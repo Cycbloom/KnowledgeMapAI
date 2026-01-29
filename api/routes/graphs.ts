@@ -90,7 +90,7 @@ router.get('/:id/nodes', requireAuth, async (req: AuthRequest, res: Response) =>
     .eq('user_id', req.user.id)
     .single();
 
-  if (graphError || !graph) return res.status(404).json({ error: 'Graph not found' });
+  if (graphError || !graph) return res.status(404).json({ error: '未找到图谱' });
 
   // Fetch nodes
   const { data: nodes, error: nodesError } = await supabase

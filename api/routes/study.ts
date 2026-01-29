@@ -67,7 +67,7 @@ router.put('/cards/:id/progress', requireAuth, async (req: AuthRequest, res: Res
     .eq('id', id)
     .single();
 
-  if (!card) return res.status(404).json({ error: 'Card not found' });
+  if (!card) return res.status(404).json({ error: '未找到卡片' });
 
   // Calculate next review date
   const now = new Date();

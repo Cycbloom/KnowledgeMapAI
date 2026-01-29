@@ -13,7 +13,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
-      res.status(400).json({ error: 'Email, password, and name are required' });
+      res.status(400).json({ error: '邮箱、密码和姓名都是必填项' });
       return;
     }
 
@@ -29,7 +29,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     }
 
     if (!authData.user) {
-      res.status(500).json({ error: 'Failed to create user' });
+      res.status(500).json({ error: '创建用户失败' });
       return;
     }
 
@@ -48,14 +48,14 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     if (dbError) {
       // Cleanup auth user if db insert fails (optional but good practice)
       // await supabase.auth.admin.deleteUser(authData.user.id);
-      res.status(500).json({ error: 'Failed to create user profile: ' + dbError.message });
+      res.status(500).json({ error: '创建用户资料失败: ' + dbError.message });
       return;
     }
 
     res.status(201).json({ user: authData.user, session: authData.session });
   } catch (error: any) {
     console.error('Register error:', error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    res.status(500).json({ error: error.message || '内部服务器错误' });
   }
 });
 
@@ -68,7 +68,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ error: 'Email and password are required' });
+      res.status(400).json({ error: '邮箱和密码都是必填项' });
       return;
     }
 
@@ -85,7 +85,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     res.json({ user: data.user, session: data.session });
   } catch (error: any) {
     console.error('Login error:', error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    res.status(500).json({ error: error.message || '内部服务器错误' });
   }
 });
 

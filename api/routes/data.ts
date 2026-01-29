@@ -9,7 +9,7 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
   const { format } = req.params;
   const { graph_id } = req.query;
 
-  if (!graph_id) return res.status(400).json({ error: 'graph_id is required' });
+  if (!graph_id) return res.status(400).json({ error: '必须提供 graph_id' });
 
   // Fetch full graph data
   const { data: graph } = await supabase
@@ -55,7 +55,7 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_title, nodes, edges } = req.body; // Expecting JSON structure
 
   if (!graph_title || !nodes) {
-    return res.status(400).json({ error: 'Invalid import data' });
+    return res.status(400).json({ error: '无效的导入数据' });
   }
 
   // 1. Create Graph

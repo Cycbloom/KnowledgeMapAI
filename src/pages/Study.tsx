@@ -47,13 +47,13 @@ export const Study = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading study cards...</div>;
+  if (loading) return <div className="p-8 text-center">正在加载学习卡片...</div>;
 
   if (cards.length === 0) {
     return (
       <div className="p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Study Session</h2>
-        <p className="text-gray-600">No cards found for this graph. Add some nodes and generate cards first!</p>
+        <h2 className="text-2xl font-bold mb-4">学习模式</h2>
+        <p className="text-gray-600">该图谱没有找到学习卡片。请先添加一些节点并生成卡片！</p>
       </div>
     );
   }
@@ -61,8 +61,8 @@ export const Study = () => {
   if (finished) {
     return (
       <div className="p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4 text-green-600">Session Complete!</h2>
-        <p className="text-gray-600 mb-8">You've reviewed all {cards.length} cards.</p>
+        <h2 className="text-2xl font-bold mb-4 text-green-600">本次学习完成!</h2>
+        <p className="text-gray-600 mb-8">你已经复习了所有 {cards.length} 张卡片。</p>
         <button
           onClick={() => {
             setFinished(false);
@@ -73,7 +73,7 @@ export const Study = () => {
           className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 inline-flex items-center"
         >
           <RefreshCw className="mr-2" size={20} />
-          Start New Session
+          开始新一轮学习
         </button>
       </div>
     );
@@ -85,9 +85,9 @@ export const Study = () => {
     <div className="min-h-full flex flex-col items-center justify-center p-8 bg-gray-100">
       <div className="w-full max-w-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Study Mode</h2>
+          <h2 className="text-xl font-bold text-gray-800">学习模式</h2>
           <span className="text-gray-500">
-            Card {currentCardIndex + 1} of {cards.length}
+            进度 {currentCardIndex + 1} / {cards.length}
           </span>
         </div>
 
@@ -97,13 +97,13 @@ export const Study = () => {
         >
           <div className="text-center">
             <h3 className="text-gray-500 uppercase tracking-wide text-sm font-semibold mb-4">
-              {showAnswer ? 'Answer' : 'Question'}
+              {showAnswer ? '答案' : '问题'}
             </h3>
             <p className="text-2xl font-medium text-gray-900">
               {showAnswer ? currentCard.answer : currentCard.question}
             </p>
             {!showAnswer && (
-              <p className="mt-8 text-gray-400 text-sm">Click to flip</p>
+              <p className="mt-8 text-gray-400 text-sm">点击翻转</p>
             )}
           </div>
         </div>
@@ -114,25 +114,25 @@ export const Study = () => {
               onClick={() => handleRate(1)}
               className="bg-red-100 text-red-700 py-3 rounded-lg font-medium hover:bg-red-200 transition-colors"
             >
-              Again
+              重来
             </button>
             <button
               onClick={() => handleRate(3)}
               className="bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors"
             >
-              Hard
+              困难
             </button>
             <button
               onClick={() => handleRate(4)}
               className="bg-blue-100 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-200 transition-colors"
             >
-              Good
+              良好
             </button>
             <button
               onClick={() => handleRate(5)}
               className="bg-green-100 text-green-700 py-3 rounded-lg font-medium hover:bg-green-200 transition-colors"
             >
-              Easy
+              简单
             </button>
           </div>
         )}

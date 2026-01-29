@@ -46,7 +46,7 @@ export const Layout = () => {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-600">Loading...</div>
+        <div className="text-xl text-gray-600">加载中...</div>
       </div>
     );
   }
@@ -59,25 +59,25 @@ export const Layout = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="w-64 bg-slate-900 text-white flex flex-col">
-        <div className="p-4 text-xl font-bold border-b border-slate-700">KnowledgeMap</div>
+        <div className="p-4 text-xl font-bold border-b border-slate-700">知识图谱</div>
         <nav className="flex-1 p-4 space-y-2">
           <Link to="/dashboard" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded">
             <LayoutDashboard size={20} />
-            <span>Dashboard</span>
+            <span>仪表盘</span>
           </Link>
           <Link to="/study" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded">
             <BookOpen size={20} />
-            <span>Study</span>
+            <span>学习模式</span>
           </Link>
           <Link to="/profile" className="flex items-center space-x-2 p-2 hover:bg-slate-800 rounded">
             <User size={20} />
-            <span>Profile</span>
+            <span>个人资料</span>
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-700">
           <button onClick={handleLogout} className="flex items-center space-x-2 text-gray-400 hover:text-white">
             <LogOut size={20} />
-            <span>Logout</span>
+            <span>退出登录</span>
           </button>
         </div>
       </div>

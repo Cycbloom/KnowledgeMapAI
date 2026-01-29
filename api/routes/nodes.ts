@@ -16,7 +16,7 @@ router.post('/nodes', requireAuth, async (req: AuthRequest, res: Response) => {
     .eq('user_id', req.user.id)
     .single();
 
-  if (!graph) return res.status(403).json({ error: 'Unauthorized access to graph' });
+  if (!graph) return res.status(403).json({ error: '未经授权访问图谱' });
 
   const { data, error } = await supabase
     .from('nodes')
@@ -46,7 +46,7 @@ router.put('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) =>
     .eq('id', id)
     .single();
     
-  if (!node) return res.status(404).json({ error: 'Node not found' });
+  if (!node) return res.status(404).json({ error: '未找到节点' });
 
   // Check graph ownership
   const { data: graph } = await supabase
@@ -56,7 +56,7 @@ router.put('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) =>
     .eq('user_id', req.user.id)
     .single();
 
-  if (!graph) return res.status(403).json({ error: 'Unauthorized' });
+  if (!graph) return res.status(403).json({ error: '未经授权' });
 
   const { data, error } = await supabase
     .from('nodes')
@@ -97,7 +97,7 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
     .eq('id', id);
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'Node deleted' });
+  res.json({ message: '节点已删除' });
 });
 
 // Create an edge

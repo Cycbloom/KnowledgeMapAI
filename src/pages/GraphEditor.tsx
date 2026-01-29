@@ -37,7 +37,7 @@ export const GraphEditor = () => {
     if (!id) return;
     const newNode = {
       graph_id: id,
-      title: 'New Node',
+      title: '新节点',
       content: '',
       x_position: (Math.random() - 0.5) * 20,
       y_position: (Math.random() - 0.5) * 20,
@@ -65,7 +65,7 @@ export const GraphEditor = () => {
 
   const handleDeleteNode = async () => {
     if (!selectedNode) return;
-    if (!confirm('Are you sure you want to delete this node?')) return;
+    if (!confirm('确定要删除这个节点吗?')) return;
     try {
       await api.nodes.delete(selectedNode.id);
       removeNode(selectedNode.id);
@@ -137,10 +137,10 @@ export const GraphEditor = () => {
       <div className="absolute top-4 left-4 bg-white p-2 rounded-lg shadow-md flex space-x-2">
         <h2 className="font-bold px-2 py-1">{graphTitle}</h2>
         <div className="w-px bg-gray-300 mx-2"></div>
-        <button onClick={handleAddNode} className="p-1 hover:bg-gray-100 rounded" title="Add Node">
+        <button onClick={handleAddNode} className="p-1 hover:bg-gray-100 rounded" title="添加节点">
           <Plus size={20} />
         </button>
-        <button className="p-1 hover:bg-gray-100 rounded" title="Export">
+        <button className="p-1 hover:bg-gray-100 rounded" title="导出">
           <Download size={20} />
         </button>
       </div>
@@ -149,13 +149,13 @@ export const GraphEditor = () => {
       {selectedNode && (
         <div className="w-80 bg-white shadow-lg border-l border-gray-200 p-4 overflow-y-auto absolute right-0 top-0 bottom-0">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg">Node Details</h3>
+            <h3 className="font-bold text-lg">节点详情</h3>
             <button onClick={() => setSelectedNode(null)} className="text-gray-500 hover:text-gray-700">✕</button>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Title</label>
+              <label className="block text-sm font-medium text-gray-700">标题</label>
               <input
                 type="text"
                 value={selectedNode.title}
@@ -165,7 +165,7 @@ export const GraphEditor = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Color</label>
+              <label className="block text-sm font-medium text-gray-700">颜色</label>
               <input
                 type="color"
                 value={selectedNode.color}
@@ -175,7 +175,7 @@ export const GraphEditor = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Content</label>
+              <label className="block text-sm font-medium text-gray-700">内容</label>
               <textarea
                 value={selectedNode.content || ''}
                 onChange={(e) => handleUpdateNode({ content: e.target.value })}
@@ -187,7 +187,7 @@ export const GraphEditor = () => {
             <div className="pt-4 border-t border-gray-200">
               <h4 className="font-semibold mb-2 flex items-center">
                 <Wand2 size={16} className="mr-2 text-purple-600" />
-                AI Assistant
+                AI 助手
               </h4>
               <div className="space-y-2">
                 <button
@@ -195,14 +195,14 @@ export const GraphEditor = () => {
                   disabled={loading}
                   className="w-full bg-purple-100 text-purple-700 py-2 rounded-md hover:bg-purple-200 text-sm"
                 >
-                  {loading ? 'Generating...' : 'Generate Content'}
+                  {loading ? '生成中...' : '生成内容'}
                 </button>
                 <button
                   onClick={handleAIExpand}
                   disabled={loading}
                   className="w-full bg-green-100 text-green-700 py-2 rounded-md hover:bg-green-200 text-sm"
                 >
-                  {loading ? 'Expanding...' : 'Expand Related Nodes'}
+                  {loading ? '扩展中...' : '扩展相关节点'}
                 </button>
               </div>
             </div>
@@ -213,7 +213,7 @@ export const GraphEditor = () => {
                 className="w-full bg-red-50 text-red-600 py-2 rounded-md hover:bg-red-100 text-sm flex items-center justify-center"
               >
                 <Trash2 size={16} className="mr-2" />
-                Delete Node
+                删除节点
               </button>
             </div>
           </div>

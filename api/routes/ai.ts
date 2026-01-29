@@ -13,13 +13,13 @@ const openai = apiKey ? new OpenAI({ apiKey }) : null;
 // Helper to generate mock response if no API key
 const getMockResponse = (type: string, prompt: string) => {
   if (type === 'content') {
-    return `[MOCK AI CONTENT] Generated content for: ${prompt}. \n\nThis is a placeholder response because OpenAI API key is not configured.`;
+    return `[模拟 AI 内容] 为以下主题生成的内容: ${prompt}。 \n\n这是一个占位符响应，因为 OpenAI API 密钥未配置。`;
   }
   if (type === 'expand') {
     return [
-      { title: `Related to ${prompt} 1`, content: 'Description 1' },
-      { title: `Related to ${prompt} 2`, content: 'Description 2' },
-      { title: `Related to ${prompt} 3`, content: 'Description 3' },
+      { title: `与 ${prompt} 相关 1`, content: '描述 1' },
+      { title: `与 ${prompt} 相关 2`, content: '描述 2' },
+      { title: `与 ${prompt} 相关 3`, content: '描述 3' },
     ];
   }
   return '';
@@ -35,7 +35,7 @@ router.post('/generate-content', requireAuth, async (req: AuthRequest, res: Resp
   try {
     const completion = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node." },
+        { role: "system", content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. Please respond in Chinese." },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
       model: "gpt-3.5-turbo",
@@ -44,7 +44,7 @@ router.post('/generate-content', requireAuth, async (req: AuthRequest, res: Resp
     res.json({ content: completion.choices[0].message.content });
   } catch (error: any) {
     console.error('AI Error:', error);
-    res.status(500).json({ error: error.message || 'AI generation failed' });
+    res.status(500).json({ error: error.message || 'AI 生成失败' });
   }
 });
 
@@ -81,8 +81,8 @@ router.post('/search-references', requireAuth, async (req: AuthRequest, res: Res
   
   res.json({
     results: [
-      { title: `Reference for ${query}`, url: 'https://example.com/ref1', snippet: 'Sample text from reference 1...' },
-      { title: `Another source for ${query}`, url: 'https://wikipedia.org/wiki/' + query, snippet: 'Wikipedia entry...' },
+      { title: `${query} 的参考资料`, url: 'https://example.com/ref1', snippet: '来自参考资料 1 的示例文本...' },
+      { title: `${query} 的其他来源`, url: 'https://wikipedia.org/wiki/' + query, snippet: '维基百科条目...' },
     ]
   });
 });

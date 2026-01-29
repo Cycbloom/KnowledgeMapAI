@@ -1,0 +1,37 @@
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+
+export interface Graph {
+  id: string;
+  title: string;
+  description?: string;
+  created_at: string;
+}
+
+export interface Node {
+  id: string;
+  graph_id: string;
+  title: string;
+  content?: string;
+  x_position: number;
+  y_position: number;
+  color?: string;
+}
+
+export interface Edge {
+  id: string;
+  source_node_id: string;
+  target_node_id: string;
+  relationship_type?: string;
+}
+
+export interface StudyCard {
+  id: string;
+  node_id: string;
+  question: string;
+  answer: string;
+  next_review: string;
+}

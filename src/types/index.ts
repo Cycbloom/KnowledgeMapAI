@@ -34,5 +34,7 @@ export interface StudyCard {
   node_id: string;
   question: string;
   answer: string;
+  card_type: 'qa' | 'choice' | 'true_false';
+  options?: string[];
   next_review: string;
 }

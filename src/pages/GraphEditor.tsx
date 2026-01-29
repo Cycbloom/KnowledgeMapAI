@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Graph3D, Graph3DRef } from '../components/Graph3D';
 import { Node, Edge } from '../types';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap } from 'lucide-react';
 
 // Helper to determine node level based on hierarchy
 type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
@@ -366,6 +366,40 @@ export const GraphEditor = () => {
     }
   };
 
+  const handleAIGenerateCards = async () => {
+    if (!selectedNode || !id) return;
+    setLoading(true);
+    try {
+      // 1. Generate Cards
+      const res = await api.ai.generateCards({ 
+        node_title: selectedNode.title, 
+        node_content: selectedNode.content 
+      });
+      
+      const cards = res.cards.map((c: any) => ({
+        node_id: selectedNode.id,
+        question: c.question,
+        answer: c.answer,
+        type: c.type,
+        options: c.options
+      }));
+
+      if (cards.length === 0) {
+        alert('AI 未能生成有效的卡片');
+        return;
+      }
+
+      // 2. Save Cards
+      await api.study.createCardsBatch(cards);
+      alert(`成功生成并保存了 ${cards.length} 张复习卡片！可以在“学习模式”中查看。`);
+    } catch (err) {
+      console.error(err);
+      alert('生成卡片失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearchResultClick = (node: Node) => {
     graphRef.current?.focusNode(node.id);
     setSelectedNode(node);
@@ -630,13 +664,23 @@ export const GraphEditor = () => {
                   {loading ? '生成中...' : '生成内容描述'}
                 </button>
                 {sidebarMode === 'edit' && (
-                  <button
-                    onClick={handleAIExpand}
-                    disabled={loading}
-                    className="w-full bg-white text-green-600 border border-green-200 py-2 rounded hover:bg-green-50 text-sm transition-colors disabled:opacity-50"
-                  >
-                    {loading ? '扩展中...' : '扩展相关节点'}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleAIExpand}
+                      disabled={loading}
+                      className="w-full bg-white text-green-600 border border-green-200 py-2 rounded hover:bg-green-50 text-sm transition-colors disabled:opacity-50"
+                    >
+                      {loading ? '扩展中...' : '扩展相关节点'}
+                    </button>
+                    <button
+                      onClick={handleAIGenerateCards}
+                      disabled={loading}
+                      className="w-full bg-white text-indigo-600 border border-indigo-200 py-2 rounded hover:bg-indigo-50 text-sm transition-colors disabled:opacity-50 flex items-center justify-center"
+                    >
+                      <GraduationCap size={16} className="mr-2" />
+                      {loading ? '生成中...' : '生成复习卡片'}
+                    </button>
+                  </>
                 )}
               </div>
             </div>

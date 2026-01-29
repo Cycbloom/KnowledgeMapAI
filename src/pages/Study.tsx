@@ -13,6 +13,8 @@ export const Study = () => {
   const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
 
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+
   useEffect(() => {
     loadCards();
   }, [graphId]);
@@ -30,21 +32,31 @@ export const Study = () => {
     }
   };
 
+  const handleNextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(prev => prev + 1);
+      setShowAnswer(false);
+      setSelectedOption(null);
+    } else {
+      setFinished(true);
+    }
+  };
+
   const handleRate = async (quality: number) => {
     if (!cards[currentCardIndex]) return;
     
     try {
       await api.study.updateProgress(cards[currentCardIndex].id, quality);
-      
-      if (currentCardIndex < cards.length - 1) {
-        setCurrentCardIndex(prev => prev + 1);
-        setShowAnswer(false);
-      } else {
-        setFinished(true);
-      }
+      handleNextCard();
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleOptionClick = (option: string) => {
+    if (showAnswer) return;
+    setSelectedOption(option);
+    setShowAnswer(true);
   };
 
   if (loading) return <div className="p-8 text-center">正在加载学习卡片...</div>;
@@ -68,6 +80,7 @@ export const Study = () => {
             setFinished(false);
             setCurrentCardIndex(0);
             setShowAnswer(false);
+            setSelectedOption(null);
             loadCards(); // Reload/Shuffle
           }}
           className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 inline-flex items-center"
@@ -80,6 +93,9 @@ export const Study = () => {
   }
 
   const currentCard = cards[currentCardIndex];
+  const isQA = !currentCard.card_type || currentCard.card_type === 'qa';
+  const isChoice = currentCard.card_type === 'choice';
+  const isTrueFalse = currentCard.card_type === 'true_false';
 
   return (
     <div className="min-h-full flex flex-col items-center justify-center p-8 bg-gray-100">
@@ -91,48 +107,135 @@ export const Study = () => {
           </span>
         </div>
 
-        <div 
-          className="bg-white rounded-xl shadow-lg p-12 min-h-[300px] flex flex-col items-center justify-center cursor-pointer transition-all hover:shadow-xl"
-          onClick={() => setShowAnswer(!showAnswer)}
-        >
-          <div className="text-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 min-h-[400px] flex flex-col cursor-default transition-all hover:shadow-xl relative overflow-hidden">
+          {/* Card Type Badge */}
+          <div className="absolute top-4 right-4 text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-500 uppercase">
+            {isQA ? '问答题' : isChoice ? '选择题' : '判断题'}
+          </div>
+
+          {/* Question Section */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center mb-8">
             <h3 className="text-gray-500 uppercase tracking-wide text-sm font-semibold mb-4">
-              {showAnswer ? '答案' : '问题'}
+              问题
             </h3>
             <p className="text-2xl font-medium text-gray-900">
-              {showAnswer ? currentCard.answer : currentCard.question}
+              {currentCard.question}
             </p>
-            {!showAnswer && (
-              <p className="mt-8 text-gray-400 text-sm">点击翻转</p>
+          </div>
+
+          {/* Answer Section */}
+          <div className="w-full">
+            {isQA && (
+              <div 
+                className={`text-center transition-all duration-300 ${showAnswer ? 'opacity-100' : 'opacity-100'}`}
+                onClick={() => !showAnswer && setShowAnswer(true)}
+              >
+                {showAnswer ? (
+                  <div className="border-t pt-6">
+                    <h3 className="text-gray-500 uppercase tracking-wide text-sm font-semibold mb-2">答案</h3>
+                    <p className="text-xl text-gray-800">{currentCard.answer}</p>
+                  </div>
+                ) : (
+                  <div className="py-8 cursor-pointer hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                    <p className="text-gray-400 text-sm">点击查看答案</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isChoice && currentCard.options && (
+              <div className="grid grid-cols-1 gap-3">
+                {currentCard.options.map((option, idx) => {
+                  const isSelected = selectedOption === option;
+                  const isCorrect = option === currentCard.answer;
+                  
+                  let btnClass = "p-4 rounded-lg border-2 text-left transition-all relative ";
+                  if (showAnswer) {
+                    if (isCorrect) btnClass += "bg-green-50 border-green-500 text-green-700";
+                    else if (isSelected) btnClass += "bg-red-50 border-red-500 text-red-700";
+                    else btnClass += "bg-gray-50 border-gray-200 text-gray-400";
+                  } else {
+                    btnClass += "bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer";
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleOptionClick(option)}
+                      disabled={showAnswer}
+                      className={btnClass}
+                    >
+                      <span className="font-semibold mr-2">{String.fromCharCode(65 + idx)}.</span>
+                      {option}
+                      {showAnswer && isCorrect && <Check className="absolute right-4 top-4 text-green-600" size={20} />}
+                      {showAnswer && isSelected && !isCorrect && <X className="absolute right-4 top-4 text-red-600" size={20} />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {isTrueFalse && (
+              <div className="flex space-x-4 justify-center">
+                {['True', 'False'].map((option) => {
+                  const isSelected = selectedOption === option;
+                  const isCorrect = option === currentCard.answer; // Assuming answer is "True" or "False" string
+                  // Support Chinese answer mapping if needed, but AI usually returns consistent strings based on prompt
+                  // Let's assume strict string match for now.
+                  
+                  let btnClass = "flex-1 py-4 rounded-lg border-2 text-center font-bold text-lg transition-all relative ";
+                  if (showAnswer) {
+                     if (isCorrect) btnClass += "bg-green-50 border-green-500 text-green-700";
+                     else if (isSelected) btnClass += "bg-red-50 border-red-500 text-red-700";
+                     else btnClass += "bg-gray-50 border-gray-200 text-gray-400";
+                  } else {
+                    btnClass += "bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer";
+                  }
+
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => handleOptionClick(option)}
+                      disabled={showAnswer}
+                      className={btnClass}
+                    >
+                      {option === 'True' ? '正确 / True' : '错误 / False'}
+                      {showAnswer && isCorrect && <Check className="absolute right-4 top-4 text-green-600" size={20} />}
+                      {showAnswer && isSelected && !isCorrect && <X className="absolute right-4 top-4 text-red-600" size={20} />}
+                    </button>
+                  )
+                })}
+              </div>
             )}
           </div>
         </div>
 
+        {/* Rating Buttons - Show only after answer is revealed */}
         {showAnswer && (
-          <div className="mt-8 grid grid-cols-4 gap-4">
+          <div className="mt-8 grid grid-cols-4 gap-4 animate-fade-in-up">
             <button
               onClick={() => handleRate(1)}
-              className="bg-red-100 text-red-700 py-3 rounded-lg font-medium hover:bg-red-200 transition-colors"
+              className="bg-red-100 text-red-700 py-3 rounded-lg font-medium hover:bg-red-200 transition-colors shadow-sm"
             >
-              重来
+              重来 (Again)
             </button>
             <button
               onClick={() => handleRate(3)}
-              className="bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors"
+              className="bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors shadow-sm"
             >
-              困难
+              困难 (Hard)
             </button>
             <button
               onClick={() => handleRate(4)}
-              className="bg-blue-100 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-200 transition-colors"
+              className="bg-blue-100 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-200 transition-colors shadow-sm"
             >
-              良好
+              良好 (Good)
             </button>
             <button
               onClick={() => handleRate(5)}
-              className="bg-green-100 text-green-700 py-3 rounded-lg font-medium hover:bg-green-200 transition-colors"
+              className="bg-green-100 text-green-700 py-3 rounded-lg font-medium hover:bg-green-200 transition-colors shadow-sm"
             >
-              简单
+              简单 (Easy)
             </button>
           </div>
         )}

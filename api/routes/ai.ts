@@ -77,6 +77,39 @@ router.post('/expand-knowledge', requireAuth, async (req: AuthRequest, res: Resp
   }
 });
 
+router.post('/generate-cards', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { node_title, node_content } = req.body;
+
+  if (!openai) {
+    // Mock response
+    return res.json({ 
+      cards: [
+        { type: 'qa', question: `什么是 ${node_title}?`, answer: `${node_title} 的定义是... (Mock)` },
+        { type: 'choice', question: `${node_title} 属于哪一类?`, options: ['A类', 'B类', 'C类', 'D类'], answer: 'A类' },
+        { type: 'true_false', question: `${node_title} 是一个重要的概念吗?`, answer: 'True' }
+      ] 
+    });
+  }
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are an educational expert. Generate 3-5 flashcards based on the provided topic and content. Mix different types: 'qa' (Question/Answer), 'choice' (Multiple Choice with 4 options), and 'true_false'. Return a JSON object with a 'cards' array. Each card object must have: 'type' (qa|choice|true_false), 'question', 'answer'. For 'choice' type, add 'options' array. Please respond in Chinese." },
+        { role: "user", content: `Topic: ${node_title}\nContent: ${node_content || 'No detailed content provided.'}` }
+      ],
+      model: model,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0].message.content;
+    const parsed = JSON.parse(content || '{"cards": []}');
+    res.json({ cards: parsed.cards || [] });
+  } catch (error: any) {
+    console.error('AI Error:', error);
+    res.status(500).json({ error: error.message || 'AI card generation failed' });
+  }
+});
+
 router.post('/search-references', requireAuth, async (req: AuthRequest, res: Response) => {
   // Real web search requires another API (e.g. Google/Bing). We'll just mock it or use AI to hallucinate references (not recommended but okay for demo).
   // Or just return a placeholder.

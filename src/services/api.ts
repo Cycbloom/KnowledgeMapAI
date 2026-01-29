@@ -57,9 +57,11 @@ export const api = {
   ai: {
     generate: (data: any) => request('/ai/generate-content', { method: 'POST', body: JSON.stringify(data) }),
     expand: (data: any) => request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(data) }),
+    generateCards: (data: any) => request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(data) }),
   },
   study: {
     getCards: (graphId?: string) => request(`/study/cards${graphId ? `?graph_id=${graphId}` : ''}`),
+    createCardsBatch: (cards: any[]) => request('/study/cards/batch', { method: 'POST', body: JSON.stringify({ cards }) }),
     updateProgress: (id: string, quality: number) => request(`/study/cards/${id}/progress`, { method: 'PUT', body: JSON.stringify({ quality }) }),
   }
 };

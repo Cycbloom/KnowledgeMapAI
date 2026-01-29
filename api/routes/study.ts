@@ -54,6 +54,34 @@ router.post('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   res.status(201).json(data);
 });
 
+// Create multiple flashcards (Batch)
+router.post('/cards/batch', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { cards } = req.body; // Expects array of { node_id, question, answer }
+
+  if (!Array.isArray(cards) || cards.length === 0) {
+    return res.status(400).json({ error: 'Invalid cards data' });
+  }
+
+  const cardsToInsert = cards.map((card: any) => ({
+    user_id: req.user.id,
+    node_id: card.node_id,
+    question: card.question,
+    answer: card.answer,
+    card_type: card.type || 'qa',
+    options: card.options || null,
+    next_review: new Date().toISOString(),
+    difficulty: 1
+  }));
+
+  const { data, error } = await req.supabase!
+    .from('study_cards')
+    .insert(cardsToInsert)
+    .select();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
 // Update card progress (Review)
 router.put('/cards/:id/progress', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;

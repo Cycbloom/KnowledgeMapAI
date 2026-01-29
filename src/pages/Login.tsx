@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../services/api';
+import { useLoginMutation } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 
 export const Login = () => {
@@ -9,11 +9,12 @@ export const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const setUser = useStore(state => state.setUser);
+  const loginMutation = useLoginMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const data = await api.auth.login({ email, password });
+      const data = await loginMutation.mutateAsync({ email, password });
       if (data.error) throw new Error(data.error);
       
       setUser(data.user, data.session?.access_token);

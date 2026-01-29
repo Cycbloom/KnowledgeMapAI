@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../services/api';
+import { useRegisterMutation } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 
 export const Register = () => {
@@ -10,11 +10,12 @@ export const Register = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const setUser = useStore(state => state.setUser);
+  const registerMutation = useRegisterMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const data = await api.auth.register({ email, password, name });
+      const data = await registerMutation.mutateAsync({ email, password, name });
       if (data.error) throw new Error(data.error);
       
       setUser(data.user, data.session?.access_token);

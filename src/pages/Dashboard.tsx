@@ -1,54 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import { Graph } from '../types';
+import { useGraphs, useCreateGraphMutation } from '../hooks/useQueries';
 import { Plus, BookOpen } from 'lucide-react';
 
 export const Dashboard = () => {
-  const [graphs, setGraphs] = useState<Graph[]>([]);
+  const { data: graphsData, isLoading, error } = useGraphs();
+  const createGraphMutation = useCreateGraphMutation();
+
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadGraphs();
-  }, []);
-
-  const loadGraphs = async () => {
-    try {
-      const data = await api.graphs.list();
-      setGraphs(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || '加载图谱失败');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const graphs = Array.isArray(graphsData) ? graphsData : [];
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle) return;
 
     try {
-      const newGraph = await api.graphs.create({ 
+      setFormError(null);
+      await createGraphMutation.mutateAsync({ 
         title: newTitle,
         description: newDescription 
       });
-      setGraphs([newGraph, ...graphs]);
       setNewTitle('');
       setNewDescription('');
       setIsCreating(false);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || '创建图谱失败');
+      setFormError(err.message || '创建图谱失败');
     }
   };
 
-  if (loading) return <div className="p-8">加载中...</div>;
-  if (error) return <div className="p-8 text-red-600">错误: {error}</div>;
+  if (isLoading) return <div className="p-8">加载中...</div>;
+  if (error) return <div className="p-8 text-red-600">错误: {(error as Error).message || '加载图谱失败'}</div>;
 
   return (
     <div className="p-8">
@@ -86,9 +72,14 @@ export const Dashboard = () => {
                 rows={3}
               />
             </div>
+            {formError && <div className="text-red-600 text-sm">{formError}</div>}
             <div className="flex gap-4">
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                创建
+              <button 
+                type="submit" 
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+                disabled={createGraphMutation.isPending}
+              >
+                {createGraphMutation.isPending ? '创建中...' : '创建'}
               </button>
               <button
                 type="button"

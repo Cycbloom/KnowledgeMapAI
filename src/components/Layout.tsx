@@ -1,42 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { useUser, useLogoutMutation } from '../hooks/useQueries';
 import { LogOut, LayoutDashboard, Database, BookOpen, User, ChevronLeft, ChevronRight } from 'lucide-react';
-import { api } from '../services/api';
 
 export const Layout = () => {
   const { user, setUser, token } = useStore();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(!user && !!token);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Use TanStack Query for user fetching
+  // Only fetch if we have a token but no user (e.g. refresh)
+  const { data: userData, isLoading: isUserLoading } = useUser(!!token && !user);
+  const logoutMutation = useLogoutMutation();
 
+  // Sync Query result to Store
   useEffect(() => {
-    const fetchUser = async () => {
-      if (!user && token) {
-        try {
-          const data = await api.auth.getUser();
-          if (data && data.user) {
-            setUser(data.user, token);
-          } else {
-            throw new Error('User not found');
-          }
-        } catch (error) {
-          console.error('Failed to fetch user:', error);
-          await handleLogout();
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [user, token, setUser]);
+    if (userData && userData.user) {
+      setUser(userData.user, token);
+    } else if (userData && !userData.user && !isUserLoading) {
+        // If fetch completed but no user, logout
+        handleLogout();
+    }
+  }, [userData, isUserLoading, setUser, token]);
 
   const handleLogout = async () => {
     try {
-      await api.auth.logout();
+      await logoutMutation.mutateAsync();
     } catch (e) {
       console.error(e);
     }
@@ -44,7 +34,8 @@ export const Layout = () => {
     navigate('/login');
   };
 
-  if (loading) {
+  // Initial loading state: if we need to fetch user, show loading
+  if ((!!token && !user && isUserLoading)) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-xl text-gray-600">加载中...</div>

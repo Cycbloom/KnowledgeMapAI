@@ -1,36 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { api } from '../services/api';
+import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
 import { Check, X, RefreshCw } from 'lucide-react';
 
 export const Study = () => {
   const [searchParams] = useSearchParams();
   const graphId = searchParams.get('graph_id');
+  
+  const { data: fetchedCards, isLoading, refetch } = useStudyCards(graphId || undefined);
+  const updateProgressMutation = useUpdateCardProgressMutation();
+
   const [cards, setCards] = useState<StudyCard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
-
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
+  // Reset state when graphId changes
   useEffect(() => {
-    loadCards();
+    setCards([]);
+    setCurrentCardIndex(0);
+    setFinished(false);
+    setShowAnswer(false);
+    setSelectedOption(null);
   }, [graphId]);
 
-  const loadCards = async () => {
-    try {
-      setLoading(true);
-      const data = await api.study.getCards(graphId || undefined);
-      // Shuffle cards
-      setCards(data.sort(() => Math.random() - 0.5));
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+  // Sync and shuffle cards when data is loaded
+  useEffect(() => {
+    if (fetchedCards && cards.length === 0) {
+      setCards([...fetchedCards].sort(() => Math.random() - 0.5));
     }
-  };
+  }, [fetchedCards, cards.length]);
 
   const handleNextCard = () => {
     if (currentCardIndex < cards.length - 1) {
@@ -46,7 +47,10 @@ export const Study = () => {
     if (!cards[currentCardIndex]) return;
     
     try {
-      await api.study.updateProgress(cards[currentCardIndex].id, quality);
+      await updateProgressMutation.mutateAsync({
+        id: cards[currentCardIndex].id,
+        quality
+      });
       handleNextCard();
     } catch (err) {
       console.error(err);
@@ -59,7 +63,21 @@ export const Study = () => {
     setShowAnswer(true);
   };
 
-  if (loading) return <div className="p-8 text-center">正在加载学习卡片...</div>;
+  const handleRestart = () => {
+    setFinished(false);
+    setCurrentCardIndex(0);
+    setShowAnswer(false);
+    setSelectedOption(null);
+    
+    if (fetchedCards) {
+      // Re-shuffle
+      setCards([...fetchedCards].sort(() => Math.random() - 0.5));
+    } else {
+      refetch();
+    }
+  };
+
+  if (isLoading) return <div className="p-8 text-center">正在加载学习卡片...</div>;
 
   if (cards.length === 0) {
     return (
@@ -76,13 +94,7 @@ export const Study = () => {
         <h2 className="text-2xl font-bold mb-4 text-green-600">本次学习完成!</h2>
         <p className="text-gray-600 mb-8">你已经复习了所有 {cards.length} 张卡片。</p>
         <button
-          onClick={() => {
-            setFinished(false);
-            setCurrentCardIndex(0);
-            setShowAnswer(false);
-            setSelectedOption(null);
-            loadCards(); // Reload/Shuffle
-          }}
+          onClick={handleRestart}
           className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 inline-flex items-center"
         >
           <RefreshCw className="mr-2" size={20} />
@@ -93,6 +105,9 @@ export const Study = () => {
   }
 
   const currentCard = cards[currentCardIndex];
+  // Guard against index out of bounds if cards changed
+  if (!currentCard) return null; 
+
   const isQA = !currentCard.card_type || currentCard.card_type === 'qa';
   const isChoice = currentCard.card_type === 'choice';
   const isTrueFalse = currentCard.card_type === 'true_false';
@@ -179,9 +194,7 @@ export const Study = () => {
               <div className="flex space-x-4 justify-center">
                 {['True', 'False'].map((option) => {
                   const isSelected = selectedOption === option;
-                  const isCorrect = option === currentCard.answer; // Assuming answer is "True" or "False" string
-                  // Support Chinese answer mapping if needed, but AI usually returns consistent strings based on prompt
-                  // Let's assume strict string match for now.
+                  const isCorrect = option === currentCard.answer;
                   
                   let btnClass = "flex-1 py-4 rounded-lg border-2 text-center font-bold text-lg transition-all relative ";
                   if (showAnswer) {
@@ -216,24 +229,28 @@ export const Study = () => {
             <button
               onClick={() => handleRate(1)}
               className="bg-red-100 text-red-700 py-3 rounded-lg font-medium hover:bg-red-200 transition-colors shadow-sm"
+              disabled={updateProgressMutation.isPending}
             >
               重来 (Again)
             </button>
             <button
               onClick={() => handleRate(3)}
               className="bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors shadow-sm"
+              disabled={updateProgressMutation.isPending}
             >
               困难 (Hard)
             </button>
             <button
               onClick={() => handleRate(4)}
               className="bg-blue-100 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-200 transition-colors shadow-sm"
+              disabled={updateProgressMutation.isPending}
             >
               良好 (Good)
             </button>
             <button
               onClick={() => handleRate(5)}
               className="bg-green-100 text-green-700 py-3 rounded-lg font-medium hover:bg-green-200 transition-colors shadow-sm"
+              disabled={updateProgressMutation.isPending}
             >
               简单 (Easy)
             </button>

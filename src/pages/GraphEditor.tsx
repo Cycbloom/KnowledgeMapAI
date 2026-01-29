@@ -1,10 +1,21 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Graph3D, Graph3DRef } from '../components/Graph3D';
 import { Node, Edge } from '../types';
 import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap } from 'lucide-react';
+import { 
+  useGraph, 
+  useGraphData, 
+  useCreateNodeMutation, 
+  useUpdateNodeOptimisticMutation, 
+  useDeleteNodeMutation, 
+  useCreateEdgeMutation,
+  useAIGenerateMutation,
+  useAIExpandMutation,
+  useAIGenerateCardsMutation,
+  useCreateCardsBatchMutation
+} from '../hooks/useQueries';
 
 // Helper to determine node level based on hierarchy
 type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
@@ -35,17 +46,35 @@ const getNextLevel = (parentLevel: string): NodeLevel => {
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { nodes, edges, setNodes, setEdges, addNode, updateNode, removeNode, addEdge } = useStore();
+  // useStore kept only for user/token if needed, or if we want to sync global state for other components
+  // But for this page, we rely on React Query
+  // const { nodes, edges, setNodes, setEdges, addNode, updateNode, removeNode, addEdge } = useStore();
   
+  // React Query Hooks
+  const { data: graphMeta } = useGraph(id || '');
+  const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || '');
+  
+  const createNodeMutation = useCreateNodeMutation();
+  const updateNodeMutation = useUpdateNodeOptimisticMutation();
+  const deleteNodeMutation = useDeleteNodeMutation();
+  const createEdgeMutation = useCreateEdgeMutation();
+  const aiGenerateMutation = useAIGenerateMutation();
+  const aiExpandMutation = useAIExpandMutation();
+  const aiGenerateCardsMutation = useAIGenerateCardsMutation();
+  const createCardsBatchMutation = useCreateCardsBatchMutation();
+
+  const nodes = graphData?.nodes || [];
+  const edges = graphData?.edges || [];
+
   // State
   const graphRef = useRef<Graph3DRef>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit'>('none');
   const [showGrid, setShowGrid] = useState(true);
   const [isDark, setIsDark] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [graphTitle, setGraphTitle] = useState('');
-  
+  const [loading, setLoading] = useState(false); // For non-query loading (e.g. AI)
+  // const [graphTitle, setGraphTitle] = useState(''); // Use graphMeta.title
+
   // Search State
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,10 +111,6 @@ export const GraphEditor = () => {
   });
   const [aiPrompt, setAiPrompt] = useState('');
 
-  useEffect(() => {
-    if (id) loadGraph(id);
-  }, [id]);
-
   // Update form when selected node changes
   useEffect(() => {
     if (selectedNode && sidebarMode === 'edit') {
@@ -97,22 +122,7 @@ export const GraphEditor = () => {
         level: getLevel(selectedNode, edges)
       });
     }
-  }, [selectedNode, sidebarMode]);
-
-  const loadGraph = async (graphId: string) => {
-    try {
-      setLoading(true);
-      const graph = await api.graphs.get(graphId);
-      setGraphTitle(graph.title);
-      const data = await api.graphs.getNodes(graphId);
-      setNodes(data.nodes || []);
-      setEdges(data.edges || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selectedNode, sidebarMode, edges]); // Added edges dependency
 
   // BFS algorithm for shortest path (unweighted graph)
   const findShortestPath = (startId: string, endId: string) => {
@@ -254,7 +264,7 @@ export const GraphEditor = () => {
     try {
       if (sidebarMode === 'create') {
         // Create Node
-        const newNode = await api.nodes.create({
+        const newNode = await createNodeMutation.mutateAsync({
           graph_id: id,
           title: nodeForm.title,
           content: nodeForm.content,
@@ -264,16 +274,14 @@ export const GraphEditor = () => {
           color: nodeForm.color,
           properties: { level: nodeForm.level }
         });
-        addNode(newNode);
 
         // Create Edge if parent selected
         if (nodeForm.parentNodeId) {
-          const newEdge = await api.edges.create({
+          await createEdgeMutation.mutateAsync({
             source_node_id: nodeForm.parentNodeId,
             target_node_id: newNode.id,
             relationship_type: 'related'
           });
-          addEdge(newEdge);
         }
 
         // Switch to edit mode for the new node
@@ -281,13 +289,17 @@ export const GraphEditor = () => {
         setSidebarMode('edit');
       } else if (sidebarMode === 'edit' && selectedNode) {
         // Update Node
-        const updated = await api.nodes.update(selectedNode.id, {
-          title: nodeForm.title,
-          content: nodeForm.content,
-          color: nodeForm.color,
-          properties: { ...selectedNode.properties, level: nodeForm.level }
+        const updated = await updateNodeMutation.mutateAsync({
+          id: selectedNode.id,
+          data: {
+            title: nodeForm.title,
+            content: nodeForm.content,
+            color: nodeForm.color,
+            properties: { ...selectedNode.properties, level: nodeForm.level }
+          },
+          graphId: id
         });
-        updateNode(selectedNode.id, updated);
+        
         setSelectedNode(updated);
       }
     } catch (err) {
@@ -299,11 +311,10 @@ export const GraphEditor = () => {
   };
 
   const handleDeleteNode = async () => {
-    if (!selectedNode) return;
+    if (!selectedNode || !id) return;
     if (!confirm('确定要删除这个节点吗?')) return;
     try {
-      await api.nodes.delete(selectedNode.id);
-      removeNode(selectedNode.id);
+      await deleteNodeMutation.mutateAsync({ id: selectedNode.id, graphId: id });
       handleCloseSidebar();
     } catch (err) {
       console.error(err);
@@ -314,7 +325,7 @@ export const GraphEditor = () => {
     if (!nodeForm.title) return;
     setLoading(true);
     try {
-      const res = await api.ai.generate({ topic: nodeForm.title, context: aiPrompt });
+      const res = await aiGenerateMutation.mutateAsync({ topic: nodeForm.title, context: aiPrompt });
       setNodeForm(prev => ({ ...prev, content: res.content }));
       setAiPrompt('');
     } catch (err) {
@@ -332,7 +343,7 @@ export const GraphEditor = () => {
       const parentLevel = getLevel(selectedNode, edges);
       const newLevel = getNextLevel(parentLevel);
 
-      const res = await api.ai.expand({ node_title: selectedNode.title });
+      const res = await aiExpandMutation.mutateAsync({ node_title: selectedNode.title });
       const suggestions = res.suggestions;
       
       for (const s of suggestions) {
@@ -341,7 +352,7 @@ export const GraphEditor = () => {
         const x = Math.round(selectedNode.x_position + (Math.random() - 0.5) * 2);
         const y = Math.round(selectedNode.y_position + (Math.random() - 0.5) * 2);
         
-        const newNode = await api.nodes.create({
+        const newNode = await createNodeMutation.mutateAsync({
           graph_id: id,
           title: s.title,
           content: s.content,
@@ -350,14 +361,12 @@ export const GraphEditor = () => {
           color: '#10B981', // Green for AI generated
           properties: { level: newLevel }
         });
-        addNode(newNode);
         
-        const newEdge = await api.edges.create({
+        await createEdgeMutation.mutateAsync({
           source_node_id: selectedNode.id,
           target_node_id: newNode.id,
           relationship_type: 'related'
         });
-        addEdge(newEdge);
       }
     } catch (err) {
       console.error(err);
@@ -371,7 +380,7 @@ export const GraphEditor = () => {
     setLoading(true);
     try {
       // 1. Generate Cards
-      const res = await api.ai.generateCards({ 
+      const res = await aiGenerateCardsMutation.mutateAsync({ 
         node_title: selectedNode.title, 
         node_content: selectedNode.content 
       });
@@ -390,7 +399,7 @@ export const GraphEditor = () => {
       }
 
       // 2. Save Cards
-      await api.study.createCardsBatch(cards);
+      await createCardsBatchMutation.mutateAsync(cards);
       alert(`成功生成并保存了 ${cards.length} 张复习卡片！可以在“学习模式”中查看。`);
     } catch (err) {
       console.error(err);
@@ -411,7 +420,12 @@ export const GraphEditor = () => {
   return (
     <div className="flex h-full relative">
       {/* 3D Canvas */}
-      <div className="flex-1 h-full">
+      <div className="flex-1 h-full relative">
+        {isGraphLoading && (
+          <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        )}
         <Graph3D 
           ref={graphRef} 
           nodes={nodes} 
@@ -434,7 +448,7 @@ export const GraphEditor = () => {
           <ArrowLeft size={20} />
         </button>
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
-        <h2 className="font-bold px-2 py-1 max-w-[200px] truncate">{graphTitle}</h2>
+        <h2 className="font-bold px-2 py-1 max-w-[200px] truncate">{graphMeta?.title || 'Loading...'}</h2>
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
         
         <div className="relative">
@@ -712,4 +726,3 @@ export const GraphEditor = () => {
     </div>
   );
 };
-

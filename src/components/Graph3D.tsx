@@ -63,6 +63,13 @@ const InstancedNodes = ({
   const tempColor = new THREE.Color();
   const hoveredRef = useRef<number | null>(null);
 
+  // Fix: Ensure bounding sphere is infinite for Raycasting
+  useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
+    }
+  }, []);
+
   useFrame(() => {
     if (!meshRef.current) return;
     
@@ -109,6 +116,7 @@ const InstancedNodes = ({
     <instancedMesh
       ref={meshRef}
       args={[undefined, undefined, nodes.length]}
+      frustumCulled={false}
       onClick={(e) => {
         e.stopPropagation();
         if (e.instanceId !== undefined && nodes[e.instanceId]) {
@@ -164,7 +172,7 @@ const LinkLines = ({ links, nodesMap, isDark, opacity = 0.6 }: { links: SimLink[
   });
 
   return (
-    <lineSegments>
+    <lineSegments frustumCulled={false}>
       <bufferGeometry ref={geometryRef} />
       <lineBasicMaterial color={isDark ? "#9ca3af" : "#64748b"} opacity={opacity} transparent linewidth={1} />
     </lineSegments>
@@ -172,7 +180,17 @@ const LinkLines = ({ links, nodesMap, isDark, opacity = 0.6 }: { links: SimLink[
 };
 
 // Labels Component - Separate from InstancedMesh for now
-const NodeLabels = ({ nodes, isDark, highlightedNodes }: { nodes: SimNode[], isDark: boolean, highlightedNodes: Set<string> }) => {
+const NodeLabels = ({ 
+  nodes, 
+  isDark, 
+  highlightedNodes,
+  onNodeClick 
+}: { 
+  nodes: SimNode[], 
+  isDark: boolean, 
+  highlightedNodes: Set<string>,
+  onNodeClick: (node: Node) => void
+}) => {
   // Optimization: Only render labels for important nodes or when few nodes
   // For P1, we render all but use efficient updates.
   // Actually, we can use a group ref and update children positions in useFrame
@@ -219,6 +237,16 @@ const NodeLabels = ({ nodes, isDark, highlightedNodes }: { nodes: SimNode[], isD
               outlineColor={isDark ? "#000000" : "#ffffff"}
               outlineOpacity={isDimmed ? 0.2 : 1}
               font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNodeClick(node);
+              }}
+              onPointerOver={() => {
+                document.body.style.cursor = 'pointer';
+              }}
+              onPointerOut={() => {
+                document.body.style.cursor = 'default';
+              }}
             >
               {node.title}
             </Text>
@@ -411,6 +439,7 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
         nodes={nodes} 
         isDark={isDark} 
         highlightedNodes={highlightedNodes} 
+        onNodeClick={onNodeClick}
       />
       
       <LinkLines 

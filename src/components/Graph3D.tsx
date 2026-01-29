@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Billboard, Environment, Float } from '@react-three/drei';
+import { OrbitControls, Text, Billboard, Environment } from '@react-three/drei';
 import * as THREE from 'three';
-import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceY } from 'd3-force-3d';
 import { Node, Edge } from '../types/index';
 
 export interface Graph3DRef {
@@ -27,149 +26,118 @@ interface SimNode extends Node {
   vx?: number;
   vy?: number;
   vz?: number;
-  // Level property for styling and physics
   level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
   [key: string]: any;
 }
 
 interface SimLink {
-  source: string | SimNode;
-  target: string | SimNode;
+  source: string;
+  target: string;
   id: string;
 }
 
-// Configuration for node levels with enhanced visual properties
+// Configuration for node levels
 const LEVEL_CONFIG = {
-  root: {
-    chargeStrength: -60,
-    radius: 1.4, // Increased size for prominence
-    color: '#8B5CF6', // Violet-500
-    emissive: '#5B21B6', // Violet-800
-    emissiveIntensity: 0.8,
-    roughness: 0.1,
-    metalness: 0.3,
-  },
-  core: {
-    chargeStrength: -40,
-    radius: 1.1,
-    color: '#F43F5E', // Rose-500
-    emissive: '#9F1239', // Rose-800
-    emissiveIntensity: 0.5,
-    roughness: 0.2,
-    metalness: 0.2,
-  },
-  sub: {
-    chargeStrength: -30,
-    radius: 0.8,
-    color: '#F59E0B', // Amber-500
-    emissive: '#92400E', // Amber-800
-    emissiveIntensity: 0.3,
-    roughness: 0.3,
-    metalness: 0.1,
-  },
-  normal: {
-    chargeStrength: -20,
-    radius: 0.5,
-    color: '#10B981', // Emerald-500
-    emissive: '#065F46', // Emerald-800
-    emissiveIntensity: 0.2,
-    roughness: 0.4,
-    metalness: 0.1,
-  },
-  leaf: {
-    chargeStrength: -10,
-    radius: 0.3,
-    color: '#3B82F6', // Blue-500
-    emissive: '#1E40AF', // Blue-800
-    emissiveIntensity: 0.1,
-    roughness: 0.5,
-    metalness: 0.0,
-  }
+  root: { radius: 1.4, color: '#8B5CF6', emissive: '#5B21B6', emissiveIntensity: 0.8 },
+  core: { radius: 1.1, color: '#F43F5E', emissive: '#9F1239', emissiveIntensity: 0.5 },
+  sub: { radius: 0.8, color: '#F59E0B', emissive: '#92400E', emissiveIntensity: 0.3 },
+  normal: { radius: 0.5, color: '#10B981', emissive: '#065F46', emissiveIntensity: 0.2 },
+  leaf: { radius: 0.3, color: '#3B82F6', emissive: '#1E40AF', emissiveIntensity: 0.1 }
 };
 
-const NodeMesh = ({ node, onClick, onDoubleClick, isDark = true, isDimmed = false }: { node: SimNode; onClick: (node: Node) => void; onDoubleClick: (node: SimNode) => void; isDark?: boolean; isDimmed?: boolean }) => {
-  const groupRef = useRef<THREE.Group>(null);
-  const textRef = useRef<any>(null);
-  const [hovered, setHovered] = useState(false);
+// Instanced Mesh for Nodes
+const InstancedNodes = ({ 
+  nodes, 
+  onNodeClick, 
+  isDark, 
+  highlightedNodes 
+}: { 
+  nodes: SimNode[], 
+  onNodeClick: (node: Node) => void, 
+  isDark: boolean,
+  highlightedNodes: Set<string>
+}) => {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
   const { camera } = useThree();
-  
-  // Get style based on level
-  const config = LEVEL_CONFIG[node.level || 'leaf'];
-  // Scale radius on hover
-  const targetRadius = hovered ? config.radius * 1.2 : config.radius;
-  
-  // Update position directly from simulation node data in useFrame
-  useFrame(() => {
-    if (groupRef.current && typeof node.x === 'number' && typeof node.y === 'number' && typeof node.z === 'number') {
-      groupRef.current.position.set(node.x, node.y, node.z);
+  const tempObject = new THREE.Object3D();
+  const tempColor = new THREE.Color();
+  const hoveredRef = useRef<number | null>(null);
 
-      // Dynamic Text Scaling (Constant Screen Size)
-      // As camera moves away, text scales up to remain readable
-      // Minimum scale is 1 (original size)
-      if (textRef.current) {
-        const distance = camera.position.distanceTo(groupRef.current.position);
-        // Reference distance is 10 (default camera Z)
-        // Adjust divider to tune the sensitivity: higher divider = slower growth
-        const scale = Math.max(1, distance / 25);
-        textRef.current.scale.set(scale, scale, scale);
+  useFrame(() => {
+    if (!meshRef.current) return;
+    
+    // We assume nodes have updated x,y,z from parent's simulation reference
+    // But React props 'nodes' might be stale if we don't force update.
+    // However, the parent ForceGraphScene passes the *latest* nodes array if it re-renders.
+    // Actually, for performance, we want to read from a Mutable Ref, not props.
+    // But to keep it simple and compatible with the loop, let's accept the array.
+    // The trick is: The parent's useFrame updates the node objects IN PLACE.
+    
+    nodes.forEach((node, i) => {
+      if (typeof node.x !== 'number') return;
+
+      tempObject.position.set(node.x, node.y!, node.z!);
+      
+      const config = LEVEL_CONFIG[node.level || 'leaf'];
+      let scale = config.radius;
+      
+      // Hover effect
+      if (hoveredRef.current === i) {
+        scale *= 1.2;
       }
-    }
+      
+      tempObject.scale.set(scale, scale, scale);
+      tempObject.updateMatrix();
+      meshRef.current!.setMatrixAt(i, tempObject.matrix);
+      
+      // Color logic
+      const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
+      const baseColor = config.color;
+      
+      tempColor.set(baseColor);
+      if (isDimmed) {
+        tempColor.lerp(new THREE.Color('#000000'), 0.8); // Dim it
+      }
+      meshRef.current!.setColorAt(i, tempColor);
+    });
+    
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
   });
 
   return (
-    <group 
-      ref={groupRef} 
-      onClick={(e) => { e.stopPropagation(); onClick(node); }}
-      onDoubleClick={(e) => { e.stopPropagation(); onDoubleClick(node); }}
-      onPointerOver={() => { document.body.style.cursor = 'pointer'; setHovered(true); }}
-      onPointerOut={() => { document.body.style.cursor = 'default'; setHovered(false); }}
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, nodes.length]}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.instanceId !== undefined && nodes[e.instanceId]) {
+          onNodeClick(nodes[e.instanceId]);
+        }
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = 'pointer';
+        hoveredRef.current = e.instanceId !== undefined ? e.instanceId : null;
+      }}
+      onPointerOut={(e) => {
+        document.body.style.cursor = 'default';
+        hoveredRef.current = null;
+      }}
     >
-      {/* Add subtle floating animation for liveliness */}
-      <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
-        <mesh>
-          <sphereGeometry args={[targetRadius, 32, 32]} />
-          <meshPhysicalMaterial 
-            color={node.color || config.color} 
-            emissive={config.emissive}
-            emissiveIntensity={hovered ? config.emissiveIntensity + 0.3 : config.emissiveIntensity}
-            roughness={config.roughness}
-            metalness={config.metalness}
-            clearcoat={0.5}
-            clearcoatRoughness={0.1}
-            transparent
-            opacity={isDimmed ? 0.1 : 1}
-          />
-        </mesh>
-      </Float>
-      
-      {/* Use Billboard to make text always face the camera */}
-      <Billboard
-        position={[0, targetRadius + 0.4, 0]}
-        follow={true}
-        lockX={false}
-        lockY={false}
-        lockZ={false}
-      >
-        <Text 
-          ref={textRef}
-          fontSize={node.level === 'root' || node.level === 'core' ? 0.6 : 0.45} 
-          color={isDark ? "white" : "#1e293b"} 
-          fillOpacity={isDimmed ? 0.2 : 1}
-          anchorX="center" 
-          anchorY="middle"
-          outlineWidth={0.05}
-          outlineColor={isDark ? "#000000" : "#ffffff"}
-          outlineOpacity={isDimmed ? 0.2 : 1}
-          font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
-        >
-          {node.title}
-        </Text>
-      </Billboard>
-    </group>
+      <sphereGeometry args={[1, 32, 32]} />
+      <meshPhysicalMaterial 
+        roughness={0.4} 
+        metalness={0.1} 
+        clearcoat={0.5}
+        clearcoatRoughness={0.1}
+      />
+    </instancedMesh>
   );
 };
 
-const LinkLines = ({ links, isDark = true, opacity = 0.6 }: { links: SimLink[], isDark?: boolean, opacity?: number }) => {
+// Optimized Lines
+const LinkLines = ({ links, nodesMap, isDark, opacity = 0.6 }: { links: SimLink[], nodesMap: Map<string, SimNode>, isDark: boolean, opacity?: number }) => {
   const geometryRef = useRef<THREE.BufferGeometry>(null);
 
   useFrame(() => {
@@ -177,11 +145,10 @@ const LinkLines = ({ links, isDark = true, opacity = 0.6 }: { links: SimLink[], 
       const positions: number[] = [];
       
       links.forEach(link => {
-        // d3-force replaces source/target strings with object references
-        const source = link.source as SimNode;
-        const target = link.target as SimNode;
+        const source = nodesMap.get(link.source);
+        const target = nodesMap.get(link.target);
 
-        if (typeof source.x === 'number' && typeof target.x === 'number') {
+        if (source && target && typeof source.x === 'number' && typeof target.x === 'number') {
           positions.push(source.x, source.y!, source.z!);
           positions.push(target.x, target.y!, target.z!);
         }
@@ -192,6 +159,7 @@ const LinkLines = ({ links, isDark = true, opacity = 0.6 }: { links: SimLink[], 
         new THREE.Float32BufferAttribute(positions, 3)
       );
       geometryRef.current.attributes.position.needsUpdate = true;
+      geometryRef.current.setDrawRange(0, positions.length / 3);
     }
   });
 
@@ -203,16 +171,71 @@ const LinkLines = ({ links, isDark = true, opacity = 0.6 }: { links: SimLink[], 
   );
 };
 
-// Component to handle camera movement
+// Labels Component - Separate from InstancedMesh for now
+const NodeLabels = ({ nodes, isDark, highlightedNodes }: { nodes: SimNode[], isDark: boolean, highlightedNodes: Set<string> }) => {
+  // Optimization: Only render labels for important nodes or when few nodes
+  // For P1, we render all but use efficient updates.
+  // Actually, we can use a group ref and update children positions in useFrame
+  
+  const groupRef = useRef<THREE.Group>(null);
+  const { camera } = useThree();
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+    
+    // Update each child (Billboard) position
+    groupRef.current.children.forEach((child: any, i) => {
+      const node = nodes[i];
+      if (node && typeof node.x === 'number') {
+        const config = LEVEL_CONFIG[node.level || 'leaf'];
+        child.position.set(node.x, node.y! + config.radius + 0.4, node.z);
+        
+        // Scale text based on distance
+        const distance = camera.position.distanceTo(child.position);
+        const scale = Math.max(1, distance / 25);
+        child.scale.set(scale, scale, scale);
+        
+        // Visibility check (optional culling)
+        child.visible = true;
+      }
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {nodes.map((node) => {
+        const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
+        const config = LEVEL_CONFIG[node.level || 'leaf'];
+        
+        return (
+          <Billboard key={node.id} follow={true} lockX={false} lockY={false} lockZ={false}>
+             <Text 
+              fontSize={node.level === 'root' || node.level === 'core' ? 0.6 : 0.45} 
+              color={isDark ? "white" : "#1e293b"} 
+              fillOpacity={isDimmed ? 0.2 : 1}
+              anchorX="center" 
+              anchorY="middle"
+              outlineWidth={0.05}
+              outlineColor={isDark ? "#000000" : "#ffffff"}
+              outlineOpacity={isDimmed ? 0.2 : 1}
+              font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
+            >
+              {node.title}
+            </Text>
+          </Billboard>
+        );
+      })}
+    </group>
+  );
+};
+
 const CameraController = ({ targetPosition, targetLookAt }: { targetPosition: THREE.Vector3 | null, targetLookAt: THREE.Vector3 | null }) => {
   const { camera, gl } = useThree();
   const controlsRef = useRef<any>(null);
   
   useFrame(() => {
     if (targetPosition && targetLookAt && controlsRef.current) {
-      // Smoothly interpolate camera position
       camera.position.lerp(targetPosition, 0.05);
-      // Smoothly interpolate controls target
       controlsRef.current.target.lerp(targetLookAt, 0.05);
       controlsRef.current.update();
     }
@@ -222,18 +245,108 @@ const CameraController = ({ targetPosition, targetLookAt }: { targetPosition: TH
 };
 
 const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef<Graph3DRef>) => {
-  const { nodes, edges, onNodeClick, showGrid, isDark = true, selectedNodeId, highlightedPath } = props;
-  const [simNodes, setSimNodes] = useState<SimNode[]>([]);
-  const [simLinks, setSimLinks] = useState<SimLink[]>([]);
-  const prevNodeCount = useRef(0);
+  const { nodes: rawNodes, edges: rawEdges, onNodeClick, showGrid, isDark = true, selectedNodeId, highlightedPath } = props;
   
+  // Simulation State
+  const workerRef = useRef<Worker | null>(null);
+  const [nodes, setNodes] = useState<SimNode[]>([]);
+  const [links, setLinks] = useState<SimLink[]>([]);
+  
+  // Map for fast lookup
+  const nodesMap = useMemo(() => new Map(nodes.map(n => [n.id, n])), [nodes]);
+
   // Spotlight state
   const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
   const [highlightedLinks, setHighlightedLinks] = useState<Set<string>>(new Set());
 
-  // Calculate spotlight when selectedNodeId OR highlightedPath changes
+  // Camera focus
+  const [focusTarget, setFocusTarget] = useState<{ pos: THREE.Vector3, lookAt: THREE.Vector3 } | null>(null);
+
+  // Initialize Worker
   useEffect(() => {
-    // Priority: Pathfinding > Single Node Selection
+    workerRef.current = new Worker(new URL('../workers/simulationWorker.ts', import.meta.url), { type: 'module' });
+    
+    workerRef.current.onmessage = (e) => {
+      const { type, nodes: updatedNodes } = e.data;
+      if (type === 'tick') {
+        // Update local node positions IN PLACE to avoid re-renders for every tick
+        // But we need to trigger a re-render initially to populate the InstancedMesh
+        // Wait, if we update objects in place, React doesn't know.
+        // We use a Ref to hold the nodes for the animation loop.
+        // But the components (InstancedNodes) need the array to map over.
+        // Solution: Maintain a state that holds the ARRAY STRUCTURE (SimNodes), 
+        // and update the properties (x,y,z) of these objects.
+        
+        setNodes(prevNodes => {
+           if (prevNodes.length === 0) return updatedNodes;
+           // Merge positions into existing objects
+           updatedNodes.forEach((n: any, i: number) => {
+             if (prevNodes[i] && prevNodes[i].id === n.id) {
+               prevNodes[i].x = n.x;
+               prevNodes[i].y = n.y;
+               prevNodes[i].z = n.z;
+             }
+           });
+           return prevNodes; // Return SAME array reference to avoid re-render, but data is mutated
+        });
+      }
+    };
+
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
+  // Send Data to Worker
+  useEffect(() => {
+    if (!workerRef.current) return;
+
+    // Process nodes to add levels (logic moved here from worker or kept here)
+    // It's better to compute levels here once.
+    const nodeDegrees = new Map<string, number>();
+    rawEdges.forEach(edge => {
+      const sId = String(edge.source_node_id);
+      const tId = String(edge.target_node_id);
+      nodeDegrees.set(sId, (nodeDegrees.get(sId) || 0) + 1);
+      nodeDegrees.set(tId, (nodeDegrees.get(tId) || 0) + 1);
+    });
+
+    const simNodes: SimNode[] = rawNodes.map(n => {
+      const nodeIdStr = String(n.id);
+      let level: any = 'leaf';
+      const degree = nodeDegrees.get(nodeIdStr) || 0;
+      
+      if (n.properties?.level) {
+         level = n.properties.level;
+      } else {
+         if (degree >= 10) level = 'root';
+         else if (degree >= 6) level = 'core';
+         else if (degree >= 4) level = 'sub';
+         else if (degree >= 2) level = 'normal';
+      }
+      return { ...n, id: nodeIdStr, level };
+    });
+
+    const simLinks: SimLink[] = rawEdges.map(e => ({
+      id: String(e.id),
+      source: String(e.source_node_id),
+      target: String(e.target_node_id)
+    }));
+
+    // Initialize state
+    setNodes(simNodes);
+    setLinks(simLinks);
+
+    // Send to worker
+    workerRef.current.postMessage({
+      type: 'updateData',
+      payload: { nodes: simNodes, links: simLinks }
+    });
+
+  }, [rawNodes, rawEdges]);
+
+  // Spotlight Logic
+  useEffect(() => {
     if (highlightedPath) {
       setHighlightedNodes(highlightedPath.nodes);
       setHighlightedLinks(highlightedPath.links);
@@ -246,248 +359,73 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
       return;
     }
 
-    // Find neighbors
     const neighbors = new Set<string>();
     const connectedLinks = new Set<string>();
-    
-    // Add selected node itself
     neighbors.add(selectedNodeId);
 
-    // First degree neighbors
-    simLinks.forEach(link => {
-      // Handle both string IDs and object references (d3-force behavior)
-      const sourceId = (typeof link.source === 'object') ? (link.source as SimNode).id : link.source;
-      const targetId = (typeof link.target === 'object') ? (link.target as SimNode).id : link.target;
-
-      if (sourceId === selectedNodeId) {
-        neighbors.add(targetId);
+    links.forEach(link => {
+      if (link.source === selectedNodeId) {
+        neighbors.add(link.target);
         connectedLinks.add(link.id);
-      } else if (targetId === selectedNodeId) {
-        neighbors.add(sourceId);
+      } else if (link.target === selectedNodeId) {
+        neighbors.add(link.source);
         connectedLinks.add(link.id);
       }
     });
 
     setHighlightedNodes(neighbors);
     setHighlightedLinks(connectedLinks);
-  }, [selectedNodeId, highlightedPath, simLinks]);
-  
-  // Camera focus state
-  const [focusTarget, setFocusTarget] = useState<{ pos: THREE.Vector3, lookAt: THREE.Vector3 } | null>(null);
-  
-  // Keep a persistent reference to the simulation
-  const simulation = useRef<any>(null);
+  }, [selectedNodeId, highlightedPath, links]);
 
-  // Handle node double click to focus camera
-  const handleNodeDoubleClick = (node: SimNode) => {
-    if (typeof node.x === 'number' && typeof node.y === 'number' && typeof node.z === 'number') {
-      const nodePos = new THREE.Vector3(node.x, node.y, node.z);
-      // Calculate offset position (maintain current viewing angle but get closer)
-      // For simplicity, we'll position camera at a fixed offset relative to the node
-      // Or better: keep current camera direction but move closer
-      
-      const offset = new THREE.Vector3(0, 2, 5); // Default offset
-      const targetPos = nodePos.clone().add(offset);
-      
-      setFocusTarget({
-        pos: targetPos,
-        lookAt: nodePos
-      });
-      
-      // Reset focus target after animation completes (simulated by timeout or just let it settle)
-      // Actually, if we keep updating lerp, it will follow the node if it moves.
-      // But we want user to regain control. So we should stop lerping after some time or when user interacts.
-      // For now, let's just set it and maybe user can override by interacting with controls (OrbitControls handles this)
-      
-      // To allow user to break free, we might need more complex logic. 
-      // But for simple "move to", the lerp in useFrame will fight with user input if we don't clear it.
-      // Let's clear it after 2 seconds.
-      setTimeout(() => setFocusTarget(null), 2000);
-    }
-  };
-
-  // Expose focusNode method to parent via ref
+  // Focus Logic
   useImperativeHandle(ref, () => ({
     focusNode: (nodeId: string) => {
-      // Find the simulation node with the given ID
-      const targetNode = simNodes.find(n => n.id === nodeId);
-      if (targetNode) {
-        handleNodeDoubleClick(targetNode);
+      const targetNode = nodes.find(n => n.id === nodeId);
+      if (targetNode && typeof targetNode.x === 'number') {
+        const nodePos = new THREE.Vector3(targetNode.x, targetNode.y, targetNode.z);
+        setFocusTarget({
+          pos: nodePos.clone().add(new THREE.Vector3(0, 2, 5)),
+          lookAt: nodePos
+        });
+        setTimeout(() => setFocusTarget(null), 2000);
       }
     }
-  }), [simNodes]); // Re-create handler if simNodes change (though simNodes updates frequently, finding by ID is safe)
-
-  // Initialize/Update Simulation Data
-  useEffect(() => {
-    // 0. Pre-calculate node degrees to determine levels automatically
-    const nodeDegrees = new Map<string, number>();
-    edges.forEach(edge => {
-      const sId = String(edge.source_node_id);
-      const tId = String(edge.target_node_id);
-      nodeDegrees.set(sId, (nodeDegrees.get(sId) || 0) + 1);
-      nodeDegrees.set(tId, (nodeDegrees.get(tId) || 0) + 1);
-    });
-
-    // 1. Merge new props with existing simulation state to preserve positions
-    setSimNodes(prevNodes => {
-      // Use String(n.id) for map keys to ensure consistency
-      const existingMap = new Map(prevNodes.map(n => [String(n.id), n]));
-      
-      return nodes.map(n => {
-        const nodeIdStr = String(n.id);
-        const existing = existingMap.get(nodeIdStr);
-        
-        // Determine level logic:
-        // Priority 1: Explicit property in DB (Manual Override)
-        // Priority 2: Fallback to degree centrality (only if property missing)
-        let level: 'root' | 'core' | 'sub' | 'normal' | 'leaf' = 'leaf';
-        const degree = nodeDegrees.get(nodeIdStr) || 0; // Use string ID for lookup
-        
-        if (n.properties?.level) {
-           // Trust the database property completely
-           level = n.properties.level as any;
-        } else {
-           // Fallback logic ONLY for nodes without explicit level
-           if (degree >= 10) level = 'root';
-           else if (degree >= 6) level = 'core';
-           else if (degree >= 4) level = 'sub';
-           else if (degree >= 2) level = 'normal';
-           else level = 'leaf';
-        }
-
-        if (existing) {
-          // Update properties but keep simulation state (x,y,z,vx,vy,vz)
-          // Ensure ID is string
-          return { ...existing, ...n, id: nodeIdStr, level };
-        } else {
-          // Initialize new node
-          // Map database x/y to 3D space x/z (horizontal plane)
-          // Y is initialized to near 0 for height
-          return { 
-            ...n, 
-            id: nodeIdStr, // Ensure ID is string
-            level,
-            x: n.x_position || (Math.random() - 0.5) * 10, 
-            y: (Math.random() - 0.5) * 2, // Small initial vertical jitter
-            z: n.y_position || (Math.random() - 0.5) * 10 // Map db Y to 3D Z
-          };
-        }
-      });
-    });
-
-    setSimLinks(edges.map(e => ({
-      id: String(e.id), // Ensure ID is string
-      source: String(e.source_node_id), // Ensure source is string
-      target: String(e.target_node_id)  // Ensure target is string
-    })));
-
-  }, [nodes, edges]);
-
-  // Manage Simulation
-  useEffect(() => {
-    if (!simulation.current) {
-      // Initialize simulation
-      simulation.current = forceSimulation()
-        .numDimensions(3) // Enable 3D
-        .force('center', forceCenter())
-        .force('y', forceY(0).strength(5)) // Strong vertical compression to keep layout flat (quasi-2D)
-        .force('collide', forceCollide().radius((d: any) => {
-           // Dynamic collision radius based on node level size
-           const level = d.level || 'leaf';
-           const config = LEVEL_CONFIG[level as keyof typeof LEVEL_CONFIG];
-           return config.radius * 1.5; // Multiplier for breathing room
-        }).iterations(3)); // Increased iterations for better packing without vertical escape
-    }
-
-    // Update simulation nodes/links
-    // Note: d3 mutates these arrays
-    simulation.current.nodes(simNodes);
-    
-    // Dynamic charge force based on node level
-    simulation.current.force('charge', forceManyBody()
-      .strength((d: any) => {
-        const level = d.level || 'leaf';
-        const config = LEVEL_CONFIG[level as keyof typeof LEVEL_CONFIG];
-        return config.chargeStrength;
-      })
-      .distanceMax(15) // Limit repulsion range to prevent distant nodes from affecting each other
-    );
-
-    // Dynamic link distance based on node levels
-    // Connect high-level nodes with longer links, low-level nodes with shorter links
-    simulation.current.force('link', forceLink(simLinks)
-      .id((d: any) => d.id)
-      .distance((link: any) => {
-        const sourceLevel = link.source.level || 'leaf';
-        const targetLevel = link.target.level || 'leaf';
-        
-        // If either node is high level, use longer distance but much more compact than before
-        if (sourceLevel === 'root' || targetLevel === 'root') return 3.0;
-        if (sourceLevel === 'core' || targetLevel === 'core') return 2.0;
-        if (sourceLevel === 'sub' || targetLevel === 'sub') return 1.5;
-        return 1.0; // Leaf-Leaf connections are very tight
-      })
-    ); 
-    
-    // Re-heat simulation when data changes
-    // Use lower alpha for incremental updates to prevent large jumps
-    const isIncremental = simNodes.length > prevNodeCount.current && prevNodeCount.current > 0;
-    const alpha = isIncremental ? 0.3 : 1;
-    simulation.current.alpha(alpha).restart();
-    
-    prevNodeCount.current = simNodes.length;
-
-    return () => {
-      // Cleanup if needed
-      simulation.current.stop();
-    };
-  }, [simNodes, simLinks]);
-
-  // Tick simulation in useFrame
-  useFrame(() => {
-    if (simulation.current) {
-      simulation.current.tick();
-    }
-  });
+  }), [nodes]);
 
   return (
     <>
-      {/* Position grid slightly lower to give a "floor" feel */}
       {showGrid && <gridHelper args={isDark ? [100, 100] : [100, 100, 0x94a3b8, 0xe2e8f0]} position={[0, -2, 0]} />}
-      
-      {/* Ambient light for general illumination */}
       <ambientLight intensity={isDark ? 0.4 : 0.7} />
-      {/* Point lights for 3D depth */}
       <pointLight position={[10, 10, 10]} intensity={1} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} />
-      
-      {/* Environment for realistic reflections and lighting */}
       <Environment preset="city" />
 
-      {simNodes.map(node => (
-        <NodeMesh 
-          key={node.id} 
-          node={node} 
-          onClick={onNodeClick}
-          onDoubleClick={handleNodeDoubleClick}
-          isDark={isDark}
-          isDimmed={highlightedNodes.size > 0 && !highlightedNodes.has(node.id)}
-        />
-      ))}
-      
-      {/* Active Links */}
-      <LinkLines 
-        links={simLinks.filter(l => highlightedLinks.size === 0 || highlightedLinks.has(l.id))} 
+      <InstancedNodes 
+        nodes={nodes} 
+        onNodeClick={onNodeClick} 
         isDark={isDark} 
-        opacity={0.6}
+        highlightedNodes={highlightedNodes} 
       />
       
-      {/* Dimmed Links */}
+      <NodeLabels 
+        nodes={nodes} 
+        isDark={isDark} 
+        highlightedNodes={highlightedNodes} 
+      />
+      
+      <LinkLines 
+        links={links} 
+        nodesMap={nodesMap} 
+        isDark={isDark} 
+        opacity={highlightedLinks.size > 0 ? 0.05 : 0.6}
+      />
+      
       {highlightedLinks.size > 0 && (
         <LinkLines 
-          links={simLinks.filter(l => !highlightedLinks.has(l.id))} 
+          links={links.filter(l => highlightedLinks.has(l.id))} 
+          nodesMap={nodesMap} 
           isDark={isDark} 
-          opacity={0.05}
+          opacity={0.6} 
         />
       )}
 
@@ -500,21 +438,11 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
 });
 
 export const Graph3D = forwardRef((props: Graph3DProps, ref: React.ForwardedRef<Graph3DRef>) => {
-  const { nodes, edges, onNodeClick, showGrid, isDark = true, selectedNodeId, highlightedPath } = props;
+  const { isDark = true } = props;
   return (
     <div className={`w-full h-full transition-colors duration-300 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
-        <ForceGraphScene 
-          ref={ref}
-          nodes={nodes} 
-          edges={edges} 
-          onNodeClick={onNodeClick} 
-          showGrid={showGrid}
-          isDark={isDark}
-          selectedNodeId={selectedNodeId}
-          highlightedPath={highlightedPath}
-        />
-        <Environment preset="city" />
+        <ForceGraphScene ref={ref} {...props} />
       </Canvas>
     </div>
   );

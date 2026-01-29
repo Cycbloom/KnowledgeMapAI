@@ -1,9 +1,12 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
-import { Graph3D, Graph3DRef } from '../components/Graph3D';
+import type { Graph3DRef } from '../components/Graph3D';
 import { Node, Edge } from '../types';
+
+// Lazy load heavy 3D component
+const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D })));
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -355,16 +358,25 @@ export const GraphEditor = () => {
              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         )}
-        <Graph3D 
-          ref={graphRef} 
-          nodes={nodes} 
-          edges={edges} 
-          onNodeClick={handleNodeClick} 
-          showGrid={showGrid} 
-          isDark={isDark}
-          selectedNodeId={selectedNode?.id}
-          highlightedPath={highlightedPath}
-        />
+        <Suspense fallback={
+          <div className="absolute inset-0 flex items-center justify-center z-40 bg-gray-50/80 backdrop-blur-sm">
+             <div className="text-center">
+               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-2"></div>
+               <p className="text-gray-600 font-medium">正在加载 3D 引擎...</p>
+             </div>
+          </div>
+        }>
+          <Graph3D 
+            ref={graphRef} 
+            nodes={nodes} 
+            edges={edges} 
+            onNodeClick={handleNodeClick} 
+            showGrid={showGrid} 
+            isDark={isDark}
+            selectedNodeId={selectedNode?.id}
+            highlightedPath={highlightedPath}
+          />
+        </Suspense>
       </div>
 
       {/* Toolbar */}

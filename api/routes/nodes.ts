@@ -57,13 +57,21 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
 router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  // Use scoped client to respect RLS
-  const { error } = await req.supabase!
+  // Use RLS-scoped client (req.supabase) instead of admin
+  // Attempt to delete directly. RLS ensures we can only delete nodes in our graphs.
+  const { error, count } = await req.supabase!
     .from('nodes')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', id);
 
   if (error) return res.status(500).json({ error: error.message });
+  
+  // If count is 0, it means either node doesn't exist or user doesn't own it.
+  // We can return a generic 404 to avoid leaking existence of other users' nodes.
+  if (count === 0) {
+    return res.status(404).json({ error: 'Node not found or unauthorized' });
+  }
+
   res.json({ message: '节点已删除' });
 });
 
@@ -71,8 +79,32 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
 router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthRequest, res: Response) => {
   const { source_node_id, target_node_id, relationship_type } = req.body;
 
-  // Use scoped client to respect RLS
-  // RLS Policy "Users can manage edges in own graphs" ensures source_node belongs to user's graph
+  // 1. Verify source node exists and is accessible by user (RLS)
+  const { data: sourceNode, error: sourceError } = await req.supabase!
+    .from('nodes')
+    .select('id, graph_id')
+    .eq('id', source_node_id)
+    .single();
+
+  if (sourceError || !sourceNode) {
+    return res.status(404).json({ error: 'Source node not found or unauthorized' });
+  }
+
+  // 2. Verify target node exists and is accessible (Optional but recommended for consistency)
+  const { data: targetNode, error: targetError } = await req.supabase!
+    .from('nodes')
+    .select('id')
+    .eq('id', target_node_id)
+    .single();
+
+  if (targetError || !targetNode) {
+    return res.status(404).json({ error: 'Target node not found or unauthorized' });
+  }
+
+  // 3. Create edge
+  // Note: Edges table RLS should allow insert if source/target nodes are visible.
+  // Assuming we have a policy for edges insert based on node ownership.
+  // If not, we might need to rely on the fact that we checked nodes above.
   const { data, error } = await req.supabase!
     .from('edges')
     .insert([

@@ -8,7 +8,7 @@ const router = Router();
 router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_id } = req.query;
 
-  let query = supabase
+  let query = req.supabase!
     .from('study_cards')
     .select('*, nodes(title)') // Join with nodes to get context
     .eq('user_id', req.user.id);
@@ -35,7 +35,7 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
 router.post('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   const { node_id, question, answer } = req.body;
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase!
     .from('study_cards')
     .insert([
       {
@@ -61,7 +61,7 @@ router.put('/cards/:id/progress', requireAuth, async (req: AuthRequest, res: Res
 
   // Simple spaced repetition logic (SM-2 simplified)
   // Fetch current card
-  const { data: card } = await supabase
+  const { data: card } = await req.supabase!
     .from('study_cards')
     .select('*')
     .eq('id', id)
@@ -80,7 +80,7 @@ router.put('/cards/:id/progress', requireAuth, async (req: AuthRequest, res: Res
 
   const nextReview = new Date(now.getTime() + interval * 24 * 60 * 60 * 1000);
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase!
     .from('study_cards')
     .update({
       last_reviewed: now.toISOString(),
@@ -100,7 +100,7 @@ router.put('/cards/:id/progress', requireAuth, async (req: AuthRequest, res: Res
 router.get('/progress', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_id } = req.query;
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase!
     .from('study_progress')
     .select('*')
     .eq('user_id', req.user.id)

@@ -12,7 +12,7 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
   if (!graph_id) return res.status(400).json({ error: '必须提供 graph_id' });
 
   // Fetch full graph data
-  const { data: graph } = await supabase
+  const { data: graph } = await req.supabase!
     .from('knowledge_graphs')
     .select('*')
     .eq('id', graph_id)
@@ -20,7 +20,7 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     
   if (!graph) return res.status(404).json({ error: 'Graph not found' });
 
-  const { data: nodes } = await supabase.from('nodes').select('*').eq('graph_id', graph_id);
+  const { data: nodes } = await req.supabase!.from('nodes').select('*').eq('graph_id', graph_id);
   
   // Get edges via nodes (see graphs.ts for logic, or fetch all edges and filter in memory if needed)
   // For export, we probably want all edges connecting these nodes.
@@ -28,7 +28,7 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
   // Supabase doesn't support complex OR across relations easily in one go without raw SQL or multiple queries.
   // We'll fetch edges where source_node_id IN (nodeIds).
   const nodeIds = nodes?.map(n => n.id) || [];
-  const { data: edges } = await supabase.from('edges').select('*').in('source_node_id', nodeIds);
+  const { data: edges } = await req.supabase!.from('edges').select('*').in('source_node_id', nodeIds);
 
   const exportData = {
     graph,
@@ -59,7 +59,7 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   // 1. Create Graph
-  const { data: graph, error: graphError } = await supabase
+  const { data: graph, error: graphError } = await req.supabase!
     .from('knowledge_graphs')
     .insert([{ user_id: req.user.id, title: graph_title }])
     .select()
@@ -89,7 +89,7 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
   });
 
   // Bulk insert nodes
-  const { data: insertedNodes, error: nodesError } = await supabase
+  const { data: insertedNodes, error: nodesError } = await req.supabase!
     .from('nodes')
     .insert(nodesToInsert)
     .select();

@@ -12,12 +12,14 @@ const getHeaders = () => {
 
 const handleResponse = async (res: Response) => {
   const text = await res.text();
-  try {
-    return text ? JSON.parse(text) : {};
-  } catch (error) {
-    console.error('Failed to parse response:', text);
-    throw new Error('Invalid JSON response from server');
+  const data = text ? JSON.parse(text) : {};
+  
+  if (!res.ok) {
+    const error = (data && data.message) || (data && data.error) || res.statusText;
+    throw new Error(error);
   }
+  
+  return data;
 };
 
 const request = (url: string, options: RequestInit = {}) => {

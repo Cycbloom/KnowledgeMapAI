@@ -6,7 +6,7 @@ const router = Router();
 
 // List all graphs for the user
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase!
     .from('knowledge_graphs')
     .select('*')
     .eq('user_id', req.user.id)
@@ -20,10 +20,19 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const { title, description } = req.body;
 
-  const { data, error } = await supabase
+  if (!title) {
+    return res.status(400).json({ error: '标题是必填项' });
+  }
+
+  const { data, error } = await req.supabase!
     .from('knowledge_graphs')
     .insert([
-      { user_id: req.user.id, title, description, settings: {} }
+      { 
+        user_id: req.user.id, 
+        title, 
+        description: description || '', 
+        settings: {} 
+      }
     ])
     .select()
     .single();
@@ -36,14 +45,14 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase!
     .from('knowledge_graphs')
     .select('*')
     .eq('id', id)
     .eq('user_id', req.user.id) // Ensure ownership
     .single();
 
-  if (error) return res.status(404).json({ error: 'Graph not found' });
+  if (error) return res.status(404).json({ error: '未找到该图谱' });
   res.json(data);
 });
 
@@ -52,7 +61,7 @@ router.put('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase!
     .from('knowledge_graphs')
     .update(updates)
     .eq('id', id)
@@ -68,14 +77,14 @@ router.put('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  const { error } = await supabase
+  const { error } = await req.supabase!
     .from('knowledge_graphs')
     .delete()
     .eq('id', id)
     .eq('user_id', req.user.id);
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'Graph deleted successfully' });
+  res.json({ message: '图谱删除成功' });
 });
 
 // Get nodes and edges for a graph
@@ -83,7 +92,7 @@ router.get('/:id/nodes', requireAuth, async (req: AuthRequest, res: Response) =>
   const { id } = req.params;
 
   // Verify ownership first
-  const { data: graph, error: graphError } = await supabase
+  const { data: graph, error: graphError } = await req.supabase!
     .from('knowledge_graphs')
     .select('id')
     .eq('id', id)
@@ -93,7 +102,7 @@ router.get('/:id/nodes', requireAuth, async (req: AuthRequest, res: Response) =>
   if (graphError || !graph) return res.status(404).json({ error: '未找到图谱' });
 
   // Fetch nodes
-  const { data: nodes, error: nodesError } = await supabase
+  const { data: nodes, error: nodesError } = await req.supabase!
     .from('nodes')
     .select('*')
     .eq('graph_id', id);
@@ -111,7 +120,7 @@ router.get('/:id/nodes', requireAuth, async (req: AuthRequest, res: Response) =>
     return res.json({ nodes: [], edges: [] });
   }
 
-  const { data: edges, error: edgesError } = await supabase
+  const { data: edges, error: edgesError } = await req.supabase!
     .from('edges')
     .select('*')
     .in('source_node_id', nodeIds); // This gets edges starting from these nodes. 

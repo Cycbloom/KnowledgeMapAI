@@ -82,6 +82,25 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Auto-repair: Ensure public.users record exists
+    const { data: existingProfile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', data.user.id)
+      .single();
+
+    if (!existingProfile) {
+      console.log(`[Auth] Repairing missing public profile for user ${data.user.id}`);
+      await supabase.from('users').insert([
+        {
+          id: data.user.id,
+          email: email,
+          name: data.user.user_metadata?.name || 'Restored User',
+          password_hash: 'MANAGED_BY_SUPABASE_AUTH'
+        }
+      ]);
+    }
+
     res.json({ user: data.user, session: data.session });
   } catch (error: any) {
     console.error('Login error:', error);

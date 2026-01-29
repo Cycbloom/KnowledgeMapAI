@@ -2,8 +2,8 @@
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  name VARCHAR(100) NOT NULL,
+  password_hash VARCHAR(255),
+  name VARCHAR(100) DEFAULT 'User',
   plan VARCHAR(20) DEFAULT 'free' CHECK (plan IN ('free', 'premium')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -96,3 +96,192 @@ CREATE TABLE IF NOT EXISTS study_progress (
 CREATE INDEX IF NOT EXISTS idx_study_progress_user ON study_progress(user_id);
 GRANT SELECT ON study_progress TO anon;
 GRANT ALL PRIVILEGES ON study_progress TO authenticated;
+
+-- RLS Policies
+
+-- Users
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own profile" ON users;
+CREATE POLICY "Users can view own profile" 
+  ON users FOR SELECT 
+  USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile" ON users;
+CREATE POLICY "Users can insert own profile" 
+  ON users FOR INSERT 
+  WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
+CREATE POLICY "Users can update own profile" 
+  ON users FOR UPDATE 
+  USING (auth.uid() = id);
+
+-- Knowledge Graphs
+ALTER TABLE knowledge_graphs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own graphs" ON knowledge_graphs;
+CREATE POLICY "Users can view own graphs" 
+  ON knowledge_graphs FOR SELECT 
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own graphs" ON knowledge_graphs;
+CREATE POLICY "Users can insert own graphs" 
+  ON knowledge_graphs FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own graphs" ON knowledge_graphs;
+CREATE POLICY "Users can update own graphs" 
+  ON knowledge_graphs FOR UPDATE 
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own graphs" ON knowledge_graphs;
+CREATE POLICY "Users can delete own graphs" 
+  ON knowledge_graphs FOR DELETE 
+  USING (auth.uid() = user_id);
+
+-- Nodes
+ALTER TABLE nodes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view nodes of own graphs" ON nodes;
+CREATE POLICY "Users can view nodes of own graphs" 
+  ON nodes FOR SELECT 
+  USING (EXISTS (
+    SELECT 1 FROM knowledge_graphs 
+    WHERE knowledge_graphs.id = nodes.graph_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Users can insert nodes to own graphs" ON nodes;
+CREATE POLICY "Users can insert nodes to own graphs" 
+  ON nodes FOR INSERT 
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM knowledge_graphs 
+    WHERE knowledge_graphs.id = nodes.graph_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Users can update nodes of own graphs" ON nodes;
+CREATE POLICY "Users can update nodes of own graphs" 
+  ON nodes FOR UPDATE 
+  USING (EXISTS (
+    SELECT 1 FROM knowledge_graphs 
+    WHERE knowledge_graphs.id = nodes.graph_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Users can delete nodes of own graphs" ON nodes;
+CREATE POLICY "Users can delete nodes of own graphs" 
+  ON nodes FOR DELETE 
+  USING (EXISTS (
+    SELECT 1 FROM knowledge_graphs 
+    WHERE knowledge_graphs.id = nodes.graph_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+-- Edges
+ALTER TABLE edges ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view edges of own graphs" ON edges;
+CREATE POLICY "Users can view edges of own graphs" 
+  ON edges FOR SELECT 
+  USING (EXISTS (
+    SELECT 1 FROM nodes 
+    JOIN knowledge_graphs ON nodes.graph_id = knowledge_graphs.id
+    WHERE nodes.id = edges.source_node_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Users can insert edges to own graphs" ON edges;
+CREATE POLICY "Users can insert edges to own graphs" 
+  ON edges FOR INSERT 
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM nodes 
+    JOIN knowledge_graphs ON nodes.graph_id = knowledge_graphs.id
+    WHERE nodes.id = edges.source_node_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Users can update edges of own graphs" ON edges;
+CREATE POLICY "Users can update edges of own graphs" 
+  ON edges FOR UPDATE 
+  USING (EXISTS (
+    SELECT 1 FROM nodes 
+    JOIN knowledge_graphs ON nodes.graph_id = knowledge_graphs.id
+    WHERE nodes.id = edges.source_node_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Users can delete edges of own graphs" ON edges;
+CREATE POLICY "Users can delete edges of own graphs" 
+  ON edges FOR DELETE 
+  USING (EXISTS (
+    SELECT 1 FROM nodes 
+    JOIN knowledge_graphs ON nodes.graph_id = knowledge_graphs.id
+    WHERE nodes.id = edges.source_node_id 
+    AND knowledge_graphs.user_id = auth.uid()
+  ));
+
+-- Study Cards
+ALTER TABLE study_cards ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own study cards" ON study_cards;
+CREATE POLICY "Users can view own study cards" 
+  ON study_cards FOR SELECT 
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own study cards" ON study_cards;
+CREATE POLICY "Users can insert own study cards" 
+  ON study_cards FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own study cards" ON study_cards;
+CREATE POLICY "Users can update own study cards" 
+  ON study_cards FOR UPDATE 
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own study cards" ON study_cards;
+CREATE POLICY "Users can delete own study cards" 
+  ON study_cards FOR DELETE 
+  USING (auth.uid() = user_id);
+
+-- Study Progress
+ALTER TABLE study_progress ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own study progress" ON study_progress;
+CREATE POLICY "Users can view own study progress" 
+  ON study_progress FOR SELECT 
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own study progress" ON study_progress;
+CREATE POLICY "Users can insert own study progress" 
+  ON study_progress FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own study progress" ON study_progress;
+CREATE POLICY "Users can update own study progress" 
+  ON study_progress FOR UPDATE 
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own study progress" ON study_progress;
+CREATE POLICY "Users can delete own study progress" 
+  ON study_progress FOR DELETE 
+  USING (auth.uid() = user_id);
+
+-- User Sync Trigger (Auth -> Public)
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, name)
+  VALUES (
+    new.id, 
+    new.email, 
+    COALESCE(new.raw_user_meta_data->>'name', 'User')
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

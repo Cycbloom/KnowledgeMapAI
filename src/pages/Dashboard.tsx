@@ -8,7 +8,9 @@ export const Dashboard = () => {
   const [graphs, setGraphs] = useState<Graph[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadGraphs();
@@ -17,9 +19,10 @@ export const Dashboard = () => {
   const loadGraphs = async () => {
     try {
       const data = await api.graphs.list();
-      setGraphs(data || []);
-    } catch (err) {
+      setGraphs(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || '加载图谱失败');
     } finally {
       setLoading(false);
     }
@@ -30,16 +33,22 @@ export const Dashboard = () => {
     if (!newTitle) return;
 
     try {
-      const newGraph = await api.graphs.create({ title: newTitle });
+      const newGraph = await api.graphs.create({ 
+        title: newTitle,
+        description: newDescription 
+      });
       setGraphs([newGraph, ...graphs]);
       setNewTitle('');
+      setNewDescription('');
       setIsCreating(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || '创建图谱失败');
     }
   };
 
   if (loading) return <div className="p-8">加载中...</div>;
+  if (error) return <div className="p-8 text-red-600">错误: {error}</div>;
 
   return (
     <div className="p-8">
@@ -57,25 +66,38 @@ export const Dashboard = () => {
       {isCreating && (
         <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4">创建新图谱</h3>
-          <form onSubmit={handleCreate} className="flex gap-4">
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="图谱名称"
-              className="flex-1 border p-2 rounded-md"
-              autoFocus
-            />
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-              创建
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsCreating(false)}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-            >
-              取消
-            </button>
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
+            <div>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="图谱名称"
+                className="w-full border p-2 rounded-md"
+                autoFocus
+              />
+            </div>
+            <div>
+              <textarea
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                placeholder="图谱描述（可选）"
+                className="w-full border p-2 rounded-md"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-4">
+              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                创建
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsCreating(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+              >
+                取消
+              </button>
+            </div>
           </form>
         </div>
       )}

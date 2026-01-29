@@ -5,6 +5,7 @@ dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.warn('⚠️ Supabase credentials missing in .env file!');
@@ -14,5 +15,16 @@ if (!supabaseUrl || !supabaseServiceKey) {
 // Requests will fail gracefully instead of crashing the server on startup.
 const validUrl = supabaseUrl || 'https://placeholder.supabase.co';
 const validKey = supabaseServiceKey || 'placeholder-key';
+const validAnonKey = supabaseAnonKey || validKey;
 
 export const supabase = createClient(validUrl, validKey);
+
+export const createClientWithToken = (token: string) => {
+  return createClient(validUrl, validAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  });
+};

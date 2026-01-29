@@ -56,6 +56,50 @@ export const api = {
   },
   ai: {
     generate: (data: any) => request('/ai/generate-content', { method: 'POST', body: JSON.stringify(data) }),
+    generateContentStream: async (data: any, onChunk: (content: string) => void) => {
+      const token = useStore.getState().token;
+      const response = await fetch(`${API_URL}/ai/generate-content-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+         const errorText = await response.text();
+         throw new Error(errorText || 'AI Stream failed');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.replace('data: ', '');
+            if (dataStr === '[DONE]') return;
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.content) onChunk(parsed.content);
+              if (parsed.error) throw new Error(parsed.error);
+            } catch (e) {
+               console.error('Stream parse error:', e);
+            }
+          }
+        }
+      }
+    },
     expand: (data: any) => request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(data) }),
     generateCards: (data: any) => request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(data) }),
   },
@@ -63,5 +107,22 @@ export const api = {
     getCards: (graphId?: string) => request(`/study/cards${graphId ? `?graph_id=${graphId}` : ''}`),
     createCardsBatch: (cards: any[]) => request('/study/cards/batch', { method: 'POST', body: JSON.stringify({ cards }) }),
     updateProgress: (id: string, quality: number) => request(`/study/cards/${id}/progress`, { method: 'PUT', body: JSON.stringify({ quality }) }),
+  },
+  data: {
+    export: (graphId: string, format: 'json' | 'pdf') => {
+      const token = useStore.getState().token;
+      return fetch(`${API_URL}/data/export/${format}?graph_id=${graphId}`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }
+      }).then(async res => {
+        if (!res.ok) {
+           const text = await res.text();
+           throw new Error(text || 'Export failed');
+        }
+        return res.blob();
+      });
+    },
+    import: (data: any) => request('/data/import', { method: 'POST', body: JSON.stringify(data) }),
   }
 };

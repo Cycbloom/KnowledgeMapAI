@@ -25,6 +25,8 @@ const __dirname = path.dirname(__filename)
 // load env
 dotenv.config()
 
+import { errorHandler } from './middleware/errorHandler.js'
+
 const app: express.Application = express()
 
 app.use(cors())
@@ -57,13 +59,7 @@ app.use(
 /**
  * error handler middleware
  */
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(error)
-  res.status(500).json({
-    success: false,
-    error: 'Server internal error',
-  })
-})
+app.use(errorHandler)
 
 /**
  * 404 handler

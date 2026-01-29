@@ -1,5 +1,7 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { importDataSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -50,12 +52,9 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
 });
 
 // Import data
-router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/import', requireAuth, validate(importDataSchema), async (req: AuthRequest, res: Response) => {
   const { graph_title, nodes, edges } = req.body; // Expecting JSON structure
-
-  if (!graph_title || !nodes) {
-    return res.status(400).json({ error: '无效的导入数据' });
-  }
+  // Manual validation removed
 
   // 1. Create Graph
   const { data: graph, error: graphError } = await req.supabase!
@@ -68,37 +67,77 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
 
   // 2. Create Nodes
   const nodeMap = new Map(); // Old ID to New ID
-  const nodesToInsert = nodes.map((n: any) => {
-    // We assume input has some ID, we map it to new UUIDs or let DB generate
-    // If we want to preserve relationships, we need to map old IDs.
-    // Let's assume input 'nodes' array has 'id' property.
-    return {
-      graph_id: graph.id,
-      title: n.title,
-      content: n.content,
-      x_position: n.x_position || 0,
-      y_position: n.y_position || 0,
-      // Store old id in properties to map edges later if needed, or we do it in memory now?
-      // Doing it in memory is complex if we batch insert.
-      // Easiest: Insert one by one (slow) or use client-generated UUIDs if trusted?
-      // Better: User provides content, we create new IDs. Edges must refer to indices or old IDs.
-      // Let's assume the client handles ID mapping or we just dump data.
-      // For MVP, we just insert nodes. Edges are tricky without ID mapping.
-    };
-  });
-
-  // Bulk insert nodes
-  const { data: insertedNodes, error: nodesError } = await req.supabase!
-    .from('nodes')
-    .insert(nodesToInsert)
-    .select();
-
-  if (nodesError) return res.status(500).json({ error: nodesError.message });
-
-  // If we have edges and logic to map them, we would do it here.
-  // For now, just return success with graph info.
+  const nodesToInsert = [];
   
-  res.status(201).json({ message: 'Import successful', graph_id: graph.id, nodes_count: insertedNodes.length });
+  if (nodes && Array.isArray(nodes)) {
+    for (const n of nodes) {
+      // Create object to insert
+      const nodeData = {
+        graph_id: graph.id,
+        title: n.title,
+        content: n.content,
+        x_position: n.x_position || 0,
+        y_position: n.y_position || 0,
+        z_position: n.z_position || 0,
+        color: n.color,
+        level: n.level || 'normal'
+      };
+      
+      nodesToInsert.push(nodeData);
+    }
+    
+    // Bulk insert nodes
+    const { data: insertedNodes, error: nodesError } = await req.supabase!
+      .from('nodes')
+      .insert(nodesToInsert)
+      .select();
+
+    if (nodesError) return res.status(500).json({ error: nodesError.message });
+
+    // Build ID map
+    if (insertedNodes && insertedNodes.length === nodes.length) {
+      for (let i = 0; i < nodes.length; i++) {
+        const oldId = nodes[i].id;
+        const newId = insertedNodes[i].id;
+        if (oldId) {
+          nodeMap.set(oldId, newId);
+        }
+      }
+    }
+
+    // 3. Create Edges
+    if (edges && Array.isArray(edges) && edges.length > 0) {
+      const edgesToInsert = [];
+      
+      for (const e of edges) {
+        // Source/Target can be ID or index? Let's assume ID if string, index if number?
+        // Schema says string. Let's assume it matches node.id from input.
+        
+        const sourceId = nodeMap.get(e.source);
+        const targetId = nodeMap.get(e.target);
+        
+        if (sourceId && targetId) {
+          edgesToInsert.push({
+            source_node_id: sourceId,
+            target_node_id: targetId,
+            relationship_type: e.relationship || 'related'
+          });
+        }
+      }
+      
+      if (edgesToInsert.length > 0) {
+        const { error: edgesError } = await req.supabase!
+          .from('edges')
+          .insert(edgesToInsert);
+          
+        if (edgesError) console.error('Error importing edges:', edgesError);
+        // We don't fail the whole import if edges fail, but maybe we should?
+        // For now, just log it.
+      }
+    }
+  }
+
+  res.status(201).json({ graph });
 });
 
 export default router;

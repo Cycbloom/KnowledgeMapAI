@@ -1,5 +1,7 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { createGraphSchema, updateGraphSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -16,12 +18,9 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Create a new graph
-router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/', requireAuth, validate(createGraphSchema), async (req: AuthRequest, res: Response) => {
   const { title, description } = req.body;
-
-  if (!title) {
-    return res.status(400).json({ error: '标题是必填项' });
-  }
+  // Manual validation removed
 
   const { data, error } = await req.supabase!
     .from('knowledge_graphs')
@@ -56,7 +55,7 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Update a graph
-router.put('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+router.put('/:id', requireAuth, validate(updateGraphSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
 

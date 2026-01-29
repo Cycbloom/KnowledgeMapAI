@@ -49,11 +49,13 @@ const LEVEL_CONFIG = {
 const InstancedNodes = ({ 
   nodes, 
   onNodeClick, 
+  onNodeDoubleClick,
   isDark, 
   highlightedNodes 
 }: { 
   nodes: SimNode[], 
   onNodeClick: (node: Node) => void, 
+  onNodeDoubleClick: (node: Node) => void,
   isDark: boolean,
   highlightedNodes: Set<string>
 }) => {
@@ -123,6 +125,12 @@ const InstancedNodes = ({
           onNodeClick(nodes[e.instanceId]);
         }
       }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (e.instanceId !== undefined && nodes[e.instanceId]) {
+          onNodeDoubleClick(nodes[e.instanceId]);
+        }
+      }}
       onPointerOver={(e) => {
         e.stopPropagation();
         document.body.style.cursor = 'pointer';
@@ -184,12 +192,14 @@ const NodeLabels = ({
   nodes, 
   isDark, 
   highlightedNodes,
-  onNodeClick 
+  onNodeClick,
+  onNodeDoubleClick
 }: { 
   nodes: SimNode[], 
   isDark: boolean, 
   highlightedNodes: Set<string>,
-  onNodeClick: (node: Node) => void
+  onNodeClick: (node: Node) => void,
+  onNodeDoubleClick: (node: Node) => void
 }) => {
   // Optimization: Only render labels for important nodes or when few nodes
   // For P1, we render all but use efficient updates.
@@ -240,6 +250,10 @@ const NodeLabels = ({
               onClick={(e) => {
                 e.stopPropagation();
                 onNodeClick(node);
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                onNodeDoubleClick(node);
               }}
               onPointerOver={() => {
                 document.body.style.cursor = 'pointer';
@@ -406,19 +420,21 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
   }, [selectedNodeId, highlightedPath, links]);
 
   // Focus Logic
-  useImperativeHandle(ref, () => ({
-    focusNode: (nodeId: string) => {
-      const targetNode = nodes.find(n => n.id === nodeId);
-      if (targetNode && typeof targetNode.x === 'number') {
-        const nodePos = new THREE.Vector3(targetNode.x, targetNode.y, targetNode.z);
-        setFocusTarget({
-          pos: nodePos.clone().add(new THREE.Vector3(0, 2, 5)),
-          lookAt: nodePos
-        });
-        setTimeout(() => setFocusTarget(null), 2000);
-      }
+  const focusNodeInternal = useCallback((nodeId: string) => {
+    const targetNode = nodes.find(n => n.id === nodeId);
+    if (targetNode && typeof targetNode.x === 'number') {
+      const nodePos = new THREE.Vector3(targetNode.x, targetNode.y, targetNode.z);
+      setFocusTarget({
+        pos: nodePos.clone().add(new THREE.Vector3(0, 2, 5)),
+        lookAt: nodePos
+      });
+      setTimeout(() => setFocusTarget(null), 2000);
     }
-  }), [nodes]);
+  }, [nodes]);
+
+  useImperativeHandle(ref, () => ({
+    focusNode: focusNodeInternal
+  }), [focusNodeInternal]);
 
   return (
     <>
@@ -431,6 +447,7 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
       <InstancedNodes 
         nodes={nodes} 
         onNodeClick={onNodeClick} 
+        onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
         isDark={isDark} 
         highlightedNodes={highlightedNodes} 
       />
@@ -440,6 +457,7 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
         isDark={isDark} 
         highlightedNodes={highlightedNodes} 
         onNodeClick={onNodeClick}
+        onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
       />
       
       <LinkLines 

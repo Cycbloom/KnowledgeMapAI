@@ -2,6 +2,8 @@ import { Router, type Response } from 'express';
 import OpenAI from 'openai';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import dotenv from 'dotenv';
+import { validate } from '../middleware/validate.js';
+import { generateContentSchema, expandKnowledgeSchema, generateCardsSchema } from '../schemas/index.js';
 
 dotenv.config();
 
@@ -28,7 +30,7 @@ const getMockResponse = (type: string, prompt: string) => {
   return '';
 };
 
-router.post('/generate-content', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/generate-content', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
   const { topic, context } = req.body;
 
   if (!openai) {
@@ -51,7 +53,58 @@ router.post('/generate-content', requireAuth, async (req: AuthRequest, res: Resp
   }
 });
 
-router.post('/expand-knowledge', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/generate-content-stream', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
+  const { topic, context } = req.body;
+
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  if (!openai) {
+    // Mock Streaming
+    const mockContent = getMockResponse('content', topic) as string;
+    const chunks = mockContent.split('');
+    
+    const sendMockChunks = async () => {
+      for (const chunk of chunks) {
+         res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+         await new Promise(resolve => setTimeout(resolve, 30)); // Simulate delay
+      }
+      res.write('data: [DONE]\n\n');
+      res.end();
+    };
+    
+    sendMockChunks();
+    return;
+  }
+
+  try {
+    const stream = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. Please respond in Chinese." },
+        { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
+      ],
+      model: model,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (error: any) {
+    console.error('AI Error:', error);
+    res.write(`data: ${JSON.stringify({ error: error.message || 'AI 生成失败' })}\n\n`);
+    res.end();
+  }
+});
+
+router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
   const { node_title } = req.body;
 
   if (!openai) {
@@ -77,7 +130,7 @@ router.post('/expand-knowledge', requireAuth, async (req: AuthRequest, res: Resp
   }
 });
 
-router.post('/generate-cards', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthRequest, res: Response) => {
   const { node_title, node_content } = req.body;
 
   if (!openai) {

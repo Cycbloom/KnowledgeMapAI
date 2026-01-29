@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { api } from '../services/api';
 import { Graph3D, Graph3DRef } from '../components/Graph3D';
 import { Node, Edge } from '../types';
 import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { 
   useGraph, 
   useGraphData, 
@@ -14,7 +16,8 @@ import {
   useAIGenerateMutation,
   useAIExpandMutation,
   useAIGenerateCardsMutation,
-  useCreateCardsBatchMutation
+  useCreateCardsBatchMutation,
+  useExportGraphMutation
 } from '../hooks/useQueries';
 
 // Helper to determine node level based on hierarchy
@@ -62,6 +65,7 @@ export const GraphEditor = () => {
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
   const createCardsBatchMutation = useCreateCardsBatchMutation();
+  const exportGraphMutation = useExportGraphMutation();
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -230,15 +234,15 @@ export const GraphEditor = () => {
     if (isPathfindingMode) {
       if (!pathStartNode) {
         setPathStartNode(node);
+        toast('请选择终点节点', { icon: '📍' });
       } else if (!pathEndNode) {
         setPathEndNode(node);
         const path = findShortestPath(pathStartNode.id, node.id);
         if (path.nodes.size > 0) {
           setHighlightedPath(path);
-          // Highlight path using the spotlight effect mechanism
-          // We need to extend Graph3D to support custom highlighting
+          toast.success(`找到路径，长度: ${path.nodes.size - 1} 步`);
         } else {
-          alert('未找到路径');
+          toast.error('未找到路径');
         }
       } else {
         // Reset and start over
@@ -280,7 +284,8 @@ export const GraphEditor = () => {
           await createEdgeMutation.mutateAsync({
             source_node_id: nodeForm.parentNodeId,
             target_node_id: newNode.id,
-            relationship_type: 'related'
+            relationship_type: 'related',
+            graphId: id
           });
         }
 
@@ -300,11 +305,12 @@ export const GraphEditor = () => {
           graphId: id
         });
         
-        setSelectedNode(updated);
+        setSidebarMode('edit');
       }
+      toast.success(sidebarMode === 'create' ? '节点创建成功' : '节点保存成功');
     } catch (err) {
       console.error(err);
-      alert('保存失败，请重试');
+      toast.error('保存失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -316,20 +322,34 @@ export const GraphEditor = () => {
     try {
       await deleteNodeMutation.mutateAsync({ id: selectedNode.id, graphId: id });
       handleCloseSidebar();
+      toast.success('节点已删除');
     } catch (err) {
       console.error(err);
+      toast.error('删除失败');
     }
   };
 
   const handleAIGenerate = async () => {
     if (!nodeForm.title) return;
     setLoading(true);
+    // Reset content for streaming
+    setNodeForm(prev => ({ ...prev, content: '' }));
+    
     try {
-      const res = await aiGenerateMutation.mutateAsync({ topic: nodeForm.title, context: aiPrompt });
-      setNodeForm(prev => ({ ...prev, content: res.content }));
+      await api.ai.generateContentStream(
+        { topic: nodeForm.title, context: aiPrompt },
+        (chunk) => {
+          setNodeForm(prev => ({ 
+            ...prev, 
+            content: (prev.content || '') + chunk 
+          }));
+        }
+      );
       setAiPrompt('');
+      toast.success('AI 内容生成完成');
     } catch (err) {
       console.error(err);
+      toast.error('AI 生成失败');
     } finally {
       setLoading(false);
     }
@@ -365,7 +385,8 @@ export const GraphEditor = () => {
         await createEdgeMutation.mutateAsync({
           source_node_id: selectedNode.id,
           target_node_id: newNode.id,
-          relationship_type: 'related'
+          relationship_type: 'related',
+          graphId: id
         });
       }
     } catch (err) {
@@ -400,10 +421,10 @@ export const GraphEditor = () => {
 
       // 2. Save Cards
       await createCardsBatchMutation.mutateAsync(cards);
-      alert(`成功生成并保存了 ${cards.length} 张复习卡片！可以在“学习模式”中查看。`);
+      toast.success(`成功生成并保存了 ${cards.length} 张复习卡片！可以在“学习模式”中查看。`);
     } catch (err) {
       console.error(err);
-      alert('生成卡片失败');
+      toast.error('生成卡片失败');
     } finally {
       setLoading(false);
     }
@@ -415,6 +436,26 @@ export const GraphEditor = () => {
     setSidebarMode('edit');
     setSearchQuery('');
     setIsSearchOpen(false);
+  };
+
+  const handleExport = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const blob = await exportGraphMutation.mutateAsync({ id, format: 'json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${graphMeta?.title || 'graph'}_export.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('导出成功');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('导出失败: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -531,7 +572,11 @@ export const GraphEditor = () => {
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
-        <button className="p-1 hover:bg-gray-100 rounded text-gray-600" title="导出">
+        <button 
+          onClick={handleExport}
+          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
+          title="导出"
+        >
           <Download size={20} />
         </button>
       </div>

@@ -1,5 +1,7 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -31,7 +33,7 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Create a flashcard manually
-router.post('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthRequest, res: Response) => {
   const { node_id, question, answer } = req.body;
 
   const { data, error } = await req.supabase!
@@ -54,12 +56,9 @@ router.post('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Create multiple flashcards (Batch)
-router.post('/cards/batch', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async (req: AuthRequest, res: Response) => {
   const { cards } = req.body; // Expects array of { node_id, question, answer }
-
-  if (!Array.isArray(cards) || cards.length === 0) {
-    return res.status(400).json({ error: 'Invalid cards data' });
-  }
+  // Manual validation removed
 
   const cardsToInsert = cards.map((card: any) => ({
     user_id: req.user.id,
@@ -82,7 +81,7 @@ router.post('/cards/batch', requireAuth, async (req: AuthRequest, res: Response)
 });
 
 // Update card progress (Review)
-router.put('/cards/:id/progress', requireAuth, async (req: AuthRequest, res: Response) => {
+router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { quality } = req.body; // 0-5 rating
 

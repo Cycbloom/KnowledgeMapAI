@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
 import { Check, X, RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export const Study = () => {
   const [searchParams] = useSearchParams();
@@ -54,6 +55,7 @@ export const Study = () => {
       handleNextCard();
     } catch (err) {
       console.error(err);
+      toast.error('保存进度失败');
     }
   };
 

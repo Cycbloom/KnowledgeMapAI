@@ -73,6 +73,23 @@ export const useCreateGraphMutation = () => {
   });
 };
 
+export const useImportGraphMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.data.import,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    },
+  });
+};
+
+export const useExportGraphMutation = () => {
+  return useMutation({
+    mutationFn: ({ id, format }: { id: string; format: 'json' | 'pdf' }) => api.data.export(id, format),
+  });
+};
+
 export const useCreateNodeMutation = () => {
   const queryClient = useQueryClient();
 
@@ -126,26 +143,6 @@ export const useUpdateNodeMutation = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => api.nodes.update(id, data),
-    onMutate: async ({ id, data }) => {
-      // We don't have graphId easily available here unless passed, 
-      // but we can find it from cache or require it. 
-      // For simplicity, let's assume we find it or invalidate all graphData (not ideal).
-      // Better: pass graphId in variables.
-      // But existing api.nodes.update doesn't require graphId.
-      // Let's assume we are viewing the graph currently, so we can find the active query.
-      // For now, we'll try to update all graphData queries where this node exists.
-      
-      // Actually, standard practice is to pass context or invalidate specific keys.
-      // Let's iterate over all queries? No, expensive.
-      // Let's rely on invalidation for now unless we pass graphId.
-      // Optimistic update without graphId is hard.
-      // Let's modify the usage to pass graphId if we want optimistic updates, 
-      // or just invalidate.
-      // But wait, the user wants "Optimistic Updates".
-      
-      // Let's try to find the query key that contains this node?
-      // Or just require graphId in the mutation hook wrapper.
-    },
     onSuccess: () => {
        // Invalidate all graphData queries
        queryClient.invalidateQueries({ queryKey: ['graphData'] });
@@ -220,17 +217,44 @@ export const useCreateEdgeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: api.edges.create,
-    onSuccess: (data, variables) => {
-       // We need graphId to invalidate. 
-       // The variables should usually have graphId? 
-       // api.edges.create takes { source_node_id, target_node_id, relationship_type }
-       // It doesn't take graphId explicitly, but we can infer or pass it.
-       // Let's just invalidate all graphData for now or require graphId passed in wrapper.
-       // Since edges link nodes in a graph, we can find the graphId if we have context.
-       // For now, simple invalidation of all 'graphData' is safer but less efficient.
-       // OR we accept graphId in the mutation variables just for cache management.
-       queryClient.invalidateQueries({ queryKey: ['graphData'] });
+    mutationFn: (data: { source_node_id: string; target_node_id: string; relationship_type: string; graphId?: string }) => {
+       const { graphId, ...edgeData } = data;
+       return api.edges.create(edgeData);
+    },
+    onMutate: async (newEdgeVariables) => {
+       const { graphId, ...edgeData } = newEdgeVariables;
+       if (!graphId) return;
+
+       await queryClient.cancelQueries({ queryKey: queryKeys.graphData(graphId) });
+       const previousData = queryClient.getQueryData(queryKeys.graphData(graphId));
+
+       queryClient.setQueryData(queryKeys.graphData(graphId), (old: { nodes: Node[], edges: Edge[] } | undefined) => {
+         if (!old) return { nodes: [], edges: [] };
+         
+         const tempEdge: Edge = {
+             id: 'temp-edge-' + Date.now(),
+             ...edgeData,
+          };
+         
+         return {
+            ...old,
+            edges: [...old.edges, tempEdge]
+         };
+       });
+
+       return { previousData };
+    },
+    onError: (err, variables, context) => {
+       if (context?.previousData && variables.graphId) {
+          queryClient.setQueryData(queryKeys.graphData(variables.graphId), context.previousData);
+       }
+    },
+    onSettled: (data, error, variables) => {
+       if (variables.graphId) {
+         queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
+       } else {
+         queryClient.invalidateQueries({ queryKey: ['graphData'] });
+       }
     }
   });
 };

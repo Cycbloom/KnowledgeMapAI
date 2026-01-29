@@ -1,6 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import { supabaseAdmin } from '../supabase.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { registerSchema, loginSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -8,14 +10,10 @@ const router = Router();
  * User Register
  * POST /api/auth/register
  */
-router.post('/register', async (req: Request, res: Response): Promise<void> => {
+router.post('/register', validate(registerSchema), async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
     const { email, password, name } = req.body;
-
-    if (!email || !password || !name) {
-      res.status(400).json({ error: '邮箱、密码和姓名都是必填项' });
-      return;
-    }
+    // Manual validation removed as it is handled by middleware
 
     // 1. Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
@@ -63,14 +61,10 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
  * User Login
  * POST /api/auth/login
  */
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
+router.post('/login', validate(loginSchema), async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      res.status(400).json({ error: '邮箱和密码都是必填项' });
-      return;
-    }
+    // Manual validation removed as it is handled by middleware
 
     const { data, error } = await supabaseAdmin.auth.signInWithPassword({
       email,

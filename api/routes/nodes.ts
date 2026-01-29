@@ -1,11 +1,13 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { supabaseAdmin } from 'api/supabase.js';
+import { validate } from '../middleware/validate.js';
+import { createNodeSchema, updateNodeSchema, createEdgeSchema } from '../schemas/index.js';
 
 const router = Router();
 
 // Create a new node
-router.post('/nodes', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthRequest, res: Response) => {
   const { graph_id, title, content, x_position, y_position, color, properties } = req.body;
 
   // Verify graph ownership
@@ -30,7 +32,7 @@ router.post('/nodes', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Update a node
-router.put('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
 
@@ -84,7 +86,7 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
 });
 
 // Create an edge
-router.post('/edges', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthRequest, res: Response) => {
   const { source_node_id, target_node_id, relationship_type } = req.body;
 
   // Verify ownership of source node (target should be in same graph usually, but let's check source at least)

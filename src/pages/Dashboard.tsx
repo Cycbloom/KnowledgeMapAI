@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useGraphs, useCreateGraphMutation } from '../hooks/useQueries';
-import { Plus, BookOpen } from 'lucide-react';
+import { useGraphs, useCreateGraphMutation, useImportGraphMutation } from '../hooks/useQueries';
+import { Plus, BookOpen, Upload } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export const Dashboard = () => {
   const { data: graphsData, isLoading, error } = useGraphs();
   const createGraphMutation = useCreateGraphMutation();
+  const importGraphMutation = useImportGraphMutation();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -27,10 +30,43 @@ export const Dashboard = () => {
       setNewTitle('');
       setNewDescription('');
       setIsCreating(false);
+      toast.success('创建成功!');
     } catch (err: any) {
       console.error(err);
-      setFormError(err.message || '创建图谱失败');
+      toast.error(err.message || '创建图谱失败');
     }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+        
+        const importData = {
+            graph_title: data.graph?.title || data.graph_title || file.name.replace('.json', ''),
+            nodes: data.nodes || [],
+            edges: data.edges || []
+        };
+
+        await importGraphMutation.mutateAsync(importData);
+        toast.success('导入成功!');
+      } catch (err: any) {
+        console.error(err);
+        toast.error('导入失败: ' + (err.message || '格式错误'));
+      } finally {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsText(file);
   };
 
   if (isLoading) return <div className="p-8">加载中...</div>;
@@ -40,13 +76,30 @@ export const Dashboard = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">我的知识图谱</h1>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700"
-        >
-          <Plus size={20} />
-          <span>新建图谱</span>
-        </button>
+        <div className="flex space-x-4">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".json"
+            className="hidden"
+          />
+          <button
+            onClick={handleImportClick}
+            className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-gray-50"
+            disabled={importGraphMutation.isPending}
+          >
+            <Upload size={20} />
+            <span>{importGraphMutation.isPending ? '导入中...' : '导入'}</span>
+          </button>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-blue-700"
+          >
+            <Plus size={20} />
+            <span>新建图谱</span>
+          </button>
+        </div>
       </div>
 
       {isCreating && (

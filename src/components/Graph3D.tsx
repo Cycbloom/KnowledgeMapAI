@@ -1,9 +1,13 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Billboard, Environment, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceY } from 'd3-force-3d';
 import { Node, Edge } from '../types/index';
+
+export interface Graph3DRef {
+  focusNode: (nodeId: string) => void;
+}
 
 interface Graph3DProps {
   nodes: Node[];
@@ -211,7 +215,8 @@ const CameraController = ({ targetPosition, targetLookAt }: { targetPosition: TH
   return <OrbitControls ref={controlsRef} args={[camera, gl.domElement]} />;
 };
 
-const ForceGraphScene = ({ nodes, edges, onNodeClick, showGrid, isDark = true }: Graph3DProps) => {
+const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef<Graph3DRef>) => {
+  const { nodes, edges, onNodeClick, showGrid, isDark = true } = props;
   const [simNodes, setSimNodes] = useState<SimNode[]>([]);
   const [simLinks, setSimLinks] = useState<SimLink[]>([]);
   const prevNodeCount = useRef(0);
@@ -249,6 +254,17 @@ const ForceGraphScene = ({ nodes, edges, onNodeClick, showGrid, isDark = true }:
       setTimeout(() => setFocusTarget(null), 2000);
     }
   };
+
+  // Expose focusNode method to parent via ref
+  useImperativeHandle(ref, () => ({
+    focusNode: (nodeId: string) => {
+      // Find the simulation node with the given ID
+      const targetNode = simNodes.find(n => n.id === nodeId);
+      if (targetNode) {
+        handleNodeDoubleClick(targetNode);
+      }
+    }
+  }), [simNodes]); // Re-create handler if simNodes change (though simNodes updates frequently, finding by ID is safe)
 
   // Initialize/Update Simulation Data
   useEffect(() => {
@@ -409,13 +425,15 @@ const ForceGraphScene = ({ nodes, edges, onNodeClick, showGrid, isDark = true }:
       />
     </>
   );
-};
+});
 
-export const Graph3D = ({ nodes, edges, onNodeClick, showGrid, isDark = true }: Graph3DProps) => {
+export const Graph3D = forwardRef((props: Graph3DProps, ref: React.ForwardedRef<Graph3DRef>) => {
+  const { nodes, edges, onNodeClick, showGrid, isDark = true } = props;
   return (
     <div className={`w-full h-full transition-colors duration-300 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
         <ForceGraphScene 
+          ref={ref}
           nodes={nodes} 
           edges={edges} 
           onNodeClick={onNodeClick} 
@@ -426,4 +444,4 @@ export const Graph3D = ({ nodes, edges, onNodeClick, showGrid, isDark = true }: 
       </Canvas>
     </div>
   );
-};
+});

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { Graph3D } from '../components/Graph3D';
+import { Graph3D, Graph3DRef } from '../components/Graph3D';
 import { Node, Edge } from '../types';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search } from 'lucide-react';
 
 // Helper to determine node level based on hierarchy
 type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
@@ -38,6 +38,7 @@ export const GraphEditor = () => {
   const { nodes, edges, setNodes, setEdges, addNode, updateNode, removeNode, addEdge } = useStore();
   
   // State
+  const graphRef = useRef<Graph3DRef>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit'>('none');
   const [showGrid, setShowGrid] = useState(true);
@@ -45,6 +46,20 @@ export const GraphEditor = () => {
   const [loading, setLoading] = useState(false);
   const [graphTitle, setGraphTitle] = useState('');
   
+  // Search State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter nodes based on search query
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return nodes.filter(node => 
+      node.title.toLowerCase().includes(query) || 
+      (node.content && node.content.toLowerCase().includes(query))
+    ).slice(0, 10); // Limit to 10 results
+  }, [nodes, searchQuery]);
+
   // Form State
   const [nodeForm, setNodeForm] = useState<{
     title: string;
@@ -233,11 +248,19 @@ export const GraphEditor = () => {
     }
   };
 
+  const handleSearchResultClick = (node: Node) => {
+    graphRef.current?.focusNode(node.id);
+    setSelectedNode(node);
+    setSidebarMode('edit');
+    setSearchQuery('');
+    setIsSearchOpen(false);
+  };
+
   return (
     <div className="flex h-full relative">
       {/* 3D Canvas */}
       <div className="flex-1 h-full">
-        <Graph3D nodes={nodes} edges={edges} onNodeClick={handleNodeClick} showGrid={showGrid} isDark={isDark} />
+        <Graph3D ref={graphRef} nodes={nodes} edges={edges} onNodeClick={handleNodeClick} showGrid={showGrid} isDark={isDark} />
       </div>
 
       {/* Toolbar */}
@@ -253,6 +276,48 @@ export const GraphEditor = () => {
         <h2 className="font-bold px-2 py-1 max-w-[200px] truncate">{graphTitle}</h2>
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
         
+        <div className="relative">
+          <button 
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className={`p-1 rounded transition-colors ${isSearchOpen ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`}
+            title="搜索节点"
+          >
+            <Search size={20} />
+          </button>
+          
+          {isSearchOpen && (
+            <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg border border-gray-200 w-64 p-3 z-50">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索节点..."
+                className="w-full border border-gray-300 rounded-md p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                autoFocus
+              />
+              {searchResults.length > 0 ? (
+                <ul className="max-h-60 overflow-y-auto custom-scrollbar">
+                  {searchResults.map(node => (
+                    <li 
+                      key={node.id}
+                      onClick={() => handleSearchResultClick(node)}
+                      className="p-2 hover:bg-gray-50 cursor-pointer text-sm rounded-md flex items-center transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: node.color || '#3B82F6' }}></div>
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="truncate font-medium text-gray-700">{node.title}</span>
+                        {node.content && <span className="truncate text-xs text-gray-400">{node.content}</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : searchQuery && (
+                <div className="text-gray-400 text-xs text-center py-4">未找到匹配的节点</div>
+              )}
+            </div>
+          )}
+        </div>
+
         <button 
           onClick={handleStartCreate} 
           className="p-1 hover:bg-gray-100 rounded text-blue-600" 

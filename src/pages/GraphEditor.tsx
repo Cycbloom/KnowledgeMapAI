@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Graph3D } from '../components/Graph3D';
 import { Node, Edge } from '../types';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon } from 'lucide-react';
 
 // Helper to determine node level based on hierarchy
 type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
@@ -41,6 +41,7 @@ export const GraphEditor = () => {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit'>('none');
   const [showGrid, setShowGrid] = useState(true);
+  const [isDark, setIsDark] = useState(true);
   const [loading, setLoading] = useState(false);
   const [graphTitle, setGraphTitle] = useState('');
   
@@ -236,7 +237,7 @@ export const GraphEditor = () => {
     <div className="flex h-full relative">
       {/* 3D Canvas */}
       <div className="flex-1 h-full">
-        <Graph3D nodes={nodes} edges={edges} onNodeClick={handleNodeClick} showGrid={showGrid} />
+        <Graph3D nodes={nodes} edges={edges} onNodeClick={handleNodeClick} showGrid={showGrid} isDark={isDark} />
       </div>
 
       {/* Toolbar */}
@@ -266,6 +267,14 @@ export const GraphEditor = () => {
           title={showGrid ? "隐藏网格" : "显示网格"}
         >
           <Grid size={20} />
+        </button>
+
+        <button 
+          onClick={() => setIsDark(!isDark)} 
+          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
+          title={isDark ? "切换亮色模式" : "切换暗色模式"}
+        >
+          {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
         <button className="p-1 hover:bg-gray-100 rounded text-gray-600" title="导出">

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Billboard, Environment, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceY } from 'd3-force-3d';
@@ -10,6 +10,7 @@ interface Graph3DProps {
   edges: Edge[];
   onNodeClick: (node: Node) => void;
   showGrid?: boolean;
+  isDark?: boolean;
 }
 
 // Extend Node with simulation properties
@@ -80,9 +81,11 @@ const LEVEL_CONFIG = {
   }
 };
 
-const NodeMesh = ({ node, onClick }: { node: SimNode; onClick: (node: Node) => void }) => {
+const NodeMesh = ({ node, onClick, onDoubleClick, isDark = true }: { node: SimNode; onClick: (node: Node) => void; onDoubleClick: (node: SimNode) => void; isDark?: boolean }) => {
   const groupRef = useRef<THREE.Group>(null);
+  const textRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
+  const { camera } = useThree();
   
   // Get style based on level
   const config = LEVEL_CONFIG[node.level || 'leaf'];
@@ -93,6 +96,17 @@ const NodeMesh = ({ node, onClick }: { node: SimNode; onClick: (node: Node) => v
   useFrame(() => {
     if (groupRef.current && typeof node.x === 'number' && typeof node.y === 'number' && typeof node.z === 'number') {
       groupRef.current.position.set(node.x, node.y, node.z);
+
+      // Dynamic Text Scaling (Constant Screen Size)
+      // As camera moves away, text scales up to remain readable
+      // Minimum scale is 1 (original size)
+      if (textRef.current) {
+        const distance = camera.position.distanceTo(groupRef.current.position);
+        // Reference distance is 10 (default camera Z)
+        // Adjust divider to tune the sensitivity: higher divider = slower growth
+        const scale = Math.max(1, distance / 25);
+        textRef.current.scale.set(scale, scale, scale);
+      }
     }
   });
 
@@ -100,6 +114,7 @@ const NodeMesh = ({ node, onClick }: { node: SimNode; onClick: (node: Node) => v
     <group 
       ref={groupRef} 
       onClick={(e) => { e.stopPropagation(); onClick(node); }}
+      onDoubleClick={(e) => { e.stopPropagation(); onDoubleClick(node); }}
       onPointerOver={() => { document.body.style.cursor = 'pointer'; setHovered(true); }}
       onPointerOut={() => { document.body.style.cursor = 'default'; setHovered(false); }}
     >
@@ -128,12 +143,13 @@ const NodeMesh = ({ node, onClick }: { node: SimNode; onClick: (node: Node) => v
         lockZ={false}
       >
         <Text 
-          fontSize={node.level === 'root' || node.level === 'core' ? 0.5 : 0.35} 
-          color="white" 
+          ref={textRef}
+          fontSize={node.level === 'root' || node.level === 'core' ? 0.6 : 0.45} 
+          color={isDark ? "white" : "#1e293b"} 
           anchorX="center" 
           anchorY="middle"
-          outlineWidth={0.04}
-          outlineColor="#000000"
+          outlineWidth={0.05}
+          outlineColor={isDark ? "#000000" : "#ffffff"}
           font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
         >
           {node.title}
@@ -143,7 +159,7 @@ const NodeMesh = ({ node, onClick }: { node: SimNode; onClick: (node: Node) => v
   );
 };
 
-const LinkLines = ({ links }: { links: SimLink[] }) => {
+const LinkLines = ({ links, isDark = true }: { links: SimLink[], isDark?: boolean }) => {
   const geometryRef = useRef<THREE.BufferGeometry>(null);
 
   useFrame(() => {
@@ -172,18 +188,67 @@ const LinkLines = ({ links }: { links: SimLink[] }) => {
   return (
     <lineSegments>
       <bufferGeometry ref={geometryRef} />
-      <lineBasicMaterial color="#9ca3af" opacity={0.6} transparent linewidth={1} />
+      <lineBasicMaterial color={isDark ? "#9ca3af" : "#64748b"} opacity={0.6} transparent linewidth={1} />
     </lineSegments>
   );
 };
 
-const ForceGraphScene = ({ nodes, edges, onNodeClick, showGrid }: Graph3DProps) => {
+// Component to handle camera movement
+const CameraController = ({ targetPosition, targetLookAt }: { targetPosition: THREE.Vector3 | null, targetLookAt: THREE.Vector3 | null }) => {
+  const { camera, gl } = useThree();
+  const controlsRef = useRef<any>(null);
+  
+  useFrame(() => {
+    if (targetPosition && targetLookAt && controlsRef.current) {
+      // Smoothly interpolate camera position
+      camera.position.lerp(targetPosition, 0.05);
+      // Smoothly interpolate controls target
+      controlsRef.current.target.lerp(targetLookAt, 0.05);
+      controlsRef.current.update();
+    }
+  });
+
+  return <OrbitControls ref={controlsRef} args={[camera, gl.domElement]} />;
+};
+
+const ForceGraphScene = ({ nodes, edges, onNodeClick, showGrid, isDark = true }: Graph3DProps) => {
   const [simNodes, setSimNodes] = useState<SimNode[]>([]);
   const [simLinks, setSimLinks] = useState<SimLink[]>([]);
   const prevNodeCount = useRef(0);
   
+  // Camera focus state
+  const [focusTarget, setFocusTarget] = useState<{ pos: THREE.Vector3, lookAt: THREE.Vector3 } | null>(null);
+  
   // Keep a persistent reference to the simulation
   const simulation = useRef<any>(null);
+
+  // Handle node double click to focus camera
+  const handleNodeDoubleClick = (node: SimNode) => {
+    if (typeof node.x === 'number' && typeof node.y === 'number' && typeof node.z === 'number') {
+      const nodePos = new THREE.Vector3(node.x, node.y, node.z);
+      // Calculate offset position (maintain current viewing angle but get closer)
+      // For simplicity, we'll position camera at a fixed offset relative to the node
+      // Or better: keep current camera direction but move closer
+      
+      const offset = new THREE.Vector3(0, 2, 5); // Default offset
+      const targetPos = nodePos.clone().add(offset);
+      
+      setFocusTarget({
+        pos: targetPos,
+        lookAt: nodePos
+      });
+      
+      // Reset focus target after animation completes (simulated by timeout or just let it settle)
+      // Actually, if we keep updating lerp, it will follow the node if it moves.
+      // But we want user to regain control. So we should stop lerping after some time or when user interacts.
+      // For now, let's just set it and maybe user can override by interacting with controls (OrbitControls handles this)
+      
+      // To allow user to break free, we might need more complex logic. 
+      // But for simple "move to", the lerp in useFrame will fight with user input if we don't clear it.
+      // Let's clear it after 2 seconds.
+      setTimeout(() => setFocusTarget(null), 2000);
+    }
+  };
 
   // Initialize/Update Simulation Data
   useEffect(() => {
@@ -314,12 +379,11 @@ const ForceGraphScene = ({ nodes, edges, onNodeClick, showGrid }: Graph3DProps) 
 
   return (
     <>
-      <OrbitControls />
       {/* Position grid slightly lower to give a "floor" feel */}
-      {showGrid && <gridHelper args={[100, 100]} position={[0, -2, 0]} />}
+      {showGrid && <gridHelper args={isDark ? [100, 100] : [100, 100, 0x94a3b8, 0xe2e8f0]} position={[0, -2, 0]} />}
       
       {/* Ambient light for general illumination */}
-      <ambientLight intensity={0.4} />
+      <ambientLight intensity={isDark ? 0.4 : 0.7} />
       {/* Point lights for 3D depth */}
       <pointLight position={[10, 10, 10]} intensity={1} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} />
@@ -328,24 +392,37 @@ const ForceGraphScene = ({ nodes, edges, onNodeClick, showGrid }: Graph3DProps) 
       <Environment preset="city" />
 
       {simNodes.map(node => (
-        <NodeMesh key={node.id} node={node} onClick={onNodeClick} />
+        <NodeMesh 
+          key={node.id} 
+          node={node} 
+          onClick={onNodeClick}
+          onDoubleClick={handleNodeDoubleClick}
+          isDark={isDark}
+        />
       ))}
       
-      <LinkLines links={simLinks} />
+      <LinkLines links={simLinks} isDark={isDark} />
+
+      <CameraController 
+        targetPosition={focusTarget?.pos || null} 
+        targetLookAt={focusTarget?.lookAt || null} 
+      />
     </>
   );
 };
 
-export const Graph3D: React.FC<Graph3DProps> = (props) => {
+export const Graph3D = ({ nodes, edges, onNodeClick, showGrid, isDark = true }: Graph3DProps) => {
   return (
-    <div className="w-full h-full bg-slate-900">
-      {/* 
-        Camera positioned higher (Y=20) and further back (Z=20) 
-        to provide a "top-down perspective" (similar to 俯视图)
-        FOV 50 provides a slightly flatter look
-      */}
-      <Canvas camera={{ position: [0, 20, 25], fov: 50 }}>
-        <ForceGraphScene {...props} />
+    <div className={`w-full h-full transition-colors duration-300 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+      <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
+        <ForceGraphScene 
+          nodes={nodes} 
+          edges={edges} 
+          onNodeClick={onNodeClick} 
+          showGrid={showGrid}
+          isDark={isDark}
+        />
+        <Environment preset="city" />
       </Canvas>
     </div>
   );

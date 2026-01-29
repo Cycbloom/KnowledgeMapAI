@@ -15,6 +15,8 @@ interface Graph3DProps {
   onNodeClick: (node: Node) => void;
   showGrid?: boolean;
   isDark?: boolean;
+  selectedNodeId?: string | null;
+  highlightedPath?: { nodes: Set<string>, links: Set<string> } | null;
 }
 
 // Extend Node with simulation properties
@@ -85,7 +87,7 @@ const LEVEL_CONFIG = {
   }
 };
 
-const NodeMesh = ({ node, onClick, onDoubleClick, isDark = true }: { node: SimNode; onClick: (node: Node) => void; onDoubleClick: (node: SimNode) => void; isDark?: boolean }) => {
+const NodeMesh = ({ node, onClick, onDoubleClick, isDark = true, isDimmed = false }: { node: SimNode; onClick: (node: Node) => void; onDoubleClick: (node: SimNode) => void; isDark?: boolean; isDimmed?: boolean }) => {
   const groupRef = useRef<THREE.Group>(null);
   const textRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
@@ -134,6 +136,8 @@ const NodeMesh = ({ node, onClick, onDoubleClick, isDark = true }: { node: SimNo
             metalness={config.metalness}
             clearcoat={0.5}
             clearcoatRoughness={0.1}
+            transparent
+            opacity={isDimmed ? 0.1 : 1}
           />
         </mesh>
       </Float>
@@ -150,10 +154,12 @@ const NodeMesh = ({ node, onClick, onDoubleClick, isDark = true }: { node: SimNo
           ref={textRef}
           fontSize={node.level === 'root' || node.level === 'core' ? 0.6 : 0.45} 
           color={isDark ? "white" : "#1e293b"} 
+          fillOpacity={isDimmed ? 0.2 : 1}
           anchorX="center" 
           anchorY="middle"
           outlineWidth={0.05}
           outlineColor={isDark ? "#000000" : "#ffffff"}
+          outlineOpacity={isDimmed ? 0.2 : 1}
           font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
         >
           {node.title}
@@ -163,7 +169,7 @@ const NodeMesh = ({ node, onClick, onDoubleClick, isDark = true }: { node: SimNo
   );
 };
 
-const LinkLines = ({ links, isDark = true }: { links: SimLink[], isDark?: boolean }) => {
+const LinkLines = ({ links, isDark = true, opacity = 0.6 }: { links: SimLink[], isDark?: boolean, opacity?: number }) => {
   const geometryRef = useRef<THREE.BufferGeometry>(null);
 
   useFrame(() => {
@@ -192,7 +198,7 @@ const LinkLines = ({ links, isDark = true }: { links: SimLink[], isDark?: boolea
   return (
     <lineSegments>
       <bufferGeometry ref={geometryRef} />
-      <lineBasicMaterial color={isDark ? "#9ca3af" : "#64748b"} opacity={0.6} transparent linewidth={1} />
+      <lineBasicMaterial color={isDark ? "#9ca3af" : "#64748b"} opacity={opacity} transparent linewidth={1} />
     </lineSegments>
   );
 };
@@ -216,10 +222,55 @@ const CameraController = ({ targetPosition, targetLookAt }: { targetPosition: TH
 };
 
 const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef<Graph3DRef>) => {
-  const { nodes, edges, onNodeClick, showGrid, isDark = true } = props;
+  const { nodes, edges, onNodeClick, showGrid, isDark = true, selectedNodeId, highlightedPath } = props;
   const [simNodes, setSimNodes] = useState<SimNode[]>([]);
   const [simLinks, setSimLinks] = useState<SimLink[]>([]);
   const prevNodeCount = useRef(0);
+  
+  // Spotlight state
+  const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
+  const [highlightedLinks, setHighlightedLinks] = useState<Set<string>>(new Set());
+
+  // Calculate spotlight when selectedNodeId OR highlightedPath changes
+  useEffect(() => {
+    // Priority: Pathfinding > Single Node Selection
+    if (highlightedPath) {
+      setHighlightedNodes(highlightedPath.nodes);
+      setHighlightedLinks(highlightedPath.links);
+      return;
+    }
+
+    if (!selectedNodeId) {
+      setHighlightedNodes(new Set());
+      setHighlightedLinks(new Set());
+      return;
+    }
+
+    // Find neighbors
+    const neighbors = new Set<string>();
+    const connectedLinks = new Set<string>();
+    
+    // Add selected node itself
+    neighbors.add(selectedNodeId);
+
+    // First degree neighbors
+    simLinks.forEach(link => {
+      // Handle both string IDs and object references (d3-force behavior)
+      const sourceId = (typeof link.source === 'object') ? (link.source as SimNode).id : link.source;
+      const targetId = (typeof link.target === 'object') ? (link.target as SimNode).id : link.target;
+
+      if (sourceId === selectedNodeId) {
+        neighbors.add(targetId);
+        connectedLinks.add(link.id);
+      } else if (targetId === selectedNodeId) {
+        neighbors.add(sourceId);
+        connectedLinks.add(link.id);
+      }
+    });
+
+    setHighlightedNodes(neighbors);
+    setHighlightedLinks(connectedLinks);
+  }, [selectedNodeId, highlightedPath, simLinks]);
   
   // Camera focus state
   const [focusTarget, setFocusTarget] = useState<{ pos: THREE.Vector3, lookAt: THREE.Vector3 } | null>(null);
@@ -271,22 +322,26 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
     // 0. Pre-calculate node degrees to determine levels automatically
     const nodeDegrees = new Map<string, number>();
     edges.forEach(edge => {
-      nodeDegrees.set(edge.source_node_id, (nodeDegrees.get(edge.source_node_id) || 0) + 1);
-      nodeDegrees.set(edge.target_node_id, (nodeDegrees.get(edge.target_node_id) || 0) + 1);
+      const sId = String(edge.source_node_id);
+      const tId = String(edge.target_node_id);
+      nodeDegrees.set(sId, (nodeDegrees.get(sId) || 0) + 1);
+      nodeDegrees.set(tId, (nodeDegrees.get(tId) || 0) + 1);
     });
 
     // 1. Merge new props with existing simulation state to preserve positions
     setSimNodes(prevNodes => {
-      const existingMap = new Map(prevNodes.map(n => [n.id, n]));
+      // Use String(n.id) for map keys to ensure consistency
+      const existingMap = new Map(prevNodes.map(n => [String(n.id), n]));
       
       return nodes.map(n => {
-        const existing = existingMap.get(n.id);
+        const nodeIdStr = String(n.id);
+        const existing = existingMap.get(nodeIdStr);
         
         // Determine level logic:
         // Priority 1: Explicit property in DB (Manual Override)
         // Priority 2: Fallback to degree centrality (only if property missing)
         let level: 'root' | 'core' | 'sub' | 'normal' | 'leaf' = 'leaf';
-        const degree = nodeDegrees.get(n.id) || 0;
+        const degree = nodeDegrees.get(nodeIdStr) || 0; // Use string ID for lookup
         
         if (n.properties?.level) {
            // Trust the database property completely
@@ -302,13 +357,15 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
 
         if (existing) {
           // Update properties but keep simulation state (x,y,z,vx,vy,vz)
-          return { ...existing, ...n, level };
+          // Ensure ID is string
+          return { ...existing, ...n, id: nodeIdStr, level };
         } else {
           // Initialize new node
           // Map database x/y to 3D space x/z (horizontal plane)
           // Y is initialized to near 0 for height
           return { 
             ...n, 
+            id: nodeIdStr, // Ensure ID is string
             level,
             x: n.x_position || (Math.random() - 0.5) * 10, 
             y: (Math.random() - 0.5) * 2, // Small initial vertical jitter
@@ -319,9 +376,9 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
     });
 
     setSimLinks(edges.map(e => ({
-      id: e.id,
-      source: e.source_node_id,
-      target: e.target_node_id
+      id: String(e.id), // Ensure ID is string
+      source: String(e.source_node_id), // Ensure source is string
+      target: String(e.target_node_id)  // Ensure target is string
     })));
 
   }, [nodes, edges]);
@@ -414,10 +471,25 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
           onClick={onNodeClick}
           onDoubleClick={handleNodeDoubleClick}
           isDark={isDark}
+          isDimmed={highlightedNodes.size > 0 && !highlightedNodes.has(node.id)}
         />
       ))}
       
-      <LinkLines links={simLinks} isDark={isDark} />
+      {/* Active Links */}
+      <LinkLines 
+        links={simLinks.filter(l => highlightedLinks.size === 0 || highlightedLinks.has(l.id))} 
+        isDark={isDark} 
+        opacity={0.6}
+      />
+      
+      {/* Dimmed Links */}
+      {highlightedLinks.size > 0 && (
+        <LinkLines 
+          links={simLinks.filter(l => !highlightedLinks.has(l.id))} 
+          isDark={isDark} 
+          opacity={0.05}
+        />
+      )}
 
       <CameraController 
         targetPosition={focusTarget?.pos || null} 
@@ -428,7 +500,7 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
 });
 
 export const Graph3D = forwardRef((props: Graph3DProps, ref: React.ForwardedRef<Graph3DRef>) => {
-  const { nodes, edges, onNodeClick, showGrid, isDark = true } = props;
+  const { nodes, edges, onNodeClick, showGrid, isDark = true, selectedNodeId, highlightedPath } = props;
   return (
     <div className={`w-full h-full transition-colors duration-300 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
@@ -439,6 +511,8 @@ export const Graph3D = forwardRef((props: Graph3DProps, ref: React.ForwardedRef<
           onNodeClick={onNodeClick} 
           showGrid={showGrid}
           isDark={isDark}
+          selectedNodeId={selectedNodeId}
+          highlightedPath={highlightedPath}
         />
         <Environment preset="city" />
       </Canvas>

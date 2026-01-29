@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Graph3D, Graph3DRef } from '../components/Graph3D';
 import { Node, Edge } from '../types';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation } from 'lucide-react';
 
 // Helper to determine node level based on hierarchy
 type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
@@ -60,6 +60,12 @@ export const GraphEditor = () => {
     ).slice(0, 10); // Limit to 10 results
   }, [nodes, searchQuery]);
 
+  // Pathfinding State
+  const [isPathfindingMode, setIsPathfindingMode] = useState(false);
+  const [pathStartNode, setPathStartNode] = useState<Node | null>(null);
+  const [pathEndNode, setPathEndNode] = useState<Node | null>(null);
+  const [highlightedPath, setHighlightedPath] = useState<{ nodes: Set<string>, links: Set<string> } | null>(null);
+
   // Form State
   const [nodeForm, setNodeForm] = useState<{
     title: string;
@@ -108,6 +114,96 @@ export const GraphEditor = () => {
     }
   };
 
+  // BFS algorithm for shortest path (unweighted graph)
+  const findShortestPath = (startId: string, endId: string) => {
+    // 1. Robust ID normalization
+    const normalizeId = (id: any) => String(id).trim();
+    
+    const sId = normalizeId(startId);
+    const eId = normalizeId(endId);
+
+    if (sId === eId) {
+      return { nodes: new Set([sId]), links: new Set<string>() };
+    }
+
+    // 2. Build Adjacency List for better performance and debugging
+    // Map<NodeId, Array<{neighborId, edgeId}>>
+    const adj = new Map<string, Array<{id: string, edgeId: string}>>();
+    
+    // Initialize adjacency list for all nodes to ensure we handle isolated nodes gracefully
+    nodes.forEach(node => {
+      adj.set(normalizeId(node.id), []);
+    });
+
+    // Populate adjacency list
+    edges.forEach(edge => {
+      const src = normalizeId(edge.source_node_id);
+      const tgt = normalizeId(edge.target_node_id);
+      const edgeId = String(edge.id);
+
+      // Undirected graph: add edges both ways
+      if (adj.has(src)) {
+        adj.get(src)?.push({ id: tgt, edgeId });
+      } else {
+        // Fallback if node missing from nodes array but present in edges
+        adj.set(src, [{ id: tgt, edgeId }]);
+      }
+
+      if (adj.has(tgt)) {
+        adj.get(tgt)?.push({ id: src, edgeId });
+      } else {
+        adj.set(tgt, [{ id: src, edgeId }]);
+      }
+    });
+
+    // 3. Standard BFS
+    const queue: string[] = [sId];
+    const visited = new Set<string>([sId]);
+    const parent = new Map<string, { nodeId: string, edgeId: string }>();
+    
+    let found = false;
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      
+      if (currentId === eId) {
+        found = true;
+        break;
+      }
+
+      const neighbors = adj.get(currentId) || [];
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor.id)) {
+          visited.add(neighbor.id);
+          parent.set(neighbor.id, { nodeId: currentId, edgeId: neighbor.edgeId });
+          queue.push(neighbor.id);
+        }
+      }
+    }
+
+    // 4. Reconstruct Path
+    if (found) {
+      const pathNodes = new Set<string>();
+      const pathLinks = new Set<string>();
+      
+      let curr = eId;
+      pathNodes.add(curr);
+      
+      while (curr !== sId) {
+        const p = parent.get(curr);
+        if (!p) break; // Should not happen if found is true
+        
+        pathLinks.add(p.edgeId);
+        pathNodes.add(p.nodeId);
+        curr = p.nodeId;
+      }
+      
+      return { nodes: pathNodes, links: pathLinks };
+    }
+    
+    return { nodes: new Set<string>(), links: new Set<string>() };
+  };
+
   const handleStartCreate = () => {
     setSidebarMode('create');
     setSelectedNode(null);
@@ -121,6 +217,28 @@ export const GraphEditor = () => {
   };
 
   const handleNodeClick = (node: Node) => {
+    if (isPathfindingMode) {
+      if (!pathStartNode) {
+        setPathStartNode(node);
+      } else if (!pathEndNode) {
+        setPathEndNode(node);
+        const path = findShortestPath(pathStartNode.id, node.id);
+        if (path.nodes.size > 0) {
+          setHighlightedPath(path);
+          // Highlight path using the spotlight effect mechanism
+          // We need to extend Graph3D to support custom highlighting
+        } else {
+          alert('未找到路径');
+        }
+      } else {
+        // Reset and start over
+        setPathStartNode(node);
+        setPathEndNode(null);
+        setHighlightedPath(null);
+      }
+      return;
+    }
+
     setSelectedNode(node);
     setSidebarMode('edit');
   };
@@ -260,7 +378,16 @@ export const GraphEditor = () => {
     <div className="flex h-full relative">
       {/* 3D Canvas */}
       <div className="flex-1 h-full">
-        <Graph3D ref={graphRef} nodes={nodes} edges={edges} onNodeClick={handleNodeClick} showGrid={showGrid} isDark={isDark} />
+        <Graph3D 
+          ref={graphRef} 
+          nodes={nodes} 
+          edges={edges} 
+          onNodeClick={handleNodeClick} 
+          showGrid={showGrid} 
+          isDark={isDark}
+          selectedNodeId={selectedNode?.id}
+          highlightedPath={highlightedPath}
+        />
       </div>
 
       {/* Toolbar */}
@@ -327,6 +454,20 @@ export const GraphEditor = () => {
         </button>
         
         <button 
+          onClick={() => {
+            setIsPathfindingMode(!isPathfindingMode);
+            // Reset path state when toggling
+            setPathStartNode(null);
+            setPathEndNode(null);
+            setHighlightedPath(null);
+          }} 
+          className={`p-1 rounded ${isPathfindingMode ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
+          title={isPathfindingMode ? "退出路径导航" : "路径导航"}
+        >
+          <Navigation size={20} />
+        </button>
+
+        <button 
           onClick={() => setShowGrid(!showGrid)} 
           className={`p-1 rounded ${showGrid ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
           title={showGrid ? "隐藏网格" : "显示网格"}
@@ -346,6 +487,32 @@ export const GraphEditor = () => {
           <Download size={20} />
         </button>
       </div>
+
+      {/* Pathfinding Instructions */}
+      {isPathfindingMode && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-blue-100 flex items-center space-x-2 z-20">
+          <Navigation size={16} className="text-blue-600" />
+          <span className="text-sm font-medium text-gray-700">
+            {!pathStartNode 
+              ? "请选择起点节点" 
+              : !pathEndNode 
+                ? "请选择终点节点" 
+                : `路径长度: ${highlightedPath?.nodes.size ? highlightedPath.nodes.size - 1 : 0} 步`}
+          </span>
+          {pathStartNode && (
+            <button 
+              onClick={() => {
+                setPathStartNode(null);
+                setPathEndNode(null);
+                setHighlightedPath(null);
+              }}
+              className="ml-2 text-xs text-gray-500 hover:text-red-500 underline"
+            >
+              重置
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Right Sidebar */}
       {sidebarMode !== 'none' && (

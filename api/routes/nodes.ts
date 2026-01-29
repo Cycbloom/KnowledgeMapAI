@@ -1,6 +1,5 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { supabaseAdmin } from 'api/supabase.js';
 import { validate } from '../middleware/validate.js';
 import { createNodeSchema, updateNodeSchema, createEdgeSchema } from '../schemas/index.js';
 
@@ -58,25 +57,8 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
 router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  // Check ownership
-  const { data: node } = await supabaseAdmin
-    .from('nodes')
-    .select('graph_id')
-    .eq('id', id)
-    .single();
-    
-  if (!node) return res.status(404).json({ error: 'Node not found' });
-
-  const { data: graph } = await supabaseAdmin
-    .from('knowledge_graphs')
-    .select('id')
-    .eq('id', node.graph_id)
-    .eq('user_id', req.user.id)
-    .single();
-
-  if (!graph) return res.status(403).json({ error: 'Unauthorized' });
-
-  const { error } = await supabaseAdmin
+  // Use scoped client to respect RLS
+  const { error } = await req.supabase!
     .from('nodes')
     .delete()
     .eq('id', id);
@@ -89,25 +71,9 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
 router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthRequest, res: Response) => {
   const { source_node_id, target_node_id, relationship_type } = req.body;
 
-  // Verify ownership of source node (target should be in same graph usually, but let's check source at least)
-  const { data: sourceNode } = await supabaseAdmin
-    .from('nodes')
-    .select('graph_id')
-    .eq('id', source_node_id)
-    .single();
-
-  if (!sourceNode) return res.status(404).json({ error: 'Source node not found' });
-
-  const { data: graph } = await supabaseAdmin
-    .from('knowledge_graphs')
-    .select('id')
-    .eq('id', sourceNode.graph_id)
-    .eq('user_id', req.user.id)
-    .single();
-
-  if (!graph) return res.status(403).json({ error: 'Unauthorized' });
-
-  const { data, error } = await supabaseAdmin
+  // Use scoped client to respect RLS
+  // RLS Policy "Users can manage edges in own graphs" ensures source_node belongs to user's graph
+  const { data, error } = await req.supabase!
     .from('edges')
     .insert([
       { source_node_id, target_node_id, relationship_type }

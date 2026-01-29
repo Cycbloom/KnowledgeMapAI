@@ -58,10 +58,10 @@ router.post('/expand-knowledge', requireAuth, async (req: AuthRequest, res: Resp
   try {
     const completion = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a knowledge graph expert. Suggest 3-5 related sub-topics for the given node to expand the graph. Return JSON array of objects with 'title' and 'content'." },
+        { role: "system", content: "You are a knowledge graph expert. Suggest 3-5 related sub-topics for the given node to expand the graph. Return JSON array of objects with 'title' and 'content'. Please respond in Chinese." },
         { role: "user", content: `Node: ${node_title}` }
       ],
-      model: "gpt-3.5-turbo",
+      model: "deepseek-chat",
       response_format: { type: "json_object" }, // Ensure JSON output
     });
 

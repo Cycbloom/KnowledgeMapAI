@@ -17,7 +17,7 @@ const validUrl = supabaseUrl || 'https://placeholder.supabase.co';
 const validKey = supabaseServiceKey || 'placeholder-key';
 const validAnonKey = supabaseAnonKey || validKey;
 
-export const supabase = createClient(validUrl, validKey);
+export const supabaseAdmin = createClient(validUrl, validKey);
 
 export const createClientWithToken = (token: string) => {
   return createClient(validUrl, validAnonKey, {

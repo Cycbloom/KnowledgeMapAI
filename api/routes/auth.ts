@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { supabase } from '../supabase.js';
+import { supabaseAdmin } from '../supabase.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -18,7 +18,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     }
 
     // 1. Sign up with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
       email,
       password,
     });
@@ -34,7 +34,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     }
 
     // 2. Create user record in public.users
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseAdmin
       .from('users')
       .insert([
         {
@@ -72,7 +72,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
       email,
       password,
     });
@@ -83,7 +83,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     }
 
     // Auto-repair: Ensure public.users record exists
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('id', data.user.id)
@@ -91,7 +91,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
     if (!existingProfile) {
       console.log(`[Auth] Repairing missing public profile for user ${data.user.id}`);
-      await supabase.from('users').insert([
+      await supabaseAdmin.from('users').insert([
         {
           id: data.user.id,
           email: email,
@@ -113,7 +113,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
  * POST /api/auth/logout
  */
 router.post('/logout', async (req: Request, res: Response): Promise<void> => {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabaseAdmin.auth.signOut();
 
   if (error) {
     res.status(500).json({ error: error.message });
@@ -129,7 +129,7 @@ router.post('/logout', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/user', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   // Fetch detailed profile from public.users
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('users')
     .select('*')
     .eq('id', req.user.id)

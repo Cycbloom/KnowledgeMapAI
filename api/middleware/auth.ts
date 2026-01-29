@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { supabase, createClientWithToken } from '../supabase.js';
+import { supabaseAdmin, createClientWithToken } from '../supabase.js';
 import { type SupabaseClient } from '@supabase/supabase-js';
 
 export interface AuthRequest extends Request {
@@ -20,8 +20,8 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     return res.status(401).json({ error: 'Token missing' });
   }
 
-  // Use the global client to verify the token first
-  const { data: { user }, error } = await supabase.auth.getUser(token);
+  // Use the admin client to verify the token first (stateless check or call auth api)
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
   if (error || !user) {
     return res.status(401).json({ error: 'Invalid token' });

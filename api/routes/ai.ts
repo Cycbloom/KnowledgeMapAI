@@ -7,13 +7,16 @@ dotenv.config();
 
 const router = Router();
 
-const apiKey = process.env.OPENAI_API_KEY;
-const openai = apiKey ? new OpenAI({ apiKey }) : null;
+const apiKey = process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY;
+const baseURL = process.env.DEEPSEEK_API_KEY ? 'https://api.deepseek.com' : undefined;
+const model = process.env.DEEPSEEK_API_KEY ? 'deepseek-chat' : 'gpt-3.5-turbo';
+
+const openai = apiKey ? new OpenAI({ apiKey, baseURL }) : null;
 
 // Helper to generate mock response if no API key
 const getMockResponse = (type: string, prompt: string) => {
   if (type === 'content') {
-    return `[模拟 AI 内容] 为以下主题生成的内容: ${prompt}。 \n\n这是一个占位符响应，因为 OpenAI API 密钥未配置。`;
+    return `[模拟 AI 内容] 为以下主题生成的内容: ${prompt}。 \n\n这是一个占位符响应，因为 API 密钥未配置。`;
   }
   if (type === 'expand') {
     return [
@@ -38,7 +41,7 @@ router.post('/generate-content', requireAuth, async (req: AuthRequest, res: Resp
         { role: "system", content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. Please respond in Chinese." },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
-      model: "gpt-3.5-turbo",
+      model: model,
     });
 
     res.json({ content: completion.choices[0].message.content });
@@ -61,7 +64,7 @@ router.post('/expand-knowledge', requireAuth, async (req: AuthRequest, res: Resp
         { role: "system", content: "You are a knowledge graph expert. Suggest 3-5 related sub-topics for the given node to expand the graph. Return JSON array of objects with 'title' and 'content'. Please respond in Chinese." },
         { role: "user", content: `Node: ${node_title}` }
       ],
-      model: "deepseek-chat",
+      model: model,
       response_format: { type: "json_object" }, // Ensure JSON output
     });
 

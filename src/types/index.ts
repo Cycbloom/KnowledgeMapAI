@@ -19,6 +19,7 @@ export interface Node {
   x_position: number;
   y_position: number;
   color?: string;
+  properties?: Record<string, any>;
 }
 
 export interface Edge {

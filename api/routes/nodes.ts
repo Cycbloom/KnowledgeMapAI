@@ -6,7 +6,7 @@ const router = Router();
 
 // Create a new node
 router.post('/nodes', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { graph_id, title, content, x_position, y_position, color } = req.body;
+  const { graph_id, title, content, x_position, y_position, color, properties } = req.body;
 
   // Verify graph ownership
   const { data: graph } = await supabase
@@ -21,7 +21,7 @@ router.post('/nodes', requireAuth, async (req: AuthRequest, res: Response) => {
   const { data, error } = await supabase
     .from('nodes')
     .insert([
-      { graph_id, title, content, x_position, y_position, color }
+      { graph_id, title, content, x_position, y_position, color, properties }
     ])
     .select()
     .single();

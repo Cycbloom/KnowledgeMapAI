@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Graph3D } from '../components/Graph3D';
 import { Node } from '../types';
-import { Save, Plus, Wand2, Download, Trash2 } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft } from 'lucide-react';
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { nodes, edges, setNodes, setEdges, addNode, updateNode, removeNode, addEdge, removeEdge } = useStore();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -134,9 +135,17 @@ export const GraphEditor = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="absolute top-4 left-4 bg-white p-2 rounded-lg shadow-md flex space-x-2">
+      <div className="absolute top-4 left-4 bg-white p-2 rounded-lg shadow-md flex items-center space-x-2">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
+          title="返回"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
         <h2 className="font-bold px-2 py-1">{graphTitle}</h2>
-        <div className="w-px bg-gray-300 mx-2"></div>
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
         <button onClick={handleAddNode} className="p-1 hover:bg-gray-100 rounded" title="添加节点">
           <Plus size={20} />
         </button>

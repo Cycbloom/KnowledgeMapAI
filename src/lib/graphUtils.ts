@@ -1,6 +1,13 @@
 import { Node, Edge } from '../types';
+import { SimNode } from '../config/graphConfig';
 
 export type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
+
+// Helper to safely get node ID from string or SimNode object (d3-force replaces strings with objects)
+export const getLinkNodeId = (node: string | SimNode): string => {
+  if (typeof node === 'string') return node;
+  return node.id;
+};
 
 // Helper to determine node level based on hierarchy
 // Modified to prioritize existing properties over dynamic calculation

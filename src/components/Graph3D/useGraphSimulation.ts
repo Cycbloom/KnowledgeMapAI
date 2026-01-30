@@ -13,6 +13,7 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
 
   // Version counter to trigger re-renders only when topology changes (nodes/edges count or structure)
   const [simulationVersion, setSimulationVersion] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Initialize Worker
   useEffect(() => {
@@ -22,8 +23,8 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
       const { type, nodes: updatedNodes } = e.data;
       
       if (type === 'tick') {
+        setIsLoading(false);
         // Update local node positions IN PLACE
-        // We assume the order and count of updatedNodes matches nodesRef.current
         // or we match by ID if necessary. For performance, array index matching is preferred 
         // if we guarantee order. The worker usually returns the same array order.
         
@@ -108,6 +109,7 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
     setSimulationVersion(v => v + 1);
 
     // Send to worker
+    setIsLoading(true);
     workerRef.current.postMessage({
       type: 'updateData',
       payload: { nodes: simNodes, links: simLinks }
@@ -119,6 +121,7 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
     nodesRef,
     linksRef,
     nodesMapRef,
-    simulationVersion
+    simulationVersion,
+    isLoading
   };
 };

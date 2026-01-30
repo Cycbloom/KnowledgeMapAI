@@ -6,6 +6,7 @@ import { SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { Node } from '../../types/index';
 import { InstancedNodes, LinkLines, NodeLabels } from './GraphRenderables';
 import { CameraController } from './CameraController';
+import { BoxSelection } from './BoxSelection';
 
 export interface GraphSceneRef {
   focusNode: (nodeId: string) => void;
@@ -20,6 +21,7 @@ interface GraphSceneProps {
   highlightedNodes: Set<string>;
   highlightedLinks: Set<string>;
   onNodeClick: (node: Node) => void;
+  onSelectionChange?: (nodeIds: string[]) => void;
   showGrid?: boolean;
 }
 
@@ -35,6 +37,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
     highlightedNodes, 
     highlightedLinks,
     onNodeClick,
+    onSelectionChange,
     showGrid 
   } = props;
 
@@ -115,6 +118,11 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
       <CameraController 
         targetPosition={focusTarget?.pos || null} 
         targetLookAt={focusTarget?.lookAt || null} 
+      />
+
+      <BoxSelection 
+        nodesRef={nodesRef} 
+        onSelectionChange={onSelectionChange || (() => {})} 
       />
     </>
   );

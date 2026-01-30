@@ -49,6 +49,15 @@ const limiter = rateLimit({
 })
 app.use('/api', limiter)
 
+// AI Rate Limiting (Stricter)
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // limit each IP to 50 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'AI request quota exceeded, please try again later.' }
+})
+
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
@@ -77,7 +86,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use('/api/auth', authRoutes)
 app.use('/api/graphs', graphRoutes)
 app.use('/api', nodeRoutes) // /api/nodes, /api/edges
-app.use('/api/ai', aiRoutes)
+app.use('/api/ai', aiLimiter, aiRoutes)
 app.use('/api/study', studyRoutes)
 app.use('/api/data', dataRoutes)
 

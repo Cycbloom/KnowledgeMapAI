@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 interface InteractionProps {
   selectedNodeId?: string | null;
+  selectedNodeIds?: Set<string>;
   highlightedPath?: { nodes: Set<string>, links: Set<string> } | null;
   nodesRef: React.MutableRefObject<SimNode[]>;
   linksRef: React.MutableRefObject<SimLink[]>;
@@ -11,6 +12,7 @@ interface InteractionProps {
 
 export const useGraphInteraction = ({
   selectedNodeId,
+  selectedNodeIds,
   highlightedPath,
   nodesRef,
   linksRef
@@ -26,17 +28,26 @@ export const useGraphInteraction = ({
       return;
     }
 
-    // 2. If nothing selected, clear
-    if (!selectedNodeId) {
+    // 2. Multiple Selection
+    if (selectedNodeIds && selectedNodeIds.size > 1) {
+      setHighlightedNodes(new Set(selectedNodeIds));
+      setHighlightedLinks(new Set());
+      return;
+    }
+
+    // 3. Single Selection
+    const activeId = selectedNodeId || (selectedNodeIds?.size === 1 ? Array.from(selectedNodeIds)[0] : null);
+
+    if (!activeId) {
       setHighlightedNodes(new Set());
       setHighlightedLinks(new Set());
       return;
     }
 
-    // 3. Spotlight logic: find neighbors
+    // 4. Spotlight logic: find neighbors
     const neighbors = new Set<string>();
     const connectedLinks = new Set<string>();
-    neighbors.add(selectedNodeId);
+    neighbors.add(activeId);
 
     // We iterate over linksRef.current
     // Note: This runs in useEffect, so it uses the links at that moment.
@@ -47,10 +58,10 @@ export const useGraphInteraction = ({
       const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
       const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
 
-      if (sourceId === selectedNodeId) {
+      if (sourceId === activeId) {
         neighbors.add(targetId);
         connectedLinks.add(link.id);
-      } else if (targetId === selectedNodeId) {
+      } else if (targetId === activeId) {
         neighbors.add(sourceId);
         connectedLinks.add(link.id);
       }
@@ -59,7 +70,7 @@ export const useGraphInteraction = ({
     setHighlightedNodes(neighbors);
     setHighlightedLinks(connectedLinks);
 
-  }, [selectedNodeId, highlightedPath, linksRef]); // We rely on linksRef reference stable
+  }, [selectedNodeId, selectedNodeIds, highlightedPath, linksRef]); // We rely on linksRef reference stable
 
   return {
     highlightedNodes,

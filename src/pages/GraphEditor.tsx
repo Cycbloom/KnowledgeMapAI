@@ -2,11 +2,12 @@ import React, { useEffect, useState, useRef, useMemo, lazy, Suspense, useCallbac
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
-import type { Graph3DRef } from '../components/Graph3D';
+import { type Graph3DRef, type Graph3DProps } from '../components/Graph3D';
 import { Node, Edge } from '../types';
 
 // Lazy load heavy 3D component
-const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D })));
+// Cast the lazy loaded component to proper type including ref
+const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -54,6 +55,8 @@ export const GraphEditor = () => {
   // State
   const graphRef = useRef<Graph3DRef>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const [isEngineLoading, setIsEngineLoading] = useState(true);
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline'>('none');
   const [showGrid, setShowGrid] = useState(true);
   const [isDark, setIsDark] = useState(true);
@@ -171,12 +174,42 @@ export const GraphEditor = () => {
     }
 
     setSelectedNode(node);
+    setSelectedNodeIds(new Set([node.id]));
     setSidebarMode('edit');
+  };
+
+  const handleSelectionChange = (ids: string[]) => {
+    const newSet = new Set(ids);
+    setSelectedNodeIds(newSet);
+    
+    if (newSet.size === 1) {
+      const node = nodes.find(n => n.id === ids[0]);
+      if (node) {
+        setSelectedNode(node);
+        setSidebarMode('edit');
+      }
+    } else if (newSet.size > 1) {
+      setSelectedNode(null);
+      setSidebarMode('none');
+    }
+    // If 0, do nothing or clear? Usually handled by background click.
+    // But if we select nothing with box, we should clear.
+    if (newSet.size === 0) {
+      setSelectedNode(null);
+      setSidebarMode('none');
+    }
+  };
+
+  const handleBackgroundClick = () => {
+    setSelectedNode(null);
+    setSelectedNodeIds(new Set());
+    setSidebarMode('none');
   };
 
   const handleCloseSidebar = () => {
     setSidebarMode('none');
     setSelectedNode(null);
+    setSelectedNodeIds(new Set());
   };
 
   const handleSaveNode = async () => {
@@ -270,6 +303,30 @@ export const GraphEditor = () => {
     } catch (err) {
       console.error(err);
       toast.error('删除失败');
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (!id || selectedNodeIds.size === 0) return;
+    if (!confirm(`确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`)) return;
+    
+    try {
+      setLoading(true);
+      const nodeIds = Array.from(selectedNodeIds);
+      // Execute in parallel
+      await Promise.all(nodeIds.map(nodeId => 
+        deleteNodeMutation.mutateAsync({ id: nodeId, graphId: id })
+      ));
+      
+      setSelectedNodeIds(new Set());
+      setSelectedNode(null);
+      setSidebarMode('none');
+      toast.success('批量删除成功');
+    } catch (err) {
+      console.error(err);
+      toast.error('批量删除失败');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -409,19 +466,17 @@ export const GraphEditor = () => {
     <div className="flex h-full relative">
       {/* 3D Canvas */}
       <div className="flex-1 h-full relative">
-        {isGraphLoading && (
-          <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50">
-             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        )}
-        <Suspense fallback={
-          <div className="absolute inset-0 flex items-center justify-center z-40 bg-gray-50/80 backdrop-blur-sm">
+        {(isGraphLoading || isEngineLoading) && (
+          <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm">
              <div className="text-center">
-               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-2"></div>
-               <p className="text-gray-600 font-medium">正在加载 3D 引擎...</p>
+               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+               <p className="text-gray-600 font-medium">
+                  {isGraphLoading ? '正在加载数据...' : '正在初始化 3D 引擎...'}
+               </p>
              </div>
           </div>
-        }>
+        )}
+        <Suspense fallback={null}>
           <Graph3D 
             ref={graphRef} 
             nodes={nodes} 
@@ -430,10 +485,29 @@ export const GraphEditor = () => {
             showGrid={showGrid} 
             isDark={isDark}
             selectedNodeId={selectedNode?.id}
+            selectedNodeIds={selectedNodeIds}
             highlightedPath={highlightedPath}
+            onEngineLoad={setIsEngineLoading}
+            onSelectionChange={handleSelectionChange}
+            onBackgroundClick={handleBackgroundClick}
           />
         </Suspense>
       </div>
+
+      {/* Batch Actions Toolbar */}
+      {selectedNodeIds.size > 1 && (
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl border border-blue-100 flex items-center space-x-4 z-20 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span className="font-medium text-gray-700">已选择 {selectedNodeIds.size} 个节点</span>
+          <div className="w-px h-4 bg-gray-300"></div>
+          <button 
+            onClick={handleBatchDelete}
+            className="flex items-center space-x-1 text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+          >
+            <Trash2 size={18} />
+            <span>批量删除</span>
+          </button>
+        </div>
+      )}
 
       {/* Toolbar */}
       {!isFocusMode && (

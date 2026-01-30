@@ -111,11 +111,11 @@ export class GraphService {
 
     if (nodesError) throw nodesError;
 
-    // Fetch edges efficiently using inner join on source_node
+    // Fetch edges efficiently using graph_id index
     const { data: edgesData, error: edgesError } = await supabase
       .from('edges')
-      .select('*, source_node:source_node_id!inner(graph_id)')
-      .eq('source_node.graph_id', graphId);
+      .select('*')
+      .eq('graph_id', graphId);
 
     if (edgesError) throw edgesError;
     const edges = edgesData || [];

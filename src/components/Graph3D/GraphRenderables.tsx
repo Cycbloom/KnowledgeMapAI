@@ -4,6 +4,7 @@ import { Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { Node } from '../../types/index';
 import { LEVEL_CONFIG, SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
+import { getLinkNodeId } from '../../lib/graphUtils';
 
 // --- Helper to get theme ---
 const getTheme = (isDark: boolean) => isDark ? THEME_CONFIG.dark : THEME_CONFIG.light;
@@ -34,6 +35,8 @@ interface LinkLinesProps {
   simulationVersion: number;
   opacity?: number;
 }
+
+const BLACK = new THREE.Color(0, 0, 0);
 
 // --- Instanced Nodes ---
 export const InstancedNodes = ({ 
@@ -91,7 +94,7 @@ export const InstancedNodes = ({
       
       tempColor.set(baseColor);
       if (isDimmed) {
-        tempColor.lerp(new THREE.Color('#000000'), 0.8);
+        tempColor.lerp(BLACK, 0.8);
       }
       meshRef.current.setColorAt(i, tempColor);
     }
@@ -156,27 +159,47 @@ export const LinkLines = ({
       // Use provided links array OR fall back to ref
       const linksToRender = links || linksRef?.current || [];
       const nodesMap = nodesMapRef.current;
-      const positions: number[] = [];
       
-      linksToRender.forEach(link => {
-        const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
-        const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
+      // Calculate required size: links * 2 points * 3 coords
+      const count = linksToRender.length;
+      const size = count * 6;
+      
+      // Check if we need to resize buffer
+      const currentAttribute = geometryRef.current.getAttribute('position') as THREE.BufferAttribute;
+      let positions: Float32Array;
+      
+      if (!currentAttribute || currentAttribute.array.length < size) {
+        // Allocate slightly more to avoid frequent resizing
+        positions = new Float32Array(Math.max(size * 1.2, 100 * 6)); 
+        geometryRef.current.setAttribute(
+          'position', 
+          new THREE.BufferAttribute(positions, 3)
+        );
+      } else {
+        positions = currentAttribute.array as Float32Array;
+      }
+      
+      let index = 0;
+       for (let i = 0; i < count; i++) {
+         const link = linksToRender[i];
+         const sourceId = getLinkNodeId(link.source);
+         const targetId = getLinkNodeId(link.target);
         
-        const source = nodesMap.get(sourceId);
+         const source = nodesMap.get(sourceId);
         const target = nodesMap.get(targetId);
 
         if (source && target && typeof source.x === 'number' && typeof target.x === 'number') {
-          positions.push(source.x, source.y!, source.z!);
-          positions.push(target.x, target.y!, target.z!);
+           positions[index++] = source.x;
+           positions[index++] = source.y!;
+           positions[index++] = source.z!;
+           positions[index++] = target.x;
+           positions[index++] = target.y!;
+           positions[index++] = target.z!;
         }
-      });
+      }
 
-      geometryRef.current.setAttribute(
-        'position', 
-        new THREE.Float32BufferAttribute(positions, 3)
-      );
       geometryRef.current.attributes.position.needsUpdate = true;
-      geometryRef.current.setDrawRange(0, positions.length / 3);
+      geometryRef.current.setDrawRange(0, index / 3);
     }
   });
 

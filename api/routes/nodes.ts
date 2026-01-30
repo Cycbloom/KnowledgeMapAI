@@ -123,7 +123,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
   const { data, error } = await req.supabase!
     .from('edges')
     .insert([
-      { source_node_id, target_node_id, relationship_type }
+      { source_node_id, target_node_id, relationship_type, graph_id: sourceNode.graph_id }
     ])
     .select()
     .single();
@@ -146,29 +146,21 @@ router.delete('/edges/:id', requireAuth, async (req: AuthRequest, res: Response)
   // Or Supabase can do nested select: select('source_node_id, nodes(graph_id)')?
   // Let's try nested select on delete? Delete returns the deleted row.
   
-  // Step 1: Get the edge's source node to find the graph (before or during delete)
-  // Deleting and selecting nested relation might not work in one go in Supabase/PostgREST for Delete.
-  // So fetch first.
-  
-  const { data: edge } = await req.supabase!
-    .from('edges')
-    .select('source_node_id, nodes!inner(graph_id)')
-    .eq('id', id)
-    .single();
-    
-  if (!edge) throw new AppError('Edge not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
-
-  // Delete
-  const { error } = await req.supabase!
+  // Delete and get graph_id for cache invalidation
+  const { data: edge, error } = await req.supabase!
     .from('edges')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select('graph_id')
+    .single();
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '删除边失败', 500, ErrorCodes.INTERNAL_ERROR);
   
-  // Invalidate cache
-  // @ts-ignore - Supabase types might be tricky with nested join aliases
-  const graphId = (edge.nodes as any)?.graph_id;
+  if (!edge) {
+    throw new AppError('Edge not found or unauthorized', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+  }
+  
+  const graphId = edge.graph_id;
   if (graphId) {
     cacheService.del(CacheKeys.GRAPH_NODES(graphId));
   }

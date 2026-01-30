@@ -111,26 +111,14 @@ export class GraphService {
 
     if (nodesError) throw nodesError;
 
-    // Fetch edges
-    const nodeIds = nodes.map((n: any) => n.id);
-    let edges: any[] = [];
-    
-    if (nodeIds.length > 0) {
-      const { data: edgesData, error: edgesError } = await this.supabase
-        .from('edges')
-        .select('*')
-        .or(`source_node_id.in.(${nodeIds.join(',')}),target_node_id.in.(${nodeIds.join(',')})`);
-        // Note: The original code only checked source_node_id.in(nodeIds) which might be incomplete if edge connects to outside?
-        // Actually, in a self-contained graph, all edges should be between nodes in the graph.
-        // Original code: .in('source_node_id', nodeIds)
-        // Let's stick to original logic but maybe improved?
-        // Actually, edges are defined by source/target. If we fetch all edges where source OR target is in our nodes list.
-        // But simpler: select * from edges where source_node_id in (nodeIds).
-        // Let's check original implementation: .in('source_node_id', nodeIds)
-      
-      if (edgesError) throw edgesError;
-      edges = edgesData || [];
-    }
+    // Fetch edges efficiently using inner join on source_node
+    const { data: edgesData, error: edgesError } = await this.supabase
+      .from('edges')
+      .select('*, source_node:source_node_id!inner(graph_id)')
+      .eq('source_node.graph_id', graphId);
+
+    if (edgesError) throw edgesError;
+    const edges = edgesData || [];
 
     const result = { nodes, edges };
     cacheService.set(cacheKey, result);

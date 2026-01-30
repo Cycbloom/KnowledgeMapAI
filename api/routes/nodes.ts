@@ -8,7 +8,7 @@ const router = Router();
 
 // Create a new node
 router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthRequest, res: Response) => {
-  const { graph_id, title, content, x_position, y_position, color, properties } = req.body;
+  const { id, graph_id, title, content, x_position, y_position, color, properties } = req.body;
 
   // Verify graph ownership
   const { data: graph } = await req.supabase!
@@ -19,11 +19,12 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
 
   if (!graph) return res.status(403).json({ error: '未经授权访问图谱' });
 
+  const nodeData: any = { graph_id, title, content, x_position, y_position, color, properties };
+  if (id) nodeData.id = id;
+
   const { data, error } = await req.supabase!
     .from('nodes')
-    .insert([
-      { graph_id, title, content, x_position, y_position, color, properties }
-    ])
+    .insert([nodeData])
     .select()
     .single();
 

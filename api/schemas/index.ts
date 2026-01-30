@@ -31,6 +31,7 @@ export const updateGraphSchema = z.object({
 
 // --- Node Schemas ---
 export const createNodeSchema = z.object({
+  id: z.string().uuid().optional(),
   graph_id: z.string().uuid('无效的图谱ID'),
   title: z.string().min(1, '标题不能为空'),
   content: z.string().optional(),

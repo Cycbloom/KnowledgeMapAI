@@ -222,10 +222,19 @@ export const NodeLabels = ({
         
         // Scale text based on distance
         const distance = camera.position.distanceTo(child.position);
-        const scale = Math.max(1, distance / 25);
-        child.scale.set(scale, scale, scale);
         
-        child.visible = true;
+        // LOD: Hide labels for distant nodes unless they are root/core
+        // Always show highlighted nodes
+        const isImportant = node.level === 'root' || node.level === 'core' || highlightedNodes.has(node.id);
+        const isVisible = isImportant || distance < 40; // Threshold distance
+
+        if (!isVisible) {
+          child.visible = false;
+        } else {
+          child.visible = true;
+          const scale = Math.max(1, distance / 25);
+          child.scale.set(scale, scale, scale);
+        }
       } else {
         child.visible = false;
       }

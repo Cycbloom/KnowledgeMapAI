@@ -8,9 +8,10 @@ import { Node, Edge } from '../types';
 // Lazy load heavy 3D component
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D })));
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
+import { useHistory } from '../hooks/useHistory';
 import { 
   useGraph, 
   useGraphData, 
@@ -45,6 +46,48 @@ export const GraphEditor = () => {
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
   const createCardsBatchMutation = useCreateCardsBatchMutation();
   const exportGraphMutation = useExportGraphMutation();
+
+  // History Hook
+  const { undo, redo, record, canUndo, canRedo } = useHistory({
+    createNode: (data) => createNodeMutation.mutateAsync(data),
+    updateNode: (params) => updateNodeMutation.mutateAsync(params),
+    deleteNode: (params) => deleteNodeMutation.mutateAsync(params)
+  });
+
+  // Keyboard Shortcuts for Undo/Redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+Z or Cmd+Z
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          // Ctrl+Shift+Z -> Redo
+          if (canRedo) {
+            e.preventDefault();
+            redo();
+            toast.success('重做');
+          }
+        } else {
+          // Ctrl+Z -> Undo
+          if (canUndo) {
+            e.preventDefault();
+            undo();
+            toast.success('撤销');
+          }
+        }
+      }
+      // Check for Ctrl+Y or Cmd+Y -> Redo
+      else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        if (canRedo) {
+          e.preventDefault();
+          redo();
+          toast.success('重做');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, canUndo, canRedo]);
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -185,18 +228,42 @@ export const GraphEditor = () => {
         setSelectedNode(newNode);
         setSidebarMode('edit');
       } else if (sidebarMode === 'edit' && selectedNode) {
+        // Prepare data for update and history
+        const beforeState = {
+          graph_id: selectedNode.graph_id,
+          title: selectedNode.title,
+          content: selectedNode.content,
+          color: selectedNode.color,
+          properties: selectedNode.properties
+        };
+
+        const updateData = {
+          graph_id: selectedNode.graph_id,
+          title: nodeForm.title,
+          content: nodeForm.content,
+          color: nodeForm.color,
+          properties: { ...selectedNode.properties, level: nodeForm.level }
+        };
+
         // Update Node
         const updated = await updateNodeMutation.mutateAsync({
           id: selectedNode.id,
-          data: {
-            title: nodeForm.title,
-            content: nodeForm.content,
-            color: nodeForm.color,
-            properties: { ...selectedNode.properties, level: nodeForm.level }
-          },
+          data: updateData,
           graphId: id
         });
         
+        // Record history
+        record({
+          type: 'UPDATE_NODE',
+          payload: {
+            id: selectedNode.id,
+            before: beforeState,
+            after: updateData
+          }
+        });
+        
+        // Update selected node state to prevent stale history
+        setSelectedNode(updated);
         setSidebarMode('edit');
       }
       toast.success(sidebarMode === 'create' ? '节点创建成功' : '节点保存成功');
@@ -274,6 +341,9 @@ export const GraphEditor = () => {
           properties: { level: newLevel }
         });
         
+        // Record history
+        record({ type: 'CREATE_NODE', payload: newNode });
+
         await createEdgeMutation.mutateAsync({
           source_node_id: selectedNode.id,
           target_node_id: newNode.id,
@@ -393,6 +463,24 @@ export const GraphEditor = () => {
         <h2 className="font-bold px-2 py-1 max-w-[200px] truncate">{graphMeta?.title || 'Loading...'}</h2>
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
         
+        <button 
+          onClick={undo} 
+          disabled={!canUndo}
+          className={`p-1 rounded transition-colors ${canUndo ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300'}`} 
+          title="撤销 (Ctrl+Z)"
+        >
+          <Undo size={20} />
+        </button>
+        <button 
+          onClick={redo} 
+          disabled={!canRedo}
+          className={`p-1 rounded transition-colors ${canRedo ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300'}`} 
+          title="重做 (Ctrl+Shift+Z)"
+        >
+          <Redo size={20} />
+        </button>
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
         <button 
           onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} 
           className={`p-1 rounded transition-colors ${sidebarMode === 'outline' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 

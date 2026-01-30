@@ -12,6 +12,11 @@ export const loginSchema = z.object({
   password: z.string().min(1, '密码不能为空'),
 });
 
+// --- Common Schemas ---
+export const uuidParamsSchema = z.object({
+  id: z.string().uuid('无效的ID格式'),
+});
+
 // --- Graph Schemas ---
 export const createGraphSchema = z.object({
   title: z.string().min(1, '标题不能为空'),

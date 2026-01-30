@@ -1,10 +1,32 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
 
-export const validate = (schema: ZodSchema) => {
+type ValidationSchemas = {
+  body?: ZodSchema;
+  query?: ZodSchema;
+  params?: ZodSchema;
+};
+
+export const validate = (schemaOrSchemas: ZodSchema | ValidationSchemas) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      req.body = schema.parse(req.body);
+      if (schemaOrSchemas instanceof ZodSchema) {
+        // Legacy mode: only validate body
+        req.body = schemaOrSchemas.parse(req.body);
+      } else {
+        // Enhanced mode: validate specified parts
+        const { body, query, params } = schemaOrSchemas;
+        
+        if (body) {
+          req.body = body.parse(req.body);
+        }
+        if (query) {
+          req.query = query.parse(req.query);
+        }
+        if (params) {
+          req.params = params.parse(req.params);
+        }
+      }
       next();
     } catch (error) {
       if (error instanceof ZodError) {

@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Billboard, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { Node, Edge } from '../types/index';
+import { LEVEL_CONFIG, SimNode, SimLink } from '../config/graphConfig';
 
 export interface Graph3DRef {
   focusNode: (nodeId: string) => void;
@@ -17,33 +18,6 @@ interface Graph3DProps {
   selectedNodeId?: string | null;
   highlightedPath?: { nodes: Set<string>, links: Set<string> } | null;
 }
-
-// Extend Node with simulation properties
-interface SimNode extends Node {
-  x?: number;
-  y?: number;
-  z?: number;
-  vx?: number;
-  vy?: number;
-  vz?: number;
-  level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
-  [key: string]: any;
-}
-
-interface SimLink {
-  source: string;
-  target: string;
-  id: string;
-}
-
-// Configuration for node levels
-const LEVEL_CONFIG = {
-  root: { radius: 1.4, color: '#8B5CF6', emissive: '#5B21B6', emissiveIntensity: 0.8 },
-  core: { radius: 1.1, color: '#F43F5E', emissive: '#9F1239', emissiveIntensity: 0.5 },
-  sub: { radius: 0.8, color: '#F59E0B', emissive: '#92400E', emissiveIntensity: 0.3 },
-  normal: { radius: 0.5, color: '#10B981', emissive: '#065F46', emissiveIntensity: 0.2 },
-  leaf: { radius: 0.3, color: '#3B82F6', emissive: '#1E40AF', emissiveIntensity: 0.1 }
-};
 
 // Instanced Mesh for Nodes
 const InstancedNodes = ({ 
@@ -74,13 +48,6 @@ const InstancedNodes = ({
 
   useFrame(() => {
     if (!meshRef.current) return;
-    
-    // We assume nodes have updated x,y,z from parent's simulation reference
-    // But React props 'nodes' might be stale if we don't force update.
-    // However, the parent ForceGraphScene passes the *latest* nodes array if it re-renders.
-    // Actually, for performance, we want to read from a Mutable Ref, not props.
-    // But to keep it simple and compatible with the loop, let's accept the array.
-    // The trick is: The parent's useFrame updates the node objects IN PLACE.
     
     nodes.forEach((node, i) => {
       if (typeof node.x !== 'number') return;
@@ -161,8 +128,8 @@ const LinkLines = ({ links, nodesMap, isDark, opacity = 0.6 }: { links: SimLink[
       const positions: number[] = [];
       
       links.forEach(link => {
-        const source = nodesMap.get(link.source);
-        const target = nodesMap.get(link.target);
+        const source = nodesMap.get(typeof link.source === 'object' ? (link.source as any).id : link.source);
+        const target = nodesMap.get(typeof link.target === 'object' ? (link.target as any).id : link.target);
 
         if (source && target && typeof source.x === 'number' && typeof target.x === 'number') {
           positions.push(source.x, source.y!, source.z!);
@@ -187,7 +154,7 @@ const LinkLines = ({ links, nodesMap, isDark, opacity = 0.6 }: { links: SimLink[
   );
 };
 
-// Labels Component - Separate from InstancedMesh for now
+// Labels Component
 const NodeLabels = ({ 
   nodes, 
   isDark, 
@@ -201,10 +168,6 @@ const NodeLabels = ({
   onNodeClick: (node: Node) => void,
   onNodeDoubleClick: (node: Node) => void
 }) => {
-  // Optimization: Only render labels for important nodes or when few nodes
-  // For P1, we render all but use efficient updates.
-  // Actually, we can use a group ref and update children positions in useFrame
-  
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
 
@@ -223,7 +186,6 @@ const NodeLabels = ({
         const scale = Math.max(1, distance / 25);
         child.scale.set(scale, scale, scale);
         
-        // Visibility check (optional culling)
         child.visible = true;
       }
     });
@@ -312,16 +274,8 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
       const { type, nodes: updatedNodes } = e.data;
       if (type === 'tick') {
         // Update local node positions IN PLACE to avoid re-renders for every tick
-        // But we need to trigger a re-render initially to populate the InstancedMesh
-        // Wait, if we update objects in place, React doesn't know.
-        // We use a Ref to hold the nodes for the animation loop.
-        // But the components (InstancedNodes) need the array to map over.
-        // Solution: Maintain a state that holds the ARRAY STRUCTURE (SimNodes), 
-        // and update the properties (x,y,z) of these objects.
-        
         setNodes(prevNodes => {
            if (prevNodes.length === 0) return updatedNodes;
-           // Merge positions into existing objects
            updatedNodes.forEach((n: any, i: number) => {
              if (prevNodes[i] && prevNodes[i].id === n.id) {
                prevNodes[i].x = n.x;
@@ -329,7 +283,7 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
                prevNodes[i].z = n.z;
              }
            });
-           return prevNodes; // Return SAME array reference to avoid re-render, but data is mutated
+           return prevNodes; // Return SAME array reference to avoid re-render
         });
       }
     };
@@ -343,8 +297,7 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
   useEffect(() => {
     if (!workerRef.current) return;
 
-    // Process nodes to add levels (logic moved here from worker or kept here)
-    // It's better to compute levels here once.
+    // Process nodes to add levels
     const nodeDegrees = new Map<string, number>();
     rawEdges.forEach(edge => {
       const sId = String(edge.source_node_id);
@@ -406,11 +359,15 @@ const ForceGraphScene = forwardRef((props: Graph3DProps, ref: React.ForwardedRef
     neighbors.add(selectedNodeId);
 
     links.forEach(link => {
-      if (link.source === selectedNodeId) {
-        neighbors.add(link.target);
+      // Handle both string IDs and object references (if any)
+      const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
+      const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
+
+      if (sourceId === selectedNodeId) {
+        neighbors.add(targetId);
         connectedLinks.add(link.id);
-      } else if (link.target === selectedNodeId) {
-        neighbors.add(link.source);
+      } else if (targetId === selectedNodeId) {
+        neighbors.add(sourceId);
         connectedLinks.add(link.id);
       }
     });

@@ -15,6 +15,10 @@ const handleResponse = async (res: Response) => {
   const data = text ? JSON.parse(text) : {};
   
   if (!res.ok) {
+    if (res.status === 401) {
+      // Clear token and user on 401 Unauthorized
+      useStore.getState().setUser(null, null);
+    }
     const error = (data && data.message) || (data && data.error) || res.statusText;
     throw new Error(error);
   }
@@ -68,6 +72,9 @@ export const api = {
       });
 
       if (!response.ok) {
+         if (response.status === 401) {
+            useStore.getState().setUser(null, null);
+         }
          const errorText = await response.text();
          throw new Error(errorText || 'AI Stream failed');
       }
@@ -117,6 +124,9 @@ export const api = {
         }
       }).then(async res => {
         if (!res.ok) {
+           if (res.status === 401) {
+              useStore.getState().setUser(null, null);
+           }
            const text = await res.text();
            throw new Error(text || 'Export failed');
         }

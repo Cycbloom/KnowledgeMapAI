@@ -1,34 +1,8 @@
 
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceY } from 'd3-force-3d';
+import { LEVEL_CONFIG, SimNode, SimLink } from '../config/graphConfig';
 
-// Types (simplified copies to avoid import issues in worker)
-interface SimNode {
-  id: string;
-  x?: number;
-  y?: number;
-  z?: number;
-  vx?: number;
-  vy?: number;
-  vz?: number;
-  level?: string;
-  [key: string]: any;
-}
-
-interface SimLink {
-  source: string | SimNode;
-  target: string | SimNode;
-  id: string;
-}
-
-// Configuration (must match main thread)
-const LEVEL_CONFIG: Record<string, any> = {
-  root: { chargeStrength: -60, radius: 1.4 },
-  core: { chargeStrength: -40, radius: 1.1 },
-  sub: { chargeStrength: -30, radius: 0.8 },
-  normal: { chargeStrength: -20, radius: 0.5 },
-  leaf: { chargeStrength: -10, radius: 0.3 }
-};
-
+// Store simulation instance
 let simulation: any = null;
 let nodes: SimNode[] = [];
 let links: SimLink[] = [];
@@ -44,28 +18,44 @@ self.onmessage = (event) => {
     case 'stop':
       if (simulation) simulation.stop();
       break;
+    case 'dragStart':
+       // Optional: Handle drag interaction from main thread
+       break;
   }
 };
 
 function initSimulation(newNodes: SimNode[], newLinks: SimLink[]) {
-  // Preserve existing positions if IDs match
+  // Preserve existing positions if IDs match to prevent jumpiness on update
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
   
+  // Merge new nodes with existing positions/velocities
   nodes = newNodes.map(n => {
     const existing = nodeMap.get(n.id);
     if (existing) {
-      return { ...existing, ...n, x: existing.x, y: existing.y, z: existing.z, vx: existing.vx, vy: existing.vy, vz: existing.vz };
+      return { 
+        ...existing, // Keep existing simulation state (x,y,z,vx,vy,vz)
+        ...n,        // Update properties (title, content, etc.)
+        // Ensure simulation properties are preserved
+        x: existing.x, 
+        y: existing.y, 
+        z: existing.z, 
+        vx: existing.vx, 
+        vy: existing.vy, 
+        vz: existing.vz 
+      };
     }
     return n;
   });
   
+  // D3 forceLink modifies link objects, so we need fresh copies or handle carefully
+  // We'll map new links to ensure they are clean objects (source/target as strings initially)
   links = newLinks.map(l => ({ ...l }));
 
   if (!simulation) {
     simulation = forceSimulation()
       .numDimensions(3)
       .force('center', forceCenter())
-      .force('y', forceY(0).strength(5)) // Flattening force
+      .force('y', forceY(0).strength(5)) // Flattening force (quasi-2D)
       .force('collide', forceCollide().radius((d: any) => {
          const level = d.level || 'leaf';
          const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.leaf;
@@ -73,22 +63,16 @@ function initSimulation(newNodes: SimNode[], newLinks: SimLink[]) {
       }).iterations(3));
       
     simulation.on('tick', () => {
-      // Send positions back to main thread
-      const positions = new Float32Array(nodes.length * 3);
-      for (let i = 0; i < nodes.length; i++) {
-        positions[i * 3] = nodes[i].x || 0;
-        positions[i * 3 + 1] = nodes[i].y || 0;
-        positions[i * 3 + 2] = nodes[i].z || 0;
-      }
+      // Send simplified node data back to main thread
+      // We mainly need positions (x, y, z)
+      // To optimize transfer, we could use Float32Array, but for simplicity/flexibility 
+      // with types, we'll send the node objects. 
+      // Since structured clone is efficient, this is usually fine for < 2000 nodes.
       
-      self.postMessage({ type: 'tick', nodes: nodes }); // We might need full nodes for links?
-      // Actually, for InstancedMesh we just need positions. 
-      // But for Lines, we need to know which node connects to which.
-      // If we send full nodes array back, it's heavy.
-      // Optimization: Send a Float32Array for positions.
-      // But the main thread needs to map index -> ID or ID -> Position.
-      // Let's return the full nodes array for now (cloned) to be safe, or just x/y/z.
-      // To keep it simple for P1, let's send the nodes array (structured clone is fast enough for <5k nodes).
+      // Note: We don't need to send the whole node object back if we only updated x,y,z.
+      // But the main thread might rely on 'nodes' array being the source of truth for rendering.
+      
+      self.postMessage({ type: 'tick', nodes: nodes });
     });
   }
 
@@ -116,5 +100,9 @@ function initSimulation(newNodes: SimNode[], newLinks: SimLink[]) {
     })
   );
 
-  simulation.alpha(1).restart();
+  // Restart simulation
+  // Use lower alpha for incremental updates (smooth transition)
+  // Use higher alpha for initial load
+  const isIncremental = nodeMap.size > 0;
+  simulation.alpha(isIncremental ? 0.3 : 1).restart();
 }

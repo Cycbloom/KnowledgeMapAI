@@ -8,8 +8,9 @@ import { Node, Edge } from '../types';
 // Lazy load heavy 3D component
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D })));
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { 
   useGraph, 
   useGraphData, 
@@ -51,7 +52,7 @@ export const GraphEditor = () => {
   // State
   const graphRef = useRef<Graph3DRef>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit'>('none');
+  const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline'>('none');
   const [showGrid, setShowGrid] = useState(true);
   const [isDark, setIsDark] = useState(true);
   const [loading, setLoading] = useState(false); // For non-query loading (e.g. AI)
@@ -392,6 +393,14 @@ export const GraphEditor = () => {
         <h2 className="font-bold px-2 py-1 max-w-[200px] truncate">{graphMeta?.title || 'Loading...'}</h2>
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
         
+        <button 
+          onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} 
+          className={`p-1 rounded transition-colors ${sidebarMode === 'outline' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
+          title="大纲视图"
+        >
+          <List size={20} />
+        </button>
+
         <div className="relative">
           <button 
             onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -509,18 +518,34 @@ export const GraphEditor = () => {
 
       {/* Right Sidebar */}
       {sidebarMode !== 'none' && (
-        <div className="w-80 bg-white shadow-lg border-l border-gray-200 p-4 overflow-y-auto absolute right-0 top-0 bottom-0 z-20 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-lg">
-              {sidebarMode === 'create' ? '创建新节点' : '编辑节点'}
-            </h3>
-            <button onClick={handleCloseSidebar} className="text-gray-500 hover:text-gray-700">
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="space-y-4 flex-1">
-            <div>
+        <div className={`w-80 bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== 'outline' ? 'p-4 overflow-y-auto' : ''}`}>
+          {sidebarMode === 'outline' ? (
+             <div className="h-full relative flex flex-col">
+               <div className="absolute right-2 top-2 z-10">
+                 <button onClick={handleCloseSidebar} className="p-1 hover:bg-slate-100 rounded text-slate-500">
+                   <X size={20} />
+                 </button>
+               </div>
+               <GraphOutline 
+                 nodes={nodes} 
+                 onNodeClick={handleNodeClick} 
+                 selectedNodeId={selectedNode?.id}
+                 className="h-full"
+               />
+             </div>
+          ) : (
+             <>
+               <div className="flex justify-between items-center mb-6">
+                 <h3 className="font-bold text-lg">
+                   {sidebarMode === 'create' ? '创建新节点' : '编辑节点'}
+                 </h3>
+                 <button onClick={handleCloseSidebar} className="text-gray-500 hover:text-gray-700">
+                   <X size={20} />
+                 </button>
+               </div>
+     
+               <div className="space-y-4 flex-1">
+                 <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">标题</label>
               <input
                 type="text"
@@ -666,6 +691,8 @@ export const GraphEditor = () => {
               </button>
             )}
           </div>
+          </>
+        )}
         </div>
       )}
     </div>

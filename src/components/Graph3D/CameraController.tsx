@@ -11,14 +11,66 @@ interface CameraControllerProps {
 export const CameraController = ({ targetPosition, targetLookAt }: CameraControllerProps) => {
   const { camera, gl } = useThree();
   const controlsRef = useRef<any>(null);
+  const keysRef = useRef<Set<string>>(new Set());
   
-  useFrame(() => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      keysRef.current.add(e.code);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysRef.current.delete(e.code);
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+  
+  useFrame((state, delta) => {
+    // 1. Handle Auto-Focus Animation
     if (targetPosition && targetLookAt && controlsRef.current) {
       camera.position.lerp(targetPosition, 0.05);
       controlsRef.current.target.lerp(targetLookAt, 0.05);
       controlsRef.current.update();
+      return; // Skip manual control during animation
+    }
+
+    // 2. Handle Keyboard Navigation (WASD)
+    const keys = keysRef.current;
+    if (keys.size > 0 && controlsRef.current) {
+      const speed = 30 * delta; // Movement speed
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0; // Move on XZ plane
+      forward.normalize();
+      
+      const right = new THREE.Vector3();
+      right.crossVectors(forward, camera.up).normalize();
+      
+      const move = new THREE.Vector3();
+      
+      if (keys.has('KeyW')) move.add(forward);
+      if (keys.has('KeyS')) move.sub(forward);
+      if (keys.has('KeyD')) move.add(right);
+      if (keys.has('KeyA')) move.sub(right);
+      
+      // Vertical movement (Space / Shift)
+      if (keys.has('Space')) move.y += 1;
+      if (keys.has('ShiftLeft') || keys.has('ShiftRight')) move.y -= 1;
+
+      if (move.lengthSq() > 0) {
+        move.normalize().multiplyScalar(speed);
+        camera.position.add(move);
+        controlsRef.current.target.add(move);
+        controlsRef.current.update();
+      }
     }
   });
 
-  return <OrbitControls ref={controlsRef} args={[camera, gl.domElement]} />;
+  return <OrbitControls ref={controlsRef} args={[camera, gl.domElement]} makeDefault />;
 };

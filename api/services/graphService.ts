@@ -6,22 +6,17 @@ export class GraphService {
 
   async listGraphs(supabase: SupabaseClient, userId: string) {
     const cacheKey = CacheKeys.USER_GRAPHS(userId);
-    const cachedData = await cacheService.get(cacheKey);
     
-    if (cachedData) {
-      return cachedData;
-    }
+    return cacheService.getOrSet(cacheKey, async () => {
+      const { data, error } = await supabase
+        .from('knowledge_graphs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-    const { data, error } = await supabase
-      .from('knowledge_graphs')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    await cacheService.set(cacheKey, data);
-    return data;
+      if (error) throw error;
+      return data;
+    });
   }
 
   async createGraph(supabase: SupabaseClient, userId: string, title: string, description: string = '') {
@@ -81,49 +76,45 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
-    await cacheService.delByPrefix(CacheKeys.GRAPH_NODES(id));
+    // Updated to use the new key structure which requires userId
+    await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
     await cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
   }
 
   async getGraphNodes(supabase: SupabaseClient, userId: string, graphId: string) {
-    const cacheKey = CacheKeys.GRAPH_NODES(graphId);
-    const cachedData = await cacheService.get(cacheKey);
+    const cacheKey = CacheKeys.GRAPH_NODES(userId, graphId);
     
-    if (cachedData) {
-      return cachedData;
-    }
+    return cacheService.getOrSet(cacheKey, async () => {
+      // Verify ownership first
+      const { data: graph, error: graphError } = await supabase
+        .from('knowledge_graphs')
+        .select('id')
+        .eq('id', graphId)
+        .eq('user_id', userId)
+        .single();
 
-    // Verify ownership first
-    const { data: graph, error: graphError } = await supabase
-      .from('knowledge_graphs')
-      .select('id')
-      .eq('id', graphId)
-      .eq('user_id', userId)
-      .single();
+      if (graphError || !graph) {
+        throw new Error('Graph not found or access denied');
+      }
 
-    if (graphError || !graph) throw new Error('未找到图谱');
+      // Fetch nodes
+      const { data: nodes, error: nodesError } = await supabase
+        .from('nodes')
+        .select('*')
+        .eq('graph_id', graphId);
 
-    // Fetch nodes
-    const { data: nodes, error: nodesError } = await supabase
-      .from('nodes')
-      .select('*')
-      .eq('graph_id', graphId);
+      if (nodesError) throw nodesError;
 
-    if (nodesError) throw nodesError;
+      // Fetch edges
+      const { data: edges, error: edgesError } = await supabase
+        .from('edges')
+        .select('*')
+        .eq('graph_id', graphId);
 
-    // Fetch edges efficiently using graph_id index
-    const { data: edgesData, error: edgesError } = await supabase
-      .from('edges')
-      .select('*')
-      .eq('graph_id', graphId);
+      if (edgesError) throw edgesError;
 
-    if (edgesError) throw edgesError;
-    const edges = edgesData || [];
-
-    const result = { nodes, edges };
-    await cacheService.set(cacheKey, result);
-    
-    return result;
+      return { nodes, edges };
+    });
   }
 }
 

@@ -35,7 +35,7 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   if (error) throw new AppError(error.message || '创建节点失败', 500, ErrorCodes.INTERNAL_ERROR);
   
   // Invalidate cache
-  cacheService.del(CacheKeys.GRAPH_NODES(graph_id));
+  cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
   
   res.status(201).json(data);
 });
@@ -60,7 +60,7 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
   }
   
   // Invalidate cache
-  cacheService.del(CacheKeys.GRAPH_NODES(data.graph_id));
+  cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, data.graph_id));
   cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
   
   res.json(data);
@@ -87,7 +87,7 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
   }
 
   // Invalidate cache
-  await cacheService.del(CacheKeys.GRAPH_NODES(data.graph_id));
+  await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, data.graph_id));
   await cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
 
   res.json({ message: '节点已删除' });
@@ -131,7 +131,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
   if (error) throw new AppError(error.message || '创建边失败', 500, ErrorCodes.INTERNAL_ERROR);
   
   // Invalidate cache
-  cacheService.del(CacheKeys.GRAPH_NODES(sourceNode.graph_id));
+  cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, sourceNode.graph_id));
   
   res.status(201).json(data);
 });
@@ -162,7 +162,7 @@ router.delete('/edges/:id', requireAuth, async (req: AuthRequest, res: Response)
   
   const graphId = edge.graph_id;
   if (graphId) {
-    cacheService.del(CacheKeys.GRAPH_NODES(graphId));
+    cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graphId));
   }
   
   res.json({ message: 'Edge deleted' });

@@ -47,7 +47,7 @@ router.delete('/:id', requireAuth, validate({ params: uuidParamsSchema }), async
 
   // Invalidate user graphs list and graph nodes
   await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
-  await cacheService.del(CacheKeys.GRAPH_NODES(id));
+  await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, id));
   
   res.json({ message: '图谱删除成功' });
 });
@@ -55,14 +55,6 @@ router.delete('/:id', requireAuth, validate({ params: uuidParamsSchema }), async
 // Get nodes and edges for a graph
 router.get('/:id/nodes', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-
-  // Try cache
-  const cacheKey = CacheKeys.GRAPH_NODES(id);
-  const cachedData = await cacheService.get(cacheKey);
-  if (cachedData) {
-    return res.json(cachedData);
-  }
-
   const data = await graphService.getGraphNodes(req.supabase!, req.user.id, id);
   res.json(data);
 });

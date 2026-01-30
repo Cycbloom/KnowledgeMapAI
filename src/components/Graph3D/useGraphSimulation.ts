@@ -20,38 +20,24 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
     workerRef.current = new Worker(new URL('../../workers/simulationWorker.ts', import.meta.url), { type: 'module' });
     
     workerRef.current.onmessage = (e) => {
-      const { type, nodes: updatedNodes } = e.data;
+      const { type, positions } = e.data;
       
       if (type === 'tick') {
         setIsLoading(false);
-        // Update local node positions IN PLACE
-        // or we match by ID if necessary. For performance, array index matching is preferred 
-        // if we guarantee order. The worker usually returns the same array order.
         
-        // However, to be safe and robust against potential worker logic changes:
-        if (nodesRef.current.length === 0 && updatedNodes.length > 0) {
-           // Initial population if empty
-           nodesRef.current = updatedNodes;
-           // Update map
-           nodesMapRef.current.clear();
-           updatedNodes.forEach((n: SimNode) => nodesMapRef.current.set(n.id, n));
-           setSimulationVersion(v => v + 1);
-        } else {
-           // In-place update
-           const localNodes = nodesRef.current;
-           const map = nodesMapRef.current;
-           
-           updatedNodes.forEach((n: any) => {
-             const localNode = map.get(n.id);
-             if (localNode) {
-               localNode.x = n.x;
-               localNode.y = n.y;
-               localNode.z = n.z;
-               localNode.vx = n.vx;
-               localNode.vy = n.vy;
-               localNode.vz = n.vz;
-             }
-           });
+        const localNodes = nodesRef.current;
+        if (!localNodes || localNodes.length === 0) return;
+
+        // Ensure length match to avoid mismatch during hot-reload or race conditions
+        // positions is a Float32Array [x, y, z, x, y, z, ...]
+        if (positions && positions.length === localNodes.length * 3) {
+           for (let i = 0; i < localNodes.length; i++) {
+             localNodes[i].x = positions[i * 3];
+             localNodes[i].y = positions[i * 3 + 1];
+             localNodes[i].z = positions[i * 3 + 2];
+             // Note: We don't update velocities (vx, vy, vz) as they are rarely used for rendering
+             // and saving bandwidth is priority.
+           }
         }
       }
     };

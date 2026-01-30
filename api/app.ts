@@ -14,6 +14,8 @@ import dotenv from 'dotenv'
 import helmet from 'helmet'
 import compression from 'compression'
 import rateLimit from 'express-rate-limit'
+import Redis from 'ioredis'
+import { RedisStore } from 'rate-limit-redis'
 import { fileURLToPath } from 'url'
 import authRoutes from './routes/auth.js'
 import graphRoutes from './routes/graphs.js'
@@ -39,12 +41,22 @@ app.use(helmet())
 // Gzip Compression
 app.use(compression())
 
+// Redis Client for Rate Limiting
+const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : undefined;
+if (redisClient) {
+  redisClient.on('error', (err) => console.error('Redis Client Error (Rate Limit):', err));
+}
+
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs (approx 1 req/sec)
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  store: redisClient ? new RedisStore({
+    // @ts-expect-error - Known issue with types compatibility
+    sendCommand: (...args: string[]) => redisClient!.call(...args),
+  }) : undefined,
   message: { success: false, error: 'Too many requests, please try again later.' }
 })
 app.use('/api', limiter)
@@ -55,6 +67,11 @@ const aiLimiter = rateLimit({
   max: 50, // limit each IP to 50 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
+  store: redisClient ? new RedisStore({
+    // @ts-expect-error
+    sendCommand: (...args: string[]) => redisClient!.call(...args),
+    prefix: 'rl:ai:'
+  }) : undefined,
   message: { success: false, error: 'AI request quota exceeded, please try again later.' }
 })
 

@@ -20,7 +20,7 @@ if (useRedis) {
 }
 
 export const CacheKeys = {
-  GRAPH_NODES: (graphId: string) => `graph_nodes_${graphId}`,
+  GRAPH_NODES: (userId: string, graphId: string) => `graph_nodes_${userId}_${graphId}`,
   USER_GRAPHS: (userId: string) => `user_graphs_${userId}`,
   STUDY_CARDS: (graphId: string) => `study_cards_${graphId}`,
 };

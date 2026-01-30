@@ -63,16 +63,20 @@ function initSimulation(newNodes: SimNode[], newLinks: SimLink[]) {
       }).iterations(3));
       
     simulation.on('tick', () => {
-      // Send simplified node data back to main thread
-      // We mainly need positions (x, y, z)
-      // To optimize transfer, we could use Float32Array, but for simplicity/flexibility 
-      // with types, we'll send the node objects. 
-      // Since structured clone is efficient, this is usually fine for < 2000 nodes.
+      // Send simplified node positions back to main thread using Float32Array
+      // Layout: [x0, y0, z0, x1, y1, z1, ...]
+      const n = nodes.length;
+      const positions = new Float32Array(n * 3);
       
-      // Note: We don't need to send the whole node object back if we only updated x,y,z.
-      // But the main thread might rely on 'nodes' array being the source of truth for rendering.
-      
-      self.postMessage({ type: 'tick', nodes: nodes });
+      for (let i = 0; i < n; i++) {
+        const node = nodes[i];
+        positions[i * 3] = node.x || 0;
+        positions[i * 3 + 1] = node.y || 0;
+        positions[i * 3 + 2] = node.z || 0;
+      }
+
+      // @ts-ignore - Worker postMessage signature differs from Window
+      self.postMessage({ type: 'tick', positions }, [positions.buffer]);
     });
   }
 

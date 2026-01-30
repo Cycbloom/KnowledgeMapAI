@@ -74,7 +74,9 @@
     "vitest": "^4.0.18"
   },
   "overrides": {
-    "path-to-regexp": "^6.3.0",
+    "@vercel/node": {
+      "path-to-regexp": "^6.3.0"
+    },
     "undici": "^6.23.0"
   }
 }

@@ -48,6 +48,53 @@ export const LEVEL_CONFIG = {
   }
 } as const;
 
+export const THEME_CONFIG = {
+  dark: {
+    background: 'bg-slate-900',
+    grid: {
+      color1: undefined, // Default three.js
+      color2: undefined,
+      opacity: 0.2
+    },
+    lighting: {
+      ambientIntensity: 0.4,
+      pointIntensity: 1,
+    },
+    text: {
+      color: 'white',
+      outline: '#000000',
+      opacity: 1
+    },
+    link: {
+      color: '#9ca3af',
+      opacity: 0.6,
+      highlightOpacity: 0.05
+    }
+  },
+  light: {
+    background: 'bg-slate-50',
+    grid: {
+      color1: 0x94a3b8,
+      color2: 0xe2e8f0,
+      opacity: 0.2
+    },
+    lighting: {
+      ambientIntensity: 0.7,
+      pointIntensity: 1,
+    },
+    text: {
+      color: '#1e293b',
+      outline: '#ffffff',
+      opacity: 1
+    },
+    link: {
+      color: '#64748b',
+      opacity: 0.6,
+      highlightOpacity: 0.05
+    }
+  }
+} as const;
+
 export type NodeLevel = keyof typeof LEVEL_CONFIG;
 
 export interface SimNode extends Node {

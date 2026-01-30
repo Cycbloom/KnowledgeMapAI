@@ -87,7 +87,7 @@ export const Layout = () => {
         fixed inset-y-0 left-0 z-40 bg-slate-900 text-white flex flex-col transition-all duration-300
         transform md:relative md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        w-64 md:${isCollapsed ? 'w-20' : 'w-64'}
+        w-64 ${isCollapsed ? 'md:w-20' : 'md:w-64'}
       `}>
         {/* Sidebar Header (Desktop) */}
         <div className="hidden md:flex p-4 text-xl font-bold border-b border-slate-700 items-center justify-between h-16">

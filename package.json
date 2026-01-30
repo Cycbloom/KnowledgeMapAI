@@ -52,7 +52,7 @@
     "@types/node": "^22.15.30",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@vercel/node": "^4.0.0",
+    "@vercel/node": "^5.5.28",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",
     "babel-plugin-react-dev-locator": "^1.0.0",
@@ -72,5 +72,9 @@
     "vite-plugin-trae-solo-badge": "^1.0.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "path-to-regexp": "^6.3.0",
+    "undici": "^6.23.0"
   }
 }

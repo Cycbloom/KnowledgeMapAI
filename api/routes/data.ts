@@ -143,10 +143,7 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
         .eq('id', createdGraphId);
     }
     
-    res.status(500).json({ 
-      error: 'Import failed', 
-      details: error.message 
-    });
+    throw error;
   }
 });
 

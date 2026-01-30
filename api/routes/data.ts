@@ -3,6 +3,8 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { importDataSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
+import { AppError } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../constants/errorCodes.js';
 
 const router = Router();
 
@@ -44,7 +46,7 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     return res.send('PDF CONTENT MOCK'); 
   }
 
-  res.status(400).json({ error: 'Unsupported format' });
+  throw new AppError('Unsupported format', 400, ErrorCodes.VALIDATION_ERROR);
 });
 
 // Import data with Manual Rollback Transaction

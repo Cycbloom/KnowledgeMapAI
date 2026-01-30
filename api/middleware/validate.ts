@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
+import { ErrorCodes } from '../constants/errorCodes.js';
 
 type ValidationSchemas = {
   body?: ZodSchema;
@@ -37,6 +38,8 @@ export const validate = (schemaOrSchemas: ZodSchema | ValidationSchemas) => {
         
         // Use 400 Bad Request for validation errors
         res.status(400).json({
+          success: false,
+          code: ErrorCodes.VALIDATION_ERROR,
           error: '输入验证失败',
           details: errorMessages,
         });

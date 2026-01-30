@@ -3,6 +3,8 @@ import { supabaseAdmin } from '../supabase.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { registerSchema, loginSchema } from '../schemas/index.js';
+import { AppError } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../constants/errorCodes.js';
 
 const router = Router();
 
@@ -22,13 +24,11 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     });
 
     if (authError) {
-      res.status(400).json({ error: authError.message });
-      return;
+      throw new AppError(authError.message, 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     if (!authData.user) {
-      res.status(500).json({ error: '创建用户失败' });
-      return;
+      throw new AppError('创建用户失败', 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     // 2. Create user record in public.users
@@ -53,7 +53,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     res.status(201).json({ user: authData.user, session: authData.session });
   } catch (error: any) {
     console.error('Register error:', error);
-    res.status(500).json({ error: error.message || '内部服务器错误' });
+    throw new AppError(error.message || '内部服务器错误', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -98,7 +98,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
     res.json({ user: data.user, session: data.session });
   } catch (error: any) {
     console.error('Login error:', error);
-    res.status(500).json({ error: error.message || '内部服务器错误' });
+    next(error);
   }
 });
 

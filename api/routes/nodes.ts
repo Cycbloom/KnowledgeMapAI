@@ -3,6 +3,8 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createNodeSchema, updateNodeSchema, createEdgeSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
+import { AppError } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../constants/errorCodes.js';
 
 const router = Router();
 
@@ -17,7 +19,9 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
     .eq('id', graph_id)
     .single();
 
-  if (!graph) return res.status(403).json({ error: '未经授权访问图谱' });
+  if (!graph) {
+    throw new AppError('未经授权访问图谱', 403, ErrorCodes.FORBIDDEN);
+  }
 
   const nodeData: any = { graph_id, title, content, x_position, y_position, color, properties };
   if (id) nodeData.id = id;
@@ -28,7 +32,7 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '创建节点失败', 500, ErrorCodes.INTERNAL_ERROR);
   
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(graph_id));
@@ -48,8 +52,12 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
     .select()
     .single();
 
-  if (error) throw error;
-  if (!data) return res.status(404).json({ error: '未找到节点或无权修改' });
+  if (error) throw new AppError(error.message || '更新节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+  
+  // Check if node exists and user has permission
+  if (!data) {
+    throw new AppError('Node not found or unauthorized', 404, ErrorCodes.NODE_NOT_FOUND);
+  }
   
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(data.graph_id));
@@ -71,11 +79,11 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
     .select('graph_id') // Return graph_id for cache invalidation
     .single();
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '删除节点失败', 500, ErrorCodes.INTERNAL_ERROR);
   
   // If count is 0 or no data, it means node not found
   if (!data) {
-    return res.status(404).json({ error: 'Node not found or unauthorized' });
+    throw new AppError('Node not found or unauthorized', 404, ErrorCodes.NODE_NOT_FOUND);
   }
 
   // Invalidate cache
@@ -97,7 +105,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
     .single();
 
   if (sourceError || !sourceNode) {
-    return res.status(404).json({ error: 'Source node not found or unauthorized' });
+    throw new AppError('Source node not found or unauthorized', 404, ErrorCodes.NODE_NOT_FOUND);
   }
 
   // 2. Verify target node exists and is accessible
@@ -108,7 +116,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
     .single();
 
   if (targetError || !targetNode) {
-    return res.status(404).json({ error: 'Target node not found or unauthorized' });
+    throw new AppError('Target node not found or unauthorized', 404, ErrorCodes.NODE_NOT_FOUND);
   }
 
   // 3. Create edge
@@ -120,7 +128,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '创建边失败', 500, ErrorCodes.INTERNAL_ERROR);
   
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(sourceNode.graph_id));
@@ -148,7 +156,7 @@ router.delete('/edges/:id', requireAuth, async (req: AuthRequest, res: Response)
     .eq('id', id)
     .single();
     
-  if (!edge) return res.status(404).json({ error: 'Edge not found' });
+  if (!edge) throw new AppError('Edge not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
 
   // Delete
   const { error } = await req.supabase!

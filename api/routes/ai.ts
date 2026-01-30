@@ -4,6 +4,8 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import dotenv from 'dotenv';
 import { validate } from '../middleware/validate.js';
 import { generateContentSchema, expandKnowledgeSchema, generateCardsSchema } from '../schemas/index.js';
+import { ErrorCodes } from '../constants/errorCodes.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 dotenv.config();
 
@@ -98,8 +100,8 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error: any) {
-    console.error('AI Error:', error);
-    res.write(`data: ${JSON.stringify({ error: error.message || 'AI 生成失败' })}\n\n`);
+    console.error('AI Stream Error:', error);
+    res.write(`data: ${JSON.stringify({ error: error.message || 'AI 生成失败', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
     res.end();
   }
 });
@@ -126,7 +128,7 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
     res.json({ suggestions: parsed.suggestions || parsed });
   } catch (error: any) {
     console.error('AI Error:', error);
-    res.status(500).json({ error: error.message || 'AI expansion failed' });
+    throw new AppError(error.message || 'AI expansion failed', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -158,7 +160,8 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
     const parsed = JSON.parse(content || '{"cards": []}');
     res.json({ cards: parsed.cards || [] });
   } catch (error: any) {
-    throw error;
+    console.error('AI Error:', error);
+    throw new AppError(error.message || 'AI card generation failed', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

@@ -4,6 +4,10 @@ import { validate } from '../middleware/validate.js';
 import { createGraphSchema, updateGraphSchema, uuidParamsSchema } from '../schemas/index.js';
 import { GraphService } from '../services/graphService.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
+import { ErrorCodes } from '../constants/errorCodes.js';
+import { AppError } from '../middleware/errorHandler.js';
+
+
 
 const router = Router();
 
@@ -27,7 +31,9 @@ router.get('/:id', requireAuth, validate({ params: uuidParamsSchema }), async (r
   const { id } = req.params;
   const service = new GraphService(req.supabase!, req.user.id);
   const data = await service.getGraph(id);
-  if (!data) return res.status(404).json({ error: '未找到该图谱' });
+  if (!data) {
+    throw new AppError('未找到该图谱', 404, ErrorCodes.GRAPH_NOT_FOUND);
+  }
   res.json(data);
 });
 

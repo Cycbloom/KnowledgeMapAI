@@ -3,6 +3,8 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
+import { ErrorCodes } from '../constants/errorCodes.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
@@ -33,7 +35,7 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   
   const { data, error } = await query;
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
   
   // Filter in memory if Supabase join filtering didn't work as expected for inner join
   // But typically it works if foreign key is set up.
@@ -67,7 +69,7 @@ router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthR
     .select('*, nodes(graph_id)')
     .single();
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
 
   if (data?.nodes?.graph_id) {
     await cacheService.del(CacheKeys.STUDY_CARDS(data.nodes.graph_id));
@@ -97,7 +99,7 @@ router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async
     .insert(cardsToInsert)
     .select('*, nodes(graph_id)');
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
 
   if (data) {
     const graphIds = new Set(data.map((card: any) => card.nodes?.graph_id).filter(Boolean));
@@ -120,7 +122,9 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
     .eq('id', id)
     .single();
 
-  if (!card) return res.status(404).json({ error: '未找到卡片' });
+  if (!card) {
+    throw new AppError('未找到卡片', 404, ErrorCodes.CARD_NOT_FOUND);
+  }
 
   // Calculate next review date
   const now = new Date();
@@ -145,7 +149,7 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throw new AppError(error.message || '更新卡片进度失败', 500, ErrorCodes.INTERNAL_ERROR);
 
   if (card?.nodes?.graph_id) {
     await cacheService.del(CacheKeys.STUDY_CARDS(card.nodes.graph_id));
@@ -166,7 +170,7 @@ router.get('/progress', requireAuth, async (req: AuthRequest, res: Response) => 
     .single(); // Might return null if no progress record yet
 
   if (error && error.code !== 'PGRST116') { // PGRST116 is no rows returned
-    return res.status(500).json({ error: error.message });
+    throw new AppError(error.message || '获取学习进度失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 
   res.json(data || { message: 'No progress recorded yet' });

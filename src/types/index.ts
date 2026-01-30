@@ -19,6 +19,7 @@ export interface Node {
   x_position: number;
   y_position: number;
   color?: string;
+  level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
   properties?: Record<string, any>;
 }
 

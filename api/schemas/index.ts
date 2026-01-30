@@ -37,7 +37,6 @@ export const createNodeSchema = z.object({
   content: z.string().optional(),
   x_position: z.number().optional(),
   y_position: z.number().optional(),
-  z_position: z.number().optional(),
   color: z.string().optional(),
   properties: z.record(z.any()).optional(),
   level: z.enum(['root', 'core', 'sub', 'normal', 'leaf']).optional(),
@@ -92,6 +91,14 @@ export const generateCardsSchema = z.object({
   node_content: z.string().optional(),
 });
 
+export const textToGraphSchema = z.object({
+  text: z.string().optional(),
+  graph_id: z.string().uuid('无效的图谱ID'),
+  action: z.enum(['analyze', 'save']).optional(),
+  nodes: z.array(z.any()).optional(),
+  edges: z.array(z.any()).optional(),
+});
+
 // --- Data Schemas ---
 export const importDataSchema = z.object({
   graph_title: z.string().min(1, '图谱标题不能为空'),
@@ -101,7 +108,6 @@ export const importDataSchema = z.object({
     content: z.string().optional(),
     x_position: z.number().optional(),
     y_position: z.number().optional(),
-    z_position: z.number().optional(),
     color: z.string().optional(),
     level: z.string().optional(),
   })).optional(),

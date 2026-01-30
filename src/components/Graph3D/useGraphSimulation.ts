@@ -66,7 +66,9 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
       let level: any = 'leaf';
       const degree = nodeDegrees.get(nodeIdStr) || 0;
       
-      if (n.properties?.level) {
+      if (n.level) {
+        level = n.level;
+      } else if (n.properties?.level) {
          level = n.properties.level;
       } else {
          if (degree >= 10) level = 'root';

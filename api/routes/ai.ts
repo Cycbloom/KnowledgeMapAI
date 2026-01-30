@@ -3,9 +3,10 @@ import OpenAI from 'openai';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import dotenv from 'dotenv';
 import { validate } from '../middleware/validate.js';
-import { generateContentSchema, expandKnowledgeSchema, generateCardsSchema } from '../schemas/index.js';
+import { generateContentSchema, expandKnowledgeSchema, generateCardsSchema, textToGraphSchema } from '../schemas/index.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { CacheKeys, cacheService } from '../services/cache.js';
 
 dotenv.config();
 
@@ -165,17 +166,172 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
   }
 });
 
-router.post('/search-references', requireAuth, async (req: AuthRequest, res: Response) => {
-  // Real web search requires another API (e.g. Google/Bing). We'll just mock it or use AI to hallucinate references (not recommended but okay for demo).
-  // Or just return a placeholder.
-  const { query } = req.body;
-  
-  res.json({
-    results: [
-      { title: `${query} 的参考资料`, url: 'https://example.com/ref1', snippet: '来自参考资料 1 的示例文本...' },
-      { title: `${query} 的其他来源`, url: 'https://wikipedia.org/wiki/' + query, snippet: '维基百科条目...' },
-    ]
-  });
+router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (req: AuthRequest, res: Response) => {
+  const { text, graph_id, action = 'analyze', nodes, edges } = req.body;
+
+  // Handle Save Action (Batch Insert)
+  if (action === 'save') {
+    if (!graph_id) {
+      throw new AppError('Graph ID is required for saving', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+      throw new AppError('No nodes provided for saving', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    try {
+      // 1. Prepare Nodes with UUIDs
+      const nodeMap = new Map<string, string>(); // temp_id -> real_uuid
+      
+      const nodesToInsert = nodes.map((node: any) => {
+        // Generate UUID
+        const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+        
+        // If node has an ID (temp_id), map it. 
+        if (node.id) nodeMap.set(node.id, uuid);
+        
+        return {
+          id: uuid,
+          graph_id,
+          title: node.title,
+          content: node.content || '',
+          x_position: Math.round((Math.random() - 0.5) * 50),
+          y_position: Math.round((Math.random() - 0.5) * 50),
+          color: node.level === 'root' ? '#8B5CF6' : 
+                 node.level === 'core' ? '#EF4444' : 
+                 node.level === 'sub' ? '#F59E0B' : 
+                 node.level === 'normal' ? '#3B82F6' : '#10B981',
+          level: node.level || 'leaf',
+          properties: { 
+            ...node.properties, 
+            source: 'ai-text-to-graph' 
+          }
+        };
+      });
+
+      // 2. Batch Insert Nodes
+      const { error: nodeError } = await req.supabase!
+        .from('nodes')
+        .insert(nodesToInsert);
+
+      if (nodeError) throw new AppError(nodeError.message, 500, ErrorCodes.INTERNAL_ERROR);
+
+      // 3. Prepare Edges
+      const edgesToInsert: any[] = [];
+      if (edges && Array.isArray(edges)) {
+        edges.forEach((edge: any) => {
+          const sourceUuid = nodeMap.get(edge.source);
+          const targetUuid = nodeMap.get(edge.target);
+          
+          if (sourceUuid && targetUuid) {
+            edgesToInsert.push({
+              source_node_id: sourceUuid,
+              target_node_id: targetUuid,
+              relationship_type: edge.relationship || 'related',
+              graph_id
+            });
+          }
+        });
+      }
+
+      // 4. Batch Insert Edges
+      if (edgesToInsert.length > 0) {
+        const { error: edgeError } = await req.supabase!
+          .from('edges')
+          .insert(edgesToInsert);
+          
+        if (edgeError) console.error('Edge insertion error:', edgeError);
+      }
+
+      // 5. Invalidate Cache
+      cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
+
+      return res.json({ 
+        success: true, 
+        nodeCount: nodesToInsert.length, 
+        edgeCount: edgesToInsert.length 
+      });
+
+    } catch (error: any) {
+      console.error('Save Graph Error:', error);
+      throw new AppError(error.message || 'Failed to save graph', 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  }
+
+  // Handle Analyze Action (AI Generation)
+  if (!text || text.length < 10) {
+    throw new AppError('Text content must be at least 10 characters long', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+
+  if (!openai) {
+    // Mock response for dev
+    return res.json({
+      nodes: [
+        { id: 'mock_1', title: '核心主题 (Mock)', content: '这是核心主题', level: 'root' },
+        { id: 'mock_2', title: '主要分支 A', content: '分支 A 的描述', level: 'core' },
+        { id: 'mock_3', title: '主要分支 B', content: '分支 B 的描述', level: 'core' },
+        { id: 'mock_4', title: '子节点 A1', content: 'A 的子节点', level: 'sub' },
+        { id: 'mock_5', title: '子节点 B1', content: 'B 的子节点', level: 'sub' },
+      ],
+      edges: [
+        { source: 'mock_1', target: 'mock_2', relationship: 'contains' },
+        { source: 'mock_1', target: 'mock_3', relationship: 'contains' },
+        { source: 'mock_2', target: 'mock_4', relationship: 'related' },
+        { source: 'mock_3', target: 'mock_5', relationship: 'related' },
+      ]
+    });
+  }
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: `You are a knowledge graph expert. Analyze the provided text and extract key concepts to build a structured Knowledge Tree.
+
+Requirements:
+1. Identify ONE main Topic as the 'root' node.
+2. Filter out irrelevant text, noise, or meta-commentary (e.g., "exam points", "irrelevant context", "ads", "author info"). Focus ONLY on the main subject matter.
+3. Organize nodes into a strict 5-level hierarchy: 'root' -> 'core' -> 'sub' -> 'normal' -> 'leaf'.
+   - 'root': The main topic (1 node).
+   - 'core': Key categories or major concepts (direct children of root).
+   - 'sub': Secondary concepts or branches (children of core).
+   - 'normal': Detailed concepts or standard nodes (children of sub).
+   - 'leaf': Specific examples, minor details, or data points (children of normal).
+4. Output a TREE structure. Minimise cross-links to keep it clean. Ensure every node (except root) has a valid parent.
+5. Return a JSON object with 'nodes' and 'edges' arrays.
+   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "level": "root|core|sub|normal|leaf" }
+   - Edges: { "source": "parent_temp_id", "target": "child_temp_id", "relationship": "contains|related" }
+6. IMPORTANT: Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.
+   
+Please respond in Chinese.` 
+        },
+        { role: "user", content: `Text: ${text.substring(0, 15000)}` } // Limit input to avoid context overflow
+       ],
+       model: model,
+       response_format: { type: "json_object" },
+       max_tokens: 8000,
+     });
+
+    const content = completion.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
+    } catch (e) {
+      console.error('JSON Parse Error (Truncated?):', content?.slice(-100));
+      throw new AppError('AI 生成内容过长被截断，请尝试减少文本量或分段生成。', 422, ErrorCodes.INTERNAL_ERROR);
+    }
+    
+    // Return parsed data for preview
+    res.json(parsed);
+
+  } catch (error: any) {
+    console.error('AI Text-to-Graph Error:', error);
+    throw new AppError(error.message || 'AI processing failed', 500, ErrorCodes.INTERNAL_ERROR);
+  }
 });
 
 export default router;

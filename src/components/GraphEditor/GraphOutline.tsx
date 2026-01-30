@@ -82,9 +82,9 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
               <span className="truncate flex-1 font-medium">
                 {node.title || '未命名节点'}
               </span>
-              {node.properties?.level && (
+              {(node.level || node.properties?.level) && (
                 <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                  {String(node.properties.level).toUpperCase()}
+                  {String(node.level || node.properties?.level).toUpperCase()}
                 </span>
               )}
             </button>

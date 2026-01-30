@@ -77,7 +77,6 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
           content: n.content,
           x_position: n.x_position || 0,
           y_position: n.y_position || 0,
-          z_position: n.z_position || 0,
           color: n.color,
           level: n.level || 'normal',
           properties: n.properties || {}
@@ -114,7 +113,8 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
             edgesToInsert.push({
               source_node_id: sourceId,
               target_node_id: targetId,
-              relationship_type: e.relationship || 'related'
+              relationship_type: e.relationship || 'related',
+              graph_id: graph.id
             });
           }
         }

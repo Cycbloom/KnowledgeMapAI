@@ -278,6 +278,16 @@ export const useAIGenerateCardsMutation = () => {
   return useMutation({ mutationFn: api.ai.generateCards });
 };
 
+export const useTextToGraphMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({ 
+    mutationFn: api.ai.textToGraph,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graph_id) });
+    }
+  });
+};
+
 export const useCreateCardsBatchMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

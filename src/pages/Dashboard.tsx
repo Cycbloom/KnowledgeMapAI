@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation } from '../hooks/useQueries';
 import { Plus, BookOpen, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { parseMarkdownToGraph } from '../utils/markdownParser';
 
 export const Dashboard = () => {
   const { data: graphsData, isLoading, error } = useGraphs();
@@ -49,14 +50,25 @@ export const Dashboard = () => {
     reader.onload = async (e) => {
       try {
         const content = e.target?.result as string;
-        const data = JSON.parse(content);
-        
-        const importData = {
+        let importData;
+
+        if (file.name.endsWith('.md')) {
+          const parsed = parseMarkdownToGraph(content);
+          importData = {
+            graph_title: parsed.graph_title || file.name.replace('.md', ''),
+            nodes: parsed.nodes,
+            edges: parsed.edges
+          };
+        } else {
+          // Assume JSON
+          const data = JSON.parse(content);
+          importData = {
             graph_title: data.graph?.title || data.graph_title || file.name.replace('.json', ''),
             nodes: data.nodes || [],
             edges: data.edges || []
-        };
-
+          };
+        }
+        
         await importGraphMutation.mutateAsync(importData);
         toast.success('导入成功!');
       } catch (err: any) {
@@ -81,7 +93,7 @@ export const Dashboard = () => {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept=".json"
+            accept=".json,.md"
             className="hidden"
           />
           <button

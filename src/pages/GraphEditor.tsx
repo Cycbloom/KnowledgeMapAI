@@ -9,9 +9,10 @@ import { Node, Edge } from '../types';
 // Cast the lazy loaded component to proper type including ref
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
+import { TextToGraphModal } from '../components/GraphEditor/TextToGraphModal';
 import { useHistory } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { 
@@ -99,6 +100,7 @@ export const GraphEditor = () => {
     level: 'leaf'
   });
   const [aiPrompt, setAiPrompt] = useState('');
+  const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
 
   // Stabilize history handlers
   const handleCreateNodeHistory = useCallback((data: any) => createNodeMutation.mutateAsync(data), [createNodeMutation]);
@@ -592,6 +594,14 @@ export const GraphEditor = () => {
         </div>
 
         <button 
+          onClick={() => setIsTextToGraphOpen(true)}
+          className="p-1 hover:bg-gray-100 rounded text-purple-600"
+          title="AI 文本生成图谱"
+        >
+          <Sparkles size={20} />
+        </button>
+
+        <button 
           onClick={handleStartCreate} 
           className="p-1 hover:bg-gray-100 rounded text-blue-600" 
           title="添加节点"
@@ -685,6 +695,13 @@ export const GraphEditor = () => {
           )}
         </div>
       )}
+
+      {/* Modals */}
+      <TextToGraphModal 
+        isOpen={isTextToGraphOpen} 
+        onClose={() => setIsTextToGraphOpen(false)} 
+        graphId={id || ''} 
+      />
 
       {/* Right Sidebar */}
       {sidebarMode !== 'none' && (

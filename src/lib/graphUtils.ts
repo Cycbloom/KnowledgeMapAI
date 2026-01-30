@@ -13,6 +13,7 @@ export const getLinkNodeId = (node: string | SimNode): string => {
 // Modified to prioritize existing properties over dynamic calculation
 export const getLevel = (node: Node, edges: Edge[]): NodeLevel => {
   // ALWAYS return the explicit level if it exists
+  if (node.level) return node.level as NodeLevel;
   if (node.properties?.level) return node.properties.level as NodeLevel;
   
   // Fallback ONLY if property is missing

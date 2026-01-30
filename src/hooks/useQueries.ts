@@ -49,6 +49,7 @@ export const useGraphData = (id: string) => {
       };
     },
     enabled: !!id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 

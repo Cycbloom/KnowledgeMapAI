@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo, lazy, Suspense } from 'react';
+import React, { useEffect, useState, useRef, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
@@ -8,10 +8,11 @@ import { Node, Edge } from '../types';
 // Lazy load heavy 3D component
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D })));
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { useHistory } from '../hooks/useHistory';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { 
   useGraph, 
   useGraphData, 
@@ -47,48 +48,6 @@ export const GraphEditor = () => {
   const createCardsBatchMutation = useCreateCardsBatchMutation();
   const exportGraphMutation = useExportGraphMutation();
 
-  // History Hook
-  const { undo, redo, record, canUndo, canRedo } = useHistory({
-    createNode: (data) => createNodeMutation.mutateAsync(data),
-    updateNode: (params) => updateNodeMutation.mutateAsync(params),
-    deleteNode: (params) => deleteNodeMutation.mutateAsync(params)
-  });
-
-  // Keyboard Shortcuts for Undo/Redo
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl+Z or Cmd+Z
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        if (e.shiftKey) {
-          // Ctrl+Shift+Z -> Redo
-          if (canRedo) {
-            e.preventDefault();
-            redo();
-            toast.success('重做');
-          }
-        } else {
-          // Ctrl+Z -> Undo
-          if (canUndo) {
-            e.preventDefault();
-            undo();
-            toast.success('撤销');
-          }
-        }
-      }
-      // Check for Ctrl+Y or Cmd+Y -> Redo
-      else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-        if (canRedo) {
-          e.preventDefault();
-          redo();
-          toast.success('重做');
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, canUndo, canRedo]);
-
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
 
@@ -98,6 +57,7 @@ export const GraphEditor = () => {
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline'>('none');
   const [showGrid, setShowGrid] = useState(true);
   const [isDark, setIsDark] = useState(true);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const [loading, setLoading] = useState(false); // For non-query loading (e.g. AI)
   // const [graphTitle, setGraphTitle] = useState(''); // Use graphMeta.title
 
@@ -136,6 +96,28 @@ export const GraphEditor = () => {
     level: 'leaf'
   });
   const [aiPrompt, setAiPrompt] = useState('');
+
+  // Stabilize history handlers
+  const handleCreateNodeHistory = useCallback((data: any) => createNodeMutation.mutateAsync(data), [createNodeMutation]);
+  const handleUpdateNodeHistory = useCallback((params: any) => updateNodeMutation.mutateAsync(params), [updateNodeMutation]);
+  const handleDeleteNodeHistory = useCallback((params: any) => deleteNodeMutation.mutateAsync(params), [deleteNodeMutation]);
+
+  // History Hook
+  const { undo, redo, record, canUndo, canRedo } = useHistory({
+    createNode: handleCreateNodeHistory,
+    updateNode: handleUpdateNodeHistory,
+    deleteNode: handleDeleteNodeHistory
+  });
+
+  // Keyboard Shortcuts for Undo/Redo and Focus Mode
+  useKeyboardShortcuts({
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    isFocusMode,
+    setIsFocusMode
+  });
 
   // Update form when selected node changes
   useEffect(() => {
@@ -223,6 +205,9 @@ export const GraphEditor = () => {
             graphId: id
           });
         }
+
+        // Record history
+        record({ type: 'CREATE_NODE', payload: newNode });
 
         // Switch to edit mode for the new node
         setSelectedNode(newNode);
@@ -451,6 +436,7 @@ export const GraphEditor = () => {
       </div>
 
       {/* Toolbar */}
+      {!isFocusMode && (
       <div className="absolute top-4 left-4 bg-white p-2 rounded-lg shadow-md flex items-center space-x-2 z-10">
         <button 
           onClick={() => navigate(-1)} 
@@ -568,6 +554,14 @@ export const GraphEditor = () => {
         >
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
+        
+        <button 
+          onClick={() => setIsFocusMode(true)}
+          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
+          title="专注模式 (F)"
+        >
+          <Maximize size={20} />
+        </button>
 
         <button 
           onClick={handleExport}
@@ -577,9 +571,23 @@ export const GraphEditor = () => {
           <Download size={20} />
         </button>
       </div>
+      )}
+
+      {/* Focus Mode Exit Button */}
+      {isFocusMode && (
+        <div className="absolute top-4 left-4 z-50">
+          <button 
+            onClick={() => setIsFocusMode(false)}
+            className="p-2 bg-white/20 hover:bg-white/90 text-white hover:text-gray-800 rounded-full backdrop-blur-sm transition-all shadow-sm"
+            title="退出专注模式 (Esc)"
+          >
+            <Minimize size={20} />
+          </button>
+        </div>
+      )}
 
       {/* Pathfinding Instructions */}
-      {isPathfindingMode && (
+      {isPathfindingMode && !isFocusMode && (
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-blue-100 flex items-center space-x-2 z-20">
           <Navigation size={16} className="text-blue-600" />
           <span className="text-sm font-medium text-gray-700">

@@ -21,16 +21,13 @@ export const useHistory = ({ createNode, updateNode, deleteNode }: UseHistoryPro
   }, []);
 
   const undo = useCallback(async () => {
-    let actionToUndo: HistoryAction | undefined;
+    if (past.length === 0) return;
 
-    setPast((prev) => {
-      if (prev.length === 0) return prev;
-      const newPast = [...prev];
-      actionToUndo = newPast.pop();
-      return newPast;
-    });
-
-    if (!actionToUndo) return;
+    const actionToUndo = past[past.length - 1];
+    const newPast = past.slice(0, -1);
+    
+    // Optimistic update
+    setPast(newPast);
 
     try {
       switch (actionToUndo.type) {
@@ -48,30 +45,30 @@ export const useHistory = ({ createNode, updateNode, deleteNode }: UseHistoryPro
           break;
       }
       
-      setFuture((prev) => [...prev, actionToUndo!]);
+      setFuture((prev) => [...prev, actionToUndo]);
     } catch (error) {
       console.error('Undo failed:', error);
-      // If failed, maybe put it back to past?
-      setPast((prev) => [...prev, actionToUndo!]);
+      // Revert state change if failed
+      setPast((prev) => [...prev, actionToUndo]);
     }
-  }, [createNode, updateNode, deleteNode]);
+  }, [past, createNode, updateNode, deleteNode]);
 
   const redo = useCallback(async () => {
-    let actionToRedo: HistoryAction | undefined;
+    if (future.length === 0) return;
 
-    setFuture((prev) => {
-      if (prev.length === 0) return prev;
-      const newFuture = [...prev];
-      actionToRedo = newFuture.pop();
-      return newFuture;
-    });
+    const actionToRedo = future[future.length - 1];
+    const newFuture = future.slice(0, -1);
 
-    if (!actionToRedo) return;
+    console.log('Redoing action:', actionToRedo.type, actionToRedo);
+
+    // Optimistic update
+    setFuture(newFuture);
 
     try {
       switch (actionToRedo.type) {
         case 'CREATE_NODE':
-          // Redo Create -> Create again (with same ID)
+          // Redo Create -> Create again
+          // Note: If backend generates new ID, history might get out of sync with actual ID.
           await createNode(actionToRedo.payload);
           break;
         case 'UPDATE_NODE':
@@ -79,17 +76,18 @@ export const useHistory = ({ createNode, updateNode, deleteNode }: UseHistoryPro
           await updateNode({ 
             id: actionToRedo.payload.id, 
             data: actionToRedo.payload.after, 
-            graphId: (actionToRedo.payload.after as any).graph_id || (actionToRedo.payload.before as any).graph_id 
+            graphId: (actionToRedo.payload.after as any)?.graph_id || (actionToRedo.payload.before as any)?.graph_id 
           });
           break;
       }
 
-      setPast((prev) => [...prev, actionToRedo!]);
+      setPast((prev) => [...prev, actionToRedo]);
     } catch (error) {
       console.error('Redo failed:', error);
-      setFuture((prev) => [...prev, actionToRedo!]);
+      // Revert state change if failed
+      setFuture((prev) => [...prev, actionToRedo]);
     }
-  }, [createNode, updateNode, deleteNode]);
+  }, [future, createNode, updateNode, deleteNode]);
 
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;

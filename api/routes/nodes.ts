@@ -79,8 +79,8 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
   }
 
   // Invalidate cache
-  cacheService.del(CacheKeys.GRAPH_NODES(data.graph_id));
-  cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
+  await cacheService.del(CacheKeys.GRAPH_NODES(data.graph_id));
+  await cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
 
   res.json({ message: '节点已删除' });
 });

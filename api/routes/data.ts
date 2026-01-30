@@ -128,7 +128,7 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
     }
 
     // Success! Invalidate user graphs cache
-    cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+    await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
     
     res.status(201).json({ graph });
 

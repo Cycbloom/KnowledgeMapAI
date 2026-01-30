@@ -3,6 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createGraphSchema, updateGraphSchema, uuidParamsSchema } from '../schemas/index.js';
 import { GraphService } from '../services/graphService.js';
+import { cacheService, CacheKeys } from '../services/cache.js';
 
 const router = Router();
 
@@ -44,12 +45,25 @@ router.delete('/:id', requireAuth, validate({ params: uuidParamsSchema }), async
   const { id } = req.params;
   const service = new GraphService(req.supabase!, req.user.id);
   await service.deleteGraph(id);
+
+  // Invalidate user graphs list and graph nodes
+  await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+  await cacheService.del(CacheKeys.GRAPH_NODES(id));
+  
   res.json({ message: '图谱删除成功' });
 });
 
 // Get nodes and edges for a graph
 router.get('/:id/nodes', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+
+  // Try cache
+  const cacheKey = CacheKeys.GRAPH_NODES(id);
+  const cachedData = await cacheService.get(cacheKey);
+  if (cachedData) {
+    return res.json(cachedData);
+  }
+
   const service = new GraphService(req.supabase!, req.user.id);
   const data = await service.getGraphNodes(id);
   res.json(data);

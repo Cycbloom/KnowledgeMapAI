@@ -1,7 +1,23 @@
 import NodeCache from 'node-cache';
+import Redis from 'ioredis';
+import dotenv from 'dotenv';
 
-// Standard TTL 5 minutes, check for expired keys every 1 minute
-const cache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+dotenv.config();
+
+// Determine mode: Use Redis if REDIS_URL is set, otherwise fallback to in-memory
+const useRedis = !!process.env.REDIS_URL;
+
+let redis: Redis | null = null;
+let localCache: NodeCache | null = null;
+
+if (useRedis) {
+  console.log('🚀 Using Redis Cache');
+  redis = new Redis(process.env.REDIS_URL!);
+  redis.on('error', (err) => console.error('Redis Client Error', err));
+} else {
+  console.log('⚠️  Redis URL not found, using In-Memory Cache');
+  localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+}
 
 export const CacheKeys = {
   GRAPH_NODES: (graphId: string) => `graph_nodes_${graphId}`,
@@ -10,40 +26,69 @@ export const CacheKeys = {
 };
 
 export const cacheService = {
-  get: <T>(key: string): T | undefined => {
-    return cache.get<T>(key);
+  get: async <T>(key: string): Promise<T | undefined> => {
+    if (redis) {
+      const data = await redis.get(key);
+      return data ? JSON.parse(data) : undefined;
+    }
+    return localCache?.get<T>(key);
   },
 
-  set: <T>(key: string, value: T, ttl?: number): boolean => {
-    return cache.set(key, value, ttl || 300);
+  set: async <T>(key: string, value: T, ttl?: number): Promise<boolean> => {
+    if (redis) {
+      const result = await redis.set(key, JSON.stringify(value), 'EX', ttl || 300);
+      return result === 'OK';
+    }
+    return localCache?.set(key, value, ttl || 300) || false;
   },
 
-  del: (key: string | string[]): number => {
-    return cache.del(key);
+  del: async (key: string | string[]): Promise<number> => {
+    if (redis) {
+      if (Array.isArray(key)) {
+        if (key.length === 0) return 0;
+        return await redis.del(...key);
+      }
+      return await redis.del(key);
+    }
+    return localCache?.del(key) || 0;
   },
 
-  delByPrefix: (prefix: string): number => {
-    const keys = cache.keys();
-    const keysToDelete = keys.filter(key => key.startsWith(prefix));
-    if (keysToDelete.length > 0) {
-      return cache.del(keysToDelete);
+  delByPrefix: async (prefix: string): Promise<number> => {
+    if (redis) {
+      const keys = await redis.keys(`${prefix}*`);
+      if (keys.length > 0) {
+        return await redis.del(...keys);
+      }
+      return 0;
+    }
+    
+    if (localCache) {
+      const keys = localCache.keys();
+      const keysToDelete = keys.filter(key => key.startsWith(prefix));
+      if (keysToDelete.length > 0) {
+        return localCache.del(keysToDelete);
+      }
     }
     return 0;
   },
 
-  flush: (): void => {
-    cache.flushAll();
+  flush: async (): Promise<void> => {
+    if (redis) {
+      await redis.flushdb();
+    } else {
+      localCache?.flushAll();
+    }
   },
   
   // Helper to get or set
   getOrSet: async <T>(key: string, fetchFn: () => Promise<T>, ttl?: number): Promise<T> => {
-    const cached = cache.get<T>(key);
+    const cached = await cacheService.get<T>(key);
     if (cached) {
       return cached;
     }
 
     const data = await fetchFn();
-    cache.set(key, data, ttl || 300);
+    await cacheService.set(key, data, ttl || 300);
     return data;
   }
 };

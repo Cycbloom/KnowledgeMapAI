@@ -70,7 +70,7 @@ router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthR
   if (error) throw error;
 
   if (data?.nodes?.graph_id) {
-    cacheService.del(CacheKeys.STUDY_CARDS(data.nodes.graph_id));
+    await cacheService.del(CacheKeys.STUDY_CARDS(data.nodes.graph_id));
   }
 
   res.status(201).json(data);
@@ -148,7 +148,7 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
   if (error) throw error;
 
   if (card?.nodes?.graph_id) {
-    cacheService.del(CacheKeys.STUDY_CARDS(card.nodes.graph_id));
+    await cacheService.del(CacheKeys.STUDY_CARDS(card.nodes.graph_id));
   }
 
   res.json(data);

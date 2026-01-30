@@ -6,7 +6,7 @@ export class GraphService {
 
   async listGraphs() {
     const cacheKey = CacheKeys.USER_GRAPHS(this.userId);
-    const cachedData = cacheService.get(cacheKey);
+    const cachedData = await cacheService.get(cacheKey);
     
     if (cachedData) {
       return cachedData;
@@ -20,7 +20,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    cacheService.set(cacheKey, data);
+    await cacheService.set(cacheKey, data);
     return data;
   }
 
@@ -40,7 +40,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    cacheService.del(CacheKeys.USER_GRAPHS(this.userId));
+    await cacheService.del(CacheKeys.USER_GRAPHS(this.userId));
     return data;
   }
 
@@ -67,7 +67,7 @@ export class GraphService {
 
     if (error) throw error;
 
-    cacheService.del(CacheKeys.USER_GRAPHS(this.userId));
+    await cacheService.del(CacheKeys.USER_GRAPHS(this.userId));
     return data;
   }
 
@@ -80,14 +80,14 @@ export class GraphService {
 
     if (error) throw error;
 
-    cacheService.del(CacheKeys.USER_GRAPHS(this.userId));
-    cacheService.delByPrefix(CacheKeys.GRAPH_NODES(id));
-    cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
+    await cacheService.del(CacheKeys.USER_GRAPHS(this.userId));
+    await cacheService.delByPrefix(CacheKeys.GRAPH_NODES(id));
+    await cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
   }
 
   async getGraphNodes(graphId: string) {
     const cacheKey = CacheKeys.GRAPH_NODES(graphId);
-    const cachedData = cacheService.get(cacheKey);
+    const cachedData = await cacheService.get(cacheKey);
     
     if (cachedData) {
       return cachedData;
@@ -121,7 +121,7 @@ export class GraphService {
     const edges = edgesData || [];
 
     const result = { nodes, edges };
-    cacheService.set(cacheKey, result);
+    await cacheService.set(cacheKey, result);
     
     return result;
   }

@@ -2,6 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } from '../schemas/index.js';
+import { cacheService, CacheKeys } from '../services/cache.js';
 
 const router = Router();
 
@@ -9,18 +10,22 @@ const router = Router();
 router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_id } = req.query;
 
+  if (graph_id) {
+    const cached = cacheService.get(CacheKeys.STUDY_CARDS(graph_id as string));
+    if (cached) {
+      return res.json(cached);
+    }
+  }
+
   let query = req.supabase!
     .from('study_cards')
-    .select('*, nodes(title)') // Join with nodes to get context
+    .select('*, nodes(title, graph_id)') // Join with nodes to get context
     .eq('user_id', req.user.id);
 
   if (graph_id) {
     // We need to filter by graph_id. study_cards has node_id. nodes has graph_id.
     // Supabase join filtering:
     query = query.eq('nodes.graph_id', graph_id);
-    // Note: Inner join filtering on Supabase JS might need !inner
-    // But let's try standard. If it fails, we fetch all and filter in memory or fix query.
-    // Correct way: .select('*, nodes!inner(title, graph_id)').eq('nodes.graph_id', graph_id)
   }
 
   // Filter for due cards? The frontend might want all cards or just due ones.
@@ -28,8 +33,19 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   
   const { data, error } = await query;
 
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  if (error) throw error;
+  
+  // Filter in memory if Supabase join filtering didn't work as expected for inner join
+  // But typically it works if foreign key is set up.
+  // If graph_id was provided, we filter data to ensure only cards from that graph are returned.
+  // (In case eq('nodes.graph_id') acts as left join filter)
+  let result = data;
+  if (graph_id && data) {
+    result = data.filter((card: any) => card.nodes?.graph_id === graph_id);
+    cacheService.set(CacheKeys.STUDY_CARDS(graph_id as string), result);
+  }
+
+  res.json(result);
 });
 
 // Create a flashcard manually
@@ -48,10 +64,15 @@ router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthR
         difficulty: 1
       }
     ])
-    .select()
+    .select('*, nodes(graph_id)')
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
+
+  if (data?.nodes?.graph_id) {
+    cacheService.del(CacheKeys.STUDY_CARDS(data.nodes.graph_id));
+  }
+
   res.status(201).json(data);
 });
 
@@ -74,9 +95,15 @@ router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async
   const { data, error } = await req.supabase!
     .from('study_cards')
     .insert(cardsToInsert)
-    .select();
+    .select('*, nodes(graph_id)');
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
+
+  if (data) {
+    const graphIds = new Set(data.map((card: any) => card.nodes?.graph_id).filter(Boolean));
+    graphIds.forEach(gid => cacheService.del(CacheKeys.STUDY_CARDS(gid as string)));
+  }
+
   res.status(201).json(data);
 });
 
@@ -89,7 +116,7 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
   // Fetch current card
   const { data: card } = await req.supabase!
     .from('study_cards')
-    .select('*')
+    .select('*, nodes(graph_id)')
     .eq('id', id)
     .single();
 
@@ -118,7 +145,12 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
+
+  if (card?.nodes?.graph_id) {
+    cacheService.del(CacheKeys.STUDY_CARDS(card.nodes.graph_id));
+  }
+
   res.json(data);
 });
 

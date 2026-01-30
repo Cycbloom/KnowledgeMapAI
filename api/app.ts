@@ -7,6 +7,7 @@ import express, {
   type Response,
   type NextFunction,
 } from 'express'
+import 'express-async-errors'
 import cors from 'cors'
 import path from 'path'
 import dotenv from 'dotenv'

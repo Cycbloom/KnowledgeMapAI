@@ -2,18 +2,32 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createGraphSchema, updateGraphSchema } from '../schemas/index.js';
+import { cacheService, CacheKeys } from '../services/cache.js';
 
 const router = Router();
 
 // List all graphs for the user
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
+  const userId = req.user.id;
+  const cacheKey = CacheKeys.USER_GRAPHS(userId);
+
+  // Try cache first
+  const cachedData = cacheService.get(cacheKey);
+  if (cachedData) {
+    return res.json(cachedData);
+  }
+
   const { data, error } = await req.supabase!
     .from('knowledge_graphs')
     .select('*')
-    .eq('user_id', req.user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
+  
+  // Set cache
+  cacheService.set(cacheKey, data);
+  
   res.json(data);
 });
 
@@ -36,6 +50,10 @@ router.post('/', requireAuth, validate(createGraphSchema), async (req: AuthReque
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
+  
+  // Invalidate user graphs list
+  cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+  
   res.status(201).json(data);
 });
 
@@ -68,6 +86,10 @@ router.put('/:id', requireAuth, validate(updateGraphSchema), async (req: AuthReq
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
+  
+  // Invalidate user graphs list (title/desc might have changed)
+  cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+  
   res.json(data);
 });
 
@@ -82,12 +104,24 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     .eq('user_id', req.user.id);
 
   if (error) return res.status(500).json({ error: error.message });
+  
+  // Invalidate user graphs list and graph nodes
+  cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+  cacheService.del(CacheKeys.GRAPH_NODES(id));
+  
   res.json({ message: '图谱删除成功' });
 });
 
 // Get nodes and edges for a graph
 router.get('/:id/nodes', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+
+  // Try cache
+  const cacheKey = CacheKeys.GRAPH_NODES(id);
+  const cachedData = cacheService.get(cacheKey);
+  if (cachedData) {
+    return res.json(cachedData);
+  }
 
   // Verify ownership first
   const { data: graph, error: graphError } = await req.supabase!
@@ -107,27 +141,26 @@ router.get('/:id/nodes', requireAuth, async (req: AuthRequest, res: Response) =>
 
   if (nodesError) return res.status(500).json({ error: nodesError.message });
 
-  // Fetch edges (where source or target is in nodes list - but easier to just query by graph logic if edges had graph_id, but they don't.
-  // Actually, edges link nodes. We need to fetch edges where source_node_id IN (nodes.ids).
-  // But standard way is to just fetch all edges if the graph is small, or filter.
-  // Since edges don't have graph_id, we must filter by the nodes we found.
-  
+  // Fetch edges
   const nodeIds = nodes.map(n => n.id);
   
   if (nodeIds.length === 0) {
-    return res.json({ nodes: [], edges: [] });
+    const emptyResult = { nodes: [], edges: [] };
+    cacheService.set(cacheKey, emptyResult);
+    return res.json(emptyResult);
   }
 
   const { data: edges, error: edgesError } = await req.supabase!
     .from('edges')
     .select('*')
-    .in('source_node_id', nodeIds); // This gets edges starting from these nodes. 
-    // Technically we should check both ends, but in a closed graph, edges connect two nodes in the graph.
-    // If we only check source, we might miss edges if we are importing partial data? No, valid edges connect valid nodes.
+    .in('source_node_id', nodeIds);
   
   if (edgesError) return res.status(500).json({ error: edgesError.message });
 
-  res.json({ nodes, edges });
+  const result = { nodes, edges };
+  cacheService.set(cacheKey, result);
+  
+  res.json(result);
 });
 
 export default router;

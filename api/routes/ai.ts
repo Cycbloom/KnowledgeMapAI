@@ -158,8 +158,7 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
     const parsed = JSON.parse(content || '{"cards": []}');
     res.json({ cards: parsed.cards || [] });
   } catch (error: any) {
-    console.error('AI Error:', error);
-    res.status(500).json({ error: error.message || 'AI card generation failed' });
+    throw error;
   }
 });
 

@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Layout } from './components/Layout';
 import { useStore } from './store/useStore';
+import { LoadingBar } from './components/LoadingBar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy Load Pages
 const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
@@ -26,7 +28,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
+      <LoadingBar />
       <Toaster position="top-center" />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
@@ -42,7 +45,7 @@ function App() {
           </Route>
         </Routes>
       </Suspense>
-    </>
+    </ErrorBoundary>
   );
 }
 

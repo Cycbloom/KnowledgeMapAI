@@ -2,6 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createNodeSchema, updateNodeSchema, createEdgeSchema } from '../schemas/index.js';
+import { cacheService, CacheKeys } from '../services/cache.js';
 
 const router = Router();
 
@@ -26,7 +27,11 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
+  
+  // Invalidate cache
+  cacheService.del(CacheKeys.GRAPH_NODES(graph_id));
+  
   res.status(201).json(data);
 });
 
@@ -34,10 +39,6 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
 router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
-
-  // RLS ensures we can only update nodes in our own graphs
-  // If the node doesn't exist or we don't own it, RLS will return an error or affect 0 rows.
-  // We can select and update in one go, or just update.
   
   const { data, error } = await req.supabase!
     .from('nodes')
@@ -46,9 +47,12 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
-  // If no data returned but no error, it means RLS filtered it out or ID doesn't exist
+  if (error) throw error;
   if (!data) return res.status(404).json({ error: '未找到节点或无权修改' });
+  
+  // Invalidate cache
+  cacheService.del(CacheKeys.GRAPH_NODES(data.graph_id));
+  cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
   
   res.json(data);
 });
@@ -57,20 +61,25 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
 router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  // Use RLS-scoped client (req.supabase) instead of admin
-  // Attempt to delete directly. RLS ensures we can only delete nodes in our graphs.
-  const { error, count } = await req.supabase!
+  // We need to get graph_id before deleting to invalidate cache
+  // Or we can select it during delete
+  const { data, error, count } = await req.supabase!
     .from('nodes')
     .delete({ count: 'exact' })
-    .eq('id', id);
+    .eq('id', id)
+    .select('graph_id') // Return graph_id for cache invalidation
+    .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
   
-  // If count is 0, it means either node doesn't exist or user doesn't own it.
-  // We can return a generic 404 to avoid leaking existence of other users' nodes.
-  if (count === 0) {
+  // If count is 0 or no data, it means node not found
+  if (!data) {
     return res.status(404).json({ error: 'Node not found or unauthorized' });
   }
+
+  // Invalidate cache
+  cacheService.del(CacheKeys.GRAPH_NODES(data.graph_id));
+  cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
 
   res.json({ message: '节点已删除' });
 });
@@ -90,7 +99,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
     return res.status(404).json({ error: 'Source node not found or unauthorized' });
   }
 
-  // 2. Verify target node exists and is accessible (Optional but recommended for consistency)
+  // 2. Verify target node exists and is accessible
   const { data: targetNode, error: targetError } = await req.supabase!
     .from('nodes')
     .select('id')
@@ -102,9 +111,6 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
   }
 
   // 3. Create edge
-  // Note: Edges table RLS should allow insert if source/target nodes are visible.
-  // Assuming we have a policy for edges insert based on node ownership.
-  // If not, we might need to rely on the fact that we checked nodes above.
   const { data, error } = await req.supabase!
     .from('edges')
     .insert([
@@ -113,7 +119,11 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
+  
+  // Invalidate cache
+  cacheService.del(CacheKeys.GRAPH_NODES(sourceNode.graph_id));
+  
   res.status(201).json(data);
 });
 
@@ -121,13 +131,39 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
 router.delete('/edges/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
-  // RLS handles ownership
+  // Need to find which graph this edge belongs to.
+  // Edge -> Source Node -> Graph
+  // We can select source_node_id, then we need to look up graph_id?
+  // Or Supabase can do nested select: select('source_node_id, nodes(graph_id)')?
+  // Let's try nested select on delete? Delete returns the deleted row.
+  
+  // Step 1: Get the edge's source node to find the graph (before or during delete)
+  // Deleting and selecting nested relation might not work in one go in Supabase/PostgREST for Delete.
+  // So fetch first.
+  
+  const { data: edge } = await req.supabase!
+    .from('edges')
+    .select('source_node_id, nodes!inner(graph_id)')
+    .eq('id', id)
+    .single();
+    
+  if (!edge) return res.status(404).json({ error: 'Edge not found' });
+
+  // Delete
   const { error } = await req.supabase!
     .from('edges')
     .delete()
     .eq('id', id);
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
+  
+  // Invalidate cache
+  // @ts-ignore - Supabase types might be tricky with nested join aliases
+  const graphId = (edge.nodes as any)?.graph_id;
+  if (graphId) {
+    cacheService.del(CacheKeys.GRAPH_NODES(graphId));
+  }
+  
   res.json({ message: 'Edge deleted' });
 });
 

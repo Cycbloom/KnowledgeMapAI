@@ -29,7 +29,7 @@ export const Study = () => {
 
   // Sync and shuffle cards when data is loaded
   useEffect(() => {
-    if (fetchedCards && cards.length === 0) {
+    if (Array.isArray(fetchedCards) && cards.length === 0) {
       setCards([...fetchedCards].sort(() => Math.random() - 0.5));
     }
   }, [fetchedCards, cards.length]);
@@ -71,7 +71,7 @@ export const Study = () => {
     setShowAnswer(false);
     setSelectedOption(null);
     
-    if (fetchedCards) {
+    if (Array.isArray(fetchedCards)) {
       // Re-shuffle
       setCards([...fetchedCards].sort(() => Math.random() - 0.5));
     } else {
@@ -236,21 +236,21 @@ export const Study = () => {
               重来 (Again)
             </button>
             <button
-              onClick={() => handleRate(3)}
+              onClick={() => handleRate(2)}
               className="bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors shadow-sm"
               disabled={updateProgressMutation.isPending}
             >
               困难 (Hard)
             </button>
             <button
-              onClick={() => handleRate(4)}
+              onClick={() => handleRate(3)}
               className="bg-blue-100 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-200 transition-colors shadow-sm"
               disabled={updateProgressMutation.isPending}
             >
               良好 (Good)
             </button>
             <button
-              onClick={() => handleRate(5)}
+              onClick={() => handleRate(4)}
               className="bg-green-100 text-green-700 py-3 rounded-lg font-medium hover:bg-green-200 transition-colors shadow-sm"
               disabled={updateProgressMutation.isPending}
             >

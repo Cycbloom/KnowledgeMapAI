@@ -7,11 +7,20 @@ export const queryKeys = {
   graphs: ['graphs'] as const,
   graph: (id: string) => ['graph', id] as const,
   graphData: (id: string) => ['graphData', id] as const,
+  graphNodeStatus: (id: string) => ['graphNodeStatus', id] as const,
   studyCards: (graphId?: string) => ['studyCards', graphId || 'all'] as const,
   user: ['user'] as const,
+  dashboardStats: ['dashboardStats'] as const,
 };
 
 // --- Queries ---
+
+export const useDashboardStats = () => {
+  return useQuery({
+    queryKey: queryKeys.dashboardStats,
+    queryFn: api.dashboard.getStats,
+  });
+};
 
 export const useUser = (enabled: boolean = true) => {
   return useQuery({
@@ -50,6 +59,15 @@ export const useGraphData = (id: string) => {
     },
     enabled: !!id,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGraphNodeStatus = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.graphNodeStatus(id),
+    queryFn: () => api.graphs.getNodeStatus(id),
+    enabled: !!id,
+    staleTime: 0, // Always fetch fresh status
   });
 };
 

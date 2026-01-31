@@ -5,8 +5,34 @@ import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } fr
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { fsrs, Card, Rating, State, createEmptyCard } from 'ts-fsrs';
 
 const router = Router();
+const f = fsrs();
+
+// Helper: Convert DB card to FSRS Card
+const dbCardToFSRS = (dbCard: any): Card => {
+  const empty = createEmptyCard();
+  return {
+    ...empty,
+    due: new Date(dbCard.next_review || new Date()),
+    stability: dbCard.fsrs_stability || 0,
+    difficulty: dbCard.fsrs_difficulty || 0,
+    elapsed_days: dbCard.fsrs_elapsed_days || 0,
+    scheduled_days: dbCard.fsrs_scheduled_days || 0,
+    reps: dbCard.review_count || 0,
+    state: dbCard.fsrs_state || State.New,
+    last_review: dbCard.fsrs_last_review ? new Date(dbCard.fsrs_last_review) : undefined
+  };
+};
+
+// Helper: Map 0-5 quality to FSRS Rating
+const mapQualityToRating = (quality: number): Rating => {
+  if (quality <= 1) return Rating.Again;
+  if (quality === 2) return Rating.Hard;
+  if (quality === 3) return Rating.Good;
+  return Rating.Easy;
+};
 
 // Get cards due for review (or all cards for a graph)
 router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -41,7 +67,7 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   // But typically it works if foreign key is set up.
   // If graph_id was provided, we filter data to ensure only cards from that graph are returned.
   // (In case eq('nodes.graph_id') acts as left join filter)
-  let result = data;
+  let result = data || [];
   if (graph_id && data) {
     result = data.filter((card: any) => card.nodes?.graph_id === graph_id);
     cacheService.set(CacheKeys.STUDY_CARDS(graph_id as string), result);
@@ -114,7 +140,6 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
   const { id } = req.params;
   const { quality } = req.body; // 0-5 rating
 
-  // Simple spaced repetition logic (SM-2 simplified)
   // Fetch current card
   const { data: card } = await req.supabase!
     .from('study_cards')
@@ -126,24 +151,31 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
     throw new AppError('未找到卡片', 404, ErrorCodes.CARD_NOT_FOUND);
   }
 
-  // Calculate next review date
+  // FSRS Logic
+  const fsrsCard = dbCardToFSRS(card);
   const now = new Date();
-  let interval = 1; // days
-  if (quality >= 3) {
-    interval = (card.review_count === 0) ? 1 : (card.review_count === 1 ? 6 : Math.round(card.review_count * 2.5)); // Very rough approx
-  } else {
-    interval = 1; // Reset if failed
-  }
-
-  const nextReview = new Date(now.getTime() + interval * 24 * 60 * 60 * 1000);
+  const rating = mapQualityToRating(quality);
+  
+  const scheduling_cards = f.repeat(fsrsCard, now);
+  const scheduledCard = scheduling_cards[rating].card;
 
   const { data, error } = await req.supabase!
     .from('study_cards')
     .update({
       last_reviewed: now.toISOString(),
-      next_review: nextReview.toISOString(),
-      review_count: card.review_count + 1,
-      difficulty: quality // Store last quality as difficulty for now
+      next_review: scheduledCard.due.toISOString(),
+      review_count: scheduledCard.reps,
+      // FSRS specific fields
+      fsrs_state: scheduledCard.state,
+      fsrs_stability: scheduledCard.stability,
+      fsrs_difficulty: scheduledCard.difficulty,
+      fsrs_elapsed_days: scheduledCard.elapsed_days,
+      fsrs_scheduled_days: scheduledCard.scheduled_days,
+      fsrs_last_review: now.toISOString(),
+      // Use stability/retrievability for analytics? 
+      // Retrievability is not directly in 'card' output of ts-fsrs v3 (it's calculated), 
+      // but we can calculate R if needed: R = (1 + elapsed / (9 * stability)) ^ -1
+      // For now, let's just store the core params.
     })
     .eq('id', id)
     .select()

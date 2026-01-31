@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation } from '../hooks/useQueries';
+import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats } from '../hooks/useQueries';
 import { Plus, BookOpen, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { ActivityHeatmap } from '../components/ActivityHeatmap';
+import { BlindSpotList } from '../components/BlindSpotList';
+import { StatsOverview } from '../components/StatsOverview';
 
 export const Dashboard = () => {
   const { data: graphsData, isLoading, error } = useGraphs();
+  const { data: statsData } = useDashboardStats();
   const createGraphMutation = useCreateGraphMutation();
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
@@ -157,6 +161,17 @@ export const Dashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* Statistics Section */}
+      {statsData && (
+        <div className="mb-12 space-y-6 animate-fade-in-up">
+          <ActivityHeatmap data={statsData.heatmap || []} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <StatsOverview data={statsData.distribution || []} />
+            <BlindSpotList data={statsData.blindSpots || []} />
+          </div>
+        </div>
+      )}
 
       {isCreating && (
         <div className="mb-8 bg-white p-6 rounded-lg shadow-md">

@@ -46,7 +46,8 @@ import {
   useExportGraphMutation,
   useDocumentToGraphMutation,
   useRecommendConnectionsMutation,
-  useDeleteGraphMutation
+  useDeleteGraphMutation,
+  useGraphNodeStatus
 } from '../hooks/useQueries';
 
 export const GraphEditor = () => {
@@ -59,6 +60,7 @@ export const GraphEditor = () => {
   // React Query Hooks
   const { data: graphMeta } = useGraph(id || '');
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || '');
+  const { data: nodeStatus } = useGraphNodeStatus(id || '');
   
   const createNodeMutation = useCreateNodeMutation();
   const updateNodeMutation = useUpdateNodeOptimisticMutation();
@@ -108,6 +110,15 @@ export const GraphEditor = () => {
   const pulsingNodeIds = useMemo(() => {
     return new Set(searchResults.map(n => n.id));
   }, [searchResults]);
+
+  const lockedNodeIds = useMemo(() => {
+    if (!nodeStatus) return new Set<string>();
+    const ids = new Set<string>();
+    Object.entries(nodeStatus).forEach(([nodeId, status]: [string, any]) => {
+      if (status.locked) ids.add(nodeId);
+    });
+    return ids;
+  }, [nodeStatus]);
 
   // Pathfinding State
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
@@ -243,6 +254,11 @@ export const GraphEditor = () => {
   const handleNodeClick = (node: Node) => {
     if (isDeleteMode) {
       handleDeleteNode(node);
+      return;
+    }
+
+    if (lockedNodeIds.has(node.id)) {
+      toast.error('此节点尚未解锁！请先学习前置知识点。', { icon: '🔒' });
       return;
     }
 
@@ -711,6 +727,7 @@ export const GraphEditor = () => {
             collapsedNodeIds={collapsedNodeIds}
             layoutMode={layoutMode}
             pulsingNodeIds={pulsingNodeIds}
+            lockedNodeIds={lockedNodeIds}
             onNodeCollapse={handleToggleCollapse}
           />
         </Suspense>
@@ -1285,7 +1302,7 @@ export const GraphEditor = () => {
                   编辑节点
                 </button>
                 <button
-                  onClick={handleDeleteNode}
+                  onClick={() => handleDeleteNode()}
                   className="w-12 bg-white text-red-500 border border-red-100 rounded-xl hover:bg-red-50 flex items-center justify-center transition-all"
                   title="删除节点"
                 >
@@ -1508,7 +1525,7 @@ export const GraphEditor = () => {
                 </button>
                 {selectedNode && (
                   <button
-                    onClick={handleDeleteNode}
+                    onClick={() => handleDeleteNode()}
                     className="w-12 bg-white text-red-500 border border-red-100 rounded-xl hover:bg-red-50 flex items-center justify-center transition-all"
                     title="删除节点"
                   >

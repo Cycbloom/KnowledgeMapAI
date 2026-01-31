@@ -17,6 +17,7 @@ interface InstancedNodesProps {
   isDark: boolean;
   highlightedNodes: Set<string>;
   pulsingNodeIds?: Set<string>;
+  lockedNodeIds?: Set<string>;
   simulationVersion: number;
 }
 
@@ -50,6 +51,7 @@ export const InstancedNodes = ({
   isDark, 
   highlightedNodes,
   pulsingNodeIds,
+  lockedNodeIds,
   simulationVersion
 }: InstancedNodesProps) => {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -114,7 +116,12 @@ export const InstancedNodes = ({
       
       // Color logic
       const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
-      const baseColor = config.color;
+      const isLocked = lockedNodeIds?.has(node.id);
+      
+      let baseColor: string = config.color;
+      if (isLocked) {
+         baseColor = '#94a3b8'; // Gray for locked
+      }
       
       tempColor.set(baseColor);
       if (isDimmed) {

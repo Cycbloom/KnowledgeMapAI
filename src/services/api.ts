@@ -12,7 +12,12 @@ const getHeaders = () => {
 
 const handleResponse = async (res: Response) => {
   const text = await res.text();
-  const data = text ? JSON.parse(text) : {};
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e) {
+    data = {};
+  }
   
   if (!res.ok) {
     if (res.status === 401) {
@@ -48,6 +53,7 @@ export const api = {
     create: (data: any) => request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
     get: (id: string) => request(`/graphs/${id}`),
     getNodes: (id: string) => request(`/graphs/${id}/nodes`),
+    getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
     delete: (id: string) => request(`/graphs/${id}`, { method: 'DELETE' }),
   },
   nodes: {
@@ -179,6 +185,9 @@ export const api = {
     getCards: (graphId?: string) => request(`/study/cards${graphId ? `?graph_id=${graphId}` : ''}`),
     createCardsBatch: (cards: any[]) => request('/study/cards/batch', { method: 'POST', body: JSON.stringify({ cards }) }),
     updateProgress: (id: string, quality: number) => request(`/study/cards/${id}/progress`, { method: 'PUT', body: JSON.stringify({ quality }) }),
+  },
+  dashboard: {
+    getStats: () => request('/dashboard/stats'),
   },
   data: {
     export: (graphId: string, format: 'json' | 'pdf') => {

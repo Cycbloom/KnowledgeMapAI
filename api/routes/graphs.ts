@@ -59,4 +59,11 @@ router.get('/:id/nodes', requireAuth, validate({ params: uuidParamsSchema }), as
   res.json(data);
 });
 
+// Get node status (locked/mastered) for a graph
+router.get('/:id/node-status', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const data = await graphService.getGraphNodeStatus(req.supabase!, req.user.id, id);
+  res.json(data);
+});
+
 export default router;

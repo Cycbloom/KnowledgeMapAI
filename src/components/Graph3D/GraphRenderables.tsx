@@ -13,8 +13,10 @@ interface InstancedNodesProps {
   nodesRef: React.MutableRefObject<SimNode[]>;
   onNodeClick?: (node: Node) => void;
   onNodeDoubleClick?: (node: Node) => void;
+  onNodeRightClick?: (node: Node) => void;
   isDark: boolean;
   highlightedNodes: Set<string>;
+  pulsingNodeIds?: Set<string>;
   simulationVersion: number;
 }
 
@@ -44,19 +46,28 @@ export const InstancedNodes = ({
   nodesRef, 
   onNodeClick, 
   onNodeDoubleClick,
+  onNodeRightClick,
   isDark, 
   highlightedNodes,
+  pulsingNodeIds,
   simulationVersion
 }: InstancedNodesProps) => {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const hitMeshRef = useRef<THREE.InstancedMesh>(null);
-  const tempObject = new THREE.Object3D();
-  const tempColor = new THREE.Color();
+  const tempObject = useMemo(() => new THREE.Object3D(), []);
+  const tempColor = useMemo(() => new THREE.Color(), []);
   const hoveredRef = useRef<number | null>(null);
   const theme = getTheme(isDark);
 
   // Re-run this when simulationVersion changes (topology changed)
   const nodeCount = nodesRef.current.length;
+
+  // Capture a snapshot of node IDs at the time of this render version.
+  // This prevents the "async click" bug where the user clicks an old mesh 
+  // but the code looks at a new (shorter) nodesRef array.
+  const nodeSnapshot = useMemo(() => {
+    return nodesRef.current.map(n => ({ id: n.id, title: n.title }));
+  }, [simulationVersion, nodeCount]);
 
   useEffect(() => {
     if (meshRef.current) {
@@ -65,7 +76,7 @@ export const InstancedNodes = ({
     if (hitMeshRef.current) {
       hitMeshRef.current.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
     }
-  }, []);
+  }, [simulationVersion]);
 
   useFrame(() => {
     if (!meshRef.current || !hitMeshRef.current) return;
@@ -96,8 +107,7 @@ export const InstancedNodes = ({
 
       // Update Hit Mesh
       // Use a larger scale for easier interaction, ensuring minimum clickable size
-      // Minimum radius 0.8 ensures even small leaf nodes are easily clickable
-      const hitScale = Math.max(scale * 1.5, 0.8);
+      const hitScale = Math.max(scale * 1.5, 1.0);
       tempObject.scale.set(hitScale, hitScale, hitScale);
       tempObject.updateMatrix();
       hitMeshRef.current.setMatrixAt(i, tempObject.matrix);
@@ -119,11 +129,24 @@ export const InstancedNodes = ({
     hitMeshRef.current.instanceMatrix.needsUpdate = true;
   });
 
+  const handleInteraction = (instanceId: number | undefined, callback?: (node: SimNode) => void) => {
+    if (instanceId === undefined) return;
+    
+    // Use the snapshot to find the ID, then find the latest node in the ref
+    const nodeMeta = nodeSnapshot[instanceId];
+    if (nodeMeta) {
+      const actualNode = nodesRef.current.find(n => n.id === nodeMeta.id);
+      if (actualNode) {
+        callback?.(actualNode);
+      }
+    }
+  };
+
   return (
     <>
       {/* Visual Mesh - No interaction */}
       <instancedMesh
-        key={`visual-${simulationVersion}`} // Force re-creation when topology changes
+        key={`visual-${simulationVersion}-${nodeCount}`} // Force re-creation when topology changes
         ref={meshRef}
         args={[undefined, undefined, nodeCount]}
         frustumCulled={false}
@@ -140,21 +163,17 @@ export const InstancedNodes = ({
 
       {/* Hit Mesh - Invisible but interactive */}
       <instancedMesh
-        key={`hit-${simulationVersion}`}
+        key={`hit-${simulationVersion}-${nodeCount}`}
         ref={hitMeshRef}
         args={[undefined, undefined, nodeCount]}
         frustumCulled={false}
         onClick={(e) => {
           e.stopPropagation();
-          if (e.instanceId !== undefined && nodesRef.current[e.instanceId]) {
-            onNodeClick?.(nodesRef.current[e.instanceId]);
-          }
+          handleInteraction(e.instanceId, onNodeClick);
         }}
         onDoubleClick={(e) => {
           e.stopPropagation();
-          if (e.instanceId !== undefined && nodesRef.current[e.instanceId]) {
-            onNodeDoubleClick?.(nodesRef.current[e.instanceId]);
-          }
+          handleInteraction(e.instanceId, onNodeDoubleClick);
         }}
         onPointerOver={(e) => {
           e.stopPropagation();
@@ -165,16 +184,94 @@ export const InstancedNodes = ({
           document.body.style.cursor = 'default';
           hoveredRef.current = null;
         }}
+        onContextMenu={(e) => {
+          e.stopPropagation();
+          e.nativeEvent.preventDefault(); 
+          handleInteraction(e.instanceId, onNodeRightClick);
+        }}
       >
-        <sphereGeometry args={[1, 8, 8]} /> {/* Low poly for hit testing */}
+        <sphereGeometry args={[1, 16, 16]} />
         <meshBasicMaterial 
           transparent 
           opacity={0} 
           depthWrite={false} 
           side={THREE.DoubleSide}
+          color="red"
         />
       </instancedMesh>
+      
+      {/* Pulse Effect for Pulsing Nodes (Search Results) */}
+      <PulseNodes 
+        nodesRef={nodesRef} 
+        activeNodeIds={pulsingNodeIds} 
+      />
     </>
+  );
+};
+
+// --- Pulse Node Effect ---
+const PulseNodes = ({ 
+  nodesRef, 
+  activeNodeIds 
+}: { 
+  nodesRef: React.MutableRefObject<SimNode[]>; 
+  activeNodeIds?: Set<string>; 
+}) => {
+  const groupRef = useRef<THREE.Group>(null);
+  
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    
+    // Animate pulse
+    const t = clock.getElapsedTime();
+    const scale = 1.5 + Math.sin(t * 3) * 0.3; // Oscillate between 1.2 and 1.8
+    const opacity = 0.6 - Math.sin(t * 3) * 0.3; // Oscillate opacity
+    
+    groupRef.current.children.forEach((child) => {
+      child.scale.set(scale, scale, scale);
+      if (child instanceof THREE.Mesh) {
+         (child.material as THREE.MeshBasicMaterial).opacity = opacity;
+      }
+    });
+  });
+
+  // Re-calculate positions only when activeNodeIds or nodes change
+  const targetNodes = useMemo(() => {
+    if (!activeNodeIds || activeNodeIds.size === 0) return [];
+    return nodesRef.current.filter(n => activeNodeIds.has(n.id));
+  }, [activeNodeIds, nodesRef.current]);
+  
+  // We need to update positions every frame because simulation moves nodes
+  useFrame(() => {
+    if (!groupRef.current) return;
+    
+    // Sync positions with simulation
+    // We match children to targetNodes by index
+    targetNodes.forEach((node, i) => {
+      const child = groupRef.current?.children[i];
+      if (child && typeof node.x === 'number') {
+        child.position.set(node.x, node.y!, node.z!);
+      }
+    });
+  });
+
+  if (targetNodes.length === 0) return null;
+
+  return (
+    <group ref={groupRef}>
+      {targetNodes.map(node => (
+        <mesh key={node.id}>
+          <sphereGeometry args={[LEVEL_CONFIG[node.level || 'leaf'].radius, 32, 32]} />
+          <meshBasicMaterial 
+            color="#ff00ff" 
+            transparent 
+            opacity={0.5} 
+            depthWrite={false} // Prevent z-fighting and allow seeing through
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 };
 

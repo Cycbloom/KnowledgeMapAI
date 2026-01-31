@@ -18,15 +18,39 @@ export type Graph3DProps = {
   onEngineLoad?: (isLoading: boolean) => void;
   onSelectionChange?: (nodeIds: string[]) => void;
   onBackgroundClick?: () => void;
+  onNodeCollapse?: (nodeId: string) => void;
+  // New props for clustering and layout
+  collapsedNodeIds?: Set<string>;
+  layoutMode?: '3d-force' | '2d-tree' | '3d-sphere';
+  pulsingNodeIds?: Set<string>;
 }
 
 export type Graph3DRef = GraphSceneRef;
 
 export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
-  const { nodes, edges, isDark = true, selectedNodeId, selectedNodeIds, highlightedPath, onEngineLoad, onSelectionChange, onBackgroundClick } = props;
+  const { 
+    nodes, 
+    edges, 
+    isDark = true, 
+    selectedNodeId, 
+    selectedNodeIds, 
+    highlightedPath, 
+    onEngineLoad, 
+    onSelectionChange, 
+    onBackgroundClick,
+    onNodeCollapse,
+    collapsedNodeIds = new Set(),
+    layoutMode = '3d-force',
+    pulsingNodeIds = new Set()
+  } = props;
   
   // 1. Simulation Hook (Worker + State)
-  const { nodesRef, linksRef, nodesMapRef, simulationVersion, isLoading } = useGraphSimulation(nodes, edges);
+  const { nodesRef, linksRef, nodesMapRef, simulationVersion, isLoading } = useGraphSimulation(
+    nodes, 
+    edges,
+    collapsedNodeIds,
+    layoutMode
+  );
 
   // Notify parent about loading state
   React.useEffect(() => {
@@ -55,8 +79,10 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
           simulationVersion={simulationVersion}
           highlightedNodes={highlightedNodes}
           highlightedLinks={highlightedLinks}
+          pulsingNodeIds={pulsingNodeIds}
           isDark={isDark}
           onSelectionChange={onSelectionChange}
+          onNodeCollapse={onNodeCollapse}
           {...props} 
         />
       </Canvas>

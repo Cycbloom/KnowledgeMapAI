@@ -87,6 +87,10 @@ export const GraphEditor = () => {
   // Search State
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Layout & Clustering State
+  const [layoutMode, setLayoutMode] = useState<'3d-force' | '2d-tree' | '3d-sphere'>('3d-force');
+  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
 
   // Filter nodes based on search query
   const searchResults = useMemo(() => {
@@ -97,6 +101,10 @@ export const GraphEditor = () => {
       (node.content && node.content.toLowerCase().includes(query))
     ).slice(0, 10); // Limit to 10 results
   }, [nodes, searchQuery]);
+
+  const pulsingNodeIds = useMemo(() => {
+    return new Set(searchResults.map(n => n.id));
+  }, [searchResults]);
 
   // Pathfinding State
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
@@ -277,6 +285,35 @@ export const GraphEditor = () => {
       case 'sub': return 'normal';
       case 'normal': return 'leaf';
       default: return 'leaf';
+    }
+  };
+
+  const handleToggleCollapse = (nodeId: string) => {
+    setCollapsedNodeIds(prev => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      return next;
+    });
+  };
+
+  const handleLayoutChange = (mode: '3d-force' | '2d-tree' | '3d-sphere') => {
+    setLayoutMode(mode);
+    // Reset camera or other view settings if needed
+    toast.success(`切换至 ${mode === '2d-tree' ? '2D 树状图' : mode === '3d-sphere' ? '3D 球形布局' : '3D 力导向'}`, {
+        icon: '👀',
+    });
+    // Ensure simulation version updates to reset interaction layers
+    if (graphRef.current) {
+      // Small delay to ensure state has propagated
+      setTimeout(() => {
+        // We can't directly trigger setSimulationVersion here as it's internal to useGraphSimulation,
+        // but changing layoutMode already triggers the useEffect in useGraphSimulation.
+        // However, we want to ensure the visual state resets.
+      }, 50);
     }
   };
 
@@ -602,6 +639,10 @@ export const GraphEditor = () => {
             onEngineLoad={setIsEngineLoading}
             onSelectionChange={handleSelectionChange}
             onBackgroundClick={handleBackgroundClick}
+            collapsedNodeIds={collapsedNodeIds}
+            layoutMode={layoutMode}
+            pulsingNodeIds={pulsingNodeIds}
+            onNodeCollapse={handleToggleCollapse}
           />
         </Suspense>
       </div>
@@ -809,6 +850,33 @@ export const GraphEditor = () => {
           <Grid size={20} />
         </button>
 
+        {/* Layout Switcher */}
+        <div className="h-6 w-px bg-gray-300 mx-1"></div>
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          <button 
+            onClick={() => handleLayoutChange('3d-force')}
+            className={`p-1 rounded text-xs font-medium transition-all ${layoutMode === '3d-force' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            title="3D 力导向"
+          >
+            3D
+          </button>
+          <button 
+            onClick={() => handleLayoutChange('2d-tree')}
+            className={`p-1 rounded text-xs font-medium transition-all ${layoutMode === '2d-tree' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            title="2D 树状图"
+          >
+            树
+          </button>
+          <button 
+            onClick={() => handleLayoutChange('3d-sphere')}
+            className={`p-1 rounded text-xs font-medium transition-all ${layoutMode === '3d-sphere' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            title="3D 球形布局"
+          >
+            球
+          </button>
+        </div>
+        <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
         <button 
           onClick={() => setIsDark(!isDark)} 
           className="p-1 hover:bg-gray-100 rounded text-gray-600" 
@@ -1003,7 +1071,15 @@ export const GraphEditor = () => {
                     {/* Children */}
                     {edges.filter(e => e.source_node_id === selectedNode.id).length > 0 && (
                       <div className="p-2 bg-white border border-gray-100 rounded-lg shadow-sm">
-                        <span className="text-xs text-gray-400 block mb-1">子节点:</span>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs text-gray-400">子节点:</span>
+                          <button 
+                            onClick={() => handleToggleCollapse(selectedNode.id)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            {collapsedNodeIds.has(selectedNode.id) ? '展开分支' : '折叠分支'}
+                          </button>
+                        </div>
                         <div className="flex flex-wrap gap-1.5">
                           {edges.filter(e => e.source_node_id === selectedNode.id).map(edge => {
                             const child = nodes.find(n => n.id === edge.target_node_id);

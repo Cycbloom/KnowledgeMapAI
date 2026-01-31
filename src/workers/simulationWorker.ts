@@ -1,11 +1,12 @@
 
-import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceY } from 'd3-force-3d';
+import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceY, forceX, forceZ, forceRadial } from 'd3-force-3d';
 import { LEVEL_CONFIG, SimNode, SimLink } from '../config/graphConfig';
 
 // Store simulation instance
 let simulation: any = null;
 let nodes: SimNode[] = [];
 let links: SimLink[] = [];
+let currentLayoutMode: '3d-force' | '2d-tree' | '3d-sphere' = '3d-force';
 
 self.onmessage = (event) => {
   const { type, payload } = event.data;
@@ -13,7 +14,7 @@ self.onmessage = (event) => {
   switch (type) {
     case 'init':
     case 'updateData':
-      initSimulation(payload.nodes, payload.links);
+      initSimulation(payload.nodes, payload.links, payload.layoutMode);
       break;
     case 'stop':
       if (simulation) simulation.stop();
@@ -24,18 +25,23 @@ self.onmessage = (event) => {
   }
 };
 
-function initSimulation(newNodes: SimNode[], newLinks: SimLink[]) {
+function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3d-force' | '2d-tree' | '3d-sphere' = '3d-force') {
   // Preserve existing positions if IDs match to prevent jumpiness on update
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const isModeChanged = currentLayoutMode !== layoutMode;
+  const isCountChanged = nodes.length !== newNodes.length;
+  currentLayoutMode = layoutMode;
   
   // Merge new nodes with existing positions/velocities
   nodes = newNodes.map(n => {
     const existing = nodeMap.get(n.id);
-    if (existing) {
+    // Reset positions only if layout mode changed.
+    // We preserve positions even if node count changed (collapse/expand) to maintain continuity.
+    if (existing && !isModeChanged) {
       return { 
         ...existing, // Keep existing simulation state (x,y,z,vx,vy,vz)
         ...n,        // Update properties (title, content, etc.)
-        // Ensure simulation properties are preserved
+        // Ensure simulation properties are explicitly preserved
         x: existing.x, 
         y: existing.y, 
         z: existing.z, 
@@ -51,62 +57,98 @@ function initSimulation(newNodes: SimNode[], newLinks: SimLink[]) {
   // We'll map new links to ensure they are clean objects (source/target as strings initially)
   links = newLinks.map(l => ({ ...l }));
 
-  if (!simulation) {
-    simulation = forceSimulation()
-      .numDimensions(3)
-      .force('center', forceCenter())
-      .force('y', forceY(0).strength(5)) // Flattening force (quasi-2D)
-      .force('collide', forceCollide().radius((d: any) => {
-         const level = d.level || 'leaf';
-         const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.leaf;
-         return config.radius * 1.5;
-      }).iterations(3));
-      
-    simulation.on('tick', () => {
-      // Send simplified node positions back to main thread using Float32Array
-      // Layout: [x0, y0, z0, x1, y1, z1, ...]
-      const n = nodes.length;
-      const positions = new Float32Array(n * 3);
-      
-      for (let i = 0; i < n; i++) {
-        const node = nodes[i];
-        positions[i * 3] = node.x || 0;
-        positions[i * 3 + 1] = node.y || 0;
-        positions[i * 3 + 2] = node.z || 0;
-      }
-
-      // @ts-ignore - Worker postMessage signature differs from Window
-      self.postMessage({ type: 'tick', positions }, [positions.buffer]);
-    });
+  if (simulation) {
+    simulation.stop();
   }
 
-  simulation.nodes(nodes);
+  simulation = forceSimulation()
+    .numDimensions(3)
+    .nodes(nodes);
 
-  simulation.force('charge', forceManyBody()
-    .strength((d: any) => {
-      const level = d.level || 'leaf';
-      const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.leaf;
-      return config.chargeStrength;
-    })
-    .distanceMax(15)
-  );
+  // Common forces
+  simulation
+    .force('charge', forceManyBody()
+      .strength((d: any) => {
+        const level = d.level || 'leaf';
+        const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.leaf;
+        return config.chargeStrength;
+      })
+      .distanceMax(layoutMode === '3d-sphere' ? 50 : 15) // Relax distance for sphere
+    )
+    .force('link', forceLink(links)
+      .id((d: any) => d.id)
+      .distance((link: any) => {
+        const sourceLevel = (link.source as SimNode).level || 'leaf';
+        const targetLevel = (link.target as SimNode).level || 'leaf';
+        
+        // Tighter links for tree mode
+        if (layoutMode === '2d-tree') return 1.5;
 
-  simulation.force('link', forceLink(links)
-    .id((d: any) => d.id)
-    .distance((link: any) => {
-      const sourceLevel = (link.source as SimNode).level || 'leaf';
-      const targetLevel = (link.target as SimNode).level || 'leaf';
-      
-      if (sourceLevel === 'root' || targetLevel === 'root') return 3.0;
-      if (sourceLevel === 'core' || targetLevel === 'core') return 2.0;
-      if (sourceLevel === 'sub' || targetLevel === 'sub') return 1.5;
-      return 1.0;
-    })
-  );
+        if (sourceLevel === 'root' || targetLevel === 'root') return 3.0;
+        if (sourceLevel === 'core' || targetLevel === 'core') return 2.0;
+        if (sourceLevel === 'sub' || targetLevel === 'sub') return 1.5;
+        return 1.0;
+      })
+    )
+    .force('collide', forceCollide().radius((d: any) => {
+       const level = d.level || 'leaf';
+       const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.leaf;
+       return config.radius * 1.5;
+    }).iterations(3));
+
+  // Layout-specific forces
+  if (layoutMode === '2d-tree') {
+    // 2D Tree: Vertical hierarchy
+    // Root at top, Leaves at bottom
+    simulation
+      .force('center', forceCenter().strength(0.1)) // Weak center to allow spread
+      .force('y', forceY((d: any) => {
+        const level = d.level || 'leaf';
+        switch (level) {
+          case 'root': return 10;
+          case 'core': return 5;
+          case 'sub': return 0;
+          case 'normal': return -5;
+          case 'leaf': return -10;
+          default: return 0;
+        }
+      }).strength(3)) // Strong Y force to enforce layers
+      .force('z', forceZ(0).strength(5)) // Flatten to 2D
+      .force('x', forceX(0).strength(0.05)); // Weak X to keep centered horizontally
+
+  } else if (layoutMode === '3d-sphere') {
+    // 3D Sphere: Push nodes to surface
+    simulation
+      .force('center', forceCenter())
+      .force('radial', forceRadial(20).strength(0.8)); // Push to radius 20
+
+  } else {
+    // Default 3D Force (Quasi-2D)
+    simulation
+      .force('center', forceCenter())
+      .force('y', forceY(0).strength(5)); // Flattening force
+  }
+
+  simulation.on('tick', () => {
+    // Send simplified node positions back to main thread using Float32Array
+    // Layout: [x0, y0, z0, x1, y1, z1, ...]
+    const n = nodes.length;
+    const positions = new Float32Array(n * 3);
+    
+    for (let i = 0; i < n; i++) {
+      const node = nodes[i];
+      positions[i * 3] = node.x || 0;
+      positions[i * 3 + 1] = node.y || 0;
+      positions[i * 3 + 2] = node.z || 0;
+    }
+
+    // @ts-ignore - Worker postMessage signature differs from Window
+    self.postMessage({ type: 'tick', positions }, [positions.buffer]);
+  });
 
   // Restart simulation
-  // Use lower alpha for incremental updates (smooth transition)
-  // Use higher alpha for initial load
-  const isIncremental = nodeMap.size > 0;
+  // If mode changed, use high alpha to reorganize. 
+  // If just data update, use lower alpha.
+  const isIncremental = nodeMap.size > 0 && !isModeChanged;
   simulation.alpha(isIncremental ? 0.3 : 1).restart();
 }

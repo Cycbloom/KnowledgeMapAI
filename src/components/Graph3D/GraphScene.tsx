@@ -29,7 +29,9 @@ interface GraphSceneProps {
   isDark: boolean;
   highlightedNodes: Set<string>;
   highlightedLinks: Set<string>;
+  pulsingNodeIds?: Set<string>;
   onNodeClick: (node: Node) => void;
+  onNodeCollapse?: (nodeId: string) => void;
   onSelectionChange?: (nodeIds: string[]) => void;
   showGrid?: boolean;
 }
@@ -45,7 +47,9 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
     isDark, 
     highlightedNodes, 
     highlightedLinks,
+    pulsingNodeIds,
     onNodeClick,
+    onNodeCollapse,
     onSelectionChange,
     showGrid 
   } = props;
@@ -222,8 +226,10 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         nodesRef={nodesRef} 
         onNodeClick={onNodeClick} 
         onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
+        onNodeRightClick={(node) => onNodeCollapse?.(node.id)}
         isDark={isDark} 
         highlightedNodes={highlightedNodes} 
+        pulsingNodeIds={pulsingNodeIds}
         simulationVersion={simulationVersion}
       />
       

@@ -2,7 +2,12 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { Node, Edge } from '../../types/index';
 import { SimNode, SimLink } from '../../config/graphConfig';
 
-export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
+export const useGraphSimulation = (
+  rawNodes: Node[], 
+  rawEdges: Edge[],
+  collapsedNodeIds: Set<string> = new Set(),
+  layoutMode: '3d-force' | '2d-tree' | '3d-sphere' = '3d-force'
+) => {
   const workerRef = useRef<Worker | null>(null);
   
   // These refs hold the latest simulation state (positions)
@@ -51,17 +56,54 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
   useEffect(() => {
     if (!workerRef.current) return;
 
-    // Process nodes to add levels (Visual Logic)
+    // 1. Identify hidden nodes (descendants of collapsed nodes)
+    const hiddenNodeIds = new Set<string>();
+    
+    // Build adjacency list for traversal (Source -> Targets)
+    const adj = new Map<string, string[]>();
+    rawEdges.forEach(e => {
+      const s = String(e.source_node_id);
+      const t = String(e.target_node_id);
+      if (!adj.has(s)) adj.set(s, []);
+      adj.get(s)?.push(t);
+    });
+
+    // Traverse from each collapsed node
+    const stack = [...collapsedNodeIds];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      // Note: We don't hide the collapsed node itself, only its children
+      // But if a node is hidden, its children should also be hidden
+      
+      const children = adj.get(current) || [];
+      children.forEach(childId => {
+        if (!hiddenNodeIds.has(childId)) {
+          hiddenNodeIds.add(childId);
+          stack.push(childId); // Continue traversal
+        }
+      });
+    }
+
+    // 2. Filter Nodes
+    // We only keep nodes that are NOT hidden
+    // Exception: If a node is in collapsedNodeIds, it is visible (it's the parent)
+    const visibleNodes = rawNodes.filter(n => !hiddenNodeIds.has(String(n.id)));
+    const visibleNodeIds = new Set(visibleNodes.map(n => String(n.id)));
+
+    // 3. Process nodes to add levels (Visual Logic)
     // We do this here to ensure nodesRef has the correct visual properties
     const nodeDegrees = new Map<string, number>();
     rawEdges.forEach(edge => {
       const sId = String(edge.source_node_id);
       const tId = String(edge.target_node_id);
-      nodeDegrees.set(sId, (nodeDegrees.get(sId) || 0) + 1);
-      nodeDegrees.set(tId, (nodeDegrees.get(tId) || 0) + 1);
+      // Only count degree if both ends are visible
+      if (visibleNodeIds.has(sId) && visibleNodeIds.has(tId)) {
+        nodeDegrees.set(sId, (nodeDegrees.get(sId) || 0) + 1);
+        nodeDegrees.set(tId, (nodeDegrees.get(tId) || 0) + 1);
+      }
     });
 
-    const simNodes: SimNode[] = rawNodes.map(n => {
+    const simNodes: SimNode[] = visibleNodes.map(n => {
       const nodeIdStr = String(n.id);
       let level: any = 'leaf';
       const degree = nodeDegrees.get(nodeIdStr) || 0;
@@ -76,14 +118,35 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
          else if (degree >= 4) level = 'sub';
          else if (degree >= 2) level = 'normal';
       }
-      return { ...n, id: nodeIdStr, level };
+      
+      // Mark as collapsed for visual indicator
+      const isCollapsed = collapsedNodeIds.has(nodeIdStr);
+      
+      // Try to preserve existing simulation data to avoid "empty frames" during re-render
+      const existing = nodesMapRef.current.get(nodeIdStr);
+
+      return { 
+        ...n, 
+        id: nodeIdStr, 
+        level, 
+        collapsed: isCollapsed,
+        x: existing?.x,
+        y: existing?.y,
+        z: existing?.z,
+        vx: existing?.vx,
+        vy: existing?.vy,
+        vz: existing?.vz
+      };
     });
 
-    const simLinks: SimLink[] = rawEdges.map(e => ({
-      id: String(e.id),
-      source: String(e.source_node_id),
-      target: String(e.target_node_id)
-    }));
+    // 4. Filter Links
+    const simLinks: SimLink[] = rawEdges
+      .filter(e => visibleNodeIds.has(String(e.source_node_id)) && visibleNodeIds.has(String(e.target_node_id)))
+      .map(e => ({
+        id: String(e.id),
+        source: String(e.source_node_id),
+        target: String(e.target_node_id)
+      }));
 
     // Update Refs
     nodesRef.current = simNodes;
@@ -100,10 +163,14 @@ export const useGraphSimulation = (rawNodes: Node[], rawEdges: Edge[]) => {
     setIsLoading(true);
     workerRef.current.postMessage({
       type: 'updateData',
-      payload: { nodes: simNodes, links: simLinks }
+      payload: {
+        nodes: simNodes,
+        links: simLinks,
+        layoutMode // Pass layout mode
+      }
     });
 
-  }, [rawNodes, rawEdges]);
+  }, [rawNodes, rawEdges, collapsedNodeIds, layoutMode]); // Re-run when these change
 
   return {
     nodesRef,

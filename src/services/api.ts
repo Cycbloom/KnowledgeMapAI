@@ -110,6 +110,53 @@ export const api = {
     expand: (data: any) => request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(data) }),
     generateCards: (data: any) => request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(data) }),
     textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: any[]; edges?: any[] }) => request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(data) }),
+    chatStream: async (data: { message: string; graph_id: string; context_node_ids?: string[] }, onChunk: (content: string) => void) => {
+      const token = useStore.getState().token;
+      const response = await fetch(`${API_URL}/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+         if (response.status === 401) {
+            useStore.getState().setUser(null, null);
+         }
+         const errorText = await response.text();
+         throw new Error(errorText || 'Chat Stream failed');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.replace('data: ', '');
+            if (dataStr === '[DONE]') return;
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.content) onChunk(parsed.content);
+              if (parsed.error) throw new Error(parsed.error);
+            } catch (e) {
+               console.error('Stream parse error:', e);
+            }
+          }
+        }
+      }
+    },
   },
   study: {
     getCards: (graphId?: string) => request(`/study/cards${graphId ? `?graph_id=${graphId}` : ''}`),

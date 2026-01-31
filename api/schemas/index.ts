@@ -99,6 +99,12 @@ export const textToGraphSchema = z.object({
   edges: z.array(z.any()).optional(),
 });
 
+export const chatSchema = z.object({
+  message: z.string().min(1, '消息不能为空'),
+  graph_id: z.string().uuid('无效的图谱ID'),
+  context_node_ids: z.array(z.string().uuid()).optional(),
+});
+
 // --- Data Schemas ---
 export const importDataSchema = z.object({
   graph_title: z.string().min(1, '图谱标题不能为空'),

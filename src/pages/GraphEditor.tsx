@@ -9,11 +9,12 @@ import { Node, Edge } from '../types';
 // Cast the lazy loaded component to proper type including ref
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generateMarkdown, generateJSON, downloadFile, downloadImage } from '../utils/exportUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { TextToGraphModal } from '../components/GraphEditor/TextToGraphModal';
+import { ChatDialog } from '../components/GraphEditor/ChatDialog';
 import { useHistory } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { 
@@ -101,6 +102,7 @@ export const GraphEditor = () => {
   });
   const [aiPrompt, setAiPrompt] = useState('');
   const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
   const [exportImageOptions, setExportImageOptions] = useState({
@@ -693,6 +695,14 @@ export const GraphEditor = () => {
         </button>
 
         <button 
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className={`p-1 rounded transition-colors ${isChatOpen ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-purple-600'}`}
+          title="图谱助手"
+        >
+          <MessageSquare size={20} />
+        </button>
+
+        <button 
           onClick={handleStartCreate} 
           className="p-1 hover:bg-gray-100 rounded text-blue-600" 
           title="添加节点"
@@ -817,11 +827,18 @@ export const GraphEditor = () => {
 
       {/* Modals */}
       <TextToGraphModal 
-        isOpen={isTextToGraphOpen} 
-        onClose={() => setIsTextToGraphOpen(false)} 
-        graphId={id || ''} 
+        isOpen={isTextToGraphOpen}
+        onClose={() => setIsTextToGraphOpen(false)}
+        graphId={id || ''}
       />
-
+      
+      <ChatDialog 
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        graphId={id || ''}
+        selectedNodeIds={Array.from(selectedNodeIds)}
+      />
+      
       {/* Right Sidebar */}
       {sidebarMode !== 'none' && (
         <div className={`w-80 bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== 'outline' ? 'p-4 overflow-y-auto' : ''}`}>

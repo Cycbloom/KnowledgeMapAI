@@ -3,10 +3,11 @@ import OpenAI from 'openai';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import dotenv from 'dotenv';
 import { validate } from '../middleware/validate.js';
-import { generateContentSchema, expandKnowledgeSchema, generateCardsSchema, textToGraphSchema } from '../schemas/index.js';
+import { generateContentSchema, expandKnowledgeSchema, generateCardsSchema, textToGraphSchema, chatSchema } from '../schemas/index.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { CacheKeys, cacheService } from '../services/cache.js';
+import { graphService } from '../services/graphService.js';
 
 dotenv.config();
 
@@ -29,6 +30,9 @@ const getMockResponse = (type: string, prompt: string) => {
       { title: `与 ${prompt} 相关 2`, content: '描述 2' },
       { title: `与 ${prompt} 相关 3`, content: '描述 3' },
     ];
+  }
+  if (type === 'chat') {
+     return `[模拟 AI 回复] 我收到了你的问题: "${prompt}"。这是一个模拟回复，因为后端没有配置 API Key。`;
   }
   return '';
 };
@@ -331,6 +335,89 @@ Please respond in Chinese.`
   } catch (error: any) {
     console.error('AI Text-to-Graph Error:', error);
     throw new AppError(error.message || 'AI processing failed', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+// Chat with Graph
+router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest, res: Response) => {
+  const { message, graph_id, context_node_ids } = req.body;
+
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  if (!openai) {
+    const mockContent = getMockResponse('chat', message) as string;
+    const chunks = mockContent.split('');
+    const sendMockChunks = async () => {
+      for (const chunk of chunks) {
+         res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+         await new Promise(resolve => setTimeout(resolve, 30)); 
+      }
+      res.write('data: [DONE]\n\n');
+      res.end();
+    };
+    sendMockChunks();
+    return;
+  }
+
+  try {
+    // 1. Fetch Graph Context
+    const { nodes } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);
+    
+    // 2. Filter/Prepare Context
+    // If specific nodes are selected (context_node_ids), prioritise them.
+    // Otherwise, use all nodes (summary).
+    let contextText = "";
+    const MAX_CONTEXT_LENGTH = 10000; // Characters
+
+    if (context_node_ids && context_node_ids.length > 0) {
+      const selectedNodes = nodes.filter((n: any) => context_node_ids.includes(n.id));
+      contextText = selectedNodes.map((n: any) => `- ${n.title}: ${n.content || '(No content)'}`).join('\n');
+    } else {
+      // Use all nodes, but maybe just titles if too many
+      if (nodes.length > 50) {
+        contextText = nodes.map((n: any) => `- ${n.title}`).join('\n');
+      } else {
+        contextText = nodes.map((n: any) => `- ${n.title}: ${n.content || '(No content)'}`).join('\n');
+      }
+    }
+
+    // Truncate if too long
+    if (contextText.length > MAX_CONTEXT_LENGTH) {
+      contextText = contextText.substring(0, MAX_CONTEXT_LENGTH) + "...(truncated)";
+    }
+
+    // 3. Call AI
+    const stream = await openai.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: `You are an intelligent assistant for a Knowledge Graph. 
+Answer the user's question based on the provided Graph Context.
+If the answer is not in the context, use your general knowledge but mention that it's external info.
+Respond in Chinese.` 
+        },
+        { role: "user", content: `Graph Context:\n${contextText}\n\nUser Question: ${message}` }
+      ],
+      model: model,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+    res.write('data: [DONE]\n\n');
+    res.end();
+
+  } catch (error: any) {
+    console.error('AI Chat Error:', error);
+    res.write(`data: ${JSON.stringify({ error: error.message || 'AI Chat failed', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
+    res.end();
   }
 });
 

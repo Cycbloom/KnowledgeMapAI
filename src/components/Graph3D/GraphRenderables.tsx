@@ -49,6 +49,7 @@ export const InstancedNodes = ({
   simulationVersion
 }: InstancedNodesProps) => {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const hitMeshRef = useRef<THREE.InstancedMesh>(null);
   const tempObject = new THREE.Object3D();
   const tempColor = new THREE.Color();
   const hoveredRef = useRef<number | null>(null);
@@ -61,10 +62,13 @@ export const InstancedNodes = ({
     if (meshRef.current) {
       meshRef.current.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
     }
+    if (hitMeshRef.current) {
+      hitMeshRef.current.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
+    }
   }, []);
 
   useFrame(() => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !hitMeshRef.current) return;
     
     const nodes = nodesRef.current;
     
@@ -85,9 +89,18 @@ export const InstancedNodes = ({
         scale *= 1.2;
       }
       
+      // Update Visual Mesh
       tempObject.scale.set(scale, scale, scale);
       tempObject.updateMatrix();
       meshRef.current.setMatrixAt(i, tempObject.matrix);
+
+      // Update Hit Mesh
+      // Use a larger scale for easier interaction, ensuring minimum clickable size
+      // Minimum radius 0.8 ensures even small leaf nodes are easily clickable
+      const hitScale = Math.max(scale * 1.5, 0.8);
+      tempObject.scale.set(hitScale, hitScale, hitScale);
+      tempObject.updateMatrix();
+      hitMeshRef.current.setMatrixAt(i, tempObject.matrix);
       
       // Color logic
       const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
@@ -102,44 +115,66 @@ export const InstancedNodes = ({
     
     meshRef.current.instanceMatrix.needsUpdate = true;
     if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+
+    hitMeshRef.current.instanceMatrix.needsUpdate = true;
   });
 
   return (
-    <instancedMesh
-      key={simulationVersion} // Force re-creation when topology changes
-      ref={meshRef}
-      args={[undefined, undefined, nodeCount]}
-      frustumCulled={false}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (e.instanceId !== undefined && nodesRef.current[e.instanceId]) {
-          onNodeClick?.(nodesRef.current[e.instanceId]);
-        }
-      }}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        if (e.instanceId !== undefined && nodesRef.current[e.instanceId]) {
-          onNodeDoubleClick?.(nodesRef.current[e.instanceId]);
-        }
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = 'pointer';
-        hoveredRef.current = e.instanceId !== undefined ? e.instanceId : null;
-      }}
-      onPointerOut={(e) => {
-        document.body.style.cursor = 'default';
-        hoveredRef.current = null;
-      }}
-    >
-      <sphereGeometry args={[1, 32, 32]} />
-      <meshPhysicalMaterial 
-        roughness={0.4} 
-        metalness={0.1} 
-        clearcoat={0.5}
-        clearcoatRoughness={0.1}
-      />
-    </instancedMesh>
+    <>
+      {/* Visual Mesh - No interaction */}
+      <instancedMesh
+        key={`visual-${simulationVersion}`} // Force re-creation when topology changes
+        ref={meshRef}
+        args={[undefined, undefined, nodeCount]}
+        frustumCulled={false}
+        raycast={() => null} // Disable raycasting for visual mesh to optimize
+      >
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshPhysicalMaterial 
+          roughness={0.4} 
+          metalness={0.1} 
+          clearcoat={0.5}
+          clearcoatRoughness={0.1}
+        />
+      </instancedMesh>
+
+      {/* Hit Mesh - Invisible but interactive */}
+      <instancedMesh
+        key={`hit-${simulationVersion}`}
+        ref={hitMeshRef}
+        args={[undefined, undefined, nodeCount]}
+        frustumCulled={false}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.instanceId !== undefined && nodesRef.current[e.instanceId]) {
+            onNodeClick?.(nodesRef.current[e.instanceId]);
+          }
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          if (e.instanceId !== undefined && nodesRef.current[e.instanceId]) {
+            onNodeDoubleClick?.(nodesRef.current[e.instanceId]);
+          }
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+          hoveredRef.current = e.instanceId !== undefined ? e.instanceId : null;
+        }}
+        onPointerOut={(e) => {
+          document.body.style.cursor = 'default';
+          hoveredRef.current = null;
+        }}
+      >
+        <sphereGeometry args={[1, 8, 8]} /> {/* Low poly for hit testing */}
+        <meshBasicMaterial 
+          transparent 
+          opacity={0} 
+          depthWrite={false} 
+          side={THREE.DoubleSide}
+        />
+      </instancedMesh>
+    </>
   );
 };
 

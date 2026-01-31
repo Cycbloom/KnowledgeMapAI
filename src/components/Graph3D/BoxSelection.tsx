@@ -1,21 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { createPortal } from 'react-dom';
 import * as THREE from 'three';
 import { SimNode } from '../../config/graphConfig';
 
 interface BoxSelectionProps {
   nodesRef: React.MutableRefObject<SimNode[]>;
   onSelectionChange: (nodeIds: string[]) => void;
+  onBoxUpdate?: (box: { left: number; top: number; width: number; height: number } | null) => void;
   enabled?: boolean;
 }
 
-export const BoxSelection = ({ nodesRef, onSelectionChange, enabled = true }: BoxSelectionProps) => {
+export const BoxSelection = ({ nodesRef, onSelectionChange, onBoxUpdate, enabled = true }: BoxSelectionProps) => {
   const { gl, camera, controls } = useThree();
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [endPos, setEndPos] = useState({ x: 0, y: 0 });
   const [isShiftDown, setIsShiftDown] = useState(false);
+
+  useEffect(() => {
+    if (!isSelecting && onBoxUpdate) {
+      onBoxUpdate(null);
+    }
+  }, [isSelecting, onBoxUpdate]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -48,27 +55,30 @@ export const BoxSelection = ({ nodesRef, onSelectionChange, enabled = true }: Bo
       if (e.button !== 0) return; // Left click only
       e.preventDefault();
       setIsSelecting(true);
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      setStartPos({ x, y });
-      setEndPos({ x, y });
+      setStartPos({ x: e.clientX, y: e.clientY });
+      setEndPos({ x: e.clientX, y: e.clientY });
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!isSelecting) return;
       e.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      setEndPos({ x, y });
+      setEndPos({ x: e.clientX, y: e.clientY });
+      
+      if (onBoxUpdate) {
+        const left = Math.min(startPos.x, e.clientX);
+        const top = Math.min(startPos.y, e.clientY);
+        const width = Math.abs(e.clientX - startPos.x);
+        const height = Math.abs(e.clientY - startPos.y);
+        onBoxUpdate({ left, top, width, height });
+      }
     };
 
     const handleMouseUp = (e: MouseEvent) => {
       if (!isSelecting) return;
       setIsSelecting(false);
+      if (onBoxUpdate) onBoxUpdate(null);
       
-      // Calculate selection
+      // Calculate selection in Client Space
       const rect = canvas.getBoundingClientRect();
       const minX = Math.min(startPos.x, endPos.x);
       const maxX = Math.max(startPos.x, endPos.x);
@@ -81,8 +91,6 @@ export const BoxSelection = ({ nodesRef, onSelectionChange, enabled = true }: Bo
       }
 
       const selectedIds: string[] = [];
-      const width = rect.width;
-      const height = rect.height;
 
       nodesRef.current.forEach(node => {
         if (typeof node.x !== 'number' || typeof node.y !== 'number') return;
@@ -90,10 +98,11 @@ export const BoxSelection = ({ nodesRef, onSelectionChange, enabled = true }: Bo
         const pos = new THREE.Vector3(node.x, node.y, node.z || 0);
         pos.project(camera); // -1 to 1
 
-        const x = (pos.x * 0.5 + 0.5) * width;
-        const y = (-(pos.y * 0.5) + 0.5) * height;
+        // Convert Node NDC to Client Coordinates
+        const clientX = (pos.x * 0.5 + 0.5) * rect.width + rect.left;
+        const clientY = (-(pos.y * 0.5) + 0.5) * rect.height + rect.top;
 
-        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+        if (clientX >= minX && clientX <= maxX && clientY >= minY && clientY <= maxY) {
           selectedIds.push(node.id);
         }
       });
@@ -110,29 +119,7 @@ export const BoxSelection = ({ nodesRef, onSelectionChange, enabled = true }: Bo
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isShiftDown, isSelecting, enabled, gl, camera, nodesRef, startPos, endPos]);
+  }, [isShiftDown, isSelecting, enabled, gl, camera, nodesRef, startPos, endPos, onBoxUpdate]);
 
-  if (!isSelecting) return null;
-
-  const left = Math.min(startPos.x, endPos.x);
-  const top = Math.min(startPos.y, endPos.y);
-  const width = Math.abs(endPos.x - startPos.x);
-  const height = Math.abs(endPos.y - startPos.y);
-
-  return (
-    <Html fullscreen style={{ pointerEvents: 'none', zIndex: 100 }}>
-      <div 
-        style={{
-          position: 'absolute',
-          left: left,
-          top: top,
-          width: width,
-          height: height,
-          border: '1px solid #3B82F6',
-          backgroundColor: 'rgba(59, 130, 246, 0.2)',
-          pointerEvents: 'none'
-        }}
-      />
-    </Html>
-  );
+  return null;
 };

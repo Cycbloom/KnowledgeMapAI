@@ -10,7 +10,7 @@ import { Node, Edge } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3 } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -21,6 +21,7 @@ import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { TextToGraphModal } from '../components/GraphEditor/TextToGraphModal';
 import { ChatDialog } from '../components/GraphEditor/ChatDialog';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useHistory } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 const levelLabels: Record<string, string> = {
@@ -110,6 +111,8 @@ export const GraphEditor = () => {
 
   // Pathfinding State
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [selectionBox, setSelectionBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [pathStartNode, setPathStartNode] = useState<Node | null>(null);
   const [pathEndNode, setPathEndNode] = useState<Node | null>(null);
   const [highlightedPath, setHighlightedPath] = useState<{ nodes: Set<string>, links: Set<string> } | null>(null);
@@ -137,6 +140,18 @@ export const GraphEditor = () => {
     transparent: false,
     fitView: true,
     hideGrid: true
+  });
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
   });
 
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -226,6 +241,11 @@ export const GraphEditor = () => {
   };
 
   const handleNodeClick = (node: Node) => {
+    if (isDeleteMode) {
+      handleDeleteNode(node);
+      return;
+    }
+
     if (isPathfindingMode) {
       if (!pathStartNode) {
         setPathStartNode(node);
@@ -253,9 +273,9 @@ export const GraphEditor = () => {
     setSidebarMode('detail');
 
     // Smooth transition: zoom to node
-    if (graphRef.current) {
-      graphRef.current.focusNode(node.id);
-    }
+    // if (graphRef.current) {
+    //   graphRef.current.focusNode(node.id);
+    // }
   };
 
   const handleSelectionChange = (ids: string[]) => {
@@ -415,43 +435,61 @@ export const GraphEditor = () => {
     }
   };
 
-  const handleDeleteNode = () => {
-    if (!selectedNode || !id) return;
-    if (window.confirm('确定要删除这个节点吗?')) {
-      deleteNodeMutation.mutate({ id: selectedNode.id, graphId: id }, {
-        onSuccess: () => {
-          handleCloseSidebar();
-          toast.success('节点已删除');
-        },
-        onError: (err) => {
-          console.error(err);
-          toast.error('删除失败');
-        }
-      });
-    }
+  const handleDeleteNode = (nodeToDelete: Node | null = selectedNode) => {
+    if (!nodeToDelete || !id) return;
+    
+    setConfirmModal({
+      isOpen: true,
+      title: '删除节点',
+      message: `确定要删除节点 "${nodeToDelete.title}" 吗?`,
+      onConfirm: () => {
+        deleteNodeMutation.mutate({ id: nodeToDelete.id, graphId: id }, {
+          onSuccess: () => {
+            // If we deleted the currently selected node, clear selection
+            if (selectedNode?.id === nodeToDelete.id) {
+              handleCloseSidebar();
+            }
+            toast.success('节点已删除');
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          },
+          onError: (err) => {
+            console.error(err);
+            toast.error('删除失败');
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          }
+        });
+      }
+    });
   };
 
   const handleBatchDelete = () => {
     if (!id || selectedNodeIds.size === 0) return;
-    if (window.confirm(`确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`)) {
-      setLoading(true);
-      const nodeIds = Array.from(selectedNodeIds);
-      
-      // Execute in parallel and wait for all to complete
-      Promise.all(nodeIds.map(nodeId => 
-        deleteNodeMutation.mutateAsync({ id: nodeId, graphId: id })
-      )).then(() => {
-        setSelectedNodeIds(new Set());
-        setSelectedNode(null);
-        setSidebarMode('none');
-        toast.success('批量删除成功');
-      }).catch((err) => {
-        console.error(err);
-        toast.error('批量删除失败');
-      }).finally(() => {
-        setLoading(false);
-      });
-    }
+    
+    setConfirmModal({
+      isOpen: true,
+      title: '批量删除',
+      message: `确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`,
+      onConfirm: () => {
+        setLoading(true);
+        const nodeIds = Array.from(selectedNodeIds);
+        
+        // Execute in parallel and wait for all to complete
+        Promise.all(nodeIds.map(nodeId => 
+          deleteNodeMutation.mutateAsync({ id: nodeId, graphId: id })
+        )).then(() => {
+          setSelectedNodeIds(new Set());
+          setSelectedNode(null);
+          setSidebarMode('none');
+          toast.success('批量删除成功');
+        }).catch((err) => {
+          console.error(err);
+          toast.error('批量删除失败');
+        }).finally(() => {
+          setLoading(false);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        });
+      }
+    });
   };
 
   const handleAIGenerate = async () => {
@@ -595,22 +633,28 @@ export const GraphEditor = () => {
 
   const handleDeleteGraph = () => {
     if (!id || !graphMeta) return;
-    if (window.confirm(`确定要删除当前图谱 "${graphMeta.title}" 吗？此操作无法撤销。`)) {
-      setLoading(true);
-      deleteGraphMutation.mutate(id, {
-        onSuccess: () => {
-          toast.success('图谱已删除');
-          navigate('/dashboard');
-        },
-        onError: (err: any) => {
-          console.error(err);
-          toast.error(err.message || '删除失败');
-        },
-        onSettled: () => {
-          setLoading(false);
-        }
-      });
-    }
+    
+    setConfirmModal({
+      isOpen: true,
+      title: '删除图谱',
+      message: `确定要删除当前图谱 "${graphMeta.title}" 吗？此操作无法撤销。`,
+      onConfirm: () => {
+        setLoading(true);
+        deleteGraphMutation.mutate(id, {
+          onSuccess: () => {
+            toast.success('图谱已删除');
+            navigate('/dashboard');
+            // No need to close modal as we navigate away
+          },
+          onError: (err: any) => {
+            console.error(err);
+            toast.error(err.message || '删除失败');
+            setLoading(false);
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          },
+        });
+      }
+    });
   };
 
   const handleExportImage = () => {
@@ -638,7 +682,7 @@ export const GraphEditor = () => {
   return (
     <div className="flex h-full relative">
       {/* 3D Canvas */}
-      <div className="flex-1 h-full relative">
+      <div className={`flex-1 h-full relative ${isDeleteMode ? 'cursor-not-allowed' : ''}`}>
         {(isGraphLoading || isEngineLoading) && (
           <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm">
              <div className="text-center">
@@ -662,6 +706,7 @@ export const GraphEditor = () => {
             highlightedPath={highlightedPath}
             onEngineLoad={setIsEngineLoading}
             onSelectionChange={handleSelectionChange}
+            onBoxUpdate={setSelectionBox}
             onBackgroundClick={handleBackgroundClick}
             collapsedNodeIds={collapsedNodeIds}
             layoutMode={layoutMode}
@@ -669,6 +714,23 @@ export const GraphEditor = () => {
             onNodeCollapse={handleToggleCollapse}
           />
         </Suspense>
+
+        {/* Selection Box Overlay - Rendered outside R3F to avoid R3F/DOM conflicts */}
+        {selectionBox && (
+          <div 
+            style={{
+              position: 'fixed',
+              left: selectionBox.left,
+              top: selectionBox.top,
+              width: selectionBox.width,
+              height: selectionBox.height,
+              border: '1px solid #3B82F6',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+            }}
+          />
+        )}
       </div>
 
       {/* Batch Actions Toolbar */}
@@ -853,6 +915,38 @@ export const GraphEditor = () => {
         >
           <Plus size={20} />
         </button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
+        <button 
+          onClick={() => {
+            setIsDeleteMode(!isDeleteMode);
+            // Disable other modes
+            if (!isDeleteMode) {
+               setIsPathfindingMode(false);
+               setIsFocusMode(false);
+            }
+          }}
+          className={`p-1 rounded transition-colors ${isDeleteMode ? 'bg-red-50 text-red-600 ring-2 ring-red-200' : 'hover:bg-gray-100 text-gray-600'}`}
+          title={isDeleteMode ? "退出删除模式" : "删除模式 (点击节点直接删除)"}
+        >
+          <Eraser size={20} />
+        </button>
+
+        <button 
+          onClick={() => {
+            if (selectedNodeIds.size > 1) {
+              handleBatchDelete();
+            } else if (selectedNodeIds.size === 1) {
+              handleDeleteNode();
+            }
+          }}
+          disabled={selectedNodeIds.size === 0}
+          className={`p-1 rounded transition-colors ${selectedNodeIds.size > 0 ? 'hover:bg-red-50 text-red-600' : 'text-gray-300 cursor-not-allowed'}`}
+          title={selectedNodeIds.size > 1 ? "批量删除" : "删除选中节点"}
+        >
+          <Trash2 size={20} />
+        </button>
         
         <button 
           onClick={() => {
@@ -978,6 +1072,20 @@ export const GraphEditor = () => {
         </div>
       )}
 
+      {/* Delete Mode Indicator */}
+      {isDeleteMode && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-200 text-red-700 px-4 py-2 rounded-full shadow-lg z-20 flex items-center space-x-2 animate-in slide-in-from-top-4">
+          <Eraser size={16} />
+          <span className="font-medium text-sm">删除模式：点击任意节点即可删除</span>
+          <button 
+            onClick={() => setIsDeleteMode(false)}
+            className="ml-2 p-0.5 hover:bg-red-200 rounded-full"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Pathfinding Instructions */}
       {isPathfindingMode && !isFocusMode && (
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-blue-100 flex items-center space-x-2 z-20">
@@ -1016,6 +1124,16 @@ export const GraphEditor = () => {
         onClose={() => setIsChatOpen(false)}
         graphId={id || ''}
         selectedNodeIds={Array.from(selectedNodeIds)}
+      />
+      
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="删除"
+        isDangerous={true}
       />
       
       {/* Right Sidebar */}

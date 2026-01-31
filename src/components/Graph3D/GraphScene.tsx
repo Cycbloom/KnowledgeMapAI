@@ -33,6 +33,7 @@ interface GraphSceneProps {
   onNodeClick: (node: Node) => void;
   onNodeCollapse?: (nodeId: string) => void;
   onSelectionChange?: (nodeIds: string[]) => void;
+  onBoxUpdate?: (box: { left: number; top: number; width: number; height: number } | null) => void;
   showGrid?: boolean;
 }
 
@@ -51,6 +52,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
     onNodeClick,
     onNodeCollapse,
     onSelectionChange,
+    onBoxUpdate,
     showGrid 
   } = props;
 
@@ -270,9 +272,11 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         targetLookAt={focusTarget?.lookAt || null} 
       />
 
+      {/* Selection Tool */}
       <BoxSelection 
         nodesRef={nodesRef} 
         onSelectionChange={onSelectionChange || (() => {})} 
+        onBoxUpdate={onBoxUpdate}
       />
     </>
   );

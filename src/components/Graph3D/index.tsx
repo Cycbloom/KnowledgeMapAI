@@ -17,6 +17,7 @@ export type Graph3DProps = {
   highlightedPath?: { nodes: Set<string>, links: Set<string> } | null;
   onEngineLoad?: (isLoading: boolean) => void;
   onSelectionChange?: (nodeIds: string[]) => void;
+  onBoxUpdate?: (box: { left: number; top: number; width: number; height: number } | null) => void;
   onBackgroundClick?: () => void;
   onNodeCollapse?: (nodeId: string) => void;
   // New props for clustering and layout
@@ -38,6 +39,7 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
     onEngineLoad, 
     onSelectionChange, 
     onBackgroundClick,
+    onBoxUpdate,
     onNodeCollapse,
     collapsedNodeIds = new Set(),
     layoutMode = '3d-force',
@@ -69,7 +71,7 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
   const backgroundClass = isDark ? THEME_CONFIG.dark.background : THEME_CONFIG.light.background;
 
   return (
-    <div className={`w-full h-full transition-colors duration-300 ${backgroundClass}`}>
+    <div className={`w-full h-full transition-colors duration-300 ${backgroundClass} relative`}>
       <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
         <GraphScene 
           ref={ref}
@@ -82,6 +84,7 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
           pulsingNodeIds={pulsingNodeIds}
           isDark={isDark}
           onSelectionChange={onSelectionChange}
+          onBoxUpdate={onBoxUpdate}
           onNodeCollapse={onNodeCollapse}
           {...props} 
         />

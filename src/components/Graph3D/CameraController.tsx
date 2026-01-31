@@ -59,9 +59,21 @@ export const CameraController = ({ targetPosition, targetLookAt }: CameraControl
       if (keys.has('KeyD')) move.add(right);
       if (keys.has('KeyA')) move.sub(right);
       
-      // Vertical movement (Space / Shift)
+      // Vertical movement (Space / Shift + Arrows)
       if (keys.has('Space')) move.y += 1;
-      if (keys.has('ShiftLeft') || keys.has('ShiftRight')) move.y -= 1;
+      
+      // Fix: Shift alone should not move camera (conflicts with selection)
+      // User requested Shift + Up/Down for vertical movement
+      const isShift = keys.has('ShiftLeft') || keys.has('ShiftRight');
+      
+      if (isShift) {
+        if (keys.has('ArrowUp')) move.y += 1;
+        if (keys.has('ArrowDown')) move.y -= 1;
+      }
+
+      // Also support Q/E for vertical movement as standard alternative
+      if (keys.has('KeyE')) move.y += 1; // Up
+      if (keys.has('KeyQ')) move.y -= 1; // Down
 
       if (move.lengthSq() > 0) {
         move.normalize().multiplyScalar(speed);

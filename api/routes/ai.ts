@@ -1,9 +1,22 @@
 import { Router, type Response } from 'express';
 import OpenAI from 'openai';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
+
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import dotenv from 'dotenv';
+import multer from 'multer';
 import { validate } from '../middleware/validate.js';
-import { generateContentSchema, expandKnowledgeSchema, generateCardsSchema, textToGraphSchema, chatSchema } from '../schemas/index.js';
+import { 
+  generateContentSchema, 
+  expandKnowledgeSchema, 
+  generateCardsSchema, 
+  textToGraphSchema, 
+  chatSchema,
+  recommendConnectionsSchema,
+  documentToGraphSchema
+} from '../schemas/index.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { CacheKeys, cacheService } from '../services/cache.js';
@@ -18,6 +31,12 @@ const baseURL = process.env.DEEPSEEK_API_KEY ? 'https://api.deepseek.com' : unde
 const model = process.env.DEEPSEEK_API_KEY ? 'deepseek-chat' : 'gpt-3.5-turbo';
 
 const openai = apiKey ? new OpenAI({ apiKey, baseURL }) : null;
+
+// Multer setup for PDF uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 // Helper to generate mock response if no API key
 const getMockResponse = (type: string, prompt: string) => {
@@ -179,7 +198,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
       throw new AppError('Graph ID is required for saving', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
-    if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+    if (!nodes || !Array.isArray(nodes)) {
       throw new AppError('No nodes provided for saving', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
@@ -187,34 +206,45 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
       // 1. Prepare Nodes with UUIDs
       const nodeMap = new Map<string, string>(); // temp_id -> real_uuid
       
-      const nodesToInsert = nodes.map((node: any) => {
-        // Generate UUID
-        const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
+      const nodesToInsert = nodes
+        .filter((node: any) => node.title && node.title.trim() !== "")
+        .map((node: any) => {
+          // Generate UUID
+          const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+          
+          // If node has an ID (temp_id), map it. 
+          if (node.id) nodeMap.set(node.id, uuid);
+          
+          return {
+            id: uuid,
+            graph_id,
+            title: node.title,
+            content: node.content || '',
+            x_position: Math.round((Math.random() - 0.5) * 50),
+            y_position: Math.round((Math.random() - 0.5) * 50),
+            color: node.level === 'root' ? '#8B5CF6' : 
+                   node.level === 'core' ? '#EF4444' : 
+                   node.level === 'sub' ? '#F59E0B' : 
+                   node.level === 'normal' ? '#3B82F6' : '#10B981',
+            level: node.level || 'leaf',
+            properties: { 
+              ...node.properties, 
+              source: 'ai-text-to-graph' 
+            }
+          };
         });
-        
-        // If node has an ID (temp_id), map it. 
-        if (node.id) nodeMap.set(node.id, uuid);
-        
-        return {
-          id: uuid,
-          graph_id,
-          title: node.title,
-          content: node.content || '',
-          x_position: Math.round((Math.random() - 0.5) * 50),
-          y_position: Math.round((Math.random() - 0.5) * 50),
-          color: node.level === 'root' ? '#8B5CF6' : 
-                 node.level === 'core' ? '#EF4444' : 
-                 node.level === 'sub' ? '#F59E0B' : 
-                 node.level === 'normal' ? '#3B82F6' : '#10B981',
-          level: node.level || 'leaf',
-          properties: { 
-            ...node.properties, 
-            source: 'ai-text-to-graph' 
-          }
-        };
-      });
+
+      if (nodesToInsert.length === 0) {
+        return res.json({ 
+          success: true, 
+          nodeCount: 0, 
+          edgeCount: 0,
+          message: 'No valid nodes found to save'
+        });
+      }
 
       // 2. Batch Insert Nodes
       const { error: nodeError } = await req.supabase!
@@ -307,9 +337,10 @@ Requirements:
    - 'leaf': Specific examples, minor details, or data points (children of normal).
 4. Output a TREE structure. Minimise cross-links to keep it clean. Ensure every node (except root) has a valid parent.
 5. Return a JSON object with 'nodes' and 'edges' arrays.
-   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "level": "root|core|sub|normal|leaf" }
+   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description (must contain definition or core content, 100-200 words)", "level": "root|core|sub|normal|leaf" }
    - Edges: { "source": "parent_temp_id", "target": "child_temp_id", "relationship": "contains|related" }
-6. IMPORTANT: Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.
+6. **Content Richness**: Every node must have substantial 'content' description, not just a title.
+7. IMPORTANT: Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.
    
 Please respond in Chinese.` 
         },
@@ -329,7 +360,10 @@ Please respond in Chinese.`
       throw new AppError('AI 生成内容过长被截断，请尝试减少文本量或分段生成。', 422, ErrorCodes.INTERNAL_ERROR);
     }
     
-    // Return parsed data for preview
+    // Return parsed data for preview, ensure nodes have titles
+    if (parsed.nodes) {
+      parsed.nodes = parsed.nodes.filter((n: any) => n.title && n.title.trim() !== "");
+    }
     res.json(parsed);
 
   } catch (error: any) {
@@ -340,7 +374,7 @@ Please respond in Chinese.`
 
 // Chat with Graph
 router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, context_node_ids } = req.body;
+  const { message, graph_id, history = [], context_node_ids } = req.body;
 
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
@@ -366,18 +400,16 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
     // 1. Fetch Graph Context
     const { nodes } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);
     
-    // 2. Filter/Prepare Context
-    // If specific nodes are selected (context_node_ids), prioritise them.
-    // Otherwise, use all nodes (summary).
+    // 2. Prepare Context
     let contextText = "";
-    const MAX_CONTEXT_LENGTH = 10000; // Characters
+    const MAX_CONTEXT_LENGTH = 15000;
 
     if (context_node_ids && context_node_ids.length > 0) {
       const selectedNodes = nodes.filter((n: any) => context_node_ids.includes(n.id));
       contextText = selectedNodes.map((n: any) => `- ${n.title}: ${n.content || '(No content)'}`).join('\n');
     } else {
-      // Use all nodes, but maybe just titles if too many
-      if (nodes.length > 50) {
+      // Use all nodes
+      if (nodes.length > 100) {
         contextText = nodes.map((n: any) => `- ${n.title}`).join('\n');
       } else {
         contextText = nodes.map((n: any) => `- ${n.title}: ${n.content || '(No content)'}`).join('\n');
@@ -389,18 +421,25 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
       contextText = contextText.substring(0, MAX_CONTEXT_LENGTH) + "...(truncated)";
     }
 
-    // 3. Call AI
-    const stream = await openai.chat.completions.create({
-      messages: [
-        { 
-          role: "system", 
-          content: `You are an intelligent assistant for a Knowledge Graph. 
+    // 3. Prepare Messages with History
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { 
+        role: "system", 
+        content: `You are an intelligent assistant for a Knowledge Graph. 
 Answer the user's question based on the provided Graph Context.
 If the answer is not in the context, use your general knowledge but mention that it's external info.
 Respond in Chinese.` 
-        },
-        { role: "user", content: `Graph Context:\n${contextText}\n\nUser Question: ${message}` }
-      ],
+      },
+      ...history.map((msg: any) => ({
+        role: msg.role === 'user' ? 'user' : 'assistant' as const,
+        content: msg.content
+      })),
+      { role: "user", content: `Graph Context:\n${contextText}\n\nUser Question: ${message}` }
+    ];
+
+    // 4. Call AI
+    const stream = await openai.chat.completions.create({
+      messages,
       model: model,
       stream: true,
     });
@@ -418,6 +457,170 @@ Respond in Chinese.`
     console.error('AI Chat Error:', error);
     res.write(`data: ${JSON.stringify({ error: error.message || 'AI Chat failed', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
     res.end();
+  }
+});
+
+// Smart Connection Recommendation
+router.post('/recommend-connections', requireAuth, validate(recommendConnectionsSchema), async (req: AuthRequest, res: Response) => {
+  const { graph_id, node_title, node_content } = req.body;
+
+  if (!openai) {
+    return res.json({ recommendations: [] });
+  }
+
+  try {
+    // 1. Fetch Existing Nodes
+    const { nodes } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);
+    
+    if (nodes.length === 0) return res.json({ recommendations: [] });
+
+    // 2. Prepare existing nodes summary for AI
+    const nodesSummary = nodes.map((n: any) => ({ id: n.id, title: n.title }));
+
+    // 3. Ask AI for potential connections
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: `You are a knowledge graph expert. Given a new node (title and content) and a list of existing nodes in a graph, suggest 1-3 most relevant existing nodes to connect to.
+Return a JSON object with a 'recommendations' array. Each item should have 'node_id', 'node_title', and 'reason'.
+Respond in Chinese.` 
+        },
+        { 
+          role: "user", 
+          content: `New Node:\nTitle: ${node_title}\nContent: ${node_content || ''}\n\nExisting Nodes:\n${JSON.stringify(nodesSummary)}` 
+        }
+      ],
+      model: model,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0].message.content;
+    const parsed = JSON.parse(content || '{"recommendations": []}');
+    res.json(parsed);
+
+  } catch (error: any) {
+    console.error('Recommendation Error:', error);
+    res.status(500).json({ error: 'Failed to get recommendations' });
+  }
+});
+
+// Document/PDF to Graph
+router.post('/document-to-graph', requireAuth, upload.single('file'), async (req: AuthRequest, res: Response) => {
+  const { graph_id } = req.body;
+  const file = req.file;
+
+  if (!file) {
+    throw new AppError('No file uploaded', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+
+  if (!openai) {
+    throw new AppError('AI provider not configured', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+
+  try {
+    let text = "";
+    if (file.mimetype === 'application/pdf') {
+      try {
+        // Fix filename encoding
+        const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+        
+        let data;
+        if (typeof pdfParse === 'function') {
+          data = await pdfParse(file.buffer);
+        } else if (pdfParse.PDFParse) {
+          const parser = new pdfParse.PDFParse({ data: file.buffer });
+          const result = await parser.getText();
+          data = { text: result.text, numpages: result.numpages || 0, info: result.info };
+        } else {
+          throw new Error('Unsupported pdf-parse version/structure');
+        }
+        
+        text = data.text;
+        const pdfTitle = data.info?.Title || originalName;
+
+        console.log('--- PDF Extraction Result ---');
+        console.log(`File Name: ${originalName}`);
+        console.log(`PDF Title Hint: ${pdfTitle}`);
+        console.log(`Page Count: ${data.numpages}`);
+        console.log(`Text Length: ${text?.length || 0}`);
+        console.log(`PDF Info: ${JSON.stringify(data.info || {})}`);
+        if (text) {
+          console.log(`Text Preview (first 1000 chars):\n${text.substring(0, 1000)}`);
+        } else {
+          console.warn('WARNING: Extracted text is empty or undefined!');
+        }
+        console.log('-----------------------------');
+      } catch (pdfErr: any) {
+        console.error('PDF Parse detailed error:', pdfErr);
+        throw new AppError('PDF parsing failed: ' + pdfErr.message, 500, ErrorCodes.INTERNAL_ERROR);
+      }
+    } else {
+      text = file.buffer.toString('utf-8');
+      console.log('--- Text/MD Extraction Result ---');
+      console.log(`File Name: ${file.originalname}`);
+      console.log(`Text Length: ${text.length}`);
+      console.log('---------------------------------');
+    }
+
+    if (!text || text.trim().length < 20) {
+      console.warn('Document extraction produced no or very little text.');
+      throw new AppError('Document extraction failed: No readable text found', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    // Reuse text-to-graph logic but with extracted text
+    console.log(`Sending ${text.length} characters to AI for graph generation...`);
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: `你是一个顶级的知识架构师，擅长从非结构化文档中还原原始的知识大纲和逻辑层级。
+          
+你的任务：
+1. **识别层级线索**：深入分析文本中的标题编号（如：第一章、1.1、一、（一）、1.）、字体特征模拟（如全大写或独立行）以及逻辑递进关系。
+2. **还原大纲结构**：将文档的目录结构映射到知识图谱的 5 层模型中：
+   - 'root': 文档总标题或核心研究对象（仅 1 个）。
+   - 'core': 一级标题/章（Chapter）。
+   - 'sub': 二级标题/节（Section）。
+   - 'normal': 三级标题/小节或核心概念点。
+   - 'leaf': 具体细节、定义、例子或支撑数据。
+3. **维护逻辑链条**：确保 edges 数组准确反映文档的父子包含关系。每个子节点必须指向其所属的直接上位标题 ID。
+4. **清理噪音**：忽略页码、重复的页眉、无意义的符号和排版残留。
+
+输出规范：
+- 必须返回 JSON 对象，包含 'nodes' 和 'edges'。
+- 节点格式：{ "id": "唯一临时ID", "title": "简洁的标题", "content": "详细的描述(必须包含该知识点的定义或核心内容，100-200字左右)", "level": "root|core|sub|normal|leaf" }
+- 节点标题要保留其在文档中的核心术语。
+- **内容丰满度**：每个节点必须有实质性的 'content' 描述，不能只有标题。
+- 所有的标题和描述必须使用中文。
+- 节点数量控制在 40-60 个左右，以保证图谱的完整性和可读性。` 
+        },
+        { role: "user", content: `文件名: ${file.originalname}\n文本内容:\n\n${text.substring(0, 15000)}` }
+      ],
+      model: model,
+      response_format: { type: "json_object" },
+      max_tokens: 4000,
+    });
+
+    const content = completion.choices[0].message.content;
+    console.log('--- AI Response Content ---');
+    console.log(content);
+    console.log('---------------------------');
+
+    const parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
+    
+    // Ensure nodes have titles before returning
+    if (parsed.nodes) {
+      parsed.nodes = parsed.nodes.filter((n: any) => n.title && n.title.trim() !== "");
+    }
+
+    console.log(`Parsed ${parsed.nodes?.length || 0} nodes and ${parsed.edges?.length || 0} edges.`);
+    
+    res.json(parsed);
+
+  } catch (error: any) {
+    console.error('Document-to-Graph Error:', error);
+    res.status(500).json({ error: error.message || 'Document processing failed' });
   }
 });
 

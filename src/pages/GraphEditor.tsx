@@ -29,7 +29,9 @@ import {
   useAIExpandMutation,
   useAIGenerateCardsMutation,
   useCreateCardsBatchMutation,
-  useExportGraphMutation
+  useExportGraphMutation,
+  useDocumentToGraphMutation,
+  useRecommendConnectionsMutation
 } from '../hooks/useQueries';
 
 export const GraphEditor = () => {
@@ -51,6 +53,8 @@ export const GraphEditor = () => {
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
   const createCardsBatchMutation = useCreateCardsBatchMutation();
+  const documentToGraphMutation = useDocumentToGraphMutation();
+  const recommendConnectionsMutation = useRecommendConnectionsMutation();
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -111,6 +115,42 @@ export const GraphEditor = () => {
     fitView: true,
     hideGrid: true
   });
+
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [isRecommending, setIsRecommending] = useState(false);
+  const recommendTimeoutRef = useRef<any>(null);
+
+  // Fetch recommendations when title changes
+  useEffect(() => {
+    // Don't recommend for default "New Node" title or empty/short titles
+    if (!nodeForm.title || 
+        nodeForm.title.length < 2 || 
+        nodeForm.title === '新节点' || 
+        !id) {
+      setRecommendations([]);
+      return;
+    }
+
+    if (recommendTimeoutRef.current) clearTimeout(recommendTimeoutRef.current);
+
+    recommendTimeoutRef.current = setTimeout(async () => {
+      setIsRecommending(true);
+      try {
+        const res = await recommendConnectionsMutation.mutateAsync({
+          graph_id: id,
+          node_title: nodeForm.title,
+          node_content: nodeForm.content
+        });
+        setRecommendations(res.recommendations || []);
+      } catch (err) {
+        console.error('Recommendation failed:', err);
+      } finally {
+        setIsRecommending(false);
+      }
+    }, 1500); // 1.5s debounce
+
+    return () => clearTimeout(recommendTimeoutRef.current);
+  }, [nodeForm.title, nodeForm.content, id]);
 
   // Stabilize history handlers
   const handleCreateNodeHistory = useCallback((data: any) => createNodeMutation.mutateAsync(data), [createNodeMutation]);
@@ -209,6 +249,16 @@ export const GraphEditor = () => {
     if (newSet.size === 0) {
       setSelectedNode(null);
       setSidebarMode('none');
+    }
+  };
+
+  const getNextLevel = (parentLevel: string): NodeLevel => {
+    switch (parentLevel) {
+      case 'root': return 'core';
+      case 'core': return 'sub';
+      case 'sub': return 'normal';
+      case 'normal': return 'leaf';
+      default: return 'leaf';
     }
   };
 
@@ -498,6 +548,10 @@ export const GraphEditor = () => {
     }
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Removed handleFileUpload as it's now integrated into TextToGraphModal
+
   return (
     <div className="flex h-full relative">
       {/* 3D Canvas */}
@@ -690,7 +744,7 @@ export const GraphEditor = () => {
         <button 
           onClick={() => setIsTextToGraphOpen(true)}
           className="p-1 hover:bg-gray-100 rounded text-purple-600"
-          title="AI 文本生成图谱"
+          title="AI 文本/文档生成图谱"
         >
           <Sparkles size={20} />
         </button>
@@ -888,21 +942,11 @@ export const GraphEditor = () => {
                   value={nodeForm.parentNodeId}
                   onChange={(e) => {
                     const parentId = e.target.value;
-                    let newLevel = nodeForm.level;
-                    
-                    // Auto-suggest level based on parent
-                    if (parentId) {
-                      const parent = nodes.find(n => n.id === parentId);
-                      if (parent) {
-                        const parentLevel = getLevel(parent, edges);
-                        newLevel = getNextLevel(parentLevel);
-                      }
-                    } else {
-                      newLevel = 'root';
-                    }
-
+                    const parentNode = nodes.find(n => n.id === parentId);
+                    const parentLevel = parentNode ? (parentNode.properties?.level || 'leaf') : 'leaf';
+                    const newLevel = parentId ? getNextLevel(parentLevel) : 'root';
                     const config = LEVEL_CONFIG[newLevel];
-
+                    
                     setNodeForm({ 
                       ...nodeForm, 
                       parentNodeId: parentId,
@@ -1003,6 +1047,60 @@ export const GraphEditor = () => {
                 )}
               </div>
             </div>
+
+            {/* Smart Recommendations */}
+            {recommendations.length > 0 && (
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <h4 className="font-semibold mb-2 flex items-center text-blue-700 text-sm">
+                  <Navigation size={16} className="mr-2" />
+                  智能关联建议
+                </h4>
+                <div className="space-y-2">
+                  {recommendations.map((rec, index) => (
+                    <div key={index} className="bg-white p-2 rounded border border-blue-50 text-xs">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-bold text-gray-700">{rec.node_title}</span>
+                        <button 
+                          onClick={() => {
+                            if (sidebarMode === 'create') {
+                              const parentNode = nodes.find(n => n.id === rec.node_id);
+                              const parentLevel = parentNode ? (parentNode.properties?.level || 'leaf') : 'leaf';
+                              const nextLevel = getNextLevel(parentLevel);
+                              const config = LEVEL_CONFIG[nextLevel];
+                              
+                              setNodeForm({ 
+                                ...nodeForm, 
+                                parentNodeId: rec.node_id,
+                                level: nextLevel,
+                                color: config ? config.color : nodeForm.color
+                              });
+                              toast.success(`已设为父节点，等级自动调整为: ${nextLevel}`);
+                            } else if (selectedNode) {
+                              createEdgeMutation.mutate({
+                                source_node_id: rec.node_id,
+                                target_node_id: selectedNode.id,
+                                relationship_type: 'related',
+                                graphId: id
+                              });
+                              toast.success('已建立关联');
+                            }
+                          }}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {sidebarMode === 'create' ? '设为父节点' : '建立关联'}
+                        </button>
+                      </div>
+                      <p className="text-gray-500 italic">"{rec.reason}"</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {isRecommending && (
+               <div className="text-center py-2">
+                 <div className="animate-pulse text-xs text-blue-400">正在寻找关联建议...</div>
+               </div>
+            )}
           </div>
 
           {/* Action Buttons */}

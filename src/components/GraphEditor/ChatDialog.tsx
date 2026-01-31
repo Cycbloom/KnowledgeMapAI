@@ -64,10 +64,17 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, graphId
     try {
       let fullContent = '';
       
+      // Convert messages to AI history format
+      const history = messages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+
       await api.ai.chatStream(
         {
           message: userMessage.content,
           graph_id: graphId,
+          history: history,
           context_node_ids: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
         },
         (chunk) => {

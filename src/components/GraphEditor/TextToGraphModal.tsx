@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { X, Wand2, Loader2, Check, ArrowLeft, Network } from 'lucide-react';
-import { useTextToGraphMutation } from '../../hooks/useQueries';
+import React, { useState, useMemo, useRef } from 'react';
+import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload } from 'lucide-react';
+import { useTextToGraphMutation, useDocumentToGraphMutation } from '../../hooks/useQueries';
 import toast from 'react-hot-toast';
 
 interface TextToGraphModalProps {
   isOpen: boolean;
   onClose: () => void;
   graphId: string;
+  initialData?: { nodes: PreviewNode[], edges: PreviewEdge[] } | null;
 }
 
 type PreviewNode = {
@@ -22,13 +23,26 @@ type PreviewEdge = {
   relationship: string;
 };
 
-export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId }) => {
-  const [step, setStep] = useState<'input' | 'preview'>('input');
+export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData }) => {
+  const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
   const [text, setText] = useState('');
-  const [previewData, setPreviewData] = useState<{ nodes: PreviewNode[], edges: PreviewEdge[] } | null>(null);
-  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const [previewData, setPreviewData] = useState<{ nodes: PreviewNode[], edges: PreviewEdge[] } | null>(initialData || null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set(initialData?.nodes.map(n => n.id) || []));
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const textToGraphMutation = useTextToGraphMutation();
+  const documentToGraphMutation = useDocumentToGraphMutation();
+
+  const isAnalyzing = textToGraphMutation.isPending || documentToGraphMutation.isPending;
+
+  // Update state if initialData changes (e.g., when a new PDF is parsed)
+  React.useEffect(() => {
+    if (initialData) {
+      setPreviewData(initialData);
+      setSelectedNodeIds(new Set(initialData.nodes.map(n => n.id)));
+      setStep('preview');
+    }
+  }, [initialData]);
 
   // Group nodes by level for display
   const nodesByLevel = useMemo(() => {
@@ -72,6 +86,34 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || '分析失败，请重试');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.loading('正在解析文档并生成预览...');
+
+    try {
+      const result = await documentToGraphMutation.mutateAsync({
+        graph_id: graphId,
+        file: file
+      });
+      
+      if (!result.nodes || result.nodes.length === 0) {
+        throw new Error('AI 未能从文档中解析出任何节点，请检查文档内容。');
+      }
+
+      setPreviewData(result);
+      setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
+      setStep('preview');
+      toast.success('文档解析成功', { id: toastId });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || '解析失败', { id: toastId });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -152,7 +194,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
               <Wand2 size={20} />
             </div>
             <h2 className="text-lg font-bold">
-              {step === 'input' ? 'AI 文本一键生成图谱' : '预览与筛选生成的图谱'}
+              {step === 'input' ? 'AI 知识图谱生成' : '预览与筛选生成的图谱'}
             </h2>
           </div>
           <button 
@@ -166,24 +208,41 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         {/* Content */}
         <div className="p-6 flex-1 overflow-y-auto bg-gray-50/50">
           {step === 'input' ? (
-            <>
-              <p className="text-gray-600 mb-4 text-sm">
-                请输入您的学习笔记、文章摘要或任何长文本，AI 将自动分析其中的关键概念和关系，并为您生成可视化的知识图谱结构。
-              </p>
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <p className="text-gray-600 text-sm">
+                  请输入笔记、文章摘要或上传文档，AI 将自动分析知识结构并生成图谱。
+                </p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"
+                  disabled={isAnalyzing}
+                >
+                  <Upload size={16} />
+                  <span>上传文档 (PDF/TXT/MD)</span>
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept=".pdf,.txt,.md"
+                  onChange={handleFileUpload}
+                />
+              </div>
               
-              <div className="relative">
+              <div className="relative group">
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="例如：太阳系是以太阳为中心，和所有受到太阳的引力约束天体的集合体。包括八大行星（由离太阳从近到远的顺序：水星、金星、地球、火星、木星、土星、天王星、海王星）、以及至少173颗已知的卫星、5颗已经辨认出来的矮行星和数以亿计的太阳系小天体..."
-                  className="w-full h-80 p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-base leading-relaxed"
-                  disabled={textToGraphMutation.isPending}
+                  className="w-full h-80 p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-base leading-relaxed transition-all group-hover:border-gray-300"
+                  disabled={isAnalyzing}
                 />
                 <div className="absolute bottom-4 right-4 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
                   {text.length} 字符
                 </div>
               </div>
-            </>
+            </div>
           ) : (
             <div className="space-y-6">
               <div className="flex justify-between items-center mb-2">
@@ -264,10 +323,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
             {step === 'input' ? (
               <button
                 onClick={handleAnalyze}
-                disabled={textToGraphMutation.isPending || !text.trim()}
+                disabled={isAnalyzing || !text.trim()}
                 className="flex items-center space-x-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {textToGraphMutation.isPending ? (
+                {isAnalyzing ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
                     <span>正在分析...</span>

@@ -110,7 +110,23 @@ export const api = {
     expand: (data: any) => request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(data) }),
     generateCards: (data: any) => request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(data) }),
     textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: any[]; edges?: any[] }) => request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(data) }),
-    chatStream: async (data: { message: string; graph_id: string; context_node_ids?: string[] }, onChunk: (content: string) => void) => {
+    documentToGraph: (data: { graph_id: string; file: File }) => {
+      const token = useStore.getState().token;
+      const formData = new FormData();
+      formData.append('graph_id', data.graph_id);
+      formData.append('file', data.file);
+      
+      return fetch(`${API_URL}/ai/document-to-graph`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData
+      }).then(handleResponse);
+    },
+    recommendConnections: (data: { graph_id: string; node_title: string; node_content?: string }) => 
+      request('/ai/recommend-connections', { method: 'POST', body: JSON.stringify(data) }),
+    chatStream: async (data: { message: string; graph_id: string; history?: any[]; context_node_ids?: string[] }, onChunk: (content: string) => void) => {
       const token = useStore.getState().token;
       const response = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',

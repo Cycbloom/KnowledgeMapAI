@@ -280,11 +280,26 @@ export const useAIGenerateCardsMutation = () => {
 
 export const useTextToGraphMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation({ 
+
+  return useMutation({
     mutationFn: api.ai.textToGraph,
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graph_id) });
-    }
+      if (variables.action === 'save') {
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graph_id) });
+      }
+    },
+  });
+};
+
+export const useDocumentToGraphMutation = () => {
+  return useMutation({
+    mutationFn: api.ai.documentToGraph,
+  });
+};
+
+export const useRecommendConnectionsMutation = () => {
+  return useMutation({
+    mutationFn: api.ai.recommendConnections,
   });
 };
 

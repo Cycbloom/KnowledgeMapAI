@@ -102,7 +102,18 @@ export const textToGraphSchema = z.object({
 export const chatSchema = z.object({
   message: z.string().min(1, '消息不能为空'),
   graph_id: z.string().uuid('无效的图谱ID'),
+  history: z.array(z.any()).optional(),
   context_node_ids: z.array(z.string().uuid()).optional(),
+});
+
+export const recommendConnectionsSchema = z.object({
+  graph_id: z.string().uuid('无效的图谱ID'),
+  node_title: z.string().min(1, '节点标题不能为空'),
+  node_content: z.string().optional(),
+});
+
+export const documentToGraphSchema = z.object({
+  graph_id: z.string().uuid('无效的图谱ID'),
 });
 
 // --- Data Schemas ---

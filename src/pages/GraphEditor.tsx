@@ -9,8 +9,9 @@ import { Node, Edge } from '../types';
 // Cast the lazy loaded component to proper type including ref
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { generateMarkdown, generateJSON, downloadFile, downloadImage } from '../utils/exportUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { TextToGraphModal } from '../components/GraphEditor/TextToGraphModal';
 import { useHistory } from '../hooks/useHistory';
@@ -48,7 +49,6 @@ export const GraphEditor = () => {
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
   const createCardsBatchMutation = useCreateCardsBatchMutation();
-  const exportGraphMutation = useExportGraphMutation();
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -101,6 +101,13 @@ export const GraphEditor = () => {
   });
   const [aiPrompt, setAiPrompt] = useState('');
   const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
+  const [exportImageOptions, setExportImageOptions] = useState({
+    transparent: false,
+    fitView: true,
+    hideGrid: true
+  });
 
   // Stabilize history handlers
   const handleCreateNodeHistory = useCallback((data: any) => createNodeMutation.mutateAsync(data), [createNodeMutation]);
@@ -444,23 +451,47 @@ export const GraphEditor = () => {
     setIsSearchOpen(false);
   };
 
-  const handleExport = async () => {
-    if (!id) return;
+  const handleExportJSON = async () => {
+    if (!graphMeta) return;
     try {
-      setLoading(true);
-      const blob = await exportGraphMutation.mutateAsync({ id, format: 'json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${graphMeta?.title || 'graph'}_export.json`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      toast.success('导出成功');
-    } catch (err: any) {
+      const json = generateJSON(graphMeta, nodes, edges);
+      downloadFile(json, `${graphMeta.title}_backup.json`, 'application/json');
+      toast.success('JSON 导出成功');
+      setIsExportMenuOpen(false);
+    } catch (err) {
       console.error(err);
-      toast.error('导出失败: ' + (err.message || 'Unknown error'));
-    } finally {
-      setLoading(false);
+      toast.error('导出失败');
+    }
+  };
+
+  const handleExportMarkdown = async () => {
+    if (!graphMeta) return;
+    try {
+      const md = generateMarkdown(graphMeta, nodes, edges);
+      downloadFile(md, `${graphMeta.title}.md`, 'text/markdown');
+      toast.success('Markdown 导出成功');
+      setIsExportMenuOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('导出失败');
+    }
+  };
+
+  const handleExportImage = () => {
+    setIsExportMenuOpen(false);
+    setIsExportImageModalOpen(true);
+  };
+
+  const confirmExportImage = async () => {
+    try {
+      if (!graphRef.current) return;
+      const dataUrl = await graphRef.current.captureScreenshot(exportImageOptions);
+      downloadImage(dataUrl, `${graphMeta?.title || 'graph'}_snapshot.png`);
+      setIsExportImageModalOpen(false);
+      toast.success('图片导出成功');
+    } catch (error) {
+      console.error('Export image failed:', error);
+      toast.error('图片导出失败');
     }
   };
 
@@ -508,6 +539,66 @@ export const GraphEditor = () => {
             <Trash2 size={18} />
             <span>批量删除</span>
           </button>
+        </div>
+      )}
+
+      {/* Export Image Modal */}
+      {isExportImageModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">导出图片设置</h3>
+              <button onClick={() => setIsExportImageModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">自适应缩放 (展示全貌)</label>
+                <input 
+                  type="checkbox" 
+                  checked={exportImageOptions.fitView}
+                  onChange={(e) => setExportImageOptions({ ...exportImageOptions, fitView: e.target.checked })}
+                  className="w-4 h-4"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">背景透明</label>
+                <input 
+                  type="checkbox" 
+                  checked={exportImageOptions.transparent}
+                  onChange={(e) => setExportImageOptions({ ...exportImageOptions, transparent: e.target.checked })}
+                  className="w-4 h-4"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">隐藏网格线</label>
+                <input 
+                  type="checkbox" 
+                  checked={exportImageOptions.hideGrid}
+                  onChange={(e) => setExportImageOptions({ ...exportImageOptions, hideGrid: e.target.checked })}
+                  className="w-4 h-4"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setIsExportImageModalOpen(false)}
+                className="flex-1 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+              >
+                取消
+              </button>
+              <button 
+                onClick={confirmExportImage}
+                className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium flex items-center justify-center"
+              >
+                <Download size={18} className="mr-2" />
+                导出
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -647,13 +738,41 @@ export const GraphEditor = () => {
           <Maximize size={20} />
         </button>
 
-        <button 
-          onClick={handleExport}
-          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
-          title="导出"
-        >
-          <Download size={20} />
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+            className={`p-1 rounded transition-colors ${isExportMenuOpen ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
+            title="导出"
+          >
+            <Download size={20} />
+          </button>
+
+          {isExportMenuOpen && (
+            <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg border border-gray-200 w-48 py-1 z-50">
+              <button
+                onClick={handleExportMarkdown}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+              >
+                <FileText size={16} />
+                <span>导出 Markdown</span>
+              </button>
+              <button
+                onClick={handleExportJSON}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+              >
+                <FileJson size={16} />
+                <span>导出 JSON (备份)</span>
+              </button>
+              <button
+                onClick={handleExportImage}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+              >
+                <Image size={16} />
+                <span>导出为图片</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       )}
 

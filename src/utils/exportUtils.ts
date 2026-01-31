@@ -1,0 +1,141 @@
+import { Node, Edge, Graph } from '../types';
+
+/**
+ * Generates a Markdown string from the graph data.
+ * Attempts to reconstruct hierarchy based on node levels and relationships.
+ */
+export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): string => {
+  let md = `# ${graph.title}\n\n`;
+  if (graph.description) {
+    md += `${graph.description}\n\n`;
+  }
+
+  // Helper to find children
+  const getChildren = (parentId: string): Node[] => {
+    return edges
+      .filter(e => e.source_node_id === parentId)
+      .map(e => nodes.find(n => n.id === e.target_node_id))
+      .filter((n): n is Node => !!n);
+  };
+
+  // Helper to determine header level
+  const getHeaderPrefix = (level: string): string => {
+    switch (level) {
+      case 'root': return '## ';
+      case 'core': return '### ';
+      case 'sub': return '#### ';
+      case 'normal': return '##### ';
+      case 'leaf': return '- '; // Leafs as list items
+      default: return '- ';
+    }
+  };
+
+  const visited = new Set<string>();
+
+  const renderNode = (node: Node, depth: number) => {
+    if (visited.has(node.id)) return;
+    visited.add(node.id);
+
+    // Indentation for list items
+    const indent = node.level === 'leaf' ? '  '.repeat(Math.max(0, depth - 1)) : '';
+    
+    // Title
+    if (node.level === 'leaf') {
+       md += `${indent}- **${node.title}**\n`;
+    } else {
+       // Map node levels to markdown headers
+       // root -> ## (since H1 is graph title)
+       // core -> ###
+       // ...
+       const prefix = getHeaderPrefix(node.level || 'normal');
+       md += `${prefix}${node.title}\n`;
+    }
+
+    // Content
+    if (node.content) {
+      const contentLines = node.content.split('\n');
+      const contentIndent = node.level === 'leaf' ? indent + '  ' : '';
+      contentLines.forEach(line => {
+        if (line.trim()) {
+           md += `${contentIndent}${line}\n`;
+        }
+      });
+      md += '\n';
+    }
+
+    // Children
+    const children = getChildren(node.id);
+    children.forEach(child => renderNode(child, depth + 1));
+  };
+
+  // 1. Find Root Nodes (level 'root' OR no incoming edges)
+  const rootNodes = nodes.filter(n => n.level === 'root');
+  
+  // If no explicit roots, find nodes with no incoming edges
+  if (rootNodes.length === 0) {
+    const targets = new Set(edges.map(e => e.target_node_id));
+    const potentialRoots = nodes.filter(n => !targets.has(n.id));
+    rootNodes.push(...potentialRoots);
+  }
+
+  // Fallback: if circular or no clear roots, pick the first one
+  if (rootNodes.length === 0 && nodes.length > 0) {
+    rootNodes.push(nodes[0]);
+  }
+
+  // Render Roots
+  rootNodes.forEach(root => renderNode(root, 1));
+
+  // Render remaining disconnected nodes
+  const remainingNodes = nodes.filter(n => !visited.has(n.id));
+  if (remainingNodes.length > 0) {
+    md += `\n---\n\n## Unconnected Nodes\n\n`;
+    remainingNodes.forEach(node => renderNode(node, 1));
+  }
+
+  return md;
+};
+
+/**
+ * Generates a JSON string for graph backup.
+ */
+export const generateJSON = (graph: Graph, nodes: Node[], edges: Edge[]): string => {
+  const data = {
+    meta: {
+      version: '1.0',
+      exported_at: new Date().toISOString(),
+      source: 'KnowledgeMap'
+    },
+    graph,
+    nodes,
+    edges
+  };
+  return JSON.stringify(data, null, 2);
+};
+
+/**
+ * Triggers a file download in the browser.
+ */
+export const downloadFile = (content: string, filename: string, mimeType: string) => {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * Downloads a data URL (for images).
+ */
+export const downloadImage = (dataUrl: string, filename: string) => {
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

@@ -25,6 +25,7 @@ interface NodeLabelsProps {
   onNodeClick?: (node: Node) => void;
   onNodeDoubleClick?: (node: Node) => void;
   simulationVersion: number;
+  forceShowAllLabels?: boolean; // New prop to force visibility
 }
 
 interface LinkLinesProps {
@@ -217,27 +218,26 @@ export const LinkLines = ({
 };
 
 // --- Node Labels ---
-export const NodeLabels = ({ 
+export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({ 
   nodesRef, 
   isDark, 
   highlightedNodes,
   onNodeClick,
   onNodeDoubleClick,
-  simulationVersion
-}: NodeLabelsProps) => {
-  const groupRef = useRef<THREE.Group>(null);
-  const { camera } = useThree();
-  const theme = getTheme(isDark);
-  
-  // We render the component ONCE based on simulationVersion (count)
-  // But update positions in useFrame
+  simulationVersion,
+  forceShowAllLabels = false
+}, ref) => {
+  // Use local ref if none provided, or sync with forwarded ref
+  const localRef = useRef<THREE.Group>(null);
   
   useFrame(() => {
-    if (!groupRef.current) return;
+    // Determine which ref to use
+    const group = (ref as React.MutableRefObject<THREE.Group>)?.current || localRef.current;
+    if (!group) return;
     
     const nodes = nodesRef.current;
     
-    groupRef.current.children.forEach((child: any, i) => {
+    group.children.forEach((child: any, i) => {
       const node = nodes[i];
       if (node && typeof node.x === 'number') {
         const config = LEVEL_CONFIG[node.level || 'leaf'];
@@ -249,23 +249,44 @@ export const NodeLabels = ({
         // LOD: Hide labels for distant nodes unless they are root/core
         // Always show highlighted nodes
         const isImportant = node.level === 'root' || node.level === 'core' || highlightedNodes.has(node.id);
-        const isVisible = isImportant || distance < 40; // Threshold distance
+        const isVisible = forceShowAllLabels || isImportant || distance < 40; // Threshold distance
 
         if (!isVisible) {
           child.visible = false;
         } else {
           child.visible = true;
+          // When forcing labels (e.g. screenshot), we might want to clamp scale to be readable but not huge
+          // Or just stick to dynamic scale.
           const scale = Math.max(1, distance / 25);
           child.scale.set(scale, scale, scale);
+          
+          // Force full opacity update if needed
+          if (forceShowAllLabels && child.material) {
+             // We can't easily access the Text material instance here to force opacity update
+             // But re-rendering with prop change will handle it
+          }
         }
+        
+        // Sync opacity for SDF Text to prevent artifacts when switching modes
+        if (child.material) {
+             child.material.depthTest = false; // Optional: Ensure text is always on top? Maybe not for 3D depth.
+             child.material.depthWrite = false;
+        }
+
       } else {
         child.visible = false;
       }
     });
   });
 
+  const { camera } = useThree();
+  const theme = getTheme(isDark);
+  
+  // We render the component ONCE based on simulationVersion (count)
+  // But update positions in useFrame
+
   return (
-    <group ref={groupRef} key={simulationVersion}>
+    <group ref={ref || localRef} key={simulationVersion}>
       {nodesRef.current.map((node) => {
         const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
         const config = LEVEL_CONFIG[node.level || 'leaf'];
@@ -281,7 +302,16 @@ export const NodeLabels = ({
               outlineWidth={0.05}
               outlineColor={theme.text.outline}
               outlineOpacity={isDimmed ? 0.2 : 1}
-              font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
+              // Use a standard font URL or local asset to ensure it loads reliably
+              // font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
+              // Removing custom font url to fallback to default or use a reliable one. 
+              // Often default font is safer for offline/export if network is issue.
+              // Or keep it if it works. The user said "text display problem", maybe font didn't load?
+              // Let's stick to default for robustness or a known good font.
+              
+              // Key change: sync() call might be needed for screenshot?
+              // Text component usually handles it.
+              
               onClick={(e) => {
                 e.stopPropagation();
                 onNodeClick?.(node);
@@ -304,4 +334,4 @@ export const NodeLabels = ({
       })}
     </group>
   );
-};
+});

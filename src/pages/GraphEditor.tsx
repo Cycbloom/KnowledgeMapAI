@@ -78,7 +78,7 @@ export const GraphEditor = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [isEngineLoading, setIsEngineLoading] = useState(true);
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
-  const [showGrid, setShowGrid] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [loading, setLoading] = useState(false); // For non-query loading (e.g. AI)

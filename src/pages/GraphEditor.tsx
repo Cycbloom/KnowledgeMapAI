@@ -9,6 +9,7 @@ import { Node, Edge } from '../types';
 // Cast the lazy loaded component to proper type including ref
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
+import { LEVEL_CONFIG } from '../config/graphConfig';
 import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generateMarkdown, generateJSON, downloadFile, downloadImage } from '../utils/exportUtils';
@@ -900,10 +901,13 @@ export const GraphEditor = () => {
                       newLevel = 'root';
                     }
 
+                    const config = LEVEL_CONFIG[newLevel];
+
                     setNodeForm({ 
                       ...nodeForm, 
                       parentNodeId: parentId,
-                      level: newLevel
+                      level: newLevel,
+                      color: config ? config.color : nodeForm.color
                     });
                   }}
                   className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -921,7 +925,15 @@ export const GraphEditor = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">节点等级</label>
               <select
                 value={nodeForm.level}
-                onChange={(e) => setNodeForm({ ...nodeForm, level: e.target.value as NodeLevel })}
+                onChange={(e) => {
+                  const newLevel = e.target.value as NodeLevel;
+                  const config = LEVEL_CONFIG[newLevel];
+                  setNodeForm({ 
+                    ...nodeForm, 
+                    level: newLevel,
+                    color: config ? config.color : nodeForm.color
+                  });
+                }}
                 className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 <option value="root">🟣 根节点 (Root)</option>

@@ -10,14 +10,27 @@ import { Node, Edge } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import toast from 'react-hot-toast';
 import { generateMarkdown, generateJSON, downloadFile, downloadImage } from '../utils/exportUtils';
+import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { TextToGraphModal } from '../components/GraphEditor/TextToGraphModal';
 import { ChatDialog } from '../components/GraphEditor/ChatDialog';
 import { useHistory } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
+const levelLabels: Record<string, string> = {
+  root: '根节点',
+  core: '核心节点',
+  sub: '次级节点',
+  normal: '普通节点',
+  leaf: '叶子节点'
+};
+
 import { 
   useGraph, 
   useGraphData, 
@@ -64,7 +77,7 @@ export const GraphEditor = () => {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [isEngineLoading, setIsEngineLoading] = useState(true);
-  const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline'>('none');
+  const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [showGrid, setShowGrid] = useState(true);
   const [isDark, setIsDark] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -227,7 +240,12 @@ export const GraphEditor = () => {
 
     setSelectedNode(node);
     setSelectedNodeIds(new Set([node.id]));
-    setSidebarMode('edit');
+    setSidebarMode('detail');
+
+    // Smooth transition: zoom to node
+    if (graphRef.current) {
+      graphRef.current.focusNode(node.id);
+    }
   };
 
   const handleSelectionChange = (ids: string[]) => {
@@ -288,7 +306,8 @@ export const GraphEditor = () => {
           x_position: Math.round((Math.random() - 0.5) * 20),
           y_position: Math.round((Math.random() - 0.5) * 20),
           color: nodeForm.color,
-          properties: { level: nodeForm.level }
+          level: nodeForm.level,
+          properties: {}
         });
 
         // Create Edge if parent selected
@@ -314,6 +333,7 @@ export const GraphEditor = () => {
           title: selectedNode.title,
           content: selectedNode.content,
           color: selectedNode.color,
+          level: selectedNode.level,
           properties: selectedNode.properties
         };
 
@@ -322,7 +342,8 @@ export const GraphEditor = () => {
           title: nodeForm.title,
           content: nodeForm.content,
           color: nodeForm.color,
-          properties: { ...selectedNode.properties, level: nodeForm.level }
+          level: nodeForm.level,
+          properties: selectedNode.properties
         };
 
         // Update Node
@@ -442,7 +463,8 @@ export const GraphEditor = () => {
           x_position: x,
           y_position: y,
           color: '#10B981', // Green for AI generated
-          properties: { level: newLevel }
+          level: newLevel,
+          properties: {}
         });
         
         // Record history
@@ -911,12 +933,147 @@ export const GraphEditor = () => {
                  className="h-full"
                />
              </div>
+          ) : sidebarMode === 'detail' && selectedNode ? (
+            <div className="h-full flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: selectedNode.color || '#3B82F6' }}></div>
+                  <h3 className="text-lg font-bold text-gray-800">节点详情</h3>
+                </div>
+                <button onClick={handleCloseSidebar} className="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-6 overflow-y-auto pr-1">
+                <section>
+                  <h1 className="text-xl font-bold text-gray-900 leading-tight mb-2">{selectedNode.title}</h1>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${ 
+                      LEVEL_CONFIG[getLevel(selectedNode, edges)]?.color ? '' : 'bg-gray-100 text-gray-600'
+                    }`} style={{ 
+                      backgroundColor: `${selectedNode.color}15`, 
+                      color: selectedNode.color,
+                      borderColor: `${selectedNode.color}30`
+                    }}>
+                      {levelLabels[getLevel(selectedNode, edges)] || '普通节点'}
+                    </span>
+                    <span className="text-gray-400 text-xs">•</span>
+                    <span className="text-gray-400 text-xs">
+                      更新于 {selectedNode.updated_at ? new Date(selectedNode.updated_at).toLocaleDateString() : '刚刚'}
+                    </span>
+                  </div>
+                </section>
+
+                <section className="bg-gray-50 rounded-xl p-4 border border-gray-100 min-h-[120px]">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">详细内容</h4>
+                  <div className="prose prose-sm prose-blue max-w-none text-gray-700 leading-relaxed">
+                    {selectedNode.content ? (
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm, remarkMath]} 
+                        rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                      >
+                        {preprocessMarkdown(selectedNode.content)}
+                      </ReactMarkdown>
+                    ) : (
+                      <span className="italic text-gray-400">暂无详细描述...</span>
+                    )}
+                  </div>
+                </section>
+
+                <section>
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">知识关联</h4>
+                  <div className="space-y-2">
+                    {/* Parent */}
+                    {edges.find(e => e.target_node_id === selectedNode.id) && (
+                      <div className="flex items-center text-sm p-2 bg-white border border-gray-100 rounded-lg shadow-sm">
+                        <span className="text-gray-400 mr-2">父节点:</span>
+                        <button 
+                          onClick={() => {
+                            const edge = edges.find(e => e.target_node_id === selectedNode.id);
+                            const parent = nodes.find(n => n.id === edge?.source_node_id);
+                            if (parent) handleNodeClick(parent);
+                          }}
+                          className="text-blue-600 hover:underline font-medium truncate"
+                        >
+                          {nodes.find(n => n.id === edges.find(e => e.target_node_id === selectedNode.id)?.source_node_id)?.title}
+                        </button>
+                      </div>
+                    )}
+                    {/* Children */}
+                    {edges.filter(e => e.source_node_id === selectedNode.id).length > 0 && (
+                      <div className="p-2 bg-white border border-gray-100 rounded-lg shadow-sm">
+                        <span className="text-xs text-gray-400 block mb-1">子节点:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {edges.filter(e => e.source_node_id === selectedNode.id).map(edge => {
+                            const child = nodes.find(n => n.id === edge.target_node_id);
+                            return child ? (
+                              <button 
+                                key={child.id}
+                                onClick={() => handleNodeClick(child)}
+                                className="px-2 py-1 bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded text-xs transition-colors border border-gray-100"
+                              >
+                                {child.title}
+                              </button>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* AI Assistant in Detail Mode */}
+                <section className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                  <h4 className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-3 flex items-center">
+                    <Wand2 size={14} className="mr-1.5" />
+                    AI 深度探索
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={handleAIExpand}
+                      disabled={loading}
+                      className="bg-white text-purple-600 border border-purple-200 py-2 rounded-lg hover:bg-purple-100 text-xs font-medium transition-all shadow-sm disabled:opacity-50"
+                    >
+                      {loading ? '扩展中...' : '发现新关联'}
+                    </button>
+                    <button
+                      onClick={handleAIGenerateCards}
+                      disabled={loading}
+                      className="bg-white text-indigo-600 border border-indigo-200 py-2 rounded-lg hover:bg-indigo-100 text-xs font-medium transition-all shadow-sm disabled:opacity-50"
+                    >
+                      {loading ? '生成中...' : '生成复习卡片'}
+                    </button>
+                  </div>
+                </section>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100 mt-auto flex space-x-2">
+                <button
+                  onClick={() => setSidebarMode('edit')}
+                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 transition-all active:scale-95"
+                >
+                  <Edit3 size={18} className="mr-2" />
+                  编辑节点
+                </button>
+                <button
+                  onClick={handleDeleteNode}
+                  className="w-12 bg-white text-red-500 border border-red-100 rounded-xl hover:bg-red-50 flex items-center justify-center transition-all"
+                  title="删除节点"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
           ) : (
              <>
                <div className="flex justify-between items-center mb-6">
-                 <h3 className="font-bold text-lg">
-                   {sidebarMode === 'create' ? '创建新节点' : '编辑节点'}
-                 </h3>
+                 <div className="flex items-center space-x-2">
+                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                   <h3 className="text-lg font-bold text-gray-800">
+                     {sidebarMode === 'create' ? '创建新节点' : '编辑节点'}
+                   </h3>
+                 </div>
                  <button onClick={handleCloseSidebar} className="text-gray-500 hover:text-gray-700">
                    <X size={20} />
                  </button>
@@ -943,7 +1100,7 @@ export const GraphEditor = () => {
                   onChange={(e) => {
                     const parentId = e.target.value;
                     const parentNode = nodes.find(n => n.id === parentId);
-                    const parentLevel = parentNode ? (parentNode.properties?.level || 'leaf') : 'leaf';
+                    const parentLevel = parentNode ? (parentNode.level || 'leaf') : 'leaf';
                     const newLevel = parentId ? getNextLevel(parentLevel) : 'root';
                     const config = LEVEL_CONFIG[newLevel];
                     
@@ -1033,7 +1190,7 @@ export const GraphEditor = () => {
                       disabled={loading}
                       className="w-full bg-white text-green-600 border border-green-200 py-2 rounded hover:bg-green-50 text-sm transition-colors disabled:opacity-50"
                     >
-                      {loading ? '扩展中...' : '扩展相关节点'}
+                      {loading ? '扩展中...' : '发现新关联'}
                     </button>
                     <button
                       onClick={handleAIGenerateCards}
@@ -1064,7 +1221,7 @@ export const GraphEditor = () => {
                           onClick={() => {
                             if (sidebarMode === 'create') {
                               const parentNode = nodes.find(n => n.id === rec.node_id);
-                              const parentLevel = parentNode ? (parentNode.properties?.level || 'leaf') : 'leaf';
+                              const parentLevel = parentNode ? (parentNode.level || 'leaf') : 'leaf';
                               const nextLevel = getNextLevel(parentLevel);
                               const config = LEVEL_CONFIG[nextLevel];
                               
@@ -1104,23 +1261,21 @@ export const GraphEditor = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 border-t border-gray-200 mt-4 space-y-3">
+          <div className="pt-4 border-t border-gray-200 mt-4 flex space-x-2">
             <button
               onClick={handleSaveNode}
               disabled={loading || !nodeForm.title}
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 flex items-center justify-center font-medium shadow-sm disabled:opacity-50"
+              className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 transition-all disabled:opacity-50"
             >
               <Save size={18} className="mr-2" />
-              {sidebarMode === 'create' ? '创建节点' : '保存修改'}
+              {sidebarMode === 'create' ? '创建节点' : '完成编辑'}
             </button>
-            
             {sidebarMode === 'edit' && (
               <button
-                onClick={handleDeleteNode}
-                className="w-full bg-white text-red-600 border border-red-200 py-2 rounded-md hover:bg-red-50 flex items-center justify-center text-sm"
+                onClick={() => setSidebarMode('detail')}
+                className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all"
               >
-                <Trash2 size={16} className="mr-2" />
-                删除节点
+                取消
               </button>
             )}
           </div>

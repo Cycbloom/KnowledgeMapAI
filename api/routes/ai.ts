@@ -66,7 +66,14 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
   try {
     const completion = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. Please respond in Chinese." },
+        { 
+          role: "system", 
+          content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. " +
+                   "IMPORTANT: All mathematical formulas must be wrapped in standard LaTeX delimiters. " +
+                   "Use $...$ for inline formulas and $$...$$ for block formulas. " +
+                   "Example: $E=mc^2$ or $$\\sum_{i=1}^n i = \\frac{n(n+1)}{2}$$. " +
+                   "Please respond in Chinese." 
+        },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
       model: model,
@@ -108,7 +115,14 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
   try {
     const stream = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. Please respond in Chinese." },
+        { 
+          role: "system", 
+          content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. " +
+                   "IMPORTANT: All mathematical formulas must be wrapped in standard LaTeX delimiters. " +
+                   "Use $...$ for inline formulas and $$...$$ for block formulas. " +
+                   "Example: $E=mc^2$ or $$\\sum_{i=1}^n i = \\frac{n(n+1)}{2}$$. " +
+                   "Please respond in Chinese." 
+        },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
       model: model,
@@ -340,7 +354,8 @@ Requirements:
    - Nodes: { "id": "temp_id", "title": "Title", "content": "Description (must contain definition or core content, 100-200 words)", "level": "root|core|sub|normal|leaf" }
    - Edges: { "source": "parent_temp_id", "target": "child_temp_id", "relationship": "contains|related" }
 6. **Content Richness**: Every node must have substantial 'content' description, not just a title.
-7. IMPORTANT: Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.
+7. IMPORTANT: All mathematical formulas in 'content' must be wrapped in standard LaTeX delimiters. Use $...$ for inline formulas and $$...$$ for block formulas.
+8. Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.
    
 Please respond in Chinese.` 
         },
@@ -428,6 +443,7 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
         content: `You are an intelligent assistant for a Knowledge Graph. 
 Answer the user's question based on the provided Graph Context.
 If the answer is not in the context, use your general knowledge but mention that it's external info.
+IMPORTANT: All mathematical formulas must be wrapped in standard LaTeX delimiters. Use $...$ for inline formulas and $$...$$ for block formulas.
 Respond in Chinese.` 
       },
       ...history.map((msg: any) => ({

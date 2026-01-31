@@ -21,6 +21,8 @@ export interface Node {
   color?: string;
   level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
   properties?: Record<string, any>;
+  updated_at?: string;
+  created_at?: string;
 }
 
 export interface Edge {

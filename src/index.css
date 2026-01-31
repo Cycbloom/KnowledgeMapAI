@@ -1,6 +1,43 @@
+@import "katex/dist/katex.min.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Hide KaTeX MathML to prevent double rendering when CSS is slow to load or conflicting */
+.katex-mathml {
+  display: none !important;
+}
+
+@layer components {
+  /* Prose overrides for compact sidebar */
+  .prose-sm {
+    @apply text-slate-700;
+  }
+  .prose-sm p {
+    @apply my-2 leading-relaxed;
+  }
+  .prose-sm ul, .prose-sm ol {
+    @apply my-2 pl-4;
+  }
+  .prose-sm li {
+    @apply my-1;
+  }
+  .prose-sm h1, .prose-sm h2, .prose-sm h3 {
+    @apply mt-4 mb-2 font-bold text-slate-900;
+  }
+  .prose-sm code {
+    @apply bg-slate-100 px-1 py-0.5 rounded text-xs font-mono text-pink-600;
+  }
+  .prose-sm pre {
+    @apply bg-slate-900 text-slate-100 p-3 rounded-lg my-2 overflow-x-auto;
+  }
+  .prose-sm pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+  .prose-sm blockquote {
+    @apply border-l-4 border-slate-200 pl-4 italic text-slate-500 my-2;
+  }
+}
 
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";

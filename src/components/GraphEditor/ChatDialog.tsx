@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, MessageSquare, Bot, User, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { api } from '../../services/api';
+import { preprocessMarkdown } from '../../utils/markdownUtils';
 import toast from 'react-hot-toast';
 
 interface ChatDialogProps {
@@ -143,8 +148,17 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, graphId
                 ? 'bg-blue-600 text-white rounded-tr-none' 
                 : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm'
             }`}>
-              <div className="whitespace-pre-wrap leading-relaxed">
-                {msg.content}
+              <div className={`leading-relaxed ${msg.role === 'assistant' ? 'prose prose-sm prose-blue max-w-none' : 'whitespace-pre-wrap'}`}>
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm, remarkMath]} 
+                    rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                  >
+                    {preprocessMarkdown(msg.content)}
+                  </ReactMarkdown>
+                ) : (
+                  msg.content
+                )}
                 {msg.isStreaming && (
                   <span className="inline-block w-1.5 h-4 ml-1 bg-green-500 animate-pulse align-middle" />
                 )}

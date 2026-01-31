@@ -1,20 +1,29 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useGraphs, useCreateGraphMutation, useImportGraphMutation } from '../hooks/useQueries';
-import { Plus, BookOpen, Upload } from 'lucide-react';
+import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation } from '../hooks/useQueries';
+import { Plus, BookOpen, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export const Dashboard = () => {
   const { data: graphsData, isLoading, error } = useGraphs();
   const createGraphMutation = useCreateGraphMutation();
   const importGraphMutation = useImportGraphMutation();
+  const deleteGraphMutation = useDeleteGraphMutation();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [isCreating, setIsCreating] = useState(false);
+  const [isManageMode, setIsManageMode] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; title: string }>({
+    isOpen: false,
+    id: '',
+    title: ''
+  });
 
   const graphs = Array.isArray(graphsData) ? graphsData : [];
 
@@ -38,8 +47,32 @@ export const Dashboard = () => {
     }
   };
 
+  const handleDeleteGraph = (id: string, title: string) => {
+    setDeleteConfirm({ isOpen: true, id, title });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteConfirm.id) return;
+
+    deleteGraphMutation.mutate(deleteConfirm.id, {
+      onSuccess: () => {
+        toast.success('图谱删除成功');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast.error(err.message || '删除失败');
+        setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   const handleImportClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const toggleManageMode = () => {
+    setIsManageMode(!isManageMode);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +129,17 @@ export const Dashboard = () => {
             accept=".json,.md"
             className="hidden"
           />
+          <button
+            onClick={toggleManageMode}
+            className={`px-4 py-2 rounded-md flex items-center space-x-2 transition-colors ${
+              isManageMode 
+                ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' 
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <Trash2 size={20} />
+            <span>{isManageMode ? '完成管理' : '管理图谱'}</span>
+          </button>
           <button
             onClick={handleImportClick}
             className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-gray-50"
@@ -165,8 +209,21 @@ export const Dashboard = () => {
           </div>
         ) : (
           graphs.map((graph, index) => (
-            <div key={graph.id || index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100">
-              <h3 className="text-xl font-bold mb-2 text-gray-800">{graph.title}</h3>
+            <div key={graph.id || index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100 group relative">
+              {isManageMode && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleDeleteGraph(graph.id, graph.title);
+                  }}
+                  className="absolute top-4 right-4 text-red-400 hover:text-red-600 transition-colors p-2 bg-red-50 rounded-full z-10"
+                  title="删除图谱"
+                >
+                  <Trash2 size={20} />
+                </button>
+              )}
+              <h3 className="text-xl font-bold mb-2 text-gray-800 pr-8">{graph.title}</h3>
               <p className="text-gray-500 text-sm mb-4">创建时间: {new Date(graph.created_at).toLocaleDateString()}</p>
               <div className="flex justify-between items-center">
                 <Link
@@ -187,6 +244,17 @@ export const Dashboard = () => {
           ))
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmDelete}
+        title="删除图谱"
+        message={`确定要删除图谱 "${deleteConfirm.title}" 吗？此操作无法撤销，所有相关数据都将被永久删除。`}
+        confirmText="删除"
+        cancelText="取消"
+        isDangerous={true}
+      />
     </div>
   );
 };

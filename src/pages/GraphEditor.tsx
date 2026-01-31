@@ -44,7 +44,8 @@ import {
   useCreateCardsBatchMutation,
   useExportGraphMutation,
   useDocumentToGraphMutation,
-  useRecommendConnectionsMutation
+  useRecommendConnectionsMutation,
+  useDeleteGraphMutation
 } from '../hooks/useQueries';
 
 export const GraphEditor = () => {
@@ -68,6 +69,7 @@ export const GraphEditor = () => {
   const createCardsBatchMutation = useCreateCardsBatchMutation();
   const documentToGraphMutation = useDocumentToGraphMutation();
   const recommendConnectionsMutation = useRecommendConnectionsMutation();
+  const deleteGraphMutation = useDeleteGraphMutation();
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -413,40 +415,42 @@ export const GraphEditor = () => {
     }
   };
 
-  const handleDeleteNode = async () => {
+  const handleDeleteNode = () => {
     if (!selectedNode || !id) return;
-    if (!confirm('确定要删除这个节点吗?')) return;
-    try {
-      await deleteNodeMutation.mutateAsync({ id: selectedNode.id, graphId: id });
-      handleCloseSidebar();
-      toast.success('节点已删除');
-    } catch (err) {
-      console.error(err);
-      toast.error('删除失败');
+    if (window.confirm('确定要删除这个节点吗?')) {
+      deleteNodeMutation.mutate({ id: selectedNode.id, graphId: id }, {
+        onSuccess: () => {
+          handleCloseSidebar();
+          toast.success('节点已删除');
+        },
+        onError: (err) => {
+          console.error(err);
+          toast.error('删除失败');
+        }
+      });
     }
   };
 
-  const handleBatchDelete = async () => {
+  const handleBatchDelete = () => {
     if (!id || selectedNodeIds.size === 0) return;
-    if (!confirm(`确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`)) return;
-    
-    try {
+    if (window.confirm(`确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`)) {
       setLoading(true);
       const nodeIds = Array.from(selectedNodeIds);
-      // Execute in parallel
-      await Promise.all(nodeIds.map(nodeId => 
-        deleteNodeMutation.mutateAsync({ id: nodeId, graphId: id })
-      ));
       
-      setSelectedNodeIds(new Set());
-      setSelectedNode(null);
-      setSidebarMode('none');
-      toast.success('批量删除成功');
-    } catch (err) {
-      console.error(err);
-      toast.error('批量删除失败');
-    } finally {
-      setLoading(false);
+      // Execute in parallel and wait for all to complete
+      Promise.all(nodeIds.map(nodeId => 
+        deleteNodeMutation.mutateAsync({ id: nodeId, graphId: id })
+      )).then(() => {
+        setSelectedNodeIds(new Set());
+        setSelectedNode(null);
+        setSidebarMode('none');
+        toast.success('批量删除成功');
+      }).catch((err) => {
+        console.error(err);
+        toast.error('批量删除失败');
+      }).finally(() => {
+        setLoading(false);
+      });
     }
   };
 
@@ -586,6 +590,26 @@ export const GraphEditor = () => {
     } catch (err) {
       console.error(err);
       toast.error('导出失败');
+    }
+  };
+
+  const handleDeleteGraph = () => {
+    if (!id || !graphMeta) return;
+    if (window.confirm(`确定要删除当前图谱 "${graphMeta.title}" 吗？此操作无法撤销。`)) {
+      setLoading(true);
+      deleteGraphMutation.mutate(id, {
+        onSuccess: () => {
+          toast.success('图谱已删除');
+          navigate('/dashboard');
+        },
+        onError: (err: any) => {
+          console.error(err);
+          toast.error(err.message || '删除失败');
+        },
+        onSettled: () => {
+          setLoading(false);
+        }
+      });
     }
   };
 
@@ -820,6 +844,8 @@ export const GraphEditor = () => {
           <MessageSquare size={20} />
         </button>
 
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
         <button 
           onClick={handleStartCreate} 
           className="p-1 hover:bg-gray-100 rounded text-blue-600" 
@@ -924,6 +950,14 @@ export const GraphEditor = () => {
               >
                 <Image size={16} />
                 <span>导出为图片</span>
+              </button>
+              <div className="h-px bg-gray-100 my-1"></div>
+              <button
+                onClick={handleDeleteGraph}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+              >
+                <Trash2 size={16} />
+                <span>删除此图谱</span>
               </button>
             </div>
           )}
@@ -1347,12 +1381,23 @@ export const GraphEditor = () => {
               {sidebarMode === 'create' ? '创建节点' : '完成编辑'}
             </button>
             {sidebarMode === 'edit' && (
-              <button
-                onClick={() => setSidebarMode('detail')}
-                className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all"
-              >
-                取消
-              </button>
+              <>
+                <button
+                  onClick={() => setSidebarMode('detail')}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all"
+                >
+                  取消
+                </button>
+                {selectedNode && (
+                  <button
+                    onClick={handleDeleteNode}
+                    className="w-12 bg-white text-red-500 border border-red-100 rounded-xl hover:bg-red-50 flex items-center justify-center transition-all"
+                    title="删除节点"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+              </>
             )}
           </div>
           </>

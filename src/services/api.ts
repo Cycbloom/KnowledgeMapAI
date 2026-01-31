@@ -48,6 +48,7 @@ export const api = {
     create: (data: any) => request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
     get: (id: string) => request(`/graphs/${id}`),
     getNodes: (id: string) => request(`/graphs/${id}/nodes`),
+    delete: (id: string) => request(`/graphs/${id}`, { method: 'DELETE' }),
   },
   nodes: {
     create: (data: any) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),

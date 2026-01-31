@@ -85,6 +85,17 @@ export const useImportGraphMutation = () => {
   });
 };
 
+export const useDeleteGraphMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.graphs.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    },
+  });
+};
+
 export const useExportGraphMutation = () => {
   return useMutation({
     mutationFn: ({ id, format }: { id: string; format: 'json' | 'pdf' }) => api.data.export(id, format),

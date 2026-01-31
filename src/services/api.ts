@@ -182,7 +182,13 @@ export const api = {
     },
   },
   study: {
-    getCards: (graphId?: string) => request(`/study/cards${graphId ? `?graph_id=${graphId}` : ''}`),
+    getCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string }) => {
+      let query = '';
+      if (params?.graph_id) query = `?graph_id=${params.graph_id}`;
+      else if (params?.node_id) query = `?node_id=${params.node_id}`;
+      else if (params?.node_ids) query = `?node_ids=${params.node_ids}`;
+      return request(`/study/cards${query}`);
+    },
     createCardsBatch: (cards: any[]) => request('/study/cards/batch', { method: 'POST', body: JSON.stringify({ cards }) }),
     updateProgress: (id: string, quality: number) => request(`/study/cards/${id}/progress`, { method: 'PUT', body: JSON.stringify({ quality }) }),
   },

@@ -36,23 +36,38 @@ const mapQualityToRating = (quality: number): Rating => {
 
 // Get cards due for review (or all cards for a graph)
 router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { graph_id } = req.query;
+  const { graph_id, node_id, node_ids } = req.query;
 
   if (graph_id) {
-    const cached = cacheService.get(CacheKeys.STUDY_CARDS(graph_id as string));
-    if (cached) {
-      return res.json(cached);
-    }
+    // For debugging: First, let's see if we can get ANY cards for this user
+    const { count, error: countError } = await req.supabase!
+      .from('study_cards')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', req.user.id);
+    
+    console.log(`Total cards for user ${req.user.id}: ${count || 0}`);
+    if (countError) console.error('Count error:', countError);
+
+    // Clear cache to ensure we get fresh data from DB
+    cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
   }
 
+  console.log('Fetching cards for graph_id:', graph_id, 'node_id:', node_id, 'node_ids:', node_ids, 'user_id:', req.user.id);
+
+  // Use a simpler approach to debug: select all cards and filter in JS if needed,
+  // or use the join but check the nodes content
   let query = req.supabase!
     .from('study_cards')
-    .select('*, nodes(title, graph_id)') // Join with nodes to get context
+    .select('*, nodes!inner(id, title, graph_id)')
     .eq('user_id', req.user.id);
 
-  if (graph_id) {
-    // We need to filter by graph_id. study_cards has node_id. nodes has graph_id.
-    // Supabase join filtering:
+  if (node_id) {
+    query = query.eq('node_id', node_id);
+  } else if (node_ids) {
+    // Support comma-separated node_ids
+    const ids = (node_ids as string).split(',');
+    query = query.in('node_id', ids);
+  } else if (graph_id) {
     query = query.eq('nodes.graph_id', graph_id);
   }
 
@@ -61,19 +76,24 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   
   const { data, error } = await query;
 
-  if (error) throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
-  
-  // Filter in memory if Supabase join filtering didn't work as expected for inner join
-  // But typically it works if foreign key is set up.
-  // If graph_id was provided, we filter data to ensure only cards from that graph are returned.
-  // (In case eq('nodes.graph_id') acts as left join filter)
-  let result = data || [];
-  if (graph_id && data) {
-    result = data.filter((card: any) => card.nodes?.graph_id === graph_id);
-    cacheService.set(CacheKeys.STUDY_CARDS(graph_id as string), result);
+  if (error) {
+    console.error('Supabase error fetching cards:', error);
+    throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
-
-  res.json(result);
+  
+  if (data && data.length > 0) {
+    console.log(`Found ${data.length} cards for graph_id: ${graph_id}. First card node_id: ${data[0].node_id}, graph_id from node: ${data[0].nodes?.graph_id}`);
+  } else {
+    console.log(`No cards found for graph_id: ${graph_id}. Checking if nodes exist for this graph...`);
+    const { data: nodesCheck } = await req.supabase!
+      .from('nodes')
+      .select('id')
+      .eq('graph_id', graph_id)
+      .limit(5);
+    console.log(`Nodes found for graph ${graph_id}:`, nodesCheck?.length || 0);
+  }
+  
+  res.json(data || []);
 });
 
 // Create a flashcard manually
@@ -89,7 +109,14 @@ router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthR
         question,
         answer,
         next_review: new Date().toISOString(), // Due immediately
-        difficulty: 1
+        difficulty: 1,
+        // FSRS initial values
+        fsrs_state: 0,
+        fsrs_stability: 0,
+        fsrs_difficulty: 0,
+        fsrs_elapsed_days: 0,
+        fsrs_scheduled_days: 0,
+        fsrs_retrievability: 0
       }
     ])
     .select('*, nodes(graph_id)')
@@ -117,7 +144,14 @@ router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async
     card_type: card.type || 'qa',
     options: card.options || null,
     next_review: new Date().toISOString(),
-    difficulty: 1
+    difficulty: 1,
+    // FSRS initial values
+    fsrs_state: 0, // New
+    fsrs_stability: 0,
+    fsrs_difficulty: 0,
+    fsrs_elapsed_days: 0,
+    fsrs_scheduled_days: 0,
+    fsrs_retrievability: 0
   }));
 
   const { data, error } = await req.supabase!

@@ -8,6 +8,11 @@ export interface Graph {
   id: string;
   title: string;
   description?: string;
+  settings?: {
+    gamification_enabled?: boolean;
+    learning_direction?: 'top_down' | 'bottom_up';
+    [key: string]: any;
+  };
   created_at: string;
 }
 
@@ -40,4 +45,6 @@ export interface StudyCard {
   card_type: 'qa' | 'choice' | 'true_false';
   options?: string[];
   next_review: string;
+  review_count?: number;
+  fsrs_state?: number;
 }

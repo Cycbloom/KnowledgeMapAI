@@ -31,6 +31,7 @@ interface GraphSceneProps {
   highlightedLinks: Set<string>;
   pulsingNodeIds?: Set<string>;
   lockedNodeIds?: Set<string>;
+  masteredNodeIds?: Set<string>;
   onNodeClick: (node: Node) => void;
   onNodeCollapse?: (nodeId: string) => void;
   onSelectionChange?: (nodeIds: string[]) => void;
@@ -234,6 +235,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         highlightedNodes={highlightedNodes} 
         pulsingNodeIds={pulsingNodeIds}
         lockedNodeIds={props.lockedNodeIds}
+        masteredNodeIds={props.masteredNodeIds}
         simulationVersion={simulationVersion}
       />
       

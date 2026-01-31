@@ -25,6 +25,7 @@ export type Graph3DProps = {
   layoutMode?: '3d-force' | '2d-tree' | '3d-sphere';
   pulsingNodeIds?: Set<string>;
   lockedNodeIds?: Set<string>;
+  masteredNodeIds?: Set<string>;
 }
 
 export type Graph3DRef = GraphSceneRef;
@@ -45,7 +46,8 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
     collapsedNodeIds = new Set(),
     layoutMode = '3d-force',
     pulsingNodeIds = new Set(),
-    lockedNodeIds = new Set()
+    lockedNodeIds = new Set(),
+    masteredNodeIds = new Set()
   } = props;
   
   // 1. Simulation Hook (Worker + State)
@@ -85,6 +87,7 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
           highlightedLinks={highlightedLinks}
           pulsingNodeIds={pulsingNodeIds}
           lockedNodeIds={lockedNodeIds}
+          masteredNodeIds={masteredNodeIds}
           isDark={isDark}
           onSelectionChange={onSelectionChange}
           onBoxUpdate={onBoxUpdate}

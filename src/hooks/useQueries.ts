@@ -8,7 +8,8 @@ export const queryKeys = {
   graph: (id: string) => ['graph', id] as const,
   graphData: (id: string) => ['graphData', id] as const,
   graphNodeStatus: (id: string) => ['graphNodeStatus', id] as const,
-  studyCards: (graphId?: string) => ['studyCards', graphId || 'all'] as const,
+  studyCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string }) => 
+    ['studyCards', params?.graph_id || 'all', params?.node_id || 'all', params?.node_ids || 'none'] as const,
   user: ['user'] as const,
   dashboardStats: ['dashboardStats'] as const,
 };
@@ -71,11 +72,11 @@ export const useGraphNodeStatus = (id: string) => {
   });
 };
 
-export const useStudyCards = (graphId?: string) => {
+export const useStudyCards = (params?: { graph_id?: string; node_id?: string; node_ids?: string }) => {
   return useQuery({
-    queryKey: queryKeys.studyCards(graphId),
-    queryFn: () => api.study.getCards(graphId),
-    staleTime: 0, // Always fetch fresh cards when entering study mode to ensure randomization
+    queryKey: queryKeys.studyCards(params),
+    queryFn: () => api.study.getCards(params),
+    staleTime: 0,
   });
 };
 
@@ -110,6 +111,19 @@ export const useDeleteGraphMutation = () => {
     mutationFn: api.graphs.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    },
+  });
+};
+
+export const useUpdateGraphMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.graphs.update(id, data),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graph(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(variables.id) });
     },
   });
 };

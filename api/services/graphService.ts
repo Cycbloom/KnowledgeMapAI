@@ -121,6 +121,20 @@ export class GraphService {
     // 1. Get nodes and edges
     const { nodes, edges } = await this.getGraphNodes(supabase, userId, graphId);
 
+    // 1.5 Get graph settings
+    const { data: graph } = await supabase
+      .from('knowledge_graphs')
+      .select('settings')
+      .eq('id', graphId)
+      .single();
+    
+    const settings = graph?.settings || {};
+    // Default to true if undefined to preserve existing behavior, or false?
+    // User said "Need a switch", implies they might want it off. 
+    // Let's default to TRUE to not break existing "game" feel, but allow turning off.
+    const gamificationEnabled = settings.gamification_enabled !== false; 
+    const learningDirection = settings.learning_direction || 'top_down';
+
     // 2. Get all cards for this graph
     const { data: cards, error: cardsError } = await supabase
       .from('study_cards')
@@ -153,37 +167,82 @@ export class GraphService {
     });
 
     // 5. Calculate Locked Status
-    // Build adjacency list (Parent -> Children is edges source -> target)
-    // We need Incoming edges (Parents)
-    const incomingEdgesMap = new Map<string, string[]>();
-    edges.forEach((edge: any) => {
-      const list = incomingEdgesMap.get(edge.target_node_id) || [];
-      list.push(edge.source_node_id);
-      incomingEdgesMap.set(edge.target_node_id, list);
-    });
-
     const status: Record<string, { locked: boolean; mastered: boolean }> = {};
-    
-    // BFS/Topological sort not strictly needed if we just check parents directly
-    // But locking depends on Parents.
-    nodes.forEach((node: any) => {
-      const parents = incomingEdgesMap.get(node.id) || [];
-      
-      let locked = false;
-      if (parents.length > 0) {
-        // Locked if ANY parent is NOT mastered
-        const allParentsMastered = parents.every(pid => masteryMap.get(pid));
-        locked = !allParentsMastered;
-      } else {
-        // Root nodes are never locked
-        locked = false;
-      }
 
-      status[node.id] = {
-        locked,
-        mastered: masteryMap.get(node.id) || false
-      };
-    });
+    if (!gamificationEnabled) {
+      // If gamification is disabled, everything is unlocked
+      nodes.forEach((node: any) => {
+        status[node.id] = {
+          locked: false,
+          mastered: masteryMap.get(node.id) || false
+        };
+      });
+      return status;
+    }
+
+    if (learningDirection === 'bottom_up') {
+      // Bottom-Up: Leaf nodes first.
+      // A node is locked if its CHILDREN (outgoing edges) are not mastered.
+      // Parents depend on Children.
+      
+      const outgoingEdgesMap = new Map<string, string[]>();
+      edges.forEach((edge: any) => {
+        const list = outgoingEdgesMap.get(edge.source_node_id) || [];
+        list.push(edge.target_node_id);
+        outgoingEdgesMap.set(edge.source_node_id, list);
+      });
+
+      nodes.forEach((node: any) => {
+        const children = outgoingEdgesMap.get(node.id) || [];
+        
+        let locked = false;
+        if (children.length > 0) {
+          // Locked if ANY child is NOT mastered
+          const allChildrenMastered = children.every(cid => masteryMap.get(cid));
+          locked = !allChildrenMastered;
+        } else {
+          // Leaf nodes (no children) are unlocked
+          locked = false;
+        }
+
+        status[node.id] = {
+          locked,
+          mastered: masteryMap.get(node.id) || false
+        };
+      });
+
+    } else {
+      // Top-Down (Default): Root nodes first.
+      // A node is locked if its PARENTS (incoming edges) are not mastered.
+      
+      // Build adjacency list (Parent -> Children is edges source -> target)
+      // We need Incoming edges (Parents)
+      const incomingEdgesMap = new Map<string, string[]>();
+      edges.forEach((edge: any) => {
+        const list = incomingEdgesMap.get(edge.target_node_id) || [];
+        list.push(edge.source_node_id);
+        incomingEdgesMap.set(edge.target_node_id, list);
+      });
+      
+      nodes.forEach((node: any) => {
+        const parents = incomingEdgesMap.get(node.id) || [];
+        
+        let locked = false;
+        if (parents.length > 0) {
+          // Locked if ANY parent is NOT mastered
+          const allParentsMastered = parents.every(pid => masteryMap.get(pid));
+          locked = !allParentsMastered;
+        } else {
+          // Root nodes are never locked
+          locked = false;
+        }
+
+        status[node.id] = {
+          locked,
+          mastered: masteryMap.get(node.id) || false
+        };
+      });
+    }
 
     return status;
   }

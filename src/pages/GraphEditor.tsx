@@ -10,7 +10,7 @@ import { Node, Edge } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser, Settings, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -20,6 +20,7 @@ import { generateMarkdown, generateJSON, downloadFile, downloadImage } from '../
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { TextToGraphModal } from '../components/GraphEditor/TextToGraphModal';
+import { GraphSettingsModal } from '../components/GraphEditor/GraphSettingsModal';
 import { ChatDialog } from '../components/GraphEditor/ChatDialog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useHistory } from '../hooks/useHistory';
@@ -47,12 +48,15 @@ import {
   useDocumentToGraphMutation,
   useRecommendConnectionsMutation,
   useDeleteGraphMutation,
-  useGraphNodeStatus
+  useGraphNodeStatus,
+  queryKeys
 } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   // useStore kept only for user/token if needed, or if we want to sync global state for other components
   // But for this page, we rely on React Query
   // const { nodes, edges, setNodes, setEdges, addNode, updateNode, removeNode, addEdge } = useStore();
@@ -120,6 +124,15 @@ export const GraphEditor = () => {
     return ids;
   }, [nodeStatus]);
 
+  const masteredNodeIds = useMemo(() => {
+    if (!nodeStatus) return new Set<string>();
+    const ids = new Set<string>();
+    Object.entries(nodeStatus).forEach(([nodeId, status]: [string, any]) => {
+      if (status.mastered) ids.add(nodeId);
+    });
+    return ids;
+  }, [nodeStatus]);
+
   // Pathfinding State
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -144,6 +157,7 @@ export const GraphEditor = () => {
   });
   const [aiPrompt, setAiPrompt] = useState('');
   const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
@@ -598,19 +612,27 @@ export const GraphEditor = () => {
       }));
 
       if (cards.length === 0) {
-        alert('AI 未能生成有效的卡片');
+        toast.error('AI 未能生成有效的卡片');
         return;
       }
 
       // 2. Save Cards
       await createCardsBatchMutation.mutateAsync(cards);
-      toast.success(`成功生成并保存了 ${cards.length} 张复习卡片！可以在“学习模式”中查看。`);
+      toast.success(`成功生成并保存了 ${cards.length} 张复习卡片！`);
+      
+      // Invalidate status to update mastery
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(id) });
     } catch (err) {
       console.error(err);
       toast.error('生成卡片失败');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStartLevelTest = () => {
+    if (!selectedNode) return;
+    navigate(`/study?node_id=${selectedNode.id}`);
   };
 
   const handleSearchResultClick = (node: Node) => {
@@ -728,6 +750,7 @@ export const GraphEditor = () => {
             layoutMode={layoutMode}
             pulsingNodeIds={pulsingNodeIds}
             lockedNodeIds={lockedNodeIds}
+            masteredNodeIds={masteredNodeIds}
             onNodeCollapse={handleToggleCollapse}
           />
         </Suspense>
@@ -987,6 +1010,14 @@ export const GraphEditor = () => {
           <Grid size={20} />
         </button>
 
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className={`p-1 hover:bg-gray-100 rounded text-gray-600 ${isSettingsOpen ? 'bg-blue-50 text-blue-600' : ''}`}
+          title="图谱设置"
+        >
+          <Settings size={20} />
+        </button>
+
         {/* Layout Switcher */}
         <div className="h-6 w-px bg-gray-300 mx-1"></div>
         <div className="flex bg-gray-100 rounded-lg p-1">
@@ -1114,6 +1145,18 @@ export const GraphEditor = () => {
                 ? "请选择终点节点" 
                 : `路径长度: ${highlightedPath?.nodes.size ? highlightedPath.nodes.size - 1 : 0} 步`}
           </span>
+          {highlightedPath && (
+            <button
+              onClick={() => {
+                const nodeIds = Array.from(highlightedPath.nodes).join(',');
+                navigate(`/study?node_ids=${nodeIds}`);
+              }}
+              className="ml-2 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full hover:bg-indigo-700 shadow-sm flex items-center"
+            >
+              <Sparkles size={12} className="mr-1" />
+              开启路径学习
+            </button>
+          )}
           {pathStartNode && (
             <button 
               onClick={() => {
@@ -1136,6 +1179,12 @@ export const GraphEditor = () => {
         graphId={id || ''}
       />
       
+      <GraphSettingsModal 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        graphId={id || ''}
+      />
+
       <ChatDialog 
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
@@ -1266,6 +1315,37 @@ export const GraphEditor = () => {
                       </div>
                     )}
                   </div>
+                </section>
+
+                {/* Mastery Status & Level Test */}
+                <section className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                      <GraduationCap size={14} className="mr-1.5" />
+                      学习进度
+                    </h4>
+                    {nodeStatus?.[selectedNode.id]?.mastered ? (
+                      <span className="flex items-center text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                        <Check size={12} className="mr-1" /> 已掌握
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                        学习中
+                      </span>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={handleStartLevelTest}
+                    className={`w-full py-3 rounded-xl flex items-center justify-center font-bold transition-all active:scale-95 ${
+                      nodeStatus?.[selectedNode.id]?.mastered 
+                      ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' 
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
+                    }`}
+                  >
+                    <Sparkles size={18} className="mr-2" />
+                    {nodeStatus?.[selectedNode.id]?.mastered ? '再次复习关卡' : '进入关卡测验'}
+                  </button>
                 </section>
 
                 {/* AI Assistant in Detail Mode */}

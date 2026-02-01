@@ -337,6 +337,17 @@ export const useCreateEdgeMutation = () => {
   });
 };
 
+export const useDeleteEdgeMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => api.edges.delete(id),
+    onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['graphData'] });
+    }
+  });
+};
+
 export const useUpdateCardProgressMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

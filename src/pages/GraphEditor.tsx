@@ -42,6 +42,7 @@ import {
   useUpdateNodeOptimisticMutation, 
   useDeleteNodeMutation, 
   useCreateEdgeMutation,
+  useDeleteEdgeMutation,
   useAIGenerateMutation,
   useAIExpandMutation,
   useAIGenerateCardsMutation, 
@@ -67,13 +68,14 @@ export const GraphEditor = () => {
   
   // React Query Hooks
   const { data: graphMeta } = useGraph(id || '');
-  const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || '');
+  const { data: graphData, isLoading: isGraphLoading, refetch: refetchGraph } = useGraphData(id || '');
   const { data: nodeStatus } = useGraphNodeStatus(id || '');
   
   const createNodeMutation = useCreateNodeMutation();
   const updateNodeMutation = useUpdateNodeOptimisticMutation();
   const deleteNodeMutation = useDeleteNodeMutation();
   const createEdgeMutation = useCreateEdgeMutation();
+  const deleteEdgeMutation = useDeleteEdgeMutation();
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
   const createCardsBatchMutation = useCreateCardsBatchMutation();
@@ -253,11 +255,12 @@ export const GraphEditor = () => {
   // Update form when selected node changes
   useEffect(() => {
     if (selectedNode && sidebarMode === 'edit') {
+      const parentEdge = edges.find(e => e.target_node_id === selectedNode.id);
       setNodeForm({
         title: selectedNode.title,
         content: selectedNode.content || '',
         color: selectedNode.color || '#3B82F6',
-        parentNodeId: '',
+        parentNodeId: parentEdge ? parentEdge.source_node_id : '',
         level: getLevel(selectedNode, edges)
       });
     }
@@ -452,6 +455,27 @@ export const GraphEditor = () => {
           data: updateData,
           graphId: id
         });
+
+        // Handle Edge Updates (Parent Node Change)
+        const currentParentEdge = edges.find(e => e.target_node_id === selectedNode.id);
+        const newParentId = nodeForm.parentNodeId;
+        
+        // 1. Delete old edge if parent changed or removed
+        if (currentParentEdge && currentParentEdge.source_node_id !== newParentId) {
+          await deleteEdgeMutation.mutateAsync({ id: currentParentEdge.id });
+        }
+        
+        // 2. Create new edge if new parent is selected
+        if (newParentId && (!currentParentEdge || currentParentEdge.source_node_id !== newParentId)) {
+          if (newParentId !== selectedNode.id) { // Prevent self-loop
+            await createEdgeMutation.mutateAsync({
+              source_node_id: newParentId,
+              target_node_id: selectedNode.id,
+              relationship_type: 'related',
+              graphId: id
+            });
+          }
+        }
         
         // Record history
         record({
@@ -729,40 +753,59 @@ export const GraphEditor = () => {
   };
 
   const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph') => {
-    if (!selectedNode || !id) return;
+    // If no nodes selected, do nothing
+    if (selectedNodeIds.size === 0 && !selectedNode) return;
+    if (!id) return;
     
+    // Determine which nodes to process
+    // If multiple nodes selected, process all of them
+    // If only one node selected (or none but selectedNode is set), process that one
+    const nodesToProcess = selectedNodeIds.size > 0 
+      ? Array.from(selectedNodeIds).map(nid => nodes.find(n => n.id === nid)).filter(Boolean)
+      : [selectedNode];
+
+    if (nodesToProcess.length === 0) return;
+
     try {
-      const payload: any = {
-        graph_id: id,
-        node_id: selectedNode.id,
-        node_title: selectedNode.title,
-        node_content: selectedNode.content
-      };
-
-      if (type === 'expand_graph') {
-        // Collect existing node titles for context
-        const existingTitles = nodes.map(n => n.title);
-        
-        // Get current direct children titles
-        const currentChildrenIds = edges
-          .filter(e => e.source_node_id === selectedNode.id)
-          .map(e => e.target_node_id);
-        const currentChildrenTitles = nodes
-          .filter(n => currentChildrenIds.includes(n.id))
-          .map(n => n.title);
-          
-        payload.existing_nodes = existingTitles;
-        payload.child_nodes = currentChildrenTitles;
-      }
-
-      await createTaskMutation.mutateAsync({
-        type,
-        payload
-      });
+      let successCount = 0;
       
+      for (const node of nodesToProcess) {
+        if (!node) continue;
+        
+        const payload: any = {
+          graph_id: id,
+          node_id: node.id,
+          node_title: node.title,
+          node_content: node.content
+        };
+
+        if (type === 'expand_graph') {
+          // Collect existing node titles for context
+          const existingTitles = nodes.map(n => n.title);
+          
+          // Get current direct children titles
+          const currentChildrenIds = edges
+            .filter(e => e.source_node_id === node.id)
+            .map(e => e.target_node_id);
+          const currentChildrenTitles = nodes
+            .filter(n => currentChildrenIds.includes(n.id))
+            .map(n => n.title);
+            
+          payload.existing_nodes = existingTitles;
+          payload.child_nodes = currentChildrenTitles;
+        }
+
+        await createTaskMutation.mutateAsync({
+          type,
+          payload
+        });
+        successCount++;
+      }
+      
+      const actionText = type === 'generate_questions' ? '自动生成题目' : '自动扩展图谱';
       addMessage({
         type: 'info',
-        content: `任务已提交：${type === 'generate_questions' ? '自动生成题目' : '自动扩展图谱'}`,
+        content: `已提交 ${successCount} 个任务：${actionText}`,
         duration: 8000,
         action: { label: '查看任务', onClick: () => navigate('/tasks') }
       });
@@ -1094,6 +1137,7 @@ export const GraphEditor = () => {
           onImage: handleExportImage,
           onDeleteGraph: handleDeleteGraph
         }}
+        onRefresh={refetchGraph}
       />
 
       {/* Delete Mode Indicator */}
@@ -1432,7 +1476,7 @@ export const GraphEditor = () => {
             </div>
 
             {/* Parent Node Selection */}
-            {sidebarMode === 'create' && (
+            {(sidebarMode === 'create' || sidebarMode === 'edit') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">父节点 (可选)</label>
                 <select
@@ -1454,7 +1498,9 @@ export const GraphEditor = () => {
                   className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="">无 (作为根节点)</option>
-                  {nodes.map(node => (
+                  {nodes
+                    .filter(node => !selectedNode || node.id !== selectedNode.id) // Avoid self-reference
+                    .map(node => (
                     <option key={node.id} value={node.id}>{node.title}</option>
                   ))}
                 </select>

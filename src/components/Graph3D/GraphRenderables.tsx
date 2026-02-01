@@ -66,6 +66,7 @@ export const InstancedNodes = ({
   const tempObject = useMemo(() => new THREE.Object3D(), []);
   const tempColor = useMemo(() => new THREE.Color(), []);
   const hoveredRef = useRef<number | null>(null);
+  const lastRightClickRef = useRef<{ time: number; instanceId: number | undefined }>({ time: 0, instanceId: undefined });
   const theme = getTheme(isDark);
 
   // Re-run this when simulationVersion changes (topology changed)
@@ -215,8 +216,18 @@ export const InstancedNodes = ({
         }}
         onContextMenu={(e) => {
           e.stopPropagation();
-          e.nativeEvent.preventDefault(); 
-          handleInteraction(e.instanceId, onNodeRightClick);
+          e.nativeEvent.preventDefault();
+          
+          const now = Date.now();
+          const lastClick = lastRightClickRef.current;
+          
+          // Double right click detection (500ms threshold)
+          if (lastClick.instanceId === e.instanceId && (now - lastClick.time) < 500) {
+            handleInteraction(e.instanceId, onNodeRightClick);
+            lastRightClickRef.current = { time: 0, instanceId: undefined };
+          } else {
+            lastRightClickRef.current = { time: now, instanceId: e.instanceId };
+          }
         }}
       >
         <sphereGeometry args={[1, 16, 16]} />

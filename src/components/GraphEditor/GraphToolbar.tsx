@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
-  Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp
+  Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node } from '../../types';
@@ -63,6 +63,7 @@ interface GraphToolbarProps {
     onImage: () => void;
     onDeleteGraph: () => void;
   };
+  onRefresh?: () => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -72,7 +73,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   aiEnabled, onTextToGraph, onAIExpand, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
-  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions
+  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -595,6 +596,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       {/* 5. System & Settings Dropdown */}
       <DropdownButton id="system" icon={Settings} label="设置">
+        <MenuItem onClick={onRefresh} icon={RefreshCw} label="刷新数据" disabled={!onRefresh} />
+        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={() => setShowGrid(!showGrid)} icon={Grid} label={showGrid ? "隐藏网格" : "显示网格"} active={showGrid} />
         <MenuItem onClick={toggleTheme} icon={isDark ? Sun : Moon} label={isDark ? "浅色模式" : "深色模式"} />
         <MenuItem onClick={() => setIsFocusMode(true)} icon={Maximize} label="专注模式 (F)" />

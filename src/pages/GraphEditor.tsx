@@ -1057,11 +1057,12 @@ export const GraphEditor = () => {
                  </button>
                </div>
                <GraphOutline 
-                 nodes={nodes} 
-                 onNodeClick={handleNodeClick} 
-                 selectedNodeId={selectedNode?.id}
-                 className="h-full"
-               />
+                nodes={nodes} 
+                edges={edges}
+                onNodeClick={handleNodeClick} 
+                selectedNodeId={selectedNode?.id}
+                className="h-full"
+              />
              </div>
           ) : sidebarMode === 'detail' && selectedNode ? (
             <div className="h-full flex flex-col">

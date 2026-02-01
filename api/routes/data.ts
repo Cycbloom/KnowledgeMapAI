@@ -69,18 +69,39 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
 
     doc.pipe(res);
 
-    doc.fontSize(20).text(safeTitle, { align: 'center' });
+    doc.fontSize(22).fillColor('#000000').text(safeTitle, { align: 'center' });
     doc.moveDown(0.5);
+    
     if (graph.description) {
-      doc.fontSize(11).fillColor('#333333').text(String(graph.description));
-      doc.moveDown(0.8);
+      doc.fontSize(11).fillColor('#444444').text(String(graph.description), { align: 'center' });
+      doc.moveDown(1);
     }
-    doc.fontSize(9).fillColor('#666666').text(`导出时间：${new Date().toLocaleString()}`);
-    doc.moveDown(1);
-    doc.fillColor('#111111');
 
+    // Add Statistics Section
+    doc.fontSize(14).fillColor('#111111').text('图谱统计信息', { underline: true });
+    doc.moveDown(0.5);
+    
     const nodesArr = Array.isArray(nodes) ? nodes : [];
     const edgesArr = Array.isArray(edges) ? edges : [];
+    
+    const levelCounts: Record<string, number> = {
+      'root': nodesArr.filter(n => n.level === 'root').length,
+      'core': nodesArr.filter(n => n.level === 'core').length,
+      'sub': nodesArr.filter(n => n.level === 'sub').length,
+      'normal': nodesArr.filter(n => n.level === 'normal').length,
+      'leaf': nodesArr.filter(n => n.level === 'leaf').length
+    };
+
+    doc.fontSize(10).fillColor('#333333');
+    doc.text(`总节点数: ${nodesArr.length}`);
+    doc.text(`总关联数: ${edgesArr.length}`);
+    doc.text(`层级分布: 核心(${levelCounts.root + levelCounts.core}) / 子项(${levelCounts.sub + levelCounts.normal}) / 叶子(${levelCounts.leaf})`);
+    doc.text(`导出时间: ${new Date().toLocaleString()}`);
+    doc.moveDown(1.5);
+    
+    doc.fillColor('#111111');
+    doc.fontSize(14).text('内容大纲', { underline: true });
+    doc.moveDown(1);
 
     const nodeById = new Map(nodesArr.map((n: any) => [n.id, n]));
     const childrenByParent = new Map<string, string[]>();

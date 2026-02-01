@@ -489,7 +489,7 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
           } else {
             // Default: 'important'
             const isImportant = node.level === 'root' || node.level === 'core';
-            isVisible = isImportant || distance < 40; // Threshold distance
+            isVisible = isImportant || distance < 80; // Threshold distance
           }
         }
 

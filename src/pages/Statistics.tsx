@@ -1,10 +1,10 @@
-import React from 'react';
-import { useStatistics } from '../hooks/useQueries';
+import React, { useMemo } from 'react';
+import { useStatistics, useUser } from '../hooks/useQueries';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { StatsOverview } from '../components/StatsOverview';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  AreaChart, Area
+  AreaChart, Area, LineChart, Line, ReferenceLine, Legend
 } from 'recharts';
 import { BookOpen, Brain, Clock, TrendingUp } from 'lucide-react';
 
@@ -99,8 +99,72 @@ const GrowthChart = ({ data }: { data: any[] }) => (
   </div>
 );
 
+// --- Forgetting Curve Chart Component ---
+const ForgettingCurveChart = ({ retentionThreshold }: { retentionThreshold: number }) => {
+  const data = useMemo(() => {
+    const points = [];
+    const stability = 7; // 示例稳定性（天）
+    for (let t = 0; t <= 30; t += 0.5) {
+      const r = Math.exp(-t / stability);
+      points.push({
+        day: t,
+        retention: Math.round(r * 100),
+      });
+    }
+    return points;
+  }, []);
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
+      <h3 className="text-lg font-bold text-gray-800 mb-2">遗忘曲线与记忆阈值</h3>
+      <p className="text-gray-500 text-xs mb-6">基于 FSRS 算法的理论模型，展示知识随时间的遗忘过程</p>
+      <div className="flex-1 w-full min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+            <XAxis 
+              dataKey="day" 
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+            />
+            <YAxis 
+              domain={[0, 100]} 
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748b', fontSize: 12 }}
+              tickFormatter={(val) => `${val}%`}
+            />
+            <RechartsTooltip 
+              formatter={(value: number) => [`${value}%`, '记忆保留率']}
+              labelFormatter={(label) => `第 ${label} 天`}
+              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+            />
+            <ReferenceLine 
+              y={retentionThreshold * 100} 
+              stroke="#ef4444" 
+              strokeDasharray="3 3" 
+              label={{ value: `目标 ${retentionThreshold * 100}%`, position: 'right', fill: '#ef4444', fontSize: 10 }} 
+            />
+            <Line 
+              type="monotone" 
+              dataKey="retention" 
+              stroke="#6366f1" 
+              strokeWidth={3} 
+              dot={false}
+              name="记忆保留率"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
 export const Statistics = () => {
   const { data: stats, isLoading, error } = useStatistics();
+  const { data: userData } = useUser();
+  const retention = userData?.user?.profile?.settings?.request_retention || 0.9;
 
   if (isLoading) return <div className="p-8 text-center text-gray-500">加载统计数据中...</div>;
   if (error) return <div className="p-8 text-center text-red-500">无法加载统计数据</div>;
@@ -156,7 +220,12 @@ export const Statistics = () => {
         <StatsOverview data={stats.distribution || []} />
       </div>
 
-      {/* 4. Growth Chart (Full Width) */}
+      {/* 4. Forgetting Curve Chart */}
+      <div className="mb-8">
+         <ForgettingCurveChart retentionThreshold={retention} />
+      </div>
+
+      {/* 5. Growth Chart (Full Width) */}
       <div className="mb-8">
         <GrowthChart data={stats.growth || []} />
       </div>

@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAIStatus, useLogoutMutation, useUser } from '../hooks/useQueries';
+import { useAIStatus, useLogoutMutation, useUser, useUpdateProfileMutation } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, User, Cpu, KeyRound, ExternalLink } from 'lucide-react';
+import { LogOut, User, Cpu, KeyRound, ExternalLink, Brain, Save } from 'lucide-react';
 
 export const Profile = () => {
   const navigate = useNavigate();
@@ -13,10 +13,36 @@ export const Profile = () => {
 
   const { data: userData, isLoading } = useUser(!!token);
   const { data: aiStatus } = useAIStatus(!!token);
+  const updateProfileMutation = useUpdateProfileMutation();
 
   const profile = (userData as any)?.user?.profile;
+  const settings = profile?.settings;
   const displayName = profile?.name || (userData as any)?.user?.user_metadata?.name || user?.name || '未命名用户';
   const email = (userData as any)?.user?.email || user?.email || '-';
+
+  const [retention, setRetention] = useState(0.9);
+  const [maxInterval, setMaxInterval] = useState(36500);
+
+  useEffect(() => {
+    if (settings) {
+      if (settings.request_retention) setRetention(Number(settings.request_retention));
+      if (settings.maximum_interval) setMaxInterval(Number(settings.maximum_interval));
+    }
+  }, [settings]);
+
+  const handleSaveSettings = async () => {
+    try {
+      await updateProfileMutation.mutateAsync({
+        settings: {
+          request_retention: Number(retention),
+          maximum_interval: Number(maxInterval)
+        }
+      });
+      addMessage({ type: 'success', content: '算法配置已保存' });
+    } catch (e) {
+      addMessage({ type: 'error', content: '保存失败' });
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -105,6 +131,63 @@ export const Profile = () => {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+               <Brain className="w-5 h-5 text-indigo-600" />
+               <h2 className="text-lg font-bold text-gray-900">学习算法配置 (FSRS)</h2>
+            </div>
+            <button
+               onClick={handleSaveSettings}
+               disabled={updateProfileMutation.isPending}
+               className="px-3 py-1.5 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50"
+            >
+               <Save className="w-4 h-4" />
+               <span>{updateProfileMutation.isPending ? '保存中...' : '保存配置'}</span>
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex justify-between items-center mb-2">
+                   <label className="font-semibold text-gray-700 text-sm">目标保留率 (Request Retention)</label>
+                   <span className="text-indigo-600 font-bold">{Number(retention).toFixed(2)}</span>
+                </div>
+                <input 
+                   type="range" 
+                   min="0.70" 
+                   max="0.99" 
+                   step="0.01"
+                   value={retention}
+                   onChange={(e) => setRetention(Number(e.target.value))}
+                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                   设定您希望在复习时记住的概率。值越高，复习越频繁，记忆越牢固。建议范围：0.80 - 0.95。
+                </p>
+             </div>
+             
+             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex justify-between items-center mb-2">
+                   <label className="font-semibold text-gray-700 text-sm">最大复习间隔 (天)</label>
+                   <span className="text-indigo-600 font-bold">{maxInterval} 天</span>
+                </div>
+                <input 
+                   type="range" 
+                   min="1" 
+                   max="36500" 
+                   step="100"
+                   value={maxInterval}
+                   onChange={(e) => setMaxInterval(Number(e.target.value))}
+                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                   限制卡片复习的最大间隔天数。默认 36500 天（100年）。
+                </p>
+             </div>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

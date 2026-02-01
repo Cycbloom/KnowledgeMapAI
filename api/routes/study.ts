@@ -8,7 +8,30 @@ import { AppError } from '../middleware/errorHandler.js';
 import { fsrs, Card, Rating, State, createEmptyCard } from 'ts-fsrs';
 
 const router = Router();
-const f = fsrs();
+
+// Helper: Get FSRS instance with user settings
+const getFSRS = async (userId: string, supabase: any) => {
+  try {
+    const { data } = await supabase
+      .from('users')
+      .select('settings')
+      .eq('id', userId)
+      .single();
+      
+    const params: any = {};
+    if (data?.settings?.request_retention) {
+      params.request_retention = Number(data.settings.request_retention);
+    }
+    if (data?.settings?.maximum_interval) {
+      params.maximum_interval = Number(data.settings.maximum_interval);
+    }
+    
+    return fsrs(params);
+  } catch (e) {
+    console.warn('Failed to fetch user settings for FSRS, using defaults', e);
+    return fsrs();
+  }
+};
 
 // Helper: Convert DB card to FSRS Card
 const dbCardToFSRS = (dbCard: any): Card => {
@@ -216,6 +239,7 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
   const now = new Date();
   const rating = mapQualityToRating(quality);
   
+  const f = await getFSRS(req.user.id, req.supabase);
   const scheduling_cards = f.repeat(fsrsCard, now);
   const scheduledCard = scheduling_cards[rating].card;
 

@@ -436,3 +436,14 @@ export const useLogoutMutation = () => {
     }
   });
 };
+
+export const useUpdateProfileMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.auth.updateProfile,
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.user, data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.user });
+    },
+  });
+};

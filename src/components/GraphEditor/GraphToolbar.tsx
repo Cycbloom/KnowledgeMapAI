@@ -47,6 +47,8 @@ interface GraphToolbarProps {
   selectedNodeIds: Set<string>;
   onDeleteSelected: () => void;
   onBatchDelete: () => void;
+  onBatchColorUpdate?: (color: string) => void;
+  onBatchLevelUpdate?: (level: string) => void;
 
   // Settings & Export
   onOpenSettings: () => void;
@@ -67,6 +69,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   showGrid, setShowGrid, layoutMode, setLayoutMode, isFocusMode, setIsFocusMode,
   aiEnabled, onTextToGraph, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
+  onBatchColorUpdate, onBatchLevelUpdate,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions
 }) => {
   const { isDark, toggleTheme } = useTheme();
@@ -166,30 +169,133 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   );
 
   // Group: Edit Tools
-  const EditGroup = () => (
-    <div className="flex items-center space-x-1">
-      <Button 
-        onClick={onAddNode} 
-        icon={Plus} 
-        colorClass="text-blue-600" 
-        title="添加节点" 
-      />
-      <Button 
-        onClick={() => setIsDeleteMode(!isDeleteMode)} 
-        active={isDeleteMode} 
-        activeClass="bg-red-50 text-red-600 ring-2 ring-red-200 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-800"
-        icon={Eraser} 
-        title={isDeleteMode ? "退出删除模式" : "删除模式"} 
-      />
-      <Button 
-        onClick={selectedNodeIds.size > 1 ? onBatchDelete : onDeleteSelected}
-        disabled={selectedNodeIds.size === 0}
-        icon={Trash2}
-        colorClass="text-red-600"
-        title={selectedNodeIds.size > 1 ? "批量删除" : "删除选中节点"}
-      />
-    </div>
-  );
+  const EditGroup = () => {
+    return (
+      <div className="flex items-center space-x-1">
+        <Button 
+          onClick={onAddNode} 
+          icon={Plus} 
+          colorClass="text-blue-600" 
+          title="添加节点" 
+        />
+        <Button 
+          onClick={() => setIsDeleteMode(!isDeleteMode)} 
+          active={isDeleteMode} 
+          activeClass="bg-red-50 text-red-600 ring-2 ring-red-200 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-800"
+          icon={Eraser} 
+          title={isDeleteMode ? "退出删除模式" : "删除模式"} 
+        />
+        
+        {selectedNodeIds.size > 0 && (
+          <Button 
+            onClick={selectedNodeIds.size > 1 ? onBatchDelete : onDeleteSelected}
+            icon={Trash2}
+            colorClass="text-red-600"
+            title={selectedNodeIds.size > 1 ? "批量删除" : "删除选中节点"}
+          />
+        )}
+      </div>
+    );
+  };
+
+  const BatchMenu = () => {
+    const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
+    
+    if (selectedNodeIds.size <= 1) return null;
+
+    return (
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <button 
+          onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
+          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
+            isBatchMenuOpen
+              ? 'bg-indigo-600 text-white'
+              : (isDark ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-800/50 hover:bg-indigo-800/60' : 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100')
+          }`}
+          title="批量操作"
+        >
+          <MoreHorizontal size={18} />
+          <span className="text-xs font-bold">批量 ({selectedNodeIds.size})</span>
+          <ChevronDown size={14} className={`transition-transform ${isBatchMenuOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isBatchMenuOpen && (
+          <div className={`absolute top-full left-0 mt-2 shadow-2xl rounded-xl border w-60 py-2 z-50 ${themeClasses.dropdown} animate-in fade-in zoom-in-95 duration-150`}>
+            <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
+              <span>批量操作</span>
+              <span className="bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{selectedNodeIds.size} 节点</span>
+            </div>
+            <div className="border-t my-1 border-gray-100 dark:border-slate-700"></div>
+            
+            {/* Batch Color */}
+            <div className="px-4 py-3">
+              <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
+                <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
+                修改颜色
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                {['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#64748B'].map(color => (
+                  <button 
+                    key={color}
+                    onClick={() => {
+                      onBatchColorUpdate?.(color);
+                      setIsBatchMenuOpen(false);
+                    }}
+                    className="w-6 h-6 rounded-full border-2 border-transparent hover:border-white dark:hover:border-slate-400 hover:scale-125 transition-all shadow-sm ring-1 ring-gray-200 dark:ring-slate-700"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="border-t my-1 border-gray-100 dark:border-slate-700"></div>
+
+            {/* Batch Level */}
+            <div className="px-4 py-3">
+              <div className="text-[10px] text-gray-500 mb-2.5 font-bold flex items-center gap-1.5">
+                <div className="w-1 h-3 bg-green-500 rounded-full"></div>
+                修改等级
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'root', label: '根节点' },
+                  { id: 'core', label: '核心' },
+                  { id: 'sub', label: '次级' },
+                  { id: 'normal', label: '普通' },
+                  { id: 'leaf', label: '叶子' }
+                ].map(level => (
+                  <button 
+                    key={level.id}
+                    onClick={() => {
+                      onBatchLevelUpdate?.(level.id);
+                      setIsBatchMenuOpen(false);
+                    }}
+                    className={`px-2 py-1.5 text-[10px] rounded-lg border font-medium transition-all ${themeClasses.itemHover} ${isDark ? 'border-slate-700 text-gray-300' : 'border-gray-200 text-gray-600'}`}
+                  >
+                    {level.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="border-t my-1 border-gray-100 dark:border-slate-700"></div>
+            <div className="px-2 pt-1">
+              <button 
+                onClick={() => {
+                  onBatchDelete();
+                  setIsBatchMenuOpen(false);
+                }}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors font-semibold"
+              >
+                <Trash2 size={16} />
+                <span>批量删除选中</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Group: Layout & Export
   const SystemGroup = () => (
@@ -267,6 +373,12 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
            <Button onClick={onBack} icon={ArrowLeft} title="返回" />
            <Divider />
            <Button onClick={toggleTheme} icon={isDark ? Sun : Moon} title="切换主题" />
+           {selectedNodeIds.size > 1 && (
+             <>
+               <Divider />
+               <BatchMenu />
+             </>
+           )}
            <Button 
              onClick={() => setIsExpanded(!isExpanded)} 
              icon={isExpanded ? ChevronUp : ChevronDown} 
@@ -371,23 +483,32 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       <Divider />
 
       {/* 2. Edit Tools Dropdown */}
-      <DropdownButton id="edit" icon={Plus} label="编辑" active={isDeleteMode || selectedNodeIds.size > 0}>
-        <MenuItem onClick={onAddNode} icon={Plus} label="添加节点" colorClass="text-blue-500" />
-        <MenuItem 
-          onClick={() => setIsDeleteMode(!isDeleteMode)} 
-          icon={Eraser} 
-          label={isDeleteMode ? "退出删除模式" : "删除模式"} 
-          active={isDeleteMode}
-          activeClass="bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-        />
-        <MenuItem 
-          onClick={selectedNodeIds.size > 1 ? onBatchDelete : onDeleteSelected}
-          disabled={selectedNodeIds.size === 0}
-          icon={Trash2}
-          label={selectedNodeIds.size > 1 ? `批量删除 (${selectedNodeIds.size})` : "删除选中节点"}
-          colorClass="text-red-500"
-        />
-      </DropdownButton>
+      <div className="flex items-center space-x-2">
+        <DropdownButton id="edit" icon={Plus} label="编辑" active={isDeleteMode || selectedNodeIds.size > 0}>
+          <MenuItem onClick={onAddNode} icon={Plus} label="添加节点" colorClass="text-blue-500" />
+          <MenuItem 
+            onClick={() => setIsDeleteMode(!isDeleteMode)} 
+            icon={Eraser} 
+            label={isDeleteMode ? "退出删除模式" : "删除模式"} 
+            active={isDeleteMode}
+            activeClass="bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+          />
+          <MenuItem 
+            onClick={onDeleteSelected}
+            disabled={selectedNodeIds.size !== 1}
+            icon={Trash2}
+            label="删除选中节点"
+            colorClass="text-red-500"
+          />
+        </DropdownButton>
+
+        {selectedNodeIds.size > 1 && (
+          <>
+            <div className={`w-px h-6 mx-1 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+            <BatchMenu />
+          </>
+        )}
+      </div>
 
       <Divider />
 

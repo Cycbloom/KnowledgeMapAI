@@ -12,6 +12,11 @@ export const loginSchema = z.object({
   password: z.string().min(1, '密码不能为空'),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().optional(),
+  settings: z.record(z.any()).optional(),
+});
+
 // --- Common Schemas ---
 export const uuidParamsSchema = z.object({
   id: z.string().uuid('无效的ID格式'),

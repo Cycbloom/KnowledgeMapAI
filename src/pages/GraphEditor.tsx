@@ -4,14 +4,14 @@ import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
 import { type Graph3DRef, type Graph3DProps } from '../components/Graph3D';
-import { Node, Edge } from '../types';
+import { Node } from '../types';
 
 // Lazy load heavy 3D component
 // Cast the lazy loaded component to proper type including ref
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
-import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
+import { getLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser, Settings, Check, Lock } from 'lucide-react';
+import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -44,15 +44,14 @@ import {
   useCreateEdgeMutation,
   useAIGenerateMutation,
   useAIExpandMutation,
-  useAIGenerateCardsMutation,
-  useCreateCardsBatchMutation,
-  useExportGraphMutation,
-  useDocumentToGraphMutation,
-  useRecommendConnectionsMutation,
-  useDeleteGraphMutation,
-  useGraphNodeStatus,
-  useCreateTaskMutation,
-  useAIStatus,
+  useAIGenerateCardsMutation, 
+  useCreateCardsBatchMutation, 
+  useDocumentToGraphMutation, 
+  useRecommendConnectionsMutation, 
+  useDeleteGraphMutation, 
+  useGraphNodeStatus, 
+  useCreateTaskMutation, 
+  useAIStatus, 
   queryKeys
 } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -75,11 +74,9 @@ export const GraphEditor = () => {
   const updateNodeMutation = useUpdateNodeOptimisticMutation();
   const deleteNodeMutation = useDeleteNodeMutation();
   const createEdgeMutation = useCreateEdgeMutation();
-  const aiGenerateMutation = useAIGenerateMutation();
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
   const createCardsBatchMutation = useCreateCardsBatchMutation();
-  const documentToGraphMutation = useDocumentToGraphMutation();
   const recommendConnectionsMutation = useRecommendConnectionsMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const createTaskMutation = useCreateTaskMutation();
@@ -536,6 +533,44 @@ export const GraphEditor = () => {
     });
   };
 
+  const handleBatchColorUpdate = async (color: string) => {
+    if (!id || selectedNodeIds.size === 0) return;
+    
+    setLoading(true);
+    const nodeIds = Array.from(selectedNodeIds);
+    
+    try {
+      await Promise.all(nodeIds.map(nodeId => 
+        updateNodeMutation.mutateAsync({ id: nodeId, graphId: id, data: { color } })
+      ));
+      addMessage({ content: `已将 ${selectedNodeIds.size} 个节点颜色修改为 ${color}`, type: 'success' });
+    } catch (err) {
+      console.error(err);
+      addMessage({ content: '批量修改颜色失败', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBatchLevelUpdate = async (level: string) => {
+    if (!id || selectedNodeIds.size === 0) return;
+    
+    setLoading(true);
+    const nodeIds = Array.from(selectedNodeIds);
+    
+    try {
+      await Promise.all(nodeIds.map(nodeId => 
+        updateNodeMutation.mutateAsync({ id: nodeId, graphId: id, data: { level: level as NodeLevel } })
+      ));
+      addMessage({ content: `已将 ${selectedNodeIds.size} 个节点等级修改为 ${levelLabels[level] || level}`, type: 'success' });
+    } catch (err) {
+      console.error(err);
+      addMessage({ content: '批量修改等级失败', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAIGenerate = async () => {
     if (!nodeForm.title) return;
     setLoading(true);
@@ -826,17 +861,45 @@ export const GraphEditor = () => {
         )}
       </div>
 
-      {/* Batch Actions Toolbar */}
+      {/* Floating Batch Actions Toolbar */}
       {selectedNodeIds.size > 1 && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl border border-blue-100 flex items-center space-x-4 z-20 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <span className="font-medium text-gray-700">已选择 {selectedNodeIds.size} 个节点</span>
-          <div className="w-px h-4 bg-gray-300"></div>
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-2xl border border-indigo-100 dark:border-indigo-900/50 flex items-center space-x-4 z-20 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center space-x-2 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+            <span className="font-bold text-indigo-700 dark:text-indigo-300 text-sm">已选择 {selectedNodeIds.size} 个节点</span>
+          </div>
+          
+          <div className="w-px h-6 bg-gray-200 dark:bg-slate-700"></div>
+          
+          {/* Quick Color Pick */}
+          <div className="flex items-center space-x-1.5">
+            {['#3B82F6', '#10B981', '#F59E0B', '#EF4444'].map(color => (
+              <button 
+                key={color}
+                onClick={() => handleBatchColorUpdate(color)}
+                className="w-5 h-5 rounded-full border border-white dark:border-slate-700 hover:scale-125 transition-transform shadow-sm"
+                style={{ backgroundColor: color }}
+                title={`批量修改为此颜色`}
+              />
+            ))}
+          </div>
+
+          <div className="w-px h-6 bg-gray-200 dark:bg-slate-700"></div>
+
           <button 
             onClick={handleBatchDelete}
-            className="flex items-center space-x-1 text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+            className="flex items-center space-x-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 px-3 py-1.5 rounded-lg transition-colors font-bold text-sm"
           >
-            <Trash2 size={18} />
+            <Trash2 size={16} />
             <span>批量删除</span>
+          </button>
+          
+          <button 
+            onClick={() => setSelectedNodeIds(new Set())}
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            title="取消选择"
+          >
+            <X size={18} />
           </button>
         </div>
       )}
@@ -950,6 +1013,8 @@ export const GraphEditor = () => {
         selectedNodeIds={selectedNodeIds}
         onDeleteSelected={() => handleDeleteNode()}
         onBatchDelete={handleBatchDelete}
+        onBatchColorUpdate={handleBatchColorUpdate}
+        onBatchLevelUpdate={handleBatchLevelUpdate}
         onOpenSettings={() => setIsSettingsOpen(true)}
         isExportMenuOpen={isExportMenuOpen}
         setIsExportMenuOpen={setIsExportMenuOpen}
@@ -1045,6 +1110,13 @@ export const GraphEditor = () => {
         confirmText="删除"
         isDangerous={true}
       />
+      
+      {/* Selection Hint */}
+      {!isDeleteMode && !isPathfindingMode && selectedNodeIds.size === 0 && (
+        <div className="absolute bottom-4 left-4 text-[10px] text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-slate-900/50 px-2 py-1 rounded backdrop-blur-sm pointer-events-none">
+          按住 Shift 键并拖动鼠标进行框选
+        </div>
+      )}
       
       {/* Right Sidebar */}
       {sidebarMode !== 'none' && (

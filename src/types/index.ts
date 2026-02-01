@@ -2,6 +2,13 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  profile?: {
+    settings?: {
+      request_retention?: number;
+      maximum_interval?: number;
+    };
+    [key: string]: any;
+  };
 }
 
 export interface Graph {

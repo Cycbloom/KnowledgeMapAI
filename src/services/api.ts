@@ -47,6 +47,7 @@ export const api = {
     login: (data: any) => request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
     logout: () => request('/auth/logout', { method: 'POST' }),
     getUser: () => request('/auth/user'),
+    updateProfile: (data: any) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
   },
   graphs: {
     list: () => request('/graphs'),

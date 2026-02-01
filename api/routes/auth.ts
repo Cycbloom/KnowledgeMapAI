@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { supabaseAdmin } from '../supabase.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { registerSchema, loginSchema } from '../schemas/index.js';
+import { registerSchema, loginSchema, updateProfileSchema } from '../schemas/index.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 
@@ -132,6 +132,36 @@ router.get('/user', requireAuth, async (req: AuthRequest, res: Response): Promis
   if (error) {
     res.status(500).json({ error: error.message });
     return;
+  }
+
+  res.json({ user: { ...req.user, profile: data } });
+});
+
+/**
+ * Update Profile (Settings)
+ * PUT /api/auth/profile
+ */
+router.put('/profile', requireAuth, validate(updateProfileSchema), async (req: AuthRequest, res: Response): Promise<void> => {
+  const { name, settings } = req.body;
+  const updates: any = {};
+  
+  if (name !== undefined) updates.name = name;
+  if (settings !== undefined) updates.settings = settings;
+
+  if (Object.keys(updates).length === 0) {
+    res.json({ message: 'No updates provided' });
+    return;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .update(updates)
+    .eq('id', req.user.id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new AppError(error.message || '更新个人资料失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 
   res.json({ user: { ...req.user, profile: data } });

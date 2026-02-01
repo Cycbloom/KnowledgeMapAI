@@ -65,11 +65,14 @@ const FilterTab = ({ label, value, current, onClick, count }: { label: string, v
   </button>
 );
 
+import { ConfirmationModal } from '../components/ConfirmationModal';
+
 export const Tasks = () => {
   const navigate = useNavigate();
   const { token } = useStore();
   const { addMessage } = useMessageStore();
   const [filter, setFilter] = useState<string>('all');
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch, isFetching } = useTasks(!!token, filter);
   const tasks = useMemo(() => (Array.isArray(data) ? data : []), [data]);
@@ -86,11 +89,16 @@ export const Tasks = () => {
     }
   };
 
-  const handleDelete = async (taskId: string) => {
-    if (!confirm('确定要删除这个任务吗？')) return;
+  const handleDeleteClick = (taskId: string) => {
+    setDeleteId(taskId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await deleteMutation.mutateAsync(taskId);
+      await deleteMutation.mutateAsync(deleteId);
       addMessage({ type: 'success', content: '任务已删除' });
+      setDeleteId(null);
     } catch (err: any) {
       addMessage({ type: 'error', content: err.message || '删除失败' });
     }
@@ -215,7 +223,7 @@ export const Tasks = () => {
                           )}
                           
                           <button
-                            onClick={() => handleDelete(t.id)}
+                            onClick={() => handleDeleteClick(t.id)}
                             disabled={deleteMutation.isPending}
                             className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             title="删除任务"
@@ -274,6 +282,17 @@ export const Tasks = () => {
           )}
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        title="删除任务"
+        message="确定要删除这个任务吗？此操作无法撤销。"
+        confirmText="删除"
+        cancelText="取消"
+        isDangerous={true}
+      />
     </div>
   );
 };

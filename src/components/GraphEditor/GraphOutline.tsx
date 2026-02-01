@@ -1,24 +1,31 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2 } from 'lucide-react';
 import { Node, Edge } from '../../types';
 
 interface GraphOutlineProps {
   nodes: Node[];
-  edges: Edge[];
+  edges?: Edge[];
   onNodeClick: (node: Node) => void;
   selectedNodeId: string | null;
+  selectedNodeIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
+  onBatchAction?: (action: 'expand_graph' | 'delete', data?: any) => void;
   className?: string;
 }
 
 export const GraphOutline: React.FC<GraphOutlineProps> = ({
   nodes,
-  edges,
+  edges = [],
   onNodeClick,
   selectedNodeId,
+  selectedNodeIds = new Set(),
+  onSelectionChange,
+  onBatchAction,
   className = ''
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // Filter nodes for search mode
   const filteredNodes = useMemo(() => {
@@ -118,6 +125,26 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     });
   };
 
+  const handleToggleSelection = (nodeId: string) => {
+    if (!onSelectionChange) return;
+    const newSet = new Set(selectedNodeIds);
+    if (newSet.has(nodeId)) {
+      newSet.delete(nodeId);
+    } else {
+      newSet.add(nodeId);
+    }
+    onSelectionChange(newSet);
+  };
+
+  const handleSelectAll = () => {
+    if (!onSelectionChange) return;
+    if (selectedNodeIds.size === nodes.length) {
+      onSelectionChange(new Set());
+    } else {
+      onSelectionChange(new Set(nodes.map(n => n.id)));
+    }
+  };
+
   // Search Mode: Flat List with Hierarchy Sorting (Previous Implementation)
   const renderSearchList = () => {
     // Sort by level then title
@@ -135,16 +162,30 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
     return sortedNodes.map(node => {
       const level = node.level || 'leaf';
+      const isSelected = selectedNodeIds.has(node.id);
+
       return (
-        <button
+        <div
           key={node.id}
-          onClick={() => onNodeClick(node)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-left group
-            ${selectedNodeId === node.id 
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left group
+            ${(selectedNodeId === node.id && !isMultiSelectMode)
               ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
+          onClick={() => {
+            if (isMultiSelectMode) {
+              handleToggleSelection(node.id);
+            } else {
+              onNodeClick(node);
+            }
+          }}
         >
+          {isMultiSelectMode && (
+            <div onClick={(e) => { e.stopPropagation(); handleToggleSelection(node.id); }} className="cursor-pointer text-slate-400 hover:text-blue-500">
+              {isSelected ? <CheckSquare size={16} className="text-blue-500" /> : <Square size={16} />}
+            </div>
+          )}
+
           <div 
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: node.color || '#3B82F6' }}
@@ -155,7 +196,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded uppercase">
             {level}
           </span>
-        </button>
+        </div>
       );
     });
   };
@@ -168,21 +209,28 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     const children = childrenMap.get(node.id) || [];
     const hasChildren = children.length > 0;
     const isExpanded = expandedNodeIds.has(node.id);
+    const isSelected = selectedNodeIds.has(node.id);
     
     // Indentation handled by paddingLeft
-    // Base padding 12px, plus depth * 12px
+    // Base padding 12px, plus depth * 16px
     const paddingLeft = 12 + depth * 16;
 
     return (
       <div key={node.id} className="select-none">
         <div 
-          onClick={() => onNodeClick(node)}
           className={`w-full flex items-center pr-2 py-1.5 cursor-pointer text-sm transition-colors group
-            ${selectedNodeId === node.id 
+            ${(selectedNodeId === node.id && !isMultiSelectMode)
               ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           style={{ paddingLeft: `${paddingLeft}px` }}
+          onClick={() => {
+            if (isMultiSelectMode) {
+              handleToggleSelection(node.id);
+            } else {
+              onNodeClick(node);
+            }
+          }}
         >
           {/* Expand Toggle */}
           <div 
@@ -192,6 +240,12 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </div>
           
+          {isMultiSelectMode && (
+            <div onClick={(e) => { e.stopPropagation(); handleToggleSelection(node.id); }} className="mr-2 cursor-pointer text-slate-400 hover:text-blue-500">
+              {isSelected ? <CheckSquare size={16} className="text-blue-500" /> : <Square size={16} />}
+            </div>
+          )}
+
           {/* Node Dot */}
           <div 
             className="w-2 h-2 rounded-full shrink-0 mr-2"
@@ -224,10 +278,25 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   return (
     <div className={`flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 ${className}`}>
       <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-        <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-          大纲视图 ({nodes.length})
-        </h2>
-        <div className="relative">
+        <div className="flex justify-between items-center mb-3 pr-6">
+          <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            大纲视图 ({nodes.length})
+          </h2>
+          <button 
+            onClick={() => {
+              setIsMultiSelectMode(!isMultiSelectMode);
+              if (isMultiSelectMode && onSelectionChange) {
+                onSelectionChange(new Set()); // Clear selection when exiting
+              }
+            }}
+            className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+            title={isMultiSelectMode ? "退出多选" : "多选模式"}
+          >
+            <MousePointer2 size={16} />
+          </button>
+        </div>
+        
+        <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
@@ -237,6 +306,40 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-md text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
           />
         </div>
+
+        {/* Batch Actions Toolbar */}
+        {isMultiSelectMode && (
+          <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-2">
+             <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleSelectAll}
+                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                  title="全选/取消全选"
+                >
+                  {selectedNodeIds.size === nodes.length && nodes.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
+                </button>
+                <span className="text-xs text-slate-500 font-medium">{selectedNodeIds.size} 已选</span>
+             </div>
+             <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onBatchAction?.('expand_graph')}
+                  disabled={selectedNodeIds.size === 0}
+                  className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="后台拓展"
+                >
+                  <Wand2 size={16} />
+                </button>
+                <button
+                  onClick={() => onBatchAction?.('delete')}
+                  disabled={selectedNodeIds.size === 0}
+                  className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="批量删除"
+                >
+                  <Trash2 size={16} />
+                </button>
+             </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto py-2">

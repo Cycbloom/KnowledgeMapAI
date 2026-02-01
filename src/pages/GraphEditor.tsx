@@ -1246,6 +1246,15 @@ export const GraphEditor = () => {
                 edges={edges}
                 onNodeClick={handleNodeClick} 
                 selectedNodeId={selectedNode?.id}
+                selectedNodeIds={selectedNodeIds}
+                onSelectionChange={setSelectedNodeIds}
+                onBatchAction={(action) => {
+                  if (action === 'expand_graph') {
+                    handleBackgroundTask('expand_graph');
+                  } else if (action === 'delete') {
+                    handleBatchDelete();
+                  }
+                }}
                 className="h-full"
               />
              </div>

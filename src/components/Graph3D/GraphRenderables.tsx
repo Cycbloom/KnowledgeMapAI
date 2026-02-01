@@ -541,6 +541,7 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
         return (
           <Billboard key={node.id} follow={true} lockX={false} lockY={false} lockZ={false}>
              <Text 
+              font="https://unpkg.com/@fontsource/noto-sans-sc@latest/files/noto-sans-sc-chinese-simplified-400-normal.woff"
               fontSize={node.level === 'root' || node.level === 'core' ? 0.6 : 0.45} 
               color={theme.text.color}
               fillOpacity={isDimmed ? 0.2 : theme.text.opacity}

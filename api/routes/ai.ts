@@ -21,21 +21,11 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { CacheKeys, cacheService } from '../services/cache.js';
 import { graphService } from '../services/graphService.js';
+import { openai, getAIModel, getMockResponse } from '../services/aiService.js';
 
 dotenv.config();
 
 const router = Router();
-
-const apiKey = process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY;
-const baseURL = process.env.DEEPSEEK_API_KEY ? 'https://api.deepseek.com' : undefined;
-const model = process.env.DEEPSEEK_API_KEY ? 'deepseek-chat' : 'gpt-3.5-turbo';
-
-const openai = apiKey ? new OpenAI({ apiKey, baseURL }) : null;
-
-router.get('/status', requireAuth, (req: AuthRequest, res: Response) => {
-  const provider = process.env.DEEPSEEK_API_KEY ? 'deepseek' : process.env.OPENAI_API_KEY ? 'openai' : null;
-  res.json({ enabled: !!openai, provider, model });
-});
 
 // Multer setup for PDF uploads
 const upload = multer({ 
@@ -43,28 +33,17 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// Helper to generate mock response if no API key
-const getMockResponse = (type: string, prompt: string) => {
-  if (type === 'content') {
-    return `[模拟 AI 内容] 为以下主题生成的内容: ${prompt}。 \n\n这是一个占位符响应，因为 API 密钥未配置。`;
-  }
-  if (type === 'expand') {
-    return [
-      { title: `与 ${prompt} 相关 1`, content: '描述 1' },
-      { title: `与 ${prompt} 相关 2`, content: '描述 2' },
-      { title: `与 ${prompt} 相关 3`, content: '描述 3' },
-    ];
-  }
-  if (type === 'chat') {
-     return `[模拟 AI 回复] 我收到了你的问题: "${prompt}"。这是一个模拟回复，因为后端没有配置 API Key。`;
-  }
-  return '';
-};
+router.get('/status', requireAuth, (req: AuthRequest, res: Response) => {
+  const model = getAIModel();
+  const provider = model.includes('deepseek') ? 'deepseek' : 'openai';
+  res.json({ enabled: !!openai, provider, model });
+});
 
 router.post('/generate-content', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
   const { topic, context } = req.body;
 
   if (!openai) {
+    // @ts-ignore
     return res.json({ content: getMockResponse('content', topic) });
   }
 
@@ -81,7 +60,7 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
         },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
-      model: model,
+      model: getAIModel(),
     });
 
     res.json({ content: completion.choices[0].message.content });
@@ -101,6 +80,7 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
 
   if (!openai) {
     // Mock Streaming
+    // @ts-ignore
     const mockContent = getMockResponse('content', topic) as string;
     const chunks = mockContent.split('');
     
@@ -130,7 +110,7 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
         },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
-      model: model,
+      model: getAIModel(),
       stream: true,
     });
 
@@ -150,19 +130,33 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
 });
 
 router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title } = req.body;
+  const { node_title, node_content, existing_nodes, child_nodes } = req.body;
 
   if (!openai) {
+    // @ts-ignore
     return res.json({ suggestions: getMockResponse('expand', node_title) });
   }
 
   try {
+    const existingNodesContext = existing_nodes && existing_nodes.length > 0 
+      ? `\nExisting Nodes in Graph (avoid duplicates unless connecting to them): ${existing_nodes.slice(0, 50).join(', ')}`
+      : '';
+      
+    const childrenContext = child_nodes && child_nodes.length > 0
+      ? `\nCurrent Direct Children (DO NOT suggest these again): ${child_nodes.join(', ')}`
+      : '';
+
     const completion = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a knowledge graph expert. Suggest 3-5 related sub-topics for the given node to expand the graph. Return JSON array of objects with 'title' and 'content'. Please respond in Chinese." },
-        { role: "user", content: `Node: ${node_title}` }
+        { role: "system", content: "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
+          "Quantity: Generate as many relevant nodes as necessary to cover the topic thoroughly (up to 20 nodes), but quality and representativeness are more important than quantity.\n" +
+          "If a suggested concept matches an 'Existing Node', please use the EXACT same title so we can link to it.\n" +
+          "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
+          "Return JSON array of objects with 'title' and 'content'.\n" +
+          "Please respond in Chinese." },
+        { role: "user", content: `Node Title: ${node_title}\nNode Content: ${node_content || ''}${existingNodesContext}${childrenContext}` }
       ],
-      model: model,
+      model: getAIModel(),
       response_format: { type: "json_object" }, // Ensure JSON output
     });
 
@@ -195,7 +189,7 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
         { role: "system", content: "You are an educational expert. Generate 3-5 flashcards based on the provided topic and content. Mix different types: 'qa' (Question/Answer), 'choice' (Multiple Choice with 4 options), and 'true_false'. Return a JSON object with a 'cards' array. Each card object must have: 'type' (qa|choice|true_false), 'question', 'answer'. For 'choice' type, add 'options' array. Please respond in Chinese." },
         { role: "user", content: `Topic: ${node_title}\nContent: ${node_content || 'No detailed content provided.'}` }
       ],
-      model: model,
+      model: getAIModel(),
       response_format: { type: "json_object" },
     });
 
@@ -366,7 +360,7 @@ Please respond in Chinese.`
         },
         { role: "user", content: `Text: ${text.substring(0, 15000)}` } // Limit input to avoid context overflow
        ],
-       model: model,
+       model: getAIModel(),
        response_format: { type: "json_object" },
        max_tokens: 8000,
      });
@@ -402,6 +396,7 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
   res.setHeader('Connection', 'keep-alive');
 
   if (!openai) {
+    // @ts-ignore
     const mockContent = getMockResponse('chat', message) as string;
     const chunks = mockContent.split('');
     const sendMockChunks = async () => {
@@ -461,7 +456,7 @@ Respond in Chinese.`
     // 4. Call AI
     const stream = await openai.chat.completions.create({
       messages,
-      model: model,
+      model: getAIModel(),
       stream: true,
     });
 
@@ -512,7 +507,7 @@ Respond in Chinese.`
           content: `New Node:\nTitle: ${node_title}\nContent: ${node_content || ''}\n\nExisting Nodes:\n${JSON.stringify(nodesSummary)}` 
         }
       ],
-      model: model,
+      model: getAIModel(),
       response_format: { type: "json_object" },
     });
 
@@ -618,7 +613,7 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
         },
         { role: "user", content: `文件名: ${file.originalname}\n文本内容:\n\n${text.substring(0, 15000)}` }
       ],
-      model: model,
+      model: getAIModel(),
       response_format: { type: "json_object" },
       max_tokens: 4000,
     });

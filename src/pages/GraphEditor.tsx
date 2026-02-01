@@ -605,38 +605,87 @@ export const GraphEditor = () => {
       const parentLevel = getLevel(selectedNode, edges);
       const newLevel = getNextLevel(parentLevel);
 
-      const res = await aiExpandMutation.mutateAsync({ node_title: selectedNode.title });
+      // Collect existing node titles for context to avoid duplicates or link to them
+      const existingTitles = nodes.map(n => n.title);
+      
+      // Get current direct children titles
+      const currentChildrenIds = edges
+        .filter(e => e.source_node_id === selectedNode.id)
+        .map(e => e.target_node_id);
+      const currentChildrenTitles = nodes
+        .filter(n => currentChildrenIds.includes(n.id))
+        .map(n => n.title);
+
+      const res = await aiExpandMutation.mutateAsync({ 
+        node_title: selectedNode.title,
+        node_content: selectedNode.content,
+        existing_nodes: existingTitles,
+        child_nodes: currentChildrenTitles
+      });
       const suggestions = res.suggestions;
       
-      for (const s of suggestions) {
-        // Generate new nodes closer to parent to avoid large layout shifts
-        // Use a smaller radius (2 instead of 10)
-        const x = Math.round(selectedNode.x_position + (Math.random() - 0.5) * 2);
-        const y = Math.round(selectedNode.y_position + (Math.random() - 0.5) * 2);
-        
-        const newNode = await createNodeMutation.mutateAsync({
-          graph_id: id,
-          title: s.title,
-          content: s.content,
-          x_position: x,
-          y_position: y,
-          color: '#10B981', // Green for AI generated
-          level: newLevel,
-          properties: {}
-        });
-        
-        // Record history
-        record({ type: 'CREATE_NODE', payload: newNode });
+      let newNodesCount = 0;
+      let newEdgesCount = 0;
 
-        await createEdgeMutation.mutateAsync({
-          source_node_id: selectedNode.id,
-          target_node_id: newNode.id,
-          relationship_type: 'related',
-          graphId: id
-        });
+      for (const s of suggestions) {
+        // Check if node already exists
+        const existingNode = nodes.find(n => n.title === s.title);
+        
+        if (existingNode) {
+          // Check if edge already exists
+          const edgeExists = edges.some(e => 
+            (e.source_node_id === selectedNode.id && e.target_node_id === existingNode.id) ||
+            (e.source_node_id === existingNode.id && e.target_node_id === selectedNode.id)
+          );
+          
+          if (!edgeExists && existingNode.id !== selectedNode.id) {
+             await createEdgeMutation.mutateAsync({
+              source_node_id: selectedNode.id,
+              target_node_id: existingNode.id,
+              relationship_type: 'related',
+              graphId: id
+            });
+            newEdgesCount++;
+          }
+        } else {
+          // Generate new nodes in a semi-random position
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 4 + Math.random() * 4; // Distance from parent
+          const x = Math.round(selectedNode.x_position + Math.cos(angle) * radius);
+          const y = Math.round(selectedNode.y_position + Math.sin(angle) * radius);
+          
+          const newNode = await createNodeMutation.mutateAsync({
+            graph_id: id,
+            title: s.title,
+            content: s.content,
+            x_position: x,
+            y_position: y,
+            color: LEVEL_CONFIG[newLevel]?.color || '#10B981', 
+            level: newLevel,
+            properties: {}
+          });
+          
+          record({ type: 'CREATE_NODE', payload: newNode });
+
+          await createEdgeMutation.mutateAsync({
+            source_node_id: selectedNode.id,
+            target_node_id: newNode.id,
+            relationship_type: 'related',
+            graphId: id
+          });
+          newNodesCount++;
+          newEdgesCount++;
+        }
+      }
+
+      if (newNodesCount > 0 || newEdgesCount > 0) {
+        addMessage({ type: 'success', content: `拓展完成：新增 ${newNodesCount} 个节点，${newEdgesCount} 条连线` });
+      } else {
+        addMessage({ type: 'info', content: '未发现新的关联' });
       }
     } catch (err) {
       console.error(err);
+      addMessage({ type: 'error', content: '拓展失败' });
     } finally {
       setLoading(false);
     }
@@ -683,14 +732,32 @@ export const GraphEditor = () => {
     if (!selectedNode || !id) return;
     
     try {
+      const payload: any = {
+        graph_id: id,
+        node_id: selectedNode.id,
+        node_title: selectedNode.title,
+        node_content: selectedNode.content
+      };
+
+      if (type === 'expand_graph') {
+        // Collect existing node titles for context
+        const existingTitles = nodes.map(n => n.title);
+        
+        // Get current direct children titles
+        const currentChildrenIds = edges
+          .filter(e => e.source_node_id === selectedNode.id)
+          .map(e => e.target_node_id);
+        const currentChildrenTitles = nodes
+          .filter(n => currentChildrenIds.includes(n.id))
+          .map(n => n.title);
+          
+        payload.existing_nodes = existingTitles;
+        payload.child_nodes = currentChildrenTitles;
+      }
+
       await createTaskMutation.mutateAsync({
         type,
-        payload: {
-          graph_id: id,
-          node_id: selectedNode.id,
-          node_title: selectedNode.title,
-          node_content: selectedNode.content
-        }
+        payload
       });
       
       addMessage({
@@ -984,6 +1051,8 @@ export const GraphEditor = () => {
         onTextToGraph={() => setIsTextToGraphOpen(true)}
         isChatOpen={isChatOpen}
         setIsChatOpen={setIsChatOpen}
+        onAIExpand={handleAIExpand}
+        onBackgroundTask={handleBackgroundTask}
         isPathfindingMode={isPathfindingMode}
         setIsPathfindingMode={(mode) => {
           setIsPathfindingMode(mode);
@@ -1461,7 +1530,7 @@ export const GraphEditor = () => {
                       disabled={loading}
                       className="w-full bg-white text-green-600 border border-green-200 py-2 rounded hover:bg-green-50 text-sm transition-colors disabled:opacity-50"
                     >
-                      {loading ? '扩展中...' : '发现新关联'}
+                      {loading ? '拓展中...' : '智能拓展 (无限模式)'}
                     </button>
                     <button
                       onClick={handleAIGenerateCards}

@@ -126,10 +126,17 @@ app.use(
   },
 )
 
+import { taskWorker } from './workers/taskWorker.js';
+
+// ... (previous code)
+
 /**
  * error handler middleware
  */
 app.use(errorHandler)
+
+// Start Task Worker
+taskWorker.start();
 
 /**
  * 404 handler

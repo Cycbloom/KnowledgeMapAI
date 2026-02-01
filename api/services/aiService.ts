@@ -63,16 +63,29 @@ export class AIService {
     }
   }
 
-  async expandKnowledge(nodeTitle: string) {
+  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[]) {
     if (!openai) {
       return { suggestions: getMockResponse('expand', nodeTitle) };
     }
 
     try {
+      const existingNodesContext = existingNodes && existingNodes.length > 0 
+        ? `\nExisting Nodes in Graph: ${existingNodes.slice(0, 50).join(', ')}`
+        : '';
+        
+      const childrenContext = childNodes && childNodes.length > 0
+        ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(', ')}`
+        : '';
+
       const completion = await openai.chat.completions.create({
         messages: [
-          { role: "system", content: "You are a knowledge graph expert. Suggest 3-5 related sub-topics for the given node to expand the graph. Return JSON array of objects with 'title' and 'content'. Please respond in Chinese." },
-          { role: "user", content: `Node: ${nodeTitle}` }
+          { role: "system", content: "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
+            "Quantity: Generate as many relevant nodes as necessary to cover the topic thoroughly (up to 20 nodes), but quality and representativeness are more important than quantity.\n" +
+            "If a suggested concept matches an 'Existing Node', please use the EXACT same title so we can link to it.\n" +
+            "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
+            "Return JSON array of objects with 'title' and 'content'.\n" +
+            "Please respond in Chinese." },
+          { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
         ],
         model: model,
         response_format: { type: "json_object" },

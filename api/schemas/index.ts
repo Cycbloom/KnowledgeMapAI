@@ -89,6 +89,9 @@ export const generateContentSchema = z.object({
 
 export const expandKnowledgeSchema = z.object({
   node_title: z.string().min(1, '节点标题不能为空'),
+  node_content: z.string().optional(),
+  existing_nodes: z.array(z.string()).optional(),
+  child_nodes: z.array(z.string()).optional(), // Add child_nodes
 });
 
 export const generateCardsSchema = z.object({

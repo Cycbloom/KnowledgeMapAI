@@ -29,6 +29,8 @@ interface GraphToolbarProps {
   // Tools
   aiEnabled?: boolean;
   onTextToGraph: () => void;
+  onAIExpand?: () => void; // New prop for AI Expand
+  onBackgroundTask?: (type: 'generate_questions' | 'expand_graph') => void; // New prop
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
   isPathfindingMode: boolean;
@@ -67,7 +69,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBack, onUndo, onRedo, canUndo, canRedo,
   title, sidebarMode, setSidebarMode,
   showGrid, setShowGrid, layoutMode, setLayoutMode, isFocusMode, setIsFocusMode,
-  aiEnabled, onTextToGraph, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
+  aiEnabled, onTextToGraph, onAIExpand, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions
@@ -502,6 +504,22 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           />
         </DropdownButton>
 
+        {/* AI Expand Shortcut - Visible when 1 node selected */}
+        {selectedNodeIds.size === 1 && onAIExpand && (
+          <button
+             onClick={onAIExpand}
+             className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
+               isDark 
+                 ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50 hover:bg-purple-800/60' 
+                 : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
+             }`}
+             title="基于选中节点进行智能拓展 (无限模式)"
+          >
+            <Sparkles size={16} />
+            <span className="text-xs font-bold">无限拓展</span>
+          </button>
+        )}
+
         {selectedNodeIds.size > 1 && (
           <>
             <div className={`w-px h-6 mx-1 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
@@ -515,6 +533,28 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       {/* 3. AI Tools Dropdown */}
       <DropdownButton id="ai" icon={Sparkles} label="AI 助手" active={isChatOpen || isPathfindingMode}>
         <MenuItem onClick={onTextToGraph} icon={Sparkles} label="文本/文档生成" colorClass="text-purple-500" />
+        <MenuItem 
+          onClick={() => {
+            if (selectedNodeIds.size === 1 && onAIExpand) {
+              onAIExpand();
+            }
+          }}
+          disabled={selectedNodeIds.size !== 1}
+          icon={Navigation} 
+          label="智能拓展 (无限模式)" 
+          colorClass="text-green-500"
+        />
+        <MenuItem 
+          onClick={() => {
+             if (selectedNodeIds.size === 1 && onBackgroundTask) {
+               onBackgroundTask('expand_graph');
+             }
+          }}
+          disabled={selectedNodeIds.size !== 1 || !onBackgroundTask}
+          icon={Sparkles} 
+          label="后台自动拓展" 
+          colorClass="text-blue-500"
+        />
         <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label="图谱助手" active={isChatOpen} colorClass="text-purple-500" />
         <MenuItem 
           onClick={() => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); }} 

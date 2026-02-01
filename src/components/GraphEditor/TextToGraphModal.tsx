@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload } from 'lucide-react';
 import { useTextToGraphMutation, useDocumentToGraphMutation } from '../../hooks/useQueries';
-import toast from 'react-hot-toast';
+import { useMessageStore } from '../../store/useMessageStore';
 
 interface TextToGraphModalProps {
   isOpen: boolean;
@@ -24,6 +24,7 @@ type PreviewEdge = {
 };
 
 export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData }) => {
+  const { addMessage } = useMessageStore();
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
   const [text, setText] = useState('');
   const [previewData, setPreviewData] = useState<{ nodes: PreviewNode[], edges: PreviewEdge[] } | null>(initialData || null);
@@ -60,12 +61,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
   const handleAnalyze = async () => {
     if (!text.trim()) {
-      toast.error('请输入文本内容');
+      addMessage({ type: 'error', content: '请输入文本内容' });
       return;
     }
     
     if (text.length < 10) {
-      toast.error('文本内容太短，至少需要10个字符');
+      addMessage({ type: 'error', content: '文本内容太短，至少需要10个字符' });
       return;
     }
 
@@ -82,10 +83,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
       }
       setStep('preview');
-      toast.success('AI 分析完成，请确认生成内容');
+      addMessage({ type: 'success', content: 'AI 分析完成，请确认生成内容' });
     } catch (error: any) {
       console.error(error);
-      toast.error(error.message || '分析失败，请重试');
+      addMessage({ type: 'error', content: error.message || '分析失败，请重试' });
     }
   };
 
@@ -93,7 +94,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const toastId = toast.loading('正在解析文档并生成预览...');
+    addMessage({ type: 'info', content: '正在解析文档并生成预览...' });
 
     try {
       const result = await documentToGraphMutation.mutateAsync({
@@ -108,10 +109,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       setPreviewData(result);
       setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
       setStep('preview');
-      toast.success('文档解析成功', { id: toastId });
+      addMessage({ type: 'success', content: '文档解析成功' });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || '解析失败', { id: toastId });
+      addMessage({ type: 'error', content: err.message || '解析失败' });
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -130,7 +131,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       );
 
       if (nodesToSave.length === 0) {
-        toast.error('请至少选择一个节点');
+        addMessage({ type: 'error', content: '请至少选择一个节点' });
         return;
       }
 
@@ -141,11 +142,11 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         edges: edgesToSave
       });
 
-      toast.success(`成功生成 ${nodesToSave.length} 个节点和 ${edgesToSave.length} 条关系！`);
+      addMessage({ type: 'success', content: `成功生成 ${nodesToSave.length} 个节点和 ${edgesToSave.length} 条关系！` });
       handleClose();
     } catch (error: any) {
       console.error(error);
-      toast.error(error.message || '保存失败，请重试');
+      addMessage({ type: 'error', content: error.message || '保存失败，请重试' });
     }
   };
 

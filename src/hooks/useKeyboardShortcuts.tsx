@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import toast from 'react-hot-toast';
 import React from 'react';
 import { Maximize, Minimize } from 'lucide-react';
+import { useMessageStore } from '../store/useMessageStore';
 
 interface UseKeyboardShortcutsProps {
   undo: () => void;
@@ -20,6 +20,8 @@ export const useKeyboardShortcuts = ({
   isFocusMode,
   setIsFocusMode
 }: UseKeyboardShortcutsProps) => {
+  const { addMessage } = useMessageStore();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Ctrl+Z or Cmd+Z
@@ -29,14 +31,14 @@ export const useKeyboardShortcuts = ({
           if (canRedo) {
             e.preventDefault();
             redo();
-            toast.success('重做');
+            addMessage({ content: '重做', type: 'success' });
           }
         } else {
           // Ctrl+Z -> Undo
           if (canUndo) {
             e.preventDefault();
             undo();
-            toast.success('撤销');
+            addMessage({ content: '撤销', type: 'success' });
           }
         }
       }
@@ -45,7 +47,7 @@ export const useKeyboardShortcuts = ({
         if (canRedo) {
           e.preventDefault();
           redo();
-          toast.success('重做');
+          addMessage({ content: '重做', type: 'success' });
         }
       }
       // Toggle Focus Mode with 'F'
@@ -58,7 +60,10 @@ export const useKeyboardShortcuts = ({
           e.preventDefault();
           const next = !isFocusMode;
           setIsFocusMode(next);
-          toast(next ? '已进入专注模式 (按 Esc 退出)' : '已退出专注模式', { icon: next ? <Maximize size={18}/> : <Minimize size={18}/> });
+          addMessage({ 
+            content: next ? '已进入专注模式 (按 Esc 退出)' : '已退出专注模式', 
+            type: 'info' 
+          });
         }
       }
       // Exit Focus Mode with Escape
@@ -66,12 +71,12 @@ export const useKeyboardShortcuts = ({
         if (isFocusMode) {
           e.preventDefault();
           setIsFocusMode(false);
-          toast('已退出专注模式', { icon: <Minimize size={18}/> });
+          addMessage({ content: '已退出专注模式', type: 'info' });
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, canUndo, canRedo, isFocusMode, setIsFocusMode]);
+  }, [undo, redo, canUndo, canRedo, isFocusMode, setIsFocusMode, addMessage]);
 };

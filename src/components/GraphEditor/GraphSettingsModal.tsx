@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type } from 'lucide-react';
 import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
-import toast from 'react-hot-toast';
+import { useMessageStore } from '../../store/useMessageStore';
 
 interface GraphSettingsModalProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ interface GraphSettingsModalProps {
 export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsModalProps) => {
   const { data: graph } = useGraph(graphId);
   const updateGraphMutation = useUpdateGraphMutation();
+  const { addMessage } = useMessageStore();
   
   const [gamificationEnabled, setGamificationEnabled] = useState(true);
   const [learningDirection, setLearningDirection] = useState<'top_down' | 'bottom_up'>('top_down');
@@ -38,10 +39,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
           }
         }
       });
-      toast.success('设置已保存');
+      addMessage({ type: 'success', content: '设置已保存' });
       onClose();
     } catch (error) {
-      toast.error('保存失败');
+      addMessage({ type: 'error', content: '保存失败' });
     }
   };
 

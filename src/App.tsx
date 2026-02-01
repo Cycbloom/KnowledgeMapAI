@@ -1,6 +1,5 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import { Layout } from './components/Layout';
 import { useStore } from './store/useStore';
 import { LoadingBar } from './components/LoadingBar';
@@ -30,7 +29,6 @@ function App() {
   return (
     <ErrorBoundary>
       <LoadingBar />
-      <Toaster position="top-center" />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/login" element={<Login />} />

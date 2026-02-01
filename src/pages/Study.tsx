@@ -3,9 +3,10 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useMessageStore } from '../store/useMessageStore';
 
 export const Study = () => {
+  const { addMessage } = useMessageStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const graphId = searchParams.get('graph_id');
@@ -68,7 +69,7 @@ export const Study = () => {
     }
     
     if (quizCards.length === 0) {
-      toast.success('没有需要复习的卡片！');
+      addMessage({ content: '没有需要复习的卡片！', type: 'info' });
       return;
     }
 
@@ -101,7 +102,7 @@ export const Study = () => {
       handleNextCard();
     } catch (err) {
       console.error(err);
-      toast.error('保存进度失败');
+      addMessage({ type: 'error', content: '保存进度失败' });
     }
   };
 
@@ -134,7 +135,7 @@ export const Study = () => {
   // --- Dashboard View ---
   if (viewState === 'dashboard') {
     return (
-      <div className="min-h-full bg-gray-50 p-8">
+      <div className="h-full overflow-y-auto bg-gray-50 p-8">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">

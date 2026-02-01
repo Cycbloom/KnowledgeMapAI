@@ -196,6 +196,10 @@ export const api = {
   dashboard: {
     getStats: () => request('/dashboard/stats'),
   },
+  tasks: {
+    create: (data: { type: string; payload: any }) => request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
+    list: () => request('/tasks'),
+  },
   data: {
     export: (graphId: string, format: 'json' | 'pdf') => {
       const token = useStore.getState().token;

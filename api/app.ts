@@ -24,6 +24,7 @@ import aiRoutes from './routes/ai.js'
 import studyRoutes from './routes/study.js'
 import dataRoutes from './routes/data.js'
 import dashboardRoutes from './routes/dashboard.js'
+import taskRoutes from './routes/tasks.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -108,6 +109,7 @@ app.use('/api/ai', aiLimiter, aiRoutes)
 app.use('/api/study', studyRoutes)
 app.use('/api/data', dataRoutes)
 app.use('/api/dashboard', dashboardRoutes)
+app.use('/api/tasks', taskRoutes)
 
 /**
  * health

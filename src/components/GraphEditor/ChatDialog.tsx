@@ -6,7 +6,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { api } from '../../services/api';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
-import toast from 'react-hot-toast';
+import { useMessageStore } from '../../store/useMessageStore';
 
 interface ChatDialogProps {
   isOpen: boolean;
@@ -23,6 +23,7 @@ type Message = {
 };
 
 export const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, graphId, selectedNodeIds }) => {
+  const { addMessage } = useMessageStore();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -100,7 +101,7 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, graphId
 
     } catch (error: any) {
       console.error('Chat error:', error);
-      toast.error('发送失败，请重试');
+      addMessage({ type: 'error', content: '发送失败，请重试' });
       setMessages(prev => prev.map(msg => 
         msg.id === assistantMessageId 
           ? { ...msg, content: '抱歉，我现在无法回答。请稍后再试。', isStreaming: false }

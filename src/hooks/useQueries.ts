@@ -362,6 +362,12 @@ export const useCreateCardsBatchMutation = () => {
   });
 };
 
+export const useCreateTaskMutation = () => {
+  return useMutation({
+    mutationFn: api.tasks.create,
+  });
+};
+
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

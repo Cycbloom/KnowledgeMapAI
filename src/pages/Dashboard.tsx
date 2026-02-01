@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats } from '../hooks/useQueries';
 import { Plus, BookOpen, Upload, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
@@ -16,6 +16,7 @@ export const Dashboard = () => {
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { addMessage } = useMessageStore();
 
   const [isCreating, setIsCreating] = useState(false);
   const [isManageMode, setIsManageMode] = useState(false);
@@ -44,10 +45,10 @@ export const Dashboard = () => {
       setNewTitle('');
       setNewDescription('');
       setIsCreating(false);
-      toast.success('创建成功!');
+      addMessage({ type: 'success', content: '创建成功!' });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || '创建图谱失败');
+      addMessage({ type: 'error', content: err.message || '创建图谱失败' });
     }
   };
 
@@ -60,12 +61,12 @@ export const Dashboard = () => {
 
     deleteGraphMutation.mutate(deleteConfirm.id, {
       onSuccess: () => {
-        toast.success('图谱删除成功');
+        addMessage({ type: 'success', content: '图谱删除成功' });
         setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
       },
       onError: (err: any) => {
         console.error(err);
-        toast.error(err.message || '删除失败');
+        addMessage({ type: 'error', content: err.message || '删除失败' });
         setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
       }
     });
@@ -107,10 +108,10 @@ export const Dashboard = () => {
         }
         
         await importGraphMutation.mutateAsync(importData);
-        toast.success('导入成功!');
+        addMessage({ content: '导入成功!', type: 'success' });
       } catch (err: any) {
         console.error(err);
-        toast.error('导入失败: ' + (err.message || '格式错误'));
+        addMessage({ content: '导入失败: ' + (err.message || '格式错误'), type: 'error' });
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
@@ -122,7 +123,7 @@ export const Dashboard = () => {
   if (error) return <div className="p-8 text-red-600">错误: {(error as Error).message || '加载图谱失败'}</div>;
 
   return (
-    <div className="p-8">
+    <div className="h-full overflow-y-auto p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">我的知识图谱</h1>
         <div className="flex space-x-4">

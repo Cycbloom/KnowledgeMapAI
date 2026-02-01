@@ -36,5 +36,8 @@
   "include": [
     "src",
     "api"
+  ],
+  "exclude": [
+    "**/*.test.ts"
   ]
 }

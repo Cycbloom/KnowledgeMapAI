@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
 import { type Graph3DRef, type Graph3DProps } from '../components/Graph3D';
 import { Node, Edge } from '../types';
@@ -10,12 +11,11 @@ import { Node, Edge } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser, Settings, Check, Lock } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser, Settings, Check, Lock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import toast from 'react-hot-toast';
 import { generateMarkdown, generateJSON, downloadFile, downloadImage } from '../utils/exportUtils';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
@@ -25,6 +25,8 @@ import { ChatDialog } from '../components/GraphEditor/ChatDialog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useHistory } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
+import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
+import { useTheme } from '../hooks/useTheme';
 const levelLabels: Record<string, string> = {
   root: '根节点',
   core: '核心节点',
@@ -49,6 +51,7 @@ import {
   useRecommendConnectionsMutation,
   useDeleteGraphMutation,
   useGraphNodeStatus,
+  useCreateTaskMutation,
   queryKeys
 } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -77,6 +80,8 @@ export const GraphEditor = () => {
   const documentToGraphMutation = useDocumentToGraphMutation();
   const recommendConnectionsMutation = useRecommendConnectionsMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
+  const createTaskMutation = useCreateTaskMutation();
+  const { addMessage } = useMessageStore();
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -88,32 +93,14 @@ export const GraphEditor = () => {
   const [isEngineLoading, setIsEngineLoading] = useState(true);
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [showGrid, setShowGrid] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const { isDark } = useTheme();
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [loading, setLoading] = useState(false); // For non-query loading (e.g. AI)
   // const [graphTitle, setGraphTitle] = useState(''); // Use graphMeta.title
 
-  // Search State
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  
   // Layout & Clustering State
   const [layoutMode, setLayoutMode] = useState<'3d-force' | '2d-tree' | '3d-sphere'>('3d-force');
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
-
-  // Filter nodes based on search query
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const query = searchQuery.toLowerCase();
-    return nodes.filter(node => 
-      node.title.toLowerCase().includes(query) || 
-      (node.content && node.content.toLowerCase().includes(query))
-    ).slice(0, 10); // Limit to 10 results
-  }, [nodes, searchQuery]);
-
-  const pulsingNodeIds = useMemo(() => {
-    return new Set(searchResults.map(n => n.id));
-  }, [searchResults]);
 
   const lockedNodeIds = useMemo(() => {
     if (!nodeStatus) return new Set<string>();
@@ -272,22 +259,22 @@ export const GraphEditor = () => {
     }
 
     if (lockedNodeIds.has(node.id)) {
-      toast.error('此节点尚未解锁！请先学习前置知识点。', { icon: '🔒' });
+      addMessage({ content: '此节点尚未解锁！请先学习前置知识点。', type: 'warning' });
       return;
     }
 
     if (isPathfindingMode) {
       if (!pathStartNode) {
         setPathStartNode(node);
-        toast('请选择终点节点', { icon: '📍' });
+        addMessage({ content: '请选择终点节点', type: 'info' });
       } else if (!pathEndNode) {
         setPathEndNode(node);
         const path = findShortestPath(nodes, edges, pathStartNode.id, node.id);
         if (path.nodes.size > 0) {
           setHighlightedPath(path);
-          toast.success(`找到路径，长度: ${path.nodes.size - 1} 步`);
+          addMessage({ content: `找到路径，长度: ${path.nodes.size - 1} 步`, type: 'success' });
         } else {
-          toast.error('未找到路径');
+          addMessage({ content: '未找到路径', type: 'error' });
         }
       } else {
         // Reset and start over
@@ -355,9 +342,7 @@ export const GraphEditor = () => {
   const handleLayoutChange = (mode: '3d-force' | '2d-tree' | '3d-sphere') => {
     setLayoutMode(mode);
     // Reset camera or other view settings if needed
-    toast.success(`切换至 ${mode === '2d-tree' ? '2D 树状图' : mode === '3d-sphere' ? '3D 球形布局' : '3D 力导向'}`, {
-        icon: '👀',
-    });
+    addMessage({ type: 'success', content: `切换至 ${mode === '2d-tree' ? '2D 树状图' : mode === '3d-sphere' ? '3D 球形布局' : '3D 力导向'}` });
     // Ensure simulation version updates to reset interaction layers
     if (graphRef.current) {
       // Small delay to ensure state has propagated
@@ -456,10 +441,10 @@ export const GraphEditor = () => {
         setSelectedNode(updated);
         setSidebarMode('edit');
       }
-      toast.success(sidebarMode === 'create' ? '节点创建成功' : '节点保存成功');
+      addMessage({ type: 'success', content: sidebarMode === 'create' ? '节点创建成功' : '节点保存成功' });
     } catch (err) {
       console.error(err);
-      toast.error('保存失败，请重试');
+      addMessage({ type: 'error', content: '保存失败，请重试' });
     } finally {
       setLoading(false);
     }
@@ -479,12 +464,12 @@ export const GraphEditor = () => {
             if (selectedNode?.id === nodeToDelete.id) {
               handleCloseSidebar();
             }
-            toast.success('节点已删除');
+            addMessage({ type: 'success', content: '节点已删除' });
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           },
           onError: (err) => {
             console.error(err);
-            toast.error('删除失败');
+            addMessage({ type: 'error', content: '删除失败' });
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           }
         });
@@ -510,10 +495,10 @@ export const GraphEditor = () => {
           setSelectedNodeIds(new Set());
           setSelectedNode(null);
           setSidebarMode('none');
-          toast.success('批量删除成功');
+          addMessage({ content: '批量删除成功', type: 'success' });
         }).catch((err) => {
           console.error(err);
-          toast.error('批量删除失败');
+          addMessage({ content: '批量删除失败', type: 'error' });
         }).finally(() => {
           setLoading(false);
           setConfirmModal(prev => ({ ...prev, isOpen: false }));
@@ -539,10 +524,10 @@ export const GraphEditor = () => {
         }
       );
       setAiPrompt('');
-      toast.success('AI 内容生成完成');
+      addMessage({ content: 'AI 内容生成完成', type: 'success' });
     } catch (err) {
       console.error(err);
-      toast.error('AI 生成失败');
+      addMessage({ content: 'AI 生成失败', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -612,21 +597,46 @@ export const GraphEditor = () => {
       }));
 
       if (cards.length === 0) {
-        toast.error('AI 未能生成有效的卡片');
+        addMessage({ type: 'error', content: 'AI 未能生成有效的卡片' });
         return;
       }
 
       // 2. Save Cards
       await createCardsBatchMutation.mutateAsync(cards);
-      toast.success(`成功生成并保存了 ${cards.length} 张复习卡片！`);
+      addMessage({ type: 'success', content: `成功生成并保存了 ${cards.length} 张复习卡片！` });
       
       // Invalidate status to update mastery
       queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(id) });
     } catch (err) {
       console.error(err);
-      toast.error('生成卡片失败');
+      addMessage({ type: 'error', content: '生成卡片失败' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph') => {
+    if (!selectedNode || !id) return;
+    
+    try {
+      await createTaskMutation.mutateAsync({
+        type,
+        payload: {
+          graph_id: id,
+          node_id: selectedNode.id,
+          node_title: selectedNode.title,
+          node_content: selectedNode.content
+        }
+      });
+      
+      addMessage({
+        type: 'info',
+        content: `任务已提交：${type === 'generate_questions' ? '自动生成题目' : '自动扩展图谱'}`,
+        duration: 5000
+      });
+    } catch (err) {
+      console.error(err);
+      addMessage({ type: 'error', content: '任务提交失败' });
     }
   };
 
@@ -635,24 +645,16 @@ export const GraphEditor = () => {
     navigate(`/study?node_id=${selectedNode.id}`);
   };
 
-  const handleSearchResultClick = (node: Node) => {
-    graphRef.current?.focusNode(node.id);
-    setSelectedNode(node);
-    setSidebarMode('edit');
-    setSearchQuery('');
-    setIsSearchOpen(false);
-  };
-
   const handleExportJSON = async () => {
     if (!graphMeta) return;
     try {
       const json = generateJSON(graphMeta, nodes, edges);
       downloadFile(json, `${graphMeta.title}_backup.json`, 'application/json');
-      toast.success('JSON 导出成功');
+      addMessage({ content: 'JSON 导出成功', type: 'success' });
       setIsExportMenuOpen(false);
     } catch (err) {
       console.error(err);
-      toast.error('导出失败');
+      addMessage({ content: '导出失败', type: 'error' });
     }
   };
 
@@ -661,11 +663,11 @@ export const GraphEditor = () => {
     try {
       const md = generateMarkdown(graphMeta, nodes, edges);
       downloadFile(md, `${graphMeta.title}.md`, 'text/markdown');
-      toast.success('Markdown 导出成功');
+      addMessage({ content: 'Markdown 导出成功', type: 'success' });
       setIsExportMenuOpen(false);
     } catch (err) {
       console.error(err);
-      toast.error('导出失败');
+      addMessage({ content: '导出失败', type: 'error' });
     }
   };
 
@@ -680,13 +682,13 @@ export const GraphEditor = () => {
         setLoading(true);
         deleteGraphMutation.mutate(id, {
           onSuccess: () => {
-            toast.success('图谱已删除');
+            addMessage({ content: '图谱已删除', type: 'success' });
             navigate('/dashboard');
             // No need to close modal as we navigate away
           },
           onError: (err: any) => {
             console.error(err);
-            toast.error(err.message || '删除失败');
+            addMessage({ content: err.message || '删除失败', type: 'error' });
             setLoading(false);
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           },
@@ -706,10 +708,10 @@ export const GraphEditor = () => {
       const dataUrl = await graphRef.current.captureScreenshot(exportImageOptions);
       downloadImage(dataUrl, `${graphMeta?.title || 'graph'}_snapshot.png`);
       setIsExportImageModalOpen(false);
-      toast.success('图片导出成功');
+      addMessage({ content: '图片导出成功', type: 'success' });
     } catch (error) {
       console.error('Export image failed:', error);
-      toast.error('图片导出失败');
+      addMessage({ content: '图片导出失败', type: 'error' });
     }
   };
 
@@ -748,7 +750,6 @@ export const GraphEditor = () => {
             onBackgroundClick={handleBackgroundClick}
             collapsedNodeIds={collapsedNodeIds}
             layoutMode={layoutMode}
-            pulsingNodeIds={pulsingNodeIds}
             lockedNodeIds={lockedNodeIds}
             masteredNodeIds={masteredNodeIds}
             onNodeCollapse={handleToggleCollapse}
@@ -850,276 +851,63 @@ export const GraphEditor = () => {
       )}
 
       {/* Toolbar */}
-      {!isFocusMode && (
-      <div className="absolute top-4 left-4 bg-white p-2 rounded-lg shadow-md flex items-center space-x-2 z-10">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
-          title="返回"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div className="w-px h-6 bg-gray-300 mx-1"></div>
-        <h2 className="font-bold px-2 py-1 max-w-[200px] truncate">{graphMeta?.title || 'Loading...'}</h2>
-        <div className="w-px h-6 bg-gray-300 mx-1"></div>
-        
-        <button 
-          onClick={undo} 
-          disabled={!canUndo}
-          className={`p-1 rounded transition-colors ${canUndo ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300'}`} 
-          title="撤销 (Ctrl+Z)"
-        >
-          <Undo size={20} />
-        </button>
-        <button 
-          onClick={redo} 
-          disabled={!canRedo}
-          className={`p-1 rounded transition-colors ${canRedo ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300'}`} 
-          title="重做 (Ctrl+Shift+Z)"
-        >
-          <Redo size={20} />
-        </button>
-        <div className="w-px h-6 bg-gray-300 mx-1"></div>
-
-        <button 
-          onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} 
-          className={`p-1 rounded transition-colors ${sidebarMode === 'outline' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
-          title="大纲视图"
-        >
-          <List size={20} />
-        </button>
-
-        <div className="relative">
-          <button 
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className={`p-1 rounded transition-colors ${isSearchOpen ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`}
-            title="搜索节点"
-          >
-            <Search size={20} />
-          </button>
-          
-          {isSearchOpen && (
-            <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg border border-gray-200 w-64 p-3 z-50">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索节点..."
-                className="w-full border border-gray-300 rounded-md p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                autoFocus
-              />
-              {searchResults.length > 0 ? (
-                <ul className="max-h-60 overflow-y-auto custom-scrollbar">
-                  {searchResults.map(node => (
-                    <li 
-                      key={node.id}
-                      onClick={() => handleSearchResultClick(node)}
-                      className="p-2 hover:bg-gray-50 cursor-pointer text-sm rounded-md flex items-center transition-colors border-b border-gray-50 last:border-0"
-                    >
-                      <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: node.color || '#3B82F6' }}></div>
-                      <div className="flex flex-col overflow-hidden">
-                        <span className="truncate font-medium text-gray-700">{node.title}</span>
-                        {node.content && <span className="truncate text-xs text-gray-400">{node.content}</span>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : searchQuery && (
-                <div className="text-gray-400 text-xs text-center py-4">未找到匹配的节点</div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <button 
-          onClick={() => setIsTextToGraphOpen(true)}
-          className="p-1 hover:bg-gray-100 rounded text-purple-600"
-          title="AI 文本/文档生成图谱"
-        >
-          <Sparkles size={20} />
-        </button>
-
-        <button 
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`p-1 rounded transition-colors ${isChatOpen ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-purple-600'}`}
-          title="图谱助手"
-        >
-          <MessageSquare size={20} />
-        </button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1"></div>
-
-        <button 
-          onClick={handleStartCreate} 
-          className="p-1 hover:bg-gray-100 rounded text-blue-600" 
-          title="添加节点"
-        >
-          <Plus size={20} />
-        </button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1"></div>
-
-        <button 
-          onClick={() => {
-            setIsDeleteMode(!isDeleteMode);
-            // Disable other modes
-            if (!isDeleteMode) {
-               setIsPathfindingMode(false);
-               setIsFocusMode(false);
-            }
-          }}
-          className={`p-1 rounded transition-colors ${isDeleteMode ? 'bg-red-50 text-red-600 ring-2 ring-red-200' : 'hover:bg-gray-100 text-gray-600'}`}
-          title={isDeleteMode ? "退出删除模式" : "删除模式 (点击节点直接删除)"}
-        >
-          <Eraser size={20} />
-        </button>
-
-        <button 
-          onClick={() => {
-            if (selectedNodeIds.size > 1) {
-              handleBatchDelete();
-            } else if (selectedNodeIds.size === 1) {
-              handleDeleteNode();
-            }
-          }}
-          disabled={selectedNodeIds.size === 0}
-          className={`p-1 rounded transition-colors ${selectedNodeIds.size > 0 ? 'hover:bg-red-50 text-red-600' : 'text-gray-300 cursor-not-allowed'}`}
-          title={selectedNodeIds.size > 1 ? "批量删除" : "删除选中节点"}
-        >
-          <Trash2 size={20} />
-        </button>
-        
-        <button 
-          onClick={() => {
-            setIsPathfindingMode(!isPathfindingMode);
-            // Reset path state when toggling
+      <GraphToolbar
+        onBack={() => navigate(-1)}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        title={graphMeta?.title || 'Loading...'}
+        sidebarMode={sidebarMode}
+        setSidebarMode={setSidebarMode}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
+        layoutMode={layoutMode}
+        setLayoutMode={handleLayoutChange}
+        isFocusMode={isFocusMode}
+        setIsFocusMode={setIsFocusMode}
+        onTextToGraph={() => setIsTextToGraphOpen(true)}
+        isChatOpen={isChatOpen}
+        setIsChatOpen={setIsChatOpen}
+        isPathfindingMode={isPathfindingMode}
+        setIsPathfindingMode={(mode) => {
+          setIsPathfindingMode(mode);
+          setPathStartNode(null);
+          setPathEndNode(null);
+          setHighlightedPath(null);
+        }}
+        pathfindingState={{
+          startNode: pathStartNode,
+          endNode: pathEndNode,
+          pathLength: highlightedPath?.nodes.size ? highlightedPath.nodes.size - 1 : 0,
+          reset: () => {
             setPathStartNode(null);
             setPathEndNode(null);
             setHighlightedPath(null);
-          }} 
-          className={`p-1 rounded ${isPathfindingMode ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
-          title={isPathfindingMode ? "退出路径导航" : "路径导航"}
-        >
-          <Navigation size={20} />
-        </button>
-
-        <button 
-          onClick={() => setShowGrid(!showGrid)} 
-          className={`p-1 rounded ${showGrid ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
-          title={showGrid ? "隐藏网格" : "显示网格"}
-        >
-          <Grid size={20} />
-        </button>
-
-        <button 
-          onClick={() => setIsSettingsOpen(true)}
-          className={`p-1 hover:bg-gray-100 rounded text-gray-600 ${isSettingsOpen ? 'bg-blue-50 text-blue-600' : ''}`}
-          title="图谱设置"
-        >
-          <Settings size={20} />
-        </button>
-
-        {/* Layout Switcher */}
-        <div className="h-6 w-px bg-gray-300 mx-1"></div>
-        <div className="flex bg-gray-100 rounded-lg p-1">
-          <button 
-            onClick={() => handleLayoutChange('3d-force')}
-            className={`p-1 rounded text-xs font-medium transition-all ${layoutMode === '3d-force' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-            title="3D 力导向"
-          >
-            3D
-          </button>
-          <button 
-            onClick={() => handleLayoutChange('2d-tree')}
-            className={`p-1 rounded text-xs font-medium transition-all ${layoutMode === '2d-tree' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-            title="2D 树状图"
-          >
-            树
-          </button>
-          <button 
-            onClick={() => handleLayoutChange('3d-sphere')}
-            className={`p-1 rounded text-xs font-medium transition-all ${layoutMode === '3d-sphere' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-            title="3D 球形布局"
-          >
-            球
-          </button>
-        </div>
-        <div className="h-6 w-px bg-gray-300 mx-1"></div>
-
-        <button 
-          onClick={() => setIsDark(!isDark)} 
-          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
-          title={isDark ? "切换亮色模式" : "切换暗色模式"}
-        >
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-        
-        <button 
-          onClick={() => setIsFocusMode(true)}
-          className="p-1 hover:bg-gray-100 rounded text-gray-600" 
-          title="专注模式 (F)"
-        >
-          <Maximize size={20} />
-        </button>
-
-        <div className="relative">
-          <button 
-            onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-            className={`p-1 rounded transition-colors ${isExportMenuOpen ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
-            title="导出"
-          >
-            <Download size={20} />
-          </button>
-
-          {isExportMenuOpen && (
-            <div className="absolute top-full left-0 mt-2 bg-white shadow-xl rounded-lg border border-gray-200 w-48 py-1 z-50">
-              <button
-                onClick={handleExportMarkdown}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-              >
-                <FileText size={16} />
-                <span>导出 Markdown</span>
-              </button>
-              <button
-                onClick={handleExportJSON}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-              >
-                <FileJson size={16} />
-                <span>导出 JSON (备份)</span>
-              </button>
-              <button
-                onClick={handleExportImage}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-              >
-                <Image size={16} />
-                <span>导出为图片</span>
-              </button>
-              <div className="h-px bg-gray-100 my-1"></div>
-              <button
-                onClick={handleDeleteGraph}
-                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-              >
-                <Trash2 size={16} />
-                <span>删除此图谱</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-      )}
-
-      {/* Focus Mode Exit Button */}
-      {isFocusMode && (
-        <div className="absolute top-4 left-4 z-50">
-          <button 
-            onClick={() => setIsFocusMode(false)}
-            className="p-2 bg-white/20 hover:bg-white/90 text-white hover:text-gray-800 rounded-full backdrop-blur-sm transition-all shadow-sm"
-            title="退出专注模式 (Esc)"
-          >
-            <Minimize size={20} />
-          </button>
-        </div>
-      )}
+          }
+        }}
+        onAddNode={handleStartCreate}
+        isDeleteMode={isDeleteMode}
+        setIsDeleteMode={(mode) => {
+          setIsDeleteMode(mode);
+          if (mode) {
+            setIsPathfindingMode(false);
+            setIsFocusMode(false);
+          }
+        }}
+        selectedNodeIds={selectedNodeIds}
+        onDeleteSelected={() => handleDeleteNode()}
+        onBatchDelete={handleBatchDelete}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        isExportMenuOpen={isExportMenuOpen}
+        setIsExportMenuOpen={setIsExportMenuOpen}
+        exportActions={{
+          onMarkdown: handleExportMarkdown,
+          onJSON: handleExportJSON,
+          onImage: handleExportImage,
+          onDeleteGraph: handleDeleteGraph
+        }}
+      />
 
       {/* Delete Mode Indicator */}
       {isDeleteMode && (
@@ -1368,20 +1156,37 @@ export const GraphEditor = () => {
                     AI 深度探索
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={handleAIExpand}
-                      disabled={loading}
-                      className="bg-white text-purple-600 border border-purple-200 py-2 rounded-lg hover:bg-purple-100 text-xs font-medium transition-all shadow-sm disabled:opacity-50"
-                    >
-                      {loading ? '扩展中...' : '发现新关联'}
-                    </button>
-                    <button
-                      onClick={handleAIGenerateCards}
-                      disabled={loading}
-                      className="bg-white text-indigo-600 border border-indigo-200 py-2 rounded-lg hover:bg-indigo-100 text-xs font-medium transition-all shadow-sm disabled:opacity-50"
-                    >
-                      {loading ? '生成中...' : '生成复习卡片'}
-                    </button>
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={handleAIExpand}
+                        disabled={loading}
+                        className="bg-white text-purple-600 border border-purple-200 py-2 rounded-lg hover:bg-purple-100 text-xs font-medium transition-all shadow-sm disabled:opacity-50"
+                      >
+                        {loading ? '扩展中...' : '发现新关联'}
+                      </button>
+                      <button
+                        onClick={() => handleBackgroundTask('expand_graph')}
+                        className="text-[10px] text-purple-500 hover:text-purple-700 hover:underline"
+                      >
+                        后台扩展
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={handleAIGenerateCards}
+                        disabled={loading}
+                        className="bg-white text-indigo-600 border border-indigo-200 py-2 rounded-lg hover:bg-indigo-100 text-xs font-medium transition-all shadow-sm disabled:opacity-50"
+                      >
+                        {loading ? '生成中...' : '生成复习卡片'}
+                      </button>
+                      <button
+                        onClick={() => handleBackgroundTask('generate_questions')}
+                        className="text-[10px] text-indigo-500 hover:text-indigo-700 hover:underline"
+                      >
+                        后台生成
+                      </button>
+                    </div>
                   </div>
                 </section>
               </div>
@@ -1569,7 +1374,7 @@ export const GraphEditor = () => {
                                 level: nextLevel,
                                 color: config ? config.color : nodeForm.color
                               });
-                              toast.success(`已设为父节点，等级自动调整为: ${nextLevel}`);
+                              addMessage({ type: 'success', content: `已设为父节点，等级自动调整为: ${nextLevel}` });
                             } else if (selectedNode) {
                               createEdgeMutation.mutate({
                                 source_node_id: rec.node_id,
@@ -1577,7 +1382,7 @@ export const GraphEditor = () => {
                                 relationship_type: 'related',
                                 graphId: id
                               });
-                              toast.success('已建立关联');
+                              addMessage({ type: 'success', content: '已建立关联' });
                             }
                           }}
                           className="text-blue-600 hover:underline"

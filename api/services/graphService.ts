@@ -155,13 +155,14 @@ export class GraphService {
     // 4. Calculate Mastery
     const masteryMap = new Map<string, boolean>();
     nodes.forEach((node: any) => {
-      const cards = nodeCardsMap.get(node.id);
-      if (!cards || cards.length === 0) {
-        // No cards -> Auto mastered (Content node)
-        masteryMap.set(node.id, true);
+      const nodeCards = nodeCardsMap.get(node.id);
+      if (!nodeCards || nodeCards.length === 0) {
+        // No cards -> NOT mastered. 
+        // This forces users to generate/create cards for a node before it can unlock children.
+        masteryMap.set(node.id, false);
       } else {
         // Mastered if all cards have been reviewed at least once
-        const allReviewed = cards.every(c => c.review_count > 0);
+        const allReviewed = nodeCards.every(c => c.review_count > 0);
         masteryMap.set(node.id, allReviewed);
       }
     });

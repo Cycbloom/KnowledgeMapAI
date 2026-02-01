@@ -13,7 +13,8 @@ export const getLinkNodeId = (node: string | SimNode): string => {
 // Modified to prioritize existing properties over dynamic calculation
 export const getLevel = (node: Node, edges: Edge[]): NodeLevel => {
   // ALWAYS return the explicit level if it exists
-  if (node.level) return node.level as NodeLevel;
+  const explicitLevel = (node.level || (node.properties as any)?.level) as NodeLevel | undefined;
+  if (explicitLevel) return explicitLevel;
   
   // Fallback ONLY if property is missing
   const degree = edges.filter(e => e.source_node_id === node.id || e.target_node_id === node.id).length;

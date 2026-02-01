@@ -13,6 +13,7 @@ interface ChatDialogProps {
   onClose: () => void;
   graphId: string;
   selectedNodeIds: string[];
+  aiEnabled?: boolean;
 }
 
 type Message = {
@@ -22,7 +23,7 @@ type Message = {
   isStreaming?: boolean;
 };
 
-export const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, graphId, selectedNodeIds }) => {
+export const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, graphId, selectedNodeIds, aiEnabled }) => {
   const { addMessage } = useMessageStore();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -129,6 +130,12 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ isOpen, onClose, graphId
           <X size={18} />
         </button>
       </div>
+
+      {aiEnabled === false && (
+        <div className="px-4 py-2 text-xs bg-amber-50 text-amber-800 border-b border-amber-100">
+          AI 未配置：当前对话为模拟回复（用于演示），请配置 AI Key 获取真实结果
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">

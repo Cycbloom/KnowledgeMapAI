@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
+import { useMessageStore } from '../../store/useMessageStore';
 import { Node } from '../../types/index';
 import { LEVEL_CONFIG, SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { getLinkNodeId } from '../../lib/graphUtils';
@@ -19,6 +20,7 @@ interface InstancedNodesProps {
   pulsingNodeIds?: Set<string>;
   lockedNodeIds?: Set<string>;
   masteredNodeIds?: Set<string>;
+  gamificationEnabled?: boolean;
   simulationVersion: number;
 }
 
@@ -26,6 +28,7 @@ interface NodeLabelsProps {
   nodesRef: React.MutableRefObject<SimNode[]>;
   isDark: boolean;
   highlightedNodes: Set<string>;
+  lockedNodeIds?: Set<string>;
   onNodeClick?: (node: Node) => void;
   onNodeDoubleClick?: (node: Node) => void;
   simulationVersion: number;
@@ -55,6 +58,7 @@ export const InstancedNodes = ({
   pulsingNodeIds,
   lockedNodeIds,
   masteredNodeIds,
+  gamificationEnabled,
   simulationVersion
 }: InstancedNodesProps) => {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -143,12 +147,23 @@ export const InstancedNodes = ({
     hitMeshRef.current.instanceMatrix.needsUpdate = true;
   });
 
+  const { addMessage } = useMessageStore();
+
   const handleInteraction = (instanceId: number | undefined, callback?: (node: SimNode) => void) => {
     if (instanceId === undefined) return;
     
     // Use the snapshot to find the ID, then find the latest node in the ref
     const nodeMeta = nodeSnapshot[instanceId];
     if (nodeMeta) {
+      // Prevent interaction with locked nodes
+      if (lockedNodeIds?.has(nodeMeta.id)) {
+        addMessage({ 
+          content: '此节点尚未解锁！请先学习前置知识点。', 
+          type: 'warning' 
+        });
+        return;
+      }
+
       const actualNode = nodesRef.current.find(n => n.id === nodeMeta.id);
       if (actualNode) {
         callback?.(actualNode);
@@ -220,13 +235,15 @@ export const InstancedNodes = ({
         activeNodeIds={pulsingNodeIds} 
       />
 
-      {/* Target Effect for Unlocked but Not Mastered Nodes */}
-      <TargetNodes
-        nodesRef={nodesRef}
-        lockedNodeIds={lockedNodeIds}
-        masteredNodeIds={masteredNodeIds}
-        highlightedNodes={highlightedNodes}
-      />
+      {/* Target Effect for Unlocked but Not Mastered Nodes - Only in gamification mode */}
+      {gamificationEnabled && (
+        <TargetNodes
+          nodesRef={nodesRef}
+          lockedNodeIds={lockedNodeIds}
+          masteredNodeIds={masteredNodeIds}
+          highlightedNodes={highlightedNodes}
+        />
+      )}
     </>
   );
 };
@@ -424,7 +441,8 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
   nodesRef, 
   isDark, 
   highlightedNodes,
-  onNodeClick,
+  lockedNodeIds,
+  onNodeClick, 
   onNodeDoubleClick,
   simulationVersion,
   forceShowAllLabels = false,
@@ -493,16 +511,32 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
   });
 
   const { camera } = useThree();
+  const { addMessage } = useMessageStore();
   const theme = getTheme(isDark);
   
   // We render the component ONCE based on simulationVersion (count)
   // But update positions in useFrame
 
+  const handleLabelClick = (node: Node) => {
+    if (lockedNodeIds?.has(node.id)) {
+      addMessage({ 
+        content: '此节点尚未解锁！请先学习前置知识点。', 
+        type: 'warning' 
+      });
+      return;
+    }
+    onNodeClick?.(node);
+  };
+
+  const handleLabelDoubleClick = (node: Node) => {
+    if (lockedNodeIds?.has(node.id)) return; // Don't even toast on dblclick to be less annoying
+    onNodeDoubleClick?.(node);
+  };
+
   return (
     <group ref={ref || localRef} key={simulationVersion}>
       {nodesRef.current.map((node) => {
         const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
-        const config = LEVEL_CONFIG[node.level || 'leaf'];
         
         return (
           <Billboard key={node.id} follow={true} lockX={false} lockY={false} lockZ={false}>
@@ -515,26 +549,18 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
               outlineWidth={0.05}
               outlineColor={theme.text.outline}
               outlineOpacity={isDimmed ? 0.2 : 1}
-              // Use a standard font URL or local asset to ensure it loads reliably
-              // font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
-              // Removing custom font url to fallback to default or use a reliable one. 
-              // Often default font is safer for offline/export if network is issue.
-              // Or keep it if it works. The user said "text display problem", maybe font didn't load?
-              // Let's stick to default for robustness or a known good font.
-              
-              // Key change: sync() call might be needed for screenshot?
-              // Text component usually handles it.
-              
               onClick={(e) => {
                 e.stopPropagation();
-                onNodeClick?.(node);
+                handleLabelClick(node);
               }}
               onDoubleClick={(e) => {
                 e.stopPropagation();
-                onNodeDoubleClick?.(node);
+                handleLabelDoubleClick(node);
               }}
               onPointerOver={() => {
-                document.body.style.cursor = 'pointer';
+                if (!lockedNodeIds?.has(node.id)) {
+                  document.body.style.cursor = 'pointer';
+                }
               }}
               onPointerOut={() => {
                 document.body.style.cursor = 'default';

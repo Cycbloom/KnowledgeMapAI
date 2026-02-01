@@ -52,6 +52,7 @@ import {
   useDeleteGraphMutation,
   useGraphNodeStatus,
   useCreateTaskMutation,
+  useAIStatus,
   queryKeys
 } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -60,6 +61,7 @@ export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { token } = useStore();
   // useStore kept only for user/token if needed, or if we want to sync global state for other components
   // But for this page, we rely on React Query
   // const { nodes, edges, setNodes, setEdges, addNode, updateNode, removeNode, addEdge } = useStore();
@@ -81,7 +83,22 @@ export const GraphEditor = () => {
   const recommendConnectionsMutation = useRecommendConnectionsMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const createTaskMutation = useCreateTaskMutation();
+  const { data: aiStatus } = useAIStatus(!!token);
   const { addMessage } = useMessageStore();
+  const aiEnabled = aiStatus?.enabled ?? true;
+  const hasShownAIWarningRef = useRef(false);
+
+  useEffect(() => {
+    if (aiEnabled) return;
+    if (hasShownAIWarningRef.current) return;
+    hasShownAIWarningRef.current = true;
+    addMessage({
+      type: 'warning',
+      content: 'AI 未配置：文本分析/对话将使用模拟结果，文档解析与智能推荐不可用',
+      duration: 12000,
+      action: { label: '配置说明', onClick: () => navigate('/profile') }
+    });
+  }, [aiEnabled, addMessage, navigate]);
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -169,6 +186,7 @@ export const GraphEditor = () => {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [isRecommending, setIsRecommending] = useState(false);
   const recommendTimeoutRef = useRef<any>(null);
+  const hasShownRecommendErrorRef = useRef(false);
 
   // Fetch recommendations when title changes
   useEffect(() => {
@@ -176,7 +194,8 @@ export const GraphEditor = () => {
     if (!nodeForm.title || 
         nodeForm.title.length < 2 || 
         nodeForm.title === '新节点' || 
-        !id) {
+        !id ||
+        aiEnabled === false) {
       setRecommendations([]);
       return;
     }
@@ -194,13 +213,23 @@ export const GraphEditor = () => {
         setRecommendations(res.recommendations || []);
       } catch (err) {
         console.error('Recommendation failed:', err);
+        setRecommendations([]);
+        if (!hasShownRecommendErrorRef.current) {
+          hasShownRecommendErrorRef.current = true;
+          const message = err instanceof Error ? err.message : '';
+          addMessage({
+            type: 'warning',
+            content: message.includes('AI provider not configured') ? 'AI 未配置：智能连线推荐不可用' : '智能连线推荐失败',
+            duration: 8000
+          });
+        }
       } finally {
         setIsRecommending(false);
       }
     }, 1500); // 1.5s debounce
 
     return () => clearTimeout(recommendTimeoutRef.current);
-  }, [nodeForm.title, nodeForm.content, id]);
+  }, [nodeForm.title, nodeForm.content, id, aiEnabled]);
 
   // Stabilize history handlers
   const handleCreateNodeHistory = useCallback((data: any) => createNodeMutation.mutateAsync(data), [createNodeMutation]);
@@ -632,7 +661,8 @@ export const GraphEditor = () => {
       addMessage({
         type: 'info',
         content: `任务已提交：${type === 'generate_questions' ? '自动生成题目' : '自动扩展图谱'}`,
-        duration: 5000
+        duration: 8000,
+        action: { label: '查看任务', onClick: () => navigate('/tasks') }
       });
     } catch (err) {
       console.error(err);
@@ -668,6 +698,26 @@ export const GraphEditor = () => {
     } catch (err) {
       console.error(err);
       addMessage({ content: '导出失败', type: 'error' });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!id || !graphMeta) return;
+    try {
+      setIsExportMenuOpen(false);
+      const blob = await api.data.export(id, 'pdf');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${graphMeta.title}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      addMessage({ content: 'PDF 导出成功', type: 'success' });
+    } catch (err) {
+      console.error(err);
+      addMessage({ content: 'PDF 导出失败', type: 'error' });
     }
   };
 
@@ -752,6 +802,7 @@ export const GraphEditor = () => {
             layoutMode={layoutMode}
             lockedNodeIds={lockedNodeIds}
             masteredNodeIds={masteredNodeIds}
+            gamificationEnabled={graphMeta?.settings?.gamification_enabled !== false}
             onNodeCollapse={handleToggleCollapse}
             textDisplayLevel={graphMeta?.settings?.text_display_level || 'important'}
           />
@@ -852,6 +903,7 @@ export const GraphEditor = () => {
 
       {/* Toolbar */}
       <GraphToolbar
+        aiEnabled={aiEnabled}
         onBack={() => navigate(-1)}
         onUndo={undo}
         onRedo={redo}
@@ -903,6 +955,7 @@ export const GraphEditor = () => {
         setIsExportMenuOpen={setIsExportMenuOpen}
         exportActions={{
           onMarkdown: handleExportMarkdown,
+          onPDF: handleExportPDF,
           onJSON: handleExportJSON,
           onImage: handleExportImage,
           onDeleteGraph: handleDeleteGraph
@@ -966,6 +1019,7 @@ export const GraphEditor = () => {
         isOpen={isTextToGraphOpen}
         onClose={() => setIsTextToGraphOpen(false)}
         graphId={id || ''}
+        aiEnabled={aiEnabled}
       />
       
       <GraphSettingsModal 
@@ -979,6 +1033,7 @@ export const GraphEditor = () => {
         onClose={() => setIsChatOpen(false)}
         graphId={id || ''}
         selectedNodeIds={Array.from(selectedNodeIds)}
+        aiEnabled={aiEnabled}
       />
       
       <ConfirmationModal

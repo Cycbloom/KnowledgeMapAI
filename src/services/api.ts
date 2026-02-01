@@ -67,6 +67,7 @@ export const api = {
     delete: (id: string) => request(`/edges/${id}`, { method: 'DELETE' }),
   },
   ai: {
+    status: () => request('/ai/status'),
     generate: (data: any) => request('/ai/generate-content', { method: 'POST', body: JSON.stringify(data) }),
     generateContentStream: async (data: any, onChunk: (content: string) => void) => {
       const token = useStore.getState().token;
@@ -183,12 +184,14 @@ export const api = {
     },
   },
   study: {
-    getCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string }) => {
-      let query = '';
-      if (params?.graph_id) query = `?graph_id=${params.graph_id}`;
-      else if (params?.node_id) query = `?node_id=${params.node_id}`;
-      else if (params?.node_ids) query = `?node_ids=${params.node_ids}`;
-      return request(`/study/cards${query}`);
+    getCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string; due?: boolean }) => {
+      const search = new URLSearchParams();
+      if (params?.graph_id) search.set('graph_id', params.graph_id);
+      else if (params?.node_id) search.set('node_id', params.node_id);
+      else if (params?.node_ids) search.set('node_ids', params.node_ids);
+      if (params?.due) search.set('due', 'true');
+      const query = search.toString();
+      return request(`/study/cards${query ? `?${query}` : ''}`);
     },
     createCardsBatch: (cards: any[]) => request('/study/cards/batch', { method: 'POST', body: JSON.stringify({ cards }) }),
     updateProgress: (id: string, quality: number) => request(`/study/cards/${id}/progress`, { method: 'PUT', body: JSON.stringify({ quality }) }),

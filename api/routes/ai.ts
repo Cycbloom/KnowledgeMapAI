@@ -32,6 +32,11 @@ const model = process.env.DEEPSEEK_API_KEY ? 'deepseek-chat' : 'gpt-3.5-turbo';
 
 const openai = apiKey ? new OpenAI({ apiKey, baseURL }) : null;
 
+router.get('/status', requireAuth, (req: AuthRequest, res: Response) => {
+  const provider = process.env.DEEPSEEK_API_KEY ? 'deepseek' : process.env.OPENAI_API_KEY ? 'openai' : null;
+  res.json({ enabled: !!openai, provider, model });
+});
+
 // Multer setup for PDF uploads
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -481,7 +486,7 @@ router.post('/recommend-connections', requireAuth, validate(recommendConnections
   const { graph_id, node_title, node_content } = req.body;
 
   if (!openai) {
-    return res.json({ recommendations: [] });
+    throw new AppError('AI provider not configured', 503, ErrorCodes.INTERNAL_ERROR);
   }
 
   try {

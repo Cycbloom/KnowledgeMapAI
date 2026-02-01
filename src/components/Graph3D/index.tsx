@@ -26,6 +26,7 @@ export type Graph3DProps = {
   pulsingNodeIds?: Set<string>;
   lockedNodeIds?: Set<string>;
   masteredNodeIds?: Set<string>;
+  gamificationEnabled?: boolean;
   textDisplayLevel?: 'all' | 'important' | 'root_only';
 }
 
@@ -48,7 +49,8 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
     layoutMode = '3d-force',
     pulsingNodeIds = new Set(),
     lockedNodeIds = new Set(),
-    masteredNodeIds = new Set()
+    masteredNodeIds = new Set(),
+    gamificationEnabled = true
   } = props;
   
   // 1. Simulation Hook (Worker + State)
@@ -89,6 +91,7 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
           pulsingNodeIds={pulsingNodeIds}
           lockedNodeIds={lockedNodeIds}
           masteredNodeIds={masteredNodeIds}
+          gamificationEnabled={gamificationEnabled}
           isDark={isDark}
           onSelectionChange={onSelectionChange}
           onBoxUpdate={onBoxUpdate}

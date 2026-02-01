@@ -5,8 +5,12 @@ import { importDataSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
+import { createRequire } from 'module';
+import fs from 'fs';
 
 const router = Router();
+const require = createRequire(import.meta.url);
+const PDFDocument = require('pdfkit');
 
 // Export graph data
 router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -40,10 +44,94 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     res.attachment(`graph-${graph_id}.json`);
     return res.send(JSON.stringify(exportData, null, 2));
   } else if (format === 'pdf') {
-    // Mock PDF generation for now
+    const safeTitle = typeof graph.title === 'string' && graph.title.trim() ? graph.title.trim() : `graph-${graph_id}`;
     res.header('Content-Type', 'application/pdf');
-    res.attachment(`graph-${graph_id}.pdf`);
-    return res.send('PDF CONTENT MOCK'); 
+    res.attachment(`${safeTitle}.pdf`);
+
+    const doc = new PDFDocument({ size: 'A4', margin: 48 });
+
+    const preferredFontPaths = [
+      process.env.PDF_FONT_PATH,
+      'C:\\\\Windows\\\\Fonts\\\\simhei.ttf',
+      'C:\\\\Windows\\\\Fonts\\\\msyh.ttf',
+      'C:\\\\Windows\\\\Fonts\\\\simsun.ttc'
+    ].filter(Boolean) as string[];
+
+    for (const fontPath of preferredFontPaths) {
+      try {
+        if (fs.existsSync(fontPath)) {
+          doc.registerFont('CN', fontPath);
+          doc.font('CN');
+          break;
+        }
+      } catch {}
+    }
+
+    doc.pipe(res);
+
+    doc.fontSize(20).text(safeTitle, { align: 'center' });
+    doc.moveDown(0.5);
+    if (graph.description) {
+      doc.fontSize(11).fillColor('#333333').text(String(graph.description));
+      doc.moveDown(0.8);
+    }
+    doc.fontSize(9).fillColor('#666666').text(`导出时间：${new Date().toLocaleString()}`);
+    doc.moveDown(1);
+    doc.fillColor('#111111');
+
+    const nodesArr = Array.isArray(nodes) ? nodes : [];
+    const edgesArr = Array.isArray(edges) ? edges : [];
+
+    const nodeById = new Map(nodesArr.map((n: any) => [n.id, n]));
+    const childrenByParent = new Map<string, string[]>();
+    const incoming = new Set<string>();
+
+    for (const e of edgesArr as any[]) {
+      if (!e?.source_node_id || !e?.target_node_id) continue;
+      incoming.add(e.target_node_id);
+      const list = childrenByParent.get(e.source_node_id) || [];
+      list.push(e.target_node_id);
+      childrenByParent.set(e.source_node_id, list);
+    }
+
+    const rootNodes = nodesArr.filter((n: any) => n.level === 'root');
+    const fallbackRoots = nodesArr.filter((n: any) => !incoming.has(n.id));
+    const roots = rootNodes.length > 0 ? rootNodes : (fallbackRoots.length > 0 ? fallbackRoots : nodesArr.slice(0, 1));
+
+    const visited = new Set<string>();
+
+    const renderNode = (node: any, depth: number) => {
+      if (!node || visited.has(node.id)) return;
+      visited.add(node.id);
+
+      const indent = Math.min(depth, 6) * 18;
+      const titleSize = Math.max(11, 16 - depth);
+
+      doc.fontSize(titleSize).fillColor('#111111').text(String(node.title || '未命名节点'), { indent });
+      if (node.content) {
+        doc.moveDown(0.2);
+        doc.fontSize(9).fillColor('#333333').text(String(node.content), { indent: indent + 12 });
+      }
+      doc.moveDown(0.6);
+
+      const children = childrenByParent.get(node.id) || [];
+      for (const childId of children) {
+        renderNode(nodeById.get(childId), depth + 1);
+      }
+    };
+
+    for (const r of roots) renderNode(r, 0);
+
+    const remaining = nodesArr.filter((n: any) => !visited.has(n.id));
+    if (remaining.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).fillColor('#111111').text('未连接节点', { align: 'left' });
+      doc.moveDown(0.8);
+      for (const n of remaining) renderNode(n, 0);
+    }
+
+    doc.end();
+    return;
   }
 
   throw new AppError('Unsupported format', 400, ErrorCodes.VALIDATION_ERROR);

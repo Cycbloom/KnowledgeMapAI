@@ -8,6 +8,7 @@ interface TextToGraphModalProps {
   onClose: () => void;
   graphId: string;
   initialData?: { nodes: PreviewNode[], edges: PreviewEdge[] } | null;
+  aiEnabled?: boolean;
 }
 
 type PreviewNode = {
@@ -23,7 +24,7 @@ type PreviewEdge = {
   relationship: string;
 };
 
-export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData }) => {
+export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData, aiEnabled }) => {
   const { addMessage } = useMessageStore();
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
   const [text, setText] = useState('');
@@ -71,6 +72,9 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     }
 
     try {
+      if (aiEnabled === false) {
+        addMessage({ type: 'warning', content: 'AI 未配置：本次将生成模拟预览' });
+      }
       const result = await textToGraphMutation.mutateAsync({ 
         text, 
         graph_id: graphId, 
@@ -93,6 +97,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (aiEnabled === false) {
+      addMessage({ type: 'error', content: 'AI 未配置：文档解析不可用，请先配置 AI Key' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     addMessage({ type: 'info', content: '正在解析文档并生成预览...' });
 
@@ -217,7 +227,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || aiEnabled === false}
                 >
                   <Upload size={16} />
                   <span>上传文档 (PDF/TXT/MD)</span>
@@ -230,6 +240,12 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   onChange={handleFileUpload}
                 />
               </div>
+
+              {aiEnabled === false && (
+                <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+                  AI 未配置：文本分析会生成模拟预览；文档上传解析需要配置 AI Key。
+                </div>
+              )}
               
               <div className="relative group">
                 <textarea

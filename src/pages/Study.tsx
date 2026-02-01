@@ -12,13 +12,24 @@ export const Study = () => {
   const graphId = searchParams.get('graph_id');
   const nodeId = searchParams.get('node_id');
   const nodeIds = searchParams.get('node_ids');
+
+  const scopeParams = useMemo(() => {
+    if (nodeIds) return { node_ids: nodeIds };
+    if (nodeId) return { node_id: nodeId };
+    if (graphId) return { graph_id: graphId };
+    return undefined;
+  }, [graphId, nodeId, nodeIds]);
   
-  const { data: fetchedCards, isLoading, refetch } = useStudyCards(
-    nodeIds ? { node_ids: nodeIds } : (nodeId ? { node_id: nodeId } : (graphId ? { graph_id: graphId } : undefined))
+  const { data: allCardsData, isLoading } = useStudyCards(scopeParams);
+  const { data: dueCardsData } = useStudyCards(
+    scopeParams ? { ...scopeParams, due: true } : { due: true }
   );
   const updateProgressMutation = useUpdateCardProgressMutation();
 
-  const [cards, setCards] = useState<StudyCard[]>([]);
+  const allCards = useMemo(() => (Array.isArray(allCardsData) ? (allCardsData as StudyCard[]) : []), [allCardsData]);
+  const dueCards = useMemo(() => (Array.isArray(dueCardsData) ? (dueCardsData as StudyCard[]) : []), [dueCardsData]);
+
+  const [quizCards, setQuizCards] = useState<StudyCard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -27,62 +38,57 @@ export const Study = () => {
   // View State: 'dashboard' | 'quiz'
   const [viewState, setViewState] = useState<'dashboard' | 'quiz'>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
+  const [tableMode, setTableMode] = useState<'due' | 'all'>('due');
 
   // Reset state when params change
   useEffect(() => {
-    setCards([]);
+    setQuizCards([]);
     setCurrentCardIndex(0);
     setFinished(false);
     setShowAnswer(false);
     setSelectedOption(null);
     setViewState('dashboard');
+    setTableMode('due');
   }, [graphId, nodeId, nodeIds]);
-
-  // Sync cards
-  useEffect(() => {
-    if (Array.isArray(fetchedCards)) {
-      setCards(fetchedCards);
-    }
-  }, [fetchedCards]);
 
   // Stats
   const stats = useMemo(() => {
-    const total = cards.length;
-    const mastered = cards.filter(c => (c.review_count || 0) > 0).length;
-    const due = cards.filter(c => new Date(c.next_review) <= new Date()).length;
+    const total = allCards.length;
+    const mastered = allCards.filter(c => (c.review_count || 0) > 0).length;
+    const due = dueCards.length;
     return { total, mastered, due };
-  }, [cards]);
+  }, [allCards, dueCards]);
+
+  const tableCards = useMemo(() => (tableMode === 'due' ? dueCards : allCards), [tableMode, dueCards, allCards]);
 
   // Filtered Cards for Table
   const filteredCards = useMemo(() => {
-    if (!searchQuery) return cards;
-    return cards.filter(c => 
+    if (!searchQuery) return tableCards;
+    return tableCards.filter(c => 
       c.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
       c.answer.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [cards, searchQuery]);
+  }, [tableCards, searchQuery]);
 
   const handleStartQuiz = (mode: 'all' | 'due') => {
-    let quizCards = [...cards];
-    if (mode === 'due') {
-      quizCards = quizCards.filter(c => new Date(c.next_review) <= new Date());
-    }
+    const selected = mode === 'due' ? dueCards : allCards;
+    const next = [...selected];
     
-    if (quizCards.length === 0) {
+    if (next.length === 0) {
       addMessage({ content: '没有需要复习的卡片！', type: 'info' });
       return;
     }
 
     // Shuffle
-    quizCards.sort(() => Math.random() - 0.5);
-    setCards(quizCards);
+    next.sort(() => Math.random() - 0.5);
+    setQuizCards(next);
     setCurrentCardIndex(0);
     setFinished(false);
     setViewState('quiz');
   };
 
   const handleNextCard = () => {
-    if (currentCardIndex < cards.length - 1) {
+    if (currentCardIndex < quizCards.length - 1) {
       setCurrentCardIndex(prev => prev + 1);
       setShowAnswer(false);
       setSelectedOption(null);
@@ -92,11 +98,11 @@ export const Study = () => {
   };
 
   const handleRate = async (quality: number) => {
-    if (!cards[currentCardIndex]) return;
+    if (!quizCards[currentCardIndex]) return;
     
     try {
       await updateProgressMutation.mutateAsync({
-        id: cards[currentCardIndex].id,
+        id: quizCards[currentCardIndex].id,
         quality
       });
       handleNextCard();
@@ -119,14 +125,15 @@ export const Study = () => {
     setSelectedOption(null);
     
     // Reshuffle current set
-    setCards(prev => [...prev].sort(() => Math.random() - 0.5));
+    setQuizCards(prev => [...prev].sort(() => Math.random() - 0.5));
   };
 
   const handleBackToDashboard = () => {
-    // Reload original cards
-    if (Array.isArray(fetchedCards)) {
-      setCards(fetchedCards);
-    }
+    setQuizCards([]);
+    setCurrentCardIndex(0);
+    setShowAnswer(false);
+    setSelectedOption(null);
+    setFinished(false);
     setViewState('dashboard');
   };
 
@@ -155,7 +162,7 @@ export const Study = () => {
             </div>
             {graphId && (
               <button 
-                onClick={() => navigate(`/editor/${graphId}`)}
+                onClick={() => navigate(`/graph/${graphId}`)}
                 className="flex items-center space-x-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors font-medium"
               >
                 <LayoutGrid size={18} />
@@ -243,15 +250,35 @@ export const Study = () => {
                 <ListIcon className="mr-2" size={20} />
                 题目列表
               </h3>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="搜索题目..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
-                />
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => setTableMode('due')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      tableMode === 'due' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    仅到期
+                  </button>
+                  <button
+                    onClick={() => setTableMode('all')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      tableMode === 'all' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    全部
+                  </button>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="搜索题目..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
+                  />
+                </div>
               </div>
             </div>
             
@@ -320,7 +347,7 @@ export const Study = () => {
           <p className="text-gray-500 mb-8 text-lg">
             {nodeId 
               ? `你已经完成了该知识点的所有测验卡片。` 
-              : `你已经复习了本次所有的 ${cards.length} 张卡片。`}
+              : `你已经复习了本次所有的 ${quizCards.length} 张卡片。`}
           </p>
           
           <div className="space-y-3">
@@ -343,7 +370,7 @@ export const Study = () => {
     );
   }
 
-  const currentCard = cards[currentCardIndex];
+  const currentCard = quizCards[currentCardIndex];
   // Guard against index out of bounds if cards changed
   if (!currentCard) return null; 
 
@@ -364,7 +391,7 @@ export const Study = () => {
           </button>
           <h2 className="text-xl font-bold text-gray-800">学习模式</h2>
           <span className="text-gray-500 font-medium">
-            进度 {currentCardIndex + 1} / {cards.length}
+            进度 {currentCardIndex + 1} / {quizCards.length}
           </span>
         </div>
 

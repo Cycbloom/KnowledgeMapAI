@@ -14,6 +14,9 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
   // index 0 = H1 parent, index 1 = H2 parent, etc.
   const parentStack: (string | null)[] = new Array(7).fill(null);
   
+  // Store potential links to resolve after all nodes are created
+  const potentialLinks: { sourceId: string; targetTitle: string }[] = [];
+  
   let currentNode: any = null;
   let graphTitle = 'Untitled Graph';
   let firstHeaderFound = false;
@@ -85,6 +88,18 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
           : trimmedLine;
       }
     }
+
+    // Extract Obsidian-style links: [[Target Node Title]]
+    if (currentNode) {
+      const linkRegex = /\[\[(.*?)\]\]/g;
+      let match;
+      while ((match = linkRegex.exec(line)) !== null) {
+        potentialLinks.push({
+          sourceId: currentNode.id,
+          targetTitle: match[1].trim()
+        });
+      }
+    }
   });
 
   // If no headers found, treat entire text as one root node
@@ -100,6 +115,26 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
     });
     graphTitle = title;
   }
+
+  // Resolve collected links
+  potentialLinks.forEach(link => {
+    const targetNode = nodes.find(n => n.title.toLowerCase() === link.targetTitle.toLowerCase());
+    
+    if (targetNode && targetNode.id !== link.sourceId) {
+      const exists = edges.some(e => 
+        (e.source === link.sourceId && e.target === targetNode.id) ||
+        (e.source === targetNode.id && e.target === link.sourceId)
+      );
+      
+      if (!exists) {
+        edges.push({
+          source: link.sourceId,
+          target: targetNode.id,
+          relationship: 'relates_to'
+        });
+      }
+    }
+  });
 
   return {
     graph_title: graphTitle,

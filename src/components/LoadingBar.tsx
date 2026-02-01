@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 
 export const LoadingBar: React.FC = () => {
-  const isFetching = useIsFetching();
+  const isFetching = useIsFetching({
+    predicate: (query) => !query.meta?.silent
+  });
   const isMutating = useIsMutating();
   const isLoading = isFetching > 0 || isMutating > 0;
   

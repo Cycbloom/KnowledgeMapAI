@@ -27,6 +27,7 @@ interface GraphToolbarProps {
   setIsFocusMode: (mode: boolean) => void;
 
   // Tools
+  aiEnabled?: boolean;
   onTextToGraph: () => void;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
@@ -53,6 +54,7 @@ interface GraphToolbarProps {
   setIsExportMenuOpen: (open: boolean) => void;
   exportActions: {
     onMarkdown: () => void;
+    onPDF: () => void;
     onJSON: () => void;
     onImage: () => void;
     onDeleteGraph: () => void;
@@ -63,7 +65,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBack, onUndo, onRedo, canUndo, canRedo,
   title, sidebarMode, setSidebarMode,
   showGrid, setShowGrid, layoutMode, setLayoutMode, isFocusMode, setIsFocusMode,
-  onTextToGraph, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
+  aiEnabled, onTextToGraph, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions
 }) => {
@@ -153,6 +155,13 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         icon={Navigation}
         title={isPathfindingMode ? "退出路径导航" : "路径导航"}
       />
+      {aiEnabled === false && (
+        <span className={`ml-1 px-2 py-0.5 rounded text-xs font-semibold ${
+          isDark ? 'bg-amber-900/30 text-amber-300 border border-amber-800/60' : 'bg-amber-50 text-amber-800 border border-amber-200'
+        }`}>
+          AI 未配置
+        </span>
+      )}
     </div>
   );
 
@@ -220,6 +229,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
              {/* Reuse existing export menu items */}
              <div className="py-1">
                <button onClick={exportActions.onMarkdown} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 Markdown</button>
+               <button onClick={exportActions.onPDF} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 PDF</button>
                <button onClick={exportActions.onJSON} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 JSON (备份)</button>
                <button onClick={exportActions.onImage} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出为图片</button>
                <div className={`border-t my-1 ${themeClasses.divider}`}></div>

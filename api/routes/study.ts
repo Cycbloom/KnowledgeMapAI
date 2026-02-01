@@ -36,7 +36,8 @@ const mapQualityToRating = (quality: number): Rating => {
 
 // Get cards due for review (or all cards for a graph)
 router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { graph_id, node_id, node_ids } = req.query;
+  const { graph_id, node_id, node_ids, due } = req.query;
+  const dueOnly = due === 'true' || due === '1';
 
   if (graph_id) {
     // For debugging: First, let's see if we can get ANY cards for this user
@@ -49,7 +50,7 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
     if (countError) console.error('Count error:', countError);
 
     // Clear cache to ensure we get fresh data from DB
-    cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
+    await cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
   }
 
   console.log('Fetching cards for graph_id:', graph_id, 'node_id:', node_id, 'node_ids:', node_ids, 'user_id:', req.user.id);
@@ -72,8 +73,9 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
     query = query.eq('graph_id', graph_id);
   }
 
-  // Filter for due cards? The frontend might want all cards or just due ones.
-  // Let's return all for now and let frontend filter, or add ?due=true
+  if (dueOnly) {
+    query = query.lte('next_review', new Date().toISOString());
+  }
   
   const { data, error } = await query;
 

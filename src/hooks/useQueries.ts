@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
-import { Node, Edge } from '../types';
+import { Node, Edge, Task } from '../types';
 
 // Query Keys
 export const queryKeys = {
@@ -8,10 +8,12 @@ export const queryKeys = {
   graph: (id: string) => ['graph', id] as const,
   graphData: (id: string) => ['graphData', id] as const,
   graphNodeStatus: (id: string) => ['graphNodeStatus', id] as const,
-  studyCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string }) => 
-    ['studyCards', params?.graph_id || 'all', params?.node_id || 'all', params?.node_ids || 'none'] as const,
+  studyCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string; due?: boolean }) => 
+    ['studyCards', params?.graph_id || 'all', params?.node_id || 'all', params?.node_ids || 'none', params?.due ? 'due' : 'all'] as const,
   user: ['user'] as const,
   dashboardStats: ['dashboardStats'] as const,
+  tasks: ['tasks'] as const,
+  aiStatus: ['aiStatus'] as const,
 };
 
 // --- Queries ---
@@ -72,11 +74,35 @@ export const useGraphNodeStatus = (id: string) => {
   });
 };
 
-export const useStudyCards = (params?: { graph_id?: string; node_id?: string; node_ids?: string }) => {
+export const useStudyCards = (params?: { graph_id?: string; node_id?: string; node_ids?: string; due?: boolean }, enabled: boolean = true) => {
   return useQuery({
     queryKey: queryKeys.studyCards(params),
     queryFn: () => api.study.getCards(params),
+    enabled,
     staleTime: 0,
+  });
+};
+
+export const useTasks = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: queryKeys.tasks,
+    queryFn: async () => (await api.tasks.list()) as Task[],
+    enabled,
+    refetchInterval: enabled ? 15000 : false, // Poll every 15 seconds instead of 5
+    staleTime: 0,
+    meta: { silent: true }
+  });
+};
+
+export const useAIStatus = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: queryKeys.aiStatus,
+    queryFn: api.ai.status,
+    enabled,
+    retry: false,
+    staleTime: 0,
+    refetchInterval: enabled ? 60_000 : false,
+    meta: { silent: true }
   });
 };
 

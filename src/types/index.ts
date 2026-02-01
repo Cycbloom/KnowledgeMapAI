@@ -49,3 +49,15 @@ export interface StudyCard {
   review_count?: number;
   fsrs_state?: number;
 }
+
+export interface Task {
+  id: string;
+  user_id: string;
+  type: 'generate_questions' | 'expand_graph' | string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | string;
+  payload: any;
+  result: any;
+  error?: string;
+  created_at: string;
+  updated_at: string;
+}

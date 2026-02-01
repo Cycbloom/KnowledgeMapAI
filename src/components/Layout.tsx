@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { useUser, useLogoutMutation } from '../hooks/useQueries';
-import { LogOut, LayoutDashboard, Database, BookOpen, User, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
+import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
+import { useMessageStore } from '../store/useMessageStore';
+import { LogOut, LayoutDashboard, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 
@@ -12,11 +13,15 @@ export const Layout = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { addMessage } = useMessageStore();
   
   // Use TanStack Query for user fetching
   // Only fetch if we have a token but no user (e.g. refresh)
   const { data: userData, isLoading: isUserLoading } = useUser(!!token && !user);
   const logoutMutation = useLogoutMutation();
+  const { data: tasksData } = useTasks(!!token);
+  const lastTaskStatusRef = useRef<Map<string, string>>(new Map());
+  const hasInitializedTasksRef = useRef(false);
 
   // Sync Query result to Store
   useEffect(() => {
@@ -27,6 +32,49 @@ export const Layout = () => {
         handleLogout();
     }
   }, [userData, isUserLoading, setUser, token]);
+
+  useEffect(() => {
+    if (!Array.isArray(tasksData)) return;
+
+    if (!hasInitializedTasksRef.current) {
+      hasInitializedTasksRef.current = true;
+      lastTaskStatusRef.current = new Map(tasksData.map((t: any) => [t.id, t.status]));
+      return;
+    }
+
+    const typeLabel = (type: string) => {
+      if (type === 'generate_questions') return '自动生成题目';
+      if (type === 'expand_graph') return '自动扩展图谱';
+      return type;
+    };
+
+    const updated = new Map(lastTaskStatusRef.current);
+
+    for (const t of tasksData as any[]) {
+      const prev = lastTaskStatusRef.current.get(t.id);
+      if (prev && prev !== t.status) {
+        if (t.status === 'completed') {
+          addMessage({
+            type: 'success',
+            content: `任务完成：${typeLabel(t.type)}`,
+            duration: 8000,
+            action: { label: '查看', onClick: () => navigate('/tasks') }
+          });
+        }
+        if (t.status === 'failed') {
+          addMessage({
+            type: 'error',
+            content: `任务失败：${typeLabel(t.type)}${t.error ? `（${t.error}）` : ''}`,
+            duration: 10000,
+            action: { label: '查看', onClick: () => navigate('/tasks') }
+          });
+        }
+      }
+      updated.set(t.id, t.status);
+    }
+
+    lastTaskStatusRef.current = updated;
+  }, [tasksData, addMessage, navigate]);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -110,6 +158,7 @@ export const Layout = () => {
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             <SidebarLink to="/dashboard" icon={LayoutDashboard} label="仪表盘" />
             <SidebarLink to="/study" icon={BookOpen} label="学习模式" />
+            <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" />
             <SidebarLink to="/profile" icon={User} label="个人资料" />
           </nav>
 

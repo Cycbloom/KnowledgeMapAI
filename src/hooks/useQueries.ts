@@ -12,7 +12,7 @@ export const queryKeys = {
     ['studyCards', params?.graph_id || 'all', params?.node_id || 'all', params?.node_ids || 'none', params?.due ? 'due' : 'all'] as const,
   user: ['user'] as const,
   dashboardStats: ['dashboardStats'] as const,
-  tasks: ['tasks'] as const,
+  tasks: (status?: string) => ['tasks', status || 'all'] as const,
   aiStatus: ['aiStatus'] as const,
   statistics: ['statistics'] as const,
 };
@@ -91,14 +91,33 @@ export const useStudyCards = (params?: { graph_id?: string; node_id?: string; no
   });
 };
 
-export const useTasks = (enabled: boolean = true) => {
+export const useTasks = (enabled: boolean = true, status?: string) => {
   return useQuery({
-    queryKey: queryKeys.tasks,
-    queryFn: async () => (await api.tasks.list()) as Task[],
+    queryKey: queryKeys.tasks(status),
+    queryFn: async () => (await api.tasks.list(status)) as Task[],
     enabled,
     refetchInterval: enabled ? 15000 : false, // Poll every 15 seconds instead of 5
     staleTime: 0,
-    meta: { silent: true }
+  });
+};
+
+export const useRetryTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.tasks.retry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidate all task lists
+    },
+  });
+};
+
+export const useDeleteTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.tasks.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidate all task lists
+    },
   });
 };
 

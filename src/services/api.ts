@@ -205,7 +205,9 @@ export const api = {
   },
   tasks: {
     create: (data: { type: string; payload: any }) => request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
-    list: () => request('/tasks'),
+    list: (status?: string) => request(`/tasks${status ? `?status=${status}` : ''}`),
+    retry: (id: string) => request(`/tasks/${id}/retry`, { method: 'POST' }),
+    delete: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
   },
   data: {
     export: (graphId: string, format: 'json' | 'pdf') => {

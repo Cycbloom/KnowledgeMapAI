@@ -14,6 +14,7 @@ export const queryKeys = {
   dashboardStats: ['dashboardStats'] as const,
   tasks: ['tasks'] as const,
   aiStatus: ['aiStatus'] as const,
+  statistics: ['statistics'] as const,
 };
 
 // --- Queries ---
@@ -22,6 +23,13 @@ export const useDashboardStats = () => {
   return useQuery({
     queryKey: queryKeys.dashboardStats,
     queryFn: api.dashboard.getStats,
+  });
+};
+
+export const useStatistics = () => {
+  return useQuery({
+    queryKey: queryKeys.statistics,
+    queryFn: api.statistics.getStats,
   });
 };
 

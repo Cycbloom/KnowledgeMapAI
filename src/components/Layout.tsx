@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, LayoutDashboard, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks } from 'lucide-react';
+import { LogOut, LayoutDashboard, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, BarChart } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 
@@ -158,6 +158,7 @@ export const Layout = () => {
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             <SidebarLink to="/dashboard" icon={LayoutDashboard} label="仪表盘" />
             <SidebarLink to="/study" icon={BookOpen} label="学习模式" />
+            <SidebarLink to="/statistics" icon={BarChart} label="统计分析" />
             <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" />
             <SidebarLink to="/profile" icon={User} label="个人资料" />
           </nav>

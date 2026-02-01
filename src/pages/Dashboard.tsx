@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats } from '../hooks/useQueries';
-import { Plus, BookOpen, Upload, Trash2 } from 'lucide-react';
+import { Plus, BookOpen, Upload, Trash2, BarChart } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { BlindSpotList } from '../components/BlindSpotList';
-import { StatsOverview } from '../components/StatsOverview';
 
 export const Dashboard = () => {
   const { data: graphsData, isLoading, error } = useGraphs();
@@ -166,9 +164,24 @@ export const Dashboard = () => {
       {/* Statistics Section */}
       {statsData && (
         <div className="mb-12 space-y-6 animate-fade-in-up">
-          <ActivityHeatmap data={statsData.heatmap || []} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <StatsOverview data={statsData.distribution || []} />
+          <div className="flex justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-100">
+             <div className="flex items-center space-x-3">
+               <div className="bg-blue-100 p-2 rounded-full">
+                 <BarChart className="text-blue-600" size={24} />
+               </div>
+               <div>
+                 <h3 className="font-semibold text-blue-900">查看详细学习统计</h3>
+                 <p className="text-sm text-blue-600">了解您的学习活跃度、知识掌握分布及复习预测</p>
+               </div>
+             </div>
+             <Link 
+               to="/statistics" 
+               className="bg-white text-blue-600 px-4 py-2 rounded-md font-medium hover:bg-blue-50 border border-blue-200 transition-colors"
+             >
+               前往分析
+             </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6">
             <BlindSpotList data={statsData.blindSpots || []} />
           </div>
         </div>

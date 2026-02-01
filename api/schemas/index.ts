@@ -99,6 +99,15 @@ export const generateCardsSchema = z.object({
   node_content: z.string().optional(),
 });
 
+export const generateCardsBatchSchema = z.object({
+  node_ids: z.array(z.string().uuid()).min(1),
+  config: z.object({
+    types: z.array(z.enum(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay'])).optional(),
+    count: z.number().min(1).max(50).optional(), // Increased max count for packs
+    pack_template: z.enum(['standard', 'comprehensive', 'exam', 'quick']).optional(),
+  }).optional(),
+});
+
 export const textToGraphSchema = z.object({
   text: z.string().optional(),
   graph_id: z.string().uuid('无效的图谱ID'),

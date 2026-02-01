@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2 } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles } from 'lucide-react';
 import { Node, Edge } from '../../types';
+import { BatchGenerateDialog } from './BatchGenerateDialog';
 
 interface GraphOutlineProps {
   nodes: Node[];
@@ -9,7 +10,7 @@ interface GraphOutlineProps {
   selectedNodeId: string | null;
   selectedNodeIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
-  onBatchAction?: (action: 'expand_graph' | 'delete', data?: any) => void;
+  onBatchAction?: (action: 'expand_graph' | 'delete' | 'batch_generate_questions', data?: any) => void;
   className?: string;
 }
 
@@ -26,6 +27,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [isBatchGenerateOpen, setIsBatchGenerateOpen] = useState(false);
 
   // Filter nodes for search mode
   const filteredNodes = useMemo(() => {
@@ -143,6 +145,13 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     } else {
       onSelectionChange(new Set(nodes.map(n => n.id)));
     }
+  };
+
+  const handleBatchGenerateSuccess = () => {
+    onSelectionChange?.(new Set());
+    setIsMultiSelectMode(false);
+    // Notify parent to show success message
+    onBatchAction?.('batch_generate_questions'); 
   };
 
   // Search Mode: Flat List with Hierarchy Sorting (Previous Implementation)
@@ -322,6 +331,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
              </div>
              <div className="flex items-center gap-1">
                 <button
+                  onClick={() => setIsBatchGenerateOpen(true)}
+                  disabled={selectedNodeIds.size === 0}
+                  className="p-1.5 text-purple-600 hover:bg-purple-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="批量生成题目"
+                >
+                  <Sparkles size={16} />
+                </button>
+                <button
                   onClick={() => onBatchAction?.('expand_graph')}
                   disabled={selectedNodeIds.size === 0}
                   className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
@@ -363,6 +380,13 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           </div>
         )}
       </div>
+      
+      <BatchGenerateDialog 
+        isOpen={isBatchGenerateOpen}
+        onClose={() => setIsBatchGenerateOpen(false)}
+        selectedNodeIds={Array.from(selectedNodeIds)}
+        onSuccess={handleBatchGenerateSuccess}
+      />
     </div>
   );
 };

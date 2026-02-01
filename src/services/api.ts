@@ -119,6 +119,9 @@ export const api = {
     },
     expand: (data: any) => request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(data) }),
     generateCards: (data: any) => request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(data) }),
+    batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string }) => 
+      request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config }) }),
+    getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
     textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: any[]; edges?: any[] }) => request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(data) }),
     documentToGraph: (data: { graph_id: string; file: File }) => {
       const token = useStore.getState().token;

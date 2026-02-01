@@ -190,6 +190,7 @@ router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async
     graph_id: nodeGraphMap.get(card.node_id),
     question: card.question,
     answer: card.answer,
+    explanation: card.explanation || null, // Add explanation
     card_type: card.type || 'qa',
     options: card.options || null,
     next_review: new Date().toISOString(),

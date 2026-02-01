@@ -306,7 +306,11 @@ export const Study = () => {
                         </td>
                         <td className="px-6 py-4">
                           <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                            {card.card_type === 'choice' ? '选择题' : card.card_type === 'true_false' ? '判断题' : '问答题'}
+                            {card.card_type === 'choice' ? '单选题' : 
+                             card.card_type === 'multi_choice' ? '多选题' :
+                             card.card_type === 'fill_in_the_blank' ? '填空题' :
+                             card.card_type === 'essay' ? '解答题' :
+                             card.card_type === 'true_false' ? '判断题' : '问答题'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -376,7 +380,31 @@ export const Study = () => {
 
   const isQA = !currentCard.card_type || currentCard.card_type === 'qa';
   const isChoice = currentCard.card_type === 'choice';
+  const isMultiChoice = currentCard.card_type === 'multi_choice';
   const isTrueFalse = currentCard.card_type === 'true_false';
+  const isFillBlank = currentCard.card_type === 'fill_in_the_blank';
+  const isEssay = currentCard.card_type === 'essay';
+
+  // For multi-choice state
+  const handleMultiOptionClick = (option: string) => {
+    if (showAnswer) return;
+    const currentSelected = selectedOption ? JSON.parse(selectedOption) : [];
+    const newSelected = currentSelected.includes(option)
+      ? currentSelected.filter((o: string) => o !== option)
+      : [...currentSelected, option];
+    setSelectedOption(JSON.stringify(newSelected));
+  };
+
+  const checkMultiChoiceCorrect = () => {
+    if (!selectedOption) return false;
+    try {
+      const selected = JSON.parse(selectedOption) as string[];
+      const correct = JSON.parse(currentCard.answer) as string[];
+      return selected.length === correct.length && selected.every(s => correct.includes(s));
+    } catch (e) {
+      return false;
+    }
+  };
 
   return (
     <div className="min-h-full flex flex-col items-center justify-center p-8 bg-gray-100">
@@ -398,7 +426,7 @@ export const Study = () => {
         <div className="bg-white rounded-xl shadow-lg p-8 min-h-[400px] flex flex-col cursor-default transition-all hover:shadow-xl relative overflow-hidden">
           {/* Card Type Badge */}
           <div className="absolute top-4 right-4 text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-500 uppercase">
-            {isQA ? '问答题' : isChoice ? '选择题' : '判断题'}
+            {isQA ? '问答题' : isChoice ? '单选题' : isMultiChoice ? '多选题' : isTrueFalse ? '判断题' : isFillBlank ? '填空题' : '解答题'}
           </div>
 
           {/* Question Section */}
@@ -413,15 +441,17 @@ export const Study = () => {
 
           {/* Answer Section */}
           <div className="w-full">
-            {isQA && (
+            {(isQA || isEssay || isFillBlank) && (
               <div 
-                className={`text-center transition-all duration-300 ${showAnswer ? 'opacity-100' : 'opacity-100'}`}
+                className="text-center transition-all duration-300"
                 onClick={() => !showAnswer && setShowAnswer(true)}
               >
                 {showAnswer ? (
                   <div className="border-t pt-6 animate-fade-in">
-                    <h3 className="text-gray-500 uppercase tracking-wide text-sm font-semibold mb-2">答案</h3>
-                    <p className="text-xl text-gray-800">{currentCard.answer}</p>
+                    <h3 className="text-gray-500 uppercase tracking-wide text-sm font-semibold mb-2">
+                      {isFillBlank ? '填空内容' : '标准答案'}
+                    </h3>
+                    <p className={`text-xl text-gray-800 ${isEssay ? 'text-left' : ''}`}>{currentCard.answer}</p>
                   </div>
                 ) : (
                   <div className="py-8 cursor-pointer hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
@@ -463,6 +493,54 @@ export const Study = () => {
               </div>
             )}
 
+            {isMultiChoice && currentCard.options && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-3">
+                  {currentCard.options.map((option, idx) => {
+                    const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
+                    const isSelected = selectedList.includes(option);
+                    let correctList = [];
+                    try { correctList = JSON.parse(currentCard.answer); } catch(e) {}
+                    const isCorrect = correctList.includes(option);
+                    
+                    let btnClass = "p-4 rounded-lg border-2 text-left transition-all relative ";
+                    if (showAnswer) {
+                      if (isCorrect) btnClass += "bg-green-50 border-green-500 text-green-700";
+                      else if (isSelected) btnClass += "bg-red-50 border-red-500 text-red-700";
+                      else btnClass += "bg-gray-50 border-gray-200 text-gray-400";
+                    } else {
+                      btnClass += isSelected 
+                        ? "bg-blue-50 border-blue-500 text-blue-700" 
+                        : "bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer";
+                    }
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleMultiOptionClick(option)}
+                        disabled={showAnswer}
+                        className={btnClass}
+                      >
+                        <span className="font-semibold mr-2">{String.fromCharCode(65 + idx)}.</span>
+                        {option}
+                        {showAnswer && isCorrect && <Check className="absolute right-4 top-4 text-green-600" size={20} />}
+                        {showAnswer && isSelected && !isCorrect && <X className="absolute right-4 top-4 text-red-600" size={20} />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!showAnswer && (
+                  <button
+                    onClick={() => setShowAnswer(true)}
+                    disabled={!selectedOption || JSON.parse(selectedOption).length === 0}
+                    className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    提交答案
+                  </button>
+                )}
+              </div>
+            )}
+
             {isTrueFalse && (
               <div className="flex space-x-4 justify-center">
                 {['True', 'False'].map((option) => {
@@ -492,6 +570,19 @@ export const Study = () => {
                   )
                 })}
               </div>
+            )}
+
+            {/* Explanation Section */}
+            {showAnswer && currentCard.explanation && (
+               <div className="mt-8 pt-6 border-t border-gray-100 text-left animate-fade-in">
+                  <div className="flex items-center gap-2 mb-2 text-indigo-600">
+                    <Brain size={18} />
+                    <h4 className="font-bold">题目解析</h4>
+                  </div>
+                  <div className="bg-indigo-50/50 p-4 rounded-xl text-gray-700 text-sm leading-relaxed">
+                    {currentCard.explanation}
+                  </div>
+               </div>
             )}
           </div>
         </div>

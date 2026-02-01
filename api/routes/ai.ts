@@ -12,6 +12,7 @@ import {
   generateContentSchema, 
   expandKnowledgeSchema, 
   generateCardsSchema, 
+  generateCardsBatchSchema,
   textToGraphSchema, 
   chatSchema,
   recommendConnectionsSchema,
@@ -21,7 +22,7 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { CacheKeys, cacheService } from '../services/cache.js';
 import { graphService } from '../services/graphService.js';
-import { openai, getAIModel, getMockResponse } from '../services/aiService.js';
+import { openai, getAIModel, getMockResponse, aiService } from '../services/aiService.js';
 
 dotenv.config();
 
@@ -132,37 +133,9 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
 router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
   const { node_title, node_content, existing_nodes, child_nodes } = req.body;
 
-  if (!openai) {
-    // @ts-ignore
-    return res.json({ suggestions: getMockResponse('expand', node_title) });
-  }
-
   try {
-    const existingNodesContext = existing_nodes && existing_nodes.length > 0 
-      ? `\nExisting Nodes in Graph (avoid duplicates unless connecting to them): ${existing_nodes.slice(0, 50).join(', ')}`
-      : '';
-      
-    const childrenContext = child_nodes && child_nodes.length > 0
-      ? `\nCurrent Direct Children (DO NOT suggest these again): ${child_nodes.join(', ')}`
-      : '';
-
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
-          "Quantity: Generate as many relevant nodes as necessary to cover the topic thoroughly (up to 20 nodes), but quality and representativeness are more important than quantity.\n" +
-          "If a suggested concept matches an 'Existing Node', please use the EXACT same title so we can link to it.\n" +
-          "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
-          "Return JSON array of objects with 'title' and 'content'.\n" +
-          "Please respond in Chinese." },
-        { role: "user", content: `Node Title: ${node_title}\nNode Content: ${node_content || ''}${existingNodesContext}${childrenContext}` }
-      ],
-      model: getAIModel(),
-      response_format: { type: "json_object" }, // Ensure JSON output
-    });
-
-    const content = completion.choices[0].message.content;
-    const parsed = JSON.parse(content || '{"suggestions": []}');
-    res.json({ suggestions: parsed.suggestions || parsed });
+    const aiResult = await aiService.expandKnowledge(node_title, node_content, existing_nodes, child_nodes);
+    res.json(aiResult);
   } catch (error: any) {
     console.error('AI Error:', error);
     throw new AppError(error.message || 'AI expansion failed', 500, ErrorCodes.INTERNAL_ERROR);
@@ -172,33 +145,79 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
 router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthRequest, res: Response) => {
   const { node_title, node_content } = req.body;
 
-  if (!openai) {
-    // Mock response
-    return res.json({ 
-      cards: [
-        { type: 'qa', question: `什么是 ${node_title}?`, answer: `${node_title} 的定义是... (Mock)` },
-        { type: 'choice', question: `${node_title} 属于哪一类?`, options: ['A类', 'B类', 'C类', 'D类'], answer: 'A类' },
-        { type: 'true_false', question: `${node_title} 是一个重要的概念吗?`, answer: 'True' }
-      ] 
-    });
-  }
-
   try {
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are an educational expert. Generate 3-5 flashcards based on the provided topic and content. Mix different types: 'qa' (Question/Answer), 'choice' (Multiple Choice with 4 options), and 'true_false'. Return a JSON object with a 'cards' array. Each card object must have: 'type' (qa|choice|true_false), 'question', 'answer'. For 'choice' type, add 'options' array. Please respond in Chinese." },
-        { role: "user", content: `Topic: ${node_title}\nContent: ${node_content || 'No detailed content provided.'}` }
-      ],
-      model: getAIModel(),
-      response_format: { type: "json_object" },
-    });
-
-    const content = completion.choices[0].message.content;
-    const parsed = JSON.parse(content || '{"cards": []}');
-    res.json({ cards: parsed.cards || [] });
+    const aiResult = await aiService.generateCards(node_title, node_content);
+    res.json({ cards: aiResult.cards || [] });
   } catch (error: any) {
     console.error('AI Error:', error);
     throw new AppError(error.message || 'AI card generation failed', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+import { taskService } from '../services/taskService.js';
+
+router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSchema), async (req: AuthRequest, res: Response) => {
+  const { node_ids, config } = req.body;
+
+  try {
+    const taskIds = [];
+    const supabase = req.supabase!;
+
+    // Fetch node details for titles (to name tasks)
+    const { data: nodes } = await supabase
+        .from('nodes')
+        .select('id, title, content')
+        .in('id', node_ids);
+
+    if (nodes && nodes.length > 0) {
+        for (const node of nodes) {
+             const task = await taskService.createTask(
+                 req.user.id, 
+                 'generate_questions', 
+                 { 
+                     node_id: node.id, 
+                     node_title: node.title, 
+                     node_content: node.content,
+                     config: config // Pass config (types, count) to individual task
+                 }, 
+                 `生成题目: ${node.title}`
+             );
+             taskIds.push(task.id);
+        }
+    }
+
+    res.json({ success: true, taskIds: taskIds, message: `${taskIds.length} tasks started` });
+
+  } catch (error: any) {
+    console.error('Batch Generation Error:', error);
+    throw new AppError(error.message || 'Batch generation failed', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  
+  try {
+    const { data: task, error } = await req.supabase!
+      .from('tasks')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !task) {
+        throw new AppError('Task not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+    }
+    
+    // Check permission
+    if (task.user_id !== req.user.id) {
+        throw new AppError('Unauthorized', 403, ErrorCodes.FORBIDDEN);
+    }
+
+    res.json(task);
+
+  } catch (error: any) {
+     if (error instanceof AppError) throw error;
+     throw new AppError('Failed to fetch task', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

@@ -32,30 +32,99 @@ export const getMockResponse = (type: string, prompt: string) => {
   return '';
 };
 
+export interface GenerateCardsOptions {
+  context?: string;
+  type?: 'qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay';
+  types?: ('qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay')[];
+  count?: number;
+  pack_type?: 'standard' | 'comprehensive' | 'custom';
+}
+
 export class AIService {
-  async generateCards(topic: string, content: string) {
+  // Helper to clean JSON string from Markdown code blocks
+  private cleanJsonString(str: string): string {
+    if (!str) return '';
+    // Remove ```json and ``` wrapping
+    let cleaned = str.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+    return cleaned.trim();
+  }
+
+  async generateCards(topic: string, content: string, options: GenerateCardsOptions = {}) {
+    // If options.type is provided (single string), wrap it in array for types (compatibility)
+    // But here we destruct types directly. 
+    // We should support `type` (singular) in options if caller sends it, or just use types (plural).
+    // The previous caller (TaskProcessor) sends { type: 'qa', count: ... }.
+    // So let's handle that.
+    const inputOptions: any = options;
+    const types = inputOptions.type ? [inputOptions.type] : (options.types || ['qa', 'choice']);
+    const count = options.count || 3;
+    const context = options.context;
+
     if (!openai) {
       return { 
         cards: [
-          { type: 'qa', question: `什么是 ${topic}?`, answer: `${topic} 的定义是... (Mock)` },
-          { type: 'choice', question: `${topic} 属于哪一类?`, options: ['A类', 'B类', 'C类', 'D类'], answer: 'A类' },
-          { type: 'true_false', question: `${topic} 是一个重要的概念吗?`, answer: 'True' }
-        ] 
+          { type: 'qa', question: `什么是 ${topic}?`, answer: `${topic} 的定义是... (Mock)`, explanation: '这是详细解析...' },
+          { type: 'choice', question: `${topic} 属于哪一类?`, options: ['A类', 'B类', 'C类', 'D类'], answer: 'A类', explanation: '解析：因为...' },
+          { type: 'true_false', question: `${topic} 是一个重要的概念吗?`, answer: 'True', explanation: '解析：是的...' },
+          { type: 'multi_choice', question: `${topic} 的特点有哪些?`, options: ['特点A', '特点B', '特点C', '特点D'], answer: '["特点A", "特点B"]', explanation: '解析：AB是正确的...' },
+          { type: 'fill_in_the_blank', question: `${topic} 是在 ___ 年被提出的。`, answer: '2024', explanation: '解析：根据文献...' },
+          { type: 'essay', question: `请详细阐述 ${topic} 的原理及其应用。`, answer: '原理是... 应用于...', explanation: '解析：得分点包括...' }
+        ].filter(c => types.includes(c.type as any)).slice(0, count)
       };
     }
+
+    const typePrompts = {
+      qa: "For 'qa' type: Create thought-provoking open-ended questions that test deep understanding. Provide a detailed 'explanation' analyzing the answer.",
+      choice: "For 'choice' type: Create multiple-choice questions with 4 plausible options. Provide the correct answer and a detailed 'explanation' of why it is correct and others are wrong.",
+      true_false: "For 'true_false' type: Create statements focusing on common misconceptions or key details. Provide a detailed 'explanation'.",
+      multi_choice: "For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE options can be correct. Provide 4 options, the 'answer' as a JSON array of correct strings, and a detailed 'explanation'.",
+      fill_in_the_blank: "For 'fill_in_the_blank' type: Create a sentence with one or more '___' (3 underscores) as blanks. The 'answer' should be the missing text. Provide a detailed 'explanation'.",
+      essay: "For 'essay' type: Create complex questions requiring a long-form structured answer. The 'answer' should be a model response with key points. Provide a detailed 'explanation' with scoring criteria."
+    };
+
+    const selectedPrompts = types.map(t => typePrompts[t] || "").join("\n");
 
     try {
       const completion = await openai.chat.completions.create({
         messages: [
-          { role: "system", content: "You are an educational expert. Generate 3-5 flashcards based on the provided topic and content. Mix different types: 'qa' (Question/Answer), 'choice' (Multiple Choice with 4 options), and 'true_false'. Return a JSON object with a 'cards' array. Each card object must have: 'type' (qa|choice|true_false), 'question', 'answer'. For 'choice' type, add 'options' array. Please respond in Chinese." },
+          { role: "system", content: `You are an educational expert. Generate ${count} flashcards based on the provided topic and content. 
+          
+Context: The current node is part of a larger knowledge structure. 
+${context ? `Parent/Context Info: ${context}` : ''}
+
+Requirements:
+1. Generate exactly ${count} cards.
+2. Allowed Types: ${types.join(', ')}.
+3. Mix the types if multiple are selected.
+${selectedPrompts}
+
+Return a JSON object with a 'cards' array. Each card object must have: 
+- 'type' (qa|choice|true_false|multi_choice|fill_in_the_blank|essay)
+- 'question'
+- 'answer'
+- 'explanation' (Detailed analysis/reasoning)
+- 'options' (Array of 4 strings, ONLY for 'choice' and 'multi_choice' types)
+
+Please respond in Chinese.` },
           { role: "user", content: `Topic: ${topic}\nContent: ${content || 'No detailed content provided.'}` }
         ],
         model: model,
         response_format: { type: "json_object" },
       });
 
-      const result = completion.choices[0].message.content;
-      const parsed = JSON.parse(result || '{"cards": []}');
+      const result = completion.choices[0].message.content || '';
+      const cleanedResult = this.cleanJsonString(result);
+      
+      console.log(`[AI] Raw result for ${topic}:`, result.substring(0, 100) + '...');
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanedResult || '{"cards": []}');
+      } catch (e) {
+        console.error('[AI] JSON Parse Error. Raw:', result);
+        throw new Error('Failed to parse AI response');
+      }
+      
       return { cards: parsed.cards || [] };
     } catch (error: any) {
       console.error('AI Error:', error);
@@ -91,8 +160,27 @@ export class AIService {
         response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0].message.content;
-      const parsed = JSON.parse(content || '{"suggestions": []}');
+      const content = completion.choices[0].message.content || '';
+      const cleanedContent = this.cleanJsonString(content);
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanedContent || '{"suggestions": []}');
+      } catch (e) {
+         console.error('[AI] JSON Parse Error (Expand). Raw:', content);
+         // Fallback: try to find JSON array/object inside text
+         const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+         if (match) {
+             try {
+                 parsed = JSON.parse(match[0]);
+             } catch (e2) {
+                 throw new Error('Failed to parse AI response');
+             }
+         } else {
+             throw new Error('Failed to parse AI response');
+         }
+      }
+
       return { suggestions: parsed.suggestions || parsed };
     } catch (error: any) {
       console.error('AI Error:', error);

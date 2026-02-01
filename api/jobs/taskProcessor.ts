@@ -39,6 +39,20 @@ class TaskProcessor {
         case 'generate_questions':
           result = await this.handleGenerateQuestions(task);
           break;
+        case 'batch_generate_questions':
+          await taskService.processBatchGenerateCards(task.id, task.user_id, task.payload);
+          // Result is handled by processBatchGenerateCards, but we need to return something to avoid double completion overwriting with undefined if we were to return here.
+          // However, processTask continues to set completed.
+          // Let's return the final result from the task itself?
+          // processBatchGenerateCards doesn't return the result.
+          // We can just break, and the subsequent updateTaskStatus will overwrite 'completed' with 'completed' (and undefined result if we don't set it).
+          // But processBatchGenerateCards sets a detailed result.
+          // If we break here, result is undefined.
+          // Then updateTaskStatus(..., 'completed', undefined) is called.
+          // My updateTaskStatus implementation: if (r !== undefined) updateData.result = r;
+          // So if result is undefined, it WON'T overwrite the result in DB!
+          // Perfect.
+          break;
         case 'expand_graph':
           result = await this.handleExpandGraph(task);
           break;
@@ -69,35 +83,122 @@ class TaskProcessor {
   }
 
   private async handleGenerateQuestions(task: Task) {
-    const { node_id, node_title, node_content } = task.payload;
+    const { node_id, node_title, node_content, config } = task.payload;
+    let totalCount = 0;
+    const errors: string[] = [];
     
-    // 1. Generate cards via AI
-    const aiResult = await aiService.generateCards(node_title, node_content);
-    const cards = aiResult.cards;
+    // Fetch graph_id for the node (needed for optimized schema)
+    const { data: nodeData } = await supabaseAdmin
+        .from('nodes')
+        .select('graph_id')
+        .eq('id', node_id)
+        .single();
+    const graph_id = nodeData?.graph_id;
 
-    // 2. Insert cards into database
-    if (cards.length > 0) {
-      const cardsToInsert = cards.map((card: any) => ({
-        user_id: task.user_id,
-        node_id: node_id,
-        question: card.question,
-        answer: card.answer,
-        card_type: card.type || 'qa',
-        options: card.options ? JSON.stringify(card.options) : null,
-        next_review: new Date().toISOString(), // Immediate review
-        interval: 0,
-        ease_factor: 2.5,
-        repetitions: 0
-      }));
+    // Truncate content to avoid context overflow
+    const MAX_CONTENT_LENGTH = 15000;
+    const truncatedContent = node_content ? node_content.substring(0, MAX_CONTENT_LENGTH) : '';
+    
+    // Determine types and counts
+    // config: { types: string[], count: number, pack_template?: string }
+    const types = (config?.types && Array.isArray(config.types) && config.types.length > 0) 
+        ? config.types 
+        : ['qa', 'choice']; // Default types
+    const totalRequestCount = config?.count || 5;
+    
+    // Use remaining count strategy to ensure exact total count
+    let remainingCount = totalRequestCount;
 
-      const { error } = await supabaseAdmin
-        .from('study_cards')
-        .insert(cardsToInsert);
+    console.log(`[TaskProcessor] Generating questions for node ${node_title}. Types: ${types.join(',')}, Total: ${totalRequestCount}`);
 
-      if (error) throw error;
+    for (let i = 0; i < types.length; i++) {
+        const type = types[i];
+        
+        // Calculate count for this type
+        const countPerType = Math.ceil(remainingCount / (types.length - i));
+        remainingCount -= countPerType;
+        
+        if (countPerType <= 0) continue;
+        
+        // Update Progress
+        const progress = Math.round((i / types.length) * 100);
+        await taskService.updateTaskStatus(supabaseAdmin, task.id, 'processing', { 
+            progress, 
+            current_node: `正在生成 ${this.getTypeName(type)}...` 
+        });
+
+        try {
+            // Generate for specific type
+            const aiResult = await aiService.generateCards(node_title, truncatedContent, { 
+                type: type as any, 
+                count: countPerType 
+            });
+            const cards = aiResult.cards || [];
+
+            // Insert cards into database
+            if (cards.length > 0) {
+                const cardsToInsert = cards.map((card: any) => ({
+                    user_id: task.user_id,
+                    node_id: node_id,
+                    graph_id: graph_id, // Add graph_id
+                    question: card.question,
+                    answer: card.answer,
+                    explanation: card.explanation, // Add explanation
+                    card_type: card.type || type, // Use returned type or fallback to requested type
+                    options: card.options ? JSON.stringify(card.options) : null,
+                    next_review: new Date().toISOString(), // Immediate review
+                    difficulty: 1,
+                    // FSRS initial values (Replacing SM-2 fields)
+                    fsrs_state: 0,
+                    fsrs_stability: 0,
+                    fsrs_difficulty: 0,
+                    fsrs_elapsed_days: 0,
+                    fsrs_scheduled_days: 0,
+                    fsrs_retrievability: 0
+                }));
+
+                const { error } = await supabaseAdmin
+                    .from('study_cards')
+                    .insert(cardsToInsert);
+
+                if (error) {
+                    console.error(`[TaskProcessor] Failed to insert cards for type ${type}:`, error);
+                    errors.push(`Failed to insert ${type}: ${error.message}`);
+                } else {
+                    totalCount += cards.length;
+                }
+            } else {
+                console.warn(`[TaskProcessor] AI returned 0 cards for type ${type}`);
+            }
+        } catch (err: any) {
+            console.error(`[TaskProcessor] Error generating type ${type}:`, err);
+            errors.push(`Failed to generate ${type}: ${err.message}`);
+            // Continue to next type even if one fails
+        }
     }
 
-    return { count: cards.length };
+    if (totalCount === 0 && errors.length > 0) {
+        throw new Error(`Failed to generate cards: ${errors.join('; ')}`);
+    }
+    
+    // Invalidate cache if graph_id is available
+    if (graph_id) {
+        await cacheService.del(CacheKeys.STUDY_CARDS(graph_id));
+    }
+
+    return { count: totalCount, progress: 100, errors: errors.length > 0 ? errors : undefined };
+  }
+
+  private getTypeName(type: string): string {
+      const map: Record<string, string> = {
+          'qa': '问答题',
+          'choice': '单选题',
+          'true_false': '判断题',
+          'multi_choice': '多选题',
+          'fill_in_the_blank': '填空题',
+          'essay': '解答题'
+      };
+      return map[type] || type;
   }
 
   private async handleExpandGraph(task: Task) {

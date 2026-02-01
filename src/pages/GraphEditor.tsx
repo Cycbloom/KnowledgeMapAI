@@ -11,7 +11,7 @@ import { Node } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock } from 'lucide-react';
+import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -108,6 +108,7 @@ export const GraphEditor = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [isEngineLoading, setIsEngineLoading] = useState(true);
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
+  const [prevSidebarMode, setPrevSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [showGrid, setShowGrid] = useState(false);
   const { isDark } = useTheme();
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -270,6 +271,7 @@ export const GraphEditor = () => {
   // const findShortestPath = ... (Removed, imported from utils)
 
   const handleStartCreate = () => {
+    setPrevSidebarMode(sidebarMode);
     setSidebarMode('create');
     setSelectedNode(null);
     setNodeForm({
@@ -316,6 +318,7 @@ export const GraphEditor = () => {
 
     setSelectedNode(node);
     setSelectedNodeIds(new Set([node.id]));
+    setPrevSidebarMode(sidebarMode);
     setSidebarMode('detail');
 
     // Smooth transition: zoom to node
@@ -332,6 +335,7 @@ export const GraphEditor = () => {
       const node = nodes.find(n => n.id === ids[0]);
       if (node) {
         setSelectedNode(node);
+        setPrevSidebarMode(sidebarMode);
         setSidebarMode('edit');
       }
     } else if (newSet.size > 1) {
@@ -390,7 +394,12 @@ export const GraphEditor = () => {
   };
 
   const handleCloseSidebar = () => {
-    setSidebarMode('none');
+    if (prevSidebarMode === 'outline') {
+      setSidebarMode('outline');
+      setPrevSidebarMode('none');
+    } else {
+      setSidebarMode('none');
+    }
     setSelectedNode(null);
     setSelectedNodeIds(new Set());
   };
@@ -752,7 +761,18 @@ export const GraphEditor = () => {
     }
   };
 
-  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph') => {
+  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions') => {
+    // If it's a batch generate success notification, just show the message
+    if (type === 'batch_generate_questions') {
+      addMessage({
+        type: 'success',
+        content: '批量生成任务已提交',
+        duration: 3000,
+        action: { label: '查看任务', onClick: () => navigate('/tasks') }
+      });
+      return;
+    }
+
     // If no nodes selected, do nothing
     if (selectedNodeIds.size === 0 && !selectedNode) return;
     if (!id) return;
@@ -802,11 +822,10 @@ export const GraphEditor = () => {
         successCount++;
       }
       
-      const actionText = type === 'generate_questions' ? '自动生成题目' : '自动扩展图谱';
       addMessage({
-        type: 'info',
-        content: `已提交 ${successCount} 个任务：${actionText}`,
-        duration: 8000,
+        type: 'success',
+        content: '任务提交成功',
+        duration: 3000,
         action: { label: '查看任务', onClick: () => navigate('/tasks') }
       });
     } catch (err) {
@@ -1253,6 +1272,8 @@ export const GraphEditor = () => {
                     handleBackgroundTask('expand_graph');
                   } else if (action === 'delete') {
                     handleBatchDelete();
+                  } else if (action === 'batch_generate_questions') {
+                    handleBackgroundTask('batch_generate_questions');
                   }
                 }}
                 className="h-full"
@@ -1262,6 +1283,18 @@ export const GraphEditor = () => {
             <div className="h-full flex flex-col">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center space-x-2">
+                  {prevSidebarMode === 'outline' && (
+                    <button 
+                      onClick={() => {
+                        setSidebarMode('outline');
+                        setPrevSidebarMode('none');
+                      }}
+                      className="mr-1 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="返回大纲"
+                    >
+                      <ArrowLeft size={18} />
+                    </button>
+                  )}
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: selectedNode.color || '#3B82F6' }}></div>
                   <h3 className="text-lg font-bold text-gray-800">节点详情</h3>
                 </div>
@@ -1443,7 +1476,10 @@ export const GraphEditor = () => {
 
               <div className="pt-6 border-t border-gray-100 mt-auto flex space-x-2">
                 <button
-                  onClick={() => setSidebarMode('edit')}
+                  onClick={() => {
+                    setPrevSidebarMode(sidebarMode);
+                    setSidebarMode('edit');
+                  }}
                   className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 transition-all active:scale-95"
                 >
                   <Edit3 size={18} className="mr-2" />
@@ -1462,7 +1498,19 @@ export const GraphEditor = () => {
              <>
                <div className="flex justify-between items-center mb-6">
                  <div className="flex items-center space-x-2">
-                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                   {prevSidebarMode === 'outline' && (sidebarMode === 'edit' || sidebarMode === 'create') && (
+                     <button 
+                       onClick={() => {
+                         setSidebarMode('outline');
+                         setPrevSidebarMode('none');
+                       }}
+                       className="mr-1 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                       title="返回大纲"
+                     >
+                       <ArrowLeft size={18} />
+                     </button>
+                   )}
+                   <div className={`w-3 h-3 rounded-full ${sidebarMode === 'create' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
                    <h3 className="text-lg font-bold text-gray-800">
                      {sidebarMode === 'create' ? '创建新节点' : '编辑节点'}
                    </h3>

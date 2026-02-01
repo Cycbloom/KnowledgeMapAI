@@ -8,10 +8,10 @@ const router = Router();
 
 // Create a new task
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { type, payload } = req.body;
+  const { type, payload, name } = req.body;
   
   try {
-    const task = await taskService.createTask(supabaseAdmin, req.user.id, type, payload);
+    const task = await taskService.createTask(req.user.id, type, payload, name);
     res.json(task);
   } catch (error: any) {
     console.error('Create Task Error:', error);

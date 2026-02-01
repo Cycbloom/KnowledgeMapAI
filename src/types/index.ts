@@ -50,8 +50,9 @@ export interface StudyCard {
   node_id: string;
   question: string;
   answer: string;
-  card_type: 'qa' | 'choice' | 'true_false';
+  card_type: 'qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay';
   options?: string[];
+  explanation?: string;
   next_review: string;
   review_count?: number;
   fsrs_state?: number;
@@ -60,7 +61,8 @@ export interface StudyCard {
 export interface Task {
   id: string;
   user_id: string;
-  type: 'generate_questions' | 'expand_graph' | string;
+  type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | string;
+  name?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | string;
   payload: any;
   result: any;

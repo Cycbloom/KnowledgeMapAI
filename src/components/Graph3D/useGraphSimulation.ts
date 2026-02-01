@@ -130,12 +130,12 @@ export const useGraphSimulation = (
         id: nodeIdStr, 
         level, 
         collapsed: isCollapsed,
-        x: existing?.x,
-        y: existing?.y,
-        z: existing?.z,
-        vx: existing?.vx,
-        vy: existing?.vy,
-        vz: existing?.vz
+        x: existing?.x ?? (Math.random() - 0.5) * 10,
+        y: existing?.y ?? (Math.random() - 0.5) * 10,
+        z: existing?.z ?? (Math.random() - 0.5) * 10,
+        vx: existing?.vx ?? 0,
+        vy: existing?.vy ?? 0,
+        vz: existing?.vz ?? 0
       };
     });
 

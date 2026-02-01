@@ -98,9 +98,17 @@ export const InstancedNodes = ({
 
     for (let i = 0; i < count; i++) {
       const node = nodes[i];
-      if (typeof node.x !== 'number') continue;
+      if (typeof node.x !== 'number' || isNaN(node.x) || 
+          typeof node.y !== 'number' || isNaN(node.y) || 
+          typeof node.z !== 'number' || isNaN(node.z)) {
+        // If position is invalid, move it far away or hide it
+        tempObject.position.set(10000, 10000, 10000);
+        tempObject.updateMatrix();
+        meshRef.current.setMatrixAt(i, tempObject.matrix);
+        continue;
+      }
 
-      tempObject.position.set(node.x, node.y!, node.z!);
+      tempObject.position.set(node.x, node.y, node.z);
       
       const config = LEVEL_CONFIG[node.level || 'leaf'];
       let scale = config.radius;
@@ -419,13 +427,18 @@ export const LinkLines = ({
          const source = nodesMap.get(sourceId);
         const target = nodesMap.get(targetId);
 
-        if (source && target && typeof source.x === 'number' && typeof target.x === 'number') {
-           positions[index++] = source.x;
-           positions[index++] = source.y!;
-           positions[index++] = source.z!;
-           positions[index++] = target.x;
-           positions[index++] = target.y!;
-           positions[index++] = target.z!;
+        const isValid = (n: any) => n && 
+          typeof n.x === 'number' && !isNaN(n.x) &&
+          typeof n.y === 'number' && !isNaN(n.y) &&
+          typeof n.z === 'number' && !isNaN(n.z);
+
+        if (isValid(source) && isValid(target)) {
+           positions[index++] = source!.x!;
+           positions[index++] = source!.y!;
+           positions[index++] = source!.z!;
+           positions[index++] = target!.x!;
+           positions[index++] = target!.y!;
+           positions[index++] = target!.z!;
         }
       }
 
@@ -471,9 +484,11 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
     
     group.children.forEach((child: any, i) => {
       const node = nodes[i];
-      if (node && typeof node.x === 'number') {
+      if (node && typeof node.x === 'number' && !isNaN(node.x) && 
+          typeof node.y === 'number' && !isNaN(node.y) && 
+          typeof node.z === 'number' && !isNaN(node.z)) {
         const config = LEVEL_CONFIG[node.level || 'leaf'];
-        child.position.set(node.x, node.y! + config.radius + 0.4, node.z);
+        child.position.set(node.x, node.y + config.radius + 0.4, node.z);
         
         // Scale text based on distance
         const distance = camera.position.distanceTo(child.position);

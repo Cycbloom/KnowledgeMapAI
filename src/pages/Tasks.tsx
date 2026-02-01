@@ -44,6 +44,8 @@ const getTypeLabel = (type: string) => {
   switch (type) {
     case 'generate_questions':
       return '自动生成题目';
+    case 'batch_generate_questions':
+      return '批量生成题目';
     case 'expand_graph':
       return '自动扩展图谱';
     default:
@@ -166,7 +168,7 @@ export const Tasks = () => {
                 const graphId = t.payload?.graph_id;
                 const nodeId = t.payload?.node_id;
                 const resultTitles = Array.isArray(t.result?.nodeTitles) ? t.result.nodeTitles : [];
-                const showResult = t.status === 'completed' && (t.type === 'expand_graph' || t.type === 'generate_questions');
+                const showResult = t.status === 'completed' && (t.type === 'expand_graph' || t.type === 'generate_questions' || t.type === 'batch_generate_questions');
 
                 return (
                   <div key={t.id} className="p-5 hover:bg-slate-50 transition-colors">
@@ -177,11 +179,29 @@ export const Tasks = () => {
                             {getStatusIcon(t.status)}
                             <span>{t.status}</span>
                           </span>
-                          <span className="font-semibold text-gray-900">{getTypeLabel(t.type)}</span>
+                          <span className="font-semibold text-gray-900">{t.name || getTypeLabel(t.type)}</span>
                           <span className="text-xs text-gray-400 font-mono">#{t.id.slice(0, 8)}</span>
                         </div>
 
                         <div className="text-sm text-gray-600 space-y-1.5 pl-1">
+                          {t.status === 'processing' && t.result?.progress !== undefined && (
+                            <div className="mt-2 w-full max-w-md bg-slate-100 p-3 rounded-lg border border-slate-200">
+                              <div className="flex justify-between text-xs text-slate-600 mb-2 font-medium">
+                                <span className="flex items-center gap-2">
+                                  <Loader2 size={12} className="animate-spin text-blue-500" />
+                                  正在处理: <span className="text-blue-600">{t.result.current_node || '准备中...'}</span>
+                                </span>
+                                <span>{t.result.progress}%</span>
+                              </div>
+                              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden shadow-inner">
+                                <div 
+                                  className="bg-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
+                                  style={{ width: `${t.result.progress}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-4 text-xs text-gray-400">
                              <span className="flex items-center gap-1"><Clock size={12}/> 创建: {formatTime(t.created_at)}</span>
                              {t.updated_at !== t.created_at && <span>更新: {formatTime(t.updated_at)}</span>}
@@ -204,6 +224,12 @@ export const Tasks = () => {
                           {showResult && t.type === 'generate_questions' && typeof t.result?.count === 'number' && (
                             <div className="text-emerald-700 bg-emerald-50/50 p-2 rounded text-xs border border-emerald-100/50">
                               <span className="font-medium">已生成卡片：</span> {t.result.count} 张
+                            </div>
+                          )}
+
+                          {showResult && t.type === 'batch_generate_questions' && typeof t.result?.totalCards === 'number' && (
+                            <div className="text-emerald-700 bg-emerald-50/50 p-2 rounded text-xs border border-emerald-100/50">
+                              <span className="font-medium">批量生成完成：</span> 共生成 {t.result.totalCards} 张卡片
                             </div>
                           )}
                         </div>

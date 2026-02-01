@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Shield, ArrowUp, ArrowDown, Save } from 'lucide-react';
+import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type } from 'lucide-react';
 import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
 import toast from 'react-hot-toast';
 
@@ -15,11 +15,13 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   
   const [gamificationEnabled, setGamificationEnabled] = useState(true);
   const [learningDirection, setLearningDirection] = useState<'top_down' | 'bottom_up'>('top_down');
+  const [textDisplayLevel, setTextDisplayLevel] = useState<'all' | 'important' | 'root_only'>('important');
 
   useEffect(() => {
     if (graph?.settings) {
       setGamificationEnabled(graph.settings.gamification_enabled !== false);
       setLearningDirection(graph.settings.learning_direction || 'top_down');
+      setTextDisplayLevel(graph.settings.text_display_level || 'important');
     }
   }, [graph]);
 
@@ -31,7 +33,8 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
           settings: {
             ...graph?.settings,
             gamification_enabled: gamificationEnabled,
-            learning_direction: learningDirection
+            learning_direction: learningDirection,
+            text_display_level: textDisplayLevel
           }
         }
       });
@@ -78,6 +81,53 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             </div>
             <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
               开启后，节点将被锁定，必须先掌握前置知识点才能解锁。关闭后所有节点可见。
+            </p>
+          </div>
+
+          {/* Text Display Level */}
+          <div className="space-y-3">
+            <h3 className="font-bold text-gray-700 flex items-center">
+              <Type size={18} className="mr-2" />
+              文本显示层级 (Label Display)
+            </h3>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setTextDisplayLevel('all')}
+                className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all ${
+                  textDisplayLevel === 'all' 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                    : 'border-gray-100 hover:border-indigo-100'
+                }`}
+              >
+                全部显示
+              </button>
+              <button
+                onClick={() => setTextDisplayLevel('important')}
+                className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all ${
+                  textDisplayLevel === 'important' 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                    : 'border-gray-100 hover:border-indigo-100'
+                }`}
+              >
+                核心节点
+              </button>
+              <button
+                onClick={() => setTextDisplayLevel('root_only')}
+                className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all ${
+                  textDisplayLevel === 'root_only' 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                    : 'border-gray-100 hover:border-indigo-100'
+                }`}
+              >
+                仅根节点
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+              {textDisplayLevel === 'all' 
+                ? '在任何距离下显示所有节点的标题（可能较拥挤）。' 
+                : textDisplayLevel === 'important'
+                  ? '远距离仅显示根节点和核心节点，近距离显示全部。'
+                  : '仅显示最顶层的根节点标题。'}
             </p>
           </div>
 

@@ -135,12 +135,12 @@ export class GraphService {
     const gamificationEnabled = settings.gamification_enabled !== false; 
     const learningDirection = settings.learning_direction || 'top_down';
 
-    // 2. Get all cards for this graph
+    // 2. Get all cards for this graph - Optimized to use graph_id
     const { data: cards, error: cardsError } = await supabase
       .from('study_cards')
       .select('node_id, review_count, fsrs_state')
       .eq('user_id', userId)
-      .in('node_id', nodes.map((n: any) => n.id));
+      .eq('graph_id', graphId);
 
     if (cardsError) throw cardsError;
 

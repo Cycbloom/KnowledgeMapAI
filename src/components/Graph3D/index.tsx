@@ -26,6 +26,7 @@ export type Graph3DProps = {
   pulsingNodeIds?: Set<string>;
   lockedNodeIds?: Set<string>;
   masteredNodeIds?: Set<string>;
+  textDisplayLevel?: 'all' | 'important' | 'root_only';
 }
 
 export type Graph3DRef = GraphSceneRef;

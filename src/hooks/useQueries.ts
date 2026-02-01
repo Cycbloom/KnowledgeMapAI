@@ -304,8 +304,14 @@ export const useCreateEdgeMutation = () => {
 };
 
 export const useUpdateCardProgressMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, quality }: { id: string; quality: number }) => api.study.updateProgress(id, quality),
+    onSuccess: () => {
+      // Invalidate both cards and node status as progress affects both
+      queryClient.invalidateQueries({ queryKey: ['studyCards'] });
+      queryClient.invalidateQueries({ queryKey: ['graphNodeStatus'] });
+    }
   });
 };
 

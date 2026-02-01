@@ -11,6 +11,7 @@ export interface Graph {
   settings?: {
     gamification_enabled?: boolean;
     learning_direction?: 'top_down' | 'bottom_up';
+    text_display_level?: 'all' | 'important' | 'root_only';
     [key: string]: any;
   };
   created_at: string;

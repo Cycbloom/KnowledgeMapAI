@@ -37,6 +37,7 @@ interface GraphSceneProps {
   onSelectionChange?: (nodeIds: string[]) => void;
   onBoxUpdate?: (box: { left: number; top: number; width: number; height: number } | null) => void;
   showGrid?: boolean;
+  textDisplayLevel?: 'all' | 'important' | 'root_only';
 }
 
 const getTheme = (isDark: boolean) => isDark ? THEME_CONFIG.dark : THEME_CONFIG.light;
@@ -248,6 +249,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
         simulationVersion={simulationVersion}
         forceShowAllLabels={isExporting} // Pass the export state
+        textDisplayLevel={props.textDisplayLevel}
       />
       
       {/* Main Links */}

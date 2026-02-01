@@ -58,7 +58,7 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   // or use the join but check the nodes content
   let query = req.supabase!
     .from('study_cards')
-    .select('*, nodes!inner(id, title, graph_id)')
+    .select('*, nodes(id, title, graph_id)')
     .eq('user_id', req.user.id);
 
   if (node_id) {
@@ -68,7 +68,8 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
     const ids = (node_ids as string).split(',');
     query = query.in('node_id', ids);
   } else if (graph_id) {
-    query = query.eq('nodes.graph_id', graph_id);
+    // Now we can query graph_id directly on study_cards for better performance
+    query = query.eq('graph_id', graph_id);
   }
 
   // Filter for due cards? The frontend might want all cards or just due ones.
@@ -100,12 +101,24 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
 router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthRequest, res: Response) => {
   const { node_id, question, answer } = req.body;
 
+  // Fetch node to get graph_id
+  const { data: node } = await req.supabase!
+    .from('nodes')
+    .select('graph_id')
+    .eq('id', node_id)
+    .single();
+
+  if (!node) {
+    throw new AppError('未找到所属节点', 404, ErrorCodes.NODE_NOT_FOUND);
+  }
+
   const { data, error } = await req.supabase!
     .from('study_cards')
     .insert([
       {
         user_id: req.user.id,
         node_id,
+        graph_id: node.graph_id,
         question,
         answer,
         next_review: new Date().toISOString(), // Due immediately
@@ -134,11 +147,22 @@ router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthR
 // Create multiple flashcards (Batch)
 router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async (req: AuthRequest, res: Response) => {
   const { cards } = req.body; // Expects array of { node_id, question, answer }
-  // Manual validation removed
+  
+  // Get all unique node_ids
+  const nodeIds = [...new Set(cards.map((c: any) => c.node_id))];
+  
+  // Fetch graph_id for all nodes
+  const { data: nodes } = await req.supabase!
+    .from('nodes')
+    .select('id, graph_id')
+    .in('id', nodeIds);
+    
+  const nodeGraphMap = new Map(nodes?.map(n => [n.id, n.graph_id]));
 
   const cardsToInsert = cards.map((card: any) => ({
     user_id: req.user.id,
     node_id: card.node_id,
+    graph_id: nodeGraphMap.get(card.node_id),
     question: card.question,
     answer: card.answer,
     card_type: card.type || 'qa',

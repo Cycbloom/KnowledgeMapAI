@@ -29,7 +29,8 @@ interface NodeLabelsProps {
   onNodeClick?: (node: Node) => void;
   onNodeDoubleClick?: (node: Node) => void;
   simulationVersion: number;
-  forceShowAllLabels?: boolean; // New prop to force visibility
+  forceShowAllLabels?: boolean;
+  textDisplayLevel?: 'all' | 'important' | 'root_only';
 }
 
 interface LinkLinesProps {
@@ -218,7 +219,63 @@ export const InstancedNodes = ({
         nodesRef={nodesRef} 
         activeNodeIds={pulsingNodeIds} 
       />
+
+      {/* Target Effect for Unlocked but Not Mastered Nodes */}
+      <TargetNodes
+        nodesRef={nodesRef}
+        lockedNodeIds={lockedNodeIds}
+        masteredNodeIds={masteredNodeIds}
+        highlightedNodes={highlightedNodes}
+      />
     </>
+  );
+};
+
+// --- Target Node Effect (Unlocked but not mastered) ---
+const TargetNodes = ({
+  nodesRef,
+  lockedNodeIds,
+  masteredNodeIds,
+  highlightedNodes
+}: {
+  nodesRef: React.MutableRefObject<SimNode[]>;
+  lockedNodeIds?: Set<string>;
+  masteredNodeIds?: Set<string>;
+  highlightedNodes: Set<string>;
+}) => {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const targetNodes = useMemo(() => {
+    return nodesRef.current.filter(node => 
+      !lockedNodeIds?.has(node.id) && 
+      !masteredNodeIds?.has(node.id) &&
+      (highlightedNodes.size === 0 || highlightedNodes.has(node.id))
+    );
+  }, [nodesRef.current, lockedNodeIds, masteredNodeIds, highlightedNodes]);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime();
+    const scale = 1.2 + Math.sin(t * 2) * 0.1;
+    const opacity = 0.4 + Math.sin(t * 2) * 0.2;
+
+    groupRef.current.children.forEach((child) => {
+      child.scale.set(scale, scale, scale);
+      if (child instanceof THREE.Mesh) {
+        (child.material as THREE.MeshBasicMaterial).opacity = opacity;
+      }
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {targetNodes.map((node) => (
+        <mesh key={`target-${node.id}`} position={[node.x!, node.y!, node.z!]}>
+          <sphereGeometry args={[LEVEL_CONFIG[node.level || 'leaf'].radius * 1.3, 16, 16]} />
+          <meshBasicMaterial color="#6366f1" transparent opacity={0.4} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
   );
 };
 
@@ -370,7 +427,8 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
   onNodeClick,
   onNodeDoubleClick,
   simulationVersion,
-  forceShowAllLabels = false
+  forceShowAllLabels = false,
+  textDisplayLevel = 'important'
 }, ref) => {
   // Use local ref if none provided, or sync with forwarded ref
   const localRef = useRef<THREE.Group>(null);
@@ -391,10 +449,20 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
         // Scale text based on distance
         const distance = camera.position.distanceTo(child.position);
         
-        // LOD: Hide labels for distant nodes unless they are root/core
-        // Always show highlighted nodes
-        const isImportant = node.level === 'root' || node.level === 'core' || highlightedNodes.has(node.id);
-        const isVisible = forceShowAllLabels || isImportant || distance < 40; // Threshold distance
+        // LOD Logic based on textDisplayLevel
+        let isVisible = forceShowAllLabels || highlightedNodes.has(node.id);
+        
+        if (!isVisible) {
+          if (textDisplayLevel === 'all') {
+            isVisible = true;
+          } else if (textDisplayLevel === 'root_only') {
+            isVisible = node.level === 'root';
+          } else {
+            // Default: 'important'
+            const isImportant = node.level === 'root' || node.level === 'core';
+            isVisible = isImportant || distance < 40; // Threshold distance
+          }
+        }
 
         if (!isVisible) {
           child.visible = false;

@@ -54,6 +54,7 @@ export const api = {
     get: (id: string) => request(`/graphs/${id}`),
     getNodes: (id: string) => request(`/graphs/${id}/nodes`),
     getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
+    update: (id: string, data: any) => request(`/graphs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/graphs/${id}`, { method: 'DELETE' }),
   },
   nodes: {

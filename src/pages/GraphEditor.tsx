@@ -10,7 +10,7 @@ import { Node, Edge } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, getNextLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser, Settings, Check } from 'lucide-react';
+import { Save, Plus, Wand2, Download, Trash2, ArrowLeft, Grid, X, Sun, Moon, Search, Navigation, GraduationCap, List, Undo, Redo, Maximize, Minimize, Sparkles, FileText, FileJson, Image, MessageSquare, Edit3, Eraser, Settings, Check, Lock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -752,6 +752,7 @@ export const GraphEditor = () => {
             lockedNodeIds={lockedNodeIds}
             masteredNodeIds={masteredNodeIds}
             onNodeCollapse={handleToggleCollapse}
+            textDisplayLevel={graphMeta?.settings?.text_display_level || 'important'}
           />
         </Suspense>
 
@@ -1337,14 +1338,26 @@ export const GraphEditor = () => {
                   
                   <button
                     onClick={handleStartLevelTest}
+                    disabled={nodeStatus?.[selectedNode.id]?.locked}
                     className={`w-full py-3 rounded-xl flex items-center justify-center font-bold transition-all active:scale-95 ${
-                      nodeStatus?.[selectedNode.id]?.mastered 
+                      nodeStatus?.[selectedNode.id]?.locked
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                      : nodeStatus?.[selectedNode.id]?.mastered 
                       ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
                     }`}
                   >
-                    <Sparkles size={18} className="mr-2" />
-                    {nodeStatus?.[selectedNode.id]?.mastered ? '再次复习关卡' : '进入关卡测验'}
+                    {nodeStatus?.[selectedNode.id]?.locked ? (
+                      <>
+                        <Lock size={18} className="mr-2" />
+                        节点已锁定 (需先掌握前置内容)
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={18} className="mr-2" />
+                        {nodeStatus?.[selectedNode.id]?.mastered ? '再次复习关卡' : '进入关卡测验'}
+                      </>
+                    )}
                   </button>
                 </section>
 

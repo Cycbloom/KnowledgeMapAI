@@ -3,6 +3,13 @@ export interface AIConfig {
   model: string;
 }
 
+export interface AvailableModels {
+  deepseek: string[];
+  volcengine: string[];
+  aliyun: string[];
+  [key: string]: string[];
+}
+
 export interface User {
   id: string;
   email: string;
@@ -20,6 +27,7 @@ export interface User {
         embedding?: AIConfig;
         reasoning?: AIConfig;
       };
+      available_models?: AvailableModels;
     };
     [key: string]: any;
   };

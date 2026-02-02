@@ -4,7 +4,8 @@ import { useAIStatus, useLogoutMutation, useUser, useUpdateProfileMutation } fro
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
-import { LogOut, User, Cpu, KeyRound, ExternalLink, Brain, Save, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { LogOut, User, Cpu, KeyRound, ExternalLink, Brain, Save, Palette, Sun, Moon, Monitor, Plus, Trash2 } from 'lucide-react';
+import { AvailableModels } from '../types';
 
 export const Profile = () => {
   const navigate = useNavigate();
@@ -30,6 +31,15 @@ export const Profile = () => {
   const [embeddingConfig, setEmbeddingConfig] = useState({ provider: 'volcengine', model: 'doubao-embedding-1.5' });
   const [reasoningConfig, setReasoningConfig] = useState({ provider: 'aliyun', model: 'qwen-max' });
 
+  // Available Models State
+  const [availableModels, setAvailableModels] = useState<AvailableModels>({
+    deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+    volcengine: ['doubao-pro-4k', 'doubao-pro-32k', 'doubao-embedding-1.5'],
+    aliyun: ['qwen-max', 'qwen-plus', 'qwen-turbo'],
+  });
+  const [newModelName, setNewModelName] = useState('');
+  const [selectedProviderForAdd, setSelectedProviderForAdd] = useState('deepseek');
+
   useEffect(() => {
     if (settings) {
       if (settings.request_retention) setRetention(Number(settings.request_retention));
@@ -40,6 +50,13 @@ export const Profile = () => {
         if (settings.ai_config.text) setTextConfig(settings.ai_config.text);
         if (settings.ai_config.embedding) setEmbeddingConfig(settings.ai_config.embedding);
         if (settings.ai_config.reasoning) setReasoningConfig(settings.ai_config.reasoning);
+      }
+
+      if (settings.available_models) {
+        setAvailableModels(prev => ({
+          ...prev,
+          ...settings.available_models
+        }));
       }
     }
   }, [settings]);
@@ -55,7 +72,8 @@ export const Profile = () => {
             text: textConfig,
             embedding: embeddingConfig,
             reasoning: reasoningConfig
-          }
+          },
+          available_models: availableModels
         }
       });
       addMessage({ type: 'success', content: 'AI 配置已保存到云端' });
@@ -63,6 +81,31 @@ export const Profile = () => {
       console.error(e);
       addMessage({ type: 'error', content: '保存 AI 配置失败' });
     }
+  };
+
+  const handleAddModel = () => {
+    if (!newModelName.trim()) return;
+    const provider = selectedProviderForAdd;
+    const currentModels = availableModels[provider] || [];
+    
+    if (currentModels.includes(newModelName.trim())) {
+      addMessage({ type: 'warning', content: '该模型已存在' });
+      return;
+    }
+
+    setAvailableModels(prev => ({
+      ...prev,
+      [provider]: [...(prev[provider] || []), newModelName.trim()]
+    }));
+    setNewModelName('');
+    addMessage({ type: 'success', content: `已添加模型: ${newModelName}` });
+  };
+
+  const handleDeleteModel = (provider: string, model: string) => {
+    setAvailableModels(prev => ({
+      ...prev,
+      [provider]: prev[provider].filter(m => m !== model)
+    }));
   };
 
   const handleSaveSettings = async () => {
@@ -190,6 +233,63 @@ export const Profile = () => {
             </button>
           </div>
 
+          {/* Model Management Section */}
+          <div className="mb-8 p-4 rounded-lg bg-indigo-50 border border-indigo-100">
+             <div className="flex items-center gap-2 mb-4">
+                <Brain className="w-4 h-4 text-indigo-700" />
+                <h3 className="font-semibold text-gray-900">可用模型库管理</h3>
+             </div>
+             <p className="text-xs text-gray-500 mb-4">在此添加各服务商支持的模型，以便在下方任务中选择。</p>
+             
+             <div className="flex gap-2 mb-4">
+                <select 
+                   value={selectedProviderForAdd}
+                   onChange={(e) => setSelectedProviderForAdd(e.target.value)}
+                   className="p-2 rounded border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                   <option value="deepseek">Deepseek</option>
+                   <option value="volcengine">火山引擎 (Volcengine)</option>
+                   <option value="aliyun">阿里云 (Aliyun)</option>
+                </select>
+                <input 
+                   type="text" 
+                   value={newModelName}
+                   onChange={(e) => setNewModelName(e.target.value)}
+                   placeholder="输入模型名称 (如 deepseek-chat)"
+                   className="flex-1 p-2 rounded border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button 
+                   onClick={handleAddModel}
+                   disabled={!newModelName.trim()}
+                   className="px-3 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1"
+                >
+                   <Plus className="w-4 h-4" /> 添加
+                </button>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {Object.entries(availableModels).map(([provider, models]) => (
+                   <div key={provider} className="bg-white p-3 rounded border border-gray-100">
+                      <div className="text-xs font-bold text-gray-500 uppercase mb-2 border-b pb-1">{provider}</div>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                         {models.map(model => (
+                            <div key={model} className="flex justify-between items-center text-sm group">
+                               <span className="truncate" title={model}>{model}</span>
+                               <button 
+                                  onClick={() => handleDeleteModel(provider, model)}
+                                  className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                               >
+                                  <Trash2 className="w-3 h-3" />
+                               </button>
+                            </div>
+                         ))}
+                         {models.length === 0 && <div className="text-xs text-gray-300 italic">无模型</div>}
+                      </div>
+                   </div>
+                ))}
+             </div>
+          </div>
+
           <div className="space-y-6">
             {/* Text Task Config */}
             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
@@ -204,7 +304,7 @@ export const Profile = () => {
                   <label className="block text-xs font-medium text-gray-500 mb-1">提供方</label>
                   <select 
                     value={textConfig.provider}
-                    onChange={(e) => setTextConfig({ ...textConfig, provider: e.target.value })}
+                    onChange={(e) => setTextConfig({ ...textConfig, provider: e.target.value, model: availableModels[e.target.value]?.[0] || '' })}
                     className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="deepseek">Deepseek</option>
@@ -214,13 +314,16 @@ export const Profile = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">模型名称</label>
-                  <input 
-                    type="text" 
+                  <select 
                     value={textConfig.model}
                     onChange={(e) => setTextConfig({ ...textConfig, model: e.target.value })}
-                    placeholder="如: deepseek-chat"
                     className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+                  >
+                     {availableModels[textConfig.provider]?.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                     ))}
+                     {!availableModels[textConfig.provider]?.length && <option value="" disabled>该提供方暂无模型</option>}
+                  </select>
                 </div>
               </div>
             </div>
@@ -238,7 +341,7 @@ export const Profile = () => {
                   <label className="block text-xs font-medium text-gray-500 mb-1">提供方</label>
                   <select 
                     value={embeddingConfig.provider}
-                    onChange={(e) => setEmbeddingConfig({ ...embeddingConfig, provider: e.target.value })}
+                    onChange={(e) => setEmbeddingConfig({ ...embeddingConfig, provider: e.target.value, model: availableModels[e.target.value]?.[0] || '' })}
                     className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="volcengine">火山引擎 (Volcengine)</option>
@@ -247,14 +350,17 @@ export const Profile = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">模型名称 (Endpoint ID)</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-xs font-medium text-gray-500 mb-1">模型名称</label>
+                   <select 
                     value={embeddingConfig.model}
                     onChange={(e) => setEmbeddingConfig({ ...embeddingConfig, model: e.target.value })}
-                    placeholder="如: doubao-embedding-1.5"
                     className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+                  >
+                     {availableModels[embeddingConfig.provider]?.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                     ))}
+                     {!availableModels[embeddingConfig.provider]?.length && <option value="" disabled>该提供方暂无模型</option>}
+                  </select>
                 </div>
               </div>
             </div>
@@ -272,7 +378,7 @@ export const Profile = () => {
                   <label className="block text-xs font-medium text-gray-500 mb-1">提供方</label>
                   <select 
                     value={reasoningConfig.provider}
-                    onChange={(e) => setReasoningConfig({ ...reasoningConfig, provider: e.target.value })}
+                    onChange={(e) => setReasoningConfig({ ...reasoningConfig, provider: e.target.value, model: availableModels[e.target.value]?.[0] || '' })}
                     className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="aliyun">阿里云 (Aliyun)</option>
@@ -282,13 +388,16 @@ export const Profile = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">模型名称</label>
-                  <input 
-                    type="text" 
+                  <select 
                     value={reasoningConfig.model}
                     onChange={(e) => setReasoningConfig({ ...reasoningConfig, model: e.target.value })}
-                    placeholder="如: qwen-max"
                     className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+                  >
+                     {availableModels[reasoningConfig.provider]?.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                     ))}
+                     {!availableModels[reasoningConfig.provider]?.length && <option value="" disabled>该提供方暂无模型</option>}
+                  </select>
                 </div>
               </div>
             </div>

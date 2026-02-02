@@ -81,10 +81,16 @@ export const InstancedNodes = ({
 
   useEffect(() => {
     if (meshRef.current) {
-      meshRef.current.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
+      if (!meshRef.current.geometry.boundingSphere) {
+        meshRef.current.geometry.boundingSphere = new THREE.Sphere();
+      }
+      meshRef.current.geometry.boundingSphere.set(new THREE.Vector3(), Infinity);
     }
     if (hitMeshRef.current) {
-      hitMeshRef.current.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
+      if (!hitMeshRef.current.geometry.boundingSphere) {
+        hitMeshRef.current.geometry.boundingSphere = new THREE.Sphere();
+      }
+      hitMeshRef.current.geometry.boundingSphere.set(new THREE.Vector3(), Infinity);
     }
   }, [simulationVersion]);
 
@@ -305,12 +311,21 @@ const TargetNodes = ({
 
   return (
     <group ref={groupRef}>
-      {targetNodes.map((node) => (
-        <mesh key={`target-${node.id}`} position={[node.x!, node.y!, node.z!]}>
-          <sphereGeometry args={[LEVEL_CONFIG[node.level || 'leaf'].radius * 1.3, 16, 16]} />
-          <meshBasicMaterial color="#6366f1" transparent opacity={0.4} depthWrite={false} />
-        </mesh>
-      ))}
+      {targetNodes.map((node) => {
+        const x = node.x ?? 0;
+        const y = node.y ?? 0;
+        const z = node.z ?? 0;
+        
+        // Skip rendering if position is invalid
+        if (isNaN(x) || isNaN(y) || isNaN(z)) return null;
+
+        return (
+          <mesh key={`target-${node.id}`} position={[x, y, z]}>
+            <sphereGeometry args={[LEVEL_CONFIG[node.level || 'leaf'].radius * 1.3, 16, 16]} />
+            <meshBasicMaterial color="#6366f1" transparent opacity={0.4} depthWrite={false} />
+          </mesh>
+        );
+      })}
     </group>
   );
 };
@@ -355,8 +370,11 @@ const PulseNodes = ({
     // We match children to targetNodes by index
     targetNodes.forEach((node, i) => {
       const child = groupRef.current?.children[i];
-      if (child && typeof node.x === 'number') {
+      if (child && typeof node.x === 'number' && !isNaN(node.x) && !isNaN(node.y!) && !isNaN(node.z!)) {
         child.position.set(node.x, node.y!, node.z!);
+        child.visible = true;
+      } else if (child) {
+        child.visible = false;
       }
     });
   });
@@ -365,18 +383,26 @@ const PulseNodes = ({
 
   return (
     <group ref={groupRef}>
-      {targetNodes.map(node => (
-        <mesh key={node.id}>
-          <sphereGeometry args={[LEVEL_CONFIG[node.level || 'leaf'].radius, 32, 32]} />
-          <meshBasicMaterial 
-            color="#ff00ff" 
-            transparent 
-            opacity={0.5} 
-            depthWrite={false} // Prevent z-fighting and allow seeing through
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-      ))}
+      {targetNodes.map(node => {
+        // Initial position check
+        const x = node.x ?? 0;
+        const y = node.y ?? 0;
+        const z = node.z ?? 0;
+        const isValid = !isNaN(x) && !isNaN(y) && !isNaN(z);
+
+        return (
+          <mesh key={node.id} position={[x, y, z]} visible={isValid}>
+            <sphereGeometry args={[LEVEL_CONFIG[node.level || 'leaf'].radius, 32, 32]} />
+            <meshBasicMaterial 
+              color="#ff00ff" 
+              transparent 
+              opacity={0.5} 
+              depthWrite={false} // Prevent z-fighting and allow seeing through
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 };
@@ -392,6 +418,13 @@ export const LinkLines = ({
 }: LinkLinesProps) => {
   const geometryRef = useRef<THREE.BufferGeometry>(null);
   const theme = getTheme(isDark);
+  
+  // Set a dummy bounding sphere once to avoid NaN errors during projection
+  useEffect(() => {
+    if (geometryRef.current) {
+      geometryRef.current.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
+    }
+  }, []);
   
   useFrame(() => {
     if (geometryRef.current && nodesMapRef?.current) {

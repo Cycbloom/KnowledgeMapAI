@@ -7,6 +7,11 @@ import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { createRequire } from 'module';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
 const require = createRequire(import.meta.url);
@@ -50,21 +55,92 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
 
     const doc = new PDFDocument({ size: 'A4', margin: 48 });
 
-    const preferredFontPaths = [
-      process.env.PDF_FONT_PATH,
-      'C:\\\\Windows\\\\Fonts\\\\simhei.ttf',
-      'C:\\\\Windows\\\\Fonts\\\\msyh.ttf',
-      'C:\\\\Windows\\\\Fonts\\\\simsun.ttc'
-    ].filter(Boolean) as string[];
-
-    for (const fontPath of preferredFontPaths) {
+    // Font selection strategy
+    const projectFontDir = path.resolve(__dirname, '../../assets/fonts');
+    let fontPath: string | undefined;
+    
+    // Helper to recursively find font
+    const findFontFile = (dir: string): string | null => {
+      if (!fs.existsSync(dir)) return null;
+      
+      let files: fs.Dirent[] = [];
       try {
-        if (fs.existsSync(fontPath)) {
-          doc.registerFont('CN', fontPath);
-          doc.font('CN');
-          break;
+        files = fs.readdirSync(dir, { withFileTypes: true });
+      } catch (e) {
+        console.error(`Error reading directory ${dir}:`, e);
+        return null;
+      }
+      
+      // 1. Check current directory for Noto Sans SC (Priority)
+      const noto = files.find(f => f.isFile() && /noto.*sc.*\.ttf$/i.test(f.name));
+      if (noto) return path.join(dir, noto.name);
+
+      // 2. Check current directory for any other Chinese-like font or generic ttf (Secondary)
+      // Only if we are deep in recursion, we might accept others, but let's stick to strict Noto search first 
+      // or standard naming conventions to avoid picking up icon fonts.
+      
+      // 3. Recurse into subdirectories
+      for (const file of files) {
+        if (file.isDirectory()) {
+          const found = findFontFile(path.join(dir, file.name));
+          if (found) return found;
         }
-      } catch {}
+      }
+      
+      return null;
+    };
+    
+    // 1. Try project assets (auto-detect recursive)
+    if (fs.existsSync(projectFontDir)) {
+      try {
+        const found = findFontFile(projectFontDir);
+        if (found) {
+          fontPath = found;
+          console.log('Using project font:', fontPath);
+        } else {
+           // Fallback: Try to find ANY ttf if specific Noto SC not found (e.g. user renamed it)
+           // Simple flat scan for fallback
+           const files = fs.readdirSync(projectFontDir);
+           const anyFont = files.find(f => /\.(ttf|otf|ttc)$/i.test(f));
+           if (anyFont) fontPath = path.join(projectFontDir, anyFont);
+        }
+      } catch (e) {
+        console.error('Error searching font directory:', e);
+      }
+    }
+
+    // 2. Try configured path
+    if (!fontPath && process.env.PDF_FONT_PATH && fs.existsSync(process.env.PDF_FONT_PATH)) {
+        fontPath = process.env.PDF_FONT_PATH;
+    }
+
+    // 3. Try System fonts (Fallback)
+    if (!fontPath) {
+        const systemFonts = [
+          'C:\\Windows\\Fonts\\simhei.ttf',
+          'C:\\Windows\\Fonts\\msyh.ttf',
+          'C:\\Windows\\Fonts\\simsun.ttc',
+          '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc', // Common Linux path
+          '/usr/share/fonts/noto/NotoSansSC-Regular.otf'
+        ];
+
+        for (const p of systemFonts) {
+           if (fs.existsSync(p)) {
+             fontPath = p;
+             break;
+           }
+        }
+    }
+
+    if (fontPath) {
+      try {
+        doc.registerFont('CN', fontPath);
+        doc.font('CN');
+      } catch (e) {
+        console.error('Failed to register font:', e);
+      }
+    } else {
+      console.warn('No Chinese font found. PDF export may not render Chinese characters correctly.');
     }
 
     doc.pipe(res);

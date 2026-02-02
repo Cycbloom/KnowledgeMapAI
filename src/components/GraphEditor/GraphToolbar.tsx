@@ -75,6 +75,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBatchColorUpdate, onBatchLevelUpdate,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh
 }) => {
+  const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isExpanded, setIsExpanded] = useState(false); // For mobile menu
@@ -591,6 +592,25 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           </div>
         </div>
       </DropdownButton>
+
+      {/* AI Status Badge */}
+      {aiEnabled === false && (
+        <>
+          <Divider />
+          <button
+            onClick={() => navigate('/profile')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all animate-pulse ${
+              isDark 
+                ? 'bg-amber-900/40 text-amber-300 border border-amber-700/50 hover:bg-amber-800/60' 
+                : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+            }`}
+            title="当前为模拟模式（Mock Mode），点击配置 API Key 以解锁全部功能"
+          >
+            <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+            <span>演示模式</span>
+          </button>
+        </>
+      )}
 
       <Divider />
 

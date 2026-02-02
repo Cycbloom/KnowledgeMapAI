@@ -326,6 +326,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
 
       // 5. Invalidate Cache
       cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
+      cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
 
       return res.json({ 
         success: true, 

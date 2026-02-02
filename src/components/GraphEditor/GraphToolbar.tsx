@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
-  Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw
+  Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
+  HelpCircle, User
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node } from '../../types';
@@ -65,6 +66,7 @@ interface GraphToolbarProps {
     onDeleteGraph: () => void;
   };
   onRefresh?: () => void;
+  onOpenHelp?: () => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -74,7 +76,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   aiEnabled, onTextToGraph, onAIExpand, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
-  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh
+  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp
 }) => {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
@@ -618,6 +620,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       {/* 5. System & Settings Dropdown */}
       <DropdownButton id="system" icon={Settings} label="设置">
         <MenuItem onClick={onRefresh} icon={RefreshCw} label="刷新数据" disabled={!onRefresh} />
+        <MenuItem onClick={onOpenHelp} icon={HelpCircle} label="操作指南" disabled={!onOpenHelp} />
+        <MenuItem onClick={() => navigate('/profile')} icon={User} label="个人设置" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={() => setShowGrid(!showGrid)} icon={Grid} label={showGrid ? "隐藏网格" : "显示网格"} active={showGrid} />
         <MenuItem onClick={toggleTheme} icon={isDark ? Sun : Moon} label={isDark ? "浅色模式" : "深色模式"} />

@@ -38,8 +38,9 @@ function App() {
           <Route path="/register" element={<Register />} />
           
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Navigate to="/" replace />} />
+            <Route path="graphs" element={<Navigate to="/" replace />} />
             <Route path="graph/:id" element={<GraphEditor />} />
             <Route path="study" element={<Study />} />
             <Route path="statistics" element={<Statistics />} />

@@ -26,6 +26,7 @@ export interface Graph {
     [key: string]: any;
   };
   created_at: string;
+  nodes_count?: number;
 }
 
 export interface Node {

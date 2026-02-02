@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAIStatus, useLogoutMutation, useUser, useUpdateProfileMutation } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, User, Cpu, KeyRound, ExternalLink, Brain, Save } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
+import { LogOut, User, Cpu, KeyRound, ExternalLink, Brain, Save, Palette, Sun, Moon, Monitor } from 'lucide-react';
 
 export const Profile = () => {
   const navigate = useNavigate();
   const { user, token, setUser } = useStore();
+  const { themeMode, setTheme } = useTheme();
   const { addMessage } = useMessageStore();
   const logoutMutation = useLogoutMutation();
 
@@ -93,6 +95,51 @@ export const Profile = () => {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Palette className="w-5 h-5 text-pink-600" />
+            <h2 className="text-lg font-bold text-gray-900">外观设置</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <button
+              onClick={() => setTheme('light')}
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+                themeMode === 'light'
+                  ? 'bg-blue-50 border-blue-200 text-blue-700 ring-1 ring-blue-200'
+                  : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Sun className="w-6 h-6 mb-2" />
+              <span className="font-medium text-sm">浅色模式</span>
+            </button>
+            
+            <button
+              onClick={() => setTheme('dark')}
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+                themeMode === 'dark'
+                  ? 'bg-slate-800 border-slate-700 text-white ring-1 ring-slate-600'
+                  : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Moon className="w-6 h-6 mb-2" />
+              <span className="font-medium text-sm">深色模式</span>
+            </button>
+            
+            <button
+              onClick={() => setTheme('system')}
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+                themeMode === 'system'
+                  ? 'bg-purple-50 border-purple-200 text-purple-700 ring-1 ring-purple-200'
+                  : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Monitor className="w-6 h-6 mb-2" />
+              <span className="font-medium text-sm">跟随系统</span>
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

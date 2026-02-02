@@ -23,6 +23,7 @@ import { TextToGraphModal } from '../components/GraphEditor/TextToGraphModal';
 import { GraphSettingsModal } from '../components/GraphEditor/GraphSettingsModal';
 import { ChatDialog } from '../components/GraphEditor/ChatDialog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { HelpModal } from '../components/HelpModal';
 import { useHistory } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
@@ -167,6 +168,7 @@ export const GraphEditor = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [exportImageOptions, setExportImageOptions] = useState({
     transparent: false,
     fitView: true,
@@ -1157,7 +1159,10 @@ export const GraphEditor = () => {
           onDeleteGraph: handleDeleteGraph
         }}
         onRefresh={refetchGraph}
+        onOpenHelp={() => setIsHelpOpen(true)}
       />
+
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       {/* Delete Mode Indicator */}
       {isDeleteMode && (

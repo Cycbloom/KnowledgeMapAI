@@ -3,20 +3,24 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, LayoutDashboard, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, BarChart, HelpCircle } from 'lucide-react';
+import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, BarChart, HelpCircle, GraduationCap } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 import { GlobalSearch } from './GlobalSearch';
 import { HelpModal } from './HelpModal';
+import { useTheme } from '../hooks/useTheme';
 
 export const Layout = () => {
   const { user, setUser, token } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isDark } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { addMessage } = useMessageStore();
+  
+  const isGraphEditor = location.pathname.startsWith('/graph/');
   
   // Use TanStack Query for user fetching
   // Only fetch if we have a token but no user (e.g. refresh)
@@ -116,10 +120,10 @@ export const Layout = () => {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50 flex-col">
+    <div className={`flex h-screen flex-col ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-gray-900'}`}>
       
       {/* Mobile Header */}
-      <div className="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-20 shadow-md">
+      <div className={`md:hidden p-4 flex justify-between items-center z-20 shadow-md ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-900 text-white'}`}>
         <span className="font-bold text-lg">知识图谱</span>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -146,26 +150,22 @@ export const Layout = () => {
           <div className="hidden md:flex p-4 text-xl font-bold border-b border-slate-700 items-center justify-between h-16">
             {!isCollapsed && <span className="truncate">知识图谱</span>}
             <button 
-              onClick={() => setIsCollapsed(!isCollapsed)} 
-              className={`p-1 hover:bg-slate-800 rounded ${isCollapsed ? 'mx-auto' : ''}`}
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-1 hover:bg-slate-800 rounded transition-colors"
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
           </div>
 
-          {/* Sidebar Header (Mobile) - just for spacing or logo if needed, but we have external header */}
-          <div className="md:hidden p-4 text-xl font-bold border-b border-slate-700 flex items-center h-16">
-            <span>知识图谱</span>
-          </div>
-
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            <SidebarLink to="/dashboard" icon={LayoutDashboard} label="仪表盘" />
-            <SidebarLink to="/study" icon={BookOpen} label="学习模式" />
-            <SidebarLink to="/statistics" icon={BarChart} label="统计分析" />
+          {/* Navigation Links */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            <SidebarLink to="/" icon={BookOpen} label="我的图谱" />
+            <SidebarLink to="/study" icon={GraduationCap} label="学习中心" />
             <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" />
-            <SidebarLink to="/profile" icon={User} label="个人资料" />
+            <SidebarLink to="/profile" icon={User} label="个人设置" />
           </nav>
 
+          {/* Sidebar Footer */}
           <div className="p-4 border-t border-slate-700">
             <button 
               onClick={handleLogout} 
@@ -182,30 +182,40 @@ export const Layout = () => {
         <div className="flex-1 overflow-hidden flex flex-col w-full relative">
           
           {/* Top Header */}
-          <header className="bg-white border-b border-gray-200 h-16 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm">
-            <div className="flex-1 max-w-xl">
-               <GlobalSearch />
-            </div>
-            <div className="flex items-center gap-4 ml-4">
-               <button 
-                 onClick={() => setIsHelpOpen(true)}
-                 className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                 title="操作指南"
-               >
-                 <HelpCircle size={20} />
-               </button>
-               {user && (
-                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
-                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">
-                      {(user.user_metadata as any)?.name || user.email?.split('@')[0]}
-                    </span>
-                 </div>
-               )}
-            </div>
-          </header>
+          {!isGraphEditor && (
+            <header className={`h-12 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b ${
+              isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
+            }`}>
+              <div className="flex-1 max-w-xl">
+                 <GlobalSearch />
+              </div>
+              <div className="flex items-center gap-4 ml-4">
+                 <button 
+                   onClick={() => setIsHelpOpen(true)}
+                   className={`p-1.5 rounded-full transition-colors ${
+                     isDark ? 'text-slate-400 hover:text-blue-400 hover:bg-slate-800' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                   }`}
+                   title="操作指南"
+                 >
+                   <HelpCircle size={18} />
+                 </button>
+                 {user && (
+                   <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full border transition-colors ${
+                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'
+                   }`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-100 text-indigo-600'
+                      }`}>
+                        {user.email?.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`text-xs font-medium max-w-[80px] truncate ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                        {(user.user_metadata as any)?.name || user.email?.split('@')[0]}
+                      </span>
+                   </div>
+                 )}
+              </div>
+            </header>
+          )}
 
           <div className="flex-1 overflow-hidden relative">
             <ErrorBoundary>

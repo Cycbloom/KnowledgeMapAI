@@ -2,10 +2,12 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
-import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid } from 'lucide-react';
+import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
+import { useTheme } from '../hooks/useTheme';
 
 export const Study = () => {
+  const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -137,25 +139,29 @@ export const Study = () => {
     setViewState('dashboard');
   };
 
-  if (isLoading) return <div className="min-h-full flex items-center justify-center p-8 text-gray-500">正在加载学习资源...</div>;
+  if (isLoading) return <div className={`min-h-full flex items-center justify-center p-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>正在加载学习资源...</div>;
 
   // --- Dashboard View ---
   if (viewState === 'dashboard') {
     return (
-      <div className="h-full overflow-y-auto bg-gray-50 p-8">
+      <div className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'} p-8`}>
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => window.history.back()}
-                className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors"
+                className={`p-2 rounded-lg border transition-colors ${
+                  isDark 
+                    ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-600'
+                }`}
               >
                 <ArrowLeft size={20} />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">学习中心</h1>
-                <p className="text-gray-500">
+                <h1 className="text-2xl font-bold">学习中心</h1>
+                <p className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                   {nodeId ? '单点突破' : nodeIds ? '路径特训' : '全图复习'}
                 </p>
               </div>
@@ -163,7 +169,11 @@ export const Study = () => {
             {graphId && (
               <button 
                 onClick={() => navigate(`/graph/${graphId}`)}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors font-medium"
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                  isDark 
+                    ? 'bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60' 
+                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                }`}
               >
                 <LayoutGrid size={18} />
                 <span>进入闯关图谱</span>
@@ -173,164 +183,196 @@ export const Study = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-              <div className="p-4 bg-blue-50 text-blue-600 rounded-xl">
+            <div className={`p-6 rounded-2xl shadow-sm border flex items-center space-x-4 ${
+              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+            }`}>
+              <div className={`p-4 rounded-xl ${isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
                 <LayoutGrid size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500 font-medium">总卡片数</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+                <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片数</p>
+                <p className="text-3xl font-bold">{stats.total}</p>
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-              <div className="p-4 bg-green-50 text-green-600 rounded-xl">
+            <div className={`p-6 rounded-2xl shadow-sm border flex items-center space-x-4 ${
+              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+            }`}>
+              <div className={`p-4 rounded-xl ${isDark ? 'bg-green-900/40 text-green-400' : 'bg-green-50 text-green-600'}`}>
                 <Trophy size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500 font-medium">已掌握</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.mastered}</p>
+                <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
+                <p className="text-3xl font-bold">{stats.mastered}</p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-              <div className="p-4 bg-amber-50 text-amber-600 rounded-xl">
+            <div className={`p-6 rounded-2xl shadow-sm border flex items-center space-x-4 ${
+              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+            }`}>
+              <div className={`p-4 rounded-xl ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
                 <Clock size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500 font-medium">待复习</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.due}</p>
+                <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
+                <p className="text-3xl font-bold">{stats.due}</p>
               </div>
             </div>
           </div>
 
-          {/* Action Area */}
+          {/* Action Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <button
               onClick={() => handleStartQuiz('due')}
-              disabled={stats.due === 0}
-              className={`p-8 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all ${
-                stats.due > 0 
-                  ? 'bg-white border-indigo-100 hover:border-indigo-500 hover:shadow-md cursor-pointer group' 
-                  : 'bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed'
+              disabled={dueCards.length === 0}
+              className={`flex flex-col items-center text-center p-8 rounded-3xl border-2 transition-all group ${
+                dueCards.length > 0 
+                  ? (isDark ? 'bg-blue-900/20 border-blue-800/50 hover:border-blue-500' : 'bg-blue-50 border-blue-100 hover:border-blue-400')
+                  : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
               }`}
             >
-              <div className={`p-4 rounded-full mb-4 transition-colors ${stats.due > 0 ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
-                <Brain size={32} />
+              <div className={`p-5 rounded-2xl mb-4 group-hover:scale-110 transition-transform ${
+                isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-600'
+              }`}>
+                <Brain size={40} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">智能复习</h3>
-              <p className="text-gray-500">
-                复习 {stats.due} 张待复习卡片
-              </p>
+              <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-blue-300' : 'text-blue-900'}`}>今日待复习</h3>
+              <p className={`mb-6 ${isDark ? 'text-blue-400/80' : 'text-blue-700'}`}>根据艾宾浩斯记忆曲线为您推荐的复习内容</p>
+              <div className={`px-6 py-2 rounded-full font-bold ${
+                dueCards.length > 0 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-300 text-gray-500'
+              }`}>
+                {dueCards.length > 0 ? `立即开始 (${dueCards.length})` : '暂无任务'}
+              </div>
             </button>
 
             <button
               onClick={() => handleStartQuiz('all')}
-              disabled={stats.total === 0}
-              className={`p-8 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all ${
-                stats.total > 0
-                  ? 'bg-white border-indigo-100 hover:border-indigo-500 hover:shadow-md cursor-pointer group'
-                  : 'bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed'
+              disabled={allCards.length === 0}
+              className={`flex flex-col items-center text-center p-8 rounded-3xl border-2 transition-all group ${
+                allCards.length > 0 
+                  ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-blue-500' : 'bg-white border-gray-100 hover:border-blue-400 shadow-sm')
+                  : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
               }`}
             >
-              <div className={`p-4 rounded-full mb-4 transition-colors ${stats.total > 0 ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
-                <BookOpen size={32} />
+              <div className={`p-5 rounded-2xl mb-4 group-hover:scale-110 transition-transform ${
+                isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'
+              }`}>
+                <Play size={40} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">突击特训</h3>
-              <p className="text-gray-500">
-                无视遗忘曲线，复习所有 {stats.total} 张卡片
-              </p>
+              <h3 className="text-xl font-bold mb-2">自由练习</h3>
+              <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>随机练习当前范围内的所有卡片，巩固记忆</p>
+              <div className={`px-6 py-2 rounded-full font-bold ${
+                allCards.length > 0 
+                  ? (isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-white text-gray-700 border border-gray-200')
+                  : 'bg-gray-200 text-gray-500'
+              }`}>
+                {allCards.length > 0 ? `开始自测 (${allCards.length})` : '暂无卡片'}
+              </div>
             </button>
           </div>
 
-          {/* Question Bank Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                <ListIcon className="mr-2" size={20} />
-                题目列表
-              </h3>
-              <div className="flex items-center gap-3">
-                <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
-                  <button
-                    onClick={() => setTableMode('due')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      tableMode === 'due' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    仅到期
-                  </button>
-                  <button
-                    onClick={() => setTableMode('all')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      tableMode === 'all' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    全部
-                  </button>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <input 
-                    type="text" 
-                    placeholder="搜索题目..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
-                  />
-                </div>
+          {/* Cards List Table */}
+          <div className={`rounded-3xl shadow-sm border overflow-hidden ${
+            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+          }`}>
+            <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className={`flex p-1 rounded-xl w-fit ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
+                <button
+                  onClick={() => setTableMode('due')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    tableMode === 'due' 
+                      ? (isDark ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-blue-600 shadow-sm') 
+                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
+                  }`}
+                >
+                  待复习
+                </button>
+                <button
+                  onClick={() => setTableMode('all')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    tableMode === 'all' 
+                      ? (isDark ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-blue-600 shadow-sm') 
+                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
+                  }`}
+                >
+                  全部
+                </button>
+              </div>
+              
+              <div className="relative">
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} size={18} />
+                <input
+                  type="text"
+                  placeholder="搜索题目或答案..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`pl-10 pr-4 py-2 rounded-xl text-sm border focus:ring-2 focus:ring-blue-500 outline-none transition-all w-full md:w-64 ${
+                    isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-200 text-gray-900'
+                  }`}
+                />
               </div>
             </div>
-            
-            {filteredCards.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">
-                没有找到题目。请先生成卡片。
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className={`text-left border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'bg-gray-50 border-gray-100'}`}>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">题目</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">下次复习</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">状态</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">操作</th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDark ? 'divide-slate-700' : 'divide-gray-100'}`}>
+                  {filteredCards.length === 0 ? (
                     <tr>
-                      <th className="px-6 py-4">题目</th>
-                      <th className="px-6 py-4">类型</th>
-                      <th className="px-6 py-4">掌握程度</th>
-                      <th className="px-6 py-4">下次复习</th>
+                      <td colSpan={4} className={`px-6 py-12 text-center ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                        没有找到匹配的卡片
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredCards.map(card => (
-                      <tr key={card.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 max-w-md">
-                          <p className="font-medium text-gray-900 truncate" title={card.question}>{card.question}</p>
-                          <p className="text-xs text-gray-400 truncate mt-1" title={card.answer}>{card.answer}</p>
+                  ) : (
+                    filteredCards.map((card) => (
+                      <tr key={card.id} className={`transition-colors ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'}`}>
+                        <td className="px-6 py-4">
+                          <p className="font-medium line-clamp-1">{card.question}</p>
+                          <p className={`text-xs mt-1 line-clamp-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{card.answer}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                            {card.card_type === 'choice' ? '单选题' : 
-                             card.card_type === 'multi_choice' ? '多选题' :
-                             card.card_type === 'fill_in_the_blank' ? '填空题' :
-                             card.card_type === 'essay' ? '解答题' :
-                             card.card_type === 'true_false' ? '判断题' : '问答题'}
+                          <div className="flex items-center space-x-2 text-sm">
+                            <Clock size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
+                            <span>{card.next_review ? new Date(card.next_review).toLocaleDateString() : '尚未开始'}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            (card.review_count || 0) > 0 
+                              ? (isDark ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700')
+                              : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-600')
+                          }`}>
+                            {(card.review_count || 0) > 0 ? '已学习' : '新内容'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          {(card.review_count || 0) > 0 ? (
-                            <span className="text-green-600 text-xs font-bold flex items-center">
-                              <Check size={12} className="mr-1" /> 已学习 ({card.review_count}次)
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-xs">未学习</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {new Date(card.next_review).toLocaleDateString()}
+                          <button 
+                            onClick={() => {
+                              setQuizCards([card]);
+                              setCurrentCardIndex(0);
+                              setFinished(false);
+                              setViewState('quiz');
+                            }}
+                            className="text-blue-500 hover:text-blue-600 font-medium text-sm"
+                          >
+                            单独练习
+                          </button>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

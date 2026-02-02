@@ -36,6 +36,7 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
+  cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
   
   res.status(201).json(data);
 });
@@ -125,6 +126,7 @@ router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Re
     await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, gid));
     await cacheService.del(CacheKeys.STUDY_CARDS(gid));
   }
+  await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
 
   res.json({ message: `成功删除 ${count} 个节点`, count });
 });

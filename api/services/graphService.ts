@@ -10,12 +10,18 @@ export class GraphService {
     return cacheService.getOrSet(cacheKey, async () => {
       const { data, error } = await supabase
         .from('knowledge_graphs')
-        .select('*')
+        .select('*, nodes(count)')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Transform data to flat structure
+      return data.map((g: any) => ({
+        ...g,
+        nodes_count: g.nodes?.[0]?.count || 0,
+        nodes: undefined // cleanup
+      }));
     });
   }
 

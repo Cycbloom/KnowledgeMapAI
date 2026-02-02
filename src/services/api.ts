@@ -2,6 +2,21 @@ import { useStore } from '../store/useStore';
 
 const API_URL = '/api';
 
+// Queue for pending requests during refresh
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 const getHeaders = () => {
   const token = useStore.getState().token;
   return {
@@ -21,8 +36,8 @@ const handleResponse = async (res: Response) => {
   
   if (!res.ok) {
     if (res.status === 401) {
-      // Clear token and user on 401 Unauthorized
-      useStore.getState().setUser(null, null);
+      // Throw 401 to be caught by request interceptor
+      throw new Error('Unauthorized');
     }
     const error = (data && data.message) || (data && data.error) || res.statusText;
     throw new Error(error);
@@ -31,15 +46,80 @@ const handleResponse = async (res: Response) => {
   return data;
 };
 
-const request = (url: string, options: RequestInit = {}) => {
-  return fetch(`${API_URL}${url}`, {
-    ...options,
-    headers: {
+const request = async (url: string, options: RequestInit = {}) => {
+  const doRequest = async (tokenOverride?: string) => {
+    const headers: any = {
       ...getHeaders(),
       ...options.headers,
-    },
-  }).then(handleResponse);
+    };
+    
+    if (tokenOverride) {
+      headers['Authorization'] = `Bearer ${tokenOverride}`;
+    }
+
+    return fetch(`${API_URL}${url}`, {
+      ...options,
+      headers,
+    }).then(handleResponse);
+  };
+
+  try {
+    return await doRequest();
+  } catch (error: any) {
+    // Intercept 401 Unauthorized
+    if (error.message === 'Unauthorized' && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
+      const { refreshToken } = useStore.getState();
+
+      if (!refreshToken) {
+        useStore.getState().setUser(null, null);
+        throw error;
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          return doRequest(token as string);
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!refreshRes.ok) {
+           throw new Error('Refresh failed');
+        }
+
+        const data = await refreshRes.json();
+        const { session, user } = data;
+        
+        // Update store with new tokens
+        useStore.getState().setUser(user, session.access_token, session.refresh_token);
+        
+        // Retry queued requests
+        processQueue(null, session.access_token);
+        
+        // Retry current request
+        return await doRequest(session.access_token);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        useStore.getState().setUser(null, null); // Logout on refresh failure
+        throw refreshError;
+      } finally {
+        isRefreshing = false;
+      }
+    }
+    
+    throw error;
+  }
 };
+
 
 export const api = {
   auth: {

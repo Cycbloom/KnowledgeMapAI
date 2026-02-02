@@ -103,6 +103,37 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
 });
 
 /**
+ * Refresh Token
+ * POST /api/auth/refresh
+ */
+router.post('/refresh', async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      throw new AppError('Refresh token missing', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    const { data, error } = await supabaseAdmin.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (error) {
+      throw new AppError(error.message || 'Session refresh failed', 401, ErrorCodes.INVALID_TOKEN);
+    }
+
+    if (!data.session) {
+       throw new AppError('Session refresh failed', 401, ErrorCodes.INVALID_TOKEN);
+    }
+
+    res.json({ session: data.session, user: data.user });
+  } catch (error: any) {
+    console.error('Refresh token error:', error);
+    next(error);
+  }
+});
+
+/**
  * User Logout
  * POST /api/auth/logout
  */

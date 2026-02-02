@@ -18,7 +18,7 @@ export const Register = () => {
       const data = await registerMutation.mutateAsync({ email, password, name });
       if (data.error) throw new Error(data.error);
       
-      setUser(data.user, data.session?.access_token);
+      setUser(data.user, data.session?.access_token, data.session?.refresh_token);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);

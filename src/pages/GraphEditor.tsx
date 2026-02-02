@@ -28,6 +28,7 @@ import { useHistory } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
 import { useTheme } from '../hooks/useTheme';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 const levelLabels: Record<string, string> = {
   root: '根节点',
   core: '核心节点',
@@ -949,30 +950,38 @@ export const GraphEditor = () => {
              </div>
           </div>
         )}
-        <Suspense fallback={null}>
-          <Graph3D 
-            ref={graphRef} 
-            nodes={nodes} 
-            edges={edges} 
-            onNodeClick={handleNodeClick} 
-            showGrid={showGrid} 
-            isDark={isDark}
-            selectedNodeId={selectedNode?.id}
-            selectedNodeIds={selectedNodeIds}
-            highlightedPath={highlightedPath}
-            onEngineLoad={setIsEngineLoading}
-            onSelectionChange={handleSelectionChange}
-            onBoxUpdate={setSelectionBox}
-            onBackgroundClick={handleBackgroundClick}
-            collapsedNodeIds={collapsedNodeIds}
-            layoutMode={layoutMode}
-            lockedNodeIds={lockedNodeIds}
-            masteredNodeIds={masteredNodeIds}
-            gamificationEnabled={graphMeta?.settings?.gamification_enabled !== false}
-            onNodeCollapse={handleToggleCollapse}
-            textDisplayLevel={graphMeta?.settings?.text_display_level || 'important'}
-          />
-        </Suspense>
+        <ErrorBoundary fallback={
+          <div className="flex flex-col items-center justify-center h-full bg-gray-50 z-10 relative">
+            <div className="text-red-500 font-bold mb-2">3D 视图加载失败</div>
+            <p className="text-gray-500 text-sm mb-4">可能是 WebGL 上下文丢失或显存不足</p>
+            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">刷新页面</button>
+          </div>
+        }>
+          <Suspense fallback={null}>
+            <Graph3D 
+              ref={graphRef} 
+              nodes={nodes} 
+              edges={edges} 
+              onNodeClick={handleNodeClick} 
+              showGrid={showGrid} 
+              isDark={isDark}
+              selectedNodeId={selectedNode?.id}
+              selectedNodeIds={selectedNodeIds}
+              highlightedPath={highlightedPath}
+              onEngineLoad={setIsEngineLoading}
+              onSelectionChange={handleSelectionChange}
+              onBoxUpdate={setSelectionBox}
+              onBackgroundClick={handleBackgroundClick}
+              collapsedNodeIds={collapsedNodeIds}
+              layoutMode={layoutMode}
+              lockedNodeIds={lockedNodeIds}
+              masteredNodeIds={masteredNodeIds}
+              gamificationEnabled={graphMeta?.settings?.gamification_enabled !== false}
+              onNodeCollapse={handleToggleCollapse}
+              textDisplayLevel={graphMeta?.settings?.text_display_level || 'important'}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Selection Box Overlay - Rendered outside R3F to avoid R3F/DOM conflicts */}
         {selectionBox && (
@@ -1257,6 +1266,12 @@ export const GraphEditor = () => {
       
       {/* Right Sidebar */}
       {sidebarMode !== 'none' && (
+        <ErrorBoundary fallback={
+          <div className="w-80 bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col p-4 items-center justify-center">
+            <div className="text-red-500 font-bold mb-2">侧边栏组件出错</div>
+            <button onClick={handleCloseSidebar} className="text-blue-600 hover:underline">关闭侧边栏</button>
+          </div>
+        }>
         <div className={`w-80 bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== 'outline' ? 'p-4 overflow-y-auto' : ''}`}>
           {sidebarMode === 'outline' ? (
              <div className="h-full relative flex flex-col">
@@ -1741,6 +1756,7 @@ export const GraphEditor = () => {
           </>
         )}
         </div>
+        </ErrorBoundary>
       )}
     </div>
   );

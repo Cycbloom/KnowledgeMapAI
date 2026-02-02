@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTasks, useRetryTaskMutation, useDeleteTaskMutation } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { CheckCircle2, XCircle, Loader2, Clock, RefreshCw, ArrowRight, Trash2, RotateCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Clock, RefreshCw, ArrowRight, Trash2, RotateCw, Download } from 'lucide-react';
 
 const formatTime = (iso?: string) => {
   if (!iso) return '-';
@@ -106,6 +106,39 @@ export const Tasks = () => {
     }
   };
 
+  const handleExport = () => {
+    if (!tasks || tasks.length === 0) {
+      addMessage({ type: 'warning', content: '暂无任务可导出' });
+      return;
+    }
+    
+    // Add BOM for Excel compatibility with UTF-8
+    const BOM = "\uFEFF";
+    const header = "ID,Name,Type,Status,Created At,Updated At,Error\n";
+    const rows = tasks.map(t => {
+      const name = t.name || getTypeLabel(t.type);
+      // Escape quotes by doubling them
+      const escapedName = name ? name.replace(/"/g, '""') : '';
+      const error = t.error ? t.error.replace(/"/g, '""') : '';
+      
+      return `${t.id},"${escapedName}",${t.type},${t.status},${t.created_at},${t.updated_at},"${error}"`;
+    }).join("\n");
+    
+    const csvContent = BOM + header + rows;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `tasks_export_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    addMessage({ type: 'success', content: '任务列表已导出' });
+  };
+
   return (
     <div className="h-full overflow-y-auto p-8">
       <div className="flex items-center justify-between mb-6">
@@ -114,6 +147,14 @@ export const Tasks = () => {
           <p className="text-gray-600 mt-1 text-sm">查看后台任务进度与结果回填</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50"
+            title="导出为 CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span>导出</span>
+          </button>
           <button
             onClick={() => refetch()}
             className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 disabled:opacity-50"

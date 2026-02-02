@@ -1,4 +1,3 @@
-
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { taskService } from '../services/taskService.js';
@@ -9,16 +8,35 @@ const router = Router();
 
 // SSE Endpoint for real-time task updates
 router.get('/events', requireAuth, (req: AuthRequest, res: Response) => {
-  // Set headers for SSE
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  };
+  
+  res.writeHead(200, headers);
   res.flushHeaders();
 
-  // Register client
-  sseService.addClient(req.user.id, res);
+  const userId = req.user.id;
+  console.log(`[SSE] New connection request from user: ${userId}`);
 
-  // Send initial connection message
+  const keepAliveInterval = setInterval(() => {
+    try {
+      res.write(': keep-alive\n\n');
+    } catch (error) {
+      console.error('[SSE] Keep-alive failed:', error);
+      clearInterval(keepAliveInterval);
+    }
+  }, 30000);
+
+  res.on('close', () => {
+    console.log(`[SSE] Connection closed for user: ${userId}`);
+    clearInterval(keepAliveInterval);
+  });
+
+  sseService.addClient(userId, res);
+
   res.write(`data: ${JSON.stringify({ type: 'connected', message: 'SSE connection established' })}\n\n`);
 });
 

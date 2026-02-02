@@ -47,18 +47,67 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
-    edges.forEach(edge => {
+    // Helper to get level value
+    const levelOrder: Record<string, number> = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
+    const getLevelVal = (n?: Node) => levelOrder[n?.level || 'leaf'] ?? 4;
+
+    // Sort edges to prioritize better parent-child relationships for the tree view
+    // We want to avoid "upward" links becoming the primary parent-child relationship in the outline
+    const sortedEdges = [...edges].sort((a, b) => {
+      const sA = nodeMap.get(a.source_node_id);
+      const tA = nodeMap.get(a.target_node_id);
+      const sB = nodeMap.get(b.source_node_id);
+      const tB = nodeMap.get(b.target_node_id);
+
+      if (!sA || !tA) return 0;
+      if (!sB || !tB) return 0;
+
+      const lA_source = getLevelVal(sA);
+      const lA_target = getLevelVal(tA);
+      const lB_source = getLevelVal(sB);
+      const lB_target = getLevelVal(tB);
+
+      // 1. Prefer "Top-Down" relationships (Source Level < Target Level)
+      // Difference: (Target - Source). Positive means correct direction (e.g. Root(0) -> Core(1) = 1)
+      // Negative means incorrect direction (e.g. Leaf(4) -> Root(0) = -4)
+      const diffA = lA_target - lA_source;
+      const diffB = lB_target - lB_source;
+
+      const isPosA = diffA > 0;
+      const isPosB = diffB > 0;
+
+      // Positive differences (Top-Down) come first
+      if (isPosA && !isPosB) return -1;
+      if (!isPosA && isPosB) return 1;
+
+      if (isPosA && isPosB) {
+        // Both positive: prefer SMALLER difference (tighter parent-child relationship)
+        // e.g. Core->Sub (diff=1) is better than Root->Sub (diff=2)
+        if (diffA !== diffB) return diffA - diffB;
+      } else {
+        // Both negative or zero: prefer LARGER difference (closer to 0)
+        // e.g. Peer (0) is better than Backlink (-1)
+        if (diffA !== diffB) return diffB - diffA;
+      }
+
+      // 2. Prefer higher level sources (Root < Core < Sub)
+      if (lA_source !== lB_source) return lA_source - lB_source;
+
+      return 0;
+    });
+
+    sortedEdges.forEach(edge => {
       const source = nodeMap.get(edge.source_node_id);
       const target = nodeMap.get(edge.target_node_id);
       
       if (source && target) {
-        if (!cMap.has(edge.source_node_id)) cMap.set(edge.source_node_id, []);
-        cMap.get(edge.source_node_id)!.push(target);
-        
-        // We only track one parent for tree view to avoid duplicates in tree
-        // If a node has multiple parents, it will appear under the first one processed (or we could show it multiple times)
-        // For simplicity in UI state, let's just mark it as having a parent.
+        // STRICT TREE CONSTRUCTION:
+        // Only add as child if the node doesn't have a parent yet in our tree representation.
+        // This prevents cycles and duplicate nodes in the outline view.
         if (!hasParent.has(edge.target_node_id)) {
+          if (!cMap.has(edge.source_node_id)) cMap.set(edge.source_node_id, []);
+          cMap.get(edge.source_node_id)!.push(target);
+          
           hasParent.add(edge.target_node_id);
           pMap.set(edge.target_node_id, edge.source_node_id);
         }

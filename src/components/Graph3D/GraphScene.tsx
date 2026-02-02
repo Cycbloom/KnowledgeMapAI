@@ -226,7 +226,8 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
       <ambientLight intensity={theme.lighting.ambientIntensity} />
       <pointLight position={[10, 10, 10]} intensity={theme.lighting.pointIntensity} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} />
-      <Environment preset="city" />
+      {/* 使用本地 HDR 文件作为环境贴图，避免远程加载失败 */}
+      <Environment files="/assets/textures/potsdamer_platz_1k.hdr" />
 
       <InstancedNodes 
         nodesRef={nodesRef} 

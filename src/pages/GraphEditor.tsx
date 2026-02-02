@@ -615,7 +615,10 @@ export const GraphEditor = () => {
     
     try {
       await api.ai.generateContentStream(
-        { topic: nodeForm.title, context: aiPrompt },
+        { 
+          topic: nodeForm.title, 
+          context: aiPrompt
+        },
         (chunk) => {
           setNodeForm(prev => ({ 
             ...prev, 
@@ -734,7 +737,7 @@ export const GraphEditor = () => {
       // 1. Generate Cards
       const res = await aiGenerateCardsMutation.mutateAsync({ 
         node_title: selectedNode.title, 
-        node_content: selectedNode.content 
+        node_content: selectedNode.content
       });
       
       const cards = res.cards.map((c: any) => ({
@@ -792,6 +795,18 @@ export const GraphEditor = () => {
     try {
       let successCount = 0;
       
+      // Get AI settings from user store (via api helper in backend calls, but here we construct payload manually)
+      // Since we can't easily access the store config here without importing store, 
+      // and we are creating a task payload that the backend will process.
+      // The backend task processor should load the user's config if not provided in payload.
+      // So we can safely omit provider/model here and let the backend handle it.
+      // Alternatively, we can use useStore() hook since this is a component.
+      
+      const { user } = useStore.getState();
+      const aiConfig = user?.profile?.settings?.ai_config?.text;
+      const provider = aiConfig?.provider;
+      const model = aiConfig?.model;
+
       for (const node of nodesToProcess) {
         if (!node) continue;
         
@@ -799,7 +814,9 @@ export const GraphEditor = () => {
           graph_id: id,
           node_id: node.id,
           node_title: node.title,
-          node_content: node.content
+          node_content: node.content,
+          provider,
+          model
         };
 
         if (type === 'expand_graph') {

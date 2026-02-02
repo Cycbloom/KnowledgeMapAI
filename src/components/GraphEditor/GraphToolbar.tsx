@@ -144,12 +144,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   const AIGroup = () => (
     <div className="flex items-center space-x-1">
       <Button 
-        onClick={onTextToGraph} 
-        icon={Sparkles} 
-        colorClass="text-purple-600" 
-        title="AI 文本/文档生成图谱" 
-      />
-      <Button 
         onClick={() => setIsChatOpen(!isChatOpen)} 
         active={isChatOpen} 
         icon={MessageSquare} 
@@ -165,6 +159,39 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         icon={Navigation}
         title={isPathfindingMode ? "退出路径导航" : "路径导航"}
       />
+      {/* AI Task Menu */}
+      <div className="relative group">
+         <Button 
+            onClick={() => {}}
+            icon={Sparkles} 
+            colorClass="text-purple-600" 
+            title="AI 任务" 
+         />
+         <div className="absolute top-full left-0 mt-2 hidden group-hover:block bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-lg rounded-lg p-2 z-50 w-48">
+             <button 
+                 className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-sm mb-1 flex items-center gap-2"
+                 onClick={onTextToGraph}
+             >
+                 <Sparkles className="w-4 h-4 text-purple-600" />
+                 文本生成图谱
+             </button>
+             <button 
+                 className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-sm flex items-center gap-2"
+                 onClick={() => onBackgroundTask?.('generate_questions')}
+             >
+                 <HelpCircle className="w-4 h-4 text-blue-600" />
+                 生成题目 (后台)
+             </button>
+             <button 
+                 className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-sm flex items-center gap-2"
+                 onClick={() => onBackgroundTask?.('expand_graph')}
+             >
+                 <List className="w-4 h-4 text-green-600" />
+                 扩展图谱 (后台)
+             </button>
+         </div>
+      </div>
+
       {aiEnabled === false && (
         <span className={`ml-1 px-2 py-0.5 rounded text-xs font-semibold ${
           isDark ? 'bg-amber-900/30 text-amber-300 border border-amber-800/60' : 'bg-amber-50 text-amber-800 border border-amber-200'

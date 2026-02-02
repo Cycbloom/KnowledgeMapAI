@@ -1,3 +1,8 @@
+export interface AIConfig {
+  provider: string;
+  model: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -10,6 +15,11 @@ export interface User {
     settings?: {
       request_retention?: number;
       maximum_interval?: number;
+      ai_config?: {
+        text?: AIConfig;
+        embedding?: AIConfig;
+        reasoning?: AIConfig;
+      };
     };
     [key: string]: any;
   };

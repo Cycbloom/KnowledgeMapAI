@@ -78,7 +78,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       const result = await textToGraphMutation.mutateAsync({ 
         text, 
         graph_id: graphId, 
-        action: 'analyze' 
+        action: 'analyze'
       });
       
       setPreviewData(result);

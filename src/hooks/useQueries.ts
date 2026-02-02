@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { useStore } from '../store/useStore';
 import { Node, Edge, Task } from '../types';
 
 // Query Keys
@@ -410,7 +411,7 @@ export const useUpdateCardProgressMutation = () => {
 };
 
 export const useAIGenerateMutation = () => {
-  return useMutation({ mutationFn: api.ai.generate });
+  return useMutation({ mutationFn: api.ai.generateContent });
 };
 
 export const useAIExpandMutation = () => {
@@ -504,6 +505,12 @@ export const useUpdateProfileMutation = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.user, data);
       queryClient.invalidateQueries({ queryKey: queryKeys.user });
+      
+      // Update global store to ensure api.ts uses latest config
+      const { setUser, token } = useStore.getState();
+      if (data.user) {
+        setUser(data.user, token);
+      }
     },
   });
 };

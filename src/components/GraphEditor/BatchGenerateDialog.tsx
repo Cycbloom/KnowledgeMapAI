@@ -82,6 +82,9 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
     if (types.length === 0) return;
     setIsLoading(true);
     
+    // api.ai.batchGenerateCards now handles provider/model injection from store if not provided
+    // So we don't need to manually read from localStorage
+
     try {
       const res: any = await api.ai.batchGenerateCards(selectedNodeIds, {
         types: types as any,

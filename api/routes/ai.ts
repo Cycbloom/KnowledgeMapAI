@@ -23,6 +23,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { CacheKeys, cacheService } from '../services/cache.js';
 import { graphService } from '../services/graphService.js';
 import { openai, getAIModel, getMockResponse, aiService } from '../services/aiService.js';
+import { getAIProviderForTask, getAIProvider } from '../services/ai/factory.js';
 
 dotenv.config();
 
@@ -35,21 +36,25 @@ const upload = multer({
 });
 
 router.get('/status', requireAuth, (req: AuthRequest, res: Response) => {
-  const model = getAIModel();
-  const provider = model.includes('deepseek') ? 'deepseek' : 'openai';
-  res.json({ enabled: !!openai, provider, model });
+  const provider = getAIProviderForTask('text');
+  res.json({ 
+    enabled: provider.hasKey, 
+    provider: provider.providerType, 
+    model: provider.model 
+  });
 });
 
 router.post('/generate-content', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
-  const { topic, context } = req.body;
+  const { topic, context, provider: providerType, model } = req.body;
+  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
 
-  if (!openai) {
+  if (!provider.hasKey) {
     // @ts-ignore
     return res.json({ content: getMockResponse('content', topic) });
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
@@ -61,7 +66,7 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
         },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
-      model: getAIModel(),
+      model: model || provider.model,
     });
 
     res.json({ content: completion.choices[0].message.content });
@@ -72,10 +77,10 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
 });
 
 router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, existing_nodes } = req.body;
+  const { node_title, node_content, existing_nodes, child_nodes, provider, model } = req.body;
 
   try {
-    const result = await aiService.expandKnowledge(node_title, node_content, existing_nodes || []);
+    const result = await aiService.expandKnowledge(node_title, node_content, existing_nodes || [], child_nodes || [], { provider, model });
     res.json(result);
   } catch (error: any) {
     console.error('AI Expand Error:', error);
@@ -84,14 +89,15 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
 });
 
 router.post('/generate-content-stream', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
-  const { topic, context } = req.body;
+  const { topic, context, provider: providerType, model } = req.body;
+  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
 
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  if (!openai) {
+  if (!provider.hasKey) {
     // Mock Streaming
     // @ts-ignore
     const mockContent = getMockResponse('content', topic) as string;
@@ -111,7 +117,7 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
   }
 
   try {
-    const stream = await openai.chat.completions.create({
+    const stream = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
@@ -123,7 +129,7 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
         },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
-      model: getAIModel(),
+      model: provider.model,
       stream: true,
     });
 
@@ -142,23 +148,12 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
   }
 });
 
-router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, existing_nodes, child_nodes } = req.body;
-
-  try {
-    const aiResult = await aiService.expandKnowledge(node_title, node_content, existing_nodes, child_nodes);
-    res.json(aiResult);
-  } catch (error: any) {
-    console.error('AI Error:', error);
-    throw new AppError(error.message || 'AI expansion failed', 500, ErrorCodes.INTERNAL_ERROR);
-  }
-});
 
 router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content } = req.body;
+  const { node_title, node_content, provider, model } = req.body;
 
   try {
-    const aiResult = await aiService.generateCards(node_title, node_content);
+    const aiResult = await aiService.generateCards(node_title, node_content, { provider, model });
     res.json({ cards: aiResult.cards || [] });
   } catch (error: any) {
     console.error('AI Error:', error);
@@ -234,7 +229,7 @@ router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) =>
 });
 
 router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (req: AuthRequest, res: Response) => {
-  const { text, graph_id, action = 'analyze', nodes, edges } = req.body;
+  const { text, graph_id, action = 'analyze', nodes, edges, provider: providerType, model } = req.body;
 
   // Handle Save Action (Batch Insert)
   if (action === 'save') {
@@ -345,7 +340,9 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
     throw new AppError('Text content must be at least 10 characters long', 400, ErrorCodes.VALIDATION_ERROR);
   }
 
-  if (!openai) {
+  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
+
+  if (!provider.hasKey) {
     // Mock response for dev
     return res.json({
       nodes: [
@@ -365,7 +362,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
@@ -392,7 +389,7 @@ Please respond in Chinese.`
         },
         { role: "user", content: `Text: ${text.substring(0, 15000)}` } // Limit input to avoid context overflow
        ],
-       model: getAIModel(),
+       model: model || provider.model,
        response_format: { type: "json_object" },
        max_tokens: 8000,
      });
@@ -420,14 +417,15 @@ Please respond in Chinese.`
 
 // Chat with Graph
 router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest, res: Response) => {
-  const { message, graph_id, history = [], context_node_ids } = req.body;
+  const { message, graph_id, history = [], context_node_ids, provider: providerType, model } = req.body;
+  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
 
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  if (!openai) {
+  if (!provider.hasKey) {
     // @ts-ignore
     const mockContent = getMockResponse('chat', message) as string;
     const chunks = mockContent.split('');
@@ -486,9 +484,9 @@ Respond in Chinese.`
     ];
 
     // 4. Call AI
-    const stream = await openai.chat.completions.create({
+    const stream = await provider.client.chat.completions.create({
       messages,
-      model: getAIModel(),
+      model: model || provider.model,
       stream: true,
     });
 
@@ -511,8 +509,9 @@ Respond in Chinese.`
 // Smart Connection Recommendation
 router.post('/recommend-connections', requireAuth, validate(recommendConnectionsSchema), async (req: AuthRequest, res: Response) => {
   const { graph_id, node_title, node_content } = req.body;
+  const provider = getAIProviderForTask('text');
 
-  if (!openai) {
+  if (!provider.hasKey) {
     throw new AppError('AI provider not configured', 503, ErrorCodes.INTERNAL_ERROR);
   }
 
@@ -526,7 +525,7 @@ router.post('/recommend-connections', requireAuth, validate(recommendConnections
     const nodesSummary = nodes.map((n: any) => ({ id: n.id, title: n.title }));
 
     // 3. Ask AI for potential connections
-    const completion = await openai.chat.completions.create({
+    const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
@@ -539,7 +538,7 @@ Respond in Chinese.`
           content: `New Node:\nTitle: ${node_title}\nContent: ${node_content || ''}\n\nExisting Nodes:\n${JSON.stringify(nodesSummary)}` 
         }
       ],
-      model: getAIModel(),
+      model: provider.model,
       response_format: { type: "json_object" },
     });
 
@@ -555,14 +554,15 @@ Respond in Chinese.`
 
 // Document/PDF to Graph
 router.post('/document-to-graph', requireAuth, upload.single('file'), async (req: AuthRequest, res: Response) => {
-  const { graph_id } = req.body;
+  const { graph_id, provider: providerOverride, model: modelOverride } = req.body;
   const file = req.file;
+  const provider = getAIProviderForTask('text', providerOverride, modelOverride);
 
   if (!file) {
     throw new AppError('No file uploaded', 400, ErrorCodes.VALIDATION_ERROR);
   }
 
-  if (!openai) {
+  if (!provider.hasKey) {
     throw new AppError('AI provider not configured', 500, ErrorCodes.INTERNAL_ERROR);
   }
 
@@ -618,7 +618,7 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
 
     // Reuse text-to-graph logic but with extracted text
     console.log(`Sending ${text.length} characters to AI for graph generation...`);
-    const completion = await openai.chat.completions.create({
+    const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
@@ -645,7 +645,7 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
         },
         { role: "user", content: `文件名: ${file.originalname}\n文本内容:\n\n${text.substring(0, 15000)}` }
       ],
-      model: getAIModel(),
+      model: provider.model,
       response_format: { type: "json_object" },
       max_tokens: 4000,
     });

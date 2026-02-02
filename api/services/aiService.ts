@@ -3,16 +3,15 @@ import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
+import { getAIProviderForTask, getAIProvider } from './ai/factory.js';
+import { AIProviderType } from './ai/types.js';
 
 dotenv.config();
 
-const apiKey = process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY;
-const baseURL = process.env.DEEPSEEK_API_KEY ? 'https://api.deepseek.com' : undefined;
-const model = process.env.DEEPSEEK_API_KEY ? 'deepseek-chat' : 'gpt-3.5-turbo';
-
-export const openai = apiKey ? new OpenAI({ apiKey, baseURL }) : null;
-
-export const getAIModel = () => model;
+// Backward compatibility: export openai and getAIModel based on default 'text' provider
+const defaultProvider = getAIProviderForTask('text');
+export const openai = defaultProvider.hasKey ? defaultProvider.client : null;
+export const getAIModel = () => defaultProvider.model;
 
 // Helper to generate mock response if no API key
 export const getMockResponse = (type: string, prompt: string) => {
@@ -38,6 +37,8 @@ export interface GenerateCardsOptions {
   types?: ('qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay')[];
   count?: number;
   pack_type?: 'standard' | 'comprehensive' | 'custom';
+  provider?: AIProviderType;
+  model?: string;
 }
 
 export class AIService {
@@ -51,16 +52,17 @@ export class AIService {
 
   async generateCards(topic: string, content: string, options: GenerateCardsOptions = {}) {
     // If options.type is provided (single string), wrap it in array for types (compatibility)
-    // But here we destruct types directly. 
-    // We should support `type` (singular) in options if caller sends it, or just use types (plural).
-    // The previous caller (TaskProcessor) sends { type: 'qa', count: ... }.
-    // So let's handle that.
     const inputOptions: any = options;
     const types = inputOptions.type ? [inputOptions.type] : (options.types || ['qa', 'choice']);
     const count = options.count || 3;
     const context = options.context;
 
-    if (!openai) {
+    // Get provider for 'text' task
+    const provider = options.provider 
+      ? getAIProvider(options.provider) 
+      : getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
       return { 
         cards: [
           { type: 'qa', question: `什么是 ${topic}?`, answer: `${topic} 的定义是... (Mock)`, explanation: '这是详细解析...' },
@@ -73,7 +75,7 @@ export class AIService {
       };
     }
 
-    const typePrompts = {
+    const typePrompts: Record<string, string> = {
       qa: "For 'qa' type: Create thought-provoking open-ended questions that test deep understanding. Provide a detailed 'explanation' analyzing the answer.",
       choice: "For 'choice' type: Create multiple-choice questions with 4 plausible options. Provide the correct answer and a detailed 'explanation' of why it is correct and others are wrong.",
       true_false: "For 'true_false' type: Create statements focusing on common misconceptions or key details. Provide a detailed 'explanation'.",
@@ -85,7 +87,7 @@ export class AIService {
     const selectedPrompts = types.map(t => typePrompts[t] || "").join("\n");
 
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: `You are an educational expert. Generate ${count} flashcards based on the provided topic and content. 
           
@@ -108,7 +110,7 @@ Return a JSON object with a 'cards' array. Each card object must have:
 Please respond in Chinese.` },
           { role: "user", content: `Topic: ${topic}\nContent: ${content || 'No detailed content provided.'}` }
         ],
-        model: model,
+        model: options.model || provider.model,
         response_format: { type: "json_object" },
       });
 
@@ -132,8 +134,12 @@ Please respond in Chinese.` },
     }
   }
 
-  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[]) {
-    if (!openai) {
+  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string } = {}) {
+    const provider = options.provider
+      ? getAIProvider(options.provider)
+      : getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
       return { suggestions: getMockResponse('expand', nodeTitle) };
     }
 
@@ -146,7 +152,7 @@ Please respond in Chinese.` },
         ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(', ')}`
         : '';
 
-      const completion = await openai.chat.completions.create({
+      const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
             "Quantity: Generate as many relevant nodes as necessary to cover the topic thoroughly (up to 20 nodes), but quality and representativeness are more important than quantity.\n" +
@@ -156,7 +162,7 @@ Please respond in Chinese.` },
             "Please respond in Chinese." },
           { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
         ],
-        model: model,
+        model: options.model || provider.model,
         response_format: { type: "json_object" },
       });
 

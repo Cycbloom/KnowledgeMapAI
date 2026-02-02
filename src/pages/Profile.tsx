@@ -25,12 +25,45 @@ export const Profile = () => {
   const [retention, setRetention] = useState(0.9);
   const [maxInterval, setMaxInterval] = useState(36500);
 
+  // AI Configuration State
+  const [textConfig, setTextConfig] = useState({ provider: 'deepseek', model: 'deepseek-chat' });
+  const [embeddingConfig, setEmbeddingConfig] = useState({ provider: 'volcengine', model: 'doubao-embedding-1.5' });
+  const [reasoningConfig, setReasoningConfig] = useState({ provider: 'aliyun', model: 'qwen-max' });
+
   useEffect(() => {
     if (settings) {
       if (settings.request_retention) setRetention(Number(settings.request_retention));
       if (settings.maximum_interval) setMaxInterval(Number(settings.maximum_interval));
+      
+      // Load AI Config from DB
+      if (settings.ai_config) {
+        if (settings.ai_config.text) setTextConfig(settings.ai_config.text);
+        if (settings.ai_config.embedding) setEmbeddingConfig(settings.ai_config.embedding);
+        if (settings.ai_config.reasoning) setReasoningConfig(settings.ai_config.reasoning);
+      }
     }
   }, [settings]);
+
+  const handleSaveAISettings = async () => {
+    try {
+      await updateProfileMutation.mutateAsync({
+        settings: {
+          ...settings, // Preserve other settings
+          request_retention: Number(retention), // Ensure these are also saved/preserved
+          maximum_interval: Number(maxInterval),
+          ai_config: {
+            text: textConfig,
+            embedding: embeddingConfig,
+            reasoning: reasoningConfig
+          }
+        }
+      });
+      addMessage({ type: 'success', content: 'AI 配置已保存到云端' });
+    } catch (e) {
+      console.error(e);
+      addMessage({ type: 'error', content: '保存 AI 配置失败' });
+    }
+  };
 
   const handleSaveSettings = async () => {
     try {
@@ -143,25 +176,121 @@ export const Profile = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Cpu className="w-5 h-5 text-purple-600" />
-            <h2 className="text-lg font-bold text-gray-900">AI 状态</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-purple-600" />
+              <h2 className="text-lg font-bold text-gray-900">AI 状态与配置</h2>
+            </div>
+            <button
+               onClick={handleSaveAISettings}
+               className="px-3 py-1.5 rounded bg-purple-600 text-white text-sm hover:bg-purple-700 flex items-center gap-2"
+            >
+               <Save className="w-4 h-4" />
+               <span>保存配置</span>
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="space-y-6">
+            {/* Text Task Config */}
             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-              <div className="text-gray-500">是否启用</div>
-              <div className={`mt-1 font-semibold ${aiStatus?.enabled ? 'text-emerald-700' : 'text-amber-800'}`}>
-                {aiStatus?.enabled ? '已启用' : '未启用'}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 bg-blue-100 rounded text-blue-700">
+                  <Brain className="w-4 h-4" />
+                </div>
+                <h3 className="font-semibold text-gray-900">文本生成任务 (对话/卡片/扩充)</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">提供方</label>
+                  <select 
+                    value={textConfig.provider}
+                    onChange={(e) => setTextConfig({ ...textConfig, provider: e.target.value })}
+                    className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="deepseek">Deepseek</option>
+                    <option value="volcengine">火山引擎 (Volcengine)</option>
+                    <option value="aliyun">阿里云 (Aliyun)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">模型名称</label>
+                  <input 
+                    type="text" 
+                    value={textConfig.model}
+                    onChange={(e) => setTextConfig({ ...textConfig, model: e.target.value })}
+                    placeholder="如: deepseek-chat"
+                    className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
               </div>
             </div>
+
+            {/* Embedding Task Config */}
             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-              <div className="text-gray-500">提供方</div>
-              <div className="mt-1 font-semibold text-gray-900">{aiStatus?.provider || '-'}</div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 bg-green-100 rounded text-green-700">
+                  <Cpu className="w-4 h-4" />
+                </div>
+                <h3 className="font-semibold text-gray-900">向量化任务 (搜索/相似度)</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">提供方</label>
+                  <select 
+                    value={embeddingConfig.provider}
+                    onChange={(e) => setEmbeddingConfig({ ...embeddingConfig, provider: e.target.value })}
+                    className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="volcengine">火山引擎 (Volcengine)</option>
+                    <option value="aliyun">阿里云 (Aliyun)</option>
+                    <option value="deepseek">Deepseek</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">模型名称 (Endpoint ID)</label>
+                  <input 
+                    type="text" 
+                    value={embeddingConfig.model}
+                    onChange={(e) => setEmbeddingConfig({ ...embeddingConfig, model: e.target.value })}
+                    placeholder="如: doubao-embedding-1.5"
+                    className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Reasoning Task Config */}
             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-              <div className="text-gray-500">模型</div>
-              <div className="mt-1 font-semibold text-gray-900">{aiStatus?.model || '-'}</div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 bg-orange-100 rounded text-orange-700">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <h3 className="font-semibold text-gray-900">推理任务 (复杂逻辑/规划)</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">提供方</label>
+                  <select 
+                    value={reasoningConfig.provider}
+                    onChange={(e) => setReasoningConfig({ ...reasoningConfig, provider: e.target.value })}
+                    className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="aliyun">阿里云 (Aliyun)</option>
+                    <option value="deepseek">Deepseek</option>
+                    <option value="volcengine">火山引擎 (Volcengine)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">模型名称</label>
+                  <input 
+                    type="text" 
+                    value={reasoningConfig.model}
+                    onChange={(e) => setReasoningConfig({ ...reasoningConfig, model: e.target.value })}
+                    placeholder="如: qwen-max"
+                    className="w-full p-2 rounded border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -172,7 +301,7 @@ export const Profile = () => {
                 <div>
                   <div className="font-semibold">配置方式</div>
                   <div className="mt-1 leading-relaxed text-amber-800">
-                    在服务端环境变量中配置 OPENAI_API_KEY 或 DEEPSEEK_API_KEY，然后重启服务端进程。未配置时：文本分析/对话会进入模拟模式，文档解析与智能推荐将不可用。
+                    在服务端环境变量中配置 AI_API_KEY 或 DEEPSEEK_API_KEY，然后重启服务端进程。未配置时：文本分析/对话会进入模拟模式，文档解析与智能推荐将不可用。
                   </div>
                 </div>
               </div>

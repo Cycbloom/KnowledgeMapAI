@@ -85,6 +85,8 @@ export const updateCardProgressSchema = z.object({
 export const generateContentSchema = z.object({
   topic: z.string().min(1, '主题不能为空'),
   context: z.string().optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
 });
 
 export const expandKnowledgeSchema = z.object({
@@ -92,11 +94,15 @@ export const expandKnowledgeSchema = z.object({
   node_content: z.string().optional(),
   existing_nodes: z.array(z.string()).optional(),
   child_nodes: z.array(z.string()).optional(), // Add child_nodes
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
 });
 
 export const generateCardsSchema = z.object({
   node_title: z.string().min(1, '节点标题不能为空'),
   node_content: z.string().optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
 });
 
 export const generateCardsBatchSchema = z.object({
@@ -105,6 +111,8 @@ export const generateCardsBatchSchema = z.object({
     types: z.array(z.enum(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay'])).optional(),
     count: z.number().min(1).max(50).optional(), // Increased max count for packs
     pack_template: z.enum(['standard', 'comprehensive', 'exam', 'quick']).optional(),
+    provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+    model: z.string().optional(),
   }).optional(),
 });
 
@@ -114,6 +122,8 @@ export const textToGraphSchema = z.object({
   action: z.enum(['analyze', 'save']).optional(),
   nodes: z.array(z.any()).optional(),
   edges: z.array(z.any()).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
 });
 
 export const chatSchema = z.object({
@@ -121,12 +131,16 @@ export const chatSchema = z.object({
   graph_id: z.string().uuid('无效的图谱ID'),
   history: z.array(z.any()).optional(),
   context_node_ids: z.array(z.string().uuid()).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
 });
 
 export const recommendConnectionsSchema = z.object({
   graph_id: z.string().uuid('无效的图谱ID'),
   node_title: z.string().min(1, '节点标题不能为空'),
   node_content: z.string().optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
 });
 
 export const documentToGraphSchema = z.object({

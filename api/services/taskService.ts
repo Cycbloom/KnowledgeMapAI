@@ -245,7 +245,9 @@ export class TaskService {
             context,
             types: finalTypes,
             count: finalCount,
-            pack_type: config?.pack_template 
+            pack_type: config?.pack_template,
+            provider: config?.provider,
+            model: config?.model
           });
 
           const cards = aiResult.cards;

@@ -120,6 +120,14 @@ const request = async (url: string, options: RequestInit = {}) => {
   }
 };
 
+const getAIConfig = (taskType: 'text' | 'embedding' | 'reasoning' = 'text') => {
+  const { user } = useStore.getState();
+  const config = user?.profile?.settings?.ai_config?.[taskType];
+  return {
+    provider: config?.provider,
+    model: config?.model
+  };
+};
 
 export const api = {
   auth: {
@@ -150,8 +158,19 @@ export const api = {
   },
   ai: {
     status: () => request('/ai/status'),
-    generate: (data: any) => request('/ai/generate-content', { method: 'POST', body: JSON.stringify(data) }),
-    generateContentStream: async (data: any, onChunk: (content: string) => void) => {
+    generateContent: (data: { topic: string; context?: string; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/ai/generate-content', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    generateContentStream: async (data: { topic: string; context?: string; provider?: string; model?: string }, onChunk: (content: string) => void) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+
       const token = useStore.getState().token;
       const response = await fetch(`${API_URL}/ai/generate-content-stream`, {
         method: 'POST',
@@ -159,7 +178,7 @@ export const api = {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -198,17 +217,43 @@ export const api = {
         }
       }
     },
-    expand: (data: any) => request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(data) }),
-    generateCards: (data: any) => request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(data) }),
-    batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string }) => 
-      request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config }) }),
+    expand: (data: { node_title: string; node_content?: string; existing_nodes?: any[]; child_nodes?: any[]; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    generateCards: (data: { node_title: string; node_content: string; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string; provider?: string; model?: string }) => {
+      const aiConfig = getAIConfig('text');
+      const payloadConfig = { ...config };
+      if (!payloadConfig.provider && aiConfig.provider) payloadConfig.provider = aiConfig.provider;
+      if (!payloadConfig.model && aiConfig.model) payloadConfig.model = aiConfig.model;
+      return request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config: payloadConfig }) });
+    },
     getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
-    textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: any[]; edges?: any[] }) => request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(data) }),
+    textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: any[]; edges?: any[]; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(payload) });
+    },
     documentToGraph: (data: { graph_id: string; file: File }) => {
       const token = useStore.getState().token;
+      const config = getAIConfig('text');
       const formData = new FormData();
       formData.append('graph_id', data.graph_id);
       formData.append('file', data.file);
+      if (config.provider) formData.append('provider', config.provider);
+      if (config.model) formData.append('model', config.model);
       
       return fetch(`${API_URL}/ai/document-to-graph`, {
         method: 'POST',
@@ -220,7 +265,12 @@ export const api = {
     },
     recommendConnections: (data: { graph_id: string; node_title: string; node_content?: string }) => 
       request('/ai/recommend-connections', { method: 'POST', body: JSON.stringify(data) }),
-    chatStream: async (data: { message: string; graph_id: string; history?: any[]; context_node_ids?: string[] }, onChunk: (content: string) => void) => {
+    chatStream: async (data: { message: string; graph_id: string; history?: any[]; context_node_ids?: string[]; provider?: string; model?: string }, onChunk: (content: string) => void) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+
       const token = useStore.getState().token;
       const response = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
@@ -228,7 +278,7 @@ export const api = {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {

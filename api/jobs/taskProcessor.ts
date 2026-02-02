@@ -81,11 +81,13 @@ class TaskProcessor {
     const truncatedContent = node_content ? node_content.substring(0, MAX_CONTENT_LENGTH) : '';
     
     // Determine types and counts
-    // config: { types: string[], count: number, pack_template?: string }
+    // config: { types: string[], count: number, pack_template?: string, provider?: string, model?: string }
     const types = (config?.types && Array.isArray(config.types) && config.types.length > 0) 
         ? config.types 
         : ['qa', 'choice']; // Default types
     const totalRequestCount = config?.count || 5;
+    const provider = config?.provider || task.payload.provider;
+    const model = config?.model || task.payload.model;
     
     // Use remaining count strategy to ensure exact total count
     let remainingCount = totalRequestCount;
@@ -112,7 +114,9 @@ class TaskProcessor {
             // Generate for specific type
             const aiResult = await aiService.generateCards(node_title, truncatedContent, { 
                 type: type as any, 
-                count: countPerType 
+                count: countPerType,
+                provider,
+                model
             });
             const cards = aiResult.cards || [];
 
@@ -183,7 +187,7 @@ class TaskProcessor {
   }
 
   private async handleExpandGraph(task: Task) {
-    const { graph_id, node_id, node_title, node_content, existing_nodes, child_nodes } = task.payload;
+    const { graph_id, node_id, node_title, node_content, existing_nodes, child_nodes, provider, model } = task.payload;
 
     // Fetch latest existing nodes in the graph to avoid duplicates/conflicts in batch processing
     const { data: allNodes } = await supabaseAdmin
@@ -212,7 +216,7 @@ class TaskProcessor {
     }
 
     // 1. Get suggestions from AI
-    const aiResult = await aiService.expandKnowledge(node_title, node_content, latestExistingNodes, latestChildNodes);
+    const aiResult = await aiService.expandKnowledge(node_title, node_content, latestExistingNodes, latestChildNodes, { provider, model });
     const suggestions = aiResult.suggestions;
 
     // 2. Insert new nodes and edges

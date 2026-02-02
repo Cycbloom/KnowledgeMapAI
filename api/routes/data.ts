@@ -120,8 +120,11 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
           'C:\\Windows\\Fonts\\simhei.ttf',
           'C:\\Windows\\Fonts\\msyh.ttf',
           'C:\\Windows\\Fonts\\simsun.ttc',
+          'C:\\Windows\\Fonts\\arialuni.ttf',
+          'C:\\Windows\\Fonts\\msyhl.ttc',
           '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc', // Common Linux path
-          '/usr/share/fonts/noto/NotoSansSC-Regular.otf'
+          '/usr/share/fonts/noto/NotoSansSC-Regular.otf',
+          '/System/Library/Fonts/PingFang.ttc' // macOS
         ];
 
         for (const p of systemFonts) {

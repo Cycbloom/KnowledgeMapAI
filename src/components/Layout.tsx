@@ -3,9 +3,11 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, LayoutDashboard, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, BarChart } from 'lucide-react';
+import { LogOut, LayoutDashboard, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, BarChart, HelpCircle } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
+import { GlobalSearch } from './GlobalSearch';
+import { HelpModal } from './HelpModal';
 
 export const Layout = () => {
   const { user, setUser, token } = useStore();
@@ -13,6 +15,7 @@ export const Layout = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { addMessage } = useMessageStore();
   
   // Use TanStack Query for user fetching
@@ -177,12 +180,40 @@ export const Layout = () => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden flex flex-col w-full relative">
-          <div className="flex-1 overflow-hidden">
+          
+          {/* Top Header */}
+          <header className="bg-white border-b border-gray-200 h-16 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm">
+            <div className="flex-1 max-w-xl">
+               <GlobalSearch />
+            </div>
+            <div className="flex items-center gap-4 ml-4">
+               <button 
+                 onClick={() => setIsHelpOpen(true)}
+                 className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                 title="操作指南"
+               >
+                 <HelpCircle size={20} />
+               </button>
+               {user && (
+                 <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
+                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">
+                      {(user.user_metadata as any)?.name || user.email?.split('@')[0]}
+                    </span>
+                 </div>
+               )}
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-hidden relative">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
           </div>
           <MessageBar />
+          <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
         </div>
       </div>
     </div>

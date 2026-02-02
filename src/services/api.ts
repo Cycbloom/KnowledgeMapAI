@@ -207,6 +207,9 @@ export const api = {
   statistics: {
     getStats: () => request('/statistics'),
   },
+  search: {
+    query: (q: string) => request(`/search?q=${encodeURIComponent(q)}`),
+  },
   tasks: {
     create: (data: { type: string; payload: any }) => request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
     list: (status?: string) => request(`/tasks${status ? `?status=${status}` : ''}`),

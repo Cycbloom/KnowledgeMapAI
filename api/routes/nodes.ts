@@ -93,6 +93,42 @@ router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response)
   res.json({ message: '节点已删除' });
 });
 
+// Batch delete nodes
+router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { node_ids } = req.body; // Expect array of UUIDs
+
+  if (!node_ids || !Array.isArray(node_ids) || node_ids.length === 0) {
+    throw new AppError('请提供有效的节点ID列表', 400, ErrorCodes.INVALID_PARAMS);
+  }
+
+  // First, get one node to identify the graph (assuming all nodes belong to same graph for now, or just handle cache later)
+  // Actually, we should get all graph_ids involved to invalidate caches.
+  const { data: nodes } = await req.supabase!
+    .from('nodes')
+    .select('graph_id')
+    .in('id', node_ids);
+    
+  if (!nodes || nodes.length === 0) {
+     return res.json({ message: '未找到匹配的节点', count: 0 });
+  }
+
+  const { error, count } = await req.supabase!
+    .from('nodes')
+    .delete({ count: 'exact' })
+    .in('id', node_ids);
+
+  if (error) throw new AppError(error.message || '批量删除节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+
+  // Invalidate caches for all affected graphs
+  const graphIds = [...new Set(nodes.map(n => n.graph_id))];
+  for (const gid of graphIds) {
+    await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, gid));
+    await cacheService.del(CacheKeys.STUDY_CARDS(gid));
+  }
+
+  res.json({ message: `成功删除 ${count} 个节点`, count });
+});
+
 // Create an edge
 router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthRequest, res: Response) => {
   const { source_node_id, target_node_id, relationship_type } = req.body;

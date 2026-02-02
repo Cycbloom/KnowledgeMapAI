@@ -71,6 +71,18 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
   }
 });
 
+router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
+  const { node_title, node_content, existing_nodes } = req.body;
+
+  try {
+    const result = await aiService.expandKnowledge(node_title, node_content, existing_nodes || []);
+    res.json(result);
+  } catch (error: any) {
+    console.error('AI Expand Error:', error);
+    res.status(500).json({ error: error.message || 'AI 扩展失败' });
+  }
+});
+
 router.post('/generate-content-stream', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
   const { topic, context } = req.body;
 

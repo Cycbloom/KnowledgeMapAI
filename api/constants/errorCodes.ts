@@ -15,6 +15,7 @@ export const ErrorCodes = {
   // Validation
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   INVALID_JSON: 'INVALID_JSON',
+  INVALID_PARAMS: 'INVALID_PARAMS',
   
   // Database
   DUPLICATE_ENTRY: 'DUPLICATE_ENTRY',

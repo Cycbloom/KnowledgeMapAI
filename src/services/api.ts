@@ -62,6 +62,7 @@ export const api = {
     create: (data: any) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => request(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/nodes/${id}`, { method: 'DELETE' }),
+    batchDelete: (node_ids: string[]) => request('/nodes/batch-delete', { method: 'POST', body: JSON.stringify({ node_ids }) }),
   },
   edges: {
     create: (data: any) => request('/edges', { method: 'POST', body: JSON.stringify(data) }),

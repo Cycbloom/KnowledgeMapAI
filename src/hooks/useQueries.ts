@@ -310,6 +310,37 @@ export const useDeleteNodeMutation = () => {
   });
 };
 
+export const useBatchDeleteNodesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ nodeIds, graphId }: { nodeIds: string[]; graphId: string }) => api.nodes.batchDelete(nodeIds),
+    onMutate: async ({ nodeIds, graphId }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.graphData(graphId) });
+      const previousData = queryClient.getQueryData(queryKeys.graphData(graphId));
+
+      queryClient.setQueryData(queryKeys.graphData(graphId), (old: { nodes: Node[], edges: Edge[] } | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          nodes: old.nodes.filter(node => !nodeIds.includes(node.id)),
+          edges: old.edges.filter(edge => !nodeIds.includes(edge.source_node_id) && !nodeIds.includes(edge.target_node_id)),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKeys.graphData(variables.graphId), context.previousData);
+      }
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
+    },
+  });
+};
+
 export const useCreateEdgeMutation = () => {
   const queryClient = useQueryClient();
 

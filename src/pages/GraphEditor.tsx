@@ -53,6 +53,7 @@ import {
   useGraphNodeStatus, 
   useCreateTaskMutation, 
   useAIStatus, 
+  useBatchDeleteNodesMutation,
   queryKeys
 } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -74,6 +75,7 @@ export const GraphEditor = () => {
   const createNodeMutation = useCreateNodeMutation();
   const updateNodeMutation = useUpdateNodeOptimisticMutation();
   const deleteNodeMutation = useDeleteNodeMutation();
+  const batchDeleteNodesMutation = useBatchDeleteNodesMutation();
   const createEdgeMutation = useCreateEdgeMutation();
   const deleteEdgeMutation = useDeleteEdgeMutation();
   const aiExpandMutation = useAIExpandMutation();
@@ -547,21 +549,19 @@ export const GraphEditor = () => {
         setLoading(true);
         const nodeIds = Array.from(selectedNodeIds);
         
-        // Execute in parallel and wait for all to complete
-        Promise.all(nodeIds.map(nodeId => 
-          deleteNodeMutation.mutateAsync({ id: nodeId, graphId: id })
-        )).then(() => {
-          setSelectedNodeIds(new Set());
-          setSelectedNode(null);
-          setSidebarMode('none');
-          addMessage({ content: '批量删除成功', type: 'success' });
-        }).catch((err) => {
-          console.error(err);
-          addMessage({ content: '批量删除失败', type: 'error' });
-        }).finally(() => {
-          setLoading(false);
-          setConfirmModal(prev => ({ ...prev, isOpen: false }));
-        });
+        batchDeleteNodesMutation.mutateAsync({ nodeIds, graphId: id })
+          .then(() => {
+            setSelectedNodeIds(new Set());
+            setSelectedNode(null);
+            setSidebarMode('none');
+            addMessage({ content: '批量删除成功', type: 'success' });
+          }).catch((err) => {
+            console.error(err);
+            addMessage({ content: '批量删除失败', type: 'error' });
+          }).finally(() => {
+            setLoading(false);
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          });
       }
     });
   };

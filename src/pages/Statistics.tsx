@@ -100,10 +100,10 @@ const GrowthChart = ({ data }: { data: any[] }) => (
 );
 
 // --- Forgetting Curve Chart Component ---
-const ForgettingCurveChart = ({ retentionThreshold }: { retentionThreshold: number }) => {
+const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionThreshold: number, avgStability: number }) => {
   const data = useMemo(() => {
     const points = [];
-    const stability = 7; // 示例稳定性（天）
+    const stability = avgStability > 0 ? avgStability : 7; // Use real stability or default to 7
     for (let t = 0; t <= 30; t += 0.5) {
       const r = Math.exp(-t / stability);
       points.push({
@@ -112,12 +112,14 @@ const ForgettingCurveChart = ({ retentionThreshold }: { retentionThreshold: numb
       });
     }
     return points;
-  }, []);
+  }, [avgStability]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
       <h3 className="text-lg font-bold text-gray-800 mb-2">遗忘曲线与记忆阈值</h3>
-      <p className="text-gray-500 text-xs mb-6">基于 FSRS 算法的理论模型，展示知识随时间的遗忘过程</p>
+      <p className="text-gray-500 text-xs mb-6">
+        基于 FSRS 算法的理论模型 (平均稳定性: {avgStability > 0 ? avgStability.toFixed(1) : 7}天)
+      </p>
       <div className="flex-1 w-full min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -217,15 +219,13 @@ export const Statistics = () => {
       {/* 3. Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <ForecastChart data={stats.forecast || []} />
-        <StatsOverview data={stats.distribution || []} />
+        <ForgettingCurveChart 
+          retentionThreshold={retention} 
+          avgStability={stats.metrics.avgStability}
+        />
       </div>
 
-      {/* 4. Forgetting Curve Chart */}
-      <div className="mb-8">
-         <ForgettingCurveChart retentionThreshold={retention} />
-      </div>
-
-      {/* 5. Growth Chart (Full Width) */}
+      {/* 4. Growth Chart (Full Width) */}
       <div className="mb-8">
         <GrowthChart data={stats.growth || []} />
       </div>

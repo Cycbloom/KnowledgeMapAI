@@ -85,14 +85,16 @@ export const InstancedNodes = ({
         meshRef.current.geometry.boundingSphere = new THREE.Sphere();
       }
       meshRef.current.geometry.boundingSphere.set(new THREE.Vector3(), Infinity);
+      meshRef.current.geometry.boundingSphere.radius = Infinity;
     }
     if (hitMeshRef.current) {
       if (!hitMeshRef.current.geometry.boundingSphere) {
         hitMeshRef.current.geometry.boundingSphere = new THREE.Sphere();
       }
       hitMeshRef.current.geometry.boundingSphere.set(new THREE.Vector3(), Infinity);
+      hitMeshRef.current.geometry.boundingSphere.radius = Infinity;
     }
-  }, [simulationVersion]);
+  }, [simulationVersion, nodeCount]);
 
   useFrame(() => {
     if (!meshRef.current || !hitMeshRef.current) return;
@@ -419,29 +421,28 @@ export const LinkLines = ({
   const geometryRef = useRef<THREE.BufferGeometry>(null);
   const theme = getTheme(isDark);
   
-  // Set a dummy bounding sphere once to avoid NaN errors during projection
-  useEffect(() => {
-    if (geometryRef.current) {
-      geometryRef.current.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Infinity);
-    }
-  }, []);
+  const isValidPosition = (val: any) => 
+    typeof val === 'number' && 
+    !isNaN(val) && 
+    isFinite(val);
+  
+  const isValidNode = (n: any) => n && 
+    isValidPosition(n.x) &&
+    isValidPosition(n.y) &&
+    isValidPosition(n.z);
   
   useFrame(() => {
     if (geometryRef.current && nodesMapRef?.current) {
-      // Use provided links array OR fall back to ref
       const linksToRender = links || linksRef?.current || [];
       const nodesMap = nodesMapRef.current;
       
-      // Calculate required size: links * 2 points * 3 coords
       const count = linksToRender.length;
       const size = count * 6;
       
-      // Check if we need to resize buffer
       const currentAttribute = geometryRef.current.getAttribute('position') as THREE.BufferAttribute;
       let positions: Float32Array;
       
       if (!currentAttribute || currentAttribute.array.length < size) {
-        // Allocate slightly more to avoid frequent resizing
         positions = new Float32Array(Math.max(size * 1.2, 100 * 6)); 
         geometryRef.current.setAttribute(
           'position', 
@@ -460,12 +461,7 @@ export const LinkLines = ({
          const source = nodesMap.get(sourceId);
         const target = nodesMap.get(targetId);
 
-        const isValid = (n: any) => n && 
-          typeof n.x === 'number' && !isNaN(n.x) &&
-          typeof n.y === 'number' && !isNaN(n.y) &&
-          typeof n.z === 'number' && !isNaN(n.z);
-
-        if (isValid(source) && isValid(target)) {
+        if (isValidNode(source) && isValidNode(target)) {
            positions[index++] = source!.x!;
            positions[index++] = source!.y!;
            positions[index++] = source!.z!;
@@ -477,6 +473,13 @@ export const LinkLines = ({
 
       geometryRef.current.attributes.position.needsUpdate = true;
       geometryRef.current.setDrawRange(0, index / 3);
+      
+      if (index > 0) {
+        geometryRef.current.computeBoundingSphere();
+        if (geometryRef.current.boundingSphere && isNaN(geometryRef.current.boundingSphere.radius)) {
+          geometryRef.current.boundingSphere.radius = Infinity;
+        }
+      }
     }
   });
 

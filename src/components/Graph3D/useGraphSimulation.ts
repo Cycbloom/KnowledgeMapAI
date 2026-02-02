@@ -33,15 +33,34 @@ export const useGraphSimulation = (
         const localNodes = nodesRef.current;
         if (!localNodes || localNodes.length === 0) return;
 
-        // Ensure length match to avoid mismatch during hot-reload or race conditions
-        // positions is a Float32Array [x, y, z, x, y, z, ...]
+        const isValidPosition = (val: number) => typeof val === 'number' && !isNaN(val) && isFinite(val);
+
         if (positions && positions.length === localNodes.length * 3) {
+           let nanCount = 0;
            for (let i = 0; i < localNodes.length; i++) {
-             localNodes[i].x = positions[i * 3];
-             localNodes[i].y = positions[i * 3 + 1];
-             localNodes[i].z = positions[i * 3 + 2];
-             // Note: We don't update velocities (vx, vy, vz) as they are rarely used for rendering
-             // and saving bandwidth is priority.
+             const x = positions[i * 3];
+             const y = positions[i * 3 + 1];
+             const z = positions[i * 3 + 2];
+             
+             if (isValidPosition(x) && isValidPosition(y) && isValidPosition(z)) {
+               localNodes[i].x = x;
+               localNodes[i].y = y;
+               localNodes[i].z = z;
+             } else {
+               nanCount++;
+               if (!isValidPosition(localNodes[i].x)) {
+                 localNodes[i].x = (Math.random() - 0.5) * 10;
+               }
+               if (!isValidPosition(localNodes[i].y)) {
+                 localNodes[i].y = (Math.random() - 0.5) * 10;
+               }
+               if (!isValidPosition(localNodes[i].z)) {
+                 localNodes[i].z = (Math.random() - 0.5) * 10;
+               }
+             }
+           }
+           if (nanCount > 0) {
+             console.warn(`[Simulation] Detected and fixed ${nanCount} NaN positions`);
            }
         }
       }

@@ -4,11 +4,12 @@ import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, BarChart, HelpCircle, GraduationCap } from 'lucide-react';
+import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 import { GlobalSearch } from './GlobalSearch';
 import { HelpModal } from './HelpModal';
+import { SSEStatusIndicator } from './SSEStatusIndicator';
 import { useTheme } from '../hooks/useTheme';
 
 export const Layout = () => {
@@ -192,6 +193,7 @@ export const Layout = () => {
                  <GlobalSearch />
               </div>
               <div className="flex items-center gap-4 ml-4">
+                 <SSEStatusIndicator />
                  <button 
                    onClick={() => setIsHelpOpen(true)}
                    className={`p-1.5 rounded-full transition-colors ${

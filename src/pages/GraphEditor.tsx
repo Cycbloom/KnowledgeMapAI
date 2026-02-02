@@ -11,7 +11,7 @@ import { Node } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -29,6 +29,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
 import { useTheme } from '../hooks/useTheme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { useIsMobile } from '../hooks/useIsMobile';
 const levelLabels: Record<string, string> = {
   root: '根节点',
   core: '核心节点',
@@ -88,6 +89,7 @@ export const GraphEditor = () => {
   const createTaskMutation = useCreateTaskMutation();
   const { data: aiStatus } = useAIStatus(!!token);
   const { addMessage } = useMessageStore();
+  const isMobile = useIsMobile();
   const aiEnabled = aiStatus?.enabled ?? true;
   const hasShownAIWarningRef = useRef(false);
 
@@ -169,6 +171,31 @@ export const GraphEditor = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
+  const [relatedNodes, setRelatedNodes] = useState<any[]>([]);
+  const [isRelatedLoading, setIsRelatedLoading] = useState(false);
+  const [showRelatedSection, setShowRelatedSection] = useState(false);
+
+  // Reset related nodes when selection changes
+  useEffect(() => {
+    setRelatedNodes([]);
+    setShowRelatedSection(false);
+  }, [selectedNode?.id]);
+
+  const handleFetchRelatedNodes = async () => {
+    if (!selectedNode) return;
+    setIsRelatedLoading(true);
+    setShowRelatedSection(true);
+    try {
+      const res = await api.nodes.getRelated(selectedNode.id);
+      setRelatedNodes(res || []);
+    } catch (err) {
+      console.error(err);
+      addMessage({ type: 'error', content: '获取相关节点失败' });
+    } finally {
+      setIsRelatedLoading(false);
+    }
+  };
+
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [exportImageOptions, setExportImageOptions] = useState({
     transparent: false,
@@ -953,6 +980,147 @@ export const GraphEditor = () => {
 
   // Removed handleFileUpload as it's now integrated into TextToGraphModal
 
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 p-4">
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-full shadow-sm">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-lg font-bold truncate px-2 text-gray-800">{graphMeta?.title || 'Knowledge Graph'}</h1>
+          <div className="w-9" /> {/* Spacer */}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-4 text-center">
+          <div className="mb-4 flex justify-center">
+             <div className="p-3 bg-blue-50 rounded-full">
+               <Sparkles className="w-8 h-8 text-blue-600" />
+             </div>
+          </div>
+          <h2 className="text-xl font-bold mb-2 text-gray-800">移动端复习模式</h2>
+          <p className="text-gray-500 mb-6 text-sm">3D 编辑功能在移动端受限，建议使用复习卡片或大纲列表。</p>
+          
+          <button 
+            onClick={() => navigate(`/study/${id}`)}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold mb-3 flex items-center justify-center space-x-2 shadow-lg shadow-blue-200 active:scale-95 transition-transform"
+          >
+            <GraduationCap size={20} />
+            <span>开始复习 (Flashcards)</span>
+          </button>
+          
+          <button 
+             onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} 
+             className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-lg font-bold flex items-center justify-center space-x-2 active:bg-gray-50 transition-colors"
+          >
+            <LayoutList size={20} />
+            <span>查看大纲列表</span>
+          </button>
+        </div>
+        
+        {/* Render GraphOutline if requested */}
+        {sidebarMode === 'outline' && (
+           <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+               <h3 className="font-bold text-gray-700">节点大纲</h3>
+             </div>
+             <div className="flex-1 overflow-y-auto">
+               <GraphOutline 
+                 nodes={nodes} 
+                 onNodeClick={(node) => {
+                   setSelectedNode(node);
+                   setSidebarMode('edit'); 
+                 }}
+                 selectedNodeId={selectedNode?.id}
+               />
+             </div>
+           </div>
+        )}
+        
+        {/* Reuse Edit Sidebar for Node Details */}
+        {sidebarMode === 'edit' && selectedNode && (
+            <div className="fixed inset-0 bg-white z-50 overflow-y-auto animate-in slide-in-from-right duration-300">
+               <div className="p-4">
+                  <button onClick={() => setSidebarMode('outline')} className="mb-4 text-gray-500 flex items-center font-medium">
+                    <ArrowLeft size={16} className="mr-1"/> 返回列表
+                  </button>
+                  <h2 className="text-2xl font-bold mb-4 text-gray-900">{selectedNode.title}</h2>
+                  
+                  <div className="mb-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${ 
+                        LEVEL_CONFIG[getLevel(selectedNode, edges)]?.color ? '' : 'bg-gray-100 text-gray-600'
+                      }`} style={{ 
+                        backgroundColor: `${selectedNode.color}15`, 
+                        color: selectedNode.color,
+                        borderColor: `${selectedNode.color}30`
+                      }}>
+                        {levelLabels[getLevel(selectedNode, edges)] || '普通节点'}
+                      </span>
+                    </div>
+                    
+                    <div className="prose prose-blue max-w-none text-gray-700">
+                       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                         {selectedNode.content || '*(无内容)*'}
+                       </ReactMarkdown>
+                    </div>
+                  </div>
+
+                  {/* Mobile Related Nodes Section */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                     <div className="flex justify-between items-center mb-4">
+                       <h5 className="text-sm font-bold text-purple-700 flex items-center">
+                         <Wand2 size={16} className="mr-2" />
+                         AI 深度探索
+                       </h5>
+                     </div>
+                     
+                     <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                       <div className="flex justify-between items-center mb-3">
+                         <span className="text-xs font-bold text-purple-700">语义相关节点</span>
+                         {!showRelatedSection && (
+                           <button 
+                             onClick={handleFetchRelatedNodes}
+                             className="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                           >
+                             查找关联
+                           </button>
+                         )}
+                       </div>
+                       
+                       {showRelatedSection && (
+                         <div className="space-y-2">
+                           {isRelatedLoading ? (
+                             <div className="flex items-center justify-center py-4 text-purple-400">
+                               <Loader2 size={16} className="animate-spin mr-2" />
+                               <span className="text-xs">分析中...</span>
+                             </div>
+                           ) : relatedNodes.length > 0 ? (
+                             relatedNodes.map(node => (
+                               <button
+                                 key={node.id}
+                                 onClick={() => setSelectedNode(node)}
+                                 className="w-full text-left p-3 bg-white hover:bg-purple-50 border border-purple-100 rounded-lg text-sm transition-all flex items-center justify-between group shadow-sm"
+                               >
+                                 <span className="truncate flex-1 text-gray-700 font-medium group-hover:text-purple-700">{node.title}</span>
+                                 <span className="text-xs text-purple-500 font-bold bg-purple-50 px-1.5 py-0.5 rounded ml-2">{(node.similarity * 100).toFixed(0)}%</span>
+                               </button>
+                             ))
+                           ) : (
+                             <div className="text-center py-2 text-xs text-purple-400 italic">
+                               未发现显著相关的其他节点
+                             </div>
+                           )}
+                         </div>
+                       )}
+                     </div>
+                  </div>
+               </div>
+            </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full relative">
       {/* 3D Canvas */}
@@ -1507,6 +1675,47 @@ export const GraphEditor = () => {
                         后台生成
                       </button>
                     </div>
+                  </div>
+                  
+                  {/* Related Nodes Section */}
+                  <div className="mt-4 pt-4 border-t border-purple-200">
+                     <div className="flex justify-between items-center mb-2">
+                       <h5 className="text-xs font-bold text-purple-700">🔗 语义相关节点</h5>
+                       {!showRelatedSection && (
+                         <button 
+                           onClick={handleFetchRelatedNodes}
+                           className="text-[10px] bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-1 rounded transition-colors"
+                         >
+                           查找关联
+                         </button>
+                       )}
+                     </div>
+                     
+                     {showRelatedSection && (
+                       <div className="space-y-2">
+                         {isRelatedLoading ? (
+                           <div className="flex items-center justify-center py-4 text-purple-400">
+                             <Loader2 size={16} className="animate-spin mr-2" />
+                             <span className="text-xs">分析中...</span>
+                           </div>
+                         ) : relatedNodes.length > 0 ? (
+                           relatedNodes.map(node => (
+                             <button
+                               key={node.id}
+                               onClick={() => handleNodeClick(node)}
+                               className="w-full text-left p-2 bg-white/60 hover:bg-white border border-purple-100 rounded text-xs transition-all flex items-center justify-between group"
+                             >
+                               <span className="truncate flex-1 text-gray-700 group-hover:text-purple-700">{node.title}</span>
+                               <span className="text-[10px] text-purple-400 bg-purple-50 px-1 rounded ml-2">{(node.similarity * 100).toFixed(0)}%</span>
+                             </button>
+                           ))
+                         ) : (
+                           <div className="text-center py-2 text-xs text-purple-400 italic">
+                             未发现显著相关的其他节点
+                           </div>
+                         )}
+                       </div>
+                     )}
                   </div>
                 </section>
               </div>

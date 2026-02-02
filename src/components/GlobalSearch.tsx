@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutGrid, FileText, Loader2, X } from 'lucide-react';
+import { Search, LayoutGrid, FileText, Loader2, X, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 import { useTheme } from '../hooks/useTheme';
 
@@ -19,7 +19,8 @@ export const GlobalSearch = () => {
   const { isDark } = useTheme();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [results, setResults] = useState<{ graphs: any[], nodes: any[] } | null>(null);
+  const [searchType, setSearchType] = useState<'keyword' | 'semantic'>('keyword');
+  const [results, setResults] = useState<{ graphs: any[], nodes: any[], answer?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounceValue(query, 300);
@@ -32,7 +33,7 @@ export const GlobalSearch = () => {
       }
       setLoading(true);
       try {
-        const data = await api.search.query(debouncedQuery);
+        const data = await api.search.query(debouncedQuery, searchType);
         setResults(data);
       } catch (err) {
         console.error(err);
@@ -41,7 +42,7 @@ export const GlobalSearch = () => {
       }
     };
     search();
-  }, [debouncedQuery]);
+  }, [debouncedQuery, searchType]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -71,13 +72,26 @@ export const GlobalSearch = () => {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder="搜索图谱或节点..."
-          className={`w-full pl-10 pr-10 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          placeholder={searchType === 'semantic' ? "AI 语义搜索..." : "搜索图谱或节点..."}
+          className={`w-full pl-10 pr-20 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
             isDark 
               ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
               : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'
           }`}
         />
+        
+        <button
+            onClick={() => setSearchType(prev => prev === 'keyword' ? 'semantic' : 'keyword')}
+            className={`absolute right-${query ? '9' : '3'} top-1/2 transform -translate-y-1/2 transition-colors p-1 rounded-md hover:bg-black/5 ${
+              searchType === 'semantic' 
+                ? 'text-purple-500' 
+                : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
+            }`}
+            title={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
+        >
+            <Sparkles size={16} fill={searchType === 'semantic' ? "currentColor" : "none"} />
+        </button>
+
         {query && (
           <button
             onClick={() => {
@@ -104,6 +118,19 @@ export const GlobalSearch = () => {
             </div>
           ) : results ? (
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+              {/* AI Answer Section */}
+              {results.answer && (
+                <div className={`p-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-purple-50/50'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles size={14} className="text-purple-500" />
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>AI 回答</span>
+                  </div>
+                  <div className={`text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    {results.answer}
+                  </div>
+                </div>
+              )}
+
               {/* Graphs Section */}
               {results.graphs.length > 0 && (
                 <div className="py-2">

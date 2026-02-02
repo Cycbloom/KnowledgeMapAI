@@ -16,6 +16,7 @@ export const getProviderConfig = (provider: AIProviderType): AIProviderConfig =>
         apiKey: process.env.VOLCENGINE_API_KEY || '',
         baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
         model: process.env.VOLCENGINE_MODEL || 'doubao-seed-1-8-251228', // Model Name or Endpoint ID
+        embeddingModel: process.env.VOLCENGINE_EMBEDDING_MODEL || 'doubao-embedding-vision-251215',
       };
     case 'aliyun':
       return {

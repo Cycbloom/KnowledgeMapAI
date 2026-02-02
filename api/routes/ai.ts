@@ -285,6 +285,21 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
         });
       }
 
+      // 1.5 Generate Embeddings
+      try {
+        await Promise.all(nodesToInsert.map(async (node: any) => {
+           const text = node.content || node.title;
+           if (text) {
+             const embedding = await aiService.generateEmbedding(text);
+             if (embedding) {
+               node.embedding = embedding;
+             }
+           }
+        }));
+      } catch (e) {
+        console.error('Failed to generate embeddings for batch nodes:', e);
+      }
+
       // 2. Batch Insert Nodes
       const { error: nodeError } = await req.supabase!
         .from('nodes')

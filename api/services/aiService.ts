@@ -14,7 +14,7 @@ export const openai = defaultProvider.hasKey ? defaultProvider.client : null;
 export const getAIModel = () => defaultProvider.model;
 
 // Helper to generate mock response if no API key
-export const getMockResponse = (type: string, prompt: string) => {
+export const getMockResponse = (type: string, prompt: string): any => {
   if (type === 'content') {
     return `[模拟 AI 内容] 为以下主题生成的内容: ${prompt}。 \n\n这是一个占位符响应，因为 API 密钥未配置。`;
   }
@@ -48,6 +48,56 @@ export class AIService {
     // Remove ```json and ``` wrapping
     let cleaned = str.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     return cleaned.trim();
+  }
+
+  async generateEmbedding(text: string): Promise<number[] | null> {
+    if (!text) return null;
+
+    const provider = getAIProviderForTask('embedding');
+    if (!provider.hasKey) {
+        console.warn('No API key for embedding provider');
+        // Return a mock embedding if needed, or null
+        return null;
+    }
+
+    try {
+        // Use provider-specific implementation if available (e.g., for custom dimensions)
+        if (provider.createEmbedding) {
+            return await provider.createEmbedding(text);
+        }
+
+        const response = await provider.client.embeddings.create({
+            model: provider.embeddingModel || provider.model,
+            input: text,
+            encoding_format: 'float',
+        });
+        return response.data[0].embedding;
+    } catch (error) {
+        console.error('Failed to generate embedding:', error);
+        return null;
+    }
+  }
+
+  async chat(messages: any[], options: { provider?: AIProviderType; model?: string } = {}): Promise<string> {
+    const provider = options.provider
+      ? getAIProvider(options.provider)
+      : getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
+      return getMockResponse('chat', messages[messages.length - 1].content);
+    }
+
+    try {
+      const completion = await provider.client.chat.completions.create({
+        messages,
+        model: options.model || provider.model,
+      });
+
+      return completion.choices[0].message.content || '';
+    } catch (error: any) {
+      console.error('AI Chat Error:', error);
+      throw new Error(error.message || 'AI chat failed');
+    }
   }
 
   async generateCards(topic: string, content: string, options: GenerateCardsOptions = {}) {

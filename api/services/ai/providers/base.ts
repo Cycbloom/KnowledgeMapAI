@@ -4,12 +4,14 @@ import { AIProvider, AIProviderConfig, AIProviderType } from '../types.js';
 export abstract class BaseAIProvider implements AIProvider {
   public client: OpenAI;
   public model: string;
+  public embeddingModel?: string;
   public providerType: AIProviderType;
   public hasKey: boolean;
 
   constructor(providerType: AIProviderType, config: AIProviderConfig) {
     this.providerType = providerType;
     this.model = config.model;
+    this.embeddingModel = config.embeddingModel;
     this.hasKey = !!config.apiKey;
     
     // Warning: Don't log API keys

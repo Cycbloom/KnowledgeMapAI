@@ -5,6 +5,7 @@ import { createNodeSchema, updateNodeSchema, createEdgeSchema } from '../schemas
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
+import { aiService } from '../services/aiService.js';
 
 const router = Router();
 
@@ -26,6 +27,19 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   const nodeData: any = { graph_id, title, content, x_position, y_position, color, properties, level };
   if (id) nodeData.id = id;
 
+  // Generate embedding
+  try {
+    const textToEmbed = content || title;
+    if (textToEmbed) {
+      const embedding = await aiService.generateEmbedding(textToEmbed);
+      if (embedding) {
+        nodeData.embedding = embedding;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to generate embedding for new node:', error);
+  }
+
   const { data, error } = await req.supabase!
     .from('nodes')
     .insert([nodeData])
@@ -46,6 +60,18 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
   const { id } = req.params;
   const updates = req.body;
   
+  // Generate embedding if content is updated
+  if (updates.content) {
+    try {
+      const embedding = await aiService.generateEmbedding(updates.content);
+      if (embedding) {
+        updates.embedding = embedding;
+      }
+    } catch (error) {
+      console.error('Failed to generate embedding for updated node:', error);
+    }
+  }
+
   const { data, error } = await req.supabase!
     .from('nodes')
     .update(updates)
@@ -65,6 +91,68 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
   cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
   
   res.json(data);
+});
+
+// Get related nodes (Semantic Recommendation)
+router.get('/nodes/:id/related', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const limit = parseInt(req.query.limit as string) || 5;
+
+  try {
+    // 1. Get the source node
+    const { data: node, error: nodeError } = await req.supabase!
+      .from('nodes')
+      .select('id, title, content, embedding, graph_id')
+      .eq('id', id)
+      .single();
+
+    if (nodeError || !node) {
+      throw new AppError('Node not found', 404, ErrorCodes.NODE_NOT_FOUND);
+    }
+
+    let embedding = node.embedding;
+
+    // 2. If no embedding, generate it on the fly (Lazy Vectorization)
+    if (!embedding && (node.content || node.title)) {
+      const textToEmbed = node.content || node.title;
+      embedding = await aiService.generateEmbedding(textToEmbed);
+      
+      // Save it back to DB for future use
+      if (embedding) {
+        await req.supabase!
+          .from('nodes')
+          .update({ embedding })
+          .eq('id', id);
+      }
+    }
+
+    if (!embedding) {
+      return res.json([]); // Cannot find related without embedding
+    }
+
+    // 3. Find similar nodes
+    const { data: relatedNodes, error: matchError } = await req.supabase!.rpc('match_nodes', {
+      query_embedding: embedding,
+      match_threshold: 0.5, // Threshold for "relatedness"
+      match_count: limit + 1, // Fetch extra one to filter out self
+      p_user_id: req.user.id
+    });
+
+    if (matchError) throw matchError;
+
+    // Filter out the source node itself
+    const results = (relatedNodes || [])
+      .filter((n: any) => n.id !== id)
+      .slice(0, limit);
+
+    res.json(results);
+
+  } catch (error: any) {
+    console.error('Related nodes error:', error);
+    // Don't fail the request if just AI fails, return empty
+    if (error instanceof AppError) throw error;
+    res.status(500).json({ error: 'Failed to fetch related nodes' });
+  }
 });
 
 // Delete a node

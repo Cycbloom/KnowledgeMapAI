@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter } from 'lucide-react';
 import { Node, Edge } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
 
@@ -28,16 +28,49 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [isBatchGenerateOpen, setIsBatchGenerateOpen] = useState(false);
+  
+  // View Control State
+  const [viewMode, setViewMode] = useState<'tree' | 'list'>('tree');
+  const [sortMode, setSortMode] = useState<'default' | 'title' | 'level'>('default');
+  const [filterLevel, setFilterLevel] = useState<string>('all');
 
-  // Filter nodes for search mode
-  const filteredNodes = useMemo(() => {
-    if (!searchQuery.trim()) return nodes;
-    const query = searchQuery.toLowerCase();
-    return nodes.filter(node => 
-      node.title.toLowerCase().includes(query) || 
-      (node.content && node.content.toLowerCase().includes(query))
-    );
-  }, [nodes, searchQuery]);
+  // Process nodes (Search -> Filter -> Sort)
+  const processedNodes = useMemo(() => {
+    let result = nodes;
+    
+    // 1. Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(node => 
+        node.title.toLowerCase().includes(query) || 
+        (node.content && node.content.toLowerCase().includes(query))
+      );
+    }
+
+    // 2. Filter Level
+    if (filterLevel !== 'all') {
+      result = result.filter(node => (node.level || 'leaf') === filterLevel);
+    }
+    
+    // 3. Sort (Applies to List Mode mainly, but we prepare it anyway)
+    if (viewMode === 'list' || searchQuery.trim() || filterLevel !== 'all') {
+       result = [...result].sort((a, b) => {
+          if (sortMode === 'title') return a.title.localeCompare(b.title);
+          if (sortMode === 'level') {
+              const levelOrder: any = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
+              return (levelOrder[a.level || 'leaf'] || 4) - (levelOrder[b.level || 'leaf'] || 4);
+          }
+          // Default: Level then Title (as per original logic)
+          const levelOrder: any = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
+          const la = levelOrder[a.level || 'leaf'] ?? 4;
+          const lb = levelOrder[b.level || 'leaf'] ?? 4;
+          if (la !== lb) return la - lb;
+          return a.title.localeCompare(b.title);
+       });
+    }
+    
+    return result;
+  }, [nodes, searchQuery, filterLevel, sortMode, viewMode]);
 
   // Build Tree Structure
   const { rootNodes, childrenMap, parentMap } = useMemo(() => {
@@ -203,22 +236,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     onBatchAction?.('batch_generate_questions'); 
   };
 
-  // Search Mode: Flat List with Hierarchy Sorting (Previous Implementation)
-  const renderSearchList = () => {
-    // Sort by level then title
-    const sortedNodes = [...filteredNodes].sort((a, b) => {
-      const levelOrder: Record<string, number> = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
-      const la = levelOrder[a.level || 'leaf'] ?? 4;
-      const lb = levelOrder[b.level || 'leaf'] ?? 4;
-      if (la !== lb) return la - lb;
-      return a.title.localeCompare(b.title);
-    });
-
-    if (sortedNodes.length === 0) {
+  // List Mode: Flat List (Used for Search, Filter, or explicit List View)
+  const renderList = () => {
+    // processedNodes is already sorted and filtered
+    if (processedNodes.length === 0) {
       return <div className="text-center py-8 text-slate-500 text-sm">无匹配节点</div>;
     }
 
-    return sortedNodes.map(node => {
+    return processedNodes.map(node => {
       const level = node.level || 'leaf';
       const isSelected = selectedNodeIds.has(node.id);
 
@@ -365,6 +390,57 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           />
         </div>
 
+        {/* View & Filter Controls */}
+        <div className="flex items-center gap-2 mb-3">
+          {/* View Toggle */}
+          <div className="flex bg-slate-100 dark:bg-slate-800 rounded p-0.5">
+            <button
+              onClick={() => setViewMode('tree')}
+              className={`p-1.5 rounded ${viewMode === 'tree' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}
+              title="树状视图"
+            >
+              <Layers size={14} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}
+              title="列表视图"
+            >
+              <List size={14} />
+            </button>
+          </div>
+
+          {/* Filter Dropdown */}
+          <div className="relative flex-1">
+             <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+               <Filter size={12} className="text-slate-400" />
+             </div>
+             <select
+               value={filterLevel}
+               onChange={(e) => setFilterLevel(e.target.value)}
+               className="w-full pl-7 pr-2 py-1 bg-slate-100 dark:bg-slate-800 border-none rounded text-xs text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer"
+             >
+               <option value="all">全部分级</option>
+               <option value="root">Root</option>
+               <option value="core">Core</option>
+               <option value="sub">Sub</option>
+               <option value="normal">Normal</option>
+               <option value="leaf">Leaf</option>
+             </select>
+          </div>
+
+          {/* Sort Toggle (List Mode Only) */}
+          {(viewMode === 'list' || searchQuery || filterLevel !== 'all') && (
+            <button
+              onClick={() => setSortMode(prev => prev === 'title' ? 'level' : 'title')}
+              className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 hover:text-blue-600"
+              title={sortMode === 'title' ? "当前：按标题排序" : "当前：按层级排序"}
+            >
+              {sortMode === 'title' ? <ArrowDownAZ size={14} /> : <ArrowUpAZ size={14} />}
+            </button>
+          )}
+        </div>
+
         {/* Batch Actions Toolbar */}
         {isMultiSelectMode && (
           <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-2">
@@ -409,9 +485,9 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto py-2">
-        {searchQuery.trim() ? (
+        {(viewMode === 'list' || searchQuery.trim() || filterLevel !== 'all') ? (
           <div className="space-y-0.5 px-2">
-            {renderSearchList()}
+            {renderList()}
           </div>
         ) : (
           <div className="space-y-0.5">

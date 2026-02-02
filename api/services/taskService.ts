@@ -1,6 +1,8 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { aiService } from './aiService.js';
+import { taskQueue } from './queue.js';
+import { sseService } from './sseService.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -43,24 +45,31 @@ export class TaskService {
       .single();
 
     if (error) throw new Error(`Failed to create task: ${error.message}`);
+    
+    // Add to BullMQ Queue
+    await taskQueue.add(type, { taskId: data.id });
+    
     return data as Task;
   }
 
-  async updateTaskStatus(client: SupabaseClient | string, taskId: string, status: string, result?: any, errorMsg?: string) {
+  async updateTaskStatus(client: SupabaseClient | string, taskId: string, status: string, result?: any, errorMsg?: string, userId?: string) {
     let supabase = defaultClient;
     let tid = taskId;
     let s = status;
     let r = result;
     let e = errorMsg;
+    let uid = userId;
 
     // Handle overload
     if (typeof client !== 'string' && client !== undefined) {
         supabase = client;
     } else {
-        e = r;
-        r = s;
-        s = tid;
-        tid = client as string;
+        // Shift arguments if client is missing (taskId was passed as first arg)
+        uid = e; // errorMsg -> userId
+        e = r;   // result -> errorMsg
+        r = s;   // status -> result
+        s = tid; // taskId -> status
+        tid = client as string; // client -> taskId
     }
 
     const updateData: any = { status: s, updated_at: new Date().toISOString() };
@@ -73,6 +82,17 @@ export class TaskService {
       .eq('id', tid);
       
     if (error) throw error;
+
+    // Broadcast update via SSE if userId is provided
+    if (uid) {
+        sseService.sendToUser(uid, {
+            type: 'task_update',
+            taskId: tid,
+            status: s,
+            result: r,
+            error: e
+        });
+    }
   }
 
   async getTasks(client: SupabaseClient, userId: string, status?: string) {
@@ -121,6 +141,10 @@ export class TaskService {
       .single();
 
     if (error) throw new Error(`Failed to retry task: ${error.message}`);
+    
+    // Re-add to BullMQ Queue
+    await taskQueue.add(data.type, { taskId: data.id });
+    
     return data as Task;
   }
 
@@ -139,7 +163,7 @@ export class TaskService {
   async processBatchGenerateCards(taskId: string, userId: string, payload: any) {
     const supabase = defaultClient;
     try {
-      await this.updateTaskStatus(supabase, taskId, 'processing');
+      await this.updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, userId);
       
       const { node_ids, config } = payload;
       const { types = ['qa', 'choice', 'true_false'], count = 3 } = config || {};
@@ -263,18 +287,18 @@ export class TaskService {
         await this.updateTaskStatus(supabase, taskId, 'processing', { 
             progress: Math.round((processedCount / sortedNodes.length) * 100),
             current_node: node.title
-        });
+        }, undefined, userId);
       }
 
       await this.updateTaskStatus(supabase, taskId, 'completed', { 
         success: true, 
         totalCards, 
         details: results 
-      });
+      }, undefined, userId);
 
     } catch (error: any) {
       console.error('Task failed:', error);
-      await this.updateTaskStatus(supabase, taskId, 'failed', null, error.message);
+      await this.updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
     }
   }
 }

@@ -7,27 +7,8 @@ import { getNextLevel } from '../utils/graphUtils.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 
 class TaskProcessor {
-  private isProcessing = false;
-
-  async processPendingTasks() {
-    if (this.isProcessing) return;
-    this.isProcessing = true;
-
-    try {
-      const tasks = await taskService.getPendingTasks(supabaseAdmin);
-      
-      if (tasks.length > 0) {
-        console.log(`[TaskProcessor] Found ${tasks.length} pending tasks`);
-        await Promise.all(tasks.map(task => this.processTask(task)));
-      }
-    } catch (error) {
-      console.error('[TaskProcessor] Error polling tasks:', error);
-    } finally {
-      this.isProcessing = false;
-    }
-  }
-
-  private async processTask(task: Task) {
+  
+  public async processTask(task: Task) {
     console.log(`[TaskProcessor] Processing task ${task.id} (${task.type})`);
     
     try {

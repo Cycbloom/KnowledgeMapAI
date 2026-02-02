@@ -3,8 +3,24 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { taskService } from '../services/taskService.js';
 import { supabaseAdmin } from '../supabase.js';
+import { sseService } from '../services/sseService.js';
 
 const router = Router();
+
+// SSE Endpoint for real-time task updates
+router.get('/events', requireAuth, (req: AuthRequest, res: Response) => {
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  // Register client
+  sseService.addClient(req.user.id, res);
+
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({ type: 'connected', message: 'SSE connection established' })}\n\n`);
+});
 
 // Create a new task
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {

@@ -96,7 +96,6 @@ export const useTasks = (enabled: boolean = true, status?: string) => {
     queryKey: queryKeys.tasks(status),
     queryFn: async () => (await api.tasks.list(status)) as Task[],
     enabled,
-    refetchInterval: enabled ? 15000 : false, // Poll every 15 seconds instead of 5
     staleTime: 0,
   });
 };

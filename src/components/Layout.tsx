@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
+import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useMessageStore } from '../store/useMessageStore';
 import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, BarChart, HelpCircle, GraduationCap } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -27,6 +28,7 @@ export const Layout = () => {
   const { data: userData, isLoading: isUserLoading } = useUser(!!token && !user);
   const logoutMutation = useLogoutMutation();
   const { data: tasksData } = useTasks(!!token);
+  useTaskEvents(); // Initialize SSE for task updates
   const lastTaskStatusRef = useRef<Map<string, string>>(new Map());
   const hasInitializedTasksRef = useRef(false);
 

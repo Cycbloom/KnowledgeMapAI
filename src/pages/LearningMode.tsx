@@ -4,11 +4,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff } from 'lucide-react';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
 import { useGraphData } from '../hooks/useQueries';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 
@@ -45,8 +46,54 @@ export const LearningMode = () => {
     }
   ]);
   const [input, setInput] = useState('');
+  const [inputBeforeVoice, setInputBeforeVoice] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Speech Recognition
+  const { isListening, transcript, startListening, stopListening, error: speechError, hasRecognitionSupport } = useSpeechRecognition();
+
+  useEffect(() => {
+    if (speechError) {
+      const isNetworkError = speechError.includes('网络连接错误');
+      addMessage({ 
+        type: 'error', 
+        content: speechError,
+        duration: isNetworkError ? 8000 : 5000,
+        action: isNetworkError ? {
+          label: '查看解决方法',
+          onClick: () => {
+            alert('语音识别失败原因排查：\n1. 浏览器限制：Chrome 依赖 Google 服务，若网络环境限制访问 Google，会导致此错误。\n2. 尝试建议：请检查网络代理设置，或尝试使用 Edge 浏览器（通常在某些环境下更稳定）。\n3. 离线支持：当前浏览器暂不支持离线语音识别。');
+          }
+        } : undefined
+      });
+    }
+  }, [speechError, addMessage]);
+
+  useEffect(() => {
+    if (isListening) {
+      // While listening, show what was typed before + current transcript
+      setInput(inputBeforeVoice + (inputBeforeVoice && transcript ? ' ' : '') + transcript);
+    } else if (transcript) {
+      // When stopped, sync the final transcript
+      setInput(inputBeforeVoice + (inputBeforeVoice && transcript ? ' ' : '') + transcript);
+    }
+  }, [transcript, isListening, inputBeforeVoice]);
+
+  const toggleListening = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!hasRecognitionSupport) {
+      addMessage({ type: 'warning', content: '您的浏览器不支持语音识别功能，请尝试使用 Chrome 浏览器。' });
+      return;
+    }
+
+    if (isListening) {
+      stopListening();
+    } else {
+      setInputBeforeVoice(input);
+      startListening();
+    }
+  };
 
   // Load Node and Generate Content
   useEffect(() => {
@@ -417,10 +464,25 @@ export const LearningMode = () => {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="有不懂的地方？问问导师..."
+                    placeholder={isListening ? "正在聆听..." : "有不懂的地方？问问导师..."}
                     className={`flex-1 p-2 bg-transparent border-none focus:ring-0 outline-none text-sm ${isDark ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-400'}`}
-                    disabled={isChatLoading}
+                    disabled={isChatLoading || isListening}
                   />
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`p-2 rounded-lg transition-colors relative ${
+                      isListening
+                        ? 'bg-red-50 text-red-500 animate-pulse'
+                        : (isDark ? 'hover:bg-slate-600 text-slate-400' : 'hover:bg-gray-200 text-gray-500')
+                    }`}
+                    title={isListening ? "点击停止录音" : "点击开始语音输入"}
+                  >
+                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                    {isListening && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                    )}
+                  </button>
                   <button
                     type="submit"
                     disabled={!input.trim() || isChatLoading}

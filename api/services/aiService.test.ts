@@ -55,7 +55,7 @@ describe('AIService', () => {
       const result = await aiService.generateEmbedding('test text');
       
       expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith('No API key for embedding provider');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('No API key for embedding provider'));
       consoleSpy.mockRestore();
     });
 
@@ -97,7 +97,8 @@ describe('AIService', () => {
       const result = await aiService.generateEmbedding('test text');
 
       expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to generate embedding:', expect.any(Error));
+      // Logger formats error into the string
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to generate embedding'));
       consoleSpy.mockRestore();
     });
   });

@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload } from 'lucide-react';
+import { parseMarkdownToGraph } from '../../utils/markdownParser';
+import { parseOpmlToGraph } from '../../utils/opmlParser';
 import { useTextToGraphMutation, useDocumentToGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
 
@@ -98,34 +100,79 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (aiEnabled === false) {
-      addMessage({ type: 'error', content: 'AI 未配置：文档解析不可用，请先配置 AI Key' });
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
+    if (file.name.endsWith('.pdf')) {
+        if (aiEnabled === false) {
+          addMessage({ type: 'error', content: 'AI 未配置：PDF 解析不可用，请先配置 AI Key' });
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+        }
+
+        addMessage({ type: 'info', content: '正在解析文档并生成预览...' });
+
+        try {
+          const result = await documentToGraphMutation.mutateAsync({
+            graph_id: graphId,
+            file: file
+          });
+          
+          if (!result.nodes || result.nodes.length === 0) {
+            throw new Error('AI 未能从文档中解析出任何节点，请检查文档内容。');
+          }
+
+          setPreviewData(result);
+          setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
+          setStep('preview');
+          addMessage({ type: 'success', content: '文档解析成功' });
+        } catch (err: any) {
+          console.error(err);
+          addMessage({ type: 'error', content: err.message || '解析失败' });
+        }
+    } else {
+       // Local parsing for MD/OPML/TXT (TXT treated as simple text)
+       const reader = new FileReader();
+       reader.onload = async (e) => {
+         try {
+           const content = e.target?.result as string;
+           let parsed;
+
+           if (file.name.endsWith('.opml')) {
+             parsed = parseOpmlToGraph(content);
+           } else if (file.name.endsWith('.md')) {
+             parsed = parseMarkdownToGraph(content);
+           } else {
+             // TXT or other: just put content in textarea
+             setText(content);
+             if (fileInputRef.current) fileInputRef.current.value = '';
+             return;
+           }
+
+           // Convert parsed format to preview format
+           const previewNodes = parsed.nodes.map((n: any) => ({
+             id: n.id,
+             title: n.title,
+             content: n.content,
+             level: n.level || 'leaf'
+           }));
+           
+           const previewEdges = parsed.edges.map((e: any) => ({
+             source: e.source,
+             target: e.target,
+             relationship: e.relationship || 'related'
+           }));
+
+           setPreviewData({ nodes: previewNodes, edges: previewEdges });
+           setSelectedNodeIds(new Set(previewNodes.map(n => n.id)));
+           setStep('preview');
+           addMessage({ type: 'success', content: '文件解析成功' });
+         } catch (err: any) {
+           console.error(err);
+           addMessage({ type: 'error', content: '解析失败: ' + err.message });
+         }
+       };
+       reader.readAsText(file);
     }
-
-    addMessage({ type: 'info', content: '正在解析文档并生成预览...' });
-
-    try {
-      const result = await documentToGraphMutation.mutateAsync({
-        graph_id: graphId,
-        file: file
-      });
-      
-      if (!result.nodes || result.nodes.length === 0) {
-        throw new Error('AI 未能从文档中解析出任何节点，请检查文档内容。');
-      }
-
-      setPreviewData(result);
-      setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
-      setStep('preview');
-      addMessage({ type: 'success', content: '文档解析成功' });
-    } catch (err: any) {
-      console.error(err);
-      addMessage({ type: 'error', content: err.message || '解析失败' });
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSave = async () => {
@@ -227,16 +274,16 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"
-                  disabled={isAnalyzing || aiEnabled === false}
+                  disabled={isAnalyzing}
                 >
                   <Upload size={16} />
-                  <span>上传文档 (PDF/TXT/MD)</span>
+                  <span>上传文档 (PDF/MD/OPML/TXT)</span>
                 </button>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
                   className="hidden" 
-                  accept=".pdf,.txt,.md"
+                  accept=".pdf,.txt,.md,.opml"
                   onChange={handleFileUpload}
                 />
               </div>

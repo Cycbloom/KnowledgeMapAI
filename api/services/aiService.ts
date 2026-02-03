@@ -232,7 +232,7 @@ Please respond in Chinese.` },
         messages: [
           { role: "system", content: "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
             "Goal: Prioritize generating NEW, specific concepts to broaden the graph's coverage.\n" +
-            "Quantity: Generate up to 10 nodes. Focus on representativeness and hierarchy.\n" +
+            "Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.\n" +
             `${linkingStrategy}\n` +
             `${generationStrategy}\n` +
             "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +

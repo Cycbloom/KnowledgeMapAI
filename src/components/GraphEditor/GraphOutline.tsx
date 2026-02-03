@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser } from 'lucide-react';
 import { Node, Edge } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
+import { GraphStatsSummary } from './GraphStatsSummary';
 
 interface GraphOutlineProps {
   nodes: Node[];
@@ -12,6 +13,11 @@ interface GraphOutlineProps {
   onSelectionChange?: (ids: Set<string>) => void;
   onBatchAction?: (action: 'expand_graph' | 'delete' | 'batch_generate_questions', data?: any) => void;
   className?: string;
+  // Optional stats for the summary dashboard
+  stats?: {
+    masteredCount: number;
+    dueTodayCount: number;
+  };
 }
 
 export const GraphOutline: React.FC<GraphOutlineProps> = ({
@@ -22,7 +28,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   selectedNodeIds = new Set(),
   onSelectionChange,
   onBatchAction,
-  className = ''
+  className = '',
+  stats
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
@@ -71,6 +78,16 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     
     return result;
   }, [nodes, searchQuery, filterLevel, sortMode, viewMode]);
+
+  // Calculate isolated nodes count
+  const isolatedCount = useMemo(() => {
+    const connectedNodeIds = new Set<string>();
+    edges.forEach(edge => {
+      connectedNodeIds.add(edge.source_node_id);
+      connectedNodeIds.add(edge.target_node_id);
+    });
+    return nodes.filter(node => !connectedNodeIds.has(node.id)).length;
+  }, [nodes, edges]);
 
   // Build Tree Structure
   const { rootNodes, childrenMap, parentMap } = useMemo(() => {
@@ -412,6 +429,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   return (
     <div className={`flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 ${className}`}>
       <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+        {stats && (
+          <GraphStatsSummary 
+            nodes={nodes}
+            masteredCount={stats.masteredCount}
+            dueTodayCount={stats.dueTodayCount}
+            isolatedCount={isolatedCount}
+          />
+        )}
         <div className="flex justify-between items-center mb-3 pr-6">
           <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             大纲视图 ({nodes.length})

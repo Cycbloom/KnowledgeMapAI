@@ -4,6 +4,7 @@ import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGra
 import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
+import { parseOpmlToGraph } from '../utils/opmlParser';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { BlindSpotList } from '../components/BlindSpotList';
 import { useTheme } from '../hooks/useTheme';
@@ -99,6 +100,13 @@ export const Dashboard = () => {
             nodes: parsed.nodes,
             edges: parsed.edges
           };
+        } else if (file.name.endsWith('.opml')) {
+          const parsed = parseOpmlToGraph(content);
+          importData = {
+            graph_title: parsed.graph_title || file.name.replace('.opml', ''),
+            nodes: parsed.nodes,
+            edges: parsed.edges
+          };
         } else {
           // Assume JSON
           const data = JSON.parse(content);
@@ -160,7 +168,7 @@ export const Dashboard = () => {
               ref={fileInputRef}
               onChange={handleFileChange}
               className="hidden"
-              accept=".json,.md"
+              accept=".json,.md,.opml"
             />
             
             <button
@@ -324,7 +332,7 @@ export const Dashboard = () => {
                 {searchQuery ? '未找到相关图谱' : '开始您的知识之旅'}
               </h3>
               <p className={`text-center max-w-md mb-8 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                {searchQuery ? '尝试更换搜索关键词' : '创建一个新的知识图谱，或导入现有的 Markdown/JSON 文件。'}
+                {searchQuery ? '尝试更换搜索关键词' : '创建一个新的知识图谱，或导入现有的 Markdown/JSON/OPML 文件。'}
               </p>
               {!searchQuery && (
                 <button

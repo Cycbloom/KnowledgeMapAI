@@ -143,6 +143,19 @@ export const GraphEditor = () => {
     return ids;
   }, [nodeStatus]);
 
+  // Calculate Graph Stats for Dashboard
+  const graphStats = useMemo(() => {
+    if (!nodeStatus) return { masteredCount: 0, dueTodayCount: 0 };
+    let mastered = 0;
+    let due = 0;
+    const now = new Date();
+    Object.values(nodeStatus).forEach((status: any) => {
+      if (status.mastered) mastered++;
+      if (status.next_review && new Date(status.next_review) <= now) due++;
+    });
+    return { masteredCount: mastered, dueTodayCount: due };
+  }, [nodeStatus]);
+
   // Pathfinding State
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -991,67 +1004,61 @@ export const GraphEditor = () => {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full bg-gray-50 p-4">
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-full shadow-sm">
-            <ArrowLeft size={20} />
+      <div className="flex flex-col h-full bg-gray-50">
+        <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 sticky top-0 z-10">
+          <button onClick={() => navigate(-1)} className="p-2 bg-gray-50 rounded-full shadow-sm active:bg-gray-100">
+            <ArrowLeft size={20} className="text-gray-600" />
           </button>
-          <h1 className="text-lg font-bold truncate px-2 text-gray-800">{graphMeta?.title || 'Knowledge Graph'}</h1>
-          <div className="w-9" /> {/* Spacer */}
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-4 text-center">
-          <div className="mb-4 flex justify-center">
-             <div className="p-3 bg-blue-50 rounded-full">
-               <Sparkles className="w-8 h-8 text-blue-600" />
-             </div>
-          </div>
-          <h2 className="text-xl font-bold mb-2 text-gray-800">移动端复习模式</h2>
-          <p className="text-gray-500 mb-6 text-sm">3D 编辑功能在移动端受限，建议使用复习卡片或大纲列表。</p>
-          
+          <h1 className="text-base font-bold truncate px-2 text-gray-800 max-w-[150px]">{graphMeta?.title || 'Knowledge Graph'}</h1>
           <button 
             onClick={() => navigate(`/study/${id}`)}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold mb-3 flex items-center justify-center space-x-2 shadow-lg shadow-blue-200 active:scale-95 transition-transform"
+            className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-full text-xs font-bold shadow-md active:scale-95 transition-transform"
           >
-            <GraduationCap size={20} />
-            <span>开始复习 (Flashcards)</span>
-          </button>
-          
-          <button 
-             onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} 
-             className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-lg font-bold flex items-center justify-center space-x-2 active:bg-gray-50 transition-colors"
-          >
-            <LayoutList size={20} />
-            <span>查看大纲列表</span>
+            <GraduationCap size={14} />
+            <span>复习</span>
           </button>
         </div>
+
+        {/* Mobile Main View: GraphOutline */}
+        <div className="flex-1 overflow-hidden bg-white">
+           <GraphOutline 
+             nodes={nodes} 
+             edges={edges}
+             onNodeClick={(node) => {
+               setSelectedNode(node);
+               setSidebarMode('edit'); 
+             }}
+             selectedNodeId={selectedNode?.id}
+             selectedNodeIds={selectedNodeIds}
+             onSelectionChange={setSelectedNodeIds}
+             onBatchAction={(action) => {
+                if (action === 'expand_graph') handleBackgroundTask('expand_graph');
+                else if (action === 'delete') handleBatchDelete();
+                else if (action === 'batch_generate_questions') handleBackgroundTask('batch_generate_questions');
+             }}
+             stats={graphStats}
+             className="h-full border-none"
+           />
+        </div>
         
-        {/* Render GraphOutline if requested */}
-        {sidebarMode === 'outline' && (
-           <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
-             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-               <h3 className="font-bold text-gray-700">节点大纲</h3>
-             </div>
-             <div className="flex-1 overflow-y-auto">
-               <GraphOutline 
-                 nodes={nodes} 
-                 onNodeClick={(node) => {
-                   setSelectedNode(node);
-                   setSidebarMode('edit'); 
-                 }}
-                 selectedNodeId={selectedNode?.id}
-               />
-             </div>
-           </div>
-        )}
-        
-        {/* Reuse Edit Sidebar for Node Details */}
+        {/* Reuse Edit Sidebar for Node Details (Full Screen on Mobile) */}
         {sidebarMode === 'edit' && selectedNode && (
-            <div className="fixed inset-0 bg-white z-50 overflow-y-auto animate-in slide-in-from-right duration-300">
-               <div className="p-4">
-                  <button onClick={() => setSidebarMode('outline')} className="mb-4 text-gray-500 flex items-center font-medium">
-                    <ArrowLeft size={16} className="mr-1"/> 返回列表
+            <div className="fixed inset-0 bg-white z-50 overflow-y-auto animate-in slide-in-from-right duration-300 flex flex-col">
+               <div className="p-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                  <button onClick={() => setSidebarMode('none')} className="text-gray-500 flex items-center font-medium">
+                    <ArrowLeft size={18} className="mr-1"/> 返回列表
                   </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleDeleteNode()}
+                      className="p-2 text-red-500 bg-red-50 rounded-lg"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+               </div>
+               
+               <div className="p-4 pb-20">
                   <h2 className="text-2xl font-bold mb-4 text-gray-900">{selectedNode.title}</h2>
                   
                   <div className="mb-6">
@@ -1491,6 +1498,7 @@ export const GraphEditor = () => {
                   }
                 }}
                 className="h-full"
+                stats={graphStats}
               />
              </div>
           ) : sidebarMode === 'detail' && selectedNode ? (

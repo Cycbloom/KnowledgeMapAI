@@ -45,7 +45,32 @@ export class AIService {
   // Helper to clean JSON string from Markdown code blocks
   private cleanJsonString(str: string): string {
     if (!str) return '';
-    // Remove ```json and ``` wrapping
+    
+    // 1. Try to locate the JSON content by finding the first { or [ and the last } or ]
+    const firstBrace = str.indexOf('{');
+    const firstBracket = str.indexOf('[');
+    
+    let startIndex = -1;
+    if (firstBrace !== -1 && firstBracket !== -1) {
+      startIndex = Math.min(firstBrace, firstBracket);
+    } else if (firstBrace !== -1) {
+      startIndex = firstBrace;
+    } else if (firstBracket !== -1) {
+      startIndex = firstBracket;
+    }
+    
+    if (startIndex !== -1) {
+      const lastBrace = str.lastIndexOf('}');
+      const lastBracket = str.lastIndexOf(']');
+      const endIndex = Math.max(lastBrace, lastBracket);
+      
+      if (endIndex > startIndex) {
+        return str.substring(startIndex, endIndex + 1);
+      }
+    }
+
+    // Fallback: simple markdown removal if no clear JSON structure found
+    // (This handles cases where the string might be just a value or malformed)
     let cleaned = str.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     return cleaned.trim();
   }

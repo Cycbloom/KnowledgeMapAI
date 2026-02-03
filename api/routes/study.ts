@@ -57,17 +57,76 @@ const mapQualityToRating = (quality: number): Rating => {
   return Rating.Easy;
 };
 
+/**
+ * @openapi
+ * /study/cards:
+ *   get:
+ *     summary: Get study cards
+ *     description: Retrieve flashcards for a specific graph or node. Supports filtering by due date.
+ *     tags: [Study]
+ *     parameters:
+ *       - in: query
+ *         name: graph_id
+ *         schema:
+ *           type: string
+ *         description: ID of the knowledge graph
+ *       - in: query
+ *         name: node_id
+ *         schema:
+ *           type: string
+ *         description: ID of a specific node
+ *       - in: query
+ *         name: due
+ *         schema:
+ *           type: boolean
+ *         description: If true, returns only cards due for review
+ *       - in: query
+ *         name: refresh
+ *         schema:
+ *           type: boolean
+ *         description: Force refresh cache
+ *     responses:
+ *       200:
+ *         description: List of study cards
+ */
 // Get cards due for review (or all cards for a graph)
 router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_id, node_id, node_ids, due } = req.query;
   const dueOnly = due === 'true' || due === '1';
 
-  if (graph_id) {
-    // Clear cache to ensure we get fresh data from DB
-    await cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
+  // Optimization: If querying all cards for a graph (no specific nodes), use cache
+  if (graph_id && !node_id && !node_ids) {
+    const cacheKey = CacheKeys.STUDY_CARDS(graph_id as string);
+    
+    // Support force refresh
+    if (req.query.refresh === 'true') {
+        await cacheService.del(cacheKey);
+    }
+
+    const cards = await cacheService.getOrSet(cacheKey, async () => {
+        const { data, error } = await req.supabase!
+            .from('study_cards')
+            .select('*, nodes!inner(id, title, graph_id)')
+            .eq('user_id', req.user.id)
+            .eq('graph_id', graph_id);
+            
+        if (error) {
+            console.error('Supabase error fetching cards:', error);
+            throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
+        }
+        return data || [];
+    });
+
+    if (dueOnly && Array.isArray(cards)) {
+        const now = new Date();
+        const dueCards = cards.filter((c: any) => new Date(c.next_review) <= now);
+        return res.json(dueCards);
+    }
+    
+    return res.json(cards);
   }
 
-  console.log('Fetching cards for graph_id:', graph_id, 'node_id:', node_id, 'node_ids:', node_ids, 'user_id:', req.user.id);
+  console.log('Fetching cards (DB) for graph_id:', graph_id, 'node_id:', node_id, 'node_ids:', node_ids, 'user_id:', req.user.id);
 
   let query = req.supabase!
     .from('study_cards')

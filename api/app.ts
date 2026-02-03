@@ -27,6 +27,8 @@ import dashboardRoutes from './routes/dashboard.js'
 import taskRoutes from './routes/tasks.js'
 import statisticsRoutes from './routes/statistics.js'
 import searchRoutes from './routes/search.js'
+import swaggerUi from 'swagger-ui-express'
+import { swaggerSpec } from './docs/swagger.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -100,6 +102,8 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 /**
  * API Routes

@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap
+  HelpCircle, User, GraduationCap, Share2
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node } from '../../types';
@@ -67,6 +67,7 @@ interface GraphToolbarProps {
   };
   onRefresh?: () => void;
   onOpenHelp?: () => void;
+  onShare?: () => void; // New prop for sharing
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -76,7 +77,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   aiEnabled, onTextToGraph, onAIExpand, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
-  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp
+  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -485,6 +486,22 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             colorClass="text-red-500"
           />
         </DropdownButton>
+
+        {/* Share Button */}
+        {onShare && (
+           <button
+             onClick={onShare}
+             className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
+               isDark 
+                 ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60' 
+                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+             }`}
+             title="分享图谱"
+           >
+             <Share2 size={16} />
+             <span className="text-xs font-bold hidden xl:inline">分享</span>
+           </button>
+        )}
 
         {/* AI Expand Shortcut - Visible when 1 node selected */}
         {selectedNodeIds.size === 1 && onAIExpand && (

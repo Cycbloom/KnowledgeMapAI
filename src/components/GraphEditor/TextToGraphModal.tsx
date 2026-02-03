@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload } from 'lucide-react';
+import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, Link } from 'lucide-react';
 import { parseMarkdownToGraph } from '../../utils/markdownParser';
 import { parseOpmlToGraph } from '../../utils/opmlParser';
 import { useTextToGraphMutation, useDocumentToGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
+import { api } from '../../services/api';
 
 interface TextToGraphModalProps {
   isOpen: boolean;
@@ -29,15 +30,21 @@ type PreviewEdge = {
 export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData, aiEnabled }) => {
   const { addMessage } = useMessageStore();
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
+  const [activeTab, setActiveTab] = useState<'text' | 'file' | 'url'>('text');
   const [text, setText] = useState('');
+  const [url, setUrl] = useState('');
   const [previewData, setPreviewData] = useState<{ nodes: PreviewNode[], edges: PreviewEdge[] } | null>(initialData || null);
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set(initialData?.nodes.map(n => n.id) || []));
+  const [isUrlLoading, setIsUrlLoading] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
   
   const textToGraphMutation = useTextToGraphMutation();
   const documentToGraphMutation = useDocumentToGraphMutation();
 
-  const isAnalyzing = textToGraphMutation.isPending || documentToGraphMutation.isPending;
+  const isAnalyzing = textToGraphMutation.isPending || documentToGraphMutation.isPending || isUrlLoading;
 
   // Update state if initialData changes (e.g., when a new PDF is parsed)
   React.useEffect(() => {
@@ -63,13 +70,35 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
   if (!isOpen) return null;
 
   const handleAnalyze = async () => {
-    if (!text.trim()) {
+    let contentToAnalyze = text;
+
+    if (activeTab === 'url') {
+      if (!url.trim()) {
+        addMessage({ type: 'error', content: '请输入有效的 URL' });
+        return;
+      }
+      try {
+        setIsUrlLoading(true);
+        // Call backend to fetch URL content
+        // Assuming we will implement this endpoint
+        const res = await api.ai.urlToText(url);
+        contentToAnalyze = res.text;
+        if (!contentToAnalyze) throw new Error('无法从该 URL 提取内容');
+      } catch (err: any) {
+        console.error(err);
+        addMessage({ type: 'error', content: err.message || 'URL 解析失败' });
+        setIsUrlLoading(false);
+        return;
+      } finally {
+        setIsUrlLoading(false);
+      }
+    } else if (!contentToAnalyze.trim()) {
       addMessage({ type: 'error', content: '请输入文本内容' });
       return;
     }
     
-    if (text.length < 10) {
-      addMessage({ type: 'error', content: '文本内容太短，至少需要10个字符' });
+    if (contentToAnalyze.length < 10) {
+      addMessage({ type: 'error', content: '内容太短，至少需要10个字符' });
       return;
     }
 
@@ -78,7 +107,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         addMessage({ type: 'warning', content: 'AI 未配置：本次将生成模拟预览' });
       }
       const result = await textToGraphMutation.mutateAsync({ 
-        text, 
+        text: contentToAnalyze, 
         graph_id: graphId, 
         action: 'analyze'
       });
@@ -96,18 +125,14 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     if (file.name.endsWith('.pdf')) {
         if (aiEnabled === false) {
           addMessage({ type: 'error', content: 'AI 未配置：PDF 解析不可用，请先配置 AI Key' });
-          if (fileInputRef.current) fileInputRef.current.value = '';
           return;
         }
 
-        addMessage({ type: 'info', content: '正在解析文档并生成预览...' });
+        addMessage({ type: 'info', content: '正在解析 PDF 文档...' });
 
         try {
           const result = await documentToGraphMutation.mutateAsync({
@@ -128,7 +153,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           addMessage({ type: 'error', content: err.message || '解析失败' });
         }
     } else {
-       // Local parsing for MD/OPML/TXT (TXT treated as simple text)
+       // Local parsing for MD/OPML/TXT
        const reader = new FileReader();
        reader.onload = async (e) => {
          try {
@@ -140,9 +165,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
            } else if (file.name.endsWith('.md')) {
              parsed = parseMarkdownToGraph(content);
            } else {
-             // TXT or other: just put content in textarea
+             // TXT: Switch to text tab and fill content
              setText(content);
-             if (fileInputRef.current) fileInputRef.current.value = '';
+             setActiveTab('text');
+             addMessage({ type: 'success', content: '文本已导入编辑器' });
              return;
            }
 
@@ -171,8 +197,55 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
        };
        reader.readAsText(file);
     }
-    
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      // Check file type
+      const validTypes = ['.pdf', '.txt', '.md', '.opml'];
+      const isValid = validTypes.some(type => file.name.toLowerCase().endsWith(type));
+      if (!isValid) {
+        addMessage({ type: 'error', content: '不支持的文件格式。请上传 PDF, Markdown, OPML 或 TXT 文件。' });
+        return;
+      }
+      await processFile(file);
+    }
   };
 
   const handleSave = async () => {
@@ -210,6 +283,8 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
   const handleClose = () => {
     setStep('input');
     setText('');
+    setUrl('');
+    setActiveTab('text');
     setPreviewData(null);
     setSelectedNodeIds(new Set());
     onClose();
@@ -266,45 +341,132 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         {/* Content */}
         <div className="p-6 flex-1 overflow-y-auto bg-gray-50/50">
           {step === 'input' ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-end">
-                <p className="text-gray-600 text-sm">
-                  请输入笔记、文章摘要或上传文档，AI 将自动分析知识结构并生成图谱。
-                </p>
+            <div className="space-y-4 h-full flex flex-col">
+              {/* Tabs */}
+              <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg self-start">
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"
-                  disabled={isAnalyzing}
+                  onClick={() => setActiveTab('text')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'text' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <FileText size={16} />
+                  <span>文本输入</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('file')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'file' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
                   <Upload size={16} />
-                  <span>上传文档 (PDF/MD/OPML/TXT)</span>
+                  <span>文件上传</span>
                 </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept=".pdf,.txt,.md,.opml"
-                  onChange={handleFileUpload}
-                />
+                <button
+                  onClick={() => setActiveTab('url')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'url' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Globe size={16} />
+                  <span>网页链接</span>
+                </button>
               </div>
 
               {aiEnabled === false && (
                 <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
-                  AI 未配置：文本分析会生成模拟预览；文档上传解析需要配置 AI Key。
+                  AI 未配置：文本分析会生成模拟预览；文档上传与 URL 解析需要配置 AI Key。
                 </div>
               )}
               
-              <div className="relative group">
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="例如：太阳系是以太阳为中心，和所有受到太阳的引力约束天体的集合体。包括八大行星（由离太阳从近到远的顺序：水星、金星、地球、火星、木星、土星、天王星、海王星）、以及至少173颗已知的卫星、5颗已经辨认出来的矮行星和数以亿计的太阳系小天体..."
-                  className="w-full h-80 p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-base leading-relaxed transition-all group-hover:border-gray-300"
-                  disabled={isAnalyzing}
-                />
-                <div className="absolute bottom-4 right-4 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                  {text.length} 字符
-                </div>
+              <div className="flex-1 min-h-[300px] flex flex-col">
+                {activeTab === 'text' && (
+                  <div className="relative group flex-1">
+                    <textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="例如：太阳系是以太阳为中心，和所有受到太阳的引力约束天体的集合体。包括八大行星..."
+                      className="w-full h-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-base leading-relaxed transition-all group-hover:border-gray-300"
+                      disabled={isAnalyzing}
+                    />
+                    <div className="absolute bottom-4 right-4 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
+                      {text.length} 字符
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'file' && (
+                  <div 
+                    className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 transition-all ${
+                      isDragging 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
+                    }`}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  >
+                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                      <Upload size={32} className={isDragging ? 'text-blue-500' : 'text-gray-400'} />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">
+                      {isDragging ? '释放以解析文件' : '点击或拖拽文件到此处'}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
+                      支持 PDF 文档、Markdown 笔记、OPML 大纲或纯文本文件。
+                      <br />
+                      <span className="text-xs opacity-70">AI 将自动提取内容并生成知识图谱。</span>
+                    </p>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
+                      disabled={isAnalyzing}
+                    >
+                      选择文件
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept=".pdf,.txt,.md,.opml"
+                      onChange={handleFileUpload}
+                    />
+                  </div>
+                )}
+
+                {activeTab === 'url' && (
+                  <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-8">
+                    <div className="w-full max-w-md space-y-4">
+                      <div className="text-center mb-6">
+                        <div className="bg-white p-3 rounded-full shadow-sm inline-block mb-3">
+                          <Globe size={28} className="text-blue-500" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-800">输入网页链接</h3>
+                        <p className="text-sm text-gray-500">AI 将读取网页内容并转化为知识结构</p>
+                      </div>
+                      
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Link size={18} className="text-gray-400" />
+                        </div>
+                        <input
+                          type="url"
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                          placeholder="https://example.com/article"
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          disabled={isAnalyzing}
+                        />
+                      </div>
+                      
+                      <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 flex items-start gap-2">
+                        <div className="mt-0.5"><Check size={12} /></div>
+                        <span>支持博客文章、新闻报道、维基百科条目等以文本为主的网页。</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

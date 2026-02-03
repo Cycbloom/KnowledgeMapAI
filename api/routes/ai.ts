@@ -26,6 +26,7 @@ import { graphService } from '../services/graphService.js';
 import { openai, getAIModel, getMockResponse, aiService } from '../services/aiService.js';
 import { getAIProviderForTask, getAIProvider } from '../services/ai/factory.js';
 import { logger } from '../utils/logger.js';
+import { scrapeUrl } from '../utils/scraper.js';
 import { taskService } from '../services/taskService.js';
 
 dotenv.config();
@@ -736,6 +737,21 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
   } catch (error: any) {
     logger.error('Document-to-Graph Error:', error);
     res.status(500).json({ error: error.message || 'Document processing failed' });
+  }
+});
+
+router.post('/url-to-text', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { url } = req.body;
+  if (!url) {
+    throw new AppError('URL is required', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+
+  try {
+    const result = await scrapeUrl(url);
+    res.json(result);
+  } catch (error: any) {
+    logger.error('URL Scraping Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch URL content' });
   }
 });
 

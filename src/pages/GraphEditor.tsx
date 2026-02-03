@@ -24,6 +24,8 @@ import { GraphSettingsModal } from '../components/GraphEditor/GraphSettingsModal
 import { ChatDialog } from '../components/GraphEditor/ChatDialog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { HelpModal } from '../components/HelpModal';
+import { ExportDialog } from '../components/GraphEditor/ExportDialog';
+import { ShareModal } from '../components/GraphEditor/ShareModal';
 import { useHistory, HistoryAction } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
@@ -187,6 +189,8 @@ export const GraphEditor = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
+  const [isExportPDFOpen, setIsExportPDFOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [relatedNodes, setRelatedNodes] = useState<any[]>([]);
   const [isRelatedLoading, setIsRelatedLoading] = useState(false);
   const [showRelatedSection, setShowRelatedSection] = useState(false);
@@ -1036,22 +1040,8 @@ export const GraphEditor = () => {
 
   const handleExportPDF = async () => {
     if (!id || !graphMeta) return;
-    try {
-      setIsExportMenuOpen(false);
-      const blob = await api.data.export(id, 'pdf');
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${graphMeta.title}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      addMessage({ content: 'PDF 导出成功', type: 'success' });
-    } catch (err) {
-      console.error(err);
-      addMessage({ content: 'PDF 导出失败', type: 'error' });
-    }
+    setIsExportMenuOpen(false);
+    setIsExportPDFOpen(true);
   };
 
   const handleDeleteGraph = () => {
@@ -1083,6 +1073,10 @@ export const GraphEditor = () => {
   const handleExportImage = () => {
     setIsExportMenuOpen(false);
     setIsExportImageModalOpen(true);
+  };
+
+  const handleShare = () => {
+    setIsShareModalOpen(true);
   };
 
   const confirmExportImage = async () => {
@@ -1531,6 +1525,7 @@ export const GraphEditor = () => {
         }}
         onRefresh={refetchGraph}
         onOpenHelp={() => setIsHelpOpen(true)}
+        onShare={handleShare}
       />
 
       <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
@@ -1599,6 +1594,37 @@ export const GraphEditor = () => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         graphId={id || ''}
+      />
+
+      <ExportDialog 
+        isOpen={isExportPDFOpen}
+        onClose={() => setIsExportPDFOpen(false)}
+        graphId={id || ''}
+        graphTitle={graphMeta?.title || 'Knowledge Graph'}
+        getScreenshot={() => {
+          if (graphRef.current) {
+            // Use current view for screenshot
+            return graphRef.current.captureScreenshot({ 
+              transparent: false, 
+              fitView: true, 
+              hideGrid: true 
+            });
+          }
+          return null;
+        }}
+      />
+
+      <ShareModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        graphId={id || ''}
+        isPublic={graphMeta?.is_public || false}
+        onPublicChange={(newStatus) => {
+          // Update local cache optimistically or refetch
+          if (graphMeta) {
+             queryClient.setQueryData(queryKeys.graph(id || ''), { ...graphMeta, is_public: newStatus });
+          }
+        }}
       />
 
       <ChatDialog 

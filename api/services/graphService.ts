@@ -45,19 +45,43 @@ export class GraphService {
     return data;
   }
 
-  async getGraph(supabase: SupabaseClient, userId: string, id: string) {
-    const { data, error } = await supabase
+  async getGraph(supabase: SupabaseClient, userId: string | null, id: string) {
+    const query = supabase
       .from('knowledge_graphs')
       .select('*')
       .eq('id', id)
-      .eq('user_id', userId)
       .single();
 
-    if (error) throw error; // Controller catches this (404/500)
+    if (userId) {
+      // If user is logged in, they can see their own graphs OR public graphs
+      // But Supabase RLS might restrict it. 
+      // Since we are using service role or authenticated client, we need to handle logic.
+      // If using RLS, we just query. But here we might want to enforce ownership check explicitly OR allow if public.
+      // Assuming RLS handles "read own" + "read public".
+      // But to be safe and explicit:
+      // The query above will fail if RLS prevents it.
+      // If we want to check ownership specifically:
+      // .or(`user_id.eq.${userId},is_public.eq.true`)
+      // But standard .select().eq('id', id) combined with RLS is best.
+      
+      // However, the original code had .eq('user_id', userId). We need to relax that.
+      // Let's rely on the result.
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    
+    // Manual check if not using RLS for public access (double safety)
+    if (!data.is_public && (!userId || data.user_id !== userId)) {
+       throw new Error('Access denied');
+    }
+
     return data;
   }
 
   async updateGraph(supabase: SupabaseClient, userId: string, id: string, updates: any) {
+    // Only owner can update
     const { data, error } = await supabase
       .from('knowledge_graphs')
       .update(updates)
@@ -69,6 +93,8 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    // Also invalidate graph node cache as metadata changed
+    await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
     return data;
   }
 
@@ -87,20 +113,25 @@ export class GraphService {
     await cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
   }
 
-  async getGraphNodes(supabase: SupabaseClient, userId: string, graphId: string) {
-    const cacheKey = CacheKeys.GRAPH_NODES(userId, graphId);
+  async getGraphNodes(supabase: SupabaseClient, userId: string | null, graphId: string) {
+    // userId can be null for public graphs
+    // Use a composite cache key that handles null userId (e.g. "public")
+    const cacheKey = CacheKeys.GRAPH_NODES(userId || 'public', graphId);
     
     return cacheService.getOrSet(cacheKey, async () => {
-      // Verify ownership first
+      // 1. Verify access (Ownership or Public)
       const { data: graph, error: graphError } = await supabase
         .from('knowledge_graphs')
-        .select('id')
+        .select('id, user_id, is_public')
         .eq('id', graphId)
-        .eq('user_id', userId)
         .single();
 
       if (graphError || !graph) {
-        throw new Error('Graph not found or access denied');
+        throw new Error('Graph not found');
+      }
+
+      if (!graph.is_public && (!userId || graph.user_id !== userId)) {
+        throw new Error('Access denied');
       }
 
       // Fetch nodes
@@ -123,9 +154,18 @@ export class GraphService {
     });
   }
 
-  async getGraphNodeStatus(supabase: SupabaseClient, userId: string, graphId: string) {
+  async getGraphNodeStatus(supabase: SupabaseClient, userId: string | null, graphId: string) {
     // 1. Get nodes and edges
     const { nodes, edges } = await this.getGraphNodes(supabase, userId, graphId);
+
+    // If no user (public view), return all unlocked
+    if (!userId) {
+      const status: Record<string, { locked: boolean; mastered: boolean }> = {};
+      nodes.forEach((node: any) => {
+        status[node.id] = { locked: false, mastered: false };
+      });
+      return status;
+    }
 
     // 1.5 Get graph settings
     const { data: graph } = await supabase

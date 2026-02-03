@@ -5,10 +5,12 @@ export enum LogLevel {
   DEBUG = 'debug',
 }
 
-class Logger {
+export class Logger {
   private level: LogLevel = LogLevel.INFO;
+  private prefix?: string;
 
-  constructor() {
+  constructor(prefix?: string) {
+    this.prefix = prefix;
     const envLevel = process.env.LOG_LEVEL as LogLevel;
     if (envLevel && Object.values(LogLevel).includes(envLevel)) {
       this.level = envLevel;
@@ -17,8 +19,9 @@ class Logger {
 
   private formatMessage(level: LogLevel, message: string, meta?: any): string {
     const timestamp = new Date().toISOString();
+    const prefixStr = this.prefix ? ` [${this.prefix}]` : '';
     const metaString = meta ? ` ${JSON.stringify(meta)}` : '';
-    return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaString}`;
+    return `[${timestamp}] [${level.toUpperCase()}]${prefixStr} ${message}${metaString}`;
   }
 
   info(message: string, meta?: any) {

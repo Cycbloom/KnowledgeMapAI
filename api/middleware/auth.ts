@@ -35,3 +35,34 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
   
   next();
 };
+
+export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    req.supabase = supabaseAdmin; // Use admin or anon client
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (!token) {
+    req.supabase = supabaseAdmin;
+    return next();
+  }
+
+  try {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+
+    if (!error && user) {
+      req.user = user;
+      req.supabase = createClientWithToken(token);
+    } else {
+      req.supabase = supabaseAdmin;
+    }
+  } catch (err) {
+    req.supabase = supabaseAdmin;
+  }
+  
+  next();
+};

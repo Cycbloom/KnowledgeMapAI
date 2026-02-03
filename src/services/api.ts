@@ -144,6 +144,7 @@ export const api = {
     getNodes: (id: string) => request(`/graphs/${id}/nodes`),
     getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
     update: (id: string, data: any) => request(`/graphs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    togglePublic: (id: string, is_public: boolean) => request(`/graphs/${id}/share`, { method: 'PUT', body: JSON.stringify({ is_public }) }),
     delete: (id: string) => request(`/graphs/${id}`, { method: 'DELETE' }),
   },
   nodes: {
@@ -272,6 +273,7 @@ export const api = {
         body: formData
       }).then(handleResponse);
     },
+    urlToText: (url: string) => request('/ai/url-to-text', { method: 'POST', body: JSON.stringify({ url }) }),
     recommendConnections: (data: { graph_id: string; node_title: string; node_content?: string }) => 
       request('/ai/recommend-connections', { method: 'POST', body: JSON.stringify(data) }),
     chatStream: async (data: { message: string; graph_id: string; history?: any[]; context_node_ids?: string[]; provider?: string; model?: string }, onChunk: (content: string) => void) => {

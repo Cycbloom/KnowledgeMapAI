@@ -5,22 +5,16 @@ import { importDataSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
-import { createRequire } from 'module';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { pdfService } from '../services/pdfService.js';
 
 const router = Router();
-const require = createRequire(import.meta.url);
-const PDFDocument = require('pdfkit');
 
 // Export graph data
-router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Response) => {
+router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Response) => {
   const { format } = req.params;
   const { graph_id } = req.query;
+  // Handle POST body for advanced PDF options
+  const { options } = req.body; 
 
   if (!graph_id) return res.status(400).json({ error: '必须提供 graph_id' });
 
@@ -97,184 +91,21 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     res.header('Content-Type', 'application/pdf');
     res.attachment(`${safeTitle}.pdf`);
 
-    const doc = new PDFDocument({ size: 'A4', margin: 48 });
-
-    // Font selection strategy
-    const projectFontDir = path.resolve(__dirname, '../../assets/fonts');
-    let fontPath: string | undefined;
-    
-    // Helper to recursively find font
-    const findFontFile = (dir: string): string | null => {
-      if (!fs.existsSync(dir)) return null;
-      
-      let files: fs.Dirent[] = [];
-      try {
-        files = fs.readdirSync(dir, { withFileTypes: true });
-      } catch (e) {
-        console.error(`Error reading directory ${dir}:`, e);
-        return null;
-      }
-      
-      // 1. Check current directory for Noto Sans SC (Priority)
-      const noto = files.find(f => f.isFile() && /noto.*sc.*\.ttf$/i.test(f.name));
-      if (noto) return path.join(dir, noto.name);
-
-      // 2. Check current directory for any other Chinese-like font or generic ttf (Secondary)
-      // Only if we are deep in recursion, we might accept others, but let's stick to strict Noto search first 
-      // or standard naming conventions to avoid picking up icon fonts.
-      
-      // 3. Recurse into subdirectories
-      for (const file of files) {
-        if (file.isDirectory()) {
-          const found = findFontFile(path.join(dir, file.name));
-          if (found) return found;
-        }
-      }
-      
-      return null;
-    };
-    
-    // 1. Try project assets (auto-detect recursive)
-    if (fs.existsSync(projectFontDir)) {
-      try {
-        const found = findFontFile(projectFontDir);
-        if (found) {
-          fontPath = found;
-          console.log('Using project font:', fontPath);
-        } else {
-           // Fallback: Try to find ANY ttf if specific Noto SC not found (e.g. user renamed it)
-           // Simple flat scan for fallback
-           const files = fs.readdirSync(projectFontDir);
-           const anyFont = files.find(f => /\.(ttf|otf|ttc)$/i.test(f));
-           if (anyFont) fontPath = path.join(projectFontDir, anyFont);
-        }
-      } catch (e) {
-        console.error('Error searching font directory:', e);
+    // Use PDF Service
+    try {
+      pdfService.generateReport(
+        graph, 
+        nodes || [], 
+        edges || [], 
+        options || {}, // Pass options from body (screenshot, etc.)
+        res
+      );
+    } catch (e: any) {
+      console.error('PDF Generation Error:', e);
+      if (!res.headersSent) {
+         res.status(500).json({ error: 'PDF generation failed' });
       }
     }
-
-    // 2. Try configured path
-    if (!fontPath && process.env.PDF_FONT_PATH && fs.existsSync(process.env.PDF_FONT_PATH)) {
-        fontPath = process.env.PDF_FONT_PATH;
-    }
-
-    // 3. Try System fonts (Fallback)
-    if (!fontPath) {
-        const systemFonts = [
-          'C:\\Windows\\Fonts\\simhei.ttf',
-          'C:\\Windows\\Fonts\\msyh.ttf',
-          'C:\\Windows\\Fonts\\simsun.ttc',
-          'C:\\Windows\\Fonts\\arialuni.ttf',
-          'C:\\Windows\\Fonts\\msyhl.ttc',
-          '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc', // Common Linux path
-          '/usr/share/fonts/noto/NotoSansSC-Regular.otf',
-          '/System/Library/Fonts/PingFang.ttc' // macOS
-        ];
-
-        for (const p of systemFonts) {
-           if (fs.existsSync(p)) {
-             fontPath = p;
-             break;
-           }
-        }
-    }
-
-    if (fontPath) {
-      try {
-        doc.registerFont('CN', fontPath);
-        doc.font('CN');
-      } catch (e) {
-        console.error('Failed to register font:', e);
-      }
-    } else {
-      console.warn('No Chinese font found. PDF export may not render Chinese characters correctly.');
-    }
-
-    doc.pipe(res);
-
-    doc.fontSize(22).fillColor('#000000').text(safeTitle, { align: 'center' });
-    doc.moveDown(0.5);
-    
-    if (graph.description) {
-      doc.fontSize(11).fillColor('#444444').text(String(graph.description), { align: 'center' });
-      doc.moveDown(1);
-    }
-
-    // Add Statistics Section
-    doc.fontSize(14).fillColor('#111111').text('图谱统计信息', { underline: true });
-    doc.moveDown(0.5);
-    
-    const nodesArr = Array.isArray(nodes) ? nodes : [];
-    const edgesArr = Array.isArray(edges) ? edges : [];
-    
-    const levelCounts: Record<string, number> = {
-      'root': nodesArr.filter(n => n.level === 'root').length,
-      'core': nodesArr.filter(n => n.level === 'core').length,
-      'sub': nodesArr.filter(n => n.level === 'sub').length,
-      'normal': nodesArr.filter(n => n.level === 'normal').length,
-      'leaf': nodesArr.filter(n => n.level === 'leaf').length
-    };
-
-    doc.fontSize(10).fillColor('#333333');
-    doc.text(`总节点数: ${nodesArr.length}`);
-    doc.text(`总关联数: ${edgesArr.length}`);
-    doc.text(`层级分布: 核心(${levelCounts.root + levelCounts.core}) / 子项(${levelCounts.sub + levelCounts.normal}) / 叶子(${levelCounts.leaf})`);
-    doc.text(`导出时间: ${new Date().toLocaleString()}`);
-    doc.moveDown(1.5);
-    
-    doc.fillColor('#111111');
-    doc.fontSize(14).text('内容大纲', { underline: true });
-    doc.moveDown(1);
-
-    const nodeById = new Map(nodesArr.map((n: any) => [n.id, n]));
-    const childrenByParent = new Map<string, string[]>();
-    const incoming = new Set<string>();
-
-    for (const e of edgesArr as any[]) {
-      if (!e?.source_node_id || !e?.target_node_id) continue;
-      incoming.add(e.target_node_id);
-      const list = childrenByParent.get(e.source_node_id) || [];
-      list.push(e.target_node_id);
-      childrenByParent.set(e.source_node_id, list);
-    }
-
-    const rootNodes = nodesArr.filter((n: any) => n.level === 'root');
-    const fallbackRoots = nodesArr.filter((n: any) => !incoming.has(n.id));
-    const roots = rootNodes.length > 0 ? rootNodes : (fallbackRoots.length > 0 ? fallbackRoots : nodesArr.slice(0, 1));
-
-    const visited = new Set<string>();
-
-    const renderNode = (node: any, depth: number) => {
-      if (!node || visited.has(node.id)) return;
-      visited.add(node.id);
-
-      const indent = Math.min(depth, 6) * 18;
-      const titleSize = Math.max(11, 16 - depth);
-
-      doc.fontSize(titleSize).fillColor('#111111').text(String(node.title || '未命名节点'), { indent });
-      if (node.content) {
-        doc.moveDown(0.2);
-        doc.fontSize(9).fillColor('#333333').text(String(node.content), { indent: indent + 12 });
-      }
-      doc.moveDown(0.6);
-
-      const children = childrenByParent.get(node.id) || [];
-      for (const childId of children) {
-        renderNode(nodeById.get(childId), depth + 1);
-      }
-    };
-
-    for (const r of roots) renderNode(r, 0);
-
-    const remaining = nodesArr.filter((n: any) => !visited.has(n.id));
-    if (remaining.length > 0) {
-      doc.addPage();
-      doc.fontSize(14).fillColor('#111111').text('未连接节点', { align: 'left' });
-      doc.moveDown(0.8);
-      for (const n of remaining) renderNode(n, 0);
-    }
-
-    doc.end();
     return;
   }
 

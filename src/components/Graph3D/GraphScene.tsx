@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { Environment, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { usePerformanceStore } from '../../store/usePerformanceStore';
 import { SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { Node } from '../../types/index';
 import { InstancedNodes, LinkLines, NodeLabels, SolarLayoutController } from './GraphRenderables';
@@ -66,6 +67,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
   const theme = getTheme(isDark);
   const [focusTarget, setFocusTarget] = useState<{ pos: THREE.Vector3 | null, lookAt: THREE.Vector3 | null } | null>(null);
   const tempQuaternion = useMemo(() => new THREE.Quaternion(), []);
+  const quality = usePerformanceStore(state => state.quality);
 
   // Focus Logic
   const focusNodeInternal = useCallback((nodeId: string) => {
@@ -255,7 +257,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         <Stars 
           radius={150} 
           depth={50} 
-          count={7000} 
+          count={quality === 'low' ? 2000 : 7000} 
           factor={4} 
           saturation={0} 
           fade 
@@ -270,8 +272,8 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         layoutMode={props.layoutMode || '3d-force'} 
       />
 
-      {/* Post-Processing Effects */}
-      {isDark && (
+      {/* Post-Processing Effects - Only on High Quality */}
+      {isDark && quality === 'high' && (
         <EffectComposer>
           <Bloom 
             luminanceThreshold={1.5} // Only very bright things glow (emissiveIntensity > 1.5)

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type } from 'lucide-react';
+import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gauge } from 'lucide-react';
 import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
+import { usePerformanceStore } from '../../store/usePerformanceStore';
 
 interface GraphSettingsModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   const { data: graph } = useGraph(graphId);
   const updateGraphMutation = useUpdateGraphMutation();
   const { addMessage } = useMessageStore();
+  const { quality, setQuality, showStats, toggleStats } = usePerformanceStore();
   
   const [gamificationEnabled, setGamificationEnabled] = useState(true);
   const [learningDirection, setLearningDirection] = useState<'top_down' | 'bottom_up'>('top_down');
@@ -66,6 +68,66 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
 
         {/* Body */}
         <div className="p-6 space-y-6">
+          {/* Performance Settings */}
+          <div className="space-y-3">
+            <h3 className="font-bold text-gray-700 flex items-center">
+              <Zap size={18} className="mr-2" />
+              性能与画质 (Performance)
+            </h3>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setQuality('high')}
+                className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                  quality === 'high' 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                    : 'border-gray-100 hover:border-indigo-100'
+                }`}
+              >
+                <Zap size={16} className="mb-1" />
+                高画质
+              </button>
+              <button
+                onClick={() => setQuality('medium')}
+                className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                  quality === 'medium' 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                    : 'border-gray-100 hover:border-indigo-100'
+                }`}
+              >
+                <Activity size={16} className="mb-1" />
+                平衡
+              </button>
+              <button
+                onClick={() => setQuality('low')}
+                className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                  quality === 'low' 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                    : 'border-gray-100 hover:border-indigo-100'
+                }`}
+              >
+                <Gauge size={16} className="mb-1" />
+                高性能
+              </button>
+            </div>
+            
+            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+              <span className="text-sm text-gray-600">显示性能统计 (FPS)</span>
+              <button 
+                onClick={toggleStats}
+                className={`w-10 h-5 rounded-full transition-colors relative ${showStats ? 'bg-indigo-600' : 'bg-gray-300'}`}
+              >
+                <div className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition-transform ${showStats ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            <p className="text-xs text-gray-400">
+              {quality === 'high' ? '启用泛光特效，最大视野距离。' : 
+               quality === 'medium' ? '关闭部分特效，适中视野。' : 
+               '关闭特效，简化几何体，适合低端设备。'}
+            </p>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4"></div>
+
           {/* Gamification Switch */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">

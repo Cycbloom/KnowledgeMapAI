@@ -81,14 +81,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { isDark, toggleTheme } = useTheme();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isExpanded, setIsExpanded] = useState(false); // For mobile menu
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const themeClasses = {
     container: isDark ? 'bg-slate-800/90 border-slate-700 text-gray-100' : 'bg-white/90 border-gray-200 text-gray-800',
@@ -401,49 +393,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     );
   }
 
-  if (isMobile) {
-    return (
-      <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2">
-        <div className={`p-2 rounded-lg shadow-md flex items-center space-x-2 backdrop-blur-sm ${themeClasses.container}`}>
-           <Button onClick={onBack} icon={ArrowLeft} title="返回" />
-           <Divider />
-           <Button onClick={toggleTheme} icon={isDark ? Sun : Moon} title="切换主题" />
-           {selectedNodeIds.size > 1 && (
-             <>
-               <Divider />
-               <BatchMenu />
-             </>
-           )}
-           <Button 
-             onClick={() => setIsExpanded(!isExpanded)} 
-             icon={isExpanded ? ChevronUp : ChevronDown} 
-             title="更多工具" 
-           />
-        </div>
-        
-        {isExpanded && (
-          <div className={`p-2 rounded-lg shadow-md flex flex-col gap-2 animate-in slide-in-from-top-2 backdrop-blur-sm ${themeClasses.container}`}>
-             <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar">
-                <Button onClick={onUndo} disabled={!canUndo} icon={Undo} />
-                <Button onClick={onRedo} disabled={!canRedo} icon={Redo} />
-                <Divider />
-                <Button onClick={onAddNode} icon={Plus} colorClass="text-blue-600" />
-                <Button onClick={() => setIsDeleteMode(!isDeleteMode)} active={isDeleteMode} icon={Eraser} />
-             </div>
-             <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar">
-                <Button onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} active={sidebarMode === 'outline'} icon={List} />
-                <Button onClick={() => setIsChatOpen(!isChatOpen)} active={isChatOpen} icon={MessageSquare} />
-             </div>
-             <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar">
-                <Button onClick={onOpenSettings} icon={Settings} />
-                <Button onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} active={isExportMenuOpen} icon={Download} />
-             </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   const [openDropdown, setOpenDropdown] = useState<'edit' | 'ai' | 'system' | 'view' | null>(null);
 
   // Close dropdowns when clicking outside
@@ -464,7 +413,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         }`}
       >
         <Icon size={20} />
-        {!isMobile && <span className="text-sm font-medium">{label}</span>}
+        <span className="text-sm font-medium">{label}</span>
         <ChevronDown size={14} className={`transition-transform duration-200 ${openDropdown === id ? 'rotate-180' : ''}`} />
       </button>
       

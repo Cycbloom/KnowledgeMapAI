@@ -11,7 +11,7 @@ import { Node } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList, BookOpen } from 'lucide-react';
+import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList, BookOpen, MoreVertical, Settings, HelpCircle, Sun, Moon, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -116,9 +116,12 @@ export const GraphEditor = () => {
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [prevSidebarMode, setPrevSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [showGrid, setShowGrid] = useState(false);
-  const { isDark } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [loading, setLoading] = useState(false); // For non-query loading (e.g. AI)
+  
+  // Mobile Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // const [graphTitle, setGraphTitle] = useState(''); // Use graphMeta.title
 
   // Layout & Clustering State
@@ -1101,19 +1104,72 @@ export const GraphEditor = () => {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full bg-gray-50">
-        <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 sticky top-0 z-10">
-          <button onClick={() => navigate(-1)} className="p-2 bg-gray-50 rounded-full shadow-sm active:bg-gray-100">
-            <ArrowLeft size={20} className="text-gray-600" />
-          </button>
-          <h1 className="text-base font-bold truncate px-2 text-gray-800 max-w-[150px]">{graphMeta?.title || 'Knowledge Graph'}</h1>
-          <button 
-            onClick={() => navigate(`/study/${id}`)}
-            className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-full text-xs font-bold shadow-md active:scale-95 transition-transform"
-          >
-            <GraduationCap size={14} />
-            <span>复习</span>
-          </button>
+      <div className="flex flex-col h-full bg-gray-50 relative">
+        <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 sticky top-0 z-20">
+          <div className="flex items-center space-x-2">
+            <button onClick={() => navigate(-1)} className="p-2 bg-gray-50 rounded-full shadow-sm active:bg-gray-100">
+              <ArrowLeft size={20} className="text-gray-600" />
+            </button>
+            <h1 className="text-base font-bold truncate px-1 text-gray-800 max-w-[120px]">{graphMeta?.title || 'Knowledge Graph'}</h1>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => navigate(`/study/${id}`)}
+              className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-full text-xs font-bold shadow-md active:scale-95 transition-transform"
+            >
+              <GraduationCap size={14} />
+              <span>复习</span>
+            </button>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 bg-gray-50 rounded-full shadow-sm active:bg-gray-100 text-gray-600"
+              >
+                <MoreVertical size={20} />
+              </button>
+              
+              {isMobileMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setIsMobileMenuOpen(false)}></div>
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="py-1">
+                      <button 
+                        onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        <Settings size={18} />
+                        图谱设置
+                      </button>
+                      <button 
+                        onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                        {isDark ? '浅色模式' : '深色模式'}
+                      </button>
+                      <button 
+                        onClick={() => { setIsHelpOpen(true); setIsMobileMenuOpen(false); }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        <HelpCircle size={18} />
+                        帮助指南
+                      </button>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <button 
+                        onClick={() => { handleExportMarkdown(); setIsMobileMenuOpen(false); }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        <Download size={18} />
+                        导出 Markdown
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Mobile Main View: GraphOutline */}
@@ -1137,6 +1193,14 @@ export const GraphEditor = () => {
              className="h-full border-none"
            />
         </div>
+        
+        {/* Modals needed for Mobile */}
+        <GraphSettingsModal 
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          graphId={id || ''}
+        />
+        <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
         
         {/* Reuse Edit Sidebar for Node Details (Full Screen on Mobile) */}
         {sidebarMode === 'edit' && selectedNode && (

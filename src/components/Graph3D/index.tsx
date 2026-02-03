@@ -1,10 +1,13 @@
 import React, { forwardRef } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { Stats } from '@react-three/drei';
 import { Node, Edge } from '../../types/index';
 import { useGraphSimulation } from './useGraphSimulation';
 import { useGraphInteraction } from './useGraphInteraction';
 import { GraphScene, GraphSceneRef } from './GraphScene';
 import { THEME_CONFIG } from '../../config/graphConfig';
+import { PerformanceMonitor } from './PerformanceMonitor';
+import { usePerformanceStore } from '../../store/usePerformanceStore';
 
 export type Graph3DProps = {
   nodes: Node[];
@@ -75,11 +78,14 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
     linksRef
   });
 
+  const showStats = usePerformanceStore(state => state.showStats);
   const backgroundClass = isDark ? THEME_CONFIG.dark.background : THEME_CONFIG.light.background;
 
   return (
     <div className={`w-full h-full transition-colors duration-300 ${backgroundClass} relative`}>
       <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
+        <PerformanceMonitor />
+        {showStats && <Stats />}
         <GraphScene 
           ref={ref}
           nodesRef={nodesRef}

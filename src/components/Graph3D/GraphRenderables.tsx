@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { useMessageStore } from '../../store/useMessageStore';
+import { usePerformanceStore } from '../../store/usePerformanceStore';
 import { Node } from '../../types/index';
 import { LEVEL_CONFIG, SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { getLinkNodeId } from '../../lib/graphUtils';
@@ -185,6 +186,8 @@ export const InstancedNodes = ({
   });
 
   const { addMessage } = useMessageStore();
+  const quality = usePerformanceStore(state => state.quality);
+  const segments = quality === 'high' ? 32 : (quality === 'medium' ? 16 : 8);
 
   const handleInteraction = (instanceId: number | undefined, callback?: (node: SimNode) => void) => {
     if (instanceId === undefined) return;
@@ -212,13 +215,13 @@ export const InstancedNodes = ({
     <>
       {/* Visual Mesh - No interaction */}
       <instancedMesh
-        key={`visual-${simulationVersion}-${nodeCount}`} // Force re-creation when topology changes
+        key={`visual-${simulationVersion}-${nodeCount}-${quality}`} // Force re-creation when topology or quality changes
         ref={meshRef}
         args={[undefined, undefined, nodeCount]}
         frustumCulled={false}
         raycast={() => null} // Disable raycasting for visual mesh to optimize
       >
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1, segments, segments]} />
         <meshPhysicalMaterial 
           roughness={0.2} 
           metalness={0.5} 
@@ -565,7 +568,8 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
           } else {
             // Default: 'important' (Adaptive)
             // Use specific visibleDistance from config
-            const visibleDistance = (config as any).visibleDistance ?? 80;
+            const baseDist = (config as any).visibleDistance ?? 80;
+            const visibleDistance = baseDist * distMultiplier;
             
             // Fade out logic:
             // Full opacity until 70% of distance
@@ -621,6 +625,8 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
   const { camera } = useThree();
   const { addMessage } = useMessageStore();
   const theme = getTheme(isDark);
+  const quality = usePerformanceStore(state => state.quality);
+  const distMultiplier = quality === 'high' ? 1.0 : (quality === 'medium' ? 0.8 : 0.5);
   
   // We render the component ONCE based on simulationVersion (count)
   // But update positions in useFrame

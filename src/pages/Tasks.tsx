@@ -140,16 +140,16 @@ export const Tasks = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-8">
+    <div className="h-full overflow-y-auto p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">任务中心</h1>
-          <p className="text-gray-600 mt-1 text-sm">查看后台任务进度与结果回填</p>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">任务中心</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">查看后台任务进度与结果回填</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleExport}
-            className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50"
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             title="导出为 CSV"
           >
             <Download className="w-4 h-4" />
@@ -157,7 +157,7 @@ export const Tasks = () => {
           </button>
           <button
             onClick={() => refetch()}
-            className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 disabled:opacity-50"
+            className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
@@ -165,7 +165,7 @@ export const Tasks = () => {
           </button>
           <Link
             to="/dashboard"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
           >
             <span>返回仪表盘</span>
             <ArrowRight className="w-4 h-4" />
@@ -173,7 +173,7 @@ export const Tasks = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-6 bg-white p-2 rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+      <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto">
         <FilterTab label="全部任务" value="all" current={filter} onClick={setFilter} />
         <FilterTab label="进行中" value="processing" current={filter} onClick={setFilter} />
         <FilterTab label="已完成" value="completed" current={filter} onClick={setFilter} />
@@ -182,29 +182,29 @@ export const Tasks = () => {
       </div>
 
       {error ? (
-        <div className="p-8 text-center text-red-600 bg-red-50 rounded-lg border border-red-100">
+        <div className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
           <XCircle className="w-8 h-8 mx-auto mb-2" />
           <p>加载任务失败: {(error as Error).message}</p>
-          <button onClick={() => refetch()} className="mt-4 text-blue-600 hover:underline">重试</button>
+          <button onClick={() => refetch()} className="mt-4 text-blue-600 dark:text-blue-400 hover:underline">重试</button>
         </div>
       ) : (
         <div className="space-y-4">
           {isLoading && !isFetching && (
-            <div className="p-12 text-center text-gray-500">
+            <div className="p-12 text-center text-gray-500 dark:text-gray-400">
               <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
               <p>加载中...</p>
             </div>
           )}
 
           {!isLoading && tasks.length === 0 && (
-            <div className="p-12 text-center text-gray-500 bg-white rounded-lg border border-dashed border-gray-300">
-              <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <div className="p-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
+              <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
               <p>暂无任务</p>
             </div>
           )}
 
           {!isLoading && tasks.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y divide-gray-100">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
               {tasks.map((t) => {
                 const graphId = t.payload?.graph_id;
                 const nodeId = t.payload?.node_id;
@@ -212,7 +212,7 @@ export const Tasks = () => {
                 const showResult = t.status === 'completed' && (t.type === 'expand_graph' || t.type === 'generate_questions' || t.type === 'batch_generate_questions');
 
                 return (
-                  <div key={t.id} className="p-5 hover:bg-slate-50 transition-colors">
+                  <div key={t.id} className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -220,21 +220,21 @@ export const Tasks = () => {
                             {getStatusIcon(t.status)}
                             <span>{t.status}</span>
                           </span>
-                          <span className="font-semibold text-gray-900">{t.name || getTypeLabel(t.type)}</span>
-                          <span className="text-xs text-gray-400 font-mono">#{t.id.slice(0, 8)}</span>
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">{t.name || getTypeLabel(t.type)}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">#{t.id.slice(0, 8)}</span>
                         </div>
 
-                        <div className="text-sm text-gray-600 space-y-1.5 pl-1">
+                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 pl-1">
                           {t.status === 'processing' && t.result?.progress !== undefined && (
-                            <div className="mt-2 w-full max-w-md bg-slate-100 p-3 rounded-lg border border-slate-200">
-                              <div className="flex justify-between text-xs text-slate-600 mb-2 font-medium">
+                            <div className="mt-2 w-full max-w-md bg-slate-100 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
                                 <span className="flex items-center gap-2">
                                   <Loader2 size={12} className="animate-spin text-blue-500" />
-                                  正在处理: <span className="text-blue-600">{t.result.current_node || '准备中...'}</span>
+                                  正在处理: <span className="text-blue-600 dark:text-blue-400">{t.result.current_node || '准备中...'}</span>
                                 </span>
                                 <span>{t.result.progress}%</span>
                               </div>
-                              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden shadow-inner">
+                              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner">
                                 <div 
                                   className="bg-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
                                   style={{ width: `${t.result.progress}%` }}
@@ -243,19 +243,19 @@ export const Tasks = () => {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-4 text-xs text-gray-400">
+                          <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
                              <span className="flex items-center gap-1"><Clock size={12}/> 创建: {formatTime(t.created_at)}</span>
                              {t.updated_at !== t.created_at && <span>更新: {formatTime(t.updated_at)}</span>}
                           </div>
                           
                           {t.error && (
-                             <div className="text-red-600 bg-red-50 p-2 rounded text-xs break-words border border-red-100">
+                             <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
                                <strong>错误：</strong>{t.error}
                              </div>
                           )}
                           
                           {showResult && t.type === 'expand_graph' && resultTitles.length > 0 && (
-                            <div className="text-emerald-700 bg-emerald-50/50 p-2 rounded text-xs border border-emerald-100/50">
+                            <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
                               <span className="font-medium">新增节点：</span>
                               {resultTitles.slice(0, 6).join('、')}
                               {resultTitles.length > 6 ? ` 等 ${resultTitles.length} 个` : ''}
@@ -263,13 +263,13 @@ export const Tasks = () => {
                           )}
                           
                           {showResult && t.type === 'generate_questions' && typeof t.result?.count === 'number' && (
-                            <div className="text-emerald-700 bg-emerald-50/50 p-2 rounded text-xs border border-emerald-100/50">
+                            <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
                               <span className="font-medium">已生成卡片：</span> {t.result.count} 张
                             </div>
                           )}
 
                           {showResult && t.type === 'batch_generate_questions' && typeof t.result?.totalCards === 'number' && (
-                            <div className="text-emerald-700 bg-emerald-50/50 p-2 rounded text-xs border border-emerald-100/50">
+                            <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
                               <span className="font-medium">批量生成完成：</span> 共生成 {t.result.totalCards} 张卡片
                             </div>
                           )}
@@ -282,7 +282,7 @@ export const Tasks = () => {
                             <button
                               onClick={() => handleRetry(t.id)}
                               disabled={retryMutation.isPending}
-                              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
                               title="重试任务"
                             >
                               <RotateCw size={18} className={retryMutation.isPending ? "animate-spin" : ""} />
@@ -292,7 +292,7 @@ export const Tasks = () => {
                           <button
                             onClick={() => handleDeleteClick(t.id)}
                             disabled={deleteMutation.isPending}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                             title="删除任务"
                           >
                             <Trash2 size={18} />
@@ -302,7 +302,7 @@ export const Tasks = () => {
                         {graphId && (
                           <button
                             onClick={() => navigate(`/graph/${graphId}`)}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
                           >
                             打开图谱
                           </button>
@@ -311,7 +311,7 @@ export const Tasks = () => {
                         {t.type === 'generate_questions' && nodeId && (
                           <button
                             onClick={() => navigate(`/study?node_id=${encodeURIComponent(nodeId)}`)}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                           >
                             复习题目
                           </button>
@@ -323,7 +323,7 @@ export const Tasks = () => {
                               navigate(`/graph/${graphId}`);
                               addMessage({ type: 'info', content: '已打开图谱：如未自动刷新，请稍等或手动刷新页面' });
                             }}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 transition-colors"
+                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                           >
                             查看结果
                           </button>
@@ -335,7 +335,7 @@ export const Tasks = () => {
                               navigate(`/study?node_id=${encodeURIComponent(nodeId)}`);
                               addMessage({ type: 'success', content: '进入学习模式：可开始复习生成的题目' });
                             }}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 transition-colors"
+                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                           >
                             开始学习
                           </button>

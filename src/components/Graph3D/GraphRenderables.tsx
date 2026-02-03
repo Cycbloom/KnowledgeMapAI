@@ -152,6 +152,14 @@ export const InstancedNodes = ({
       }
       
       tempColor.set(baseColor);
+      
+      // Apply emissive intensity for Bloom effect
+      // If it's not locked, we boost the color to make it glow
+      if (!isLocked && !isDimmed) {
+        const intensity = config.emissiveIntensity || 1.0;
+        tempColor.multiplyScalar(intensity);
+      }
+
       if (isDimmed) {
         tempColor.lerp(BLACK, 0.8);
       }
@@ -200,10 +208,12 @@ export const InstancedNodes = ({
       >
         <sphereGeometry args={[1, 32, 32]} />
         <meshPhysicalMaterial 
-          roughness={0.4} 
-          metalness={0.1} 
-          clearcoat={0.5}
+          roughness={0.2} 
+          metalness={0.5} 
+          clearcoat={0.3}
           clearcoatRoughness={0.1}
+          toneMapped={false} // Critical for Bloom to work with high intensity colors
+          emissive={new THREE.Color(0x000000)} // Base emissive is black, we rely on bright diffuse
         />
       </instancedMesh>
 

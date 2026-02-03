@@ -1,6 +1,7 @@
 import React, { forwardRef, useState, useCallback, useImperativeHandle, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
-import { Environment } from '@react-three/drei';
+import { Environment, Stars } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { Node } from '../../types/index';
@@ -228,6 +229,31 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
       <pointLight position={[-10, -10, -10]} intensity={0.5} />
       {/* 使用本地 HDR 文件作为环境贴图，避免远程加载失败 */}
       <Environment files="/assets/textures/potsdamer_platz_1k.hdr" />
+
+      {/* Starry Sky Background */}
+      {isDark && (
+        <Stars 
+          radius={150} 
+          depth={50} 
+          count={7000} 
+          factor={4} 
+          saturation={0} 
+          fade 
+          speed={0.5} 
+        />
+      )}
+
+      {/* Post-Processing Effects */}
+      {isDark && (
+        <EffectComposer>
+          <Bloom 
+            luminanceThreshold={1.5} // Only very bright things glow (emissiveIntensity > 1.5)
+            mipmapBlur 
+            intensity={1.2} 
+            radius={0.6}
+          />
+        </EffectComposer>
+      )}
 
       <InstancedNodes 
         nodesRef={nodesRef} 

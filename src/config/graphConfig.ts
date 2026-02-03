@@ -3,76 +3,76 @@ import { Node } from '../types/index';
 export const LEVEL_CONFIG = {
   root: { 
     chargeStrength: -60, 
-    radius: 1.4, 
-    color: '#8B5CF6', 
-    emissive: '#5B21B6', 
-    emissiveIntensity: 0.8,
+    radius: 1.6, 
+    color: '#FDB813', // Sun/Gold
+    emissive: '#F59E0B', 
+    emissiveIntensity: 2.5,
     roughness: 0.1,
-    metalness: 0.3,
+    metalness: 0.5,
     visibleDistance: Infinity
   },
   core: { 
     chargeStrength: -40, 
-    radius: 1.1, 
-    color: '#F43F5E', 
-    emissive: '#9F1239', 
-    emissiveIntensity: 0.5,
+    radius: 1.2, 
+    color: '#60A5FA', // Blue Giant
+    emissive: '#3B82F6', 
+    emissiveIntensity: 1.8,
     roughness: 0.2,
-    metalness: 0.2,
-    visibleDistance: 240
+    metalness: 0.3,
+    visibleDistance: 500
   },
   sub: { 
     chargeStrength: -30, 
-    radius: 0.8, 
-    color: '#F59E0B', 
-    emissive: '#92400E', 
-    emissiveIntensity: 0.3,
+    radius: 0.9, 
+    color: '#F87171', // Red/Orange Star
+    emissive: '#EF4444', 
+    emissiveIntensity: 1.5,
     roughness: 0.3,
-    metalness: 0.1,
-    visibleDistance: 120
+    metalness: 0.2,
+    visibleDistance: 250
   },
   normal: { 
     chargeStrength: -20, 
-    radius: 0.5, 
-    color: '#10B981', 
-    emissive: '#065F46', 
-    emissiveIntensity: 0.2,
+    radius: 0.6, 
+    color: '#A78BFA', // Purple/White Star
+    emissive: '#8B5CF6', 
+    emissiveIntensity: 1.2,
     roughness: 0.4,
     metalness: 0.1,
-    visibleDistance: 60
+    visibleDistance: 120
   },
   leaf: { 
     chargeStrength: -10, 
     radius: 0.3, 
-    color: '#3B82F6', 
-    emissive: '#1E40AF', 
-    emissiveIntensity: 0.1,
+    color: '#E2E8F0', // White/Distant Star
+    emissive: '#94A3B8', 
+    emissiveIntensity: 0.8,
     roughness: 0.5,
-    metalness: 0.0,
-    visibleDistance: 30
+    metalness: 0.1,
+    visibleDistance: 60
   }
 } as const;
 
 export const THEME_CONFIG = {
   dark: {
-    background: 'bg-slate-900',
+    background: 'bg-black', // Deep space
     grid: {
-      color1: undefined, // Default three.js
+      color1: undefined,
       color2: undefined,
-      opacity: 0.2
+      opacity: 0.0
     },
     lighting: {
-      ambientIntensity: 0.4,
-      pointIntensity: 1,
+      ambientIntensity: 0.2,
+      pointIntensity: 2,
     },
     text: {
-      color: 'white',
+      color: '#f8fafc',
       outline: '#000000',
-      opacity: 1
+      opacity: 0.9
     },
     link: {
-      color: '#9ca3af',
-      opacity: 0.6,
+      color: '#38bdf8', // Light cyan connections
+      opacity: 0.15,    // Very subtle
       highlightOpacity: 0.05
     }
   },

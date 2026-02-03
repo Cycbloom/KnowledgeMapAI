@@ -38,6 +38,7 @@ const __dirname = path.dirname(__filename)
 dotenv.config()
 
 import { errorHandler } from './middleware/errorHandler.js'
+import { logger } from './utils/logger.js'
 
 const app: express.Application = express()
 
@@ -50,7 +51,7 @@ app.use(compression())
 // Redis Client for Rate Limiting
 const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : undefined;
 if (redisClient) {
-  redisClient.on('error', (err) => console.error('Redis Client Error (Rate Limit):', err));
+  redisClient.on('error', (err) => logger.error('Redis Client Error (Rate Limit):', err));
 }
 
 // Rate Limiting

@@ -24,6 +24,8 @@ import { CacheKeys, cacheService } from '../services/cache.js';
 import { graphService } from '../services/graphService.js';
 import { openai, getAIModel, getMockResponse, aiService } from '../services/aiService.js';
 import { getAIProviderForTask, getAIProvider } from '../services/ai/factory.js';
+import { logger } from '../utils/logger.js';
+import { taskService } from '../services/taskService.js';
 
 dotenv.config();
 
@@ -71,7 +73,7 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
 
     res.json({ content: completion.choices[0].message.content });
   } catch (error: any) {
-    console.error('AI Error:', error);
+    logger.error('AI Error:', error);
     res.status(500).json({ error: error.message || 'AI 生成失败' });
   }
 });
@@ -83,7 +85,7 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
     const result = await aiService.expandKnowledge(node_title, node_content, existing_nodes || [], child_nodes || [], { provider, model, contextLevel: context_level });
     res.json(result);
   } catch (error: any) {
-    console.error('AI Expand Error:', error);
+    logger.error('AI Expand Error:', error);
     res.status(500).json({ error: error.message || 'AI 扩展失败' });
   }
 });
@@ -152,7 +154,7 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error: any) {
-    console.error('AI Stream Error:', error);
+    logger.error('AI Stream Error:', error);
     res.write(`data: ${JSON.stringify({ error: error.message || 'AI 生成失败', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
     res.end();
   }
@@ -166,12 +168,10 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
     const aiResult = await aiService.generateCards(node_title, node_content, { provider, model });
     res.json({ cards: aiResult.cards || [] });
   } catch (error: any) {
-    console.error('AI Error:', error);
+    logger.error('AI Error:', error);
     throw new AppError(error.message || 'AI card generation failed', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
-
-import { taskService } from '../services/taskService.js';
 
 router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSchema), async (req: AuthRequest, res: Response) => {
   const { node_ids, config } = req.body;
@@ -206,7 +206,7 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
     res.json({ success: true, taskIds: taskIds, message: `${taskIds.length} tasks started` });
 
   } catch (error: any) {
-    console.error('Batch Generation Error:', error);
+    logger.error('Batch Generation Error:', error);
     throw new AppError(error.message || 'Batch generation failed', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
@@ -307,7 +307,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
            }
         }));
       } catch (e) {
-        console.error('Failed to generate embeddings for batch nodes:', e);
+        logger.error('Failed to generate embeddings for batch nodes:', e);
       }
 
       // 2. Batch Insert Nodes
@@ -341,7 +341,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
           .from('edges')
           .insert(edgesToInsert);
           
-        if (edgeError) console.error('Edge insertion error:', edgeError);
+        if (edgeError) logger.error('Edge insertion error:', edgeError);
       }
 
       // 5. Invalidate Cache
@@ -355,7 +355,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
       });
 
     } catch (error: any) {
-      console.error('Save Graph Error:', error);
+      logger.error('Save Graph Error:', error);
       throw new AppError(error.message || 'Failed to save graph', 500, ErrorCodes.INTERNAL_ERROR);
     }
   }
@@ -424,7 +424,7 @@ Please respond in Chinese.`
     try {
       parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
     } catch (e) {
-      console.error('JSON Parse Error (Truncated?):', content?.slice(-100));
+      logger.error('JSON Parse Error (Truncated?):', { content: content?.slice(-100) });
       throw new AppError('AI 生成内容过长被截断，请尝试减少文本量或分段生成。', 422, ErrorCodes.INTERNAL_ERROR);
     }
     
@@ -435,7 +435,7 @@ Please respond in Chinese.`
     res.json(parsed);
 
   } catch (error: any) {
-    console.error('AI Text-to-Graph Error:', error);
+    logger.error('AI Text-to-Graph Error:', error);
     throw new AppError(error.message || 'AI processing failed', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
@@ -468,7 +468,7 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
 
   try {
     // 1. Fetch Graph Context
-    const { nodes } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);
+    const { nodes, edges } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);
     
     // 2. Prepare Context
     let contextText = "";
@@ -476,19 +476,49 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
 
     if (context_node_ids && context_node_ids.length > 0) {
       const selectedNodes = nodes.filter((n: any) => context_node_ids.includes(n.id));
-      contextText = selectedNodes.map((n: any) => `- ${n.title}: ${n.content || '(No content)'}`).join('\n');
+      
+      // Node details
+      const nodesText = selectedNodes.map((n: any) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
+      
+      // Internal edges (relationships between selected nodes)
+      const relatedEdges = edges.filter((e: any) => 
+        context_node_ids.includes(e.source_node_id) && context_node_ids.includes(e.target_node_id)
+      );
+      
+      // Map IDs to Titles for better context
+      const nodeTitleMap = new Map(nodes.map((n: any) => [n.id, n.title]));
+      
+      const edgesText = relatedEdges.map((e: any) => {
+        const source = nodeTitleMap.get(e.source_node_id) || 'Unknown';
+        const target = nodeTitleMap.get(e.target_node_id) || 'Unknown';
+        return `[Edge] ${source} -> ${target} (${e.relationship || 'related'})`;
+      }).join('\n');
+
+      contextText = `Selected Nodes:\n${nodesText}\n\nRelationships:\n${edgesText}`;
     } else {
       // Use all nodes
+      const nodeTitleMap = new Map(nodes.map((n: any) => [n.id, n.title]));
+      
       if (nodes.length > 100) {
-        contextText = nodes.map((n: any) => `- ${n.title}`).join('\n');
+        // Too many nodes, just list titles
+        const nodesText = nodes.map((n: any) => `- ${n.title}`).join('\n');
+        contextText = `Graph Overview (Nodes Only):\n${nodesText}`;
       } else {
-        contextText = nodes.map((n: any) => `- ${n.title}: ${n.content || '(No content)'}`).join('\n');
+        const nodesText = nodes.map((n: any) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
+        const edgesText = edges.map((e: any) => {
+            const source = nodeTitleMap.get(e.source_node_id) || 'Unknown';
+            const target = nodeTitleMap.get(e.target_node_id) || 'Unknown';
+            return `[Edge] ${source} -> ${target} (${e.relationship || 'related'})`;
+        }).join('\n');
+        
+        contextText = `All Nodes:\n${nodesText}\n\nAll Relationships:\n${edgesText}`;
       }
     }
 
     // Truncate if too long
     if (contextText.length > MAX_CONTEXT_LENGTH) {
       contextText = contextText.substring(0, MAX_CONTEXT_LENGTH) + "...(truncated)";
+      logger.warn('Graph context truncated due to length', { graph_id, length: contextText.length });
     }
 
     // 3. Prepare Messages with History
@@ -497,18 +527,20 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
         role: "system", 
         content: `You are an intelligent assistant for a Knowledge Graph. 
 Answer the user's question based on the provided Graph Context.
-If the answer is not in the context, use your general knowledge but mention that it's external info.
-IMPORTANT: All mathematical formulas must be wrapped in standard LaTeX delimiters. Use $...$ for inline formulas and $$...$$ for block formulas.
-Respond in Chinese.` 
+
+Graph Context:
+${contextText}
+
+Instructions:
+1. Use the [Node] content to answer questions about definitions or details.
+2. Use the [Edge] relationships to explain connections, hierarchy, or flows.
+3. If the answer is not in the context, use your general knowledge but mention that it's external info.
+4. Respond in the same language as the user (default to Chinese).`
       },
-      ...history.map((msg: any) => ({
-        role: msg.role === 'user' ? 'user' : 'assistant' as const,
-        content: msg.content
-      })),
-      { role: "user", content: `Graph Context:\n${contextText}\n\nUser Question: ${message}` }
+      ...history.map((msg: any) => ({ role: msg.role, content: msg.content })),
+      { role: "user", content: message }
     ];
 
-    // 4. Call AI
     const stream = await provider.client.chat.completions.create({
       messages,
       model: model || provider.model,
@@ -525,8 +557,8 @@ Respond in Chinese.`
     res.end();
 
   } catch (error: any) {
-    console.error('AI Chat Error:', error);
-    res.write(`data: ${JSON.stringify({ error: error.message || 'AI Chat failed', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
+    logger.error('AI Chat Error:', error);
+    res.write(`data: ${JSON.stringify({ error: error.message || 'AI 对话失败', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
     res.end();
   }
 });
@@ -572,7 +604,7 @@ Respond in Chinese.`
     res.json(parsed);
 
   } catch (error: any) {
-    console.error('Recommendation Error:', error);
+    logger.error('Recommendation Error:', error);
     res.status(500).json({ error: 'Failed to get recommendations' });
   }
 });
@@ -612,37 +644,36 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
         text = data.text;
         const pdfTitle = data.info?.Title || originalName;
 
-        console.log('--- PDF Extraction Result ---');
-        console.log(`File Name: ${originalName}`);
-        console.log(`PDF Title Hint: ${pdfTitle}`);
-        console.log(`Page Count: ${data.numpages}`);
-        console.log(`Text Length: ${text?.length || 0}`);
-        console.log(`PDF Info: ${JSON.stringify(data.info || {})}`);
-        if (text) {
-          console.log(`Text Preview (first 1000 chars):\n${text.substring(0, 1000)}`);
-        } else {
-          console.warn('WARNING: Extracted text is empty or undefined!');
+        logger.info('PDF Extraction Result', {
+          fileName: originalName,
+          titleHint: pdfTitle,
+          pageCount: data.numpages,
+          textLength: text?.length || 0,
+          info: data.info
+        });
+        
+        if (!text) {
+          logger.warn('WARNING: Extracted text is empty or undefined!');
         }
-        console.log('-----------------------------');
       } catch (pdfErr: any) {
-        console.error('PDF Parse detailed error:', pdfErr);
+        logger.error('PDF Parse detailed error:', pdfErr);
         throw new AppError('PDF parsing failed: ' + pdfErr.message, 500, ErrorCodes.INTERNAL_ERROR);
       }
     } else {
       text = file.buffer.toString('utf-8');
-      console.log('--- Text/MD Extraction Result ---');
-      console.log(`File Name: ${file.originalname}`);
-      console.log(`Text Length: ${text.length}`);
-      console.log('---------------------------------');
+      logger.info('Text/MD Extraction Result', {
+        fileName: file.originalname,
+        textLength: text.length
+      });
     }
 
     if (!text || text.trim().length < 20) {
-      console.warn('Document extraction produced no or very little text.');
+      logger.warn('Document extraction produced no or very little text.');
       throw new AppError('Document extraction failed: No readable text found', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     // Reuse text-to-graph logic but with extracted text
-    console.log(`Sending ${text.length} characters to AI for graph generation...`);
+    logger.info(`Sending ${text.length} characters to AI for graph generation...`);
     const completion = await provider.client.chat.completions.create({
       messages: [
         { 
@@ -676,9 +707,7 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
     });
 
     const content = completion.choices[0].message.content;
-    console.log('--- AI Response Content ---');
-    console.log(content);
-    console.log('---------------------------');
+    logger.info('AI Response Content received');
 
     const parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
     
@@ -687,12 +716,12 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
       parsed.nodes = parsed.nodes.filter((n: any) => n.title && n.title.trim() !== "");
     }
 
-    console.log(`Parsed ${parsed.nodes?.length || 0} nodes and ${parsed.edges?.length || 0} edges.`);
+    logger.info(`Parsed ${parsed.nodes?.length || 0} nodes and ${parsed.edges?.length || 0} edges.`);
     
     res.json(parsed);
 
   } catch (error: any) {
-    console.error('Document-to-Graph Error:', error);
+    logger.error('Document-to-Graph Error:', error);
     res.status(500).json({ error: error.message || 'Document processing failed' });
   }
 });

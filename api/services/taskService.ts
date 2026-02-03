@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { aiService } from './aiService.js';
 import { taskQueue } from './queue.js';
 import { sseService } from './sseService.js';
+import { logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -273,7 +274,7 @@ export class TaskService {
               .insert(cardsToInsert);
 
             if (insertError) {
-                console.error(`Failed to insert cards for node ${node.id}`, insertError);
+                logger.error(`Failed to insert cards for node ${node.id}`, insertError);
             } else {
                 totalCards += cards.length;
             }
@@ -281,7 +282,7 @@ export class TaskService {
           
           results.push({ node_id: node.id, title: node.title, cards: cards.length, status: 'success' });
         } catch (err: any) {
-            console.error(`Error processing node ${node.id}:`, err);
+            logger.error(`Error processing node ${node.id}:`, err);
             results.push({ node_id: node.id, title: node.title, error: err.message, status: 'failed' });
         }
         
@@ -299,7 +300,7 @@ export class TaskService {
       }, undefined, userId);
 
     } catch (error: any) {
-      console.error('Task failed:', error);
+      logger.error('Task failed:', error);
       await this.updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
     }
   }

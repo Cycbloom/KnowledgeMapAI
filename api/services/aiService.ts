@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { getAIProviderForTask, getAIProvider } from './ai/factory.js';
 import { AIProviderType } from './ai/types.js';
+import { logger } from '../utils/logger.js';
 
 dotenv.config();
 
@@ -14,7 +15,7 @@ export const openai = defaultProvider.hasKey ? defaultProvider.client : null;
 export const getAIModel = () => defaultProvider.model;
 
 // Helper to generate mock response if no API key
-export const getMockResponse = (type: string, prompt: string): any => {
+export const getMockResponse = (type: string, prompt: string): string | any[] => {
   if (type === 'content') {
     return `[模拟 AI 内容] 为以下主题生成的内容: ${prompt}。 \n\n这是一个占位符响应，因为 API 密钥未配置。`;
   }
@@ -33,6 +34,7 @@ export const getMockResponse = (type: string, prompt: string): any => {
 
 export interface GenerateCardsOptions {
   context?: string;
+  /** @deprecated Use types instead */
   type?: 'qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay';
   types?: ('qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay')[];
   count?: number;
@@ -80,7 +82,7 @@ export class AIService {
 
     const provider = getAIProviderForTask('embedding');
     if (!provider.hasKey) {
-        console.warn('No API key for embedding provider');
+        logger.warn('No API key for embedding provider');
         // Return a mock embedding if needed, or null
         return null;
     }
@@ -98,7 +100,7 @@ export class AIService {
         });
         return response.data[0].embedding;
     } catch (error) {
-        console.error('Failed to generate embedding:', error);
+        logger.error('Failed to generate embedding:', error);
         return null;
     }
   }
@@ -109,7 +111,8 @@ export class AIService {
       : getAIProviderForTask('text');
 
     if (!provider.hasKey) {
-      return getMockResponse('chat', messages[messages.length - 1].content);
+      const response = getMockResponse('chat', messages[messages.length - 1].content);
+      return typeof response === 'string' ? response : JSON.stringify(response);
     }
 
     try {
@@ -120,15 +123,14 @@ export class AIService {
 
       return completion.choices[0].message.content || '';
     } catch (error: any) {
-      console.error('AI Chat Error:', error);
+      logger.error('AI Chat Error:', error);
       throw new Error(error.message || 'AI chat failed');
     }
   }
 
   async generateCards(topic: string, content: string, options: GenerateCardsOptions = {}) {
     // If options.type is provided (single string), wrap it in array for types (compatibility)
-    const inputOptions: any = options;
-    const types = inputOptions.type ? [inputOptions.type] : (options.types || ['qa', 'choice']);
+    const types = options.type ? [options.type] : (options.types || ['qa', 'choice']);
     const count = options.count || 3;
     const context = options.context;
 
@@ -192,19 +194,19 @@ Please respond in Chinese.` },
       const result = completion.choices[0].message.content || '';
       const cleanedResult = this.cleanJsonString(result);
       
-      console.log(`[AI] Raw result for ${topic}:`, result.substring(0, 100) + '...');
+      logger.debug(`[AI] Raw result for ${topic}:`, { preview: result.substring(0, 100) + '...' });
       
       let parsed;
       try {
         parsed = JSON.parse(cleanedResult || '{"cards": []}');
       } catch (e) {
-        console.error('[AI] JSON Parse Error. Raw:', result);
+        logger.error('[AI] JSON Parse Error. Raw:', { result });
         throw new Error('Failed to parse AI response');
       }
       
       return { cards: parsed.cards || [] };
     } catch (error: any) {
-      console.error('AI Error:', error);
+      logger.error('AI Error:', error);
       throw new Error(error.message || 'AI card generation failed');
     }
   }
@@ -276,7 +278,7 @@ Please respond in Chinese.` },
       try {
         parsed = JSON.parse(cleanedContent || '{"suggestions": []}');
       } catch (e) {
-         console.error('[AI] JSON Parse Error (Expand). Raw:', content);
+         logger.error('[AI] JSON Parse Error (Expand). Raw:', { content });
          // Fallback: try to find JSON array/object inside text
          const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
          if (match) {
@@ -292,7 +294,7 @@ Please respond in Chinese.` },
 
       return { suggestions: parsed.suggestions || parsed };
     } catch (error: any) {
-      console.error('AI Error:', error);
+      logger.error('AI Error:', error);
       throw new Error(error.message || 'AI expansion failed');
     }
   }

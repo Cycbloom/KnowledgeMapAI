@@ -348,7 +348,7 @@ export const api = {
     delete: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
   },
   data: {
-    export: (graphId: string, format: 'json' | 'pdf') => {
+    export: (graphId: string, format: 'json' | 'pdf' | 'markdown') => {
       const token = useStore.getState().token;
       return fetch(`${API_URL}/data/export/${format}?graph_id=${graphId}`, {
         headers: {

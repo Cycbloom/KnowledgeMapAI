@@ -902,15 +902,22 @@ export const GraphEditor = () => {
   };
 
   const handleExportMarkdown = async () => {
-    if (!graphMeta) return;
+    if (!id || !graphMeta) return;
     try {
-      const md = generateMarkdown(graphMeta, nodes, edges);
-      downloadFile(md, `${graphMeta.title}.md`, 'text/markdown');
-      addMessage({ content: 'Markdown 导出成功', type: 'success' });
       setIsExportMenuOpen(false);
+      const blob = await api.data.export(id, 'markdown');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${graphMeta.title}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      addMessage({ content: 'Markdown 导出成功', type: 'success' });
     } catch (err) {
       console.error(err);
-      addMessage({ content: '导出失败', type: 'error' });
+      addMessage({ content: 'Markdown 导出失败', type: 'error' });
     }
   };
 

@@ -63,26 +63,15 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   const dueOnly = due === 'true' || due === '1';
 
   if (graph_id) {
-    // For debugging: First, let's see if we can get ANY cards for this user
-    const { count, error: countError } = await req.supabase!
-      .from('study_cards')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', req.user.id);
-    
-    console.log(`Total cards for user ${req.user.id}: ${count || 0}`);
-    if (countError) console.error('Count error:', countError);
-
     // Clear cache to ensure we get fresh data from DB
     await cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
   }
 
   console.log('Fetching cards for graph_id:', graph_id, 'node_id:', node_id, 'node_ids:', node_ids, 'user_id:', req.user.id);
 
-  // Use a simpler approach to debug: select all cards and filter in JS if needed,
-  // or use the join but check the nodes content
   let query = req.supabase!
     .from('study_cards')
-    .select('*, nodes(id, title, graph_id)')
+    .select('*, nodes!inner(id, title, graph_id)')
     .eq('user_id', req.user.id);
 
   if (node_id) {
@@ -105,18 +94,6 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
   if (error) {
     console.error('Supabase error fetching cards:', error);
     throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
-  }
-  
-  if (data && data.length > 0) {
-    console.log(`Found ${data.length} cards for graph_id: ${graph_id}. First card node_id: ${data[0].node_id}, graph_id from node: ${data[0].nodes?.graph_id}`);
-  } else {
-    console.log(`No cards found for graph_id: ${graph_id}. Checking if nodes exist for this graph...`);
-    const { data: nodesCheck } = await req.supabase!
-      .from('nodes')
-      .select('id')
-      .eq('graph_id', graph_id)
-      .limit(5);
-    console.log(`Nodes found for graph ${graph_id}:`, nodesCheck?.length || 0);
   }
   
   res.json(data || []);

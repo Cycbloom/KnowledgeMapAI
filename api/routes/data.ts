@@ -48,6 +48,50 @@ router.get('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     res.header('Content-Type', 'application/json');
     res.attachment(`graph-${graph_id}.json`);
     return res.send(JSON.stringify(exportData, null, 2));
+  } else if (format === 'markdown') {
+    const safeTitle = typeof graph.title === 'string' && graph.title.trim() ? graph.title.trim() : `graph-${graph_id}`;
+    res.header('Content-Type', 'text/markdown; charset=utf-8');
+    res.attachment(`${safeTitle}.md`);
+
+    let md = `# ${safeTitle}\n\n`;
+    if (graph.description) {
+      md += `> ${graph.description}\n\n`;
+    }
+
+    md += `---\n\n`;
+
+    const nodeById = new Map(nodes?.map((n: any) => [n.id, n]));
+    
+    // Group edges by source
+    const edgesBySource = new Map<string, any[]>();
+    edges?.forEach((e: any) => {
+        const list = edgesBySource.get(e.source_node_id) || [];
+        list.push(e);
+        edgesBySource.set(e.source_node_id, list);
+    });
+
+    nodes?.forEach((node: any) => {
+        md += `## ${node.title}\n\n`;
+        if (node.content) {
+            md += `${node.content}\n\n`;
+        }
+
+        const outgoing = edgesBySource.get(node.id);
+        if (outgoing && outgoing.length > 0) {
+            md += `### Related\n`;
+            outgoing.forEach((e: any) => {
+                const target = nodeById.get(e.target_node_id);
+                if (target) {
+                    md += `- [[${target.title}]]\n`;
+                }
+            });
+            md += `\n`;
+        }
+        
+        md += `---\n\n`;
+    });
+
+    return res.send(md);
   } else if (format === 'pdf') {
     const safeTitle = typeof graph.title === 'string' && graph.title.trim() ? graph.title.trim() : `graph-${graph_id}`;
     res.header('Content-Type', 'application/pdf');

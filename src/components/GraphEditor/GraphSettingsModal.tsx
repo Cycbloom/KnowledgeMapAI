@@ -67,7 +67,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* Performance Settings */}
           <div className="space-y-3">
             <h3 className="font-bold text-gray-700 flex items-center">

@@ -2,9 +2,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
-import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap } from 'lucide-react';
+import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 
 export const Study = () => {
   const { isDark } = useTheme();
@@ -41,6 +42,16 @@ export const Study = () => {
   const [viewState, setViewState] = useState<'dashboard' | 'quiz'>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [tableMode, setTableMode] = useState<'due' | 'all'>('due');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
+  const [previewCard, setPreviewCard] = useState<StudyCard | null>(null);
+
+  // Gesture motion values
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-25, 25]);
+  const opacity = useTransform(x, [-200, -150, 0, 150, 200], [0, 1, 1, 1, 0]);
+  const successOpacity = useTransform(x, [50, 150], [0, 1]);
+  const failOpacity = useTransform(x, [-150, -50], [1, 0]);
 
   // Reset state when params change
   useEffect(() => {
@@ -51,7 +62,18 @@ export const Study = () => {
     setSelectedOption(null);
     setViewState('dashboard');
     setTableMode('due');
+    setCurrentPage(1);
   }, [graphId, nodeId, nodeIds]);
+
+  // Reset page when mode or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tableMode, searchQuery]);
+
+  // Reset swipe position when card changes
+  useEffect(() => {
+    x.set(0);
+  }, [currentCardIndex, x]);
 
   // Stats
   const stats = useMemo(() => {
@@ -71,6 +93,12 @@ export const Study = () => {
       c.answer.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [tableCards, searchQuery]);
+
+  const totalPages = Math.ceil(filteredCards.length / pageSize);
+  const paginatedCards = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCards.slice(start, start + pageSize);
+  }, [filteredCards, currentPage, pageSize]);
 
   const handleStartQuiz = (mode: 'all' | 'due') => {
     const selected = mode === 'due' ? dueCards : allCards;
@@ -130,6 +158,14 @@ export const Study = () => {
     setQuizCards(prev => [...prev].sort(() => Math.random() - 0.5));
   };
 
+  const handleDragEnd = (_: any, info: any) => {
+    if (info.offset.x > 150) {
+      handleRate(3); // Good/Remembered
+    } else if (info.offset.x < -150) {
+      handleRate(1); // Again/Not remembered
+    }
+  };
+
   const handleBackToDashboard = () => {
     setQuizCards([]);
     setCurrentCardIndex(0);
@@ -138,6 +174,22 @@ export const Study = () => {
     setFinished(false);
     setViewState('dashboard');
   };
+
+  const currentCard = quizCards[currentCardIndex];
+
+  // Safely parse options if they are stored as a JSON string
+  const currentOptions = useMemo(() => {
+    if (!currentCard?.options) return [];
+    if (Array.isArray(currentCard.options)) return currentCard.options;
+    try {
+      if (typeof currentCard.options === 'string') {
+        return JSON.parse(currentCard.options);
+      }
+    } catch (e) {
+      console.error('Failed to parse card options:', e);
+    }
+    return [];
+  }, [currentCard]);
 
   if (isLoading) return <div className={`min-h-full flex items-center justify-center p-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>正在加载学习资源...</div>;
 
@@ -183,198 +235,436 @@ export const Study = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className={`p-6 rounded-2xl shadow-sm border flex items-center space-x-4 ${
-              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-            }`}>
-              <div className={`p-4 rounded-xl ${isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+              }`}
+            >
+              <div className={`p-4 rounded-2xl ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
                 <LayoutGrid size={24} />
               </div>
               <div>
                 <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片数</p>
-                <p className="text-3xl font-bold">{stats.total}</p>
+                <p className="text-3xl font-black">{stats.total}</p>
               </div>
-            </div>
+            </motion.div>
             
-            <div className={`p-6 rounded-2xl shadow-sm border flex items-center space-x-4 ${
-              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-            }`}>
-              <div className={`p-4 rounded-xl ${isDark ? 'bg-green-900/40 text-green-400' : 'bg-green-50 text-green-600'}`}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+              }`}
+            >
+              <div className={`p-4 rounded-2xl ${isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
                 <Trophy size={24} />
               </div>
               <div>
                 <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
-                <p className="text-3xl font-bold">{stats.mastered}</p>
+                <p className="text-3xl font-black">{stats.mastered}</p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className={`p-6 rounded-2xl shadow-sm border flex items-center space-x-4 ${
-              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-            }`}>
-              <div className={`p-4 rounded-xl ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+              }`}
+            >
+              <div className={`p-4 rounded-2xl ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
                 <Clock size={24} />
               </div>
               <div>
                 <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
-                <p className="text-3xl font-bold">{stats.due}</p>
+                <p className="text-3xl font-black text-amber-500">{stats.due}</p>
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Action Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <button
+            <motion.button
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
               onClick={() => handleStartQuiz('due')}
               disabled={dueCards.length === 0}
-              className={`flex flex-col items-center text-center p-8 rounded-3xl border-2 transition-all group ${
+              className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group relative overflow-hidden ${
                 dueCards.length > 0 
-                  ? (isDark ? 'bg-blue-900/20 border-blue-800/50 hover:border-blue-500' : 'bg-blue-50 border-blue-100 hover:border-blue-400')
+                  ? (isDark ? 'bg-indigo-900/20 border-indigo-800/50 hover:border-indigo-500 shadow-lg shadow-indigo-900/20' : 'bg-indigo-50 border-indigo-100 hover:border-indigo-400 shadow-xl shadow-indigo-100/50')
                   : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
               }`}
             >
-              <div className={`p-5 rounded-2xl mb-4 group-hover:scale-110 transition-transform ${
-                isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-600'
+              {dueCards.length > 0 && (
+                <div className="absolute top-4 right-4 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                </div>
+              )}
+              <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
+                isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-white text-indigo-600 shadow-md'
               }`}>
-                <Brain size={40} />
+                <Brain size={48} />
               </div>
-              <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-blue-300' : 'text-blue-900'}`}>今日待复习</h3>
-              <p className={`mb-6 ${isDark ? 'text-blue-400/80' : 'text-blue-700'}`}>根据艾宾浩斯记忆曲线为您推荐的复习内容</p>
-              <div className={`px-6 py-2 rounded-full font-bold ${
+              <h3 className={`text-2xl font-black mb-2 ${isDark ? 'text-indigo-300' : 'text-indigo-900'}`}>今日待复习</h3>
+              <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-indigo-400/80' : 'text-indigo-700/70'}`}>基于 FSRS 算法为您定制的最佳复习计划</p>
+              <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
                 dueCards.length > 0 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 group-hover:bg-indigo-700 group-hover:-translate-y-1' 
                   : 'bg-gray-300 text-gray-500'
               }`}>
-                {dueCards.length > 0 ? `立即开始 (${dueCards.length})` : '暂无任务'}
+                {dueCards.length > 0 ? `立即开始 (${dueCards.length})` : '暂无复习任务'}
               </div>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
               onClick={() => handleStartQuiz('all')}
               disabled={allCards.length === 0}
-              className={`flex flex-col items-center text-center p-8 rounded-3xl border-2 transition-all group ${
+              className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group ${
                 allCards.length > 0 
-                  ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-blue-500' : 'bg-white border-gray-100 hover:border-blue-400 shadow-sm')
+                  ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 shadow-lg' : 'bg-white border-gray-100 hover:border-indigo-400 shadow-xl shadow-gray-100/50')
                   : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
               }`}
             >
-              <div className={`p-5 rounded-2xl mb-4 group-hover:scale-110 transition-transform ${
-                isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'
+              <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
+                isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-50 text-gray-600'
               }`}>
-                <Play size={40} />
+                <Play size={48} />
               </div>
-              <h3 className="text-xl font-bold mb-2">自由练习</h3>
-              <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>随机练习当前范围内的所有卡片，巩固记忆</p>
-              <div className={`px-6 py-2 rounded-full font-bold ${
+              <h3 className="text-2xl font-black mb-2">自由练习</h3>
+              <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>随机测验当前范围内的所有内容，巩固基础</p>
+              <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
                 allCards.length > 0 
-                  ? (isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-white text-gray-700 border border-gray-200')
+                  ? (isDark ? 'bg-slate-700 text-white border border-slate-600 group-hover:bg-slate-600 group-hover:-translate-y-1' : 'bg-white text-gray-700 border-2 border-gray-100 shadow-sm group-hover:border-indigo-200 group-hover:-translate-y-1')
                   : 'bg-gray-200 text-gray-500'
               }`}>
-                {allCards.length > 0 ? `开始自测 (${allCards.length})` : '暂无卡片'}
+                {allCards.length > 0 ? `开始自测 (${allCards.length})` : '暂无卡片数据'}
               </div>
-            </button>
+            </motion.button>
           </div>
 
-          {/* Cards List Table */}
-          <div className={`rounded-3xl shadow-sm border overflow-hidden ${
-            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-          }`}>
-            <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className={`flex p-1 rounded-xl w-fit ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
-                <button
-                  onClick={() => setTableMode('due')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    tableMode === 'due' 
-                      ? (isDark ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-blue-600 shadow-sm') 
-                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
-                  }`}
-                >
-                  待复习
-                </button>
-                <button
-                  onClick={() => setTableMode('all')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    tableMode === 'all' 
-                      ? (isDark ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-blue-600 shadow-sm') 
-                      : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
-                  }`}
-                >
-                  全部
-                </button>
-              </div>
+          {/* Cards List Section */}
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <BookOpen className="text-indigo-500" size={24} />
+                卡片列表
+              </h2>
               
-              <div className="relative">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} size={18} />
-                <input
-                  type="text"
-                  placeholder="搜索题目或答案..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`pl-10 pr-4 py-2 rounded-xl text-sm border focus:ring-2 focus:ring-blue-500 outline-none transition-all w-full md:w-64 ${
-                    isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-200 text-gray-900'
-                  }`}
-                />
+              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+                <div className={`flex p-1 rounded-xl w-fit ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                  <button
+                    onClick={() => setTableMode('due')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      tableMode === 'due' 
+                        ? (isDark ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-indigo-600 shadow-sm') 
+                        : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
+                    }`}
+                  >
+                    待复习 ({dueCards.length})
+                  </button>
+                  <button
+                    onClick={() => setTableMode('all')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      tableMode === 'all' 
+                        ? (isDark ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-indigo-600 shadow-sm') 
+                        : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
+                    }`}
+                  >
+                    全部 ({allCards.length})
+                  </button>
+                </div>
+                
+                <div className="relative">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} size={18} />
+                  <input
+                    type="text"
+                    placeholder="搜索题目或答案..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:ring-2 focus:ring-indigo-500 outline-none transition-all w-full md:w-64 ${
+                      isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200 text-gray-900 shadow-sm'
+                    }`}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className={`text-left border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'bg-gray-50 border-gray-100'}`}>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">题目</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">下次复习</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">状态</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">操作</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDark ? 'divide-slate-700' : 'divide-gray-100'}`}>
-                  {filteredCards.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className={`px-6 py-12 text-center ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                        没有找到匹配的卡片
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredCards.map((card) => (
-                      <tr key={card.id} className={`transition-colors ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'}`}>
-                        <td className="px-6 py-4">
-                          <p className="font-medium line-clamp-1">{card.question}</p>
-                          <p className={`text-xs mt-1 line-clamp-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{card.answer}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2 text-sm">
-                            <Clock size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
-                            <span>{card.next_review ? new Date(card.next_review).toLocaleDateString() : '尚未开始'}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            (card.review_count || 0) > 0 
-                              ? (isDark ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700')
-                              : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-600')
-                          }`}>
-                            {(card.review_count || 0) > 0 ? '已学习' : '新内容'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button 
-                            onClick={() => {
-                              setQuizCards([card]);
-                              setCurrentCardIndex(0);
-                              setFinished(false);
-                              setViewState('quiz');
-                            }}
-                            className="text-blue-500 hover:text-blue-600 font-medium text-sm"
-                          >
-                            单独练习
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {paginatedCards.length === 0 ? (
+                <div className={`col-span-full py-12 text-center rounded-3xl border-2 border-dashed ${
+                  isDark ? 'border-slate-800 text-slate-500' : 'border-gray-200 text-gray-400'
+                }`}>
+                  <Search className="mx-auto mb-3 opacity-20" size={48} />
+                  <p>没有找到匹配的卡片</p>
+                </div>
+              ) : (
+                paginatedCards.map((card) => (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    key={card.id}
+                    className={`group p-5 rounded-2xl border transition-all hover:shadow-xl flex flex-col h-full ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 hover:border-indigo-500/50' 
+                        : 'bg-white border-gray-100 hover:border-indigo-200 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                          (card.review_count || 0) > 0 
+                            ? (isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
+                            : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')
+                        }`}>
+                          {(card.review_count || 0) > 0 ? '已学习' : '新内容'}
+                        </span>
+                        <div className={`flex items-center gap-1 text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          <Calendar size={10} />
+                          <span>{card.next_review ? new Date(card.next_review).toLocaleDateString() : '尚未开始'}</span>
+                        </div>
+                      </div>
+                      
+                      <h4 className="font-bold line-clamp-2 leading-snug min-h-[2.8rem]">{card.question}</h4>
+                      <p className={`text-sm line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{card.answer}</p>
+                    </div>
+
+                    <div className="mt-5 pt-4 border-t border-gray-50 dark:border-slate-700/50 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
+                          <Tag size={12} className="text-indigo-400" />
+                        </div>
+                        <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          {card.card_type === 'choice' ? '单选题' : 
+                           card.card_type === 'multi_choice' ? '多选题' : 
+                           card.card_type === 'fill_in_the_blank' ? '填空题' : '问答题'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setPreviewCard(card)}
+                          className={`p-1.5 rounded-lg transition-all ${
+                            isDark 
+                              ? 'text-slate-400 hover:text-indigo-400 hover:bg-slate-700' 
+                              : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
+                          }`}
+                          title="预览内容"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setQuizCards([card]);
+                            setCurrentCardIndex(0);
+                            setFinished(false);
+                            setViewState('quiz');
+                          }}
+                          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                            isDark 
+                              ? 'text-indigo-400 hover:bg-indigo-500/10' 
+                              : 'text-indigo-600 hover:bg-indigo-50'
+                          }`}
+                        >
+                          单独练习
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-xl transition-all ${
+                    currentPage === 1 
+                      ? 'opacity-30 cursor-not-allowed' 
+                      : (isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600')
+                  }`}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                    // Show first, last, current, and pages around current
+                    if (
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                            currentPage === page
+                              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                              : (isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500')
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (
+                      (page === currentPage - 2 && page > 1) ||
+                      (page === currentPage + 2 && page < totalPages)
+                    ) {
+                      return <span key={page} className="px-1 text-slate-400">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-xl transition-all ${
+                    currentPage === totalPages 
+                      ? 'opacity-30 cursor-not-allowed' 
+                      : (isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600')
+                  }`}
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Card Preview Modal */}
+        <AnimatePresence>
+          {previewCard && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setPreviewCard(null)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className={`relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[2.5rem] shadow-2xl flex flex-col ${
+                  isDark ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-gray-100'
+                }`}
+              >
+                {/* Modal Header */}
+                <div className={`p-6 border-b flex items-center justify-between shrink-0 ${
+                  isDark ? 'border-slate-800' : 'border-gray-50'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-2xl ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                      <Info size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg">卡片详情</h3>
+                      <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                        {previewCard.card_type === 'choice' ? '单选题' : 
+                         previewCard.card_type === 'multi_choice' ? '多选题' : 
+                         previewCard.card_type === 'fill_in_the_blank' ? '填空题' : '问答题'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setPreviewCard(null)}
+                    className={`p-2 rounded-xl transition-all ${
+                      isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-400'
+                    }`}
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
+                  <section className="space-y-3">
+                    <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>问题</h4>
+                    <div className={`text-xl font-bold leading-relaxed ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {previewCard.question}
+                    </div>
+                  </section>
+
+                  {/* Options for Choice Cards */}
+                  {(previewCard.card_type === 'choice' || previewCard.card_type === 'multi_choice') && previewCard.options && (
+                    <section className="space-y-3">
+                      <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>选项</h4>
+                      <div className="grid gap-3">
+                        {(() => {
+                          let opts = [];
+                          try {
+                            opts = typeof previewCard.options === 'string' ? JSON.parse(previewCard.options) : previewCard.options;
+                          } catch (e) {}
+                          return Array.isArray(opts) ? opts.map((opt, i) => (
+                            <div key={i} className={`p-4 rounded-2xl border ${
+                              isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-gray-50 border-gray-100 text-slate-600'
+                            }`}>
+                              <span className="font-bold mr-3 opacity-50">{String.fromCharCode(65 + i)}.</span>
+                              {opt}
+                            </div>
+                          )) : null;
+                        })()}
+                      </div>
+                    </section>
+                  )}
+
+                  <section className="space-y-3">
+                    <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>正确答案</h4>
+                    <div className={`p-5 rounded-2xl font-bold ${
+                      isDark ? 'bg-emerald-900/20 border border-emerald-900/50 text-emerald-400' : 'bg-emerald-50 border border-emerald-100 text-emerald-700'
+                    }`}>
+                      {previewCard.answer}
+                    </div>
+                  </section>
+
+                  {previewCard.explanation && (
+                    <section className="space-y-3">
+                      <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>解析</h4>
+                      <div className={`p-5 rounded-2xl leading-relaxed ${
+                        isDark ? 'bg-slate-800/50 text-slate-300' : 'bg-slate-50 text-slate-600'
+                      }`}>
+                        {previewCard.explanation}
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className={`p-6 border-t shrink-0 flex gap-3 ${isDark ? 'border-slate-800' : 'border-gray-50'}`}>
+                  <button
+                    onClick={() => {
+                      setQuizCards([previewCard]);
+                      setCurrentCardIndex(0);
+                      setFinished(false);
+                      setViewState('quiz');
+                      setPreviewCard(null);
+                    }}
+                    className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Play size={20} fill="currentColor" />
+                    立即开始练习
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -416,7 +706,6 @@ export const Study = () => {
     );
   }
 
-  const currentCard = quizCards[currentCardIndex];
   // Guard against index out of bounds if cards changed
   if (!currentCard) return null; 
 
@@ -449,217 +738,332 @@ export const Study = () => {
   };
 
   return (
-    <div className="min-h-full flex flex-col items-center justify-center p-8 bg-gray-100">
+    <div className={`min-h-full flex flex-col items-center justify-center p-4 md:p-8 transition-colors ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
       <div className="w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 px-2">
           <button 
             onClick={handleBackToDashboard}
-            className="flex items-center text-gray-500 hover:text-gray-800 transition-colors"
+            className={`flex items-center transition-colors ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-800'}`}
           >
             <ArrowLeft size={20} className="mr-1" />
-            退出
+            <span className="font-medium">退出</span>
           </button>
-          <h2 className="text-xl font-bold text-gray-800">学习模式</h2>
-          <span className="text-gray-500 font-medium">
-            进度 {currentCardIndex + 1} / {quizCards.length}
+          <div className="text-center">
+            <h2 className={`text-lg font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>学习模式</h2>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>左右滑动可快速评分</p>
+          </div>
+          <span className={`font-bold px-3 py-1 rounded-full text-sm ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-gray-500 shadow-sm'}`}>
+            {currentCardIndex + 1} / {quizCards.length}
           </span>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8 min-h-[400px] flex flex-col cursor-default transition-all hover:shadow-xl relative overflow-hidden">
-          {/* Card Type Badge */}
-          <div className="absolute top-4 right-4 text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-500 uppercase">
-            {isQA ? '问答题' : isChoice ? '单选题' : isMultiChoice ? '多选题' : isTrueFalse ? '判断题' : isFillBlank ? '填空题' : '解答题'}
-          </div>
-
-          {/* Question Section */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center mb-8">
-            <h3 className="text-gray-500 uppercase tracking-wide text-sm font-semibold mb-4">
-              问题
-            </h3>
-            <p className="text-2xl font-medium text-gray-900 leading-relaxed">
-              {currentCard.question}
-            </p>
-          </div>
-
-          {/* Answer Section */}
-          <div className="w-full">
-            {(isQA || isEssay || isFillBlank) && (
-              <div 
-                className="text-center transition-all duration-300"
-                onClick={() => !showAnswer && setShowAnswer(true)}
+        <div className="relative perspective-1000 h-[550px] md:h-[600px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentCard.id}
+              style={{ x, rotate, opacity }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              onDragEnd={handleDragEnd}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ 
+                x: x.get() > 0 ? 500 : -500, 
+                opacity: 0,
+                transition: { duration: 0.3 }
+              }}
+              className={`absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 md:p-10 flex flex-col cursor-grab active:cursor-grabbing transition-colors border ${
+                isDark ? 'border-slate-700' : 'border-gray-100'
+              }`}
+            >
+              {/* Swipe Feedback Icons */}
+              <motion.div 
+                style={{ opacity: successOpacity }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
               >
-                {showAnswer ? (
-                  <div className="border-t pt-6 animate-fade-in">
-                    <h3 className="text-gray-500 uppercase tracking-wide text-sm font-semibold mb-2">
-                      {isFillBlank ? '填空内容' : '标准答案'}
-                    </h3>
-                    <p className={`text-xl text-gray-800 ${isEssay ? 'text-left' : ''}`}>{currentCard.answer}</p>
-                  </div>
-                ) : (
-                  <div className="py-8 cursor-pointer hover:bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                    <p className="text-gray-400 text-sm">点击查看答案</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {isChoice && currentCard.options && (
-              <div className="grid grid-cols-1 gap-3">
-                {currentCard.options.map((option, idx) => {
-                  const isSelected = selectedOption === option;
-                  const isCorrect = option === currentCard.answer;
-                  
-                  let btnClass = "p-4 rounded-lg border-2 text-left transition-all relative ";
-                  if (showAnswer) {
-                    if (isCorrect) btnClass += "bg-green-50 border-green-500 text-green-700";
-                    else if (isSelected) btnClass += "bg-red-50 border-red-500 text-red-700";
-                    else btnClass += "bg-gray-50 border-gray-200 text-gray-400";
-                  } else {
-                    btnClass += "bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer";
-                  }
-
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleOptionClick(option)}
-                      disabled={showAnswer}
-                      className={btnClass}
-                    >
-                      <span className="font-semibold mr-2">{String.fromCharCode(65 + idx)}.</span>
-                      {option}
-                      {showAnswer && isCorrect && <Check className="absolute right-4 top-4 text-green-600" size={20} />}
-                      {showAnswer && isSelected && !isCorrect && <X className="absolute right-4 top-4 text-red-600" size={20} />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {isMultiChoice && currentCard.options && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-3">
-                  {currentCard.options.map((option, idx) => {
-                    const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
-                    const isSelected = selectedList.includes(option);
-                    let correctList = [];
-                    try { correctList = JSON.parse(currentCard.answer); } catch(e) {}
-                    const isCorrect = correctList.includes(option);
-                    
-                    let btnClass = "p-4 rounded-lg border-2 text-left transition-all relative ";
-                    if (showAnswer) {
-                      if (isCorrect) btnClass += "bg-green-50 border-green-500 text-green-700";
-                      else if (isSelected) btnClass += "bg-red-50 border-red-500 text-red-700";
-                      else btnClass += "bg-gray-50 border-gray-200 text-gray-400";
-                    } else {
-                      btnClass += isSelected 
-                        ? "bg-blue-50 border-blue-500 text-blue-700" 
-                        : "bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer";
-                    }
-
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => handleMultiOptionClick(option)}
-                        disabled={showAnswer}
-                        className={btnClass}
-                      >
-                        <span className="font-semibold mr-2">{String.fromCharCode(65 + idx)}.</span>
-                        {option}
-                        {showAnswer && isCorrect && <Check className="absolute right-4 top-4 text-green-600" size={20} />}
-                        {showAnswer && isSelected && !isCorrect && <X className="absolute right-4 top-4 text-red-600" size={20} />}
-                      </button>
-                    );
-                  })}
+                <div className="bg-green-500/20 p-8 rounded-full border-4 border-green-500 text-green-500">
+                  <ThumbsUp size={80} />
                 </div>
-                {!showAnswer && (
-                  <button
-                    onClick={() => setShowAnswer(true)}
-                    disabled={!selectedOption || JSON.parse(selectedOption).length === 0}
-                    className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                  >
-                    提交答案
-                  </button>
-                )}
+              </motion.div>
+              <motion.div 
+                style={{ opacity: failOpacity }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+              >
+                <div className="bg-red-500/20 p-8 rounded-full border-4 border-red-500 text-red-500">
+                  <ThumbsDown size={80} />
+                </div>
+              </motion.div>
+
+              {/* Card Type Badge */}
+              <div className={`absolute top-6 right-6 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider z-10 ${
+                isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-500'
+              }`}>
+                {isQA ? '问答题' : isChoice ? '单选题' : isMultiChoice ? '多选题' : isTrueFalse ? '判断题' : isFillBlank ? '填空题' : '解答题'}
               </div>
-            )}
 
-            {isTrueFalse && (
-              <div className="flex space-x-4 justify-center">
-                {['True', 'False'].map((option) => {
-                  const isSelected = selectedOption === option;
-                  const isCorrect = option === currentCard.answer;
-                  
-                  let btnClass = "flex-1 py-4 rounded-lg border-2 text-center font-bold text-lg transition-all relative ";
-                  if (showAnswer) {
-                     if (isCorrect) btnClass += "bg-green-50 border-green-500 text-green-700";
-                     else if (isSelected) btnClass += "bg-red-50 border-red-500 text-red-700";
-                     else btnClass += "bg-gray-50 border-gray-200 text-gray-400";
-                  } else {
-                    btnClass += "bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer";
-                  }
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-8 mt-4">
+                {/* Question Section - Left Aligned */}
+                <div className="flex flex-col items-start text-left">
+                  <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-4 px-3 py-1 rounded-md ${
+                    isDark ? 'bg-indigo-900/30 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
+                  }`}>
+                    问题
+                  </h3>
+                  <div className={`text-xl md:text-2xl font-semibold leading-relaxed ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
+                    {currentCard.question}
+                  </div>
+                </div>
 
-                  return (
-                    <button
-                      key={option}
-                      onClick={() => handleOptionClick(option)}
-                      disabled={showAnswer}
-                      className={btnClass}
+                {/* Answer Content Section (Only shown when showAnswer is true) */}
+                <div className="w-full pb-6">
+                  {showAnswer && (
+                    <div className="space-y-8 animate-fade-in">
+                      {/* Standard Answer Display for QA/Essay/FillBlank */}
+                      {(isQA || isEssay || isFillBlank) && (
+                        <div className={`border-t pt-8 ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                          <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-4 px-3 py-1 rounded-md w-fit ${
+                            isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                          }`}>
+                            {isFillBlank ? '填空内容' : '标准答案'}
+                          </h3>
+                          <div className={`text-lg md:text-xl font-medium ${isDark ? 'text-slate-200' : 'text-gray-800'} whitespace-pre-wrap`}>
+                            {currentCard.answer}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Explanation if exists */}
+                      {currentCard.explanation && (
+                        <div className={`pt-8 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                          <div className="flex items-center gap-2 mb-4 text-indigo-500">
+                            <Brain size={18} />
+                            <h4 className="font-bold tracking-wider text-sm uppercase">题目解析</h4>
+                          </div>
+                          <div className={`p-5 rounded-2xl text-sm leading-relaxed border ${
+                            isDark ? 'bg-slate-900/50 text-slate-400 border-slate-700' : 'bg-indigo-50/30 text-gray-600 border-indigo-100'
+                          }`}>
+                            {currentCard.explanation}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Options Section (Always visible for selection types) */}
+                  {isChoice && currentOptions.length > 0 && (
+                    <div className="grid grid-cols-1 gap-4 mt-8">
+                      {currentOptions.map((option, idx) => {
+                        const isSelected = selectedOption === option;
+                        const isCorrect = option === currentCard.answer;
+                        
+                        let btnClass = "p-5 rounded-2xl border-2 text-left transition-all relative flex items-start gap-4 ";
+                        if (showAnswer) {
+                          if (isCorrect) btnClass += isDark ? "bg-emerald-900/20 border-emerald-500 text-emerald-400" : "bg-emerald-50 border-emerald-500 text-emerald-700";
+                          else if (isSelected) btnClass += isDark ? "bg-red-900/20 border-red-500 text-red-400" : "bg-red-50 border-red-500 text-red-700";
+                          else btnClass += isDark ? "bg-slate-800 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
+                        } else {
+                          btnClass += isDark 
+                            ? "bg-slate-800 border-slate-700 hover:border-indigo-500 hover:bg-slate-700/80 cursor-pointer text-slate-200" 
+                            : "bg-white border-gray-100 hover:border-indigo-300 hover:shadow-md cursor-pointer text-gray-700";
+                        }
+
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => handleOptionClick(option)}
+                            disabled={showAnswer}
+                            className={btnClass}
+                          >
+                            <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                              isSelected ? 'bg-indigo-600 text-white' : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')
+                            }`}>
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span className="flex-1 pt-0.5 font-medium">{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 mt-1" size={20} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 mt-1" size={20} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {isMultiChoice && currentOptions.length > 0 && (
+                    <div className="grid grid-cols-1 gap-4 mt-8">
+                      {currentOptions.map((option, idx) => {
+                        const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
+                        const isSelected = selectedList.includes(option);
+                        let correctList = [];
+                        try { correctList = JSON.parse(currentCard.answer); } catch(e) {}
+                        const isCorrect = correctList.includes(option);
+                        
+                        let btnClass = "p-5 rounded-2xl border-2 text-left transition-all relative flex items-start gap-4 ";
+                        if (showAnswer) {
+                          if (isCorrect) btnClass += isDark ? "bg-emerald-900/20 border-emerald-500 text-emerald-400" : "bg-emerald-50 border-emerald-500 text-emerald-700";
+                          else if (isSelected) btnClass += isDark ? "bg-red-900/20 border-red-500 text-red-400" : "bg-red-50 border-red-500 text-red-700";
+                          else btnClass += isDark ? "bg-slate-800 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
+                        } else {
+                          btnClass += isSelected 
+                            ? (isDark ? "bg-indigo-900/30 border-indigo-500 text-indigo-300" : "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm") 
+                            : (isDark ? "bg-slate-800 border-slate-700 hover:border-indigo-500 hover:bg-slate-700/80 cursor-pointer text-slate-200" : "bg-white border-gray-100 hover:border-indigo-300 hover:shadow-md cursor-pointer text-gray-700");
+                        }
+
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => handleMultiOptionClick(option)}
+                            disabled={showAnswer}
+                            className={btnClass}
+                          >
+                            <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                              isSelected ? 'bg-indigo-600 text-white' : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')
+                            }`}>
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span className="flex-1 pt-0.5 font-medium">{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 mt-1" size={20} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 mt-1" size={20} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {isTrueFalse && (
+                    <div className="flex flex-col md:flex-row gap-4 justify-center mt-8">
+                      {['True', 'False'].map((option) => {
+                        const isSelected = selectedOption === option;
+                        const isCorrect = option === currentCard.answer;
+                        
+                        let btnClass = "flex-1 p-6 rounded-2xl border-2 text-center font-bold text-lg transition-all relative flex flex-col items-center justify-center gap-2 ";
+                        if (showAnswer) {
+                           if (isCorrect) btnClass += isDark ? "bg-emerald-900/20 border-emerald-500 text-emerald-400" : "bg-emerald-50 border-emerald-500 text-emerald-700";
+                           else if (isSelected) btnClass += isDark ? "bg-red-900/20 border-red-500 text-red-400" : "bg-red-50 border-red-500 text-red-700";
+                           else btnClass += isDark ? "bg-slate-800 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
+                        } else {
+                          btnClass += isDark 
+                            ? "bg-slate-800 border-slate-700 hover:border-indigo-500 hover:bg-slate-700/80 cursor-pointer text-slate-200" 
+                            : "bg-white border-gray-100 hover:border-indigo-300 hover:shadow-md cursor-pointer text-gray-700";
+                        }
+
+                        return (
+                          <button
+                            key={option}
+                            onClick={() => handleOptionClick(option)}
+                            disabled={showAnswer}
+                            className={btnClass}
+                          >
+                            <span className="text-xl">{option === 'True' ? '正确' : '错误'}</span>
+                            <span className="text-xs opacity-60 uppercase tracking-widest">{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 absolute top-4 right-4" size={20} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 absolute top-4 right-4" size={20} />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Footer - Fixed at bottom of card */}
+              <div className={`mt-auto pt-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                <AnimatePresence mode="wait">
+                  {!showAnswer ? (
+                    <motion.div
+                      key="submit-action"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="w-full"
                     >
-                      {option === 'True' ? '正确 / True' : '错误 / False'}
-                      {showAnswer && isCorrect && <Check className="absolute right-4 top-4 text-green-600" size={20} />}
-                      {showAnswer && isSelected && !isCorrect && <X className="absolute right-4 top-4 text-red-600" size={20} />}
-                    </button>
-                  )
-                })}
+                      {(isQA || isEssay || isFillBlank) ? (
+                        <button
+                          onClick={() => setShowAnswer(true)}
+                          className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
+                        >
+                          <BookOpen size={20} />
+                          显示答案
+                        </button>
+                      ) : isMultiChoice ? (
+                        <button
+                          onClick={() => setShowAnswer(true)}
+                          disabled={!selectedOption || JSON.parse(selectedOption).length === 0}
+                          className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
+                        >
+                          提交答案
+                        </button>
+                      ) : (
+                        <div className={`text-center py-4 text-sm font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          请选择一个选项以查看答案
+                        </div>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="rating-action"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="w-full"
+                    >
+                      <div className="flex items-center gap-2 mb-4 text-slate-400 dark:text-slate-500">
+                        <Check size={14} />
+                        <h4 className="font-bold tracking-wider text-[10px] uppercase">评价记忆程度</h4>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button
+                          onClick={() => handleRate(1)}
+                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                            isDark ? 'bg-red-900/20 text-red-400 hover:bg-red-900/40' : 'bg-red-50 text-red-700 hover:bg-red-100'
+                          }`}
+                          disabled={updateProgressMutation.isPending}
+                        >
+                          <ThumbsDown size={16} className="mb-1" />
+                          <span className="text-xs">重来</span>
+                        </button>
+                        <button
+                          onClick={() => handleRate(2)}
+                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                            isDark ? 'bg-orange-900/20 text-orange-400 hover:bg-orange-900/40' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+                          }`}
+                          disabled={updateProgressMutation.isPending}
+                        >
+                          <span className="text-xs">困难</span>
+                        </button>
+                        <button
+                          onClick={() => handleRate(3)}
+                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                            isDark ? 'bg-blue-900/20 text-blue-400 hover:bg-blue-900/40' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          }`}
+                          disabled={updateProgressMutation.isPending}
+                        >
+                          <ThumbsUp size={16} className="mb-1" />
+                          <span className="text-xs">良好</span>
+                        </button>
+                        <button
+                          onClick={() => handleRate(4)}
+                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                            isDark ? 'bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          }`}
+                          disabled={updateProgressMutation.isPending}
+                        >
+                          <span className="text-xs">简单</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            )}
-
-            {/* Explanation Section */}
-            {showAnswer && currentCard.explanation && (
-               <div className="mt-8 pt-6 border-t border-gray-100 text-left animate-fade-in">
-                  <div className="flex items-center gap-2 mb-2 text-indigo-600">
-                    <Brain size={18} />
-                    <h4 className="font-bold">题目解析</h4>
-                  </div>
-                  <div className="bg-indigo-50/50 p-4 rounded-xl text-gray-700 text-sm leading-relaxed">
-                    {currentCard.explanation}
-                  </div>
-               </div>
-            )}
-          </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        {/* Rating Buttons - Show only after answer is revealed */}
-        {showAnswer && (
-          <div className="mt-8 grid grid-cols-4 gap-4 animate-fade-in-up">
-            <button
-              onClick={() => handleRate(1)}
-              className="bg-red-100 text-red-700 py-3 rounded-lg font-medium hover:bg-red-200 transition-colors shadow-sm"
-              disabled={updateProgressMutation.isPending}
-            >
-              重来 (Again)
-            </button>
-            <button
-              onClick={() => handleRate(2)}
-              className="bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors shadow-sm"
-              disabled={updateProgressMutation.isPending}
-            >
-              困难 (Hard)
-            </button>
-            <button
-              onClick={() => handleRate(3)}
-              className="bg-blue-100 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-200 transition-colors shadow-sm"
-              disabled={updateProgressMutation.isPending}
-            >
-              良好 (Good)
-            </button>
-            <button
-              onClick={() => handleRate(4)}
-              className="bg-green-100 text-green-700 py-3 rounded-lg font-medium hover:bg-green-200 transition-colors shadow-sm"
-              disabled={updateProgressMutation.isPending}
-            >
-              简单 (Easy)
-            </button>
+        {/* Swipe Instructions */}
+        {!showAnswer && (
+          <div className="mt-8 text-center animate-bounce-slow">
+            <p className={`text-sm font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+              左右滑动卡片快速评分 (左: 困难, 右: 良好)
+            </p>
           </div>
         )}
       </div>

@@ -24,7 +24,7 @@ import { GraphSettingsModal } from '../components/GraphEditor/GraphSettingsModal
 import { ChatDialog } from '../components/GraphEditor/ChatDialog';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { HelpModal } from '../components/HelpModal';
-import { useHistory } from '../hooks/useHistory';
+import { useHistory, HistoryAction } from '../hooks/useHistory';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
 import { useTheme } from '../hooks/useTheme';
@@ -280,12 +280,16 @@ export const GraphEditor = () => {
   const handleCreateNodeHistory = useCallback((data: any) => createNodeMutation.mutateAsync(data), [createNodeMutation]);
   const handleUpdateNodeHistory = useCallback((params: any) => updateNodeMutation.mutateAsync(params), [updateNodeMutation]);
   const handleDeleteNodeHistory = useCallback((params: any) => deleteNodeMutation.mutateAsync(params), [deleteNodeMutation]);
+  const handleCreateEdgeHistory = useCallback((data: any) => createEdgeMutation.mutateAsync(data), [createEdgeMutation]);
+  const handleDeleteEdgeHistory = useCallback((params: any) => deleteEdgeMutation.mutateAsync(params), [deleteEdgeMutation]);
 
   // History Hook
   const { undo, redo, record, canUndo, canRedo } = useHistory({
     createNode: handleCreateNodeHistory,
     updateNode: handleUpdateNodeHistory,
-    deleteNode: handleDeleteNodeHistory
+    deleteNode: handleDeleteNodeHistory,
+    createEdge: handleCreateEdgeHistory,
+    deleteEdge: handleDeleteEdgeHistory
   });
 
   // Keyboard Shortcuts for Undo/Redo and Focus Mode
@@ -469,12 +473,13 @@ export const GraphEditor = () => {
 
         // Create Edge if parent selected
         if (nodeForm.parentNodeId) {
-          await createEdgeMutation.mutateAsync({
+          const newEdge = await createEdgeMutation.mutateAsync({
             source_node_id: nodeForm.parentNodeId,
             target_node_id: newNode.id,
             relationship_type: 'related',
             graphId: id
           });
+          record({ type: 'CREATE_EDGE', payload: newEdge });
         }
 
         // Record history
@@ -503,11 +508,22 @@ export const GraphEditor = () => {
           properties: selectedNode.properties
         };
 
+        const actions: HistoryAction[] = [];
+
         // Update Node
         const updated = await updateNodeMutation.mutateAsync({
           id: selectedNode.id,
           data: updateData,
           graphId: id
+        });
+        
+        actions.push({
+          type: 'UPDATE_NODE',
+          payload: {
+            id: selectedNode.id,
+            before: beforeState,
+            after: updateData
+          }
         });
 
         // Handle Edge Updates (Parent Node Change)
@@ -517,29 +533,28 @@ export const GraphEditor = () => {
         // 1. Delete old edge if parent changed or removed
         if (currentParentEdge && currentParentEdge.source_node_id !== newParentId) {
           await deleteEdgeMutation.mutateAsync({ id: currentParentEdge.id });
+          actions.push({ type: 'DELETE_EDGE', payload: currentParentEdge });
         }
         
         // 2. Create new edge if new parent is selected
         if (newParentId && (!currentParentEdge || currentParentEdge.source_node_id !== newParentId)) {
           if (newParentId !== selectedNode.id) { // Prevent self-loop
-            await createEdgeMutation.mutateAsync({
+            const newEdge = await createEdgeMutation.mutateAsync({
               source_node_id: newParentId,
               target_node_id: selectedNode.id,
               relationship_type: 'related',
               graphId: id
             });
+            actions.push({ type: 'CREATE_EDGE', payload: newEdge });
           }
         }
         
         // Record history
-        record({
-          type: 'UPDATE_NODE',
-          payload: {
-            id: selectedNode.id,
-            before: beforeState,
-            after: updateData
-          }
-        });
+        if (actions.length === 1) {
+          record(actions[0]);
+        } else if (actions.length > 1) {
+          record({ type: 'BATCH', payload: actions });
+        }
         
         // Update selected node state to prevent stale history
         setSelectedNode(updated);
@@ -557,6 +572,11 @@ export const GraphEditor = () => {
   const handleDeleteNode = (nodeToDelete: Node | null = selectedNode) => {
     if (!nodeToDelete || !id) return;
     
+    // Find connected edges
+    const connectedEdges = edges.filter(e => 
+      e.source_node_id === nodeToDelete.id || e.target_node_id === nodeToDelete.id
+    );
+    
     setConfirmModal({
       isOpen: true,
       title: '删除节点',
@@ -564,6 +584,10 @@ export const GraphEditor = () => {
       onConfirm: () => {
         deleteNodeMutation.mutate({ id: nodeToDelete.id, graphId: id }, {
           onSuccess: () => {
+            record({ 
+              type: 'DELETE_NODE', 
+              payload: { node: nodeToDelete, edges: connectedEdges } 
+            });
             // If we deleted the currently selected node, clear selection
             if (selectedNode?.id === nodeToDelete.id) {
               handleCloseSidebar();
@@ -584,6 +608,23 @@ export const GraphEditor = () => {
   const handleBatchDelete = () => {
     if (!id || selectedNodeIds.size === 0) return;
     
+    // Prepare history data
+    const batchAction: HistoryAction = {
+      type: 'BATCH',
+      payload: []
+    };
+    
+    Array.from(selectedNodeIds).forEach(nodeId => {
+      const node = nodes.find(n => n.id === nodeId);
+      if (node) {
+        const connectedEdges = edges.filter(e => e.source_node_id === nodeId || e.target_node_id === nodeId);
+        batchAction.payload.push({
+          type: 'DELETE_NODE',
+          payload: { node, edges: connectedEdges }
+        });
+      }
+    });
+    
     setConfirmModal({
       isOpen: true,
       title: '批量删除',
@@ -594,6 +635,9 @@ export const GraphEditor = () => {
         
         batchDeleteNodesMutation.mutateAsync({ nodeIds, graphId: id })
           .then(() => {
+            if (batchAction.payload.length > 0) {
+              record(batchAction);
+            }
             setSelectedNodeIds(new Set());
             setSelectedNode(null);
             setSidebarMode('none');
@@ -615,10 +659,33 @@ export const GraphEditor = () => {
     setLoading(true);
     const nodeIds = Array.from(selectedNodeIds);
     
+    // Prepare history
+    const batchAction: HistoryAction = {
+      type: 'BATCH',
+      payload: []
+    };
+    
+    nodeIds.forEach(nodeId => {
+      const node = nodes.find(n => n.id === nodeId);
+      if (node) {
+        batchAction.payload.push({
+          type: 'UPDATE_NODE',
+          payload: {
+            id: nodeId,
+            before: { color: node.color },
+            after: { color }
+          }
+        });
+      }
+    });
+    
     try {
       await Promise.all(nodeIds.map(nodeId => 
         updateNodeMutation.mutateAsync({ id: nodeId, graphId: id, data: { color } })
       ));
+      if (batchAction.payload.length > 0) {
+        record(batchAction);
+      }
       addMessage({ content: `已将 ${selectedNodeIds.size} 个节点颜色修改为 ${color}`, type: 'success' });
     } catch (err) {
       console.error(err);
@@ -634,10 +701,33 @@ export const GraphEditor = () => {
     setLoading(true);
     const nodeIds = Array.from(selectedNodeIds);
     
+    // Prepare history
+    const batchAction: HistoryAction = {
+      type: 'BATCH',
+      payload: []
+    };
+    
+    nodeIds.forEach(nodeId => {
+      const node = nodes.find(n => n.id === nodeId);
+      if (node) {
+        batchAction.payload.push({
+          type: 'UPDATE_NODE',
+          payload: {
+            id: nodeId,
+            before: { level: node.level },
+            after: { level: level as NodeLevel }
+          }
+        });
+      }
+    });
+    
     try {
       await Promise.all(nodeIds.map(nodeId => 
         updateNodeMutation.mutateAsync({ id: nodeId, graphId: id, data: { level: level as NodeLevel } })
       ));
+      if (batchAction.payload.length > 0) {
+        record(batchAction);
+      }
       addMessage({ content: `已将 ${selectedNodeIds.size} 个节点等级修改为 ${levelLabels[level] || level}`, type: 'success' });
     } catch (err) {
       console.error(err);
@@ -720,12 +810,13 @@ export const GraphEditor = () => {
           );
           
           if (!edgeExists && existingNode.id !== selectedNode.id) {
-             await createEdgeMutation.mutateAsync({
+             const newEdge = await createEdgeMutation.mutateAsync({
               source_node_id: selectedNode.id,
               target_node_id: existingNode.id,
               relationship_type: 'related',
               graphId: id
             });
+            record({ type: 'CREATE_EDGE', payload: newEdge });
             newEdgesCount++;
           }
         } else {
@@ -748,12 +839,13 @@ export const GraphEditor = () => {
           
           record({ type: 'CREATE_NODE', payload: newNode });
 
-          await createEdgeMutation.mutateAsync({
+          const newEdge = await createEdgeMutation.mutateAsync({
             source_node_id: selectedNode.id,
             target_node_id: newNode.id,
             relationship_type: 'related',
             graphId: id
           });
+          record({ type: 'CREATE_EDGE', payload: newEdge });
           newNodesCount++;
           newEdgesCount++;
         }

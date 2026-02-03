@@ -523,7 +523,7 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
       if (node && typeof node.x === 'number' && !isNaN(node.x) && 
           typeof node.y === 'number' && !isNaN(node.y) && 
           typeof node.z === 'number' && !isNaN(node.z)) {
-        const config = LEVEL_CONFIG[node.level || 'leaf'];
+        const config = LEVEL_CONFIG[node.level || 'leaf'] || LEVEL_CONFIG.leaf;
         child.position.set(node.x, node.y + config.radius + 0.4, node.z);
         
         // Scale text based on distance
@@ -538,9 +538,10 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
           } else if (textDisplayLevel === 'root_only') {
             isVisible = node.level === 'root';
           } else {
-            // Default: 'important'
-            const isImportant = node.level === 'root' || node.level === 'core';
-            isVisible = isImportant || distance < 80; // Threshold distance
+            // Default: 'important' (Adaptive)
+            // Use specific visibleDistance from config
+            const visibleDistance = (config as any).visibleDistance ?? 80;
+            isVisible = distance < visibleDistance;
           }
         }
 

@@ -644,7 +644,8 @@ export const GraphEditor = () => {
       await api.ai.generateContentStream(
         { 
           topic: nodeForm.title, 
-          context: aiPrompt
+          context: aiPrompt,
+          level: nodeForm.level
         },
         (chunk) => {
           setNodeForm(prev => ({ 
@@ -686,7 +687,8 @@ export const GraphEditor = () => {
         node_title: selectedNode.title,
         node_content: selectedNode.content,
         existing_nodes: existingTitles,
-        child_nodes: currentChildrenTitles
+        child_nodes: currentChildrenTitles,
+        context_level: parentLevel
       });
       const suggestions = res.suggestions;
       

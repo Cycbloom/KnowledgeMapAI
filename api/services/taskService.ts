@@ -102,7 +102,7 @@ export class TaskService {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (status) {
+    if (status && status !== 'all') {
       query = query.eq('status', status);
     }
 

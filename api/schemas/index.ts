@@ -85,6 +85,7 @@ export const updateCardProgressSchema = z.object({
 export const generateContentSchema = z.object({
   topic: z.string().min(1, '主题不能为空'),
   context: z.string().optional(),
+  level: z.string().optional(),
   provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
   model: z.string().optional(),
 });
@@ -94,6 +95,7 @@ export const expandKnowledgeSchema = z.object({
   node_content: z.string().optional(),
   existing_nodes: z.array(z.string()).optional(),
   child_nodes: z.array(z.string()).optional(), // Add child_nodes
+  context_level: z.string().optional(),
   provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
   model: z.string().optional(),
 });

@@ -184,7 +184,7 @@ Please respond in Chinese.` },
     }
   }
 
-  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string } = {}) {
+  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string } = {}) {
     const provider = options.provider
       ? getAIProvider(options.provider)
       : getAIProviderForTask('text');
@@ -195,18 +195,46 @@ Please respond in Chinese.` },
 
     try {
       const existingNodesContext = existingNodes && existingNodes.length > 0 
-        ? `\nExisting Nodes in Graph: ${existingNodes.slice(0, 50).join(', ')}`
+        ? `\nExisting Nodes in Graph: ${existingNodes.slice(0, 300).join(', ')}`
         : '';
         
       const childrenContext = childNodes && childNodes.length > 0
         ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(', ')}`
         : '';
 
+      const contextLevel = options.contextLevel || 'normal';
+      let linkingStrategy = "Linking Strategy: Check the provided 'Existing Nodes'. If a suggested concept is SEMANTICALLY IDENTICAL to an existing node, use the EXACT same title to create a link. \n" +
+            "Constraint: Do NOT force links to loosely related existing nodes. It is better to create a new specific node than to link to a generic existing one.";
+
+      let generationStrategy = "Content Strategy: Generate diverse sub-topics. Content should be informative.";
+
+      if (['root', 'core'].includes(contextLevel)) {
+        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
+          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
+          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually. \n" +
+          "3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.";
+        
+        generationStrategy = "Content Strategy (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES. The 'content' should be a high-level summary or definition.";
+      } else if (['sub', 'normal'].includes(contextLevel)) {
+        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
+          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
+          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually. \n" +
+          "3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.";
+
+        generationStrategy = "Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS. The 'content' should be descriptive and explain 'how' or 'why'.";
+      } else if (contextLevel === 'leaf') {
+        linkingStrategy = "Linking Strategy (NETWORK): You are expanding a leaf node. You are encouraged to link to 'Existing Nodes' if they are highly relevant, especially other leaf nodes, to form knowledge connections.";
+        
+        generationStrategy = "Content Strategy (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES. The 'content' should be very specific, technical, and detailed.";
+      }
+
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
-            "Quantity: Generate as many relevant nodes as necessary to cover the topic thoroughly (up to 20 nodes), but quality and representativeness are more important than quantity.\n" +
-            "If a suggested concept matches an 'Existing Node', please use the EXACT same title so we can link to it.\n" +
+            "Goal: Prioritize generating NEW, specific concepts to broaden the graph's coverage.\n" +
+            "Quantity: Generate up to 10 nodes. Focus on representativeness and hierarchy.\n" +
+            `${linkingStrategy}\n` +
+            `${generationStrategy}\n` +
             "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
             "Return JSON array of objects with 'title' and 'content'.\n" +
             "Please respond in Chinese." },

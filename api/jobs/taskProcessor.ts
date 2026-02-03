@@ -215,15 +215,7 @@ class TaskProcessor {
       latestChildNodes = child_nodes || [];
     }
 
-    // 1. Get suggestions from AI
-    const aiResult = await aiService.expandKnowledge(node_title, node_content, latestExistingNodes, latestChildNodes, { provider, model });
-    const suggestions = aiResult.suggestions;
-
-    // 2. Insert new nodes and edges
-    const newNodes: any[] = [];
-    const newEdges: any[] = [];
-
-    // Fetch current node to get position
+    // 0. Fetch current node to get position and level
     const { data: currentNode } = await supabaseAdmin
       .from('nodes')
       .select('x_position, y_position, level')
@@ -231,7 +223,21 @@ class TaskProcessor {
       .single();
       
     if (!currentNode) throw new Error('Source node not found');
-    
+
+    // 1. Get suggestions from AI
+    const aiResult = await aiService.expandKnowledge(
+      node_title, 
+      node_content, 
+      latestExistingNodes, 
+      latestChildNodes, 
+      { provider, model, contextLevel: currentNode.level }
+    );
+    const suggestions = aiResult.suggestions;
+
+    // 2. Insert new nodes and edges
+    const newNodes: any[] = [];
+    const newEdges: any[] = [];
+      
     const newLevel = getNextLevel(currentNode.level);
 
     if (Array.isArray(suggestions) && suggestions.length > 0) {

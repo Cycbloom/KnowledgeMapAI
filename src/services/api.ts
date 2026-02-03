@@ -166,7 +166,7 @@ export const api = {
       if (!payload.model && config.model) payload.model = config.model;
       return request('/ai/generate-content', { method: 'POST', body: JSON.stringify(payload) });
     },
-    generateContentStream: async (data: { topic: string; context?: string; provider?: string; model?: string }, onChunk: (content: string) => void) => {
+    generateContentStream: async (data: { topic: string; context?: string; level?: string; provider?: string; model?: string }, onChunk: (content: string) => void) => {
       const config = getAIConfig('text');
       const payload = { ...data };
       if (!payload.provider && config.provider) payload.provider = config.provider;
@@ -218,7 +218,7 @@ export const api = {
         }
       }
     },
-    expand: (data: { node_title: string; node_content?: string; existing_nodes?: any[]; child_nodes?: any[]; provider?: string; model?: string }) => {
+    expand: (data: { node_title: string; node_content?: string; existing_nodes?: any[]; child_nodes?: any[]; context_level?: string; provider?: string; model?: string }) => {
       const config = getAIConfig('text');
       const payload = { ...data };
       if (!payload.provider && config.provider) payload.provider = config.provider;

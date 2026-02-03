@@ -8,7 +8,8 @@ export const LEVEL_CONFIG = {
     emissive: '#5B21B6', 
     emissiveIntensity: 0.8,
     roughness: 0.1,
-    metalness: 0.3
+    metalness: 0.3,
+    visibleDistance: Infinity
   },
   core: { 
     chargeStrength: -40, 
@@ -17,7 +18,8 @@ export const LEVEL_CONFIG = {
     emissive: '#9F1239', 
     emissiveIntensity: 0.5,
     roughness: 0.2,
-    metalness: 0.2
+    metalness: 0.2,
+    visibleDistance: 240
   },
   sub: { 
     chargeStrength: -30, 
@@ -26,7 +28,8 @@ export const LEVEL_CONFIG = {
     emissive: '#92400E', 
     emissiveIntensity: 0.3,
     roughness: 0.3,
-    metalness: 0.1
+    metalness: 0.1,
+    visibleDistance: 120
   },
   normal: { 
     chargeStrength: -20, 
@@ -35,7 +38,8 @@ export const LEVEL_CONFIG = {
     emissive: '#065F46', 
     emissiveIntensity: 0.2,
     roughness: 0.4,
-    metalness: 0.1
+    metalness: 0.1,
+    visibleDistance: 60
   },
   leaf: { 
     chargeStrength: -10, 
@@ -44,7 +48,8 @@ export const LEVEL_CONFIG = {
     emissive: '#1E40AF', 
     emissiveIntensity: 0.1,
     roughness: 0.5,
-    metalness: 0.0
+    metalness: 0.0,
+    visibleDistance: 30
   }
 } as const;
 

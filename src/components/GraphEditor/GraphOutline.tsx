@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser } from 'lucide-react';
 import { Node, Edge } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
 
@@ -284,6 +284,46 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     });
   };
 
+  // Helper to select all direct children of a node
+  const handleSelectChildren = (parentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onSelectionChange) return;
+    
+    const children = childrenMap.get(parentId) || [];
+    if (children.length === 0) return;
+    
+    const newSet = new Set(selectedNodeIds);
+    // Add all children
+    children.forEach(child => newSet.add(child.id));
+    
+    onSelectionChange(newSet);
+    if (!isMultiSelectMode) setIsMultiSelectMode(true);
+  };
+
+  // Helper to select isolated nodes (nodes with no edges)
+  const handleSelectIsolated = () => {
+    if (!onSelectionChange) return;
+
+    const connectedNodeIds = new Set<string>();
+    edges.forEach(edge => {
+      connectedNodeIds.add(edge.source_node_id);
+      connectedNodeIds.add(edge.target_node_id);
+    });
+
+    const isolatedNodes = nodes.filter(node => !connectedNodeIds.has(node.id));
+    
+    if (isolatedNodes.length === 0) {
+      // toast.success('没有发现孤立节点'); // Assume toast is not available or handled by parent
+      return;
+    }
+
+    const newSet = new Set(selectedNodeIds);
+    isolatedNodes.forEach(node => newSet.add(node.id));
+    
+    onSelectionChange(newSet);
+    if (!isMultiSelectMode) setIsMultiSelectMode(true);
+  };
+
   // Tree Mode: Recursive Render
   const renderTree = (node: Node, depth: number, visited: Set<string>) => {
     if (visited.has(node.id)) return null;
@@ -347,6 +387,17 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
               {node.level}
             </span>
           )}
+
+          {/* Select Children Button */}
+          {hasChildren && (
+            <button
+              onClick={(e) => handleSelectChildren(node.id, e)}
+              className="ml-2 p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded hidden group-hover:flex items-center justify-center transition-colors"
+              title="全选子节点"
+            >
+              <ListChecks size={14} />
+            </button>
+          )}
         </div>
         
         {hasChildren && isExpanded && (
@@ -365,18 +416,27 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             大纲视图 ({nodes.length})
           </h2>
-          <button 
-            onClick={() => {
-              setIsMultiSelectMode(!isMultiSelectMode);
-              if (isMultiSelectMode && onSelectionChange) {
-                onSelectionChange(new Set()); // Clear selection when exiting
-              }
-            }}
-            className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-            title={isMultiSelectMode ? "退出多选" : "多选模式"}
-          >
-            <MousePointer2 size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleSelectIsolated}
+              className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500"
+              title="选中所有孤立节点 (无连线)"
+            >
+              <Eraser size={16} />
+            </button>
+            <button 
+              onClick={() => {
+                setIsMultiSelectMode(!isMultiSelectMode);
+                if (isMultiSelectMode && onSelectionChange) {
+                  onSelectionChange(new Set()); // Clear selection when exiting
+                }
+              }}
+              className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              title={isMultiSelectMode ? "退出多选" : "多选模式"}
+            >
+              <MousePointer2 size={16} />
+            </button>
+          </div>
         </div>
         
         <div className="relative mb-3">

@@ -127,7 +127,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
               {textDisplayLevel === 'all' 
                 ? '在任何距离下显示所有节点的标题（可能较拥挤）。' 
                 : textDisplayLevel === 'important'
-                  ? '远距离仅显示根节点和核心节点，近距离显示全部。'
+                  ? '根据节点层级自动调整可见距离（根节点最远，叶子节点最近）。'
                   : '仅显示最顶层的根节点标题。'}
             </p>
           </div>

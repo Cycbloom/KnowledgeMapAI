@@ -77,10 +77,10 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
 });
 
 router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, existing_nodes, child_nodes, provider, model } = req.body;
+  const { node_title, node_content, existing_nodes, child_nodes, context_level, provider, model } = req.body;
 
   try {
-    const result = await aiService.expandKnowledge(node_title, node_content, existing_nodes || [], child_nodes || [], { provider, model });
+    const result = await aiService.expandKnowledge(node_title, node_content, existing_nodes || [], child_nodes || [], { provider, model, contextLevel: context_level });
     res.json(result);
   } catch (error: any) {
     console.error('AI Expand Error:', error);
@@ -89,7 +89,7 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
 });
 
 router.post('/generate-content-stream', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
-  const { topic, context, provider: providerType, model } = req.body;
+  const { topic, context, level, provider: providerType, model } = req.body;
   const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
 
   // Set headers for SSE
@@ -117,11 +117,21 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
   }
 
   try {
+    let depthPrompt = "";
+    if (level === 'root' || level === 'core') {
+      depthPrompt = "Depth Requirement (High-Level): Provide a comprehensive OVERVIEW, core definitions, and high-level principles. Avoid excessive low-level details. Focus on the 'Why' and 'What'.";
+    } else if (level === 'sub' || level === 'normal') {
+      depthPrompt = "Depth Requirement (Mid-Level): Provide a balanced explanation covering key concepts, sub-components, and relationships. Bridge the gap between abstract theory and specific examples.";
+    } else if (level === 'leaf') {
+      depthPrompt = "Depth Requirement (Low-Level): Provide a HIGHLY DETAILED, specific, and concrete explanation. Include implementation details, code snippets (if applicable), edge cases, and practical nuances. Focus on the 'How'.";
+    }
+
     const stream = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. " +
+          content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. \n" +
+                   `${depthPrompt}\n` +
                    "IMPORTANT: All mathematical formulas must be wrapped in standard LaTeX delimiters. " +
                    "Use $...$ for inline formulas and $$...$$ for block formulas. " +
                    "Example: $E=mc^2$ or $$\\sum_{i=1}^n i = \\frac{n(n+1)}{2}$$. " +

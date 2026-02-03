@@ -10,6 +10,7 @@ import multer from 'multer';
 import { validate } from '../middleware/validate.js';
 import { 
   generateContentSchema, 
+  generateLearningMaterialSchema,
   expandKnowledgeSchema, 
   generateCardsSchema, 
   generateCardsBatchSchema,
@@ -75,6 +76,18 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
   } catch (error: any) {
     logger.error('AI Error:', error);
     res.status(500).json({ error: error.message || 'AI 生成失败' });
+  }
+});
+
+router.post('/learning-material', requireAuth, validate(generateLearningMaterialSchema), async (req: AuthRequest, res: Response) => {
+  const { topic, context, level, provider, model } = req.body;
+
+  try {
+    const content = await aiService.generateLearningMaterial(topic, context, { provider, model, level });
+    res.json({ content });
+  } catch (error: any) {
+    logger.error('AI Learning Material Error:', error);
+    res.status(500).json({ error: error.message || 'AI 生成学习内容失败' });
   }
 });
 

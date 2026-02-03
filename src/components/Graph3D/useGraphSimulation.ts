@@ -6,7 +6,7 @@ export const useGraphSimulation = (
   rawNodes: Node[], 
   rawEdges: Edge[],
   collapsedNodeIds: Set<string> = new Set(),
-  layoutMode: '3d-force' | '2d-tree' | '3d-sphere' = '3d-force'
+  layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' = '3d-force'
 ) => {
   const workerRef = useRef<Worker | null>(null);
   
@@ -49,13 +49,13 @@ export const useGraphSimulation = (
              } else {
                nanCount++;
                if (!isValidPosition(localNodes[i].x)) {
-                 localNodes[i].x = (Math.random() - 0.5) * 10;
+                 localNodes[i].x = (Math.random() - 0.5) * 50;
                }
                if (!isValidPosition(localNodes[i].y)) {
-                 localNodes[i].y = (Math.random() - 0.5) * 10;
+                 localNodes[i].y = (Math.random() - 0.5) * 50;
                }
                if (!isValidPosition(localNodes[i].z)) {
-                 localNodes[i].z = (Math.random() - 0.5) * 10;
+                 localNodes[i].z = (Math.random() - 0.5) * 50;
                }
              }
            }
@@ -149,9 +149,9 @@ export const useGraphSimulation = (
         id: nodeIdStr, 
         level, 
         collapsed: isCollapsed,
-        x: existing?.x ?? (Math.random() - 0.5) * 10,
-        y: existing?.y ?? (Math.random() - 0.5) * 10,
-        z: existing?.z ?? (Math.random() - 0.5) * 10,
+        x: existing?.x ?? (Math.random() - 0.5) * 50,
+        y: existing?.y ?? (Math.random() - 0.5) * 50,
+        z: existing?.z ?? (Math.random() - 0.5) * 50,
         vx: existing?.vx ?? 0,
         vy: existing?.vy ?? 0,
         vz: existing?.vz ?? 0

@@ -19,7 +19,7 @@ export const LEVEL_CONFIG = {
     emissiveIntensity: 1.8,
     roughness: 0.2,
     metalness: 0.3,
-    visibleDistance: 500
+    visibleDistance: 100
   },
   sub: { 
     chargeStrength: -30, 
@@ -29,7 +29,7 @@ export const LEVEL_CONFIG = {
     emissiveIntensity: 1.5,
     roughness: 0.3,
     metalness: 0.2,
-    visibleDistance: 250
+    visibleDistance: 60
   },
   normal: { 
     chargeStrength: -20, 
@@ -39,7 +39,7 @@ export const LEVEL_CONFIG = {
     emissiveIntensity: 1.2,
     roughness: 0.4,
     metalness: 0.1,
-    visibleDistance: 120
+    visibleDistance: 30
   },
   leaf: { 
     chargeStrength: -10, 
@@ -49,7 +49,7 @@ export const LEVEL_CONFIG = {
     emissiveIntensity: 0.8,
     roughness: 0.5,
     metalness: 0.1,
-    visibleDistance: 60
+    visibleDistance: 15
   }
 } as const;
 
@@ -68,6 +68,7 @@ export const THEME_CONFIG = {
     text: {
       color: '#f8fafc',
       outline: '#000000',
+      backgroundColor: '#000000',
       opacity: 0.9
     },
     link: {
@@ -90,6 +91,7 @@ export const THEME_CONFIG = {
     text: {
       color: '#1e293b',
       outline: '#ffffff',
+      backgroundColor: '#ffffff',
       opacity: 1
     },
     link: {

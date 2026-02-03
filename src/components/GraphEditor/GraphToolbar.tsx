@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User
+  HelpCircle, User, GraduationCap
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node } from '../../types';
@@ -79,6 +79,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp
 }) => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { isDark, toggleTheme } = useTheme();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isExpanded, setIsExpanded] = useState(false); // For mobile menu
@@ -600,7 +601,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       {/* 4. View Tools Dropdown */}
       <DropdownButton id="view" icon={List} label="视图">
-        <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="大纲视图" active={sidebarMode === 'outline'} />
+        <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="大纲视图 (侧栏)" active={sidebarMode === 'outline'} />
+        <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label="大纲学习模式" colorClass="text-indigo-600" />
         <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label="搜索节点" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <div className="px-3 py-2">

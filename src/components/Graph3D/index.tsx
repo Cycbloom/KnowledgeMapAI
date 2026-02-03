@@ -22,7 +22,7 @@ export type Graph3DProps = {
   onNodeCollapse?: (nodeId: string) => void;
   // New props for clustering and layout
   collapsedNodeIds?: Set<string>;
-  layoutMode?: '3d-force' | '2d-tree' | '3d-sphere';
+  layoutMode?: '3d-force' | '2d-tree' | '3d-sphere' | 'solar';
   pulsingNodeIds?: Set<string>;
   lockedNodeIds?: Set<string>;
   masteredNodeIds?: Set<string>;

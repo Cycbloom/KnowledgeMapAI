@@ -11,7 +11,7 @@ import { Node } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList } from 'lucide-react';
+import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -993,6 +993,11 @@ export const GraphEditor = () => {
     navigate(`/study?node_id=${selectedNode.id}`);
   };
 
+  const handleStartLearningMode = () => {
+    if (!selectedNode) return;
+    navigate(`/learning?node_id=${selectedNode.id}&graph_id=${id}`);
+  };
+
   const handleExportJSON = async () => {
     if (!graphMeta) return;
     try {
@@ -1708,7 +1713,7 @@ export const GraphEditor = () => {
                   <div className="flex justify-between items-center mb-4">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
                       <GraduationCap size={14} className="mr-1.5" />
-                      学习进度
+                      学习与闯关
                     </h4>
                     {nodeStatus?.[selectedNode.id]?.mastered ? (
                       <span className="flex items-center text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
@@ -1721,29 +1726,44 @@ export const GraphEditor = () => {
                     )}
                   </div>
                   
-                  <button
-                    onClick={handleStartLevelTest}
-                    disabled={nodeStatus?.[selectedNode.id]?.locked}
-                    className={`w-full py-3 rounded-xl flex items-center justify-center font-bold transition-all active:scale-95 ${
-                      nodeStatus?.[selectedNode.id]?.locked
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                      : nodeStatus?.[selectedNode.id]?.mastered 
-                      ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' 
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
-                    }`}
-                  >
-                    {nodeStatus?.[selectedNode.id]?.locked ? (
-                      <>
-                        <Lock size={18} className="mr-2" />
-                        节点已锁定 (需先掌握前置内容)
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={18} className="mr-2" />
-                        {nodeStatus?.[selectedNode.id]?.mastered ? '再次复习关卡' : '进入关卡测验'}
-                      </>
-                    )}
-                  </button>
+                  <div className="space-y-3">
+                    {/* Primary: Learning Mode */}
+                    <button
+                      onClick={handleStartLearningMode}
+                      disabled={nodeStatus?.[selectedNode.id]?.locked}
+                      className={`w-full py-3 rounded-xl flex items-center justify-center font-bold transition-all active:scale-95 ${
+                        nodeStatus?.[selectedNode.id]?.locked
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                        : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-700 hover:to-violet-700 shadow-lg shadow-indigo-100'
+                      }`}
+                    >
+                      {nodeStatus?.[selectedNode.id]?.locked ? (
+                         <>
+                          <Lock size={18} className="mr-2" />
+                          节点已锁定
+                        </>
+                      ) : (
+                        <>
+                          <BookOpen size={18} className="mr-2" />
+                          开始系统学习
+                        </>
+                      )}
+                    </button>
+
+                    {/* Secondary: Quiz Only */}
+                    <button
+                      onClick={handleStartLevelTest}
+                      disabled={nodeStatus?.[selectedNode.id]?.locked}
+                      className={`w-full py-2.5 rounded-xl flex items-center justify-center font-bold text-sm transition-all active:scale-95 ${
+                        nodeStatus?.[selectedNode.id]?.locked
+                        ? 'hidden'
+                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
+                      }`}
+                    >
+                      <Sparkles size={16} className="mr-2" />
+                      {nodeStatus?.[selectedNode.id]?.mastered ? '再次复习测验' : '直接进入测验'}
+                    </button>
+                  </div>
                 </section>
 
                 {/* AI Assistant in Detail Mode */}

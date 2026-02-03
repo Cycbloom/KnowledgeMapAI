@@ -10,6 +10,18 @@ import { getLinkNodeId } from '../../lib/graphUtils';
 // --- Helper to get theme ---
 const getTheme = (isDark: boolean) => isDark ? THEME_CONFIG.dark : THEME_CONFIG.light;
 
+// --- Helper for Render Order ---
+const getRenderOrder = (level: string | undefined) => {
+  switch (level) {
+    case 'root': return 100;
+    case 'core': return 80;
+    case 'sub': return 60;
+    case 'normal': return 40;
+    case 'leaf': return 20;
+    default: return 10;
+  }
+};
+
 interface InstancedNodesProps {
   nodesRef: React.MutableRefObject<SimNode[]>;
   onNodeClick?: (node: Node) => void;
@@ -536,11 +548,14 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
         const config = LEVEL_CONFIG[node.level || 'leaf'] || LEVEL_CONFIG.leaf;
         child.position.set(node.x, node.y + config.radius + 0.4, node.z);
         
+        const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
+        
         // Scale text based on distance
         const distance = camera.position.distanceTo(child.position);
         
         // LOD Logic based on textDisplayLevel
         let isVisible = forceShowAllLabels || highlightedNodes.has(node.id);
+        let opacity = theme.text.opacity;
         
         if (!isVisible) {
           if (textDisplayLevel === 'all') {
@@ -551,11 +566,26 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
             // Default: 'important' (Adaptive)
             // Use specific visibleDistance from config
             const visibleDistance = (config as any).visibleDistance ?? 80;
-            isVisible = distance < visibleDistance;
+            
+            // Fade out logic:
+            // Full opacity until 70% of distance
+            // Fade to 0 from 70% to 100%
+            const fadeStart = visibleDistance * 0.7;
+            
+            if (distance > visibleDistance) {
+              isVisible = false;
+            } else if (distance > fadeStart) {
+              // Linear fade
+              const fade = 1 - (distance - fadeStart) / (visibleDistance - fadeStart);
+              opacity = theme.text.opacity * fade;
+              isVisible = true;
+            } else {
+              isVisible = true;
+            }
           }
         }
 
-        if (!isVisible) {
+        if (!isVisible || opacity < 0.05) {
           child.visible = false;
         } else {
           child.visible = true;
@@ -564,10 +594,15 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
           const scale = Math.max(1, distance / 25);
           child.scale.set(scale, scale, scale);
           
-          // Force full opacity update if needed
-          if (forceShowAllLabels && child.material) {
-             // We can't easily access the Text material instance here to force opacity update
-             // But re-rendering with prop change will handle it
+          // Force opacity update
+          if (child.material) {
+             // Update main text opacity
+             (child as any).fillOpacity = isDimmed ? 0.2 : opacity;
+             // Update background opacity (relative to main opacity)
+             // We want background to fade out with text
+             (child as any).backgroundOpacity = isDimmed ? 0.2 : (0.75 * (opacity / theme.text.opacity));
+             // Update outline opacity
+             (child as any).outlineOpacity = isDimmed ? 0.2 : opacity;
           }
         }
         
@@ -618,6 +653,13 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
               fontSize={node.level === 'root' || node.level === 'core' ? 0.6 : 0.45} 
               color={theme.text.color}
               fillOpacity={isDimmed ? 0.2 : theme.text.opacity}
+              {...({
+                backgroundColor: theme.text.backgroundColor,
+                backgroundOpacity: isDimmed ? 0.2 : 0.75,
+                padding: 0.05
+              } as any)}
+              renderOrder={getRenderOrder(node.level)}
+              depthTest={true}
               anchorX="center" 
               anchorY="middle"
               outlineWidth={0.05}
@@ -648,3 +690,125 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
     </group>
   );
 });
+
+// --- Solar Layout Controller ---
+// This component overrides node positions based on a hierarchical orbit logic.
+export const SolarLayoutController = ({ 
+  nodesRef, 
+  linksRef, 
+  layoutMode 
+}: { 
+  nodesRef: React.MutableRefObject<SimNode[]>, 
+  linksRef: React.MutableRefObject<SimLink[]>,
+  layoutMode: string
+}) => {
+  const hierarchyRef = useRef<{ roots: string[], childrenMap: Map<string, string[]> } | null>(null);
+  const versionRef = useRef(0);
+
+  useFrame(({ clock }) => {
+    if (layoutMode !== 'solar' || nodesRef.current.length === 0) return;
+
+    const time = clock.getElapsedTime();
+    const nodes = nodesRef.current;
+    const links = linksRef.current;
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+    // 1. Rebuild hierarchy if data changed
+    const currentVersionKey = `${nodes.length}-${links.length}`;
+    if (!hierarchyRef.current || (versionRef.current as any) !== currentVersionKey) {
+      const childrenMap = new Map<string, string[]>();
+      const hasParent = new Set<string>();
+      
+      const levelOrder: Record<string, number> = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
+      const getLevelVal = (id: string) => levelOrder[nodeMap.get(id)?.level || 'leaf'] ?? 4;
+
+      links.forEach(link => {
+        const sId = typeof link.source === 'object' ? (link.source as SimNode).id : link.source;
+        const tId = typeof link.target === 'object' ? (link.target as SimNode).id : link.target;
+        
+        const sLevel = getLevelVal(sId);
+        const tLevel = getLevelVal(tId);
+
+        if (sLevel < tLevel && !hasParent.has(tId)) {
+          if (!childrenMap.has(sId)) childrenMap.set(sId, []);
+          childrenMap.get(sId)!.push(tId);
+          hasParent.add(tId);
+        }
+      });
+
+      const roots = nodes.filter(n => !hasParent.has(n.id)).map(n => n.id);
+      hierarchyRef.current = { roots, childrenMap };
+      (versionRef.current as any) = currentVersionKey;
+    }
+
+    const { roots, childrenMap } = hierarchyRef.current;
+
+    // 2. Recursive Radius Calculation
+    const getSystemRadius = (id: string, depth: number): number => {
+      const children = childrenMap.get(id) || [];
+      if (children.length === 0) return 5;
+
+      let baseOrbit = 0;
+      if (depth === 0) baseOrbit = 0;
+      else if (depth === 1) baseOrbit = 30;
+      else if (depth === 2) baseOrbit = 15;
+      else baseOrbit = 8;
+
+      const adaptiveR = baseOrbit + (children.length > 5 ? (children.length - 5) * 2 : 0);
+      
+      let maxChildRadius = 0;
+      children.forEach(cId => {
+        maxChildRadius = Math.max(maxChildRadius, getSystemRadius(cId, depth + 1));
+      });
+
+      return adaptiveR + maxChildRadius;
+    };
+
+    // 3. Recursive Position Update
+    const updatePositions = (id: string, parentX: number, parentY: number, parentZ: number, depth: number) => {
+      const node = nodeMap.get(id);
+      if (!node) return;
+
+      const children = childrenMap.get(id) || [];
+      
+      // Update this node
+      node.x = parentX;
+      node.y = parentY;
+      node.z = parentZ;
+
+      if (children.length === 0) return;
+
+      let orbitR = 0;
+      if (depth === 0) orbitR = 0; // Root is at center of its system
+      else if (depth === 1) orbitR = 30;
+      else if (depth === 2) orbitR = 15;
+      else orbitR = 8;
+
+      const adaptiveOrbitR = orbitR + (children.length > 5 ? (children.length - 5) * 2 : 0);
+      const speed = 0.2 / (depth + 1);
+
+      children.forEach((cId, i) => {
+        const angle = (i / children.length) * Math.PI * 2 + time * speed;
+        // Apply vertical offset for 3D depth
+        const cX = parentX + Math.cos(angle) * adaptiveOrbitR;
+        const cZ = parentZ + Math.sin(angle) * adaptiveOrbitR;
+        const cY = parentY - 10; // Vertical drop per level
+
+        updatePositions(cId, cX, cY, cZ, depth + 1);
+      });
+    };
+
+    // 4. Arrange Roots
+    const rootCount = roots.length;
+    const dynamicRadius = Math.max(250, rootCount * 50);
+
+    roots.forEach((rootId, i) => {
+      const angle = (i / rootCount) * Math.PI * 2;
+      const rx = Math.cos(angle) * dynamicRadius;
+      const rz = Math.sin(angle) * dynamicRadius;
+      updatePositions(rootId, rx, 0, rz, 0);
+    });
+  });
+
+  return null;
+};

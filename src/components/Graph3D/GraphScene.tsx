@@ -5,7 +5,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { Node } from '../../types/index';
-import { InstancedNodes, LinkLines, NodeLabels } from './GraphRenderables';
+import { InstancedNodes, LinkLines, NodeLabels, SolarLayoutController } from './GraphRenderables';
 import { CameraController } from './CameraController';
 import { BoxSelection } from './BoxSelection';
 
@@ -40,6 +40,7 @@ interface GraphSceneProps {
   onBoxUpdate?: (box: { left: number; top: number; width: number; height: number } | null) => void;
   showGrid?: boolean;
   textDisplayLevel?: 'all' | 'important' | 'root_only';
+  layoutMode?: string;
 }
 
 const getTheme = (isDark: boolean) => isDark ? THEME_CONFIG.dark : THEME_CONFIG.light;
@@ -58,11 +59,12 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
     onNodeCollapse,
     onSelectionChange,
     onBoxUpdate,
-    showGrid 
+    showGrid,
+    layoutMode
   } = props;
 
   const theme = getTheme(isDark);
-  const [focusTarget, setFocusTarget] = useState<{ pos: THREE.Vector3, lookAt: THREE.Vector3 } | null>(null);
+  const [focusTarget, setFocusTarget] = useState<{ pos: THREE.Vector3 | null, lookAt: THREE.Vector3 | null } | null>(null);
   const tempQuaternion = useMemo(() => new THREE.Quaternion(), []);
 
   // Focus Logic
@@ -78,6 +80,24 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
       setTimeout(() => setFocusTarget(null), 2000);
     }
   }, [nodesRef]);
+
+  // Click Logic - Center Rotation (LookAt)
+  const handleNodeClick = useCallback((node: Node) => {
+    // 1. Call parent handler (e.g. open sidebar)
+    onNodeClick?.(node);
+    
+    // 2. Center camera rotation on this node
+    const simNode = node as SimNode;
+    if (typeof simNode.x === 'number') {
+      const nodePos = new THREE.Vector3(simNode.x, simNode.y, simNode.z);
+      setFocusTarget({
+        pos: null, // Keep camera position, only rotate view
+        lookAt: nodePos
+      });
+      // Release lock after 1s
+      setTimeout(() => setFocusTarget(null), 1000);
+    }
+  }, [onNodeClick]);
 
   const { gl, scene, camera: genericCamera } = useThree();
   const camera = genericCamera as THREE.PerspectiveCamera;
@@ -243,6 +263,13 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         />
       )}
 
+      {/* Logic Controllers */}
+      <SolarLayoutController 
+        nodesRef={nodesRef} 
+        linksRef={linksRef} 
+        layoutMode={props.layoutMode || '3d-force'} 
+      />
+
       {/* Post-Processing Effects */}
       {isDark && (
         <EffectComposer>
@@ -257,7 +284,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
 
       <InstancedNodes 
         nodesRef={nodesRef} 
-        onNodeClick={onNodeClick} 
+        onNodeClick={handleNodeClick} 
         onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
         onNodeRightClick={(node) => onNodeCollapse?.(node.id)}
         isDark={isDark} 
@@ -275,7 +302,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         isDark={isDark} 
         highlightedNodes={highlightedNodes} 
         lockedNodeIds={props.lockedNodeIds}
-        onNodeClick={onNodeClick}
+        onNodeClick={handleNodeClick}
         onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
         simulationVersion={simulationVersion}
         forceShowAllLabels={isExporting} // Pass the export state

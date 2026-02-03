@@ -57,6 +57,7 @@ export interface Node {
   color?: string;
   level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
   properties?: Record<string, any>;
+  learning_material?: string;
   updated_at?: string;
   created_at?: string;
 }

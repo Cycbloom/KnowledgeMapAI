@@ -122,11 +122,18 @@ function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3
       .force('center', forceCenter())
       .force('radial', forceRadial(20).strength(0.8)); // Push to radius 20
 
+  } else if (layoutMode === 'solar' as any) {
+    // Solar mode: Let Main Thread handle positions. Disable forces.
+    simulation
+      .force('center', null)
+      .force('charge', null)
+      .force('link', null)
+      .force('collide', null);
   } else {
     // Default 3D Force (Quasi-2D)
     simulation
       .force('center', forceCenter())
-      .force('y', forceY(0).strength(5)); // Flattening force
+      .force('y', forceY(0).strength(0.5)); // Reduced flattening force for more natural settle
   }
 
   simulation.on('tick', () => {

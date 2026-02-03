@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats } from '../hooks/useQueries';
-import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network } from 'lucide-react';
+import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network, ArrowRight } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
@@ -354,7 +354,7 @@ export const Dashboard = () => {
                 }`}
               >
                 {/* Card Content */}
-                <Link to={`/graph/${graph.id}`} className="block p-6 h-full flex flex-col">
+                <Link to={`/learning?graph_id=${graph.id}`} className="block p-6 h-full flex flex-col">
                   <div className="flex items-start justify-between mb-4">
                     <div className={`p-3.5 rounded-xl transition-colors ${
                       isDark 
@@ -366,6 +366,18 @@ export const Dashboard = () => {
                     
                     {/* Hover Actions */}
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                      <Link
+                        to={`/graph/${graph.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`p-2 rounded-lg transition-colors ${
+                          isDark 
+                            ? 'text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400' 
+                            : 'text-gray-400 hover:bg-indigo-50 hover:text-indigo-600'
+                        }`}
+                        title="打开 3D 思维导图"
+                      >
+                        <Network size={18} />
+                      </Link>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -406,12 +418,13 @@ export const Dashboard = () => {
                         <Network size={14} />
                         <span>{graph.nodes_count || 0} 节点</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 text-xs ${
-                        isDark ? 'text-slate-500' : 'text-gray-400'
-                      }`}>
-                        <Calendar size={14} />
-                        <span>{new Date(graph.created_at).toLocaleDateString()}</span>
-                      </div>
+                    </div>
+                    
+                    <div className={`flex items-center gap-1 text-xs font-bold transition-colors ${
+                      isDark ? 'text-indigo-400 group-hover:text-indigo-300' : 'text-indigo-600 group-hover:text-indigo-700'
+                    }`}>
+                      <span>进入大纲</span>
+                      <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
                     </div>
                   </div>
                 </Link>

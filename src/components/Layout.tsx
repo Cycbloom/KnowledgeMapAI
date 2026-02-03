@@ -22,7 +22,7 @@ export const Layout = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { addMessage } = useMessageStore();
   
-  const isGraphEditor = location.pathname.startsWith('/graph/');
+  const isFullScreenPage = location.pathname.startsWith('/graph/') || location.pathname.startsWith('/learning');
   
   // Use TanStack Query for user fetching
   // Only fetch if we have a token but no user (e.g. refresh)
@@ -143,49 +143,51 @@ export const Layout = () => {
         )}
 
         {/* Sidebar */}
-        <div className={`
-          fixed inset-y-0 left-0 z-40 bg-slate-900 text-white flex flex-col transition-all duration-300
-          transform md:relative md:translate-x-0
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          w-64 ${isCollapsed ? 'md:w-20' : 'md:w-64'}
-        `}>
-          {/* Sidebar Header (Desktop) */}
-          <div className="hidden md:flex p-4 text-xl font-bold border-b border-slate-700 items-center justify-between h-16">
-            {!isCollapsed && <span className="truncate">知识图谱</span>}
-            <button 
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1 hover:bg-slate-800 rounded transition-colors"
-            >
-              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-            </button>
-          </div>
+        {!isFullScreenPage && (
+          <div className={`
+            fixed inset-y-0 left-0 z-40 bg-slate-900 text-white flex flex-col transition-all duration-300
+            transform md:relative md:translate-x-0
+            ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+            w-64 ${isCollapsed ? 'md:w-20' : 'md:w-64'}
+          `}>
+            {/* Sidebar Header (Desktop) */}
+            <div className="hidden md:flex p-4 text-xl font-bold border-b border-slate-700 items-center justify-between h-16">
+              {!isCollapsed && <span className="truncate">知识图谱</span>}
+              <button 
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-1 hover:bg-slate-800 rounded transition-colors"
+              >
+                {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+              </button>
+            </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-            <SidebarLink to="/" icon={BookOpen} label="我的图谱" />
-            <SidebarLink to="/study" icon={GraduationCap} label="学习中心" />
-            <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" />
-            <SidebarLink to="/profile" icon={User} label="个人设置" />
-          </nav>
+            {/* Navigation Links */}
+            <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+              <SidebarLink to="/" icon={BookOpen} label="我的图谱" />
+              <SidebarLink to="/study" icon={GraduationCap} label="学习中心" />
+              <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" />
+              <SidebarLink to="/profile" icon={User} label="个人设置" />
+            </nav>
 
-          {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-700">
-            <button 
-              onClick={handleLogout} 
-              className={`flex items-center ${isCollapsed && !isMobileMenuOpen ? 'justify-center' : 'space-x-2'} text-gray-400 hover:text-white w-full p-2 hover:bg-slate-800 rounded transition-colors`} 
-              title="退出登录"
-            >
-              <LogOut size={20} />
-              {(!isCollapsed || isMobileMenuOpen) && <span>退出登录</span>}
-            </button>
+            {/* Sidebar Footer */}
+            <div className="p-4 border-t border-slate-700">
+              <button 
+                onClick={handleLogout} 
+                className={`flex items-center ${isCollapsed && !isMobileMenuOpen ? 'justify-center' : 'space-x-2'} text-gray-400 hover:text-white w-full p-2 hover:bg-slate-800 rounded transition-colors`} 
+                title="退出登录"
+              >
+                <LogOut size={20} />
+                {(!isCollapsed || isMobileMenuOpen) && <span>退出登录</span>}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden flex flex-col w-full relative">
           
           {/* Top Header */}
-          {!isGraphEditor && (
+          {!isFullScreenPage && (
             <header className={`h-12 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b ${
               isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
             }`}>

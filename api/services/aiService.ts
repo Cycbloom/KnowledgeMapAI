@@ -298,6 +298,48 @@ Please respond in Chinese.` },
       throw new Error(error.message || 'AI expansion failed');
     }
   }
+
+  async generateLearningMaterial(topic: string, context: string, options: { provider?: AIProviderType; model?: string; level?: string } = {}) {
+    const provider = options.provider
+      ? getAIProvider(options.provider)
+      : getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
+      return getMockResponse('content', `Learning Material for ${topic}`);
+    }
+
+    try {
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { 
+            role: "system", 
+            content: "You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.\n" +
+                     "Target Audience: University students or professionals learning this concept.\n" +
+                     "Structure:\n" +
+                     "1. **Introduction (Hook)**: Briefly explain what this is and why it matters.\n" +
+                     "2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.\n" +
+                     "3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.\n" +
+                     "4. **Real-world Examples**: Concrete use cases or historical context.\n" +
+                     "5. **Summary**: Key takeaways.\n\n" +
+                     "Formatting:\n" +
+                     "- Use Markdown headers (##, ###).\n" +
+                     "- Use bolding for key terms.\n" +
+                     "- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.\n" +
+                     "- Use lists and bullet points for readability.\n" +
+                     "- Length: Comprehensive (approx 800-1500 words).\n" +
+                     "Please respond in Chinese." 
+          },
+          { role: "user", content: `Topic: ${topic}\nContext/Background: ${context || 'General knowledge'}` }
+        ],
+        model: options.model || provider.model,
+      });
+
+      return completion.choices[0].message.content || '';
+    } catch (error: any) {
+      logger.error('AI Learning Material Error:', error);
+      throw new Error(error.message || 'AI generation failed');
+    }
+  }
 }
 
 export const aiService = new AIService();

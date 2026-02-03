@@ -44,6 +44,7 @@ export const createNodeSchema = z.object({
   y_position: z.number().optional(),
   color: z.string().optional(),
   properties: z.record(z.any()).optional(),
+  learning_material: z.string().optional(),
   level: z.enum(['root', 'core', 'sub', 'normal', 'leaf']).optional(),
 });
 
@@ -83,6 +84,14 @@ export const updateCardProgressSchema = z.object({
 
 // --- AI Schemas ---
 export const generateContentSchema = z.object({
+  topic: z.string().min(1, '主题不能为空'),
+  context: z.string().optional(),
+  level: z.string().optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
+export const generateLearningMaterialSchema = z.object({
   topic: z.string().min(1, '主题不能为空'),
   context: z.string().optional(),
   level: z.string().optional(),

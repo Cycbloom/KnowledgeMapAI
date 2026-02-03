@@ -11,6 +11,7 @@ const Register = lazy(() => import('./pages/Register').then(module => ({ default
 const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const GraphEditor = lazy(() => import('./pages/GraphEditor').then(module => ({ default: module.GraphEditor })));
 const Study = lazy(() => import('./pages/Study').then(module => ({ default: module.Study })));
+const LearningMode = lazy(() => import('./pages/LearningMode').then(module => ({ default: module.LearningMode })));
 const Statistics = lazy(() => import('./pages/Statistics').then(module => ({ default: module.Statistics })));
 const Tasks = lazy(() => import('./pages/Tasks').then(module => ({ default: module.Tasks })));
 const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
@@ -43,6 +44,7 @@ function App() {
             <Route path="graphs" element={<Navigate to="/" replace />} />
             <Route path="graph/:id" element={<GraphEditor />} />
             <Route path="study" element={<Study />} />
+            <Route path="learning" element={<LearningMode />} />
             <Route path="statistics" element={<Statistics />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="profile" element={<Profile />} />

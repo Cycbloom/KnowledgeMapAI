@@ -33,11 +33,19 @@ export const CameraController = ({ targetPosition, targetLookAt }: CameraControl
   
   useFrame((state, delta) => {
     // 1. Handle Auto-Focus Animation
-    if (targetPosition && targetLookAt && controlsRef.current) {
-      camera.position.lerp(targetPosition, 0.05);
-      controlsRef.current.target.lerp(targetLookAt, 0.05);
+    if ((targetPosition || targetLookAt) && controlsRef.current) {
+      if (targetPosition) {
+        camera.position.lerp(targetPosition, 0.05);
+      }
+      if (targetLookAt) {
+        controlsRef.current.target.lerp(targetLookAt, 0.05);
+      }
       controlsRef.current.update();
-      return; // Skip manual control during animation
+      
+      // Only skip manual control if we are actively forcing camera position
+      // If we are only rotating target, maybe we still want to allow some control?
+      // But for simplicity, let's block manual control during transition to avoid fighting.
+      return; 
     }
 
     // 2. Handle Keyboard Navigation (WASD)

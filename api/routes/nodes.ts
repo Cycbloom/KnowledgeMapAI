@@ -55,6 +55,23 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   res.status(201).json(data);
 });
 
+// Get a node
+router.get('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  const { data: node, error } = await req.supabase!
+    .from('nodes')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !node) {
+    throw new AppError('Node not found', 404, ErrorCodes.NODE_NOT_FOUND);
+  }
+
+  res.json(node);
+});
+
 // Update a node
 router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;

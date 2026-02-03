@@ -112,6 +112,8 @@ export const expandKnowledgeSchema = z.object({
 export const generateCardsSchema = z.object({
   node_title: z.string().min(1, '节点标题不能为空'),
   node_content: z.string().optional(),
+  count: z.number().min(1).max(50).optional(),
+  types: z.array(z.enum(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank', 'essay'])).optional(),
   provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
   model: z.string().optional(),
 });

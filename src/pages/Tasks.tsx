@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTasks, useRetryTaskMutation, useDeleteTaskMutation } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { CheckCircle2, XCircle, Loader2, Clock, RefreshCw, ArrowRight, Trash2, RotateCw, Download } from 'lucide-react';
+import { ConfirmationModal } from '../components/ConfirmationModal';
+import { CheckCircle2, XCircle, Loader2, Clock, RefreshCw, ArrowRight, Trash2, RotateCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const formatTime = (iso?: string) => {
   if (!iso) return '-';
@@ -67,7 +68,6 @@ const FilterTab = ({ label, value, current, onClick, count }: { label: string, v
   </button>
 );
 
-import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export const Tasks = () => {
   const navigate = useNavigate();
@@ -75,12 +75,28 @@ export const Tasks = () => {
   const { addMessage } = useMessageStore();
   const [filter, setFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const { data, isLoading, error, refetch, isFetching } = useTasks(!!token, filter);
-  const tasks = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  
+  const { data, isLoading, error, refetch, isFetching } = useTasks(!!token, filter, limit, (page - 1) * limit);
   const retryMutation = useRetryTaskMutation();
   const deleteMutation = useDeleteTaskMutation();
+  const { tasks, total } = useMemo(() => {
+    if (data && typeof data === 'object' && 'tasks' in data) {
+      return { 
+        tasks: Array.isArray(data.tasks) ? data.tasks : [], 
+        total: typeof data.total === 'number' ? data.total : 0 
+      };
+    }
+    return { tasks: [], total: 0 };
+  }, [data]);
+  
+  const totalPages = Math.ceil(total / limit);
+
+  const handleFilterChange = (v: string) => {
+    setFilter(v);
+    setPage(1);
+  };
 
   const handleRetry = async (taskId: string) => {
     try {
@@ -174,11 +190,11 @@ export const Tasks = () => {
       </div>
 
       <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto">
-        <FilterTab label="全部任务" value="all" current={filter} onClick={setFilter} />
-        <FilterTab label="进行中" value="processing" current={filter} onClick={setFilter} />
-        <FilterTab label="已完成" value="completed" current={filter} onClick={setFilter} />
-        <FilterTab label="失败" value="failed" current={filter} onClick={setFilter} />
-        <FilterTab label="排队中" value="pending" current={filter} onClick={setFilter} />
+        <FilterTab label="全部任务" value="all" current={filter} onClick={handleFilterChange} />
+        <FilterTab label="进行中" value="processing" current={filter} onClick={handleFilterChange} />
+        <FilterTab label="已完成" value="completed" current={filter} onClick={handleFilterChange} />
+        <FilterTab label="失败" value="failed" current={filter} onClick={handleFilterChange} />
+        <FilterTab label="排队中" value="pending" current={filter} onClick={handleFilterChange} />
       </div>
 
       {error ? (
@@ -204,148 +220,196 @@ export const Tasks = () => {
           )}
 
           {!isLoading && tasks.length > 0 && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
-              {tasks.map((t) => {
-                const graphId = t.payload?.graph_id;
-                const nodeId = t.payload?.node_id;
-                const resultTitles = Array.isArray(t.result?.nodeTitles) ? t.result.nodeTitles : [];
-                const showResult = t.status === 'completed' && (t.type === 'expand_graph' || t.type === 'generate_questions' || t.type === 'batch_generate_questions');
+            <>
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
+                {tasks.map((t) => {
+                  const graphId = t.payload?.graph_id;
+                  const nodeId = t.payload?.node_id;
+                  const resultTitles = Array.isArray(t.result?.nodeTitles) ? t.result.nodeTitles : [];
+                  const showResult = t.status === 'completed' && (t.type === 'expand_graph' || t.type === 'generate_questions' || t.type === 'batch_generate_questions');
 
-                return (
-                  <div key={t.id} className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusBadgeClass(t.status)}`}>
-                            {getStatusIcon(t.status)}
-                            <span>{t.status}</span>
-                          </span>
-                          <span className="font-semibold text-gray-900 dark:text-gray-100">{t.name || getTypeLabel(t.type)}</span>
-                          <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">#{t.id.slice(0, 8)}</span>
-                        </div>
-
-                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 pl-1">
-                          {t.status === 'processing' && t.result?.progress !== undefined && (
-                            <div className="mt-2 w-full max-w-md bg-slate-100 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                              <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
-                                <span className="flex items-center gap-2">
-                                  <Loader2 size={12} className="animate-spin text-blue-500" />
-                                  正在处理: <span className="text-blue-600 dark:text-blue-400">{t.result.current_node || '准备中...'}</span>
-                                </span>
-                                <span>{t.result.progress}%</span>
-                              </div>
-                              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner">
-                                <div 
-                                  className="bg-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
-                                  style={{ width: `${t.result.progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
-                             <span className="flex items-center gap-1"><Clock size={12}/> 创建: {formatTime(t.created_at)}</span>
-                             {t.updated_at !== t.created_at && <span>更新: {formatTime(t.updated_at)}</span>}
+                  return (
+                    <div key={t.id} className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusBadgeClass(t.status)}`}>
+                              {getStatusIcon(t.status)}
+                              <span>{t.status}</span>
+                            </span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">{t.name || getTypeLabel(t.type)}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">#{t.id.slice(0, 8)}</span>
                           </div>
-                          
-                          {t.error && (
-                             <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
-                               <strong>错误：</strong>{t.error}
-                             </div>
-                          )}
-                          
-                          {showResult && t.type === 'expand_graph' && resultTitles.length > 0 && (
-                            <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
-                              <span className="font-medium">新增节点：</span>
-                              {resultTitles.slice(0, 6).join('、')}
-                              {resultTitles.length > 6 ? ` 等 ${resultTitles.length} 个` : ''}
-                            </div>
-                          )}
-                          
-                          {showResult && t.type === 'generate_questions' && typeof t.result?.count === 'number' && (
-                            <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
-                              <span className="font-medium">已生成卡片：</span> {t.result.count} 张
-                            </div>
-                          )}
 
-                          {showResult && t.type === 'batch_generate_questions' && typeof t.result?.totalCards === 'number' && (
-                            <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
-                              <span className="font-medium">批量生成完成：</span> 共生成 {t.result.totalCards} 张卡片
+                          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 pl-1">
+                            {t.status === 'processing' && t.result?.progress !== undefined && (
+                              <div className="mt-2 w-full max-w-md bg-slate-100 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
+                                  <span className="flex items-center gap-2">
+                                    <Loader2 size={12} className="animate-spin text-blue-500" />
+                                    正在处理: <span className="text-blue-600 dark:text-blue-400">{t.result.current_node || '准备中...'}</span>
+                                  </span>
+                                  <span>{t.result.progress}%</span>
+                                </div>
+                                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner">
+                                  <div 
+                                    className="bg-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
+                                    style={{ width: `${t.result.progress}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
+                               <span className="flex items-center gap-1"><Clock size={12}/> 创建: {formatTime(t.created_at)}</span>
+                               {t.updated_at !== t.created_at && <span>更新: {formatTime(t.updated_at)}</span>}
                             </div>
-                          )}
+                            
+                            {t.error && (
+                               <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
+                                 <strong>错误：</strong>{t.error}
+                               </div>
+                            )}
+                            
+                            {showResult && t.type === 'expand_graph' && resultTitles.length > 0 && (
+                              <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
+                                <span className="font-medium">新增节点：</span>
+                                {resultTitles.slice(0, 6).join('、')}
+                                {resultTitles.length > 6 ? ` 等 ${resultTitles.length} 个` : ''}
+                              </div>
+                            )}
+                            
+                            {showResult && t.type === 'generate_questions' && typeof t.result?.count === 'number' && (
+                              <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
+                                <span className="font-medium">已生成卡片：</span> {t.result.count} 张
+                              </div>
+                            )}
+
+                            {showResult && t.type === 'batch_generate_questions' && typeof t.result?.totalCards === 'number' && (
+                              <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
+                                <span className="font-medium">批量生成完成：</span> 共生成 {t.result.totalCards} 张卡片
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="flex items-center gap-2">
-                          {t.status === 'failed' && (
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2">
+                            {t.status === 'failed' && (
+                              <button
+                                onClick={() => handleRetry(t.id)}
+                                disabled={retryMutation.isPending}
+                                className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                                title="重试任务"
+                              >
+                                <RotateCw size={18} className={retryMutation.isPending ? "animate-spin" : ""} />
+                              </button>
+                            )}
+                            
                             <button
-                              onClick={() => handleRetry(t.id)}
-                              disabled={retryMutation.isPending}
-                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
-                              title="重试任务"
+                              onClick={() => handleDeleteClick(t.id)}
+                              disabled={deleteMutation.isPending}
+                              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                              title="删除任务"
                             >
-                              <RotateCw size={18} className={retryMutation.isPending ? "animate-spin" : ""} />
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+
+                          {graphId && (
+                            <button
+                              onClick={() => navigate(`/graph/${graphId}`)}
+                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
+                            >
+                              打开图谱
                             </button>
                           )}
                           
-                          <button
-                            onClick={() => handleDeleteClick(t.id)}
-                            disabled={deleteMutation.isPending}
-                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                            title="删除任务"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {t.type === 'generate_questions' && nodeId && (
+                            <button
+                              onClick={() => navigate(`/study?node_id=${encodeURIComponent(nodeId)}`)}
+                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                            >
+                              复习题目
+                            </button>
+                          )}
+                          
+                          {t.status === 'completed' && graphId && t.type === 'expand_graph' && (
+                            <button
+                              onClick={() => {
+                                navigate(`/graph/${graphId}`);
+                                addMessage({ type: 'info', content: '已打开图谱：如未自动刷新，请稍等或手动刷新页面' });
+                              }}
+                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
+                            >
+                              查看结果
+                            </button>
+                          )}
+                          
+                          {t.status === 'completed' && t.type === 'generate_questions' && nodeId && (
+                            <button
+                              onClick={() => {
+                                navigate(`/study?node_id=${encodeURIComponent(nodeId)}`);
+                                addMessage({ type: 'success', content: '进入学习模式：可开始复习生成的题目' });
+                              }}
+                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
+                            >
+                              开始学习
+                            </button>
+                          )}
                         </div>
-
-                        {graphId && (
-                          <button
-                            onClick={() => navigate(`/graph/${graphId}`)}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
-                          >
-                            打开图谱
-                          </button>
-                        )}
-                        
-                        {t.type === 'generate_questions' && nodeId && (
-                          <button
-                            onClick={() => navigate(`/study?node_id=${encodeURIComponent(nodeId)}`)}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                          >
-                            复习题目
-                          </button>
-                        )}
-                        
-                        {t.status === 'completed' && graphId && t.type === 'expand_graph' && (
-                          <button
-                            onClick={() => {
-                              navigate(`/graph/${graphId}`);
-                              addMessage({ type: 'info', content: '已打开图谱：如未自动刷新，请稍等或手动刷新页面' });
-                            }}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
-                          >
-                            查看结果
-                          </button>
-                        )}
-                        
-                        {t.status === 'completed' && t.type === 'generate_questions' && nodeId && (
-                          <button
-                            onClick={() => {
-                              navigate(`/study?node_id=${encodeURIComponent(nodeId)}`);
-                              addMessage({ type: 'success', content: '进入学习模式：可开始复习生成的题目' });
-                            }}
-                            className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
-                          >
-                            开始学习
-                          </button>
-                        )}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 px-2">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    显示 {(page - 1) * limit + 1} - {Math.min(page * limit, total)} 条，共 {total} 条
                   </div>
-                );
-              })}
-            </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="p-2 rounded-md border border-gray-300 dark:border-slate-700 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <ChevronLeft size={20} className="text-gray-600 dark:text-gray-400" />
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                        .map((p, i, arr) => (
+                          <React.Fragment key={p}>
+                            {i > 0 && arr[i-1] !== p - 1 && <span className="text-gray-400">...</span>}
+                            <button
+                              onClick={() => setPage(p)}
+                              className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                                page === p
+                                  ? 'bg-blue-600 text-white'
+                                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700'
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          </React.Fragment>
+                        ))}
+                    </div>
+
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="p-2 rounded-md border border-gray-300 dark:border-slate-700 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <ChevronRight size={20} className="text-gray-600 dark:text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

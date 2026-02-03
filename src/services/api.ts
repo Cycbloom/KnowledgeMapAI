@@ -233,7 +233,7 @@ export const api = {
       if (!payload.model && config.model) payload.model = config.model;
       return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
     },
-    generateCards: (data: { node_title: string; node_content: string; provider?: string; model?: string }) => {
+    generateCards: (data: { node_title: string; node_content: string; count?: number; types?: string[]; provider?: string; model?: string }) => {
       const config = getAIConfig('text');
       const payload = { ...data };
       if (!payload.provider && config.provider) payload.provider = config.provider;
@@ -351,7 +351,12 @@ export const api = {
   },
   tasks: {
     create: (data: { type: string; payload: any }) => request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
-    list: (status?: string) => request(`/tasks${status ? `?status=${status}` : ''}`),
+    list: (status?: string, limit: number = 20, offset: number = 0) => 
+      request(`/tasks?${new URLSearchParams({
+        ...(status && { status }),
+        limit: limit.toString(),
+        offset: offset.toString()
+      }).toString()}`),
     retry: (id: string) => request(`/tasks/${id}/retry`, { method: 'POST' }),
     delete: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
   },

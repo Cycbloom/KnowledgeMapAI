@@ -57,8 +57,11 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const status = req.query.status as string;
-    const tasks = await taskService.getTasks(supabaseAdmin, req.user.id, status);
-    res.json(tasks);
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = parseInt(req.query.offset as string) || 0;
+    
+    const { tasks, total } = await taskService.getTasks(supabaseAdmin, req.user.id, status, limit, offset);
+    res.json({ tasks, total });
   } catch (error: any) {
     console.error('Get Tasks Error:', error);
     res.status(500).json({ error: 'Failed to fetch tasks' });

@@ -96,20 +96,21 @@ export class TaskService {
     }
   }
 
-  async getTasks(client: SupabaseClient, userId: string, status?: string) {
+  async getTasks(client: SupabaseClient, userId: string, status?: string, limit: number = 20, offset: number = 0) {
     let query = client
       .from('tasks')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) throw new Error(`Failed to fetch tasks: ${error.message}`);
-    return data as Task[];
+    return { tasks: data as Task[], total: count || 0 };
   }
 
   async getPendingTasks(client: SupabaseClient) {

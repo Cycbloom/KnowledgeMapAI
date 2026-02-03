@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
@@ -12,6 +12,7 @@ import { useGraphData } from '../hooks/useQueries';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
+import { GenerateCardsModal } from '../components/LearningMode/GenerateCardsModal';
 
 type Message = {
   id: string;
@@ -31,8 +32,10 @@ export const LearningMode = () => {
   const [nodeTitle, setNodeTitle] = useState('');
   const [articleContent, setArticleContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingCards, setIsGeneratingCards] = useState(false);
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isGenModalOpen, setIsGenModalOpen] = useState(false);
   
   // Fetch Graph Data for Outline
   const { data: graphData } = useGraphData(graphId || '');
@@ -140,11 +143,35 @@ export const LearningMode = () => {
           
           try {
             console.log('Saving generated material to node:', nodeId);
-            const updateResult = await api.nodes.update(nodeId, {
+            await api.nodes.update(nodeId, {
               learning_material: response.content
             });
-            console.log('Save result:', updateResult);
             addMessage({ type: 'success', content: '学习教材已自动保存' });
+            
+            // 5. Automatically generate questions (via background task)
+            setIsGeneratingCards(true);
+            try {
+              const result = await api.ai.batchGenerateCards([nodeId], {
+                count: 10,
+                types: ['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank']
+              });
+              
+              if (result.success) {
+                addMessage({ 
+                  type: 'success', 
+                  content: '题目自动生成任务已提交至后台',
+                  duration: 5000,
+                  action: {
+                    label: '查看任务',
+                    onClick: () => navigate('/tasks')
+                  }
+                });
+              }
+            } catch (cardError) {
+              console.error('Failed to generate cards:', cardError);
+            } finally {
+              setIsGeneratingCards(false);
+            }
           } catch (saveError) {
             console.error('Failed to save learning material:', saveError);
             addMessage({ type: 'error', content: '教材保存失败，下次进入将重新生成' });
@@ -255,6 +282,40 @@ export const LearningMode = () => {
     navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz`);
   };
 
+  const handleManualGenerateCards = async (config: { count: number; types: string[] }) => {
+    if (!nodeId) {
+      addMessage({ type: 'warning', content: '请先选择知识点' });
+      return;
+    }
+
+    setIsGeneratingCards(true);
+    try {
+      const result = await api.ai.batchGenerateCards([nodeId], {
+        count: config.count,
+        types: config.types
+      });
+      
+      if (result.success) {
+        addMessage({ 
+          type: 'success', 
+          content: '题目生成任务已提交至后台',
+          duration: 5000,
+          action: {
+            label: '查看任务',
+            onClick: () => navigate('/tasks')
+          }
+        });
+      } else {
+        addMessage({ type: 'error', content: '任务提交失败，请重试' });
+      }
+    } catch (error) {
+      console.error('Manual generation failed:', error);
+      addMessage({ type: 'error', content: '题目生成提交失败，请稍后重试' });
+    } finally {
+      setIsGeneratingCards(false);
+    }
+  };
+
   return (
     <div className={`h-screen flex flex-col ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'}`}>
       {/* Header */}
@@ -330,12 +391,37 @@ export const LearningMode = () => {
 
           {nodeId && (
             <button
-              onClick={handleStartChallenge}
-              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-105 active:scale-95"
+              onClick={() => setIsGenModalOpen(true)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+                isDark 
+                  ? 'bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30' 
+                  : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
+              }`}
+              title="配置并生成题目"
             >
-              <GraduationCap size={18} />
-              <span>完成学习，开始挑战</span>
+              <BrainCircuit size={18} />
+              <span className="hidden sm:inline">生成题目</span>
             </button>
+          )}
+
+          {nodeId && (
+            <div className="flex flex-col items-end space-y-1">
+              {isGeneratingCards && (
+                <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
+                  <Sparkles size={10} /> 正在生成挑战题...
+                </span>
+              )}
+              <button
+                onClick={handleStartChallenge}
+                disabled={isGeneratingCards}
+                className={`flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
+                  isGeneratingCards ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+              >
+                <GraduationCap size={18} />
+                <span>完成学习，开始挑战</span>
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -536,6 +622,13 @@ export const LearningMode = () => {
           </div>
         )}
       </div>
+      {/* Modal */}
+      <GenerateCardsModal
+        isOpen={isGenModalOpen}
+        onClose={() => setIsGenModalOpen(false)}
+        onGenerate={handleManualGenerateCards}
+        nodeTitle={nodeTitle}
+      />
     </div>
   );
 };

@@ -175,10 +175,10 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
 
 
 router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, provider, model } = req.body;
+  const { node_title, node_content, count, types, provider, model } = req.body;
 
   try {
-    const aiResult = await aiService.generateCards(node_title, node_content, { provider, model });
+    const aiResult = await aiService.generateCards(node_title, node_content, { count, types, provider, model });
     res.json({ cards: aiResult.cards || [] });
   } catch (error: any) {
     logger.error('AI Error:', error);

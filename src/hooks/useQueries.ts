@@ -13,7 +13,7 @@ export const queryKeys = {
     ['studyCards', params?.graph_id || 'all', params?.node_id || 'all', params?.node_ids || 'none', params?.due ? 'due' : 'all'] as const,
   user: ['user'] as const,
   dashboardStats: ['dashboardStats'] as const,
-  tasks: (status?: string) => ['tasks', status || 'all'] as const,
+  tasks: (status?: string, limit?: number, offset?: number) => ['tasks', status || 'all', limit || 20, offset || 0] as const,
   aiStatus: ['aiStatus'] as const,
   statistics: ['statistics'] as const,
 };
@@ -92,10 +92,10 @@ export const useStudyCards = (params?: { graph_id?: string; node_id?: string; no
   });
 };
 
-export const useTasks = (enabled: boolean = true, status?: string) => {
+export const useTasks = (enabled: boolean = true, status?: string, limit: number = 20, offset: number = 0) => {
   return useQuery({
-    queryKey: queryKeys.tasks(status),
-    queryFn: async () => (await api.tasks.list(status)) as Task[],
+    queryKey: queryKeys.tasks(status, limit, offset),
+    queryFn: async () => (await api.tasks.list(status, limit, offset)) as { tasks: Task[], total: number },
     enabled,
     staleTime: 0,
   });

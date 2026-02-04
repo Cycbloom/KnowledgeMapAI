@@ -89,7 +89,7 @@ export const THEME_CONFIG = {
       pointIntensity: 1,
     },
     text: {
-      color: '#1e293b',
+      color: '#0f172a', // Darker for better contrast
       outline: '#ffffff',
       backgroundColor: '#ffffff',
       opacity: 1
@@ -100,6 +100,14 @@ export const THEME_CONFIG = {
       highlightOpacity: 0.05
     }
   }
+} as const;
+
+export const RADIAL_DISTANCES = {
+  root: 0,
+  core: 12,
+  sub: 24,
+  normal: 36,
+  leaf: 48
 } as const;
 
 export type NodeLevel = keyof typeof LEVEL_CONFIG;

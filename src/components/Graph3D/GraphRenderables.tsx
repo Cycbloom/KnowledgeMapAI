@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { useMessageStore } from '../../store/useMessageStore';
 import { usePerformanceStore } from '../../store/usePerformanceStore';
 import { Node } from '../../types/index';
-import { LEVEL_CONFIG, SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
+import { LEVEL_CONFIG, SimNode, SimLink, THEME_CONFIG, RADIAL_DISTANCES } from '../../config/graphConfig';
 import { getLinkNodeId } from '../../lib/graphUtils';
 
 // --- Helper to get theme ---
@@ -40,6 +40,7 @@ interface InstancedNodesProps {
 interface NodeLabelsProps {
   nodesRef: React.MutableRefObject<SimNode[]>;
   isDark: boolean;
+  layoutMode?: string;
   highlightedNodes: Set<string>;
   lockedNodeIds?: Set<string>;
   onNodeClick?: (node: Node) => void;
@@ -222,13 +223,11 @@ export const InstancedNodes = ({
         raycast={() => null} // Disable raycasting for visual mesh to optimize
       >
         <sphereGeometry args={[1, segments, segments]} />
-        <meshPhysicalMaterial 
-          roughness={0.2} 
-          metalness={0.5} 
-          clearcoat={0.3}
-          clearcoatRoughness={0.1}
+        <meshStandardMaterial 
+          roughness={0.1} 
+          metalness={0.8} 
           toneMapped={false} // Critical for Bloom to work with high intensity colors
-          emissive={new THREE.Color(0x000000)} // Base emissive is black, we rely on bright diffuse
+          emissive={new THREE.Color(0x000000)} // Will be updated per instance color
         />
       </instancedMesh>
 
@@ -521,10 +520,35 @@ export const LinkLines = ({
   );
 };
 
+// --- Orbit Lines for Solar Mode ---
+export const OrbitLines = ({ isDark, layoutMode }: { isDark: boolean, layoutMode: string }) => {
+  if (layoutMode !== 'solar') return null;
+
+  const radii = Object.values(RADIAL_DISTANCES).filter(r => r > 0);
+  const theme = getTheme(isDark);
+
+  return (
+    <group rotation={[-Math.PI / 2, 0, 0]}>
+      {radii.map((radius, i) => (
+        <mesh key={i}>
+          <ringGeometry args={[radius - 0.05, radius + 0.05, 128]} />
+          <meshBasicMaterial 
+            color={isDark ? '#ffffff' : '#000000'} 
+            transparent 
+            opacity={0.05} 
+            side={THREE.DoubleSide} 
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
 // --- Node Labels ---
 export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({ 
   nodesRef, 
   isDark, 
+  layoutMode,
   highlightedNodes,
   lockedNodeIds,
   onNodeClick, 
@@ -535,7 +559,16 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
 }, ref) => {
   // Use local ref if none provided, or sync with forwarded ref
   const localRef = useRef<THREE.Group>(null);
+  const { camera } = useThree();
+  const { addMessage } = useMessageStore();
   
+  // Force dark theme text for solar mode since background is always dark
+  const effectiveIsDark = isDark || layoutMode === 'solar';
+  const theme = getTheme(effectiveIsDark);
+  
+  const quality = usePerformanceStore(state => state.quality);
+  const distMultiplier = quality === 'high' ? 1.0 : (quality === 'medium' ? 0.8 : 0.5);
+
   useFrame(() => {
     // Determine which ref to use
     const group = (ref as React.MutableRefObject<THREE.Group>)?.current || localRef.current;
@@ -594,7 +627,6 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
         } else {
           child.visible = true;
           // When forcing labels (e.g. screenshot), we might want to clamp scale to be readable but not huge
-          // Or just stick to dynamic scale.
           const scale = Math.max(1, distance / 25);
           child.scale.set(scale, scale, scale);
           
@@ -603,16 +635,14 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
              // Update main text opacity
              (child as any).fillOpacity = isDimmed ? 0.2 : opacity;
              // Update background opacity (relative to main opacity)
-             // We want background to fade out with text
              (child as any).backgroundOpacity = isDimmed ? 0.2 : (0.75 * (opacity / theme.text.opacity));
              // Update outline opacity
              (child as any).outlineOpacity = isDimmed ? 0.2 : opacity;
           }
         }
         
-        // Sync opacity for SDF Text to prevent artifacts when switching modes
         if (child.material) {
-             child.material.depthTest = false; // Optional: Ensure text is always on top? Maybe not for 3D depth.
+             child.material.depthTest = true;
              child.material.depthWrite = false;
         }
 
@@ -621,15 +651,6 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
       }
     });
   });
-
-  const { camera } = useThree();
-  const { addMessage } = useMessageStore();
-  const theme = getTheme(isDark);
-  const quality = usePerformanceStore(state => state.quality);
-  const distMultiplier = quality === 'high' ? 1.0 : (quality === 'medium' ? 0.8 : 0.5);
-  
-  // We render the component ONCE based on simulationVersion (count)
-  // But update positions in useFrame
 
   const handleLabelClick = (node: Node) => {
     if (lockedNodeIds?.has(node.id)) {
@@ -643,7 +664,7 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
   };
 
   const handleLabelDoubleClick = (node: Node) => {
-    if (lockedNodeIds?.has(node.id)) return; // Don't even toast on dblclick to be less annoying
+    if (lockedNodeIds?.has(node.id)) return;
     onNodeDoubleClick?.(node);
   };
 
@@ -668,7 +689,7 @@ export const NodeLabels = React.forwardRef<THREE.Group, NodeLabelsProps>(({
               depthTest={true}
               anchorX="center" 
               anchorY="middle"
-              outlineWidth={0.05}
+              outlineWidth={0.06} // Slightly thicker outline for better visibility
               outlineColor={theme.text.outline}
               outlineOpacity={isDimmed ? 0.2 : 1}
               onClick={(e) => {

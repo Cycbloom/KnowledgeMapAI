@@ -1,12 +1,12 @@
 
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceY, forceX, forceZ, forceRadial } from 'd3-force-3d';
-import { LEVEL_CONFIG, SimNode, SimLink } from '../config/graphConfig';
+import { LEVEL_CONFIG, RADIAL_DISTANCES, SimNode, SimLink } from '../config/graphConfig';
 
 // Store simulation instance
 let simulation: any = null;
 let nodes: SimNode[] = [];
 let links: SimLink[] = [];
-let currentLayoutMode: '3d-force' | '2d-tree' | '3d-sphere' = '3d-force';
+let currentLayoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' = '3d-force';
 
 self.onmessage = (event) => {
   const { type, payload } = event.data;
@@ -25,7 +25,7 @@ self.onmessage = (event) => {
   }
 };
 
-function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3d-force' | '2d-tree' | '3d-sphere' = '3d-force') {
+function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' = '3d-force') {
   // Preserve existing positions if IDs match to prevent jumpiness on update
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const isModeChanged = currentLayoutMode !== layoutMode;
@@ -122,13 +122,22 @@ function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3
       .force('center', forceCenter())
       .force('radial', forceRadial(20).strength(0.8)); // Push to radius 20
 
-  } else if (layoutMode === 'solar' as any) {
-    // Solar mode: Let Main Thread handle positions. Disable forces.
+  } else if (layoutMode === 'solar') {
+    // Solar mode: Concentric circles based on level
     simulation
-      .force('center', null)
-      .force('charge', null)
-      .force('link', null)
-      .force('collide', null);
+      .force('center', forceCenter(0, 0, 0).strength(1))
+      .force('radial', forceRadial((d: any) => {
+        const level = (d.level || 'leaf') as keyof typeof RADIAL_DISTANCES;
+        return RADIAL_DISTANCES[level] || RADIAL_DISTANCES.leaf;
+      }).strength(2.5)) // Even stronger radial
+      .force('z', forceZ(0).strength(2))
+      // Fix root at center
+      .force('x', forceX(0).strength((d: any) => d.level === 'root' ? 2 : 0))
+      .force('y', forceY(0).strength((d: any) => d.level === 'root' ? 2 : 0))
+      .force('charge', forceManyBody().strength((d: any) => {
+        return d.level === 'root' ? -50 : -30; // Slight repulsion for root to keep space
+      }));
+
   } else {
     // Default 3D Force (Quasi-2D)
     simulation

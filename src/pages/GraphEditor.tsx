@@ -11,7 +11,7 @@ import { Node } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList, BookOpen, MoreVertical, Settings, HelpCircle, Sun, Moon, LogOut, Network, Plus, Minus, Focus } from 'lucide-react';
+import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList, BookOpen, MoreVertical, Settings, HelpCircle, Sun, Moon, LogOut, Network, Plus, Minus, Focus, Layers } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -128,8 +128,18 @@ export const GraphEditor = () => {
   // const [graphTitle, setGraphTitle] = useState(''); // Use graphMeta.title
 
   // Layout & Clustering State
-  const [layoutMode, setLayoutMode] = useState<'3d-force' | '2d-tree' | '3d-sphere'>('3d-force');
+  const [layoutMode, setLayoutMode] = useState<'3d-force' | '2d-tree' | '3d-sphere' | 'solar'>('3d-force');
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
+
+  // Auto-center graph when layout mode changes
+  useEffect(() => {
+    if (graphRef.current) {
+      // Small delay to let the simulation update its version/state
+      setTimeout(() => {
+        graphRef.current?.centerGraph();
+      }, 500);
+    }
+  }, [layoutMode]);
 
   const lockedNodeIds = useMemo(() => {
     if (!nodeStatus) return new Set<string>();
@@ -429,10 +439,13 @@ export const GraphEditor = () => {
     });
   };
 
-  const handleLayoutChange = (mode: '3d-force' | '2d-tree' | '3d-sphere') => {
+  const handleLayoutChange = (mode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar') => {
     setLayoutMode(mode);
     // Reset camera or other view settings if needed
-    addMessage({ type: 'success', content: `切换至 ${mode === '2d-tree' ? '2D 树状图' : mode === '3d-sphere' ? '3D 球形布局' : '3D 力导向'}` });
+    const modeName = mode === '2d-tree' ? '2D 树状图' : 
+                    mode === '3d-sphere' ? '3D 球形布局' : 
+                    mode === 'solar' ? '星系 radial 布局' : '3D 力导向';
+    addMessage({ type: 'success', content: `切换至 ${modeName}` });
     // Ensure simulation version updates to reset interaction layers
     if (graphRef.current) {
       // Small delay to ensure state has propagated
@@ -1237,7 +1250,7 @@ export const GraphEditor = () => {
                    <button 
                      onClick={() => {
                         // Cycle layout modes
-                        const modes: ('3d-force' | '2d-tree' | '3d-sphere')[] = ['3d-force', '2d-tree', '3d-sphere'];
+                        const modes: ('3d-force' | '2d-tree' | '3d-sphere' | 'solar')[] = ['3d-force', '2d-tree', '3d-sphere', 'solar'];
                         const nextIndex = (modes.indexOf(layoutMode) + 1) % modes.length;
                         handleLayoutChange(modes[nextIndex]);
                      }}

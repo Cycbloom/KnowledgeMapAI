@@ -79,10 +79,13 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
   });
 
   const showStats = usePerformanceStore(state => state.showStats);
-  const backgroundClass = isDark ? THEME_CONFIG.dark.background : THEME_CONFIG.light.background;
+  // Force dark background for solar mode to maintain "Galaxy" theme immersion
+  const backgroundClass = (isDark || layoutMode === 'solar') 
+    ? THEME_CONFIG.dark.background 
+    : THEME_CONFIG.light.background;
 
   return (
-    <div className={`w-full h-full transition-colors duration-300 ${backgroundClass} relative touch-none`}>
+    <div className={`w-full h-full transition-colors duration-500 ${backgroundClass} relative touch-none`}>
       <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
         <PerformanceMonitor />
         {showStats && <Stats />}

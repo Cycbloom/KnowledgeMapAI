@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { usePerformanceStore } from '../../store/usePerformanceStore';
 import { SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { Node } from '../../types/index';
-import { InstancedNodes, LinkLines, NodeLabels, SolarLayoutController } from './GraphRenderables';
+import { InstancedNodes, LinkLines, NodeLabels, SolarLayoutController, OrbitLines } from './GraphRenderables';
 import { CameraController } from './CameraController';
 import { BoxSelection } from './BoxSelection';
 
@@ -21,6 +21,9 @@ export interface ScreenshotOptions {
 export interface GraphSceneRef {
   focusNode: (nodeId: string) => void;
   captureScreenshot: (options?: ScreenshotOptions) => Promise<string>;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  centerGraph: () => void;
 }
 
 interface GraphSceneProps {
@@ -232,10 +235,35 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
   
   // Pass isExporting to NodeLabels
 
+  const zoomIn = useCallback(() => {
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    camera.position.add(direction.multiplyScalar(5));
+    camera.updateMatrixWorld();
+  }, [camera]);
+
+  const zoomOut = useCallback(() => {
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    camera.position.sub(direction.multiplyScalar(5));
+    camera.updateMatrixWorld();
+  }, [camera]);
+
+  const centerGraph = useCallback(() => {
+    setFocusTarget({
+      pos: new THREE.Vector3(0, 10, 40),
+      lookAt: new THREE.Vector3(0, 0, 0)
+    });
+    setTimeout(() => setFocusTarget(null), 1000);
+  }, []);
+
   useImperativeHandle(ref, () => ({
     focusNode: focusNodeInternal,
-    captureScreenshot
-  }), [focusNodeInternal, captureScreenshot]);
+    captureScreenshot,
+    zoomIn,
+    zoomOut,
+    centerGraph
+  }), [focusNodeInternal, captureScreenshot, zoomIn, zoomOut, centerGraph]);
 
   return (
     <>
@@ -246,14 +274,14 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         />
       )}
       
-      <ambientLight intensity={theme.lighting.ambientIntensity} />
-      <pointLight position={[10, 10, 10]} intensity={theme.lighting.pointIntensity} />
+      <ambientLight intensity={layoutMode === 'solar' ? 0.2 : theme.lighting.ambientIntensity} />
+      <pointLight position={[10, 10, 10]} intensity={layoutMode === 'solar' ? 1.5 : theme.lighting.pointIntensity} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} />
       {/* 使用本地 HDR 文件作为环境贴图，避免远程加载失败 */}
       <Environment files="/assets/textures/potsdamer_platz_1k.hdr" />
 
       {/* Starry Sky Background */}
-      {isDark && (
+      {(isDark || layoutMode === 'solar') && (
         <Stars 
           radius={150} 
           depth={50} 
@@ -265,21 +293,26 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         />
       )}
 
-      {/* Logic Controllers */}
-      <SolarLayoutController 
-        nodesRef={nodesRef} 
-        linksRef={linksRef} 
-        layoutMode={props.layoutMode || '3d-force'} 
-      />
+      {/* Orbit Rings for Solar Mode */}
+      <OrbitLines isDark={isDark} layoutMode={layoutMode || '3d-force'} />
 
-      {/* Post-Processing Effects - Only on High Quality */}
-      {isDark && quality === 'high' && (
+      {/* Logic Controllers - Only use SolarLayoutController if we want manual overrides */}
+      {layoutMode === 'solar_manual' && (
+        <SolarLayoutController 
+          nodesRef={nodesRef} 
+          linksRef={linksRef} 
+          layoutMode={layoutMode} 
+        />
+      )}
+
+      {/* Post-Processing Effects */}
+      {((isDark && quality === 'high') || layoutMode === 'solar') && (
         <EffectComposer>
           <Bloom 
-            luminanceThreshold={1.5} // Only very bright things glow (emissiveIntensity > 1.5)
+            luminanceThreshold={0.2} // Lower threshold so nodes glow more easily
             mipmapBlur 
-            intensity={1.2} 
-            radius={0.6}
+            intensity={layoutMode === 'solar' ? 2.0 : 1.2} 
+            radius={0.5}
           />
         </EffectComposer>
       )}
@@ -302,6 +335,7 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         ref={nodeLabelsGroupRef}
         nodesRef={nodesRef} 
         isDark={isDark} 
+        layoutMode={layoutMode}
         highlightedNodes={highlightedNodes} 
         lockedNodeIds={props.lockedNodeIds}
         onNodeClick={handleNodeClick}

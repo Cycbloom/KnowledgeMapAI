@@ -1,8 +1,8 @@
 import { BaseAIProvider } from './base.js';
-import { getProviderConfig } from '../config.js';
+import { AIProviderConfig } from '../types.js';
 
 export class AliyunProvider extends BaseAIProvider {
-  constructor() {
-    super('aliyun', getProviderConfig('aliyun'));
+  constructor(config: AIProviderConfig) {
+    super('aliyun', config);
   }
 }

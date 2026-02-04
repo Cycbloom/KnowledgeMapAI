@@ -12,6 +12,7 @@ export class GraphService {
         .from('knowledge_graphs')
         .select('*, nodes(count)')
         .eq('user_id', userId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -23,6 +24,24 @@ export class GraphService {
         nodes: undefined // cleanup
       }));
     });
+  }
+
+  async listTrash(supabase: SupabaseClient, userId: string) {
+    // Trash is usually not cached or has a separate cache
+    const { data, error } = await supabase
+      .from('knowledge_graphs')
+      .select('*, nodes(count)')
+      .eq('user_id', userId)
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false });
+
+    if (error) throw error;
+    
+    return data.map((g: any) => ({
+      ...g,
+      nodes_count: g.nodes?.[0]?.count || 0,
+      nodes: undefined
+    }));
   }
 
   async createGraph(supabase: SupabaseClient, userId: string, title: string, description: string = '') {
@@ -50,6 +69,7 @@ export class GraphService {
       .from('knowledge_graphs')
       .select('*')
       .eq('id', id)
+      .is('deleted_at', null)
       .single();
 
     if (userId) {
@@ -99,6 +119,38 @@ export class GraphService {
   }
 
   async deleteGraph(supabase: SupabaseClient, userId: string, id: string) {
+    // Soft delete
+    const { error } = await supabase
+      .from('knowledge_graphs')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    // We don't necessarily need to delete the node cache immediately if we allow viewing trash,
+    // but usually we want to clear it to prevent stale data if we restore it differently.
+    // However, if we soft delete, the `getGraphNodes` should also block access unless we allow reading deleted graphs.
+    // Let's clear it.
+    await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
+    await cacheService.del(CacheKeys.GRAPH_NODES('public', id));
+  }
+
+  async restoreGraph(supabase: SupabaseClient, userId: string, id: string) {
+    const { error } = await supabase
+      .from('knowledge_graphs')
+      .update({ deleted_at: null })
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
+  }
+
+  async permanentDeleteGraph(supabase: SupabaseClient, userId: string, id: string) {
     const { error } = await supabase
       .from('knowledge_graphs')
       .delete()
@@ -108,7 +160,6 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
-    // Updated to use the new key structure which requires userId
     await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
     await cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
   }
@@ -124,6 +175,7 @@ export class GraphService {
         .from('knowledge_graphs')
         .select('id, user_id, is_public')
         .eq('id', graphId)
+        .is('deleted_at', null)
         .single();
 
       if (graphError || !graph) {
@@ -138,7 +190,8 @@ export class GraphService {
       const { data: nodes, error: nodesError } = await supabase
         .from('nodes')
         .select('*')
-        .eq('graph_id', graphId);
+        .eq('graph_id', graphId)
+        .is('deleted_at', null);
 
       if (nodesError) throw nodesError;
 
@@ -146,12 +199,159 @@ export class GraphService {
       const { data: edges, error: edgesError } = await supabase
         .from('edges')
         .select('*')
-        .eq('graph_id', graphId);
+        .eq('graph_id', graphId)
+        .is('deleted_at', null);
 
       if (edgesError) throw edgesError;
 
       return { nodes, edges };
     });
+  }
+
+  async getLearningPath(supabase: SupabaseClient, userId: string | null, graphId: string) {
+    // 1. Get graph nodes and edges
+    const { nodes, edges } = await this.getGraphNodes(supabase, userId, graphId);
+
+    // 2. Identify Root nodes (in-degree 0) or explicitly level='root'
+    // Map of id -> node
+    const nodeMap = new Map(nodes.map((n: any) => [n.id, n]));
+    
+    // Adjacency list: id -> children[]
+    const adj = new Map<string, string[]>();
+    // In-degree count
+    const inDegree = new Map<string, number>();
+
+    nodes.forEach((n: any) => {
+      adj.set(n.id, []);
+      inDegree.set(n.id, 0);
+    });
+
+    edges.forEach((e: any) => {
+      if (adj.has(e.source_node_id) && nodeMap.has(e.target_node_id)) {
+        adj.get(e.source_node_id)!.push(e.target_node_id);
+        inDegree.set(e.target_node_id, (inDegree.get(e.target_node_id) || 0) + 1);
+      }
+    });
+
+    // 3. Algorithm: Modified Topological Sort / Level-Order
+    // We want a coherent path. Pure topological sort can jump between branches.
+    // DFS is often better for "learning flow" (Depth First).
+    // But we need to respect dependencies (Parents before Children).
+    
+    // Strategy:
+    // - Find all valid start nodes (in-degree 0). 
+    // - Sort start nodes by priority (e.g., 'root' level first, then by x_position/title).
+    // - Use a Priority Queue or Stack for traversal?
+    // - Actually, a simple topological sort works well for dependencies.
+    // - To keep it "grouped", when we pop a node, we should try to visit its children next IF they are ready (in-degree 0).
+    
+    const queue: string[] = []; // Ready to visit
+    const result: string[] = [];
+    
+    // Initialize queue with roots
+    nodes.forEach((n: any) => {
+      if ((inDegree.get(n.id) || 0) === 0) {
+        queue.push(n.id);
+      }
+    });
+
+    // Sort initial queue to prioritize 'root' level
+    const sortNodes = (ids: string[]) => {
+      return ids.sort((a, b) => {
+        const nodeA = nodeMap.get(a);
+        const nodeB = nodeMap.get(b);
+        // Priority levels
+        const levels = { root: 0, core: 1, sub: 2, normal: 3, leaf: 4 };
+        const levelA = levels[nodeA?.level as keyof typeof levels] ?? 99;
+        const levelB = levels[nodeB?.level as keyof typeof levels] ?? 99;
+        
+        if (levelA !== levelB) return levelA - levelB;
+        // Secondary sort by x_position (left to right) or title
+        return (nodeA?.x_position || 0) - (nodeB?.x_position || 0);
+      });
+    };
+
+    queue.sort((a, b) => { // Sort initially
+        const nodeA = nodeMap.get(a);
+        const nodeB = nodeMap.get(b);
+        const levels = { root: 0, core: 1, sub: 2, normal: 3, leaf: 4 };
+        const levelA = levels[nodeA?.level as keyof typeof levels] ?? 99;
+        const levelB = levels[nodeB?.level as keyof typeof levels] ?? 99;
+        return levelA - levelB;
+    });
+
+    // Kahn's Algorithm for Topological Sort with Priority
+    // We want to process "branches" together if possible.
+    // Standard Kahn's uses a Queue. If we sort the queue/buffer at each step, we can control order.
+    
+    // Instead of a simple queue, let's use a "Candidate List" and pick the best one.
+    // Heuristic:
+    // 1. Pick a node.
+    // 2. Add it to result.
+    // 3. Decrement neighbors in-degree.
+    // 4. If neighbor becomes 0, add to candidates.
+    // 5. From candidates, pick the one that is a CHILD of the last visited node (to maintain continuity) OR closest in hierarchy.
+    
+    let candidates = [...queue];
+    let lastVisitedId: string | null = null;
+
+    while (candidates.length > 0) {
+      // Sort candidates
+      // If we have a child of lastVisitedId in candidates, prioritize it!
+      candidates.sort((a, b) => {
+        const nodeA = nodeMap.get(a);
+        const nodeB = nodeMap.get(b);
+        
+        // 1. Continuity bonus: Is it a child of lastVisited?
+        const isChildA = lastVisitedId && adj.get(lastVisitedId)?.includes(a);
+        const isChildB = lastVisitedId && adj.get(lastVisitedId)?.includes(b);
+        
+        if (isChildA && !isChildB) return -1;
+        if (!isChildA && isChildB) return 1;
+
+        // 2. Level priority
+        const levels = { root: 0, core: 1, sub: 2, normal: 3, leaf: 4 };
+        const levelA = levels[nodeA?.level as keyof typeof levels] ?? 99;
+        const levelB = levels[nodeB?.level as keyof typeof levels] ?? 99;
+        
+        if (levelA !== levelB) return levelA - levelB;
+
+        // 3. Position (Left to Right)
+        return (nodeA?.x_position || 0) - (nodeB?.x_position || 0);
+      });
+
+      const currentId = candidates.shift()!;
+      result.push(currentId);
+      lastVisitedId = currentId;
+
+      // Process neighbors
+      const neighbors = adj.get(currentId) || [];
+      neighbors.forEach(neighborId => {
+        const newDegree = (inDegree.get(neighborId) || 0) - 1;
+        inDegree.set(neighborId, newDegree);
+        if (newDegree === 0) {
+          candidates.push(neighborId);
+        }
+      });
+    }
+
+    // Handle cycles or disconnected components (remaining nodes)
+    if (result.length < nodes.length) {
+      // Find unvisited nodes
+      const visited = new Set(result);
+      const unvisited = nodes.filter((n: any) => !visited.has(n.id));
+      // Just append them sorted by level
+      unvisited.sort((a: any, b: any) => {
+         const levels = { root: 0, core: 1, sub: 2, normal: 3, leaf: 4 };
+         const levelA = levels[a.level as keyof typeof levels] ?? 99;
+         const levelB = levels[b.level as keyof typeof levels] ?? 99;
+         return levelA - levelB;
+      });
+      result.push(...unvisited.map((n: any) => n.id));
+    }
+
+    // Return ordered node objects
+    return result.map(id => nodeMap.get(id));
   }
 
   async getGraphNodeStatus(supabase: SupabaseClient, userId: string | null, graphId: string) {
@@ -294,5 +494,6 @@ export class GraphService {
     return status;
   }
 }
+
 
 export const graphService = new GraphService();

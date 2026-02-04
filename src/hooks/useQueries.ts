@@ -51,11 +51,27 @@ export const useGraphs = () => {
   });
 };
 
+export const useTrashGraphs = () => {
+  return useQuery({
+    queryKey: ['graphs', 'trash'],
+    queryFn: api.graphs.listTrash,
+  });
+};
+
 export const useGraph = (id: string) => {
   return useQuery({
     queryKey: queryKeys.graph(id),
     queryFn: () => api.graphs.get(id),
     enabled: !!id,
+  });
+};
+
+export const useGraphLearningPath = (id: string) => {
+  return useQuery({
+    queryKey: ['graphLearningPath', id],
+    queryFn: () => api.graphs.getLearningPath(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 30, // 30 mins, path structure doesn't change often
   });
 };
 
@@ -164,6 +180,30 @@ export const useDeleteGraphMutation = () => {
     mutationFn: api.graphs.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      queryClient.invalidateQueries({ queryKey: ['graphs', 'trash'] });
+    },
+  });
+};
+
+export const useRestoreGraphMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.graphs.restore,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      queryClient.invalidateQueries({ queryKey: ['graphs', 'trash'] });
+    },
+  });
+};
+
+export const usePermanentDeleteGraphMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.graphs.permanentDelete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['graphs', 'trash'] });
     },
   });
 };
@@ -438,6 +478,12 @@ export const useTextToGraphMutation = () => {
 export const useDocumentToGraphMutation = () => {
   return useMutation({
     mutationFn: api.ai.documentToGraph,
+  });
+};
+
+export const useImageToGraphMutation = () => {
+  return useMutation({
+    mutationFn: api.ai.imageToGraph,
   });
 };
 

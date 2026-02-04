@@ -9,11 +9,6 @@ import { logger } from '../utils/logger.js';
 
 dotenv.config();
 
-// Backward compatibility: export openai and getAIModel based on default 'text' provider
-const defaultProvider = getAIProviderForTask('text');
-export const openai = defaultProvider.hasKey ? defaultProvider.client : null;
-export const getAIModel = () => defaultProvider.model;
-
 // Helper to generate mock response if no API key
 export const getMockResponse = (type: string, prompt: string): string | any[] => {
   if (type === 'content') {
@@ -80,7 +75,7 @@ export class AIService {
   async generateEmbedding(text: string): Promise<number[] | null> {
     if (!text) return null;
 
-    const provider = getAIProviderForTask('embedding');
+    const provider = await getAIProviderForTask('embedding');
     if (!provider.hasKey) {
         logger.warn('No API key for embedding provider');
         // Return a mock embedding if needed, or null
@@ -107,8 +102,8 @@ export class AIService {
 
   async chat(messages: any[], options: { provider?: AIProviderType; model?: string } = {}): Promise<string> {
     const provider = options.provider
-      ? getAIProvider(options.provider)
-      : getAIProviderForTask('text');
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
 
     if (!provider.hasKey) {
       const response = getMockResponse('chat', messages[messages.length - 1].content);
@@ -136,8 +131,8 @@ export class AIService {
 
     // Get provider for 'text' task
     const provider = options.provider 
-      ? getAIProvider(options.provider) 
-      : getAIProviderForTask('text');
+      ? await getAIProvider(options.provider) 
+      : await getAIProviderForTask('text');
 
     if (!provider.hasKey) {
       return { 
@@ -213,8 +208,8 @@ Please respond in Chinese.` },
 
   async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string } = {}) {
     const provider = options.provider
-      ? getAIProvider(options.provider)
-      : getAIProviderForTask('text');
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
 
     if (!provider.hasKey) {
       return { suggestions: getMockResponse('expand', nodeTitle) };
@@ -299,10 +294,104 @@ Please respond in Chinese.` },
     }
   }
 
+  async generateGraphFromImage(imageBase64: string, options: { provider?: AIProviderType; model?: string } = {}) {
+    // Default to 'aliyun' (Qwen-VL) or 'volcengine' if available, as they support vision well.
+    // Deepseek currently doesn't support vision via API (as of standard V3).
+    // We try to get a provider that supports vision. For now, we manually check or default.
+    let providerName = options.provider;
+    
+    // If no provider specified, try Aliyun or Volcengine
+    if (!providerName) {
+        // This is a heuristic. Ideally we should have a 'vision' task type.
+        // But for now let's just use 'text' provider and hope it supports vision, 
+        // OR explicitly fallback to Aliyun if the default text provider is Deepseek (which is text-only).
+        const defaultTextProvider = await getAIProviderForTask('text');
+        if (defaultTextProvider.providerType === 'deepseek') {
+            providerName = 'aliyun'; // Fallback to Aliyun for Vision
+        } else {
+            providerName = defaultTextProvider.providerType;
+        }
+    }
+
+    const provider = await getAIProvider(providerName as AIProviderType);
+
+    if (!provider.hasKey) {
+       // Mock response
+       return {
+          nodes: [
+            { id: 'mock_img_1', title: '识别的主题', content: '这是从图片识别的内容', level: 'root' },
+            { id: 'mock_img_2', title: '视觉元素 A', content: '图片中的元素 A', level: 'core' }
+          ],
+          edges: [
+            { source: 'mock_img_1', target: 'mock_img_2', relationship: 'contains' }
+          ]
+       };
+    }
+
+    // Check if using Qwen-VL or similar model that supports images
+    // Qwen-VL-Max/Plus/Turbo
+    let model = options.model || provider.model;
+    if (provider.providerType === 'aliyun' && !model.includes('vl')) {
+        model = 'qwen-vl-max'; // Force VL model for Aliyun
+    } else if (provider.providerType === 'volcengine' && !model.includes('vision')) {
+        // Doubao vision model name guess or config needed. 
+        // For now, assume user configured it or we use a safe default if known.
+        // But better to trust the config or let it fail if model doesn't support vision.
+    }
+
+    try {
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { 
+            role: "system", 
+            content: `You are a knowledge graph expert capable of analyzing visual content (diagrams, mind maps, slides, or text-heavy images).
+            
+Your task:
+1. Analyze the provided image to extract the structured knowledge hierarchy.
+2. If it's a diagram/mind map, capture the structure exactly.
+3. If it's a slide/text, structure the information logically.
+4. Output a JSON object with 'nodes' and 'edges' arrays.
+   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description (100-200 words)", "level": "root|core|sub|normal|leaf" }
+   - Edges: { "source": "parent_id", "target": "child_id", "relationship": "contains|related" }
+5. Ensure the 'root' node represents the main topic of the image.
+6. Limit to 30-50 nodes.
+7. Respond in Chinese.`
+          },
+          { 
+            role: "user", 
+            content: [
+                { type: "text", text: "Please analyze this image and generate the knowledge graph JSON." },
+                { type: "image_url", image_url: { url: imageBase64 } }
+            ]
+          }
+        ],
+        model: model,
+        response_format: { type: "json_object" },
+        max_tokens: 4000,
+      });
+
+      const content = completion.choices[0].message.content || '';
+      const cleanedContent = this.cleanJsonString(content);
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanedContent || '{"nodes": [], "edges": []}');
+      } catch (e) {
+        throw new Error('Failed to parse AI response');
+      }
+
+      return parsed;
+
+    } catch (error: any) {
+      logger.error('Image-to-Graph Error:', error);
+      throw new Error(error.message || 'Image processing failed');
+    }
+  }
+
   async generateLearningMaterial(topic: string, context: string, options: { provider?: AIProviderType; model?: string; level?: string } = {}) {
     const provider = options.provider
-      ? getAIProvider(options.provider)
-      : getAIProviderForTask('text');
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
 
     if (!provider.hasKey) {
       return getMockResponse('content', `Learning Material for ${topic}`);

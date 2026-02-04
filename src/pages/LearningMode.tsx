@@ -9,11 +9,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
-import { useGraphData } from '../hooks/useQueries';
+import { useGraphData, useGraphLearningPath, useGraphNodeStatus } from '../hooks/useQueries';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { GenerateCardsModal } from '../components/LearningMode/GenerateCardsModal';
+import { LearningPathMap } from '../components/LearningMode/LearningPathMap.tsx';
 
 type Message = {
   id: string;
@@ -38,6 +40,8 @@ export const LearningMode = () => {
   const [isChatOpen, setIsChatOpen] = useState(window.innerWidth >= 1280);
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [showLearningPath, setShowLearningPath] = useState(false);
+  const isOnline = useNetworkStatus();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -54,6 +58,8 @@ export const LearningMode = () => {
   
   // Fetch Graph Data for Outline
   const { data: graphData } = useGraphData(graphId || '');
+  const { data: learningPathData } = useGraphLearningPath(graphId || '');
+  const { data: nodeStatus } = useGraphNodeStatus(graphId || '');
 
   // Chat State
   const [messages, setMessages] = useState<Message[]>([
@@ -130,7 +136,6 @@ export const LearningMode = () => {
 
         // 2. Check if learning material already exists
         if (node.learning_material) {
-          console.log('Found existing learning material');
           setArticleContent(node.learning_material);
           setMessages(prev => [
             ...prev,
@@ -144,7 +149,6 @@ export const LearningMode = () => {
           return;
         }
 
-        console.log('Generating new learning material...');
         // 3. Generate Learning Material
         const response = await api.ai.generateLearningMaterial({
           topic: node.title,
@@ -157,7 +161,6 @@ export const LearningMode = () => {
           setArticleContent(response.content);
           
           try {
-            console.log('Saving generated material to node:', nodeId);
             await api.nodes.update(nodeId, {
               learning_material: response.content
             });
@@ -224,6 +227,11 @@ export const LearningMode = () => {
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isChatLoading) return;
+
+    if (!isOnline) {
+      addMessage({ type: 'error', content: '离线模式下无法使用 AI 助教' });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -300,6 +308,11 @@ export const LearningMode = () => {
   const handleManualGenerateCards = async (config: { count: number; types: string[] }) => {
     if (!nodeId) {
       addMessage({ type: 'warning', content: '请先选择知识点' });
+      return;
+    }
+
+    if (!isOnline) {
+      addMessage({ type: 'error', content: '离线模式下无法生成题目' });
       return;
     }
 
@@ -390,6 +403,16 @@ export const LearningMode = () => {
           </div>
 
           <button
+            onClick={() => setShowLearningPath(!showLearningPath)}
+            className={`p-1.5 lg:p-2 rounded-lg transition-colors hidden md:block ${
+              showLearningPath ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400' : (isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-600')
+            }`}
+            title="学习路径图"
+          >
+            <Network size={20} />
+          </button>
+
+          <button
             onClick={() => setIsChatOpen(!isChatOpen)}
             className={`p-1.5 lg:p-2 rounded-lg transition-colors xl:hidden ${
               isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-600'
@@ -427,18 +450,28 @@ export const LearningMode = () => {
           )}
 
           {nodeId && (
-            <button
-              onClick={() => setIsGenModalOpen(true)}
-              className={`flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-full font-medium transition-all ${
-                isDark 
-                  ? 'bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30' 
-                  : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
-              }`}
-              title="配置并生成题目"
-            >
-              <BrainCircuit size={18} />
-              <span className="hidden md:inline">生成题目</span>
-            </button>
+            <div className="group relative">
+              <button
+                onClick={() => isOnline && setIsGenModalOpen(true)}
+                disabled={!isOnline}
+                className={`flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-full font-medium transition-all ${
+                  !isOnline 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700'
+                    : (isDark 
+                        ? 'bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30' 
+                        : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200')
+                }`}
+                title={isOnline ? "配置并生成题目" : "离线模式不可用"}
+              >
+                <BrainCircuit size={18} />
+                <span className="hidden md:inline">生成题目</span>
+              </button>
+              {!isOnline && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                  离线不可用
+                </div>
+              )}
+            </div>
           )}
 
           {nodeId && (
@@ -474,19 +507,28 @@ export const LearningMode = () => {
             : (isOutlineOpen ? 'w-80' : 'w-0')
         } transition-all duration-300 ease-in-out border-r dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 relative`}>
            <div className={`absolute inset-0 ${isMobile ? 'w-full' : 'w-80'}`}>
-             {graphData ? (
-               <GraphOutline 
-                 nodes={graphData.nodes}
-                 edges={graphData.edges}
-                 onNodeClick={(node) => navigate(`/learning?graph_id=${graphId}&node_id=${node.id}`)}
-                 selectedNodeId={nodeId}
-                 className="h-full border-none"
+             {showLearningPath && learningPathData ? (
+               <LearningPathMap 
+                 nodes={learningPathData.path}
+                 activeNodeId={nodeId}
+                 onNodeClick={(id) => navigate(`/learning?graph_id=${graphId}&node_id=${id}`)}
+                 nodeStatus={nodeStatus}
                />
              ) : (
-               <div className="flex items-center justify-center h-full text-slate-400">
-                 <Loader2 className="animate-spin mr-2" />
-                 加载大纲...
-               </div>
+               graphData ? (
+                 <GraphOutline 
+                   nodes={graphData.nodes}
+                   edges={graphData.edges}
+                   onNodeClick={(node) => navigate(`/learning?graph_id=${graphId}&node_id=${node.id}`)}
+                   selectedNodeId={nodeId}
+                   className="h-full border-none"
+                 />
+               ) : (
+                 <div className="flex items-center justify-center h-full text-slate-400">
+                   <Loader2 className="animate-spin mr-2" />
+                   加载大纲...
+                 </div>
+               )
              )}
            </div>
         </div>

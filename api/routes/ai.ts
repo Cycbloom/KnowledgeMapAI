@@ -23,7 +23,7 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { CacheKeys, cacheService } from '../services/cache.js';
 import { graphService } from '../services/graphService.js';
-import { openai, getAIModel, getMockResponse, aiService } from '../services/aiService.js';
+import { getMockResponse, aiService } from '../services/aiService.js';
 import { getAIProviderForTask, getAIProvider } from '../services/ai/factory.js';
 import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
@@ -39,8 +39,8 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-router.get('/status', requireAuth, (req: AuthRequest, res: Response) => {
-  const provider = getAIProviderForTask('text');
+router.get('/status', requireAuth, async (req: AuthRequest, res: Response) => {
+  const provider = await getAIProviderForTask('text');
   res.json({ 
     enabled: provider.hasKey, 
     provider: provider.providerType, 
@@ -50,7 +50,7 @@ router.get('/status', requireAuth, (req: AuthRequest, res: Response) => {
 
 router.post('/generate-content', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
   const { topic, context, provider: providerType, model } = req.body;
-  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
+  const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   if (!provider.hasKey) {
     // @ts-ignore
@@ -106,7 +106,7 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
 
 router.post('/generate-content-stream', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
   const { topic, context, level, provider: providerType, model } = req.body;
-  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
+  const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
@@ -379,7 +379,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
     throw new AppError('Text content must be at least 10 characters long', 400, ErrorCodes.VALIDATION_ERROR);
   }
 
-  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
+  const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   if (!provider.hasKey) {
     // Mock response for dev
@@ -457,7 +457,7 @@ Please respond in Chinese.`
 // Chat with Graph
 router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest, res: Response) => {
   const { message, graph_id, history = [], context_node_ids, provider: providerType, model } = req.body;
-  const provider = providerType ? getAIProvider(providerType) : getAIProviderForTask('text');
+  const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   // Set headers for SSE
   res.setHeader('Content-Type', 'text/event-stream');
@@ -580,7 +580,7 @@ Instructions:
 // Smart Connection Recommendation
 router.post('/recommend-connections', requireAuth, validate(recommendConnectionsSchema), async (req: AuthRequest, res: Response) => {
   const { graph_id, node_title, node_content } = req.body;
-  const provider = getAIProviderForTask('text');
+  const provider = await getAIProviderForTask('text');
 
   if (!provider.hasKey) {
     throw new AppError('AI provider not configured', 503, ErrorCodes.INTERNAL_ERROR);
@@ -627,7 +627,7 @@ Respond in Chinese.`
 router.post('/document-to-graph', requireAuth, upload.single('file'), async (req: AuthRequest, res: Response) => {
   const { graph_id, provider: providerOverride, model: modelOverride } = req.body;
   const file = req.file;
-  const provider = getAIProviderForTask('text', providerOverride, modelOverride);
+  const provider = await getAIProviderForTask('text', providerOverride, modelOverride);
 
   if (!file) {
     throw new AppError('No file uploaded', 400, ErrorCodes.VALIDATION_ERROR);
@@ -737,6 +737,37 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
   } catch (error: any) {
     logger.error('Document-to-Graph Error:', error);
     res.status(500).json({ error: error.message || 'Document processing failed' });
+  }
+});
+
+router.post('/image-to-graph', requireAuth, upload.single('file'), async (req: AuthRequest, res: Response) => {
+  const { provider: providerOverride, model: modelOverride } = req.body;
+  const file = req.file;
+
+  if (!file) {
+    throw new AppError('No image uploaded', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+
+  try {
+    // Convert to base64
+    const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    
+    // Call AI Service
+    const result = await aiService.generateGraphFromImage(base64Image, { 
+      provider: providerOverride, 
+      model: modelOverride 
+    });
+    
+    // Ensure nodes have titles before returning
+    if (result.nodes) {
+      result.nodes = result.nodes.filter((n: any) => n.title && n.title.trim() !== "");
+    }
+
+    res.json(result);
+
+  } catch (error: any) {
+    logger.error('Image-to-Graph Error:', error);
+    res.status(500).json({ error: error.message || 'Image processing failed' });
   }
 });
 

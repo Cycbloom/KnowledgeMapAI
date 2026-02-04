@@ -15,6 +15,8 @@ const LearningMode = lazy(() => import('./pages/LearningMode').then(module => ({
 const Statistics = lazy(() => import('./pages/Statistics').then(module => ({ default: module.Statistics })));
 const Tasks = lazy(() => import('./pages/Tasks').then(module => ({ default: module.Tasks })));
 const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
+const Settings = lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
+const RecycleBin = lazy(() => import('./pages/RecycleBin').then(module => ({ default: module.RecycleBin })));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -48,6 +50,8 @@ function App() {
             <Route path="statistics" element={<Statistics />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="trash" element={<RecycleBin />} />
           </Route>
         </Routes>
       </Suspense>

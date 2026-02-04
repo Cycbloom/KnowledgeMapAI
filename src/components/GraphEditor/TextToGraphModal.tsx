@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, Link } from 'lucide-react';
+import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, Link, Image as ImageIcon, WifiOff } from 'lucide-react';
 import { parseMarkdownToGraph } from '../../utils/markdownParser';
 import { parseOpmlToGraph } from '../../utils/opmlParser';
-import { useTextToGraphMutation, useDocumentToGraphMutation } from '../../hooks/useQueries';
+import { useTextToGraphMutation, useDocumentToGraphMutation, useImageToGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
 import { api } from '../../services/api';
+import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 
 interface TextToGraphModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ type PreviewEdge = {
 export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData, aiEnabled }) => {
   const { addMessage } = useMessageStore();
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
-  const [activeTab, setActiveTab] = useState<'text' | 'file' | 'url'>('text');
+  const [activeTab, setActiveTab] = useState<'text' | 'file' | 'url' | 'image'>('text');
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
   const [previewData, setPreviewData] = useState<{ nodes: PreviewNode[], edges: PreviewEdge[] } | null>(initialData || null);
@@ -38,13 +39,16 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
   const [isUrlLoading, setIsUrlLoading] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   
   const textToGraphMutation = useTextToGraphMutation();
   const documentToGraphMutation = useDocumentToGraphMutation();
+  const imageToGraphMutation = useImageToGraphMutation();
+  const isOnline = useNetworkStatus();
 
-  const isAnalyzing = textToGraphMutation.isPending || documentToGraphMutation.isPending || isUrlLoading;
+  const isAnalyzing = textToGraphMutation.isPending || documentToGraphMutation.isPending || imageToGraphMutation.isPending || isUrlLoading;
 
   // Update state if initialData changes (e.g., when a new PDF is parsed)
   React.useEffect(() => {
@@ -73,6 +77,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     let contentToAnalyze = text;
 
     if (activeTab === 'url') {
+      if (!isOnline) {
+        addMessage({ type: 'error', content: '离线模式下无法解析 URL' });
+        return;
+      }
       if (!url.trim()) {
         addMessage({ type: 'error', content: '请输入有效的 URL' });
         return;
@@ -102,6 +110,11 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       return;
     }
 
+    if (!isOnline) {
+      addMessage({ type: 'error', content: '离线模式下无法使用 AI 分析' });
+      return;
+    }
+
     try {
       if (aiEnabled === false) {
         addMessage({ type: 'warning', content: 'AI 未配置：本次将生成模拟预览' });
@@ -125,8 +138,52 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     }
   };
 
+  const processImage = async (file: File) => {
+    if (!isOnline) {
+      addMessage({ type: 'error', content: '离线模式下无法使用图片识别' });
+      return;
+    }
+
+    if (aiEnabled === false) {
+      addMessage({ type: 'error', content: 'AI 未配置：图片识别需要配置 AI Key (推荐使用 Aliyun/Volcengine)' });
+      return;
+    }
+
+    addMessage({ type: 'info', content: '正在分析图片内容...' });
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      // Optional: Pass provider preference if needed, but backend handles default
+      
+      const result = await imageToGraphMutation.mutateAsync(formData);
+
+      if (!result.nodes || result.nodes.length === 0) {
+        throw new Error('AI 未能从图片中识别出有效节点。');
+      }
+
+      setPreviewData(result);
+      setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
+      setStep('preview');
+      addMessage({ type: 'success', content: '图片分析成功' });
+    } catch (err: any) {
+      console.error(err);
+      addMessage({ type: 'error', content: err.message || '分析失败' });
+    }
+  };
+
   const processFile = async (file: File) => {
+    if (file.type.startsWith('image/')) {
+        await processImage(file);
+        return;
+    }
+
     if (file.name.endsWith('.pdf')) {
+        if (!isOnline) {
+          addMessage({ type: 'error', content: '离线模式下无法解析 PDF' });
+          return;
+        }
+
         if (aiEnabled === false) {
           addMessage({ type: 'error', content: 'AI 未配置：PDF 解析不可用，请先配置 AI Key' });
           return;
@@ -206,6 +263,13 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processImage(file);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -238,10 +302,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
     const file = e.dataTransfer.files?.[0];
     if (file) {
       // Check file type
-      const validTypes = ['.pdf', '.txt', '.md', '.opml'];
-      const isValid = validTypes.some(type => file.name.toLowerCase().endsWith(type));
+      const validExtensions = ['.pdf', '.txt', '.md', '.opml', '.png', '.jpg', '.jpeg', '.webp'];
+      const isValid = validExtensions.some(type => file.name.toLowerCase().endsWith(type));
       if (!isValid) {
-        addMessage({ type: 'error', content: '不支持的文件格式。请上传 PDF, Markdown, OPML 或 TXT 文件。' });
+        addMessage({ type: 'error', content: '不支持的文件格式。请上传 PDF, Markdown, OPML, TXT 或 图片文件。' });
         return;
       }
       await processFile(file);
@@ -363,6 +427,15 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   <span>文件上传</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('image')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeTab === 'image' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <ImageIcon size={16} />
+                  <span>图片识别</span>
+                </button>
+                <button
                   onClick={() => setActiveTab('url')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                     activeTab === 'url' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
@@ -435,8 +508,55 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                   </div>
                 )}
 
+                {activeTab === 'image' && (
+                  <div 
+                    className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 transition-all ${
+                      isDragging 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
+                    }`}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  >
+                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                      <ImageIcon size={32} className={isDragging ? 'text-blue-500' : 'text-gray-400'} />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">
+                      {isDragging ? '释放以识别图片' : '上传图片生成图谱'}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
+                      支持思维导图截图、流程图、板书照片或幻灯片。
+                      <br />
+                      <span className="text-xs opacity-70">支持 JPG, PNG, WebP 格式。</span>
+                    </p>
+                    <button
+                      onClick={() => imageInputRef.current?.click()}
+                      className="px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
+                      disabled={isAnalyzing}
+                    >
+                      选择图片
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={imageInputRef} 
+                      className="hidden" 
+                      accept=".jpg,.jpeg,.png,.webp"
+                      onChange={handleImageUpload}
+                    />
+                  </div>
+                )}
+
                 {activeTab === 'url' && (
                   <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-8">
+                    {!isOnline ? (
+                      <div className="text-center text-gray-500">
+                        <WifiOff size={48} className="mx-auto mb-4 text-gray-400" />
+                        <p className="font-medium">离线模式不可用</p>
+                        <p className="text-sm mt-2">URL 解析需要网络连接</p>
+                      </div>
+                    ) : (
                     <div className="w-full max-w-md space-y-4">
                       <div className="text-center mb-6">
                         <div className="bg-white p-3 rounded-full shadow-sm inline-block mb-3">
@@ -465,6 +585,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
                         <span>支持博客文章、新闻报道、维基百科条目等以文本为主的网页。</span>
                       </div>
                     </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -11,7 +11,7 @@ import { Node } from '../types';
 const Graph3D = lazy(() => import('../components/Graph3D').then(module => ({ default: module.Graph3D }))) as unknown as React.ForwardRefExoticComponent<Graph3DProps & React.RefAttributes<Graph3DRef>>;
 import { getLevel, findShortestPath, NodeLevel } from '../lib/graphUtils';
 import { LEVEL_CONFIG } from '../config/graphConfig';
-import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList, BookOpen, MoreVertical, Settings, HelpCircle, Sun, Moon, LogOut } from 'lucide-react';
+import { Save, Wand2, Download, Trash2, X, Navigation, GraduationCap, Sparkles, Edit3, Eraser, Check, Lock, ArrowLeft, Loader2, LayoutList, BookOpen, MoreVertical, Settings, HelpCircle, Sun, Moon, LogOut, Network, Plus, Minus, Focus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -92,6 +92,7 @@ export const GraphEditor = () => {
   const { data: aiStatus } = useAIStatus(!!token);
   const { addMessage } = useMessageStore();
   const isMobile = useIsMobile();
+  const [mobileViewMode, setMobileViewMode] = useState<'list' | '3d'>('list');
   const aiEnabled = aiStatus?.enabled ?? true;
   const hasShownAIWarningRef = useRef(false);
 
@@ -1099,7 +1100,7 @@ export const GraphEditor = () => {
   if (isMobile) {
     return (
       <div className="flex flex-col h-full bg-gray-50 relative">
-        <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 sticky top-0 z-20">
+        <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center space-x-2">
             <button onClick={() => navigate(-1)} className="p-2 bg-gray-50 rounded-full shadow-sm active:bg-gray-100">
               <ArrowLeft size={20} className="text-gray-600" />
@@ -1108,6 +1109,22 @@ export const GraphEditor = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
+              <button
+                onClick={() => setMobileViewMode('list')}
+                className={`p-1.5 rounded-md transition-all ${mobileViewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+              >
+                <LayoutList size={18} />
+              </button>
+              <button
+                onClick={() => setMobileViewMode('3d')}
+                className={`p-1.5 rounded-md transition-all ${mobileViewMode === '3d' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+              >
+                <Network size={18} />
+              </button>
+            </div>
+
             <button 
               onClick={() => navigate(`/study/${id}`)}
               className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-full text-xs font-bold shadow-md active:scale-95 transition-transform"
@@ -1166,26 +1183,89 @@ export const GraphEditor = () => {
           </div>
         </div>
 
-        {/* Mobile Main View: GraphOutline */}
-        <div className="flex-1 overflow-hidden bg-white">
-           <GraphOutline 
-             nodes={nodes} 
-             edges={edges}
-             onNodeClick={(node) => {
-               setSelectedNode(node);
-               setSidebarMode('edit'); 
-             }}
-             selectedNodeId={selectedNode?.id}
-             selectedNodeIds={selectedNodeIds}
-             onSelectionChange={setSelectedNodeIds}
-             onBatchAction={(action) => {
-                if (action === 'expand_graph') handleBackgroundTask('expand_graph');
-                else if (action === 'delete') handleBatchDelete();
-                else if (action === 'batch_generate_questions') handleBackgroundTask('batch_generate_questions');
-             }}
-             stats={graphStats}
-             className="h-full border-none"
-           />
+        {/* Mobile Main View */}
+        <div className="flex-1 overflow-hidden bg-white relative">
+           {mobileViewMode === 'list' ? (
+             <GraphOutline 
+               nodes={nodes} 
+               edges={edges}
+               onNodeClick={(node) => {
+                 setSelectedNode(node);
+                 setSidebarMode('edit'); 
+               }}
+               selectedNodeId={selectedNode?.id}
+               selectedNodeIds={selectedNodeIds}
+               onSelectionChange={setSelectedNodeIds}
+               onBatchAction={(action) => {
+                  if (action === 'expand_graph') handleBackgroundTask('expand_graph');
+                  else if (action === 'delete') handleBatchDelete();
+                  else if (action === 'batch_generate_questions') handleBackgroundTask('batch_generate_questions');
+               }}
+               stats={graphStats}
+               className="h-full border-none"
+             />
+           ) : (
+             <div className="h-full w-full relative">
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-blue-500" /></div>}>
+                  <Graph3D 
+                    ref={graphRef} 
+                    nodes={nodes} 
+                    edges={edges} 
+                    onNodeClick={(node) => {
+                      setSelectedNode(node);
+                      setSidebarMode('edit');
+                    }} 
+                    showGrid={false} // Hide grid on mobile for performance
+                    isDark={isDark}
+                    selectedNodeId={selectedNode?.id}
+                    selectedNodeIds={selectedNodeIds}
+                    onEngineLoad={setIsEngineLoading}
+                    onSelectionChange={handleSelectionChange}
+                    onBoxUpdate={setSelectionBox}
+                    onBackgroundClick={handleBackgroundClick}
+                    collapsedNodeIds={collapsedNodeIds}
+                    layoutMode={layoutMode}
+                    lockedNodeIds={lockedNodeIds}
+                    masteredNodeIds={masteredNodeIds}
+                    gamificationEnabled={graphMeta?.settings?.gamification_enabled !== false}
+                    onNodeCollapse={handleToggleCollapse}
+                    textDisplayLevel={graphMeta?.settings?.text_display_level || 'important'}
+                  />
+                </Suspense>
+                {/* Mobile Floating Toolbar for 3D View */}
+                <div className="absolute bottom-6 right-4 flex flex-col gap-2">
+                   <button 
+                     onClick={() => {
+                        // Cycle layout modes
+                        const modes: ('3d-force' | '2d-tree' | '3d-sphere')[] = ['3d-force', '2d-tree', '3d-sphere'];
+                        const nextIndex = (modes.indexOf(layoutMode) + 1) % modes.length;
+                        handleLayoutChange(modes[nextIndex]);
+                     }}
+                     className="p-3 bg-white rounded-full shadow-lg text-blue-600 border border-blue-100 active:scale-95"
+                   >
+                     <Layers size={20} />
+                   </button>
+                   <button 
+                     onClick={() => graphRef.current?.zoomIn()}
+                     className="p-3 bg-white rounded-full shadow-lg text-gray-600 border border-gray-100 active:scale-95"
+                   >
+                     <Plus size={20} />
+                   </button>
+                   <button 
+                     onClick={() => graphRef.current?.zoomOut()}
+                     className="p-3 bg-white rounded-full shadow-lg text-gray-600 border border-gray-100 active:scale-95"
+                   >
+                     <Minus size={20} />
+                   </button>
+                   <button 
+                     onClick={() => graphRef.current?.centerGraph()}
+                     className="p-3 bg-white rounded-full shadow-lg text-gray-600 border border-gray-100 active:scale-95"
+                   >
+                     <Focus size={20} />
+                   </button>
+                </div>
+             </div>
+           )}
         </div>
         
         {/* Modals needed for Mobile */}

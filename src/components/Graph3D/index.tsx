@@ -82,7 +82,7 @@ export const Graph3D = forwardRef<Graph3DRef, Graph3DProps>((props, ref) => {
   const backgroundClass = isDark ? THEME_CONFIG.dark.background : THEME_CONFIG.light.background;
 
   return (
-    <div className={`w-full h-full transition-colors duration-300 ${backgroundClass} relative`}>
+    <div className={`w-full h-full transition-colors duration-300 ${backgroundClass} relative touch-none`}>
       <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
         <PerformanceMonitor />
         {showStats && <Stats />}

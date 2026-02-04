@@ -1,9 +1,9 @@
 import { BaseAIProvider } from './base.js';
-import { getProviderConfig } from '../config.js';
+import { AIProviderConfig } from '../types.js';
 
 export class VolcengineProvider extends BaseAIProvider {
-  constructor() {
-    super('volcengine', getProviderConfig('volcengine'));
+  constructor(config: AIProviderConfig) {
+    super('volcengine', config);
   }
 
   // Override to support dimensions parameter for Volcengine embedding

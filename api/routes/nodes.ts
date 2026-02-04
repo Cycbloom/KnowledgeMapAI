@@ -1,7 +1,7 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { createNodeSchema, updateNodeSchema, createEdgeSchema } from '../schemas/index.js';
+import { createNodeSchema, updateNodeSchema, createEdgeSchema, uuidParamsSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
@@ -24,7 +24,10 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
     throw new AppError('未经授权访问图谱', 403, ErrorCodes.FORBIDDEN);
   }
 
-  const nodeData: any = { graph_id, title, content, x_position, y_position, color, properties, level };
+  const nodeData: any = { 
+    graph_id, title, content, x_position, y_position, color, properties, level,
+    deleted_at: null // Ensure restored if upserting
+  };
   if (id) nodeData.id = id;
 
   // Generate embedding
@@ -42,7 +45,7 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
 
   const { data, error } = await req.supabase!
     .from('nodes')
-    .insert([nodeData])
+    .upsert([nodeData], { onConflict: 'id' })
     .select()
     .single();
 
@@ -172,15 +175,15 @@ router.get('/nodes/:id/related', requireAuth, async (req: AuthRequest, res: Resp
   }
 });
 
-// Delete a node
-router.delete('/nodes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+// Delete a node (Soft Delete)
+router.delete('/nodes/:id', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
   // We need to get graph_id before deleting to invalidate cache
   // Or we can select it during delete
   const { data, error, count } = await req.supabase!
     .from('nodes')
-    .delete({ count: 'exact' })
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .select('graph_id') // Return graph_id for cache invalidation
     .single();
@@ -220,7 +223,7 @@ router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Re
 
   const { error, count } = await req.supabase!
     .from('nodes')
-    .delete({ count: 'exact' })
+    .update({ deleted_at: new Date().toISOString() })
     .in('id', node_ids);
 
   if (error) throw new AppError(error.message || '批量删除节点失败', 500, ErrorCodes.INTERNAL_ERROR);
@@ -265,9 +268,17 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
   // 3. Create edge
   const { data, error } = await req.supabase!
     .from('edges')
-    .insert([
-      { source_node_id, target_node_id, relationship_type, graph_id: sourceNode.graph_id }
-    ])
+    .upsert([
+      { source_node_id, target_node_id, relationship_type, graph_id: sourceNode.graph_id, deleted_at: null }
+    ], { onConflict: 'id' }) // Ideally conflict on (source, target)? But id is PK. We don't have unique constraint on source-target?
+    // If user creates duplicate edge, it's a new ID usually.
+    // If we want to restore, we need to know the ID.
+    // But edge creation usually doesn't pass ID from frontend unless it's Undo.
+    // Frontend `addEdge` usually generates temp ID then server returns real ID.
+    // If "Undo" creates edge, it might not have the ID.
+    // So soft delete for edges is mostly for cascading?
+    // If we just INSERT, it creates a NEW row. The old soft-deleted row stays there.
+    // This is fine. "Zombie" edges are acceptable.
     .select()
     .single();
 
@@ -280,7 +291,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
 });
 
 // Delete an edge
-router.delete('/edges/:id', requireAuth, async (req: AuthRequest, res: Response) => {
+router.delete('/edges/:id', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
   // Need to find which graph this edge belongs to.
@@ -292,7 +303,7 @@ router.delete('/edges/:id', requireAuth, async (req: AuthRequest, res: Response)
   // Delete and get graph_id for cache invalidation
   const { data: edge, error } = await req.supabase!
     .from('edges')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .select('graph_id')
     .single();

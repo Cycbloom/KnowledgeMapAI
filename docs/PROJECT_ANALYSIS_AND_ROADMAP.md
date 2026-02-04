@@ -1,94 +1,138 @@
 # 项目深度分析与功能迭代路线图
 
-> 生成日期: 2026-02-02
-> 基于代码库全面分析生成的架构诊断与演进计划。
+> 生成日期: 2026-02-04
+> 基于当前代码库 (`v0.1.0`) 的全面架构审查与业务逻辑分析。
 
-## 1. 项目概览
+## 1. 项目现状深度分析
 
-本项目是一个基于 **React + Node.js + Supabase** 的全栈 AI 知识图谱与学习平台。
+### 1.1 技术架构概览 (Architecture Overview)
+本项目采用现代化的全栈架构，专注于高性能的 3D 知识图谱可视化与 AI 辅助学习。
 
-### 核心技术栈
-- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, Zustand, React Query
-- **Visualization**: Three.js (@react-three/fiber) 用于 3D 图谱渲染
-- **Backend**: Node.js, Express, OpenAI SDK
-- **Database**: Supabase (PostgreSQL), Redis (Caching)
+*   **前端 (Frontend)**:
+    *   **核心框架**: React 18, Vite 5, TypeScript.
+    *   **可视化引擎**: Three.js (`@react-three/fiber`, `@react-three/drei`) 用于 3D 渲染, `d3-force-3d` 用于力导向布局。
+    *   **状态管理**: Zustand (`useStore`, `useGraphInteraction`) 实现轻量级状态共享。
+    *   **数据层**: React Query (`@tanstack/react-query`) 管理服务端状态与缓存。
+    *   **UI 组件**: Tailwind CSS, Lucide React, Radix UI (通过 shadcn/ui 模式)。
+    *   **移动与离线 (PWA)**: `vite-plugin-pwa` (Workbox) 实现应用安装、离线静态资源缓存与 API 弱网支持。
 
-### 核心业务闭环
-1.  **知识获取**: 通过 Text-to-Graph 和文档解析（PDF/MD）自动生成知识结构。
-2.  **知识管理**: 3D 空间内的节点编辑与层级可视化。
-3.  **知识内化**: 基于 FSRS 算法的智能闪卡（Flashcards）复习系统。
+*   **后端 (Backend)**:
+    *   **服务框架**: Node.js + Express.js。
+    *   **数据库**: Supabase (PostgreSQL) + `pgvector` (向量检索)。
+    *   **异步任务**: BullMQ + Redis (处理 AI 生成、批量导入等耗时任务)。
+    *   **API 规范**: RESTful API, Swagger 文档。
+
+*   **AI 基础设施 (AI Infrastructure)**:
+    *   **多模型策略**:
+        *   **Deepseek**: 负责核心文本生成、聊天对话 (默认模型)。
+        *   **Aliyun (Qwen)**: 负责推理与复杂逻辑分析。
+        *   **Volcengine (Doubao)**: 负责文本 Embedding 和视觉任务。
+    *   **RAG 流程**: 检索相关节点 -> 构建上下文 -> AI 生成回答。
+
+### 1.2 核心业务逻辑 (Core Business Logic)
+1.  **知识图谱构建 (Graph Construction)**:
+    *   用户输入文本/URL/文件 -> 后端解析 -> AI 提取实体与关系 -> 生成图谱数据 -> 前端 3D 渲染。
+    *   支持增量更新：用户选中节点 -> "Expand" -> AI 生成子节点并自动连接。
+2.  **学习闭环 (Learning Loop)**:
+    *   **内容生成**: 针对节点生成 Markdown 格式的深度学习资料。
+    *   **题目生成**: AI 基于节点内容生成单选/判断/填空题。
+    *   **记忆调度**: 集成 FSRS (Free Spaced Repetition Scheduler) 算法，根据用户答题反馈安排下一次复习时间。
+3.  **任务调度 (Task Orchestration)**:
+    *   前端发起耗时请求 -> 后端推入 Redis 队列 -> Worker 异步处理 -> SSE (Server-Sent Events) 实时推送进度 -> 前端更新 UI。
+
+### 1.3 技术债务与风险 (Technical Debt & Risks)
+通过代码审查，识别出以下关键问题：
+
+1.  **硬编码配置 (Hardcoded Configuration)**:
+    *   `api/services/ai/config.ts` 中包含具体的模型版本号（如 `doubao-seed-1-8-251228`），一旦供应商废弃旧版本将导致服务不可用。
+    *   `src/config/graphConfig.ts` 中的颜色、距离阈值等视觉参数无法动态调整。
+2.  **类型安全隐患 (Type Safety)**:
+    *   后端 Controller (如 `study.ts`) 存在 `any` 类型声明，绕过了 TS 检查。
+    *   部分 AI 响应解析逻辑缺乏 Zod/Schema 运行时校验，容易因模型输出格式变化导致 Crash。
+3.  **错误处理断层 (Error Handling)**:
+    *   部分异步操作（Task Queue）失败后缺乏详细的错误原因记录。
+    *   前端部分组件未包裹 `ErrorBoundary`，单个组件崩溃可能导致白屏。
+4.  **测试覆盖率低 (Low Test Coverage)**:
+    *   缺乏端到端 (E2E) 测试，核心的 "Text -> Graph" 流程依赖手动回归测试。
 
 ---
 
-## 2. 现状诊断：技术债务与风险 (Technical Debt)
+## 2. 功能扩展清单与评估 (Feature Extension List)
 
-在扩展新功能前，建议优先解决以下可能影响系统稳定性的隐患：
+基于 GAP 分析，以下是建议的新增或优化功能模块：
 
-| 优先级 | 模块 | 问题描述 | 风险分析 | 建议方案 |
-| :--- | :--- | :--- | :--- | :--- |
-| **P0** | **任务队列** | 当前使用 `setInterval` 轮询数据库 (`tasks` 表) 处理异步任务。 | **竞态条件风险**：多实例部署时会重复执行任务；无重试机制，AI 服务抖动会导致任务直接失败。 | 引入 **BullMQ (Redis)** 替代轮询；实现任务重试与死信队列。 |
-| **P0** | **认证鉴权** | 前端仅检查 Token 是否存在，缺乏过期校验和刷新机制 (Refresh Token)。 | **用户体验差**：Token 过期后用户在操作中途会被强制登出，可能丢失未保存数据。 | 完善 `axios` 拦截器，处理 401 响应并自动刷新 Token；增加 Session 保持逻辑。 |
-| **P1** | **AI工程化** | Prompt 逻辑硬编码在 Controller/Service 层中。 | **维护困难**：调整 AI 指令需要修改业务代码；无法进行 A/B 测试或版本管理。 | 抽离 Prompt 到独立的配置文件或数据库表；构建 Prompt Manager 模块。 |
-| **P1** | **移动端体验** | 3D 图谱在移动端难以交互（缩放/拖拽）。 | **可用性低**：手机用户无法有效使用复习功能。 | 增加**移动端适配视图**，在小屏上自动切换为列表/卡片模式，屏蔽 3D 编辑功能。 |
+### P0: 核心稳定性与架构重构 (Critical / Immediate)
+*旨在解决技术债务，确保系统长期可维护性。*
+
+| 功能模块 | 优先级 | 预期价值 | 技术可行性 |
+| :--- | :--- | :--- | :--- |
+| **配置中心化 (Config Centralization)** | **High** | 支持热更新模型版本，无需重新部署；解耦代码与配置。 | **高**。需建立 `app_settings` 表及配套 API。 |
+| **统一错误处理 (Unified Error Handling)** | **High** | 避免用户遇到“未知错误”，提供明确的重试引导。 | **高**。重构中间件与前端 Toast 逻辑。 |
+| **API 参数校验 (Schema Validation)** | **Medium** | 提升后端安全性，防止恶意 Payload 攻击。 | **中**。引入 `zod` 或 `joi`。 |
+
+### P1: 用户体验与个性化 (High Priority / Short-term)
+*旨在补齐作为产品的基本功能缺失。*
+
+| 功能模块 | 优先级 | 预期价值 | 技术可行性 |
+| :--- | :--- | :--- | :--- |
+| **用户设置中心 (User Settings Hub)** | **High** | 允许用户切换 AI 模型（成本/速度权衡）、调整 FSRS 记忆参数。 | **高**。前端新增页面 + 后端存储 User Profile。 |
+| **移动端适配优化 (Mobile Optimization)** | **High** | 改善手机端的 3D 操作体验，增加“2D 列表模式”作为降级方案。 | **中**。需优化 Three.js 事件监听。 |
+| **数据回收站 (Trash/Archive)** | **Medium** | 防止误删重要知识节点，提供恢复机制。 | **高**。数据库增加 `deleted_at` 软删除字段。 |
+
+### P2: AI 能力深度拓展 (Medium Priority / Mid-term)
+*旨在建立差异化竞争优势。*
+
+| 功能模块 | 优先级 | 预期价值 | 技术可行性 |
+| :--- | :--- | :--- | :--- |
+| **多模态图谱 (Multi-modal Graph)** | **Medium** | 支持上传图片/PDF 中的图表直接生成图谱节点。 | **中**。需接入视觉大模型 API。 |
+| **智能路径规划 (Learning Path)** | **Medium** | 基于图算法推荐“从 A 到 B”的最佳学习顺序。 | **高**。基于现有图结构开发路径算法。 |
+| **AI 辩论/陪练 (AI Tutor Mode)** | **Low** | 通过对话式交互加深理解，而非单向阅读。 | **中**。基于 RAG 的 Chat 升级。 |
 
 ---
 
-## 3. 功能扩展清单 (Feature Backlog)
+## 3. 可执行迭代路线图 (Executable Roadmap)
 
-基于 SaaS 标准和知识管理场景，识别出以下高价值功能空白：
+### 第一阶段：地基加固 (Foundation) - [预计 1-2 周]
+**目标**: 消除高风险技术债务，建立配置管理机制。
 
-### A. 核心体验增强 (Core Experience)
-*   **语义搜索 (Semantic Search)**: 利用 Supabase `pgvector`，让用户能搜索概念而非仅匹配关键词（如搜“神经网络”能找到“深度学习”节点）。
-*   **数据导出 (Data Export)**: 支持导出为 Markdown (Obsidian/Notion 兼容) 或 OPML/XMind 格式，解除数据锁定担忧。
-*   **富文本/媒体节点**: 目前节点内容偏纯文本，支持 Markdown 渲染、图片嵌入或代码高亮。
+1.  **后端重构**:
+    *   [ ] 创建 `AppSettings` 数据库表，存储 AI 模型配置与系统参数。
+    *   [ ] 重构 `aiService`，从数据库读取模型配置而非硬编码。
+    *   [ ] 引入 `zod` 对核心 API (`/api/ai/*`) 进行 Request/Response 校验。
+2.  **前端优化**:
+    *   [ ] 全局替换 `any` 类型，补充完整的 TypeScript 接口定义。
+    *   [ ] 封装统一的 `useErrorHandler` Hook，处理 API 异常。
 
-### B. 协作与社交 (Collaboration)
-*   **图谱分享**: 生成只读分享链接，允许未注册用户查看 3D 图谱。
-*   **团队协作**: 引入 `Workspace` 概念，允许成员共同编辑同一个图谱（需升级 RLS 策略）。
+### 第二阶段：体验升级 (Experience) - [预计 2-3 周]
+**目标**: 完善用户控制权，优化移动端体验。
 
-### C. 学习模式升级 (Learning Mode)
-*   **学习仪表盘**: 可视化展示记忆曲线、每日学习量和预测遗忘点。
-*   **语音交互**: 利用 Web Speech API 或 OpenAI Whisper，实现语音输入生成节点，或语音朗读卡片。
+1.  **功能开发**:
+    *   [ ] 开发 `Settings` 页面：包含 AI 模型选择、界面主题设置、FSRS 参数调整。
+    *   [ ] 实现“回收站”功能：后端支持软删除，前端增加回收站管理入口。
+2.  **交互优化**:
+    *   [ ] 移动端专属优化：增加屏幕触控手势支持（双指缩放、旋转）。
+    *   [ ] 实现图谱数据的本地快照备份 (Local Backup)。
+
+### 第三阶段：智慧增强 (Intelligence) - [预计 1 个月]
+**目标**: 拓展 AI 输入源与交互深度。
+
+1.  **AI 升级**:
+    *   [ ] 集成视觉模型接口，实现“图片转图谱”功能。
+    *   [ ] 优化推荐算法，基于用户历史学习数据推荐相关节点。
+2.  **深度学习**:
+    *   [x] 上线“智能学习路径”功能，可视化展示推荐的学习顺序。
+
+### 第四阶段：全能增强 (Omni-Enhancement) - [已完成]
+**目标**: 提升离线可用性、协作能力与系统健壮性。
+
+1.  **PWA 与 离线支持**:
+    *   [x] 配置 `vite-plugin-pwa` 实现应用安装 (Manifest)。
+    *   [x] 配置 Workbox 实现静态资源缓存与 API 离线回退 (NetworkFirst)。
+    *   [x] 优化离线状态下的 UI 提示与交互降级 (OfflineIndicator, AI 功能拦截)。
+
+2.  **系统健壮性 (Robustness)**:
+    *   [x] 全面集成测试 (Integration Testing): 核心工具库单元测试 (Vitest)。
+    *   [x] 性能优化 (Lighthouse Score > 90): 路由懒加载、构建产物拆分 (Manual Chunks)。
 
 ---
-
-## 4. 产品迭代路线图 (Roadmap)
-
-建议分三个阶段推进，**P0 阶段侧重稳定性，P1 阶段侧重核心价值，P2 阶段侧重生态扩展**。
-
-### 阶段一：稳固基础 (Stability & Foundation) - P0
-> 目标：修复技术债务，确保系统在高并发和长链路任务下的可靠性。
-
-1.  **[后端] 重构异步任务系统**
-    - [ ] 部署 Redis 服务。
-    - [ ] 将 `TaskProcessor` 迁移至 BullMQ。
-    - [ ] 实现任务进度实时推送 (WebSocket/SSE) 替代前端轮询。
-2.  **[前端] 完善认证与错误处理**
-    - [ ] 实现 Token 无感刷新机制。
-    - [ ] 全局错误边界 (Error Boundary) 优化，避免 AI 失败导致白屏。
-3.  **[功能] 通用数据导出**
-    - [ ] 实现 Markdown 格式导出（兼容 Obsidian）。
-    - [ ] 实现 JSON 格式全量备份导出。
-
-### 阶段二：智能增强 (Intelligence & Search) - P1
-> 目标：充分利用向量数据库能力，提升知识检索和连接效率。
-
-1.  **[数据库] 启用 PgVector**
-    - [ ] 在 `nodes` 表增加 `embedding` 字段。
-    - [ ] 集成 Embeddings API，实现节点创建/更新时的自动向量化。
-2.  **[功能] 语义搜索与推荐**
-    - [ ] 开发“相关节点推荐”功能（基于向量距离）。
-    - [ ] 升级全局搜索栏，支持自然语言提问（RAG 基础版）。
-3.  **[前端] 移动端适配**
-    - [ ] 开发响应式布局断点检测。
-    - [ ] 实现移动端专用“复习模式”（仅展示 Flashcards 和列表）。
-
-### 阶段三：协作与生态 (Collaboration & Ecosystem) - P2
-> 目标：从单人工具演进为团队知识库。
-
-1.  **[后端] 多人协作架构**
-    - [ ] 修改数据库 Schema，引入 `permissions` 或 `team_members` 表。
-    - [ ] 更新 RLS 策略，支持基于角色的访问控制 (RBAC)。
-2.  **[功能] 公开分享与发布**
-    - [ ] 实现图谱的“发布”状态。
-    - [ ] 生成公共访问页（无需登录即可查看 3D 视图）。
+*本文档将随项目迭代动态更新。*

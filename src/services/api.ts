@@ -139,6 +139,7 @@ export const api = {
   },
   graphs: {
     list: () => request('/graphs'),
+    listTrash: () => request('/graphs/trash'),
     create: (data: any) => request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
     get: (id: string) => request(`/graphs/${id}`),
     getNodes: (id: string) => request(`/graphs/${id}/nodes`),
@@ -146,6 +147,9 @@ export const api = {
     update: (id: string, data: any) => request(`/graphs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     togglePublic: (id: string, is_public: boolean) => request(`/graphs/${id}/share`, { method: 'PUT', body: JSON.stringify({ is_public }) }),
     delete: (id: string) => request(`/graphs/${id}`, { method: 'DELETE' }),
+    restore: (id: string) => request(`/graphs/${id}/restore`, { method: 'POST' }),
+    permanentDelete: (id: string) => request(`/graphs/${id}/permanent`, { method: 'DELETE' }),
+    getLearningPath: (id: string) => request(`/graphs/${id}/learning-path`),
   },
   nodes: {
     create: (data: any) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),
@@ -273,6 +277,7 @@ export const api = {
         body: formData
       }).then(handleResponse);
     },
+    imageToGraph: (formData: FormData) => request('/ai/image-to-graph', { method: 'POST', body: formData }),
     urlToText: (url: string) => request('/ai/url-to-text', { method: 'POST', body: JSON.stringify({ url }) }),
     recommendConnections: (data: { graph_id: string; node_title: string; node_content?: string }) => 
       request('/ai/recommend-connections', { method: 'POST', body: JSON.stringify(data) }),

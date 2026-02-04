@@ -34,6 +34,10 @@ export const updateGraphSchema = z.object({
   settings: z.record(z.any()).optional(),
 });
 
+export const shareGraphSchema = z.object({
+  is_public: z.boolean({ required_error: '必须指定是否公开' }),
+});
+
 // --- Node Schemas ---
 export const createNodeSchema = z.object({
   id: z.string().uuid().optional(),
@@ -49,6 +53,14 @@ export const createNodeSchema = z.object({
 });
 
 export const updateNodeSchema = createNodeSchema.partial().omit({ graph_id: true });
+
+export const batchDeleteNodesSchema = z.object({
+  node_ids: z.array(z.string().uuid()).min(1, '请提供有效的节点ID列表'),
+});
+
+export const relatedNodesQuerySchema = z.object({
+  limit: z.string().optional().transform(val => (val ? parseInt(val, 10) : 5)),
+});
 
 // --- Edge Schemas ---
 export const createEdgeSchema = z.object({

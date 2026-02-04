@@ -4,7 +4,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
@@ -34,8 +35,22 @@ export const LearningMode = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingCards, setIsGeneratingCards] = useState(false);
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(window.innerWidth >= 1280);
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // On mobile, if no nodeId is selected, we should show the outline
+  useEffect(() => {
+    if (isMobile && !nodeId) {
+      setIsOutlineOpen(true);
+    }
+  }, [isMobile, nodeId]);
   
   // Fetch Graph Data for Outline
   const { data: graphData } = useGraphData(graphId || '');
@@ -319,17 +334,35 @@ export const LearningMode = () => {
   return (
     <div className={`h-screen flex flex-col ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'}`}>
       {/* Header */}
-      <header className={`h-16 border-b flex items-center justify-between px-4 lg:px-6 flex-shrink-0 ${
+      <header className={`${isMobile ? 'h-14' : 'h-16'} border-b flex items-center justify-between px-3 lg:px-6 flex-shrink-0 ${
         isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200 shadow-sm'
       }`}>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 lg:space-x-4">
           <button 
-            onClick={() => window.history.back()}
-            className={`p-2 rounded-lg transition-colors ${
+            onClick={() => {
+              if (isMobile && nodeId) {
+                // Clear nodeId to go back to outline
+                navigate(`/learning?graph_id=${graphId}`);
+              } else {
+                window.history.back();
+              }
+            }}
+            className={`p-1.5 lg:p-2 rounded-lg transition-colors ${
               isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-600'
             }`}
+            title="返回上一页"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={isMobile ? 18 : 20} />
+          </button>
+
+          <button 
+            onClick={() => navigate('/')}
+            className={`p-1.5 lg:p-2 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-600'
+            }`}
+            title="返回首页"
+          >
+            <Home size={isMobile ? 18 : 20} />
           </button>
           
           <button
@@ -342,57 +375,61 @@ export const LearningMode = () => {
             {isOutlineOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
           </button>
 
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-              <BookOpen size={20} />
+          <div className="flex items-center space-x-2">
+            <div className={`p-1 rounded-lg ${isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+              <BookOpen size={isMobile ? 16 : 20} />
             </div>
-            <div>
-              <h1 className="font-bold text-lg">闯关学习模式</h1>
-              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                {nodeTitle || (graphData ? '请选择课程章节' : '加载中...')}
-              </p>
+            <div className={isMobile && nodeId ? 'hidden sm:block' : 'block'}>
+              <h1 className="font-bold text-sm lg:text-lg whitespace-nowrap">闯关学习</h1>
+              {!isMobile && (
+                <p className={`text-[10px] lg:text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'} truncate max-w-[150px]`}>
+                  {nodeTitle || (graphData ? '请选择课程章节' : '加载中...')}
+                </p>
+              )}
             </div>
           </div>
 
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`p-2 rounded-lg transition-colors xl:hidden ${
+            className={`p-1.5 lg:p-2 rounded-lg transition-colors xl:hidden ${
               isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-600'
             }`}
             title={isChatOpen ? "隐藏 AI 助手" : "显示 AI 助手"}
           >
-            <MessageSquare size={20} className={isChatOpen ? 'text-indigo-500' : ''} />
+            <MessageSquare size={isMobile ? 18 : 20} className={isChatOpen ? 'text-indigo-500' : ''} />
           </button>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 lg:space-x-3">
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-1.5 lg:p-2 rounded-lg transition-colors ${
               isDark ? 'hover:bg-slate-800 text-amber-400' : 'hover:bg-gray-100 text-indigo-600'
             }`}
             title={isDark ? "切换到浅色模式" : "切换到深色模式"}
           >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            {isDark ? <Sun size={isMobile ? 18 : 20} /> : <Moon size={isMobile ? 18 : 20} />}
           </button>
 
-          <button
-            onClick={() => navigate(`/graph/${graphId}`)}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
-              isDark 
-                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            title="进入 3D 思维导图"
-          >
-            <Network size={18} />
-            <span className="hidden sm:inline">思维导图</span>
-          </button>
+          {!isMobile && (
+            <button
+              onClick={() => navigate(`/graph/${graphId}`)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+                isDark 
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title="进入 3D 思维导图"
+            >
+              <Network size={18} />
+              <span className="hidden sm:inline">思维导图</span>
+            </button>
+          )}
 
           {nodeId && (
             <button
               onClick={() => setIsGenModalOpen(true)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+              className={`flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-full font-medium transition-all ${
                 isDark 
                   ? 'bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30' 
                   : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
@@ -400,13 +437,13 @@ export const LearningMode = () => {
               title="配置并生成题目"
             >
               <BrainCircuit size={18} />
-              <span className="hidden sm:inline">生成题目</span>
+              <span className="hidden md:inline">生成题目</span>
             </button>
           )}
 
           {nodeId && (
-            <div className="flex flex-col items-end space-y-1">
-              {isGeneratingCards && (
+            <div className="flex flex-col items-end">
+              {isGeneratingCards && !isMobile && (
                 <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
                   <Sparkles size={10} /> 正在生成挑战题...
                 </span>
@@ -414,12 +451,13 @@ export const LearningMode = () => {
               <button
                 onClick={handleStartChallenge}
                 disabled={isGeneratingCards}
-                className={`flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
+                className={`flex items-center space-x-2 px-4 lg:px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
                   isGeneratingCards ? 'opacity-70 cursor-not-allowed' : ''
                 }`}
               >
                 <GraduationCap size={18} />
-                <span>完成学习，开始挑战</span>
+                <span className="hidden sm:inline">完成学习，开始挑战</span>
+                <span className="sm:hidden">开始挑战</span>
               </button>
             </div>
           )}
@@ -431,9 +469,11 @@ export const LearningMode = () => {
         
         {/* Outline Sidebar */}
         <div className={`${
-          isOutlineOpen ? 'w-80' : 'w-0'
+          isMobile 
+            ? (!nodeId ? 'w-full' : 'w-0')
+            : (isOutlineOpen ? 'w-80' : 'w-0')
         } transition-all duration-300 ease-in-out border-r dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 relative`}>
-           <div className="absolute inset-0 w-80">
+           <div className={`absolute inset-0 ${isMobile ? 'w-full' : 'w-80'}`}>
              {graphData ? (
                <GraphOutline 
                  nodes={graphData.nodes}
@@ -453,171 +493,196 @@ export const LearningMode = () => {
 
         {/* Content Area */}
         {nodeId ? (
-          <>
-            {/* Left: Article Reader */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12 border-r dark:border-slate-800 relative bg-white dark:bg-slate-900">
-              {isGenerating ? (
-                <div className="flex flex-col items-center justify-center h-full space-y-6 text-center">
-                  <div className="relative">
-                    <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Sparkles size={24} className="text-indigo-600 animate-pulse" />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>AI 正在为您编写教材...</h3>
-                    <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>正在生成关于 "{nodeTitle}" 的深度学习内容</p>
-                  </div>
-                </div>
-              ) : (
-                <div className={`max-w-3xl mx-auto prose prose-lg dark:prose-invert prose-indigo ${isDark ? 'text-slate-50' : 'text-gray-900'}`}>
-                   <ReactMarkdown 
-                    remarkPlugins={[remarkGfm, remarkMath]} 
-                    rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
-                  >
-                    {preprocessMarkdown(articleContent)}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
-
-            {/* Right: AI Tutor */}
-            <div className={`
-              ${isChatOpen ? 'w-full lg:w-96 fixed lg:relative inset-0 lg:inset-auto z-40 lg:z-0 flex' : 'hidden'} 
-              flex-col border-l dark:border-slate-800 ${isDark ? 'bg-slate-900 lg:bg-slate-800/30' : 'bg-white'} 
-              transition-all duration-300
-            `}>
-              <div className={`p-4 border-b ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-100 bg-gray-50'} flex items-center justify-between`}>
-                <div className="flex items-center space-x-2">
-                  <Bot size={18} className="text-indigo-500" />
-                  <span className={`font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>AI 导师</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">在线</span>
-                  <button 
-                    onClick={() => setIsChatOpen(false)}
-                    className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 lg:hidden"
-                  >
-                    <ArrowLeft size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-transparent">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex items-start space-x-2 ${
-                      msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                    }`}
-                  >
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      msg.role === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-indigo-100 text-indigo-600'
-                    }`}>
-                      {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
-                    </div>
-                    <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-blue-600 text-white rounded-tr-none' 
-                        : (isDark ? 'bg-slate-700 text-slate-50' : 'bg-white border border-gray-100 text-gray-800') + ' rounded-tl-none'
-                    }`}>
-                      <div className={`leading-relaxed ${msg.role === 'assistant' ? 'prose prose-sm dark:prose-invert max-w-none text-inherit' : 'whitespace-pre-wrap text-inherit'}`}>
-                        <div className={isDark && msg.role === 'assistant' ? 'text-slate-50' : ''}>
-                          {msg.role === 'assistant' ? (
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm, remarkMath]} 
-                              rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
-                            >
-                              {preprocessMarkdown(msg.content)}
-                            </ReactMarkdown>
-                          ) : (
-                            msg.content
-                          )}
-                        </div>
-                        {msg.isStreaming && (
-                          <span className="inline-block w-1.5 h-4 ml-1 bg-green-500 animate-pulse align-middle" />
-                        )}
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex-1 flex overflow-hidden">
+              {/* Left: Article Reader */}
+              <div className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? 'p-4' : 'p-8 lg:p-12'} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}>
+                {isGenerating ? (
+                  <div className="flex flex-col items-center justify-center h-full space-y-6 text-center">
+                    <div className="relative">
+                      <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Sparkles size={24} className="text-indigo-600 animate-pulse" />
                       </div>
                     </div>
+                    <div>
+                      <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>AI 正在为您编写教材...</h3>
+                      <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>正在生成关于 "{nodeTitle}" 的深度学习内容</p>
+                    </div>
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
+                ) : (
+                  <div className={`max-w-3xl mx-auto prose ${isMobile ? 'prose-sm' : 'prose-lg'} dark:prose-invert prose-indigo ${isDark ? 'text-slate-50' : 'text-gray-900'}`}>
+                    <div className={isMobile ? 'leading-relaxed space-y-4' : ''}>
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm, remarkMath]} 
+                        rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                      >
+                        {preprocessMarkdown(articleContent)}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <form onSubmit={handleChatSubmit} className={`p-4 border-t ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-100 bg-white'}`}>
-                <div className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-700 rounded-xl p-1 pr-2">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={isListening ? "正在聆听..." : "有不懂的地方？问问导师..."}
-                    className={`flex-1 p-2 bg-transparent border-none focus:ring-0 outline-none text-sm ${isDark ? 'text-white placeholder-slate-400' : 'text-gray-900 placeholder-gray-400'}`}
-                    disabled={isChatLoading || isListening}
-                  />
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    className={`p-2 rounded-lg transition-colors relative ${
-                      isListening
-                        ? 'bg-red-50 text-red-500 animate-pulse'
-                        : (isDark ? 'hover:bg-slate-600 text-slate-400' : 'hover:bg-gray-200 text-gray-500')
-                    }`}
-                    title={isListening ? "点击停止录音" : "点击开始语音输入"}
-                  >
-                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                    {isListening && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+              {/* Right: AI Tutor */}
+              <AnimatePresence>
+                {isChatOpen && (
+                  <>
+                    {/* Mobile Backdrop */}
+                    {isMobile && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsChatOpen(false)}
+                        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40"
+                      />
                     )}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!input.trim() || isChatLoading}
-                    className={`p-2 rounded-lg transition-colors ${
-                      input.trim() 
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md' 
-                        : 'bg-gray-200 text-gray-400 dark:bg-slate-600 dark:text-slate-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {isChatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                  </button>
-                </div>
-              </form>
+                    <motion.div
+                      initial={isMobile ? { x: '100%' } : { width: 0, opacity: 0 }}
+                      animate={isMobile ? { x: 0 } : { width: 384, opacity: 1 }}
+                      exit={isMobile ? { x: '100%' } : { width: 0, opacity: 0 }}
+                      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                      className={`
+                        ${isMobile ? 'fixed inset-y-0 right-0 z-50 w-[85%] max-w-sm shadow-2xl' : 'relative h-full border-l'} 
+                        flex flex-col dark:border-slate-800 ${isDark ? 'bg-slate-900' : 'bg-white'}
+                      `}
+                    >
+                      {/* Chat Header */}
+                      <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <Bot size={18} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-sm">AI 助教</h3>
+                            <div className="flex items-center text-[10px] text-green-500">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
+                              在线
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button 
+                            onClick={() => setMessages([{ id: 'welcome', role: 'assistant', content: '你好！我是你的专属学习导师。' }])}
+                            className={`p-1.5 rounded-md transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                            title="清空对话"
+                          >
+                            <RefreshCw size={14} />
+                          </button>
+                          <button 
+                            onClick={() => setIsChatOpen(false)}
+                            className={`p-1.5 rounded-md transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Chat Messages */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                        {messages.map((msg) => (
+                          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`flex max-w-[90%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-2`}>
+                              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                                msg.role === 'user' 
+                                  ? 'bg-indigo-600 text-white' 
+                                  : (isDark ? 'bg-slate-800 text-indigo-400 border border-slate-700' : 'bg-white text-indigo-600 border border-gray-100 shadow-sm')
+                              }`}>
+                                {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
+                              </div>
+                              <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
+                                msg.role === 'user'
+                                  ? 'bg-indigo-600 text-white rounded-tr-none'
+                                  : (isDark ? 'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700' : 'bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100')
+                              }`}>
+                                {msg.isStreaming && !msg.content ? (
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                  </div>
+                                ) : (
+                                  <div className="prose prose-sm dark:prose-invert prose-indigo max-w-none">
+                                    <ReactMarkdown 
+                                      remarkPlugins={[remarkGfm, remarkMath]}
+                                      rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                                    >
+                                      {msg.role === 'assistant' ? preprocessMarkdown(msg.content) : msg.content}
+                                    </ReactMarkdown>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </div>
+
+                      {/* Chat Input */}
+                      <div className="p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                        <form onSubmit={handleChatSubmit} className="relative">
+                          <textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleChatSubmit(e);
+                              }
+                            }}
+                            placeholder="有问题尽管问我..."
+                            className={`w-full p-3 pr-20 pl-4 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all ${
+                              isDark ? 'bg-slate-800 text-white placeholder-slate-500 border-slate-700' : 'bg-white text-gray-900 placeholder-gray-400 border-gray-200'
+                            } border`}
+                            rows={2}
+                          />
+                          <div className="absolute right-2 bottom-2 flex items-center space-x-1">
+                            <button
+                              type="button"
+                              onClick={toggleListening}
+                              className={`p-2 rounded-lg transition-all ${
+                                isListening 
+                                  ? 'bg-red-500 text-white animate-pulse' 
+                                  : (isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-indigo-400' : 'text-gray-400 hover:bg-gray-100 hover:text-indigo-600')
+                              }`}
+                              title={isListening ? "停止录音" : "语音提问"}
+                            >
+                              {isListening ? <Mic size={18} /> : <MicOff size={18} />}
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={!input.trim() || isChatLoading}
+                              className={`p-2 rounded-lg transition-all ${
+                                input.trim() && !isChatLoading
+                                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
+                              }`}
+                            >
+                              {isChatLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                            </button>
+                          </div>
+                        </form>
+                        <p className={`text-[10px] mt-2 text-center ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          由 AI 导师提供支持，内容仅供参考
+                        </p>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
-          </>
+          </div>
         ) : (
-          // Empty State / Welcome Screen
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900 text-center p-8">
-            <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6">
-              <BookOpen size={48} className="text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              开始您的学习之旅
-            </h2>
-            <p className="text-gray-500 dark:text-slate-400 max-w-md mb-8">
-              请从左侧大纲中选择一个章节开始学习。每个章节都包含详细的 AI 生成教材和专属导师辅导。
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl text-left">
-              <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-4 text-blue-600">
-                  <List size={20} />
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">结构化大纲</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400">清晰的知识树结构，帮助您系统地掌握知识体系。</p>
+          <div className={`${isMobile ? 'hidden' : 'flex-1'} flex items-center justify-center text-slate-400 p-8 text-center`}>
+            <div className="max-w-md">
+              <div className={`w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center ${
+                isDark ? 'bg-slate-800 text-slate-700' : 'bg-gray-100 text-gray-300'
+              }`}>
+                <BookOpen size={40} />
               </div>
-              <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4 text-purple-600">
-                  <Sparkles size={20} />
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI 智能教材</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400">根据节点内容自动生成深度学习资料，图文并茂。</p>
-              </div>
-              <div className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-4 text-green-600">
-                  <Bot size={20} />
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">专属导师</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400">随时提问，AI 导师结合当前教材为您答疑解惑。</p>
-              </div>
+              <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>开始您的学习之旅</h2>
+              <p className="mb-8">从左侧大纲中选择一个知识点，AI 将为您生成专属的学习教材和练习题。</p>
             </div>
           </div>
         )}

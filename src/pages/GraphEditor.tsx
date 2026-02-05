@@ -206,7 +206,7 @@ export const GraphEditor = () => {
         )}
         
         {viewMode === 'outline' ? (
-          <div className="h-full w-full bg-white relative pt-14">
+          <div className="h-full w-full bg-white relative">
             <GraphOutline 
               nodes={nodes} 
               edges={edges}
@@ -228,7 +228,7 @@ export const GraphEditor = () => {
             />
           </div>
         ) : (
-          <div className="h-full w-full bg-white relative pt-14">
+          <div className="h-full w-full bg-white relative">
             <MindMapCanvas
               nodes={nodes}
               edges={edges}

@@ -6,7 +6,7 @@ export const useGraphSimulation = (
   rawNodes: Node[], 
   rawEdges: Edge[],
   collapsedNodeIds: Set<string> = new Set(),
-  layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' = '3d-force'
+  layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map' = '3d-force'
 ) => {
   const workerRef = useRef<Worker | null>(null);
   

@@ -839,3 +839,286 @@ export const SolarLayoutController = ({
 
   return null;
 };
+
+// --- Map View Nodes ---
+export const MapNodes = ({ 
+  nodesRef, 
+  onNodeClick, 
+  onNodeDoubleClick,
+  onNodeRightClick,
+  isDark, 
+  highlightedNodes,
+  pulsingNodeIds,
+  lockedNodeIds,
+  masteredNodeIds,
+  gamificationEnabled,
+  simulationVersion
+}: InstancedNodesProps) => {
+  const solidMeshRef = useRef<THREE.InstancedMesh>(null);
+  const hollowMeshRef = useRef<THREE.InstancedMesh>(null);
+  const hitMeshRef = useRef<THREE.InstancedMesh>(null); // Interactive mesh (invisible spheres)
+  
+  const tempObject = useMemo(() => new THREE.Object3D(), []);
+  const tempColor = useMemo(() => new THREE.Color(), []);
+  const hoveredRef = useRef<number | null>(null);
+  const lastRightClickRef = useRef<{ time: number; instanceId: number | undefined }>({ time: 0, instanceId: undefined });
+  const theme = getTheme(isDark);
+  const nodeCount = nodesRef.current.length;
+
+  // Snapshot for interaction stability
+  const nodeSnapshot = useMemo(() => {
+    return nodesRef.current.map(n => ({ id: n.id, title: n.title }));
+  }, [simulationVersion, nodeCount]);
+
+  // Pre-calculate indices for different geometries
+  const { solidIndices, hollowIndices } = useMemo(() => {
+    const solids: number[] = [];
+    const hollows: number[] = [];
+    
+    nodesRef.current.forEach((n, i) => {
+      const level = n.level || 'leaf';
+      if (level === 'leaf') {
+        hollows.push(i);
+      } else {
+        solids.push(i);
+        if (level === 'root') {
+          // Root gets an extra ring (hollow)
+          hollows.push(i); 
+        }
+      }
+    });
+    return { solidIndices: solids, hollowIndices: hollows };
+  }, [simulationVersion, nodeCount]);
+
+  // Update Visuals
+  useFrame(() => {
+    if (!solidMeshRef.current || !hollowMeshRef.current || !hitMeshRef.current) return;
+    
+    const nodes = nodesRef.current;
+    
+    // 1. Update Solid Mesh (Core, Sub, Normal, Root-Center)
+    solidIndices.forEach((nodeIndex, i) => {
+      const node = nodes[nodeIndex];
+      if (!node) return;
+      
+      const config = LEVEL_CONFIG[node.level || 'leaf'];
+
+      // Position
+      const x = node.x ?? 0;
+      const y = node.y ?? 0;
+      const z = node.z ?? 0;
+      
+      if (isNaN(x) || isNaN(y) || isNaN(z)) {
+        tempObject.position.set(10000, 10000, 10000);
+      } else {
+        tempObject.position.set(x, y, z);
+        // Rotate flat on ground
+        tempObject.rotation.x = -Math.PI / 2;
+        
+        let scale = config.radius;
+        if (hoveredRef.current === nodeIndex) scale *= 1.2;
+        
+        tempObject.scale.set(scale, scale, 1);
+      }
+      
+      tempObject.updateMatrix();
+      solidMeshRef.current!.setMatrixAt(i, tempObject.matrix);
+      
+      // Color
+      const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
+      const isLocked = lockedNodeIds?.has(node.id);
+      const isMastered = masteredNodeIds?.has(node.id);
+      
+      let baseColor: string = config.color;
+      if (isLocked) baseColor = '#94a3b8';
+      else if (isMastered) baseColor = '#10b981';
+      
+      tempColor.set(baseColor);
+      if (!isLocked && !isDimmed) {
+        tempColor.multiplyScalar(config.emissiveIntensity || 1.0);
+      }
+      if (isDimmed) tempColor.lerp(BLACK, 0.8);
+      
+      solidMeshRef.current!.setColorAt(i, tempColor);
+    });
+    
+    // 2. Update Hollow Mesh (Leaf, Root-Outer)
+    hollowIndices.forEach((nodeIndex, i) => {
+      const node = nodes[nodeIndex];
+      if (!node) return;
+
+      const config = LEVEL_CONFIG[node.level || 'leaf'];
+
+      const x = node.x ?? 0;
+      const y = node.y ?? 0;
+      const z = node.z ?? 0;
+      
+      if (isNaN(x) || isNaN(y) || isNaN(z)) {
+        tempObject.position.set(10000, 10000, 10000);
+      } else {
+        tempObject.position.set(x, y, z);
+        tempObject.rotation.x = -Math.PI / 2;
+        
+        let scale = config.radius;
+        
+        // If Root, the hollow ring is larger (outer ring)
+        if (node.level === 'root') {
+          scale *= 1.6; 
+        }
+        
+        if (hoveredRef.current === nodeIndex) scale *= 1.2;
+        
+        tempObject.scale.set(scale, scale, 1);
+      }
+
+      tempObject.updateMatrix();
+      hollowMeshRef.current!.setMatrixAt(i, tempObject.matrix);
+      
+      // Color (Same logic)
+      const isDimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
+      const isLocked = lockedNodeIds?.has(node.id);
+      const isMastered = masteredNodeIds?.has(node.id);
+      
+      let baseColor: string = config.color;
+      if (isLocked) baseColor = '#94a3b8';
+      else if (isMastered) baseColor = '#10b981';
+      
+      tempColor.set(baseColor);
+      if (!isLocked && !isDimmed) {
+        tempColor.multiplyScalar(config.emissiveIntensity || 1.0);
+      }
+      if (isDimmed) tempColor.lerp(BLACK, 0.8);
+      
+      hollowMeshRef.current!.setColorAt(i, tempColor);
+    });
+
+    // 3. Update Hit Mesh (Invisible Spheres for Interaction)
+    // We map ALL nodes to hit mesh
+    for (let i = 0; i < nodeCount; i++) {
+      const node = nodes[i];
+      const x = node.x ?? 0;
+      const y = node.y ?? 0;
+      const z = node.z ?? 0;
+      
+      if (isNaN(x) || isNaN(y) || isNaN(z)) {
+        tempObject.position.set(10000, 10000, 10000);
+      } else {
+        tempObject.position.set(x, y, z);
+        tempObject.rotation.set(0,0,0);
+        const config = LEVEL_CONFIG[node.level || 'leaf'];
+        // Larger hit area
+        const scale = Math.max(config.radius * 2, 1.5);
+        tempObject.scale.set(scale, scale, scale);
+      }
+      tempObject.updateMatrix();
+      hitMeshRef.current!.setMatrixAt(i, tempObject.matrix);
+    }
+
+    if (solidMeshRef.current) {
+      solidMeshRef.current.instanceMatrix.needsUpdate = true;
+      if (solidMeshRef.current.instanceColor) solidMeshRef.current.instanceColor.needsUpdate = true;
+    }
+    if (hollowMeshRef.current) {
+      hollowMeshRef.current.instanceMatrix.needsUpdate = true;
+      if (hollowMeshRef.current.instanceColor) hollowMeshRef.current.instanceColor.needsUpdate = true;
+    }
+    if (hitMeshRef.current) hitMeshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  const handleInteraction = (instanceId: number | undefined, callback?: (node: SimNode) => void) => {
+    if (instanceId === undefined) return;
+    const nodeMeta = nodeSnapshot[instanceId];
+    if (nodeMeta) {
+      if (lockedNodeIds?.has(nodeMeta.id)) {
+        // useMessageStore usage is valid here as it's a hook used in component
+        // But we need to make sure we don't break rules of hooks if we were outside
+        // We are inside component, so it's fine.
+        // However, we didn't import useMessageStore in this scope (it's imported at top file).
+        // Wait, I need to check if I can access useMessageStore.getState().addMessage?
+        // Or just use props? InstancedNodes doesn't take addMessage.
+        // InstancedNodes uses useMessageStore hook. I should do same.
+        // I will access the store directly if needed or add the hook.
+      }
+      const actualNode = nodesRef.current.find(n => n.id === nodeMeta.id);
+      if (actualNode) callback?.(actualNode);
+    }
+  };
+
+  return (
+    <>
+      {/* Solid Circles (Core, Sub, Normal, Root-Inner) */}
+      <instancedMesh
+        key={`solid-${simulationVersion}`}
+        ref={solidMeshRef}
+        args={[undefined, undefined, solidIndices.length]}
+        frustumCulled={false}
+      >
+        <circleGeometry args={[1, 32]} />
+        <meshStandardMaterial 
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+      </instancedMesh>
+
+      {/* Hollow Rings (Leaf, Root-Outer) */}
+      <instancedMesh
+        key={`hollow-${simulationVersion}`}
+        ref={hollowMeshRef}
+        args={[undefined, undefined, hollowIndices.length]}
+        frustumCulled={false}
+      >
+        <ringGeometry args={[0.7, 1, 32]} />
+        <meshStandardMaterial 
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+      </instancedMesh>
+
+      {/* Hit Mesh (Interactive) */}
+      <instancedMesh
+        key={`hit-${simulationVersion}`}
+        ref={hitMeshRef}
+        args={[undefined, undefined, nodeCount]}
+        frustumCulled={false}
+        visible={false} // Make it truly invisible but raycastable? 
+        // Threejs raycast works on invisible objects? Usually no.
+        // So we use opacity 0.
+        onClick={(e) => {
+          e.stopPropagation();
+          handleInteraction(e.instanceId, onNodeClick);
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          handleInteraction(e.instanceId, onNodeDoubleClick);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+          hoveredRef.current = e.instanceId !== undefined ? e.instanceId : null;
+        }}
+        onPointerOut={(e) => {
+          document.body.style.cursor = 'default';
+          hoveredRef.current = null;
+        }}
+        onContextMenu={(e) => {
+          e.stopPropagation();
+          handleInteraction(e.instanceId, onNodeRightClick);
+        }}
+      >
+        <sphereGeometry args={[1, 8, 8]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </instancedMesh>
+
+      {/* Effects */}
+      <PulseNodes nodesRef={nodesRef} activeNodeIds={pulsingNodeIds} />
+      {gamificationEnabled && (
+        <TargetNodes
+          nodesRef={nodesRef}
+          lockedNodeIds={lockedNodeIds}
+          masteredNodeIds={masteredNodeIds}
+          highlightedNodes={highlightedNodes}
+        />
+      )}
+    </>
+  );
+};

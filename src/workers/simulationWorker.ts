@@ -6,7 +6,7 @@ import { LEVEL_CONFIG, RADIAL_DISTANCES, SimNode, SimLink } from '../config/grap
 let simulation: any = null;
 let nodes: SimNode[] = [];
 let links: SimLink[] = [];
-let currentLayoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' = '3d-force';
+let currentLayoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map' = '3d-force';
 
 self.onmessage = (event) => {
   const { type, payload } = event.data;
@@ -25,7 +25,7 @@ self.onmessage = (event) => {
   }
 };
 
-function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' = '3d-force') {
+function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map' = '3d-force') {
   // Preserve existing positions if IDs match to prevent jumpiness on update
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const isModeChanged = currentLayoutMode !== layoutMode;
@@ -137,6 +137,28 @@ function initSimulation(newNodes: SimNode[], newLinks: SimLink[], layoutMode: '3
       .force('charge', forceManyBody().strength((d: any) => {
         return d.level === 'root' ? -50 : -30; // Slight repulsion for root to keep space
       }));
+
+  } else if (layoutMode === '2d-map') {
+    // 2D Map Mode: Flat layout on XY plane (Z=0)
+    // Stronger repulsion to separate nodes clearly
+    simulation
+      .force('center', forceCenter().strength(0.5))
+      .force('charge', forceManyBody()
+        .strength((d: any) => {
+          const level = d.level || 'leaf';
+          const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.leaf;
+          // Stronger repulsion for map view
+          return config.chargeStrength * 2.0;
+        })
+        .distanceMax(300)
+      )
+      .force('collide', forceCollide().radius((d: any) => {
+         const level = d.level || 'leaf';
+         const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.leaf;
+         // Ensure no overlap
+         return config.radius * 3.0;
+      }).iterations(2))
+      .force('y', forceY(0).strength(5)); // Flatten to Y=0 (Floor/Desktop)
 
   } else {
     // Default 3D Force (Quasi-2D)

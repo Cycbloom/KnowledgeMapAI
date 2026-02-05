@@ -128,7 +128,7 @@ export const GraphEditor = () => {
   // const [graphTitle, setGraphTitle] = useState(''); // Use graphMeta.title
 
   // Layout & Clustering State
-  const [layoutMode, setLayoutMode] = useState<'3d-force' | '2d-tree' | '3d-sphere' | 'solar'>('3d-force');
+  const [layoutMode, setLayoutMode] = useState<'3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map'>('3d-force');
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
 
   // Auto-center graph when layout mode changes
@@ -439,12 +439,13 @@ export const GraphEditor = () => {
     });
   };
 
-  const handleLayoutChange = (mode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar') => {
+  const handleLayoutChange = (mode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map') => {
     setLayoutMode(mode);
     // Reset camera or other view settings if needed
     const modeName = mode === '2d-tree' ? '2D 树状图' : 
                     mode === '3d-sphere' ? '3D 球形布局' : 
-                    mode === 'solar' ? '星系 radial 布局' : '3D 力导向';
+                    mode === 'solar' ? '星系 radial 布局' : 
+                    mode === '2d-map' ? '2D 地图模式' : '3D 力导向';
     addMessage({ type: 'success', content: `切换至 ${modeName}` });
     // Ensure simulation version updates to reset interaction layers
     if (graphRef.current) {
@@ -1250,8 +1251,8 @@ export const GraphEditor = () => {
                    <button 
                      onClick={() => {
                         // Cycle layout modes
-                        const modes: ('3d-force' | '2d-tree' | '3d-sphere' | 'solar')[] = ['3d-force', '2d-tree', '3d-sphere', 'solar'];
-                        const nextIndex = (modes.indexOf(layoutMode) + 1) % modes.length;
+                        const modes: ('3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map')[] = ['3d-force', '2d-tree', '2d-map', '3d-sphere', 'solar'];
+                        const nextIndex = (modes.indexOf(layoutMode as any) + 1) % modes.length;
                         handleLayoutChange(modes[nextIndex]);
                      }}
                      className="p-3 bg-white rounded-full shadow-lg text-blue-600 border border-blue-100 active:scale-95"

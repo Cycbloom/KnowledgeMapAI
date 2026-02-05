@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { usePerformanceStore } from '../../store/usePerformanceStore';
 import { SimNode, SimLink, THEME_CONFIG } from '../../config/graphConfig';
 import { Node } from '../../types/index';
-import { InstancedNodes, LinkLines, NodeLabels, SolarLayoutController, OrbitLines } from './GraphRenderables';
+import { InstancedNodes, LinkLines, NodeLabels, SolarLayoutController, OrbitLines, MapNodes } from './GraphRenderables';
 import { CameraController } from './CameraController';
 import { BoxSelection } from './BoxSelection';
 
@@ -317,19 +317,35 @@ export const GraphScene = forwardRef<GraphSceneRef, GraphSceneProps>((props, ref
         </EffectComposer>
       )}
 
-      <InstancedNodes 
-        nodesRef={nodesRef} 
-        onNodeClick={handleNodeClick} 
-        onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
-        onNodeRightClick={(node) => onNodeCollapse?.(node.id)}
-        isDark={isDark} 
-        highlightedNodes={highlightedNodes} 
-        pulsingNodeIds={pulsingNodeIds}
-        lockedNodeIds={props.lockedNodeIds}
-        masteredNodeIds={props.masteredNodeIds}
-        gamificationEnabled={props.gamificationEnabled}
-        simulationVersion={simulationVersion}
-      />
+      {layoutMode === '2d-map' ? (
+        <MapNodes 
+          nodesRef={nodesRef} 
+          onNodeClick={handleNodeClick} 
+          onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
+          onNodeRightClick={(node) => onNodeCollapse?.(node.id)}
+          isDark={isDark} 
+          highlightedNodes={highlightedNodes} 
+          pulsingNodeIds={pulsingNodeIds}
+          lockedNodeIds={props.lockedNodeIds}
+          masteredNodeIds={props.masteredNodeIds}
+          gamificationEnabled={props.gamificationEnabled}
+          simulationVersion={simulationVersion}
+        />
+      ) : (
+        <InstancedNodes 
+          nodesRef={nodesRef} 
+          onNodeClick={handleNodeClick} 
+          onNodeDoubleClick={(node) => focusNodeInternal(node.id)}
+          onNodeRightClick={(node) => onNodeCollapse?.(node.id)}
+          isDark={isDark} 
+          highlightedNodes={highlightedNodes} 
+          pulsingNodeIds={pulsingNodeIds}
+          lockedNodeIds={props.lockedNodeIds}
+          masteredNodeIds={props.masteredNodeIds}
+          gamificationEnabled={props.gamificationEnabled}
+          simulationVersion={simulationVersion}
+        />
+      )}
       
       <NodeLabels 
         ref={nodeLabelsGroupRef}

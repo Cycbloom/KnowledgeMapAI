@@ -7,6 +7,7 @@ import { GraphStatsSummary } from './GraphStatsSummary';
 interface GraphOutlineProps {
   nodes: Node[];
   edges?: Edge[];
+  nodeStatus?: Record<string, any>;
   onNodeClick: (node: Node) => void;
   selectedNodeId: string | null;
   selectedNodeIds?: Set<string>;
@@ -23,6 +24,7 @@ interface GraphOutlineProps {
 export const GraphOutline: React.FC<GraphOutlineProps> = ({
   nodes,
   edges = [],
+  nodeStatus,
   onNodeClick,
   selectedNodeId,
   selectedNodeIds = new Set(),

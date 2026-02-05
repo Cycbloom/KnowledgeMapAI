@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { Node, Edge } from '../types';
-import { NodeLevel, getLevel } from '../lib/graphUtils';
+import { Node, Edge, NodeLevel } from '../types';
+import { getLevel } from '../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';

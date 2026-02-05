@@ -7,6 +7,7 @@ import { ArrowLeft, LayoutList, Network, Loader2 } from 'lucide-react';
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
+import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
 
 // New Managers and Hooks
 import { GraphModalManager } from '../components/GraphEditor/GraphModalManager';
@@ -59,7 +60,8 @@ export const GraphEditor = () => {
     showGrid, setShowGrid,
     isFocusMode, setIsFocusMode,
     collapsedNodeIds,
-    highlightedPath
+    highlightedPath,
+    viewMode, setViewMode
   } = state;
 
   // Mutations Hook
@@ -192,7 +194,7 @@ export const GraphEditor = () => {
 
   return (
     <div className="flex h-full relative">
-      {/* Main Canvas Area (Outline Only) */}
+      {/* Main Canvas Area */}
       <div className={`flex-1 h-full relative ${isDeleteMode ? 'cursor-not-allowed' : ''}`}>
         {isGraphLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm">
@@ -203,13 +205,15 @@ export const GraphEditor = () => {
           </div>
         )}
         
-        <div className="h-full w-full bg-white relative pt-14">
+        {viewMode === 'outline' ? (
+          <div className="h-full w-full bg-white relative pt-14">
             <GraphOutline 
               nodes={nodes} 
               edges={edges}
+              nodeStatus={nodeStatus}
               onNodeClick={(node) => {
                 setSelectedNode(node);
-                setSidebarMode('edit'); 
+                setSidebarMode('detail'); 
               }}
               selectedNodeId={selectedNode?.id}
               selectedNodeIds={selectedNodeIds}
@@ -222,72 +226,89 @@ export const GraphEditor = () => {
               stats={graphStats}
               className="h-full border-none"
             />
-        </div>
-
-        <GraphToolbar 
-          onBack={() => navigate('/dashboard')}
-          onUndo={undo}
-          onRedo={redo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          title={graphMeta?.title || '未命名图谱'}
-          sidebarMode={sidebarMode}
-          setSidebarMode={setSidebarMode}
-          showGrid={showGrid}
-          setShowGrid={setShowGrid}
-          isFocusMode={isFocusMode}
-          setIsFocusMode={setIsFocusMode}
-          aiEnabled={aiEnabled}
-          onTextToGraph={() => state.setIsTextToGraphOpen(true)}
-          onAIExpand={aiOps.handleAIExpand}
-          onBackgroundTask={aiOps.handleBackgroundTask}
-          isChatOpen={state.isChatOpen}
-          setIsChatOpen={state.setIsChatOpen}
-          isPathfindingMode={isPathfindingMode}
-          setIsPathfindingMode={setIsPathfindingMode}
-          pathfindingState={{
-            startNode: state.pathStartNode,
-            endNode: state.pathEndNode,
-            pathLength: state.highlightedPath?.nodes.size || 0,
-            reset: () => {
-              state.setPathStartNode(null);
-              state.setPathEndNode(null);
-              state.setHighlightedPath(null);
-            }
-          }}
-          onAddNode={nodeOps.handleStartCreate}
-          isDeleteMode={isDeleteMode}
-          setIsDeleteMode={setIsDeleteMode}
-          selectedNodeIds={selectedNodeIds}
-          onDeleteSelected={nodeOps.handleDeleteNode}
-          onBatchDelete={nodeOps.handleBatchDelete}
-          onBatchColorUpdate={nodeOps.handleBatchColorUpdate}
-          onBatchLevelUpdate={nodeOps.handleBatchLevelUpdate}
-          onOpenSettings={() => state.setIsSettingsOpen(true)}
-          isExportMenuOpen={state.isExportMenuOpen}
-          setIsExportMenuOpen={state.setIsExportMenuOpen}
-          exportActions={{
-            onMarkdown: exportOps.handleExportMarkdown,
-            onPDF: exportOps.handleExportPDF,
-            onJSON: exportOps.handleExportJSON,
-            onImage: () => state.setIsExportImageModalOpen(true),
-            onDeleteGraph: exportOps.handleDeleteGraph
-          }}
-          onRefresh={() => window.location.reload()}
-          onOpenHelp={() => state.setIsHelpOpen(true)}
-          onShare={() => state.setIsShareModalOpen(true)}
-        />
-
-        {sidebarMode === 'none' && !isMobile && (
-          <button 
-            onClick={() => setSidebarMode('outline')}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-l-xl shadow-lg border-y border-l border-gray-200 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-all hover:pr-4"
-          >
-            <ArrowLeft size={20} />
-          </button>
+          </div>
+        ) : (
+          <div className="h-full w-full bg-white relative pt-14">
+            <MindMapCanvas
+              nodes={nodes}
+              edges={edges}
+              nodeStatus={nodeStatus}
+              selectedNodeId={selectedNode?.id}
+              onNodeClick={(node) => {
+                setSelectedNode(node);
+                setSidebarMode('detail');
+              }}
+              sidebarMode={sidebarMode}
+            />
+          </div>
         )}
       </div>
 
+      <GraphToolbar 
+        onBack={() => navigate('/dashboard')}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        title={graphMeta?.title || '未命名图谱'}
+        sidebarMode={sidebarMode}
+        setSidebarMode={setSidebarMode}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
+        isFocusMode={isFocusMode}
+        setIsFocusMode={setIsFocusMode}
+        aiEnabled={aiEnabled}
+        onTextToGraph={() => state.setIsTextToGraphOpen(true)}
+        onAIExpand={aiOps.handleAIExpand}
+        onBackgroundTask={aiOps.handleBackgroundTask}
+        isChatOpen={state.isChatOpen}
+        setIsChatOpen={state.setIsChatOpen}
+        isPathfindingMode={isPathfindingMode}
+        setIsPathfindingMode={setIsPathfindingMode}
+        pathfindingState={{
+          startNode: state.pathStartNode,
+          endNode: state.pathEndNode,
+          pathLength: state.highlightedPath?.nodes.size || 0,
+          reset: () => {
+            state.setPathStartNode(null);
+            state.setPathEndNode(null);
+            state.setHighlightedPath(null);
+          }
+        }}
+        onAddNode={nodeOps.handleStartCreate}
+        isDeleteMode={isDeleteMode}
+        setIsDeleteMode={setIsDeleteMode}
+        selectedNodeIds={selectedNodeIds}
+        onDeleteSelected={nodeOps.handleDeleteNode}
+        onBatchDelete={nodeOps.handleBatchDelete}
+        onBatchColorUpdate={nodeOps.handleBatchColorUpdate}
+        onBatchLevelUpdate={nodeOps.handleBatchLevelUpdate}
+        onOpenSettings={() => state.setIsSettingsOpen(true)}
+        isExportMenuOpen={state.isExportMenuOpen}
+        setIsExportMenuOpen={state.setIsExportMenuOpen}
+        exportActions={{
+          onMarkdown: exportOps.handleExportMarkdown,
+          onPDF: exportOps.handleExportPDF,
+          onJSON: exportOps.handleExportJSON,
+          onImage: () => state.setIsExportImageModalOpen(true),
+          onDeleteGraph: exportOps.handleDeleteGraph
+        }}
+        onRefresh={() => window.location.reload()}
+        onOpenHelp={() => state.setIsHelpOpen(true)}
+        onShare={() => state.setIsShareModalOpen(true)}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
+
+      {sidebarMode === 'none' && !isMobile && (
+        <button 
+          onClick={() => setSidebarMode('outline')}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-l-xl shadow-lg border-y border-l border-gray-200 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-all hover:pr-4"
+        >
+          <ArrowLeft size={20} />
+        </button>
+      )}
+      
       <GraphModalManager 
         id={id || ''}
         state={state}

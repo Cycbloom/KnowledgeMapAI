@@ -1,6 +1,7 @@
 import React from 'react';
 import { Node, Edge } from '../../types';
-import { LEVEL_CONFIG, levelLabels } from '../../config/graphConfig';
+import { levelLabels } from '../../config/graphConfig';
+import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
 import { getLevel } from '../../lib/graphUtils';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
 import ReactMarkdown from 'react-markdown';
@@ -11,6 +12,7 @@ import {
   X, ArrowLeft, Wand2, Edit3, Trash2, Navigation, 
   GraduationCap, Sparkles, Check, Lock, Loader2 
 } from 'lucide-react';
+import { useTheme } from '../../hooks/useTheme';
 
 interface NodeDetailSidebarProps {
   node: Node;
@@ -51,8 +53,11 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   relatedNodes,
   onRelatedNodeClick
 }) => {
+  const { isDark } = useTheme();
   const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
   const isLocked = nodeStatus && nodeStatus[node.id]?.locked;
+  const status = getLearningStatus(nodeStatus?.[node.id]);
+  const colors = getStatusColors(status, isDark);
 
   return (
     <div className="h-full flex flex-col">
@@ -67,7 +72,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               <ArrowLeft size={18} />
             </button>
           )}
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: node.color || '#3B82F6' }}></div>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.primary }}></div>
           <h3 className="text-lg font-bold text-gray-800">节点详情</h3>
         </div>
         <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-full transition-colors">
@@ -79,12 +84,10 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         <section>
           <h1 className="text-xl font-bold text-gray-900 leading-tight mb-2">{node.title}</h1>
           <div className="flex items-center space-x-2">
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${ 
-              LEVEL_CONFIG[getLevel(node, edges)]?.color ? '' : 'bg-gray-100 text-gray-600'
-            }`} style={{ 
-              borderColor: LEVEL_CONFIG[getLevel(node, edges)]?.color || '#e5e7eb',
-              color: LEVEL_CONFIG[getLevel(node, edges)]?.color || '#4b5563',
-              backgroundColor: (LEVEL_CONFIG[getLevel(node, edges)]?.color || '#e5e7eb') + '20'
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border`} style={{ 
+              borderColor: colors.primary,
+              color: colors.text,
+              backgroundColor: colors.background
             }}>
               {levelLabels[getLevel(node, edges)] || '未知层级'}
             </span>

@@ -47,6 +47,8 @@ export interface Graph {
   nodes_count?: number;
 }
 
+export type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
+
 export interface Node {
   id: string;
   graph_id: string;
@@ -55,7 +57,7 @@ export interface Node {
   x_position: number;
   y_position: number;
   color?: string;
-  level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
+  level?: NodeLevel;
   properties?: Record<string, any>;
   learning_material?: string;
   updated_at?: string;
@@ -93,4 +95,40 @@ export interface Task {
   error?: string;
   created_at: string;
   updated_at: string;
+}
+
+export type LearningStatus = 'mastered' | 'due' | 'locked' | 'new' | 'learning';
+
+export interface NodeStatus {
+  locked: boolean;
+  mastered: boolean;
+  due_today?: boolean;
+  due?: boolean;
+  review_count?: number;
+  next_review?: string;
+}
+
+export interface LayoutNode extends Node {
+  x: number;
+  y: number;
+  vx?: number;
+  vy?: number;
+  fx?: number | null;
+  fy?: number | null;
+}
+
+export interface LayoutLink extends Edge {
+  source: string | LayoutNode;
+  target: string | LayoutNode;
+}
+
+export type NodeStyleVariant = 'single' | 'double' | 'triple' | 'dashed' | 'dotted' | 'gradient';
+
+export interface NodeStyle {
+  variant: NodeStyleVariant;
+  rings: number;
+  radius: number;
+  strokeWidth: number;
+  showCenterDot: boolean;
+  showGlow: boolean;
 }

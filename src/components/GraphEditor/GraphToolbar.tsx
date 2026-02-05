@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2
+  HelpCircle, User, GraduationCap, Share2, Network
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node } from '../../types';
@@ -21,6 +21,8 @@ interface GraphToolbarProps {
   title: string;
   sidebarMode: 'none' | 'create' | 'edit' | 'outline' | 'detail';
   setSidebarMode: (mode: 'none' | 'create' | 'edit' | 'outline' | 'detail') => void;
+  viewMode: 'outline' | 'mindmap';
+  setViewMode: (mode: 'outline' | 'mindmap') => void;
   showGrid: boolean;
   setShowGrid: (show: boolean) => void;
   isFocusMode: boolean;
@@ -71,6 +73,7 @@ interface GraphToolbarProps {
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBack, onUndo, onRedo, canUndo, canRedo,
   title, sidebarMode, setSidebarMode,
+  viewMode, setViewMode,
   showGrid, setShowGrid, isFocusMode, setIsFocusMode,
   aiEnabled, onTextToGraph, onAIExpand, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
@@ -544,10 +547,12 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       {/* 4. View Tools Dropdown */}
       <DropdownButton id="view" icon={List} label="视图">
-        <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="大纲视图 (侧栏)" active={sidebarMode === 'outline'} />
+        <MenuItem onClick={() => setViewMode('outline')} icon={List} label="大纲视图" active={viewMode === 'outline'} colorClass="text-blue-600" />
+        <MenuItem onClick={() => setViewMode('mindmap')} icon={Network} label="思维导图" active={viewMode === 'mindmap'} colorClass="text-green-600" />
+        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="侧边栏大纲" active={sidebarMode === 'outline'} />
         <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label="大纲学习模式" colorClass="text-indigo-600" />
         <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label="搜索节点" />
-        {/* Layout switcher removed */}
       </DropdownButton>
 
       {/* AI Status Badge */}

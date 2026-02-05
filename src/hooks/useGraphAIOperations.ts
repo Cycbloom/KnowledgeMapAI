@@ -1,13 +1,13 @@
-import { Node, Edge } from '../types';
-import { NodeLevel, getLevel } from '../lib/graphUtils';
+import { Node, Edge, NodeLevel } from '../types';
+import { getLevel } from '../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { LEVEL_CONFIG } from '../config/graphConfig';
 import { queryKeys } from './useQueries';
 import { useQueryClient } from '@tanstack/react-query';
+import { LEARNING_STATUS_COLORS } from '../config/learningStatusColors';
 
 interface UseGraphAIOperationsProps {
   id: string;
@@ -161,7 +161,7 @@ export const useGraphAIOperations = ({
             content: s.content,
             x_position: x,
             y_position: y,
-            color: LEVEL_CONFIG[newLevel]?.color || '#10B981', 
+            color: LEARNING_STATUS_COLORS.new.primary, 
             level: newLevel,
             properties: {}
           });

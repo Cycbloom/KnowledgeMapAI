@@ -1,6 +1,6 @@
 import React from 'react';
-import { Node } from '../../types';
-import { NodeLevel } from '../../lib/graphUtils';
+import { Node, NodeLevel } from '../../types';
+import { getLevel } from '../../lib/graphUtils';
 import { X, ArrowLeft, Save, Loader2 } from 'lucide-react';
 
 interface NodeFormState {

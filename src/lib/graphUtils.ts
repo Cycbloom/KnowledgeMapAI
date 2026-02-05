@@ -1,10 +1,6 @@
-import { Node, Edge } from '../types';
-import { SimNode } from '../config/graphConfig';
+import { Node, Edge, NodeLevel } from '../types';
 
-export type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
-
-// Helper to safely get node ID from string or SimNode object (d3-force replaces strings with objects)
-export const getLinkNodeId = (node: string | SimNode): string => {
+export const getLinkNodeId = (node: string | any): string => {
   if (typeof node === 'string') return node;
   return node.id;
 };

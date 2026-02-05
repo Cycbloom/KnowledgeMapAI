@@ -1,6 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Node } from '../types';
-import { NodeLevel } from '../lib/graphUtils';
+import { Node, NodeLevel } from '../types';
 
 export interface GraphEditorState {
   // Graph Ref
@@ -27,6 +26,8 @@ export interface GraphEditorState {
   setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
   collapsedNodeIds: Set<string>;
   setCollapsedNodeIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  viewMode: 'outline' | 'mindmap';
+  setViewMode: React.Dispatch<React.SetStateAction<'outline' | 'mindmap'>>;
   
   // Interaction Modes
   isPathfindingMode: boolean;
@@ -139,6 +140,7 @@ export const useGraphEditorState = (): GraphEditorState => {
   // Layout & View
   const [showGrid, setShowGrid] = useState(false);
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'outline' | 'mindmap'>('outline');
 
   // Interaction
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
@@ -216,6 +218,7 @@ export const useGraphEditorState = (): GraphEditorState => {
     isMobileMenuOpen, setIsMobileMenuOpen,
     showGrid, setShowGrid,
     collapsedNodeIds, setCollapsedNodeIds,
+    viewMode, setViewMode,
     isPathfindingMode, setIsPathfindingMode,
     isDeleteMode, setIsDeleteMode,
     isFocusMode, setIsFocusMode,

@@ -374,7 +374,7 @@ export const Dashboard = () => {
                             ? 'text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400' 
                             : 'text-gray-400 hover:bg-indigo-50 hover:text-indigo-600'
                         }`}
-                        title="打开 3D 思维导图"
+                        title="打开思维导图"
                       >
                         <Network size={18} />
                       </Link>

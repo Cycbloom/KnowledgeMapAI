@@ -140,7 +140,7 @@ export const useGraphEditorState = (): GraphEditorState => {
   // Layout & View
   const [showGrid, setShowGrid] = useState(false);
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'outline' | 'mindmap'>('outline');
+  const [viewMode, setViewMode] = useState<'outline' | 'mindmap'>('mindmap');
 
   // Interaction
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);

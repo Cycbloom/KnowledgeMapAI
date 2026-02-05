@@ -29,9 +29,7 @@ export const useGraphInteraction = ({
     setSelectedNodeIds,
     setPrevSidebarMode,
     setSidebarMode,
-    sidebarMode,
-    setLayoutMode,
-    graphRef
+    sidebarMode
   } = state;
 
   const handleNodeClick = (node: Node) => {
@@ -95,15 +93,6 @@ export const useGraphInteraction = ({
     }
   };
 
-  const handleLayoutChange = (mode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map') => {
-    setLayoutMode(mode);
-    const modeName = mode === '2d-tree' ? '2D 树状图' : 
-                    mode === '3d-sphere' ? '3D 球形布局' : 
-                    mode === 'solar' ? '星系 radial 布局' : 
-                    mode === '2d-map' ? '2D 地图模式' : '3D 力导向';
-    addMessage({ type: 'success', content: `切换至 ${modeName}` });
-  };
-
   const handleBackgroundClick = () => {
     setSelectedNode(null);
     setSelectedNodeIds(new Set());
@@ -113,7 +102,6 @@ export const useGraphInteraction = ({
   return {
     handleNodeClick,
     handleSelectionChange,
-    handleLayoutChange,
     handleBackgroundClick
   };
 };

@@ -29,7 +29,6 @@ export const useGraphEffects = ({
   const navigate = useNavigate();
   const {
     graphRef,
-    isEngineLoading,
     setSelectedNode,
     setSelectedNodeIds,
   } = state;
@@ -52,10 +51,10 @@ export const useGraphEffects = ({
 
   // 处理图表加载后的自动居中 (示例逻辑)
   useEffect(() => {
-    if (nodes.length > 0 && !isGraphLoading && !isEngineLoading && graphRef.current) {
+    if (nodes.length > 0 && !isGraphLoading && graphRef.current) {
       // graphRef.current.zoomToFit(); 
     }
-  }, [nodes.length, isGraphLoading, isEngineLoading, graphRef]);
+  }, [nodes.length, isGraphLoading, graphRef]);
 
   // AI 未配置警告
   const hasShownAIWarningRef = useRef(false);

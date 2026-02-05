@@ -9,14 +9,6 @@ import {
 import { useTheme } from '../../hooks/useTheme';
 import { Node } from '../../types';
 
-const LAYOUT_MODES = [
-  { id: '3d-force', label: '3D' },
-  { id: '2d-tree', label: '树' },
-  { id: '2d-map', label: '2D 地图' },
-  { id: '3d-sphere', label: '球' },
-  { id: 'solar', label: '星系' }
-];
-
 interface GraphToolbarProps {
   // Navigation & History
   onBack: () => void;
@@ -31,8 +23,6 @@ interface GraphToolbarProps {
   setSidebarMode: (mode: 'none' | 'create' | 'edit' | 'outline' | 'detail') => void;
   showGrid: boolean;
   setShowGrid: (show: boolean) => void;
-  layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map';
-  setLayoutMode: (mode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map') => void;
   isFocusMode: boolean;
   setIsFocusMode: (mode: boolean) => void;
 
@@ -81,7 +71,7 @@ interface GraphToolbarProps {
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBack, onUndo, onRedo, canUndo, canRedo,
   title, sidebarMode, setSidebarMode,
-  showGrid, setShowGrid, layoutMode, setLayoutMode, isFocusMode, setIsFocusMode,
+  showGrid, setShowGrid, isFocusMode, setIsFocusMode,
   aiEnabled, onTextToGraph, onAIExpand, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
@@ -338,23 +328,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     <div className="flex items-center space-x-1">
       <Button onClick={onOpenSettings} icon={Settings} title="图谱设置" />
       
-      {/* Layout Switcher */}
-      <div className={`flex rounded-lg p-1 mx-1 ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-        {LAYOUT_MODES.map(mode => (
-          <button 
-            key={mode.id}
-            onClick={() => setLayoutMode(mode.id as any)}
-            className={`px-2 py-0.5 rounded text-xs font-medium transition-all ${
-              layoutMode === mode.id 
-                ? (isDark ? 'bg-slate-600 shadow text-blue-400' : 'bg-white shadow text-blue-600')
-                : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
-            }`}
-          >
-            {mode.label}
-          </button>
-        ))}
-      </div>
-
       <div className="relative">
         <Button 
           onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} 
@@ -574,25 +547,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="大纲视图 (侧栏)" active={sidebarMode === 'outline'} />
         <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label="大纲学习模式" colorClass="text-indigo-600" />
         <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label="搜索节点" />
-        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <div className="px-3 py-2">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">布局切换</div>
-          <div className={`flex rounded-lg p-1 ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-            {LAYOUT_MODES.map(mode => (
-              <button 
-                key={mode.id}
-                onClick={() => setLayoutMode(mode.id as any)}
-                className={`flex-1 px-2 py-1 rounded text-xs font-medium transition-all ${
-                  layoutMode === mode.id 
-                    ? (isDark ? 'bg-slate-600 shadow text-blue-400' : 'bg-white shadow text-blue-600')
-                    : (isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Layout switcher removed */}
       </DropdownButton>
 
       {/* AI Status Badge */}

@@ -1,11 +1,10 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Node } from '../types';
 import { NodeLevel } from '../lib/graphUtils';
-import { Graph3DRef } from '../components/Graph3D';
 
 export interface GraphEditorState {
   // Graph Ref
-  graphRef: React.RefObject<Graph3DRef>;
+  graphRef: React.RefObject<any>;
   
   // Selection
   selectedNode: Node | null;
@@ -15,19 +14,15 @@ export interface GraphEditorState {
   selectionBox: { left: number; top: number; width: number; height: number } | null;
   setSelectionBox: React.Dispatch<React.SetStateAction<{ left: number; top: number; width: number; height: number } | null>>;
   
-  // Sidebar & UI Modes
+  // Sidebar & UI
   sidebarMode: 'none' | 'create' | 'edit' | 'outline' | 'detail';
   setSidebarMode: React.Dispatch<React.SetStateAction<'none' | 'create' | 'edit' | 'outline' | 'detail'>>;
   prevSidebarMode: 'none' | 'create' | 'edit' | 'outline' | 'detail';
   setPrevSidebarMode: React.Dispatch<React.SetStateAction<'none' | 'create' | 'edit' | 'outline' | 'detail'>>;
-  mobileViewMode: 'list' | '3d';
-  setMobileViewMode: React.Dispatch<React.SetStateAction<'list' | '3d'>>;
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  
+
   // Layout & View
-  layoutMode: '3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map';
-  setLayoutMode: React.Dispatch<React.SetStateAction<'3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map'>>;
   showGrid: boolean;
   setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
   collapsedNodeIds: Set<string>;
@@ -126,12 +121,10 @@ export interface GraphEditorState {
   // General Loading
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  isEngineLoading: boolean;
-  setIsEngineLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const useGraphEditorState = (): GraphEditorState => {
-  const graphRef = useRef<Graph3DRef>(null);
+  const graphRef = useRef<any>(null);
   
   // Selection
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -141,11 +134,9 @@ export const useGraphEditorState = (): GraphEditorState => {
   // Sidebar & UI
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [prevSidebarMode, setPrevSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
-  const [mobileViewMode, setMobileViewMode] = useState<'list' | '3d'>('list');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Layout & View
-  const [layoutMode, setLayoutMode] = useState<'3d-force' | '2d-tree' | '3d-sphere' | 'solar' | '2d-map'>('3d-force');
   const [showGrid, setShowGrid] = useState(false);
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
 
@@ -214,7 +205,6 @@ export const useGraphEditorState = (): GraphEditorState => {
 
   // Loading
   const [loading, setLoading] = useState(false);
-  const [isEngineLoading, setIsEngineLoading] = useState(true);
 
   return {
     graphRef,
@@ -223,9 +213,7 @@ export const useGraphEditorState = (): GraphEditorState => {
     selectionBox, setSelectionBox,
     sidebarMode, setSidebarMode,
     prevSidebarMode, setPrevSidebarMode,
-    mobileViewMode, setMobileViewMode,
     isMobileMenuOpen, setIsMobileMenuOpen,
-    layoutMode, setLayoutMode,
     showGrid, setShowGrid,
     collapsedNodeIds, setCollapsedNodeIds,
     isPathfindingMode, setIsPathfindingMode,
@@ -252,6 +240,5 @@ export const useGraphEditorState = (): GraphEditorState => {
     recommendations, setRecommendations,
     isRecommending, setIsRecommending,
     loading, setLoading,
-    isEngineLoading, setIsEngineLoading
   };
 };

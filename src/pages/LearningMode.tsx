@@ -15,7 +15,6 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { GenerateCardsModal } from '../components/LearningMode/GenerateCardsModal';
-import { LearningPathMap } from '../components/LearningMode/LearningPathMap.tsx';
 
 type Message = {
   id: string;
@@ -40,7 +39,6 @@ export const LearningMode = () => {
   const [isChatOpen, setIsChatOpen] = useState(window.innerWidth >= 1280);
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  const [showLearningPath, setShowLearningPath] = useState(false);
   const isOnline = useNetworkStatus();
 
   useEffect(() => {
@@ -403,16 +401,6 @@ export const LearningMode = () => {
           </div>
 
           <button
-            onClick={() => setShowLearningPath(!showLearningPath)}
-            className={`p-1.5 lg:p-2 rounded-lg transition-colors hidden md:block ${
-              showLearningPath ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400' : (isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-600')
-            }`}
-            title="学习路径图"
-          >
-            <Network size={20} />
-          </button>
-
-          <button
             onClick={() => setIsChatOpen(!isChatOpen)}
             className={`p-1.5 lg:p-2 rounded-lg transition-colors xl:hidden ${
               isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-600'
@@ -507,28 +495,19 @@ export const LearningMode = () => {
             : (isOutlineOpen ? 'w-80' : 'w-0')
         } transition-all duration-300 ease-in-out border-r dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 relative`}>
            <div className={`absolute inset-0 ${isMobile ? 'w-full' : 'w-80'}`}>
-             {showLearningPath && learningPathData ? (
-               <LearningPathMap 
-                 nodes={learningPathData.path}
-                 activeNodeId={nodeId}
-                 onNodeClick={(id) => navigate(`/learning?graph_id=${graphId}&node_id=${id}`)}
-                 nodeStatus={nodeStatus}
+             {graphData ? (
+               <GraphOutline 
+                 nodes={graphData.nodes}
+                 edges={graphData.edges}
+                 onNodeClick={(node) => navigate(`/learning?graph_id=${graphId}&node_id=${node.id}`)}
+                 selectedNodeId={nodeId}
+                 className="h-full border-none"
                />
              ) : (
-               graphData ? (
-                 <GraphOutline 
-                   nodes={graphData.nodes}
-                   edges={graphData.edges}
-                   onNodeClick={(node) => navigate(`/learning?graph_id=${graphId}&node_id=${node.id}`)}
-                   selectedNodeId={nodeId}
-                   className="h-full border-none"
-                 />
-               ) : (
                  <div className="flex items-center justify-center h-full text-slate-400">
                    <Loader2 className="animate-spin mr-2" />
-                   加载大纲...
+                   加载中...
                  </div>
-               )
              )}
            </div>
         </div>

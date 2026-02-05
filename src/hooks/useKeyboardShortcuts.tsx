@@ -3,80 +3,122 @@ import React from 'react';
 import { Maximize, Minimize } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 
+import { Node } from '../types';
+
 interface UseKeyboardShortcutsProps {
   undo: () => void;
   redo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  isFocusMode: boolean;
-  setIsFocusMode: React.Dispatch<React.SetStateAction<boolean>>;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  deleteNode: (node: Node | null) => void;
+  toggleDeleteMode: () => void;
+  togglePathfindingMode: () => void;
+  toggleGrid: () => void;
+  toggleFocusMode: () => void;
+  toggleSidebar: () => void;
+  saveNode: () => void;
+  sidebarMode: string;
+  selectedNode: Node | null;
 }
 
 export const useKeyboardShortcuts = ({
   undo,
   redo,
-  canUndo,
-  canRedo,
-  isFocusMode,
-  setIsFocusMode
+  canUndo = true,
+  canRedo = true,
+  deleteNode,
+  toggleDeleteMode,
+  togglePathfindingMode,
+  toggleGrid,
+  toggleFocusMode,
+  toggleSidebar,
+  saveNode,
+  sidebarMode,
+  selectedNode
 }: UseKeyboardShortcutsProps) => {
   const { addMessage } = useMessageStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl+Z or Cmd+Z
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      // Global shortcuts (even in inputs, some might be allowed, but usually not)
+      if (isInput && !((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'z' || e.key.toLowerCase() === 'y'))) {
+        return;
+      }
+
+      // Undo/Redo
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
         if (e.shiftKey) {
-          // Ctrl+Shift+Z -> Redo
-          if (canRedo) {
-            e.preventDefault();
-            redo();
-            addMessage({ content: '重做', type: 'success' });
-          }
+          if (canRedo) redo();
         } else {
-          // Ctrl+Z -> Undo
-          if (canUndo) {
-            e.preventDefault();
-            undo();
-            addMessage({ content: '撤销', type: 'success' });
-          }
+          if (canUndo) undo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        if (canRedo) redo();
+      }
+      
+      // Save Node (Ctrl+S)
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (sidebarMode === 'edit' || sidebarMode === 'create') {
+          saveNode();
         }
       }
-      // Check for Ctrl+Y or Cmd+Y -> Redo
-      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
-        if (canRedo) {
+
+      // Delete (Delete or Backspace)
+      else if ((e.key === 'Delete' || e.key === 'Backspace') && !isInput) {
+        if (selectedNode) {
           e.preventDefault();
-          redo();
-          addMessage({ content: '重做', type: 'success' });
+          deleteNode(selectedNode);
         }
       }
-      // Toggle Focus Mode with 'F'
-      else if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // Only block if user is typing in an input/textarea
-        const target = e.target as HTMLElement;
-        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-        
-        if (!isInput) {
-          e.preventDefault();
-          const next = !isFocusMode;
-          setIsFocusMode(next);
-          addMessage({ 
-            content: next ? '已进入专注模式 (按 Esc 退出)' : '已退出专注模式', 
-            type: 'info' 
-          });
-        }
+
+      // Toggle Sidebar (B)
+      else if (e.key.toLowerCase() === 'b' && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleSidebar();
       }
-      // Exit Focus Mode with Escape
+
+      // Toggle Grid (G)
+      else if (e.key.toLowerCase() === 'g' && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleGrid();
+      }
+
+      // Toggle Focus Mode (F)
+      else if (e.key.toLowerCase() === 'f' && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleFocusMode();
+      }
+
+      // Toggle Delete Mode (D)
+      else if (e.key.toLowerCase() === 'd' && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleDeleteMode();
+      }
+
+      // Toggle Pathfinding Mode (P)
+      else if (e.key.toLowerCase() === 'p' && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        togglePathfindingMode();
+      }
+      
+      // Exit Focus Mode / Close Sidebar (Escape)
       else if (e.key === 'Escape') {
-        if (isFocusMode) {
-          e.preventDefault();
-          setIsFocusMode(false);
-          addMessage({ content: '已退出专注模式', type: 'info' });
-        }
+        // This is handled by components usually, but we can add global Esc logic if needed
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, canUndo, canRedo, isFocusMode, setIsFocusMode, addMessage]);
+  }, [
+    undo, redo, canUndo, canRedo, 
+    deleteNode, toggleDeleteMode, togglePathfindingMode, 
+    toggleGrid, toggleFocusMode, toggleSidebar, 
+    saveNode, sidebarMode, selectedNode
+  ]);
 };

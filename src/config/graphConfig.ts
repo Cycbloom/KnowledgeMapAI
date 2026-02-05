@@ -1,4 +1,21 @@
-import { Node } from '../types/index';
+import { Node, Edge } from '../types/index';
+
+export interface SimNode extends Node {
+  x?: number;
+  y?: number;
+  z?: number;
+  vx?: number;
+  vy?: number;
+  vz?: number;
+  fx?: number | null;
+  fy?: number | null;
+  fz?: number | null;
+}
+
+export interface SimLink extends Edge {
+  source: string | SimNode;
+  target: string | SimNode;
+}
 
 export const LEVEL_CONFIG = {
   root: { 
@@ -102,29 +119,18 @@ export const THEME_CONFIG = {
   }
 } as const;
 
+export const levelLabels: Record<string, string> = {
+  root: '根节点',
+  core: '核心节点',
+  sub: '次级节点',
+  normal: '普通节点',
+  leaf: '叶子节点'
+};
+
 export const RADIAL_DISTANCES = {
   root: 0,
-  core: 12,
-  sub: 24,
-  normal: 36,
-  leaf: 48
+  core: 6,
+  sub: 12,
+  normal: 18,
+  leaf: 25
 } as const;
-
-export type NodeLevel = keyof typeof LEVEL_CONFIG;
-
-export interface SimNode extends Node {
-  x?: number;
-  y?: number;
-  z?: number;
-  vx?: number;
-  vy?: number;
-  vz?: number;
-  level?: NodeLevel;
-  [key: string]: any;
-}
-
-export interface SimLink {
-  source: string | SimNode;
-  target: string | SimNode;
-  id: string;
-}

@@ -16,19 +16,19 @@ export interface LayoutOptions {
 }
 
 const LEVEL_CHARGE_STRENGTH: Record<NodeLevel, number> = {
-  root: -200,
-  core: -150,
-  sub: -100,
-  normal: -80,
-  leaf: -50
+  root: -300,
+  core: -250,
+  sub: -180,
+  normal: -150,
+  leaf: -120
 };
 
 const LEVEL_LINK_DISTANCE: Record<NodeLevel, number> = {
-  root: 200,
-  core: 150,
-  sub: 120,
-  normal: 100,
-  leaf: 80
+  root: 280,
+  core: 220,
+  sub: 180,
+  normal: 150,
+  leaf: 120
 };
 
 export const createMindMapLayout = (
@@ -37,6 +37,32 @@ export const createMindMapLayout = (
   options: LayoutOptions
 ): LayoutResult => {
   const { width, height, chargeStrength, linkDistance, centerForce } = options;
+
+  const nodeCount = nodes.length;
+
+  const dynamicLinkDistance = linkDistance || (() => {
+    if (nodeCount > 100) return 150;
+    if (nodeCount > 50) return 130;
+    return 100;
+  })();
+
+  const dynamicChargeStrength = chargeStrength || (() => {
+    if (nodeCount > 100) return -200;
+    if (nodeCount > 50) return -150;
+    return -100;
+  })();
+
+  const dynamicCenterForce = centerForce || (() => {
+    if (nodeCount > 100) return 0.2;
+    if (nodeCount > 50) return 0.18;
+    return 0.15;
+  })();
+
+  const dynamicIterations = (() => {
+    if (nodeCount > 100) return 700;
+    if (nodeCount > 50) return 600;
+    return 500;
+  })();
 
   const layoutNodes: LayoutNode[] = nodes.map(node => ({
     ...node,
@@ -55,31 +81,32 @@ export const createMindMapLayout = (
   const simulation = d3.forceSimulation(layoutNodes)
     .force('link', d3.forceLink(layoutLinks)
       .id((d: any) => d.id)
-      .distance(linkDistance || 100)
-      .strength(0.5)
+      .distance(dynamicLinkDistance)
+      .strength(0.3)
     )
     .force('charge', d3.forceManyBody()
       .strength((d: any) => {
         const level = getLevel(d, edges);
-        return chargeStrength || LEVEL_CHARGE_STRENGTH[level];
+        return dynamicChargeStrength * (1 + (LEVEL_CHARGE_STRENGTH[level] / -100));
       })
     )
     .force('center', d3.forceCenter(width / 2, height / 2)
-      .strength(centerForce || 0.1)
+      .strength(dynamicCenterForce)
     )
     .force('collide', d3.forceCollide()
       .radius((d: any) => {
         const level = getLevel(d, edges);
-        return getLevelRadius(level);
+        const baseRadius = getLevelRadius(level);
+        return nodeCount > 50 ? baseRadius * 1.2 : baseRadius;
       })
-      .strength(0.7)
+      .strength(0.9)
     )
-    .force('x', d3.forceX(width / 2).strength(0.05))
-    .force('y', d3.forceY(height / 2).strength(0.05));
+    .force('x', d3.forceX(width / 2).strength(0.03))
+    .force('y', d3.forceY(height / 2).strength(0.03));
 
   simulation.stop();
 
-  for (let i = 0; i < 300; i++) {
+  for (let i = 0; i < dynamicIterations; i++) {
     simulation.tick();
   }
 
@@ -91,13 +118,13 @@ export const createMindMapLayout = (
 
 const getLevelRadius = (level: NodeLevel): number => {
   const radii: Record<NodeLevel, number> = {
-    root: 50,
-    core: 40,
-    sub: 32,
-    normal: 26,
-    leaf: 20
+    root: 70,
+    core: 60,
+    sub: 50,
+    normal: 40,
+    leaf: 35
   };
-  return radii[level] || 26;
+  return radii[level] || 40;
 };
 
 export const getLinkNodeId = (node: string | LayoutNode): string => {

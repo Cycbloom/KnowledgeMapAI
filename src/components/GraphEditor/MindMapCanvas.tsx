@@ -180,6 +180,7 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               nodeStatus={nodeStatus}
               selected={node.id === selectedNodeId}
               isDark={isDark}
+              zoomLevel={transform.k}
               onClick={() => onNodeClick(node)}
               onMouseEnter={() => setHoveredNodeId(node.id)}
               onMouseLeave={() => setHoveredNodeId(null)}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutNode, LearningStatus } from '../../types';
+import { LayoutNode, LearningStatus, NodeLevel } from '../../types';
 import { NodeRing } from './NodeRing';
 import { NODE_STYLE_CONFIG, getRingRadius, getRingOpacity, getCenterDotRadius } from '../../config/nodeStyleConfig';
 import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
@@ -12,10 +12,30 @@ interface MindMapNodeProps {
   nodeStatus?: Record<string, any>;
   selected: boolean;
   isDark: boolean;
+  zoomLevel: number;
   onClick: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }
+
+const getTextVisibility = (level: NodeLevel, zoomLevel: number): { visible: boolean; opacity: number } => {
+  const thresholds: Record<NodeLevel, { minZoom: number; maxOpacity: number }> = {
+    root: { minZoom: 0, maxOpacity: 1 },
+    core: { minZoom: 0.2, maxOpacity: 1 },
+    sub: { minZoom: 0.4, maxOpacity: 0.95 },
+    normal: { minZoom: 0.6, maxOpacity: 0.9 },
+    leaf: { minZoom: 0.8, maxOpacity: 0.85 }
+  };
+
+  const threshold = thresholds[level] || thresholds.leaf;
+  const visible = zoomLevel >= threshold.minZoom;
+  
+  const opacity = visible 
+    ? Math.min(threshold.maxOpacity, (zoomLevel - threshold.minZoom) * 0.3 + 0.7)
+    : 0;
+
+  return { visible, opacity };
+};
 
 export const MindMapNode: React.FC<MindMapNodeProps> = ({
   node,
@@ -23,6 +43,7 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
   nodeStatus,
   selected,
   isDark,
+  zoomLevel,
   onClick,
   onMouseEnter,
   onMouseLeave
@@ -31,6 +52,7 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
   const styleConfig = NODE_STYLE_CONFIG[level];
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
+  const textVisibility = getTextVisibility(level, zoomLevel);
 
   const rings = [];
   for (let i = 0; i < styleConfig.rings; i++) {
@@ -54,6 +76,11 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
 
   const centerDotRadius = styleConfig.showCenterDot ? getCenterDotRadius(styleConfig.baseRadius) : 0;
   const maxRadius = getRingRadius(styleConfig.baseRadius, styleConfig.rings - 1, styleConfig.rings) + styleConfig.strokeWidth;
+  const textOffset = maxRadius + 12;
+  const baseFontSize = level === 'root' ? 14 : level === 'core' ? 12 : 10;
+  const scaledFontSize = baseFontSize / zoomLevel;
+  const shadowBlur = 3 / zoomLevel;
+  const shadowOffset = 1 / zoomLevel;
 
   return (
     <g
@@ -97,6 +124,28 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
         fill="transparent"
         onClick={onClick}
       />
+
+      {textVisibility.visible && (
+        <text
+          x={0}
+          y={textOffset}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={scaledFontSize}
+          fontWeight={level === 'root' ? 700 : level === 'core' ? 600 : 500}
+          fill={isDark ? '#f1f5f9' : '#0f172a'}
+          opacity={textVisibility.opacity}
+          style={{
+            pointerEvents: 'none',
+            transition: 'opacity 0.2s ease',
+            textShadow: isDark 
+              ? `0 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.4)` 
+              : `0 2px 4px rgba(0,0,0,0.15), 0 0 8px rgba(0,0,0,0.1)`
+          }}
+        >
+          {node.title || '未命名'}
+        </text>
+      )}
     </g>
   );
 };

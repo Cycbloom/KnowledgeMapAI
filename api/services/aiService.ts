@@ -258,7 +258,8 @@ Please respond in Chinese.` },
             `${linkingStrategy}\n` +
             `${generationStrategy}\n` +
             "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
-            "Return JSON array of objects with 'title' and 'content'.\n" +
+            "Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.\n" +
+            "Example format: { \"suggestions\": [{ \"title\": \"Example Title\", \"content\": \"Example content\" }] }\n" +
             "Please respond in Chinese." },
           { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
         ],

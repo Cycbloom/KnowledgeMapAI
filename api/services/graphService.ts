@@ -186,25 +186,64 @@ export class GraphService {
         throw new Error('Access denied');
       }
 
-      // Fetch nodes
-      const { data: nodes, error: nodesError } = await supabase
-        .from('nodes')
-        .select('*')
-        .eq('graph_id', graphId)
-        .is('deleted_at', null);
+      // Fetch nodes with pagination
+      // Note: Supabase/PostgREST has a default limit of 1000 rows per query
+      // We need to fetch in batches to handle large graphs
+      const batchSize = 1000;
+      let allNodes: any[] = [];
+      let offset = 0;
+      let hasMore = true;
 
-      if (nodesError) throw nodesError;
+      while (hasMore) {
+        const { data: nodes, error: nodesError } = await supabase
+          .from('nodes')
+          .select('*')
+          .eq('graph_id', graphId)
+          .is('deleted_at', null)
+          .range(offset, offset + batchSize - 1);
 
-      // Fetch edges
-      const { data: edges, error: edgesError } = await supabase
-        .from('edges')
-        .select('*')
-        .eq('graph_id', graphId)
-        .is('deleted_at', null);
+        if (nodesError) throw nodesError;
 
-      if (edgesError) throw edgesError;
+        if (nodes && nodes.length > 0) {
+          allNodes = allNodes.concat(nodes);
+          offset += nodes.length;
+          hasMore = nodes.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
 
-      return { nodes, edges };
+      console.log(`[GraphService] Graph ${graphId}: Fetched ${allNodes.length} nodes`);
+
+      // Fetch edges with pagination
+      // Note: Supabase/PostgREST has a default limit of 1000 rows per query
+      // We need to fetch in batches to handle large graphs
+      let allEdges: any[] = [];
+      offset = 0;
+      hasMore = true;
+
+      while (hasMore) {
+        const { data: edges, error: edgesError } = await supabase
+          .from('edges')
+          .select('*')
+          .eq('graph_id', graphId)
+          .is('deleted_at', null)
+          .range(offset, offset + batchSize - 1);
+
+        if (edgesError) throw edgesError;
+
+        if (edges && edges.length > 0) {
+          allEdges = allEdges.concat(edges);
+          offset += edges.length;
+          hasMore = edges.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      console.log(`[GraphService] Graph ${graphId}: Fetched ${allEdges.length} edges`);
+
+      return { nodes: allNodes, edges: allEdges };
     });
   }
 

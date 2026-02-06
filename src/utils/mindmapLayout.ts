@@ -64,6 +64,8 @@ export const createMindMapLayout = (
     return 500;
   })();
 
+  const nodeIds = new Set(nodes.map(n => n.id));
+
   const layoutNodes: LayoutNode[] = nodes.map(node => ({
     ...node,
     x: width / 2 + (Math.random() - 0.5) * 100,
@@ -72,11 +74,13 @@ export const createMindMapLayout = (
     vy: 0
   }));
 
-  const layoutLinks: LayoutLink[] = edges.map(edge => ({
-    ...edge,
-    source: edge.source_node_id,
-    target: edge.target_node_id
-  }));
+  const layoutLinks: LayoutLink[] = edges
+    .filter(edge => nodeIds.has(edge.source_node_id) && nodeIds.has(edge.target_node_id))
+    .map(edge => ({
+      ...edge,
+      source: edge.source_node_id,
+      target: edge.target_node_id
+    }));
 
   const simulation = d3.forceSimulation(layoutNodes)
     .force('link', d3.forceLink(layoutLinks)

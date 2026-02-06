@@ -43,6 +43,11 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const [sortMode, setSortMode] = useState<'default' | 'title' | 'level'>('default');
   const [filterLevel, setFilterLevel] = useState<string>('all');
 
+  // Log node count for debugging
+  useEffect(() => {
+    console.log(`[GraphOutline] Received ${nodes.length} nodes and ${edges.length} edges`);
+  }, [nodes.length, edges.length]);
+
   // Process nodes (Search -> Filter -> Sort)
   const processedNodes = useMemo(() => {
     let result = nodes;

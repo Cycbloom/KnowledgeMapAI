@@ -7,7 +7,6 @@ import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { queryKeys } from './useQueries';
 import { useQueryClient } from '@tanstack/react-query';
-import { LEARNING_STATUS_COLORS } from '../config/learningStatusColors';
 
 interface UseGraphAIOperationsProps {
   id: string;
@@ -62,6 +61,17 @@ export const useGraphAIOperations = ({
       case 'sub': return 'normal';
       case 'normal': return 'leaf';
       default: return 'leaf';
+    }
+  };
+
+  const getLevelColor = (level: NodeLevel): string => {
+    switch (level) {
+      case 'root': return '#8B5CF6';
+      case 'core': return '#EF4444';
+      case 'sub': return '#F59E0B';
+      case 'normal': return '#3B82F6';
+      case 'leaf': return '#10B981';
+      default: return '#3B82F6';
     }
   };
 
@@ -161,7 +171,7 @@ export const useGraphAIOperations = ({
             content: s.content,
             x_position: x,
             y_position: y,
-            color: LEARNING_STATUS_COLORS.new.primary, 
+            color: getLevelColor(newLevel), 
             level: newLevel,
             properties: {}
           });

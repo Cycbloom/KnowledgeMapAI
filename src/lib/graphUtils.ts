@@ -29,6 +29,133 @@ export const getNextLevel = (parentLevel: string): NodeLevel => {
   return 'leaf'; // Leaves produce leaves
 };
 
+// Get all descendant nodes (children, grandchildren, etc.) using BFS
+export const getDescendantNodes = (nodeId: string, nodes: Node[], edges: Edge[]): Set<string> => {
+  const normalizeId = (id: any) => String(id).trim();
+  const startId = normalizeId(nodeId);
+  
+  const descendants = new Set<string>();
+  const queue: string[] = [startId];
+  const visited = new Set<string>([startId]);
+  
+  // Build adjacency list for children only (outgoing edges)
+  const childrenMap = new Map<string, string[]>();
+  nodes.forEach(node => {
+    childrenMap.set(normalizeId(node.id), []);
+  });
+  
+  edges.forEach(edge => {
+    const src = normalizeId(edge.source_node_id);
+    const tgt = normalizeId(edge.target_node_id);
+    if (childrenMap.has(src)) {
+      childrenMap.get(src)?.push(tgt);
+    }
+  });
+  
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    const children = childrenMap.get(currentId) || [];
+    
+    for (const childId of children) {
+      if (!visited.has(childId)) {
+        visited.add(childId);
+        descendants.add(childId);
+        queue.push(childId);
+      }
+    }
+  }
+  
+  return descendants;
+};
+
+// Get direct children only (not grandchildren)
+export const getDirectChildren = (nodeId: string, nodes: Node[], edges: Edge[]): Set<string> => {
+  const normalizeId = (id: any) => String(id).trim();
+  const startId = normalizeId(nodeId);
+  
+  const directChildren = new Set<string>();
+  
+  edges.forEach(edge => {
+    const src = normalizeId(edge.source_node_id);
+    const tgt = normalizeId(edge.target_node_id);
+    if (src === startId) {
+      directChildren.add(tgt);
+    }
+  });
+  
+  return directChildren;
+};
+
+// Get all ancestor nodes (parents, grandparents, etc.) using BFS
+export const getAncestorNodes = (nodeId: string, nodes: Node[], edges: Edge[]): Set<string> => {
+  const normalizeId = (id: any) => String(id).trim();
+  const startId = normalizeId(nodeId);
+  
+  const ancestors = new Set<string>();
+  const queue: string[] = [startId];
+  const visited = new Set<string>([startId]);
+  
+  // Build adjacency list for parents only (incoming edges)
+  const parentsMap = new Map<string, string[]>();
+  nodes.forEach(node => {
+    parentsMap.set(normalizeId(node.id), []);
+  });
+  
+  edges.forEach(edge => {
+    const src = normalizeId(edge.source_node_id);
+    const tgt = normalizeId(edge.target_node_id);
+    if (parentsMap.has(tgt)) {
+      parentsMap.get(tgt)?.push(src);
+    }
+  });
+  
+  while (queue.length > 0) {
+    const currentId = queue.shift()!;
+    const parents = parentsMap.get(currentId) || [];
+    
+    for (const parentId of parents) {
+      if (!visited.has(parentId)) {
+        visited.add(parentId);
+        ancestors.add(parentId);
+        queue.push(parentId);
+      }
+    }
+  }
+  
+  return ancestors;
+};
+
+// Get all nodes to focus: selected node + ancestors + descendants
+export const getFocusedNodes = (nodeId: string, nodes: Node[], edges: Edge[]): Set<string> => {
+  const focused = new Set<string>();
+  focused.add(nodeId);
+  
+  const descendants = getDescendantNodes(nodeId, nodes, edges);
+  const ancestors = getAncestorNodes(nodeId, nodes, edges);
+  
+  descendants.forEach(id => focused.add(id));
+  ancestors.forEach(id => focused.add(id));
+  
+  return focused;
+};
+
+// Get all links that connect focused nodes
+export const getFocusedLinks = (focusedNodeIds: Set<string>, edges: Edge[]): Set<string> => {
+  const focusedLinks = new Set<string>();
+  
+  edges.forEach(edge => {
+    const src = String(edge.source_node_id).trim();
+    const tgt = String(edge.target_node_id).trim();
+    
+    // Include link if both endpoints are in focused nodes
+    if (focusedNodeIds.has(src) && focusedNodeIds.has(tgt)) {
+      focusedLinks.add(String(edge.id));
+    }
+  });
+  
+  return focusedLinks;
+};
+
 // BFS algorithm for shortest path (unweighted graph)
 export const findShortestPath = (nodes: Node[], edges: Edge[], startId: string, endId: string) => {
   // 1. Robust ID normalization

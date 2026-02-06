@@ -16,9 +16,16 @@ interface MindMapNodeProps {
   onClick: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  focused?: boolean;
+  forceShowText?: boolean;
+  hasFocusMode?: boolean;
 }
 
-const getTextVisibility = (level: NodeLevel, zoomLevel: number): { visible: boolean; opacity: number } => {
+const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
+  if (forceShowText) {
+    return { visible: true, opacity: 1 };
+  }
+  
   const thresholds: Record<NodeLevel, { minZoom: number; maxOpacity: number }> = {
     root: { minZoom: 0, maxOpacity: 1 },
     core: { minZoom: 0.2, maxOpacity: 1 },
@@ -46,13 +53,18 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
   zoomLevel,
   onClick,
   onMouseEnter,
-  onMouseLeave
+  onMouseLeave,
+  focused = false,
+  forceShowText = false,
+  hasFocusMode = false
 }) => {
   const level = getLevel(node, edges);
   const styleConfig = NODE_STYLE_CONFIG[level];
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
-  const textVisibility = getTextVisibility(level, zoomLevel);
+  const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
+  
+  const nodeOpacity = !hasFocusMode ? 1 : (focused ? 1 : 0.3);
 
   const rings = [];
   for (let i = 0; i < styleConfig.rings; i++) {
@@ -87,7 +99,7 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
       transform={`translate(${node.x}, ${node.y})`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', opacity: nodeOpacity, transition: 'opacity 0.2s ease' }}
     >
       <g
         style={{

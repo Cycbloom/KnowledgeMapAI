@@ -37,6 +37,16 @@ export interface GraphEditorState {
   isFocusMode: boolean;
   setIsFocusMode: React.Dispatch<React.SetStateAction<boolean>>;
   
+  // Node Focus Mode
+  focusedNodeId: string | null;
+  setFocusedNodeId: React.Dispatch<React.SetStateAction<string | null>>;
+  focusedNodeIds: Set<string>;
+  setFocusedNodeIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  focusedLinkIds: Set<string>;
+  setFocusedLinkIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  forceShowTextIds: Set<string>;
+  setForceShowTextIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  
   // Pathfinding State
   pathStartNode: Node | null;
   setPathStartNode: React.Dispatch<React.SetStateAction<Node | null>>;
@@ -147,6 +157,12 @@ export const useGraphEditorState = (): GraphEditorState => {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
 
+  // Node Focus Mode
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
+  const [focusedNodeIds, setFocusedNodeIds] = useState<Set<string>>(new Set());
+  const [focusedLinkIds, setFocusedLinkIds] = useState<Set<string>>(new Set());
+  const [forceShowTextIds, setForceShowTextIds] = useState<Set<string>>(new Set());
+
   // Pathfinding
   const [pathStartNode, setPathStartNode] = useState<Node | null>(null);
   const [pathEndNode, setPathEndNode] = useState<Node | null>(null);
@@ -222,6 +238,10 @@ export const useGraphEditorState = (): GraphEditorState => {
     isPathfindingMode, setIsPathfindingMode,
     isDeleteMode, setIsDeleteMode,
     isFocusMode, setIsFocusMode,
+    focusedNodeId, setFocusedNodeId,
+    focusedNodeIds, setFocusedNodeIds,
+    focusedLinkIds, setFocusedLinkIds,
+    forceShowTextIds, setForceShowTextIds,
     pathStartNode, setPathStartNode,
     pathEndNode, setPathEndNode,
     highlightedPath, setHighlightedPath,

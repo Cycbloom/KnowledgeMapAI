@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Node, Edge } from '../../types';
+import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
 import { MindMapLink } from './MindMapLink';
 import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
@@ -11,10 +12,15 @@ interface MindMapCanvasProps {
   edges: Edge[];
   nodeStatus?: Record<string, any>;
   selectedNodeId: string | null;
-  onNodeClick: (node: Node) => void;
+  onNodeClick: (node: GraphNode) => void;
   width?: number;
   height?: number;
   sidebarMode?: 'none' | 'edit' | 'outline' | 'create' | 'detail';
+  focusedNodeIds?: Set<string>;
+  focusedLinkIds?: Set<string>;
+  onCanvasClick?: () => void;
+  forceShowTextIds?: Set<string>;
+  focusedNodeId?: string | null;
 }
 
 interface Transform {
@@ -31,7 +37,12 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   onNodeClick,
   width = 800,
   height = 600,
-  sidebarMode = 'none'
+  sidebarMode = 'none',
+  focusedNodeIds = new Set(),
+  focusedLinkIds = new Set(),
+  onCanvasClick,
+  forceShowTextIds = new Set(),
+  focusedNodeId = null
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -44,6 +55,7 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   const [containerSize, setContainerSize] = useState({ width, height });
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
+  const hasFocusMode = focusedNodeId !== null;
 
   useEffect(() => {
     const updateContainerSize = () => {
@@ -100,8 +112,11 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
     if (e.target === svgRef.current) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+      if (onCanvasClick && e.button === 2) {
+        onCanvasClick();
+      }
     }
-  }, [transform]);
+  }, [transform, onCanvasClick]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isDragging) {
@@ -160,6 +175,7 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onContextMenu={(e) => e.preventDefault()}
       >
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
           {layout.links.map(link => (
@@ -169,6 +185,8 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               nodes={nodeMap}
               isDark={isDark}
               highlighted={false}
+              focused={focusedLinkIds.has(link.id)}
+              hasFocusMode={hasFocusMode}
             />
           ))}
 
@@ -184,6 +202,9 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               onClick={() => onNodeClick(node)}
               onMouseEnter={() => setHoveredNodeId(node.id)}
               onMouseLeave={() => setHoveredNodeId(null)}
+              focused={focusedNodeIds.has(node.id)}
+              forceShowText={forceShowTextIds.has(node.id)}
+              hasFocusMode={hasFocusMode}
             />
           ))}
         </g>

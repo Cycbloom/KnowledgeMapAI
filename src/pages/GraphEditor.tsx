@@ -32,6 +32,8 @@ import { useGraphAIOperations } from '../hooks/useGraphAIOperations';
 import { useGraphExportOperations } from '../hooks/useGraphExportOperations';
 import { useGraphInteraction } from '../hooks/useGraphInteraction';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
+import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
+import type { Node as GraphNode } from '../types';
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,7 +63,11 @@ export const GraphEditor = () => {
     isFocusMode, setIsFocusMode,
     collapsedNodeIds,
     highlightedPath,
-    viewMode, setViewMode
+    viewMode, setViewMode,
+    focusedNodeId, setFocusedNodeId,
+    focusedNodeIds, setFocusedNodeIds,
+    focusedLinkIds, setFocusedLinkIds,
+    forceShowTextIds, setForceShowTextIds
   } = state;
 
   // Mutations Hook
@@ -192,6 +198,27 @@ export const GraphEditor = () => {
     setSelectedNodeIds(new Set());
   };
 
+  const handleNodeClick = (node: GraphNode) => {
+    setSelectedNode(node);
+    setSidebarMode('detail');
+    
+    const focusedNodes = getFocusedNodes(node.id, nodes, edges);
+    const focusedLinks = getFocusedLinks(focusedNodes, edges);
+    const directChildren = getDirectChildren(node.id, nodes, edges);
+    
+    setFocusedNodeId(node.id);
+    setFocusedNodeIds(focusedNodes);
+    setFocusedLinkIds(focusedLinks);
+    state.setForceShowTextIds(new Set([node.id, ...directChildren]));
+  };
+
+  const handleCanvasClick = () => {
+    setFocusedNodeId(null);
+    setFocusedNodeIds(new Set());
+    setFocusedLinkIds(new Set());
+    state.setForceShowTextIds(new Set());
+  };
+
   return (
     <div className="flex h-full relative">
       {/* Main Canvas Area */}
@@ -234,11 +261,13 @@ export const GraphEditor = () => {
               edges={edges}
               nodeStatus={nodeStatus}
               selectedNodeId={selectedNode?.id}
-              onNodeClick={(node) => {
-                setSelectedNode(node);
-                setSidebarMode('detail');
-              }}
+              onNodeClick={handleNodeClick}
               sidebarMode={sidebarMode}
+              focusedNodeIds={focusedNodeIds}
+              focusedLinkIds={focusedLinkIds}
+              onCanvasClick={handleCanvasClick}
+              forceShowTextIds={forceShowTextIds}
+              focusedNodeId={focusedNodeId}
             />
           </div>
         )}

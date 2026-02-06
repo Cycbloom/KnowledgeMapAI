@@ -7,13 +7,17 @@ interface MindMapLinkProps {
   nodes: Map<string, LayoutNode>;
   isDark: boolean;
   highlighted?: boolean;
+  focused?: boolean;
+  hasFocusMode?: boolean;
 }
 
 export const MindMapLink: React.FC<MindMapLinkProps> = ({
   link,
   nodes,
   isDark,
-  highlighted = false
+  highlighted = false,
+  focused = false,
+  hasFocusMode = false
 }) => {
   const source = typeof link.source === 'string' ? nodes.get(link.source) : link.source;
   const target = typeof link.target === 'string' ? nodes.get(link.target) : link.target;
@@ -21,9 +25,24 @@ export const MindMapLink: React.FC<MindMapLinkProps> = ({
   if (!source || !target) return null;
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
-  const strokeColor = highlighted ? colors.linkHighlight : colors.link;
-  const strokeWidth = highlighted ? 3 : 2;
-  const opacity = highlighted ? 0.8 : 0.4;
+  
+  let strokeColor = colors.link;
+  let strokeWidth = 2;
+  let opacity = 0.4;
+  
+  if (!hasFocusMode) {
+    opacity = 0.4;
+  } else if (focused) {
+    strokeColor = colors.linkHighlight;
+    strokeWidth = 3;
+    opacity = 0.8;
+  } else if (highlighted) {
+    strokeColor = colors.linkHighlight;
+    strokeWidth = 3;
+    opacity = 0.8;
+  } else {
+    opacity = 0.1;
+  }
 
   const dx = target.x - source.x;
   const dy = target.y - source.y;

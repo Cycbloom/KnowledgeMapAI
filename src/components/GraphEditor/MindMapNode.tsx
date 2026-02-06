@@ -87,7 +87,7 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
   }
 
   const centerDotRadius = styleConfig.showCenterDot ? getCenterDotRadius(styleConfig.baseRadius) : 0;
-  const maxRadius = getRingRadius(styleConfig.baseRadius, styleConfig.rings - 1, styleConfig.rings) + styleConfig.strokeWidth;
+  const maxRadius = getRingRadius(styleConfig.baseRadius, 0, styleConfig.rings) + styleConfig.strokeWidth / 2;
   const textOffset = maxRadius + 12;
   const baseFontSize = level === 'root' ? 14 : level === 'core' ? 12 : 10;
   const scaledFontSize = baseFontSize / zoomLevel;
@@ -99,6 +99,11 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
       transform={`translate(${node.x}, ${node.y})`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
       style={{ cursor: 'pointer', opacity: nodeOpacity, transition: 'opacity 0.2s ease' }}
     >
       <g
@@ -134,7 +139,11 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
       <circle
         r={maxRadius}
         fill="transparent"
-        onClick={onClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
       />
 
       {textVisibility.visible && (

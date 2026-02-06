@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, lazy, Suspense } from 'react';
+import React, { useRef, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
@@ -132,29 +132,29 @@ export const GraphEditor = () => {
   // Computed Values
   const lockedNodeIds = useMemo(() => {
     if (!nodeStatus) return new Set<string>();
-    return new Set(
-      Object.entries(nodeStatus)
-        .filter(([_, status]: [string, any]) => status.locked)
-        .map(([id]) => id)
-    );
+    const result = new Set<string>();
+    Object.entries(nodeStatus).forEach(([id, status]: [string, any]) => {
+      if (status.locked) result.add(id);
+    });
+    return result;
   }, [nodeStatus]);
 
   const masteredNodeIds = useMemo(() => {
     if (!nodeStatus) return new Set<string>();
-    return new Set(
-      Object.entries(nodeStatus)
-        .filter(([_, status]: [string, any]) => status.mastered)
-        .map(([id]) => id)
-    );
+    const result = new Set<string>();
+    Object.entries(nodeStatus).forEach(([id, status]: [string, any]) => {
+      if (status.mastered) result.add(id);
+    });
+    return result;
   }, [nodeStatus]);
 
   const dueTodayNodeIds = useMemo(() => {
     if (!nodeStatus) return new Set<string>();
-    return new Set(
-      Object.entries(nodeStatus)
-        .filter(([_, status]: [string, any]) => status.due_today || status.due)
-        .map(([id]) => id)
-    );
+    const result = new Set<string>();
+    Object.entries(nodeStatus).forEach(([id, status]: [string, any]) => {
+      if (status.due_today || status.due) result.add(id);
+    });
+    return result;
   }, [nodeStatus]);
 
   const graphStats = useMemo(() => {
@@ -187,7 +187,7 @@ export const GraphEditor = () => {
     selectedNode
   });
 
-  const handleCloseSidebar = () => {
+  const handleCloseSidebar = useCallback(() => {
     if (prevSidebarMode === 'outline') {
       setSidebarMode('outline');
       setPrevSidebarMode('none');
@@ -196,9 +196,9 @@ export const GraphEditor = () => {
     }
     setSelectedNode(null);
     setSelectedNodeIds(new Set());
-  };
+  }, [prevSidebarMode, setSidebarMode, setPrevSidebarMode, setSelectedNode, setSelectedNodeIds]);
 
-  const handleNodeClick = (node: GraphNode) => {
+  const handleNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node);
     setSidebarMode('detail');
     
@@ -210,14 +210,14 @@ export const GraphEditor = () => {
     setFocusedNodeIds(focusedNodes);
     setFocusedLinkIds(focusedLinks);
     state.setForceShowTextIds(new Set([node.id, ...directChildren]));
-  };
+  }, [setSelectedNode, setSidebarMode, nodes, edges, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
 
-  const handleCanvasClick = () => {
+  const handleCanvasClick = useCallback(() => {
     setFocusedNodeId(null);
     setFocusedNodeIds(new Set());
     setFocusedLinkIds(new Set());
     state.setForceShowTextIds(new Set());
-  };
+  }, [setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
 
   return (
     <div className="flex h-full relative">

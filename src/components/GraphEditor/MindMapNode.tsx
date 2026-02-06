@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { LayoutNode, LearningStatus, NodeLevel } from '../../types';
 import { NodeRing } from './NodeRing';
 import { NODE_STYLE_CONFIG, getRingRadius, getRingOpacity, getCenterDotRadius } from '../../config/nodeStyleConfig';
@@ -44,7 +44,7 @@ const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: b
   return { visible, opacity };
 };
 
-export const MindMapNode: React.FC<MindMapNodeProps> = ({
+const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   node,
   edges,
   nodeStatus,
@@ -66,44 +66,62 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
   
   const nodeOpacity = !hasFocusMode ? 1 : (focused ? 1 : 0.3);
 
-  const rings = [];
-  for (let i = 0; i < styleConfig.rings; i++) {
-    const radius = getRingRadius(styleConfig.baseRadius, i, styleConfig.rings);
-    const opacity = getRingOpacity(i, styleConfig.rings);
-    const color = i === 0 ? colors.primary : colors.secondary;
+  const rings = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < styleConfig.rings; i++) {
+      const radius = getRingRadius(styleConfig.baseRadius, i, styleConfig.rings);
+      const opacity = getRingOpacity(i, styleConfig.rings);
+      const color = i === 0 ? colors.primary : colors.secondary;
 
-    rings.push(
-      <NodeRing
-        key={`ring-${i}`}
-        radius={radius}
-        strokeWidth={styleConfig.strokeWidth}
-        color={color}
-        opacity={opacity}
-        dashArray={styleConfig.dashArray}
-        showGlow={i === 0 && styleConfig.showGlow}
-        glowColor={colors.glow}
-      />
-    );
-  }
+      result.push(
+        <NodeRing
+          key={`ring-${i}`}
+          radius={radius}
+          strokeWidth={styleConfig.strokeWidth}
+          color={color}
+          opacity={opacity}
+          dashArray={styleConfig.dashArray}
+          showGlow={i === 0 && styleConfig.showGlow}
+          glowColor={colors.glow}
+        />
+      );
+    }
+    return result;
+  }, [styleConfig, colors.primary, colors.secondary, colors.glow]);
 
   const centerDotRadius = styleConfig.showCenterDot ? getCenterDotRadius(styleConfig.baseRadius) : 0;
-  const maxRadius = getRingRadius(styleConfig.baseRadius, 0, styleConfig.rings) + styleConfig.strokeWidth / 2;
-  const textOffset = maxRadius + 12;
+  const maxRadius = useMemo(() => getRingRadius(styleConfig.baseRadius, 0, styleConfig.rings) + styleConfig.strokeWidth / 2, [styleConfig.baseRadius, styleConfig.rings, styleConfig.strokeWidth]);
+  const textOffset = useMemo(() => maxRadius + 12, [maxRadius]);
   const baseFontSize = level === 'root' ? 14 : level === 'core' ? 12 : 10;
-  const scaledFontSize = baseFontSize / zoomLevel;
-  const shadowBlur = 3 / zoomLevel;
-  const shadowOffset = 1 / zoomLevel;
+  const scaledFontSize = useMemo(() => baseFontSize / zoomLevel, [baseFontSize, zoomLevel]);
+  const shadowBlur = useMemo(() => 3 / zoomLevel, [zoomLevel]);
+  const shadowOffset = useMemo(() => 1 / zoomLevel, [zoomLevel]);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick();
+  }, [onClick]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleCircleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick();
+  }, [onClick]);
+
+  const handleCircleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
 
   return (
     <g
       transform={`translate(${node.x}, ${node.y})`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      onMouseDown={(e) => e.stopPropagation()}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
       style={{ cursor: 'pointer', opacity: nodeOpacity, transition: 'opacity 0.2s ease' }}
     >
       <g
@@ -139,11 +157,8 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
       <circle
         r={maxRadius}
         fill="transparent"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
+        onClick={handleCircleClick}
+        onMouseDown={handleCircleMouseDown}
       />
 
       {textVisibility.visible && (
@@ -170,3 +185,19 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({
     </g>
   );
 };
+
+export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.node.id === nextProps.node.id &&
+    prevProps.node.x === nextProps.node.x &&
+    prevProps.node.y === nextProps.node.y &&
+    prevProps.node.title === nextProps.node.title &&
+    prevProps.selected === nextProps.selected &&
+    prevProps.isDark === nextProps.isDark &&
+    prevProps.zoomLevel === nextProps.zoomLevel &&
+    prevProps.focused === nextProps.focused &&
+    prevProps.forceShowText === nextProps.forceShowText &&
+    prevProps.hasFocusMode === nextProps.hasFocusMode &&
+    prevProps.nodeStatus?.[prevProps.node.id] === nextProps.nodeStatus?.[nextProps.node.id]
+  );
+});

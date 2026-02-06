@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { LayoutNode, LayoutLink } from '../../types';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 
@@ -11,7 +11,7 @@ interface MindMapLinkProps {
   hasFocusMode?: boolean;
 }
 
-export const MindMapLink: React.FC<MindMapLinkProps> = ({
+const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   link,
   nodes,
   isDark,
@@ -24,44 +24,50 @@ export const MindMapLink: React.FC<MindMapLinkProps> = ({
 
   if (!source || !target) return null;
 
-  const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
+  const colors = useMemo(() => isDark ? THEME_COLORS.dark : THEME_COLORS.light, [isDark]);
   
-  let strokeColor = colors.link;
-  let strokeWidth = 2;
-  let opacity = 0.4;
-  
-  if (!hasFocusMode) {
-    opacity = 0.4;
-  } else if (focused) {
-    strokeColor = colors.linkHighlight;
-    strokeWidth = 3;
-    opacity = 0.8;
-  } else if (highlighted) {
-    strokeColor = colors.linkHighlight;
-    strokeWidth = 3;
-    opacity = 0.8;
-  } else {
-    opacity = 0.1;
-  }
+  const linkStyle = useMemo(() => {
+    let strokeColor = colors.link;
+    let strokeWidth = 2;
+    let opacity = 0.4;
+    
+    if (!hasFocusMode) {
+      opacity = 0.4;
+    } else if (focused) {
+      strokeColor = colors.linkHighlight;
+      strokeWidth = 3;
+      opacity = 0.8;
+    } else if (highlighted) {
+      strokeColor = colors.linkHighlight;
+      strokeWidth = 3;
+      opacity = 0.8;
+    } else {
+      opacity = 0.1;
+    }
 
-  const dx = target.x - source.x;
-  const dy = target.y - source.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
+    return { strokeColor, strokeWidth, opacity };
+  }, [colors, hasFocusMode, focused, highlighted]);
 
-  const midX = (source.x + target.x) / 2;
-  const midY = (source.y + target.y) / 2;
+  const pathData = useMemo(() => {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-  const controlOffset = distance * 0.2;
+    const midX = (source.x + target.x) / 2;
+    const midY = (source.y + target.y) / 2;
 
-  const pathData = `M ${source.x} ${source.y} Q ${midX} ${midY} ${target.x} ${target.y}`;
+    const controlOffset = distance * 0.2;
+
+    return `M ${source.x} ${source.y} Q ${midX} ${midY} ${target.x} ${target.y}`;
+  }, [source.x, source.y, target.x, target.y]);
 
   return (
     <path
       d={pathData}
       fill="none"
-      stroke={strokeColor}
-      strokeWidth={strokeWidth}
-      opacity={opacity}
+      stroke={linkStyle.strokeColor}
+      strokeWidth={linkStyle.strokeWidth}
+      opacity={linkStyle.opacity}
       strokeLinecap="round"
       style={{
         transition: 'stroke-width 0.2s, opacity 0.2s'
@@ -69,3 +75,25 @@ export const MindMapLink: React.FC<MindMapLinkProps> = ({
     />
   );
 };
+
+export const MindMapLink = React.memo(MindMapLinkComponent, (prevProps, nextProps) => {
+  const getSourceId = (link: LayoutLink) => typeof link.source === 'string' ? link.source : link.source.id;
+  const getTargetId = (link: LayoutLink) => typeof link.target === 'string' ? link.target : link.target.id;
+  
+  const prevSourceId = getSourceId(prevProps.link);
+  const nextSourceId = getSourceId(nextProps.link);
+  const prevTargetId = getTargetId(prevProps.link);
+  const nextTargetId = getTargetId(nextProps.link);
+  
+  return (
+    prevProps.link.id === nextProps.link.id &&
+    prevProps.isDark === nextProps.isDark &&
+    prevProps.highlighted === nextProps.highlighted &&
+    prevProps.focused === nextProps.focused &&
+    prevProps.hasFocusMode === nextProps.hasFocusMode &&
+    prevProps.nodes.get(prevSourceId)?.x === nextProps.nodes.get(nextSourceId)?.x &&
+    prevProps.nodes.get(prevSourceId)?.y === nextProps.nodes.get(nextSourceId)?.y &&
+    prevProps.nodes.get(prevTargetId)?.x === nextProps.nodes.get(nextTargetId)?.x &&
+    prevProps.nodes.get(prevTargetId)?.y === nextProps.nodes.get(nextTargetId)?.y
+  );
+});

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser } from 'lucide-react';
 import { Node, Edge } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
@@ -223,7 +223,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     }
   }, [selectedNodeId, parentMap, searchQuery]);
 
-  const toggleExpand = (nodeId: string, e: React.MouseEvent) => {
+  const toggleExpand = useCallback((nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedNodeIds(prev => {
       const next = new Set(prev);
@@ -231,9 +231,9 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       else next.add(nodeId);
       return next;
     });
-  };
+  }, []);
 
-  const handleToggleSelection = (nodeId: string) => {
+  const handleToggleSelection = useCallback((nodeId: string) => {
     if (!onSelectionChange) return;
     const newSet = new Set(selectedNodeIds);
     if (newSet.has(nodeId)) {
@@ -242,23 +242,22 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       newSet.add(nodeId);
     }
     onSelectionChange(newSet);
-  };
+  }, [selectedNodeIds, onSelectionChange]);
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (!onSelectionChange) return;
     if (selectedNodeIds.size === nodes.length) {
       onSelectionChange(new Set());
     } else {
       onSelectionChange(new Set(nodes.map(n => n.id)));
     }
-  };
+  }, [selectedNodeIds.size, nodes, onSelectionChange]);
 
-  const handleBatchGenerateSuccess = () => {
+  const handleBatchGenerateSuccess = useCallback(() => {
     onSelectionChange?.(new Set());
     setIsMultiSelectMode(false);
-    // Notify parent to show success message
     onBatchAction?.('batch_generate_questions'); 
-  };
+  }, [onSelectionChange, onBatchAction]);
 
   // List Mode: Flat List (Used for Search, Filter, or explicit List View)
   const renderList = () => {
@@ -309,7 +308,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   };
 
   // Helper to select all direct children of a node
-  const handleSelectChildren = (parentId: string, e: React.MouseEvent) => {
+  const handleSelectChildren = useCallback((parentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!onSelectionChange) return;
     
@@ -317,15 +316,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     if (children.length === 0) return;
     
     const newSet = new Set(selectedNodeIds);
-    // Add all children
     children.forEach(child => newSet.add(child.id));
     
     onSelectionChange(newSet);
     if (!isMultiSelectMode) setIsMultiSelectMode(true);
-  };
+  }, [selectedNodeIds, onSelectionChange, isMultiSelectMode, childrenMap]);
 
   // Helper to select isolated nodes (nodes with no edges)
-  const handleSelectIsolated = () => {
+  const handleSelectIsolated = useCallback(() => {
     if (!onSelectionChange) return;
 
     const connectedNodeIds = new Set<string>();
@@ -337,7 +335,6 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     const isolatedNodes = nodes.filter(node => !connectedNodeIds.has(node.id));
     
     if (isolatedNodes.length === 0) {
-      // toast.success('没有发现孤立节点'); // Assume toast is not available or handled by parent
       return;
     }
 
@@ -346,10 +343,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     
     onSelectionChange(newSet);
     if (!isMultiSelectMode) setIsMultiSelectMode(true);
-  };
+  }, [selectedNodeIds, onSelectionChange, isMultiSelectMode, nodes, edges]);
 
   // Tree Mode: Recursive Render
-  const renderTree = (node: Node, depth: number, visited: Set<string>) => {
+  const TreeNode = React.memo(({ node, depth, visited }: { node: Node; depth: number; visited: Set<string> }) => {
     if (visited.has(node.id)) return null;
     const newVisited = new Set(visited).add(node.id);
     
@@ -358,12 +355,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     const isExpanded = expandedNodeIds.has(node.id);
     const isSelected = selectedNodeIds.has(node.id);
     
-    // Indentation handled by paddingLeft
-    // Base padding 12px, plus depth * 16px
     const paddingLeft = 12 + depth * 16;
 
     return (
-      <div key={node.id} className="select-none">
+      <div className="select-none">
         <div 
           className={`w-full flex items-center pr-2 py-1.5 cursor-pointer text-sm transition-colors group
             ${(selectedNodeId === node.id && !isMultiSelectMode)
@@ -379,7 +374,6 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             }
           }}
         >
-          {/* Expand Toggle */}
           <div 
             className={`w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700 mr-1 transition-colors ${hasChildren ? 'visible' : 'invisible'}`}
             onClick={(e) => hasChildren && toggleExpand(node.id, e)}
@@ -393,18 +387,15 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             </div>
           )}
 
-          {/* Node Dot */}
           <div 
             className="w-2 h-2 rounded-full shrink-0 mr-2"
             style={{ backgroundColor: node.color || '#3B82F6' }}
           />
           
-          {/* Title */}
           <span className="truncate flex-1 font-medium">
             {node.title || '未命名节点'}
           </span>
           
-          {/* Level Badge (Only show on hover or selected to keep clean) */}
           {node.level && (
             <span className={`text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block
                ${selectedNodeId === node.id ? 'bg-blue-100 dark:bg-blue-800 text-blue-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
@@ -412,7 +403,6 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             </span>
           )}
 
-          {/* Select Children Button */}
           {hasChildren && (
             <button
               onClick={(e) => handleSelectChildren(node.id, e)}
@@ -426,12 +416,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         
         {hasChildren && isExpanded && (
           <div>
-            {children.map(child => renderTree(child, depth + 1, newVisited))}
+            {children.map(child => (
+              <TreeNode key={child.id} node={child} depth={depth + 1} visited={newVisited} />
+            ))}
           </div>
         )}
       </div>
     );
-  };
+  });
 
   return (
     <div className={`flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 ${className}`}>
@@ -584,10 +576,13 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         ) : (
           <div className="space-y-0.5">
              {rootNodes.length === 0 && nodes.length > 0 ? (
-                // Fallback if something went wrong with root detection
-                nodes.map(node => renderTree(node, 0, new Set()))
+                nodes.map(node => (
+                  <TreeNode key={node.id} node={node} depth={0} visited={new Set()} />
+                ))
              ) : (
-                rootNodes.map(node => renderTree(node, 0, new Set()))
+                rootNodes.map(node => (
+                  <TreeNode key={node.id} node={node} depth={0} visited={new Set()} />
+                ))
              )}
              {nodes.length === 0 && (
                <div className="text-center py-8 text-slate-500 text-sm">

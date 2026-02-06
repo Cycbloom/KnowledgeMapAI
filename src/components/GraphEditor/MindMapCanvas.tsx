@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Node, Edge } from '../../types';
 import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
@@ -47,7 +47,6 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState<LayoutResult | null>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -77,14 +76,12 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
     return () => resizeObserver.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (nodes.length > 0) {
-      const result = createMindMapLayout(nodes, edges, { 
-        width: containerSize.width, 
-        height: containerSize.height 
-      });
-      setLayout(result);
-    }
+  const layout = useMemo(() => {
+    if (nodes.length === 0) return null;
+    return createMindMapLayout(nodes, edges, { 
+      width: containerSize.width, 
+      height: containerSize.height 
+    });
   }, [nodes, edges, containerSize]);
 
   const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {

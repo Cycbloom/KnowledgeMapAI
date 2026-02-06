@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { LayoutNode, LayoutLink } from '../../types';
+import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation } from '../../types';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 
 interface MindMapLinkProps {
@@ -9,6 +9,8 @@ interface MindMapLinkProps {
   highlighted?: boolean;
   focused?: boolean;
   hasFocusMode?: boolean;
+  linkStyle?: LinkStyle;
+  linkAnimation?: LinkAnimation;
 }
 
 const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
@@ -17,7 +19,9 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   isDark,
   highlighted = false,
   focused = false,
-  hasFocusMode = false
+  hasFocusMode = false,
+  linkStyle = 'curved',
+  linkAnimation = 'none'
 }) => {
   const source = typeof link.source === 'string' ? nodes.get(link.source) : link.source;
   const target = typeof link.target === 'string' ? nodes.get(link.target) : link.target;
@@ -26,7 +30,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
 
   const colors = useMemo(() => isDark ? THEME_COLORS.dark : THEME_COLORS.light, [isDark]);
   
-  const linkStyle = useMemo(() => {
+  const linkStyleConfig = useMemo(() => {
     let strokeColor = colors.link;
     let strokeWidth = 2;
     let opacity = 0.4;
@@ -53,26 +57,87 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     const dy = target.y - source.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    const midX = (source.x + target.x) / 2;
-    const midY = (source.y + target.y) / 2;
+    switch (linkStyle) {
+      case 'straight':
+        return `M ${source.x} ${source.y} L ${target.x} ${target.y}`;
+      
+      case 'step':
+        const midX = (source.x + target.x) / 2;
+        return `M ${source.x} ${source.y} L ${midX} ${source.y} L ${midX} ${target.y} L ${target.x} ${target.y}`;
+      
+      case 'bezier':
+        const midX2 = (source.x + target.x) / 2;
+        const midY2 = (source.y + target.y) / 2;
+        const controlOffset = distance * 0.3;
+        const perpX = (dy / distance) * controlOffset;
+        const perpY = -(dx / distance) * controlOffset;
+        return `M ${source.x} ${source.y} Q ${midX2 + perpX} ${midY2 + perpY} ${target.x} ${target.y}`;
+      
+      case 'curved':
+      default:
+        const midX3 = (source.x + target.x) / 2;
+        const midY3 = (source.y + target.y) / 2;
+        const controlOffset2 = distance * 0.2;
+        return `M ${source.x} ${source.y} Q ${midX3} ${midY3} ${target.x} ${target.y}`;
+    }
+  }, [source.x, source.y, target.x, target.y, linkStyle]);
 
-    const controlOffset = distance * 0.2;
-
-    return `M ${source.x} ${source.y} Q ${midX} ${midY} ${target.x} ${target.y}`;
-  }, [source.x, source.y, target.x, target.y]);
+  const animationStyle = useMemo(() => {
+    switch (linkAnimation) {
+      case 'flow':
+        return {
+          strokeDasharray: '10, 10',
+          animation: 'dash 1s linear infinite',
+          transition: 'none'
+        };
+      case 'pulse':
+        return {
+          animation: 'pulse 2s ease-in-out infinite',
+          transition: 'none'
+        };
+      case 'dash':
+        return {
+          strokeDasharray: '5, 5',
+          animation: 'dash 0.5s linear infinite',
+          transition: 'none'
+        };
+      case 'none':
+      default:
+        return {
+          transition: 'stroke-width 0.2s, opacity 0.2s'
+        };
+    }
+  }, [linkAnimation]);
 
   return (
-    <path
-      d={pathData}
-      fill="none"
-      stroke={linkStyle.strokeColor}
-      strokeWidth={linkStyle.strokeWidth}
-      opacity={linkStyle.opacity}
-      strokeLinecap="round"
-      style={{
-        transition: 'stroke-width 0.2s, opacity 0.2s'
-      }}
-    />
+    <>
+      <style>
+        {`
+          @keyframes dash {
+            to {
+              stroke-dashoffset: -20;
+            }
+          }
+          @keyframes pulse {
+            0%, 100% {
+              opacity: ${linkStyleConfig.opacity};
+            }
+            50% {
+              opacity: ${linkStyleConfig.opacity * 0.5};
+            }
+          }
+        `}
+      </style>
+      <path
+        d={pathData}
+        fill="none"
+        stroke={linkStyleConfig.strokeColor}
+        strokeWidth={linkStyleConfig.strokeWidth}
+        opacity={linkStyleConfig.opacity}
+        strokeLinecap="round"
+        style={animationStyle}
+      />
+    </>
   );
 };
 
@@ -91,6 +156,8 @@ export const MindMapLink = React.memo(MindMapLinkComponent, (prevProps, nextProp
     prevProps.highlighted === nextProps.highlighted &&
     prevProps.focused === nextProps.focused &&
     prevProps.hasFocusMode === nextProps.hasFocusMode &&
+    prevProps.linkStyle === nextProps.linkStyle &&
+    prevProps.linkAnimation === nextProps.linkAnimation &&
     prevProps.nodes.get(prevSourceId)?.x === nextProps.nodes.get(nextSourceId)?.x &&
     prevProps.nodes.get(prevSourceId)?.y === nextProps.nodes.get(nextSourceId)?.y &&
     prevProps.nodes.get(prevTargetId)?.x === nextProps.nodes.get(nextTargetId)?.x &&

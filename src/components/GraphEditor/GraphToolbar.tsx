@@ -4,10 +4,10 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import { Node } from '../../types';
+import { Node, ColorScheme, LinkStyle, LinkAnimation } from '../../types';
 
 interface GraphToolbarProps {
   // Navigation & History
@@ -31,8 +31,9 @@ interface GraphToolbarProps {
   // Tools
   aiEnabled?: boolean;
   onTextToGraph: () => void;
-  onAIExpand?: () => void; // New prop for AI Expand
-  onBackgroundTask?: (type: 'generate_questions' | 'expand_graph') => void; // New prop
+  onAIExpand?: () => void;
+  onBranchExplore?: () => void;
+  onBackgroundTask?: (type: 'generate_questions' | 'expand_graph') => void;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
   isPathfindingMode: boolean;
@@ -43,6 +44,10 @@ interface GraphToolbarProps {
     pathLength: number;
     reset: () => void;
   };
+  isExplorationMode: boolean;
+  setIsExplorationMode: (mode: boolean) => void;
+  isTimelineVisible: boolean;
+  setIsTimelineVisible: (visible: boolean) => void;
 
   // Edit
   onAddNode: () => void;
@@ -53,6 +58,16 @@ interface GraphToolbarProps {
   onBatchDelete: () => void;
   onBatchColorUpdate?: (color: string) => void;
   onBatchLevelUpdate?: (level: string) => void;
+
+  // Style Settings
+  isStyleSettingsOpen: boolean;
+  setIsStyleSettingsOpen: (open: boolean) => void;
+  colorScheme: string;
+  setColorScheme: (scheme: ColorScheme) => void;
+  linkStyle: string;
+  setLinkStyle: (style: LinkStyle) => void;
+  linkAnimation: string;
+  setLinkAnimation: (animation: LinkAnimation) => void;
 
   // Settings & Export
   onOpenSettings: () => void;
@@ -67,7 +82,7 @@ interface GraphToolbarProps {
   };
   onRefresh?: () => void;
   onOpenHelp?: () => void;
-  onShare?: () => void; // New prop for sharing
+  onShare?: () => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -75,10 +90,12 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   title, sidebarMode, setSidebarMode,
   viewMode, setViewMode,
   showGrid, setShowGrid, isFocusMode, setIsFocusMode,
-  aiEnabled, onTextToGraph, onAIExpand, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
+  aiEnabled, onTextToGraph, onAIExpand, onBranchExplore, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
-  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare
+  isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme, setColorScheme, linkStyle, setLinkStyle, linkAnimation, setLinkAnimation,
+  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare,
+  isExplorationMode, setIsExplorationMode, isTimelineVisible, setIsTimelineVisible
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -499,6 +516,22 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           </button>
         )}
 
+        {/* Branch Explore Shortcut - Visible when exploration mode and 1 node selected */}
+        {isExplorationMode && selectedNodeIds.size === 1 && onBranchExplore && (
+          <button
+             onClick={onBranchExplore}
+             className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
+               isDark 
+                 ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-800/60' 
+                 : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+             }`}
+             title="查看分支建议"
+          >
+            <GitBranch size={16} />
+            <span className="text-xs font-bold">探索分支</span>
+          </button>
+        )}
+
         {selectedNodeIds.size > 1 && (
           <>
             <div className={`w-px h-6 mx-1 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
@@ -547,12 +580,14 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       {/* 4. View Tools Dropdown */}
       <DropdownButton id="view" icon={List} label="视图">
-        <MenuItem onClick={() => setViewMode('outline')} icon={List} label="大纲视图" active={viewMode === 'outline'} colorClass="text-blue-600" />
+        <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label="大纲学习模式" colorClass="text-indigo-600" />
         <MenuItem onClick={() => setViewMode('mindmap')} icon={Network} label="思维导图" active={viewMode === 'mindmap'} colorClass="text-green-600" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="侧边栏大纲" active={sidebarMode === 'outline'} />
-        <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label="大纲学习模式" colorClass="text-indigo-600" />
         <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label="搜索节点" />
+        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        <MenuItem onClick={() => setIsExplorationMode(!isExplorationMode)} icon={GitBranch} label={isExplorationMode ? "退出探索模式" : "探索分支模式"} active={isExplorationMode} colorClass="text-purple-600" />
+        <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? "隐藏时间轴" : "显示时间轴"} active={isTimelineVisible} colorClass="text-blue-500" />
       </DropdownButton>
 
       {/* AI Status Badge */}
@@ -582,6 +617,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <MenuItem onClick={onOpenHelp} icon={HelpCircle} label="操作指南" disabled={!onOpenHelp} />
         <MenuItem onClick={() => navigate('/profile')} icon={User} label="个人设置" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        <MenuItem onClick={() => setIsStyleSettingsOpen(true)} icon={Palette} label="样式设置" active={isStyleSettingsOpen} />
         <MenuItem onClick={() => setShowGrid(!showGrid)} icon={Grid} label={showGrid ? "隐藏网格" : "显示网格"} active={showGrid} />
         <MenuItem onClick={toggleTheme} icon={isDark ? Sun : Moon} label={isDark ? "浅色模式" : "深色模式"} />
         <MenuItem onClick={() => setIsFocusMode(true)} icon={Maximize} label="专注模式 (F)" />

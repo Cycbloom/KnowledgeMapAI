@@ -238,6 +238,13 @@ export const api = {
       if (!payload.model && config.model) payload.model = config.model;
       return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
     },
+    getBranchSuggestions: (data: { node_title: string; node_content?: string; existing_nodes?: any[]; child_nodes?: any[]; context_level?: string; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/ai/branch-suggestions', { method: 'POST', body: JSON.stringify(payload) });
+    },
     generateCards: (data: { node_title: string; node_content: string; count?: number; types?: string[]; provider?: string; model?: string }) => {
       const config = getAIConfig('text');
       const payload = { ...data };

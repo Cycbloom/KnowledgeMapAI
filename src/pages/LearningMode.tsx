@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
@@ -15,6 +15,7 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { GenerateCardsModal } from '../components/LearningMode/GenerateCardsModal';
+import { Node, NodeLevel } from '../types';
 
 type Message = {
   id: string;
@@ -40,6 +41,13 @@ export const LearningMode = () => {
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const isOnline = useNetworkStatus();
+
+  const [isCreateNodeModalOpen, setIsCreateNodeModalOpen] = useState(false);
+  const [newNodeTitle, setNewNodeTitle] = useState('');
+  const [newNodeContent, setNewNodeContent] = useState('');
+  const [newNodeColor, setNewNodeColor] = useState('#3B82F6');
+  const [newNodeLevel, setNewNodeLevel] = useState<NodeLevel>('leaf');
+  const [selectedParentNodeId, setSelectedParentNodeId] = useState<string>('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -299,6 +307,50 @@ export const LearningMode = () => {
     }
   };
 
+  const handleCreateNode = async () => {
+    if (!graphId || !newNodeTitle.trim()) {
+      addMessage({ type: 'warning', content: '请输入节点标题' });
+      return;
+    }
+
+    try {
+      const newNode = await api.nodes.create({
+        graph_id: graphId,
+        title: newNodeTitle,
+        content: newNodeContent,
+        x_position: Math.round((Math.random() - 0.5) * 20),
+        y_position: Math.round((Math.random() - 0.5) * 20),
+        color: newNodeColor,
+        level: newNodeLevel,
+        properties: {}
+      });
+
+      if (selectedParentNodeId) {
+        await api.edges.create({
+          source_node_id: selectedParentNodeId,
+          target_node_id: newNode.id,
+          relationship_type: 'related'
+        });
+      }
+
+      addMessage({ type: 'success', content: '节点创建成功' });
+      
+      setNewNodeTitle('');
+      setNewNodeContent('');
+      setNewNodeColor('#3B82F6');
+      setNewNodeLevel('leaf');
+      setSelectedParentNodeId('');
+      setIsCreateNodeModalOpen(false);
+
+      if (graphData) {
+        navigate(`/learning?graph_id=${graphId}&node_id=${newNode.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to create node:', error);
+      addMessage({ type: 'error', content: '节点创建失败，请重试' });
+    }
+  };
+
   const handleStartChallenge = () => {
     navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz`);
   };
@@ -501,6 +553,7 @@ export const LearningMode = () => {
                  edges={graphData.edges}
                  onNodeClick={(node) => navigate(`/learning?graph_id=${graphId}&node_id=${node.id}`)}
                  selectedNodeId={nodeId}
+                 onAddNode={() => setIsCreateNodeModalOpen(true)}
                  className="h-full border-none"
                />
              ) : (
@@ -715,6 +768,144 @@ export const LearningMode = () => {
         onGenerate={handleManualGenerateCards}
         nodeTitle={nodeTitle}
       />
+
+      {/* Create Node Modal */}
+      {isCreateNodeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} rounded-xl shadow-2xl w-full max-w-md mx-4 border`}>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>创建新节点</h3>
+                <button
+                  onClick={() => setIsCreateNodeModalOpen(false)}
+                  className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    节点标题 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newNodeTitle}
+                    onChange={(e) => setNewNodeTitle(e.target.value)}
+                    placeholder="输入节点标题"
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    节点内容
+                  </label>
+                  <textarea
+                    value={newNodeContent}
+                    onChange={(e) => setNewNodeContent(e.target.value)}
+                    placeholder="输入节点内容（可选）"
+                    rows={4}
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all resize-none ${
+                      isDark 
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                    }`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                      节点颜色
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={newNodeColor}
+                        onChange={(e) => setNewNodeColor(e.target.value)}
+                        className="w-10 h-10 rounded-lg cursor-pointer border-0"
+                      />
+                      <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{newNodeColor}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                      节点等级
+                    </label>
+                    <select
+                      value={newNodeLevel}
+                      onChange={(e) => setNewNodeLevel(e.target.value as NodeLevel)}
+                      className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
+                        isDark 
+                          ? 'bg-slate-700 border-slate-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                    >
+                      <option value="root">根节点</option>
+                      <option value="core">核心</option>
+                      <option value="sub">次级</option>
+                      <option value="normal">普通</option>
+                      <option value="leaf">叶子</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    父节点（可选）
+                  </label>
+                  <select
+                    value={selectedParentNodeId}
+                    onChange={(e) => setSelectedParentNodeId(e.target.value)}
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-700 border-slate-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="">无父节点</option>
+                    {graphData?.nodes.map(node => (
+                      <option key={node.id} value={node.id}>{node.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setIsCreateNodeModalOpen(false)}
+                  className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                    isDark 
+                      ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleCreateNode}
+                  disabled={!newNodeTitle.trim()}
+                  className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                    !newNodeTitle.trim()
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
+                >
+                  <Plus size={18} />
+                  创建节点
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

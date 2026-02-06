@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser, Plus } from 'lucide-react';
 import { Node, Edge } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
 import { GraphStatsSummary } from './GraphStatsSummary';
@@ -13,6 +13,7 @@ interface GraphOutlineProps {
   selectedNodeIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
   onBatchAction?: (action: 'expand_graph' | 'delete' | 'batch_generate_questions', data?: any) => void;
+  onAddNode?: () => void;
   className?: string;
   // Optional stats for the summary dashboard
   stats?: {
@@ -30,6 +31,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   selectedNodeIds = new Set(),
   onSelectionChange,
   onBatchAction,
+  onAddNode,
   className = '',
   stats
 }) => {
@@ -441,6 +443,15 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             大纲视图 ({nodes.length})
           </h2>
           <div className="flex items-center gap-1">
+            {onAddNode && (
+              <button
+                onClick={onAddNode}
+                className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
+                title="添加节点"
+              >
+                <Plus size={16} />
+              </button>
+            )}
             <button
               onClick={handleSelectIsolated}
               className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500"

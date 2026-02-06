@@ -13,6 +13,7 @@ interface UseKeyboardShortcutsProps {
   deleteNode: (node: Node | null) => void;
   toggleDeleteMode: () => void;
   togglePathfindingMode: () => void;
+  toggleExplorationMode: () => void;
   toggleGrid: () => void;
   toggleFocusMode: () => void;
   toggleSidebar: () => void;
@@ -29,6 +30,7 @@ export const useKeyboardShortcuts = ({
   deleteNode,
   toggleDeleteMode,
   togglePathfindingMode,
+  toggleExplorationMode,
   toggleGrid,
   toggleFocusMode,
   toggleSidebar,
@@ -107,6 +109,12 @@ export const useKeyboardShortcuts = ({
         togglePathfindingMode();
       }
       
+      // Toggle Exploration Mode (E)
+      else if (e.key.toLowerCase() === 'e' && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleExplorationMode();
+      }
+      
       // Exit Focus Mode / Close Sidebar (Escape)
       else if (e.key === 'Escape') {
         // This is handled by components usually, but we can add global Esc logic if needed
@@ -117,7 +125,7 @@ export const useKeyboardShortcuts = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     undo, redo, canUndo, canRedo, 
-    deleteNode, toggleDeleteMode, togglePathfindingMode, 
+    deleteNode, toggleDeleteMode, togglePathfindingMode, toggleExplorationMode,
     toggleGrid, toggleFocusMode, toggleSidebar, 
     saveNode, sidebarMode, selectedNode
   ]);

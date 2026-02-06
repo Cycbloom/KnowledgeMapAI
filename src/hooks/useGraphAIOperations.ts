@@ -1,4 +1,4 @@
-import { Node, Edge, NodeLevel } from '../types';
+import { Node, Edge, NodeLevel, BranchSuggestion } from '../types';
 import { getLevel } from '../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
@@ -340,6 +340,88 @@ export const useGraphAIOperations = ({
     }
   };
 
+  const handleGetBranchSuggestions = async () => {
+    if (!selectedNode || !id) return;
+    setLoading(true);
+    try {
+      const parentLevel = getLevel(selectedNode, edges);
+      
+      const existingTitles = nodes.map(n => n.title);
+      
+      const currentChildrenIds = edges
+        .filter(e => e.source_node_id === selectedNode.id)
+        .map(e => e.target_node_id);
+      const currentChildrenTitles = nodes
+        .filter(n => currentChildrenIds.includes(n.id))
+        .map(n => n.title);
+
+      const res = await api.ai.getBranchSuggestions({
+        node_title: selectedNode.title,
+        node_content: selectedNode.content,
+        existing_nodes: existingTitles,
+        child_nodes: currentChildrenTitles,
+        context_level: parentLevel
+      });
+
+      return res.suggestions || [];
+    } catch (err) {
+      console.error(err);
+      addMessage({ type: 'error', content: '获取分支建议失败' });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateBranch = async (suggestion: BranchSuggestion) => {
+    if (!selectedNode || !id) return;
+    setLoading(true);
+    try {
+      const parentLevel = getLevel(selectedNode, edges);
+      const newLevel = getNextLevel(parentLevel);
+
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 4 + Math.random() * 4;
+      const x = Math.round(selectedNode.x_position + Math.cos(angle) * radius);
+      const y = Math.round(selectedNode.y_position + Math.sin(angle) * radius);
+
+      const newNode = await createNodeMutation.mutateAsync({
+        graph_id: id,
+        title: suggestion.title,
+        content: suggestion.description,
+        x_position: x,
+        y_position: y,
+        color: getLevelColor(newLevel),
+        level: newLevel,
+        properties: {
+          branchSuggestionId: suggestion.id,
+          priority: suggestion.priority,
+          estimatedDifficulty: suggestion.estimatedDifficulty,
+          relatedTopics: suggestion.relatedTopics
+        }
+      });
+
+      record({ type: 'CREATE_NODE', payload: newNode });
+
+      const newEdge = await createEdgeMutation.mutateAsync({
+        source_node_id: selectedNode.id,
+        target_node_id: newNode.id,
+        relationship_type: 'branch',
+        graphId: id
+      });
+      record({ type: 'CREATE_EDGE', payload: newEdge });
+
+      addMessage({ type: 'success', content: `已创建分支：${suggestion.title}` });
+      return newNode;
+    } catch (err) {
+      console.error(err);
+      addMessage({ type: 'error', content: '创建分支失败' });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     handleAIGenerate,
     handleAIExpand,
@@ -347,6 +429,8 @@ export const useGraphAIOperations = ({
     handleBackgroundTask,
     handleStartLevelTest,
     handleStartLearningMode,
-    handleFetchRelatedNodes
+    handleFetchRelatedNodes,
+    handleGetBranchSuggestions,
+    handleCreateBranch
   };
 };

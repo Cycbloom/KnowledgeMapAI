@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Node, Edge } from '../../types';
+import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, BranchSuggestion } from '../../types';
 import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
 import { MindMapLink } from './MindMapLink';
+import { BranchPreview } from './BranchPreview';
 import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
@@ -21,6 +22,14 @@ interface MindMapCanvasProps {
   onCanvasClick?: () => void;
   forceShowTextIds?: Set<string>;
   focusedNodeId?: string | null;
+  colorScheme?: ColorScheme;
+  linkStyle?: LinkStyle;
+  linkAnimation?: LinkAnimation;
+  branchSuggestions?: BranchSuggestion[];
+  selectedNodeForBranch?: GraphNode | null;
+  onSelectBranch?: (suggestion: BranchSuggestion) => void;
+  onCloseBranchPreview?: () => void;
+  isExplorationMode?: boolean;
 }
 
 interface Transform {
@@ -42,7 +51,15 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   focusedLinkIds = new Set(),
   onCanvasClick,
   forceShowTextIds = new Set(),
-  focusedNodeId = null
+  focusedNodeId = null,
+  colorScheme = 'default',
+  linkStyle = 'curved',
+  linkAnimation = 'none',
+  branchSuggestions = [],
+  selectedNodeForBranch = null,
+  onSelectBranch,
+  onCloseBranchPreview,
+  isExplorationMode = false
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -151,8 +168,18 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">正在加载思维导图...</p>
+          {nodes.length === 0 ? (
+            <>
+              <div className="text-6xl mb-4">📊</div>
+              <p className="text-gray-600 dark:text-gray-400 mb-2">暂无节点</p>
+              <p className="text-gray-500 dark:text-gray-500 text-sm">点击工具栏的"+"按钮添加第一个节点</p>
+            </>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">正在加载思维导图...</p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -184,6 +211,8 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               highlighted={false}
               focused={focusedLinkIds.has(link.id)}
               hasFocusMode={hasFocusMode}
+              linkStyle={linkStyle}
+              linkAnimation={linkAnimation}
             />
           ))}
 
@@ -202,8 +231,19 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               focused={focusedNodeIds.has(node.id)}
               forceShowText={forceShowTextIds.has(node.id)}
               hasFocusMode={hasFocusMode}
+              colorScheme={colorScheme}
             />
           ))}
+
+          {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (
+            <BranchPreview
+              parentNode={selectedNodeForBranch}
+              suggestions={branchSuggestions}
+              onSelectBranch={onSelectBranch}
+              onClose={onCloseBranchPreview}
+              isDark={isDark}
+            />
+          )}
         </g>
       </svg>
 

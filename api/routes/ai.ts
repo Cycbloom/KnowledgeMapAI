@@ -17,7 +17,8 @@ import {
   textToGraphSchema, 
   chatSchema,
   recommendConnectionsSchema,
-  documentToGraphSchema
+  documentToGraphSchema,
+  branchSuggestionsSchema
 } from '../schemas/index.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -101,6 +102,18 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
   } catch (error: any) {
     logger.error('AI Expand Error:', error);
     res.status(500).json({ error: error.message || 'AI 扩展失败' });
+  }
+});
+
+router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema), async (req: AuthRequest, res: Response) => {
+  const { node_title, node_content, existing_nodes, child_nodes, context_level, provider, model } = req.body;
+
+  try {
+    const result = await aiService.getBranchSuggestions(node_title, node_content, existing_nodes || [], child_nodes || [], { provider, model, contextLevel: context_level });
+    res.json(result);
+  } catch (error: any) {
+    logger.error('AI Branch Suggestions Error:', error);
+    res.status(500).json({ error: error.message || 'AI 分支建议生成失败' });
   }
 });
 

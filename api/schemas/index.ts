@@ -172,6 +172,16 @@ export const documentToGraphSchema = z.object({
   graph_id: z.string().uuid('无效的图谱ID'),
 });
 
+export const branchSuggestionsSchema = z.object({
+  node_title: z.string().min(1, '节点标题不能为空'),
+  node_content: z.string().optional(),
+  existing_nodes: z.array(z.string()).optional(),
+  child_nodes: z.array(z.string()).optional(),
+  context_level: z.string().optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
 // --- Data Schemas ---
 export const importDataSchema = z.object({
   graph_title: z.string().min(1, '图谱标题不能为空'),

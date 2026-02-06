@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, lazy, Suspense, useCallback } from 'react';
+import React, { useRef, useMemo, lazy, Suspense, useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
@@ -6,8 +6,9 @@ import { ArrowLeft, LayoutList, Network, Loader2 } from 'lucide-react';
 
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
+import { ExplorationTimeline } from '../components/GraphEditor/ExplorationTimeline';
+import { GraphStyleSettings } from '../components/GraphEditor/GraphStyleSettings';
 
 // New Managers and Hooks
 import { GraphModalManager } from '../components/GraphEditor/GraphModalManager';
@@ -16,8 +17,7 @@ import { useGraphEffects } from '../hooks/useGraphEffects';
 
 import { useTheme } from '../hooks/useTheme';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { 
-  useGraph, 
+import { useGraph, 
   useGraphData, 
   useGraphNodeStatus, 
   useAIStatus, 
@@ -32,8 +32,9 @@ import { useGraphAIOperations } from '../hooks/useGraphAIOperations';
 import { useGraphExportOperations } from '../hooks/useGraphExportOperations';
 import { useGraphInteraction } from '../hooks/useGraphInteraction';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
+import { useExplorationPath } from '../hooks/useExplorationPath';
 import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
-import type { Node as GraphNode } from '../types';
+import type { Node as GraphNode, ColorScheme, LinkStyle, LinkAnimation } from '../types';
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +44,11 @@ export const GraphEditor = () => {
   const { isDark, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   
+  const [isStyleSettingsOpen, setIsStyleSettingsOpen] = useState(false);
+  const [colorScheme, setColorScheme] = useState<ColorScheme>('default');
+  const [linkStyle, setLinkStyle] = useState<LinkStyle>('curved');
+  const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>('none');
+
   // React Query Hooks
   const { data: graphMeta } = useGraph(id || '');
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || '');
@@ -67,7 +73,12 @@ export const GraphEditor = () => {
     focusedNodeId, setFocusedNodeId,
     focusedNodeIds, setFocusedNodeIds,
     focusedLinkIds, setFocusedLinkIds,
-    forceShowTextIds, setForceShowTextIds
+    forceShowTextIds, setForceShowTextIds,
+    isExplorationMode, setIsExplorationMode,
+    branchSuggestions, setBranchSuggestions,
+    explorationPath, setExplorationPath,
+    currentPathIndex, setCurrentPathIndex,
+    isTimelineVisible, setIsTimelineVisible
   } = state;
 
   // Mutations Hook
@@ -129,6 +140,9 @@ export const GraphEditor = () => {
     isGraphLoading
   });
 
+  // Exploration Path Hook
+  const explorationPathOps = useExplorationPath();
+
   // Computed Values
   const lockedNodeIds = useMemo(() => {
     if (!nodeStatus) return new Set<string>();
@@ -176,6 +190,7 @@ export const GraphEditor = () => {
     deleteNode: nodeOps.handleDeleteNode,
     toggleDeleteMode: () => setIsDeleteMode(prev => !prev),
     togglePathfindingMode: () => setIsPathfindingMode(prev => !prev),
+    toggleExplorationMode: () => setIsExplorationMode(prev => !prev),
     toggleGrid: () => setShowGrid(prev => !prev),
     toggleFocusMode: () => setIsFocusMode(prev => !prev),
     toggleSidebar: () => {
@@ -212,6 +227,12 @@ export const GraphEditor = () => {
     state.setForceShowTextIds(new Set([node.id, ...directChildren]));
   }, [setSelectedNode, setSidebarMode, nodes, edges, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
 
+  const handleGetBranchSuggestions = useCallback(async () => {
+    if (!selectedNode || !id) return;
+    const suggestions = await aiOps.handleGetBranchSuggestions();
+    state.setBranchSuggestions(suggestions);
+  }, [selectedNode, id, aiOps, state]);
+
   const handleCanvasClick = useCallback(() => {
     setFocusedNodeId(null);
     setFocusedNodeIds(new Set());
@@ -232,31 +253,8 @@ export const GraphEditor = () => {
           </div>
         )}
         
-        {viewMode === 'outline' ? (
-          <div className="h-full w-full bg-white relative">
-            <GraphOutline 
-              nodes={nodes} 
-              edges={edges}
-              nodeStatus={nodeStatus}
-              onNodeClick={(node) => {
-                setSelectedNode(node);
-                setSidebarMode('detail'); 
-              }}
-              selectedNodeId={selectedNode?.id}
-              selectedNodeIds={selectedNodeIds}
-              onSelectionChange={setSelectedNodeIds}
-              onBatchAction={(action) => {
-                if (action === 'expand_graph') aiOps.handleBackgroundTask('expand_graph');
-                else if (action === 'delete') nodeOps.handleBatchDelete();
-                else if (action === 'batch_generate_questions') aiOps.handleBackgroundTask('batch_generate_questions');
-              }}
-              stats={graphStats}
-              className="h-full border-none"
-            />
-          </div>
-        ) : (
-          <div className="h-full w-full bg-white relative">
-            <MindMapCanvas
+        <div className="h-full w-full bg-white relative">
+          <MindMapCanvas
               nodes={nodes}
               edges={edges}
               nodeStatus={nodeStatus}
@@ -268,9 +266,28 @@ export const GraphEditor = () => {
               onCanvasClick={handleCanvasClick}
               forceShowTextIds={forceShowTextIds}
               focusedNodeId={focusedNodeId}
+              branchSuggestions={branchSuggestions}
+              selectedNodeForBranch={selectedNode}
+              onSelectBranch={async (suggestion) => {
+                const newNode = await aiOps.handleCreateBranch(suggestion);
+                if (newNode) {
+                  state.setBranchSuggestions([]);
+                  explorationPathOps.addToPath({
+                    nodeId: newNode.id,
+                    nodeTitle: newNode.title,
+                    branchChoice: suggestion.title,
+                    parentNodeId: selectedNode?.id,
+                    branchSuggestionId: suggestion.id
+                  });
+                }
+              }}
+              onCloseBranchPreview={() => state.setBranchSuggestions([])}
+              isExplorationMode={isExplorationMode}
+              colorScheme={colorScheme}
+              linkStyle={linkStyle}
+              linkAnimation={linkAnimation}
             />
           </div>
-        )}
       </div>
 
       <GraphToolbar 
@@ -312,6 +329,14 @@ export const GraphEditor = () => {
         onBatchDelete={nodeOps.handleBatchDelete}
         onBatchColorUpdate={nodeOps.handleBatchColorUpdate}
         onBatchLevelUpdate={nodeOps.handleBatchLevelUpdate}
+        isStyleSettingsOpen={isStyleSettingsOpen}
+        setIsStyleSettingsOpen={setIsStyleSettingsOpen}
+        colorScheme={colorScheme}
+        setColorScheme={setColorScheme}
+        linkStyle={linkStyle}
+        setLinkStyle={setLinkStyle}
+        linkAnimation={linkAnimation}
+        setLinkAnimation={setLinkAnimation}
         onOpenSettings={() => state.setIsSettingsOpen(true)}
         isExportMenuOpen={state.isExportMenuOpen}
         setIsExportMenuOpen={state.setIsExportMenuOpen}
@@ -327,7 +352,74 @@ export const GraphEditor = () => {
         onShare={() => state.setIsShareModalOpen(true)}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        isExplorationMode={isExplorationMode}
+        setIsExplorationMode={setIsExplorationMode}
+        isTimelineVisible={isTimelineVisible}
+        setIsTimelineVisible={setIsTimelineVisible}
       />
+
+      {isTimelineVisible && isExplorationMode && (
+        <ExplorationTimeline
+          explorationPath={explorationPathOps.explorationPath}
+          currentPathIndex={explorationPathOps.currentPathIndex}
+          onGoToIndex={(index) => {
+            explorationPathOps.goToPathIndex(index);
+            const pathItem = explorationPathOps.explorationPath[index];
+            if (pathItem) {
+              const node = nodes.find(n => n.id === pathItem.nodeId);
+              if (node) {
+                setSelectedNode(node);
+                setFocusedNodeId(node.id);
+                const focusedNodes = getFocusedNodes(node.id, nodes, edges);
+                const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                setFocusedNodeIds(focusedNodes);
+                setFocusedLinkIds(focusedLinks);
+                const directChildren = getDirectChildren(node.id, nodes, edges);
+                state.setForceShowTextIds(new Set([node.id, ...directChildren]));
+              }
+            }
+          }}
+          onGoBack={() => {
+            explorationPathOps.goBack();
+            const pathItem = explorationPathOps.getCurrentPathItem();
+            if (pathItem) {
+              const node = nodes.find(n => n.id === pathItem.nodeId);
+              if (node) {
+                setSelectedNode(node);
+                setFocusedNodeId(node.id);
+                const focusedNodes = getFocusedNodes(node.id, nodes, edges);
+                const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                setFocusedNodeIds(focusedNodes);
+                setFocusedLinkIds(focusedLinks);
+                const directChildren = getDirectChildren(node.id, nodes, edges);
+                state.setForceShowTextIds(new Set([node.id, ...directChildren]));
+              }
+            }
+          }}
+          onGoForward={() => {
+            explorationPathOps.goForward();
+            const pathItem = explorationPathOps.getCurrentPathItem();
+            if (pathItem) {
+              const node = nodes.find(n => n.id === pathItem.nodeId);
+              if (node) {
+                setSelectedNode(node);
+                setFocusedNodeId(node.id);
+                const focusedNodes = getFocusedNodes(node.id, nodes, edges);
+                const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                setFocusedNodeIds(focusedNodes);
+                setFocusedLinkIds(focusedLinks);
+                const directChildren = getDirectChildren(node.id, nodes, edges);
+                state.setForceShowTextIds(new Set([node.id, ...directChildren]));
+              }
+            }
+          }}
+          canGoBack={explorationPathOps.canGoBack()}
+          canGoForward={explorationPathOps.canGoForward()}
+          isDark={isDark}
+          isCollapsed={!isTimelineVisible}
+          onToggleCollapse={() => state.setIsTimelineVisible(!isTimelineVisible)}
+        />
+      )}
 
       {sidebarMode === 'none' && !isMobile && (
         <button 
@@ -343,7 +435,17 @@ export const GraphEditor = () => {
         state={state}
         graphMeta={graphMeta}
         aiEnabled={aiEnabled}
-        exportOps={exportOps}
+      />
+
+      <GraphStyleSettings
+        isOpen={isStyleSettingsOpen}
+        onClose={() => setIsStyleSettingsOpen(false)}
+        currentColorScheme={colorScheme}
+        currentLinkStyle={linkStyle}
+        currentLinkAnimation={linkAnimation}
+        onColorSchemeChange={setColorScheme}
+        onLinkStyleChange={setLinkStyle}
+        onLinkAnimationChange={setLinkAnimation}
       />
       
       {!isDeleteMode && !isPathfindingMode && selectedNodeIds.size === 0 && (

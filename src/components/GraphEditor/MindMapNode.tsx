@@ -1,7 +1,15 @@
-import React, { useMemo, useCallback } from 'react';
-import { LayoutNode, LearningStatus, NodeLevel } from '../../types';
+import React, { useMemo, useCallback, useState } from 'react';
+import { LayoutNode, LearningStatus, NodeLevel, CenterDotShape, ColorScheme } from '../../types';
 import { NodeRing } from './NodeRing';
-import { NODE_STYLE_CONFIG, getRingRadius, getRingOpacity, getCenterDotRadius } from '../../config/nodeStyleConfig';
+import { 
+  NODE_STYLE_CONFIG, 
+  getRingRadius, 
+  getRingOpacity, 
+  getCenterDotRadius,
+  getShadowStyle,
+  getGradientId,
+  getCenterDotPath
+} from '../../config/nodeStyleConfig';
 import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
 import { getLevel } from '../../lib/graphUtils';
 import { Edge } from '../../types';
@@ -19,6 +27,7 @@ interface MindMapNodeProps {
   focused?: boolean;
   forceShowText?: boolean;
   hasFocusMode?: boolean;
+  colorScheme?: ColorScheme;
 }
 
 const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
@@ -56,22 +65,29 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   onMouseLeave,
   focused = false,
   forceShowText = false,
-  hasFocusMode = false
+  hasFocusMode = false,
+  colorScheme = 'default'
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
   const level = getLevel(node, edges);
   const styleConfig = NODE_STYLE_CONFIG[level];
   const status = getLearningStatus(nodeStatus?.[node.id]);
-  const colors = getStatusColors(status, isDark);
+  const colors = getStatusColors(status, isDark, colorScheme);
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
   
   const nodeOpacity = !hasFocusMode ? 1 : (focused ? 1 : 0.3);
+  const hoverScale = isHovered ? styleConfig.animation.hoverScale : 1;
+  const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;
+  const shadowStyle = getShadowStyle(styleConfig.shadow);
+  const transitionDuration = styleConfig.animation.transitionDuration;
 
   const rings = useMemo(() => {
     const result = [];
     for (let i = 0; i < styleConfig.rings; i++) {
-      const radius = getRingRadius(styleConfig.baseRadius, i, styleConfig.rings);
+      const radius = getRingRadius(styleConfig.baseRadius, i, styleConfig.rings, styleConfig.ringSpacing);
       const opacity = getRingOpacity(i, styleConfig.rings);
       const color = i === 0 ? colors.primary : colors.secondary;
+      const gradientId = getGradientId(node.id, i);
 
       result.push(
         <NodeRing
@@ -83,14 +99,64 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           dashArray={styleConfig.dashArray}
           showGlow={i === 0 && styleConfig.showGlow}
           glowColor={colors.glow}
+          gradient={styleConfig.gradient}
+          gradientId={gradientId}
+          enableRotation={styleConfig.animation.enablePulse && i === 0}
+          rotationSpeed={styleConfig.animation.pulseSpeed}
+          shadowBlur={styleConfig.shadow.enabled ? styleConfig.shadow.blur : 0}
+          shadowColor={styleConfig.shadow.color}
         />
       );
     }
     return result;
-  }, [styleConfig, colors.primary, colors.secondary, colors.glow]);
+  }, [styleConfig, colors.primary, colors.secondary, colors.glow, node.id]);
+
+  const gradientDefinitions = useMemo(() => {
+    const defs = [];
+    for (let i = 0; i < styleConfig.rings; i++) {
+      const gradientId = getGradientId(node.id, i);
+      const gradientColors = styleConfig.gradient.colors.length > 0 
+        ? styleConfig.gradient.colors 
+        : [colors.primary, colors.secondary];
+
+      if (styleConfig.gradient.enabled) {
+        if (styleConfig.gradient.type === 'radial') {
+          defs.push(
+            <radialGradient key={gradientId} id={gradientId} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={gradientColors[0]} stopOpacity="0.8" />
+              <stop offset="100%" stopColor={gradientColors[1] || gradientColors[0]} stopOpacity="0.2" />
+            </radialGradient>
+          );
+        } else {
+          const angle = styleConfig.gradient.angle || 0;
+          const rad = (angle * Math.PI) / 180;
+          const x1 = 50 - Math.cos(rad) * 50;
+          const y1 = 50 - Math.sin(rad) * 50;
+          const x2 = 50 + Math.cos(rad) * 50;
+          const y2 = 50 + Math.sin(rad) * 50;
+
+          defs.push(
+            <linearGradient 
+              key={gradientId} 
+              id={gradientId} 
+              x1={`${x1}%`} 
+              y1={`${y1}%`} 
+              x2={`${x2}%`} 
+              y2={`${y2}%`}
+            >
+              <stop offset="0%" stopColor={gradientColors[0]} stopOpacity="0.8" />
+              <stop offset="100%" stopColor={gradientColors[1] || gradientColors[0]} stopOpacity="0.2" />
+            </linearGradient>
+          );
+        }
+      }
+    }
+    return defs;
+  }, [styleConfig.gradient, colors.primary, colors.secondary, node.id, styleConfig.rings]);
 
   const centerDotRadius = styleConfig.showCenterDot ? getCenterDotRadius(styleConfig.baseRadius) : 0;
-  const maxRadius = useMemo(() => getRingRadius(styleConfig.baseRadius, 0, styleConfig.rings) + styleConfig.strokeWidth / 2, [styleConfig.baseRadius, styleConfig.rings, styleConfig.strokeWidth]);
+  const centerDotPath = getCenterDotPath(centerDotRadius, styleConfig.centerDotShape);
+  const maxRadius = useMemo(() => getRingRadius(styleConfig.baseRadius, 0, styleConfig.rings, styleConfig.ringSpacing) + styleConfig.strokeWidth / 2, [styleConfig.baseRadius, styleConfig.rings, styleConfig.strokeWidth, styleConfig.ringSpacing]);
   const textOffset = useMemo(() => maxRadius + 12, [maxRadius]);
   const baseFontSize = level === 'root' ? 14 : level === 'core' ? 12 : 10;
   const scaledFontSize = useMemo(() => baseFontSize / zoomLevel, [baseFontSize, zoomLevel]);
@@ -115,29 +181,60 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     e.stopPropagation();
   }, []);
 
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+    onMouseEnter?.();
+  }, [onMouseEnter]);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    onMouseLeave?.();
+  }, [onMouseLeave]);
+
   return (
     <g
       transform={`translate(${node.x}, ${node.y})`}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
-      style={{ cursor: 'pointer', opacity: nodeOpacity, transition: 'opacity 0.2s ease' }}
+      style={{ 
+        cursor: 'pointer', 
+        opacity: nodeOpacity, 
+        transition: `opacity ${transitionDuration}ms ease`
+      }}
     >
+      <svg width={0} height={0}>
+        <defs>
+          {gradientDefinitions}
+        </defs>
+      </svg>
+      
       <g
         style={{
-          transition: 'transform 0.2s ease',
-          transform: selected ? 'scale(1.1)' : 'scale(1)'
+          transition: `transform ${transitionDuration}ms ease`,
+          transform: `scale(${selected ? 1.1 : hoverScale})`,
+          filter: shadowStyle
         }}
       >
         {rings}
         
-        {styleConfig.showCenterDot && centerDotRadius > 0 && (
+        {styleConfig.showCenterDot && centerDotRadius > 0 && styleConfig.centerDotShape === 'circle' && (
           <circle
             r={centerDotRadius}
             fill={colors.primary}
             style={{
-              filter: selected ? 'drop-shadow(0 0 8px ' + colors.glow + ')' : 'none'
+              filter: (selected || showHoverGlow) ? `drop-shadow(0 0 ${8 / zoomLevel}px ${colors.glow})` : 'none'
+            }}
+          />
+        )}
+
+        {styleConfig.showCenterDot && centerDotRadius > 0 && styleConfig.centerDotShape !== 'circle' && centerDotPath && (
+          <path
+            d={centerDotPath}
+            fill={colors.primary}
+            style={{
+              filter: (selected || showHoverGlow) ? `drop-shadow(0 0 ${8 / zoomLevel}px ${colors.glow})` : 'none'
             }}
           />
         )}
@@ -173,10 +270,10 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           opacity={textVisibility.opacity}
           style={{
             pointerEvents: 'none',
-            transition: 'opacity 0.2s ease',
+            transition: `opacity ${transitionDuration}ms ease`,
             textShadow: isDark 
-              ? `0 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.4)` 
-              : `0 2px 4px rgba(0,0,0,0.15), 0 0 8px rgba(0,0,0,0.1)`
+              ? `0 ${2 / zoomLevel}px ${4 / zoomLevel}px rgba(0,0,0,0.8), 0 0 ${8 / zoomLevel}px rgba(0,0,0,0.4)` 
+              : `0 ${2 / zoomLevel}px ${4 / zoomLevel}px rgba(0,0,0,0.15), 0 0 ${8 / zoomLevel}px rgba(0,0,0,0.1)`
           }}
         >
           {node.title || '未命名'}
@@ -198,6 +295,7 @@ export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProp
     prevProps.focused === nextProps.focused &&
     prevProps.forceShowText === nextProps.forceShowText &&
     prevProps.hasFocusMode === nextProps.hasFocusMode &&
+    prevProps.colorScheme === nextProps.colorScheme &&
     prevProps.nodeStatus?.[prevProps.node.id] === nextProps.nodeStatus?.[nextProps.node.id]
   );
 });

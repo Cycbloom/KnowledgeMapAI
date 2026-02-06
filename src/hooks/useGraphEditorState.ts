@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Node, NodeLevel } from '../types';
+import { Node, NodeLevel, BranchSuggestion, ExplorationPathItem } from '../types';
 
 export interface GraphEditorState {
   // Graph Ref
@@ -29,13 +29,25 @@ export interface GraphEditorState {
   viewMode: 'outline' | 'mindmap';
   setViewMode: React.Dispatch<React.SetStateAction<'outline' | 'mindmap'>>;
   
-  // Interaction Modes
+  // Interaction
   isPathfindingMode: boolean;
   setIsPathfindingMode: React.Dispatch<React.SetStateAction<boolean>>;
   isDeleteMode: boolean;
   setIsDeleteMode: React.Dispatch<React.SetStateAction<boolean>>;
   isFocusMode: boolean;
   setIsFocusMode: React.Dispatch<React.SetStateAction<boolean>>;
+  
+  // Exploration Mode
+  isExplorationMode: boolean;
+  setIsExplorationMode: React.Dispatch<React.SetStateAction<boolean>>;
+  branchSuggestions: BranchSuggestion[];
+  setBranchSuggestions: React.Dispatch<React.SetStateAction<BranchSuggestion[]>>;
+  explorationPath: ExplorationPathItem[];
+  setExplorationPath: React.Dispatch<React.SetStateAction<ExplorationPathItem[]>>;
+  currentPathIndex: number;
+  setCurrentPathIndex: React.Dispatch<React.SetStateAction<number>>;
+  isTimelineVisible: boolean;
+  setIsTimelineVisible: React.Dispatch<React.SetStateAction<boolean>>;
   
   // Node Focus Mode
   focusedNodeId: string | null;
@@ -156,6 +168,13 @@ export const useGraphEditorState = (): GraphEditorState => {
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  
+  // Exploration Mode
+  const [isExplorationMode, setIsExplorationMode] = useState(false);
+  const [branchSuggestions, setBranchSuggestions] = useState<BranchSuggestion[]>([]);
+  const [explorationPath, setExplorationPath] = useState<ExplorationPathItem[]>([]);
+  const [currentPathIndex, setCurrentPathIndex] = useState(-1);
+  const [isTimelineVisible, setIsTimelineVisible] = useState(false);
 
   // Node Focus Mode
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
@@ -263,5 +282,10 @@ export const useGraphEditorState = (): GraphEditorState => {
     recommendations, setRecommendations,
     isRecommending, setIsRecommending,
     loading, setLoading,
+    isExplorationMode, setIsExplorationMode,
+    branchSuggestions, setBranchSuggestions,
+    explorationPath, setExplorationPath,
+    currentPathIndex, setCurrentPathIndex,
+    isTimelineVisible, setIsTimelineVisible,
   };
 };

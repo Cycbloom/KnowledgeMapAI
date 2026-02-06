@@ -8,13 +8,13 @@ import { ChatDialog } from './ChatDialog';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { queryKeys } from '../../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
+import { useMessageStore } from '../../store/useMessageStore';
 
 interface GraphModalManagerProps {
   id: string;
   state: GraphEditorState;
   graphMeta: any;
   aiEnabled: boolean;
-  exportOps: any;
 }
 
 export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
@@ -22,9 +22,9 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   state,
   graphMeta,
   aiEnabled,
-  exportOps,
 }) => {
   const queryClient = useQueryClient();
+  const { addMessage } = useMessageStore();
   const {
     isSettingsOpen, setIsSettingsOpen,
     isHelpOpen, setIsHelpOpen,
@@ -36,6 +36,24 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
     selectedNodeIds,
     isExportPDFOpen, setIsExportPDFOpen,
   } = state;
+
+  const exportOps = {
+    confirmExportImage: async () => {
+      try {
+        if (!state.graphRef.current) return;
+        const dataUrl = await state.graphRef.current.captureScreenshot(exportImageOptions);
+        const link = document.createElement('a');
+        link.download = `${graphMeta?.title || 'graph'}_snapshot.png`;
+        link.href = dataUrl;
+        link.click();
+        setIsExportImageModalOpen(false);
+        addMessage({ content: '图片导出成功', type: 'success' });
+      } catch (error) {
+        console.error('Export image failed:', error);
+        addMessage({ content: '图片导出失败', type: 'error' });
+      }
+    }
+  };
 
   return (
     <>

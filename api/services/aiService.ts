@@ -295,6 +295,125 @@ Please respond in Chinese.` },
     }
   }
 
+  async getBranchSuggestions(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string } = {}) {
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
+      return { 
+        suggestions: [
+          { 
+            id: 'mock_1', 
+            title: `分支 1: ${nodeTitle} 的延伸`, 
+            description: '这是一个模拟的分支建议', 
+            priority: 'high' as const, 
+            estimatedDifficulty: 3, 
+            relatedTopics: [] 
+          },
+          { 
+            id: 'mock_2', 
+            title: `分支 2: ${nodeTitle} 的应用`, 
+            description: '这是另一个模拟的分支建议', 
+            priority: 'medium' as const, 
+            estimatedDifficulty: 4, 
+            relatedTopics: [] 
+          },
+          { 
+            id: 'mock_3', 
+            title: `分支 3: ${nodeTitle} 的原理`, 
+            description: '这是第三个模拟的分支建议', 
+            priority: 'low' as const, 
+            estimatedDifficulty: 2, 
+            relatedTopics: [] 
+          }
+        ] 
+      };
+    }
+
+    try {
+      const existingNodesContext = existingNodes && existingNodes.length > 0 
+        ? `\nExisting Nodes in Graph: ${existingNodes.slice(0, 300).join(', ')}`
+        : '';
+        
+      const childrenContext = childNodes && childNodes.length > 0
+        ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(', ')}`
+        : '';
+
+      const contextLevel = options.contextLevel || 'normal';
+      let linkingStrategy = "Linking Strategy: Check provided 'Existing Nodes'. If a suggested concept is SEMANTICALLY IDENTICAL to an existing node, use EXACT same title to create a link.";
+
+      let generationStrategy = "Content Strategy: Generate diverse sub-topics. Content should be informative.";
+
+      if (['root', 'core'].includes(contextLevel)) {
+        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
+          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
+          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually.";
+        
+        generationStrategy = "Content Strategy (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES.";
+      } else if (['sub', 'normal'].includes(contextLevel)) {
+        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
+          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
+          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually.";
+
+        generationStrategy = "Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS.";
+      } else if (contextLevel === 'leaf') {
+        linkingStrategy = "Linking Strategy (NETWORK): You are expanding a leaf node. You are encouraged to link to 'Existing Nodes' if they are highly relevant.";
+        
+        generationStrategy = "Content Strategy (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES.";
+      }
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: "You are a knowledge graph expert specializing in creating interactive exploration paths like story branches or adventure game choices.\n" +
+            "Goal: Generate 3-5 distinct branch suggestions for the user to explore from the current node.\n" +
+            "Each branch should represent a different direction or perspective the user could take.\n" +
+            "Quantity: Generate exactly 3-5 branches.\n" +
+            `${linkingStrategy}\n` +
+            `${generationStrategy}\n` +
+            "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
+            "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
+            "- 'id': Unique identifier for this suggestion\n" +
+            "- 'title': Brief, catchy title for the branch (max 20 chars)\n" +
+            "- 'description': Short description explaining what this branch explores (max 100 chars)\n" +
+            "- 'priority': 'high', 'medium', or 'low' based on importance\n" +
+            "- 'estimatedDifficulty': Number from 1-5 indicating difficulty\n" +
+            "- 'relatedTopics': Array of 2-3 related topic keywords\n" +
+            "Example format: { \"suggestions\": [{ \"id\": \"branch_1\", \"title\": \"深入原理\", \"description\": \"探索核心原理\", \"priority\": \"high\", \"estimatedDifficulty\": 4, \"relatedTopics\": [\"theory\", \"fundamentals\"] }] }\n" +
+            "Please respond in Chinese." },
+          { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
+        ],
+        model: options.model || provider.model,
+        response_format: { type: "json_object" },
+      });
+
+      const content = completion.choices[0].message.content || '';
+      const cleanedContent = this.cleanJsonString(content);
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanedContent || '{"suggestions": []}');
+      } catch (e) {
+         logger.error('[AI] JSON Parse Error (Branch Suggestions). Raw:', { content });
+         const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+         if (match) {
+             try {
+                 parsed = JSON.parse(match[0]);
+             } catch (e2) {
+                 throw new Error('Failed to parse AI response');
+             }
+         } else {
+             throw new Error('Failed to parse AI response');
+         }
+      }
+
+      return { suggestions: parsed.suggestions || [] };
+    } catch (error: any) {
+      logger.error('AI Error:', error);
+      throw new Error(error.message || 'AI branch suggestions failed');
+    }
+  }
+
   async generateGraphFromImage(imageBase64: string, options: { provider?: AIProviderType; model?: string } = {}) {
     // Default to 'aliyun' (Qwen-VL) or 'volcengine' if available, as they support vision well.
     // Deepseek currently doesn't support vision via API (as of standard V3).

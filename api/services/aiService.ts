@@ -206,7 +206,7 @@ Please respond in Chinese.` },
     }
   }
 
-  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string } = {}) {
+  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string; expandPrompt?: string } = {}) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
       : await getAIProviderForTask('text');
@@ -225,6 +225,8 @@ Please respond in Chinese.` },
         : '';
 
       const contextLevel = options.contextLevel || 'normal';
+      const customPrompt = options.expandPrompt;
+      
       let linkingStrategy = "Linking Strategy: Check the provided 'Existing Nodes'. If a suggested concept is SEMANTICALLY IDENTICAL to an existing node, use the EXACT same title to create a link. \n" +
             "Constraint: Do NOT force links to loosely related existing nodes. It is better to create a new specific node than to link to a generic existing one.";
 
@@ -252,15 +254,26 @@ Please respond in Chinese.` },
 
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { role: "system", content: "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
-            "Goal: Prioritize generating NEW, specific concepts to broaden the graph's coverage.\n" +
-            "Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.\n" +
-            `${linkingStrategy}\n` +
-            `${generationStrategy}\n` +
-            "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
-            "Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.\n" +
-            "Example format: { \"suggestions\": [{ \"title\": \"Example Title\", \"content\": \"Example content\" }] }\n" +
-            "Please respond in Chinese." },
+          { 
+            role: "system", 
+            content: customPrompt 
+              ? `You are a knowledge graph expert. ${customPrompt}\n` +
+                `${linkingStrategy}\n` +
+                `${generationStrategy}\n` +
+                "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
+                "Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.\n" +
+                "Example format: { \"suggestions\": [{ \"title\": \"Example Title\", \"content\": \"Example content\" }] }\n" +
+                "Please respond in Chinese."
+              : "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
+                "Goal: Prioritize generating NEW, specific concepts to broaden the graph's coverage.\n" +
+                "Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.\n" +
+                `${linkingStrategy}\n` +
+                `${generationStrategy}\n` +
+                "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
+                "Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.\n" +
+                "Example format: { \"suggestions\": [{ \"title\": \"Example Title\", \"content\": \"Example content\" }] }\n" +
+                "Please respond in Chinese."
+          },
           { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
         ],
         model: options.model || provider.model,

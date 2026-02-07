@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, FileText, Image, List, Check, Download, Loader2 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
-import { useThree } from '@react-three/fiber';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -158,7 +157,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                  </div>
                  <div className="text-sm">
                    <div className="font-medium text-gray-800">包含当前视图截图</div>
-                   <div className="text-gray-500 text-xs">将当前 3D 视角的画面作为封面图</div>
+                   <div className="text-gray-500 text-xs">将当前知识图谱的画面作为封面图</div>
                  </div>
                </div>
                <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${includeScreenshot ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>

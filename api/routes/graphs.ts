@@ -1,8 +1,9 @@
 import { Router, type Response } from 'express';
 import { requireAuth, optionalAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { createGraphSchema, updateGraphSchema, uuidParamsSchema, shareGraphSchema } from '../schemas/index.js';
+import { createGraphSchema, updateGraphSchema, uuidParamsSchema, shareGraphSchema, createGraphFromTemplateSchema } from '../schemas/index.js';
 import { graphService, GraphService } from '../services/graphService.js';
+import { templateService } from '../services/templateService.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -25,6 +26,13 @@ router.get('/trash', requireAuth, async (req: AuthRequest, res: Response) => {
 router.post('/', requireAuth, validate({ body: createGraphSchema }), async (req: AuthRequest, res: Response) => {
   const { title, description } = req.body;
   const data = await graphService.createGraph(req.supabase!, req.user.id, title, description);
+  res.status(201).json(data);
+});
+
+// Create a new graph from template (Auth Required)
+router.post('/from-template', requireAuth, validate({ body: createGraphFromTemplateSchema }), async (req: AuthRequest, res: Response) => {
+  const { template_id, title, description } = req.body;
+  const data = await templateService.createGraphFromTemplate(req.supabase!, req.user.id, template_id, title, description);
   res.status(201).json(data);
 });
 

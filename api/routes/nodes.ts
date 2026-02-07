@@ -11,7 +11,7 @@ const router = Router();
 
 // Create a new node
 router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthRequest, res: Response) => {
-  const { id, graph_id, title, content, x_position, y_position, color, properties, level } = req.body;
+  const { id, graph_id, title, content, x_position, y_position, color, properties, level, is_accepted } = req.body;
 
   // Verify graph ownership
   const { data: graph } = await req.supabase!
@@ -25,7 +25,7 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   }
 
   const nodeData: any = { 
-    graph_id, title, content, x_position, y_position, color, properties, level,
+    graph_id, title, content, x_position, y_position, color, properties, level, is_accepted,
     deleted_at: null // Ensure restored if upserting
   };
   if (id) nodeData.id = id;
@@ -229,7 +229,7 @@ router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Re
   if (error) throw new AppError(error.message || '批量删除节点失败', 500, ErrorCodes.INTERNAL_ERROR);
 
   // Invalidate caches for all affected graphs
-  const graphIds = [...new Set(nodes.map(n => n.graph_id))];
+  const graphIds = [...new Set(nodes.map((n: { graph_id: string }) => n.graph_id))];
   for (const gid of graphIds) {
     await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, gid));
     await cacheService.del(CacheKeys.STUDY_CARDS(gid));

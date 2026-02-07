@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, BranchSuggestion } from '../../types';
+import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, BranchSuggestion, TemplateLayout } from '../../types';
 import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
 import { MindMapLink } from './MindMapLink';
-import { BranchPreview } from './BranchPreview';
+import { AlternativeBranches } from './AlternativeBranches';
+import { CanvasLayout } from './CanvasLayout';
 import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
@@ -28,8 +29,10 @@ interface MindMapCanvasProps {
   branchSuggestions?: BranchSuggestion[];
   selectedNodeForBranch?: GraphNode | null;
   onSelectBranch?: (suggestion: BranchSuggestion) => void;
-  onCloseBranchPreview?: () => void;
+  onSwitchBranch?: (pathItem: any, suggestion: BranchSuggestion) => void;
   isExplorationMode?: boolean;
+  historicalAlternativeBranches?: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[];
+  templateLayout?: TemplateLayout;
 }
 
 interface Transform {
@@ -58,8 +61,10 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   branchSuggestions = [],
   selectedNodeForBranch = null,
   onSelectBranch,
-  onCloseBranchPreview,
-  isExplorationMode = false
+  onSwitchBranch,
+  isExplorationMode = false,
+  historicalAlternativeBranches = [],
+  templateLayout,
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -100,6 +105,29 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
       height: containerSize.height 
     });
   }, [nodes, edges, containerSize]);
+
+  const visibleNodes = useMemo(() => {
+    if (!layout) return [];
+    
+    if (!isExplorationMode) {
+      return layout.nodes.filter(node => node.is_accepted !== false);
+    }
+    
+    return layout.nodes;
+  }, [layout, isExplorationMode]);
+
+  const visibleLinks = useMemo(() => {
+    if (!layout) return [];
+    
+    const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+    
+    return layout.links.filter(link => {
+      const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+      const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+      
+      return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
+    });
+  }, [layout, visibleNodes]);
 
   const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
     e.preventDefault();
@@ -202,7 +230,12 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
         onContextMenu={(e) => e.preventDefault()}
       >
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
-          {layout.links.map(link => (
+          <CanvasLayout
+            layout={templateLayout}
+            width={containerSize.width}
+            height={containerSize.height}
+          />
+          {visibleLinks.map(link => (
             <MindMapLink
               key={link.id}
               link={link}
@@ -215,8 +248,7 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               linkAnimation={linkAnimation}
             />
           ))}
-
-          {layout.nodes.map(node => (
+          {visibleNodes.map(node => (
             <MindMapNode
               key={node.id}
               node={node}
@@ -234,16 +266,33 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               colorScheme={colorScheme}
             />
           ))}
-
-          {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (
-            <BranchPreview
-              parentNode={selectedNodeForBranch}
-              suggestions={branchSuggestions}
-              onSelectBranch={onSelectBranch}
-              onClose={onCloseBranchPreview}
-              isDark={isDark}
-            />
-          )}
+          {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {
+            const layoutNode = visibleNodes.find(n => n.id === selectedNodeForBranch.id);
+            if (!layoutNode) return null;
+            return (
+              <AlternativeBranches
+                parentNode={layoutNode}
+                branches={branchSuggestions}
+                isDark={isDark}
+                onSelectBranch={onSelectBranch}
+              />
+            );
+          })()}
+          {isExplorationMode && historicalAlternativeBranches.map((item, index) => {
+            const node = visibleNodes.find(n => n.id === item.nodeId);
+            if (!node) return null;
+            return (
+              <AlternativeBranches
+                key={`historical-${item.nodeId}-${index}`}
+                parentNode={node}
+                branches={item.branches}
+                selectedBranchId={item.selectedBranchId}
+                isDark={isDark}
+                pathItem={item}
+                onSwitchBranch={onSwitchBranch}
+              />
+            );
+          })}
         </g>
       </svg>
 

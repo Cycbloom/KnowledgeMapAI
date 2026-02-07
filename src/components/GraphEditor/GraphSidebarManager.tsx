@@ -17,6 +17,7 @@ interface GraphSidebarManagerProps {
   aiOps: any;
   interactionOps: any;
   handleCloseSidebar: () => void;
+  isExplorationMode?: boolean;
 }
 
 export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
@@ -29,6 +30,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   aiOps,
   interactionOps,
   handleCloseSidebar,
+  isExplorationMode = false
 }) => {
   const {
     sidebarMode, setSidebarMode,
@@ -99,6 +101,10 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             onRelatedNodeClick={(node) => {
               setSelectedNode(node);
             }}
+            onUpdateNode={(nodeId, updates) => {
+              nodeOps.handleUpdateNode(nodeId, updates);
+            }}
+            isExplorationMode={isExplorationMode}
           />
         ) : (sidebarMode === 'create' || sidebarMode === 'edit') ? (
           <NodeEditSidebar

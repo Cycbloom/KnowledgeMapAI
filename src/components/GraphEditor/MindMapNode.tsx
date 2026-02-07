@@ -75,7 +75,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const colors = getStatusColors(status, isDark, colorScheme);
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
   
-  const nodeOpacity = !hasFocusMode ? 1 : (focused ? 1 : 0.3);
+  const nodeOpacity = !hasFocusMode ?1 : (focused ?1 : 0.3);
+  const isAccepted = node.is_accepted !== false;
   const hoverScale = isHovered ? styleConfig.animation.hoverScale : 1;
   const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;
   const shadowStyle = getShadowStyle(styleConfig.shadow);
@@ -200,7 +201,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       onMouseDown={handleMouseDown}
       style={{ 
         cursor: 'pointer', 
-        opacity: nodeOpacity, 
+        opacity: isAccepted ? nodeOpacity : nodeOpacity * 0.5, 
         transition: `opacity ${transitionDuration}ms ease`
       }}
     >
@@ -213,41 +214,72 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       <g
         style={{
           transition: `transform ${transitionDuration}ms ease`,
-          transform: `scale(${selected ? 1.1 : hoverScale})`,
+          transform: `scale(${selected ?1.1 : hoverScale})`,
           filter: shadowStyle
         }}
       >
-        {rings}
-        
-        {styleConfig.showCenterDot && centerDotRadius > 0 && styleConfig.centerDotShape === 'circle' && (
-          <circle
-            r={centerDotRadius}
-            fill={colors.primary}
-            style={{
-              filter: (selected || showHoverGlow) ? `drop-shadow(0 0 ${8 / zoomLevel}px ${colors.glow})` : 'none'
-            }}
-          />
-        )}
-
-        {styleConfig.showCenterDot && centerDotRadius > 0 && styleConfig.centerDotShape !== 'circle' && centerDotPath && (
-          <path
-            d={centerDotPath}
-            fill={colors.primary}
-            style={{
-              filter: (selected || showHoverGlow) ? `drop-shadow(0 0 ${8 / zoomLevel}px ${colors.glow})` : 'none'
-            }}
-          />
-        )}
-
-        {selected && (
-          <circle
-            r={styleConfig.baseRadius + 8}
-            fill="none"
-            stroke={colors.primary}
-            strokeWidth={2}
-            opacity={0.5}
-            strokeDasharray="4 4"
-          />
+        {isAccepted ? (
+          <>
+            {rings}
+            
+            {styleConfig.showCenterDot && centerDotRadius > 0 && styleConfig.centerDotShape === 'circle' && (
+              <circle
+                r={centerDotRadius}
+                fill={colors.primary}
+                style={{
+                  filter: (selected || showHoverGlow) ? `drop-shadow(0 0 ${8 / zoomLevel}px ${colors.glow})` : 'none'
+                }}
+              />
+            )}
+            
+            {styleConfig.showCenterDot && centerDotRadius > 0 && styleConfig.centerDotShape !== 'circle' && centerDotPath && (
+              <path
+                d={centerDotPath}
+                fill={colors.primary}
+                style={{
+                  filter: (selected || showHoverGlow) ? `drop-shadow(0 0 ${8 / zoomLevel}px ${colors.glow})` : 'none'
+                }}
+              />
+            )}
+            
+            {selected && (
+              <circle
+                r={styleConfig.baseRadius + 8}
+                fill="none"
+                stroke={colors.primary}
+                strokeWidth={2}
+                opacity={0.5}
+                strokeDasharray="4 4"
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <rect
+              x={-styleConfig.baseRadius}
+              y={-styleConfig.baseRadius}
+              width={styleConfig.baseRadius * 2}
+              height={styleConfig.baseRadius * 2}
+              rx={4}
+              fill={isDark ? 'rgba(156, 163, 175, 0.3)' : 'rgba(107, 114, 128, 0.3)'}
+              stroke={isDark ? 'rgba(156, 163, 175, 0.5)' : 'rgba(107, 114, 128, 0.5)'}
+              strokeWidth={1.5}
+            />
+            {selected && (
+              <rect
+                x={-styleConfig.baseRadius - 4}
+                y={-styleConfig.baseRadius - 4}
+                width={styleConfig.baseRadius * 2 + 8}
+                height={styleConfig.baseRadius * 2 + 8}
+                rx={6}
+                fill="none"
+                stroke={colors.primary}
+                strokeWidth={2}
+                opacity={0.5}
+                strokeDasharray="4 4"
+              />
+            )}
+          </>
         )}
       </g>
       
@@ -257,7 +289,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         onClick={handleCircleClick}
         onMouseDown={handleCircleMouseDown}
       />
-
+      
       {textVisibility.visible && (
         <text
           x={0}
@@ -267,7 +299,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           fontSize={scaledFontSize}
           fontWeight={level === 'root' ? 700 : level === 'core' ? 600 : 500}
           fill={isDark ? '#f1f5f9' : '#0f172a'}
-          opacity={textVisibility.opacity}
+          opacity={textVisibility.opacity * (isAccepted ? 1 : 0.6)}
           style={{
             pointerEvents: 'none',
             transition: `opacity ${transitionDuration}ms ease`,

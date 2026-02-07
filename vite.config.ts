@@ -30,7 +30,7 @@ export default defineConfig({
       manifest: {
         name: 'Knowledge Map AI',
         short_name: 'KnowledgeMap',
-        description: 'AI-powered 3D Knowledge Graph Editor',
+        description: 'AI-powered Knowledge Graph Editor',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
@@ -105,7 +105,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
           'vendor-ui': ['lucide-react', 'framer-motion'],
           'vendor-charts': ['recharts'],
           'vendor-utils': ['clsx', 'tailwind-merge'],

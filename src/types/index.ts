@@ -60,6 +60,7 @@ export interface Node {
   level?: NodeLevel;
   properties?: Record<string, any>;
   learning_material?: string;
+  is_accepted?: boolean;
   updated_at?: string;
   created_at?: string;
 }
@@ -192,4 +193,79 @@ export interface ExplorationPathItem {
   branchChoice: string;
   parentNodeId?: string;
   branchSuggestionId?: string;
+  alternativeBranches?: BranchSuggestion[];
+}
+
+export type TemplateCategory = 'learning' | 'story' | 'project' | 'analysis' | 'custom';
+
+export type TemplateLayoutType = 'default' | 'quadrant' | 'timeline' | 'flowchart' | 'mindmap';
+
+export interface TemplateNode {
+  id: string;
+  title: string;
+  level: NodeLevel;
+  parentId?: string;
+  aiPrompt?: string;
+  color?: string;
+  x_position?: number;
+  y_position?: number;
+  position_zone?: string;
+}
+
+export interface TemplateEdge {
+  source: string;
+  target: string;
+  relationship_type?: string;
+}
+
+export interface TemplateLayout {
+  type: TemplateLayoutType;
+  showAxes?: boolean;
+  showGrid?: boolean;
+  showLabels?: boolean;
+  axes?: {
+    x?: { label?: string; min?: number; max?: number };
+    y?: { label?: string; min?: number; max?: number };
+  };
+  zones?: Array<{
+    id: string;
+    label: string;
+    bounds: { x: number; y: number; width: number; height: number };
+    color?: string;
+  }>;
+  timeline?: {
+    direction: 'horizontal' | 'vertical';
+    startLabel?: string;
+    endLabel?: string;
+  };
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  description?: string;
+  category: TemplateCategory;
+  is_system: boolean;
+  user_id?: string;
+  nodes: TemplateNode[];
+  edges: TemplateEdge[];
+  layout?: TemplateLayout;
+  preview_image?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateTemplateData {
+  name: string;
+  description?: string;
+  category: TemplateCategory;
+  nodes: TemplateNode[];
+  edges: TemplateEdge[];
+  layout?: TemplateLayout;
+}
+
+export interface CreateGraphFromTemplateData {
+  template_id: string;
+  title: string;
+  description?: string;
 }

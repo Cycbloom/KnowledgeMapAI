@@ -50,6 +50,7 @@ export const createNodeSchema = z.object({
   properties: z.record(z.any()).optional(),
   learning_material: z.string().optional(),
   level: z.enum(['root', 'core', 'sub', 'normal', 'leaf']).optional(),
+  is_accepted: z.boolean().optional(),
 });
 
 export const updateNodeSchema = createNodeSchema.partial().omit({ graph_id: true });
@@ -114,9 +115,10 @@ export const generateLearningMaterialSchema = z.object({
 export const expandKnowledgeSchema = z.object({
   node_title: z.string().min(1, '节点标题不能为空'),
   node_content: z.string().optional(),
-  existing_nodes: z.array(z.string()).optional(),
-  child_nodes: z.array(z.string()).optional(), // Add child_nodes
-  context_level: z.string().optional(),
+  node_level: z.string().optional(),
+  existing_titles: z.array(z.string()).optional(),
+  current_children: z.array(z.string()).optional(),
+  expand_prompt: z.string().optional(),
   provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
   model: z.string().optional(),
 });
@@ -199,4 +201,69 @@ export const importDataSchema = z.object({
     target: z.string(), // ID or index
     relationship: z.string().optional(),
   })).optional(),
+});
+
+// --- Template Schemas ---
+export const createTemplateSchema = z.object({
+  name: z.string().min(1, '模板名称不能为空'),
+  description: z.string().optional(),
+  category: z.enum(['learning', 'story', 'project', 'analysis', 'custom']),
+  nodes: z.array(z.object({
+    id: z.string().min(1, '节点ID不能为空'),
+    title: z.string().min(1, '节点标题不能为空'),
+    level: z.enum(['root', 'core', 'sub', 'normal', 'leaf']),
+    parentId: z.string().optional(),
+    aiPrompt: z.string().optional(),
+    color: z.string().optional(),
+    x_position: z.number().optional(),
+    y_position: z.number().optional(),
+    position_zone: z.string().optional(),
+  })).min(1, '至少需要一个节点'),
+  edges: z.array(z.object({
+    source: z.string().min(1, '源节点ID不能为空'),
+    target: z.string().min(1, '目标节点ID不能为空'),
+    relationship_type: z.string().optional(),
+  })).optional(),
+  layout: z.object({
+    type: z.enum(['default', 'quadrant', 'timeline', 'flowchart', 'mindmap']),
+    showAxes: z.boolean().optional(),
+    showGrid: z.boolean().optional(),
+    showLabels: z.boolean().optional(),
+    axes: z.object({
+      x: z.object({
+        label: z.string().optional(),
+        min: z.number().optional(),
+        max: z.number().optional(),
+      }).optional(),
+      y: z.object({
+        label: z.string().optional(),
+        min: z.number().optional(),
+        max: z.number().optional(),
+      }).optional(),
+    }).optional(),
+    zones: z.array(z.object({
+      id: z.string(),
+      label: z.string(),
+      bounds: z.object({
+        x: z.number(),
+        y: z.number(),
+        width: z.number(),
+        height: z.number(),
+      }),
+      color: z.string().optional(),
+    })).optional(),
+    timeline: z.object({
+      direction: z.enum(['horizontal', 'vertical']),
+      startLabel: z.string().optional(),
+      endLabel: z.string().optional(),
+    }).optional(),
+  }).optional(),
+});
+
+export const updateTemplateSchema = createTemplateSchema.partial();
+
+export const createGraphFromTemplateSchema = z.object({
+  template_id: z.string().uuid('无效的模板ID'),
+  title: z.string().min(1, '标题不能为空'),
+  description: z.string().optional(),
 });

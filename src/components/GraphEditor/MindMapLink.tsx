@@ -34,9 +34,18 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     let strokeColor = colors.link;
     let strokeWidth = 2;
     let opacity = 0.4;
+    let strokeDasharray = 'none';
+    
+    const isTargetAccepted = target.is_accepted !== false;
+    
+    if (!isTargetAccepted) {
+      strokeDasharray = '6,4';
+      opacity = 0.3;
+      strokeWidth = 1.5;
+    }
     
     if (!hasFocusMode) {
-      opacity = 0.4;
+      opacity = isTargetAccepted ? 0.4 : 0.3;
     } else if (focused) {
       strokeColor = colors.linkHighlight;
       strokeWidth = 3;
@@ -46,11 +55,11 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
       strokeWidth = 3;
       opacity = 0.8;
     } else {
-      opacity = 0.1;
+      opacity = isTargetAccepted ? 0.1 : 0.05;
     }
 
-    return { strokeColor, strokeWidth, opacity };
-  }, [colors, hasFocusMode, focused, highlighted]);
+    return { strokeColor, strokeWidth, opacity, strokeDasharray };
+  }, [colors, hasFocusMode, focused, highlighted, target]);
 
   const pathData = useMemo(() => {
     const dx = target.x - source.x;
@@ -135,6 +144,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
         strokeWidth={linkStyleConfig.strokeWidth}
         opacity={linkStyleConfig.opacity}
         strokeLinecap="round"
+        strokeDasharray={linkStyleConfig.strokeDasharray}
         style={animationStyle}
       />
     </>

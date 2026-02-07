@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats } from '../hooks/useQueries';
+import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation } from '../hooks/useQueries';
 import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network, ArrowRight } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { BlindSpotList } from '../components/BlindSpotList';
+import { TemplateSelector } from '../components/TemplateSelector';
+import { Template } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
 export const Dashboard = () => {
@@ -15,12 +17,15 @@ export const Dashboard = () => {
   const { data: graphsData, isLoading, error } = useGraphs();
   const { data: statsData } = useDashboardStats();
   const createGraphMutation = useCreateGraphMutation();
+  const createGraphFromTemplateMutation = useCreateGraphFromTemplateMutation();
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addMessage } = useMessageStore();
 
   const [isCreating, setIsCreating] = useState(false);
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -45,17 +50,40 @@ export const Dashboard = () => {
 
     try {
       setFormError(null);
-      await createGraphMutation.mutateAsync({ 
-        title: newTitle,
-        description: newDescription 
-      });
+      if (selectedTemplate) {
+        await createGraphFromTemplateMutation.mutateAsync({ 
+          template_id: selectedTemplate.id,
+          title: newTitle,
+          description: newDescription 
+        });
+      } else {
+        await createGraphMutation.mutateAsync({ 
+          title: newTitle,
+          description: newDescription 
+        });
+      }
       setNewTitle('');
       setNewDescription('');
+      setSelectedTemplate(null);
       setIsCreating(false);
       addMessage({ type: 'success', content: '创建成功!' });
     } catch (err: any) {
       console.error(err);
       addMessage({ type: 'error', content: err.message || '创建图谱失败' });
+    }
+  };
+
+  const handleOpenTemplateSelector = () => {
+    setIsTemplateSelectorOpen(true);
+  };
+
+  const handleSelectTemplate = (template: Template | null) => {
+    setSelectedTemplate(template);
+    setIsTemplateSelectorOpen(false);
+    setIsCreating(true);
+    if (template) {
+      setNewTitle(template.name);
+      setNewDescription(template.description || '');
     }
   };
 
@@ -185,7 +213,7 @@ export const Dashboard = () => {
             </button>
             
             <button
-              onClick={() => setIsCreating(true)}
+              onClick={handleOpenTemplateSelector}
               className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium active:scale-95"
             >
               <Plus size={20} />
@@ -246,14 +274,31 @@ export const Dashboard = () => {
               isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white'
             }`}>
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">创建新图谱</h3>
+                <h3 className="text-xl font-bold">{selectedTemplate ? '从模板创建图谱' : '创建新图谱'}</h3>
                 <button 
-                  onClick={() => setIsCreating(false)}
+                  onClick={() => {
+                    setIsCreating(false);
+                    setSelectedTemplate(null);
+                  }}
                   className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${isDark ? 'hover:bg-white text-slate-400' : 'hover:bg-black text-gray-400'}`}
                 >
                   <Plus size={24} className="rotate-45" />
                 </button>
               </div>
+
+              {selectedTemplate && (
+                <div className={`mb-6 p-4 rounded-xl ${isDark ? 'bg-slate-700' : 'bg-blue-50'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-600 text-white">
+                      {selectedTemplate.name}
+                    </span>
+                    <span className="text-xs text-gray-500">{selectedTemplate.nodes.length} 个节点</span>
+                  </div>
+                  <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                    {selectedTemplate.description || '暂无描述'}
+                  </p>
+                </div>
+              )}
               
               <form onSubmit={handleCreate} className="space-y-5">
                 <div className="space-y-2">
@@ -297,7 +342,10 @@ export const Dashboard = () => {
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsCreating(false)}
+                    onClick={() => {
+                      setIsCreating(false);
+                      setSelectedTemplate(null);
+                    }}
                     className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${
                       isDark 
                         ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
@@ -309,14 +357,22 @@ export const Dashboard = () => {
                   <button 
                     type="submit" 
                     className="flex-1 px-4 py-3 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                    disabled={createGraphMutation.isPending || !newTitle}
+                    disabled={createGraphMutation.isPending || createGraphFromTemplateMutation.isPending || !newTitle}
                   >
-                    {createGraphMutation.isPending ? '创建中...' : '立即创建'}
+                    {createGraphMutation.isPending || createGraphFromTemplateMutation.isPending ? '创建中...' : '立即创建'}
                   </button>
                 </div>
               </form>
             </div>
           </div>
+        )}
+
+        {/* Template Selector Modal */}
+        {isTemplateSelectorOpen && (
+          <TemplateSelector
+            onSelectTemplate={handleSelectTemplate}
+            onCancel={() => setIsTemplateSelectorOpen(false)}
+          />
         )}
 
         {/* Graphs Grid */}

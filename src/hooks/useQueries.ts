@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { Node, Edge, Task } from '../types';
+import { Node, Edge, Task, Template } from '../types';
 
 // Query Keys
 export const queryKeys = {
@@ -16,6 +16,8 @@ export const queryKeys = {
   tasks: (status?: string, limit?: number, offset?: number) => ['tasks', status || 'all', limit || 20, offset || 0] as const,
   aiStatus: ['aiStatus'] as const,
   statistics: ['statistics'] as const,
+  templates: (category?: string) => ['templates', category || 'all'] as const,
+  template: (id: string) => ['template', id] as const,
 };
 
 // --- Queries ---
@@ -156,6 +158,18 @@ export const useCreateGraphMutation = () => {
 
   return useMutation({
     mutationFn: api.graphs.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    },
+  });
+};
+
+export const useCreateGraphFromTemplateMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { template_id: string; title: string; description?: string }) => 
+      api.graphs.createFromTemplate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
     },
@@ -557,6 +571,56 @@ export const useUpdateProfileMutation = () => {
       if (data.user) {
         setUser(data.user, token);
       }
+    },
+  });
+};
+
+// Template Queries & Mutations
+
+export const useTemplates = (category?: string) => {
+  return useQuery({
+    queryKey: queryKeys.templates(category),
+    queryFn: () => api.templates.list(category),
+    staleTime: 1000 * 60 * 30, // 30 mins
+  });
+};
+
+export const useTemplate = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.template(id),
+    queryFn: () => api.templates.get(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 30, // 30 mins
+  });
+};
+
+export const useCreateTemplateMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.templates.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    },
+  });
+};
+
+export const useUpdateTemplateMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.templates.update(id, data),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.template(variables.id) });
+    },
+  });
+};
+
+export const useDeleteTemplateMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.templates.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
     },
   });
 };

@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2 } from 'lucide-react';
+import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 import { GlobalSearch } from './GlobalSearch';
@@ -166,6 +166,7 @@ export const Layout = () => {
             <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
               <SidebarLink to="/" icon={BookOpen} label="我的图谱" />
               <SidebarLink to="/study" icon={GraduationCap} label="学习中心" />
+              <SidebarLink to="/templates" icon={Sparkles} label="模板管理" />
               <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" />
               <SidebarLink to="/profile" icon={User} label="个人设置" />
               <SidebarLink to="/trash" icon={Trash2} label="回收站" />

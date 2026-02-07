@@ -48,13 +48,15 @@ export const GraphEditor = () => {
   const [colorScheme, setColorScheme] = useState<ColorScheme>('default');
   const [linkStyle, setLinkStyle] = useState<LinkStyle>('curved');
   const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>('none');
-
+  
   // React Query Hooks
   const { data: graphMeta } = useGraph(id || '');
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || '');
   const { data: nodeStatus } = useGraphNodeStatus(id || '');
   const { data: aiStatus } = useAIStatus(!!token);
   const aiEnabled = aiStatus?.enabled ?? true;
+  
+  const templateLayout = graphMeta?.settings?.layout;
 
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
@@ -78,7 +80,8 @@ export const GraphEditor = () => {
     branchSuggestions, setBranchSuggestions,
     explorationPath, setExplorationPath,
     currentPathIndex, setCurrentPathIndex,
-    isTimelineVisible, setIsTimelineVisible
+    isTimelineVisible, setIsTimelineVisible,
+    historicalAlternativeBranches, setHistoricalAlternativeBranches
   } = state;
 
   // Mutations Hook
@@ -215,6 +218,7 @@ export const GraphEditor = () => {
 
   const handleNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node);
+    setSelectedNodeIds(new Set([node.id]));
     setSidebarMode('detail');
     
     const focusedNodes = getFocusedNodes(node.id, nodes, edges);
@@ -225,7 +229,7 @@ export const GraphEditor = () => {
     setFocusedNodeIds(focusedNodes);
     setFocusedLinkIds(focusedLinks);
     state.setForceShowTextIds(new Set([node.id, ...directChildren]));
-  }, [setSelectedNode, setSidebarMode, nodes, edges, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
+  }, [setSelectedNode, setSelectedNodeIds, setSidebarMode, nodes, edges, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
 
   const handleGetBranchSuggestions = useCallback(async () => {
     if (!selectedNode || !id) return;
@@ -268,24 +272,50 @@ export const GraphEditor = () => {
               focusedNodeId={focusedNodeId}
               branchSuggestions={branchSuggestions}
               selectedNodeForBranch={selectedNode}
-              onSelectBranch={async (suggestion) => {
-                const newNode = await aiOps.handleCreateBranch(suggestion);
-                if (newNode) {
-                  state.setBranchSuggestions([]);
-                  explorationPathOps.addToPath({
-                    nodeId: newNode.id,
-                    nodeTitle: newNode.title,
-                    branchChoice: suggestion.title,
-                    parentNodeId: selectedNode?.id,
-                    branchSuggestionId: suggestion.id
-                  });
+              historicalAlternativeBranches={historicalAlternativeBranches}
+              onSelectBranch={async (selectedSuggestion) => {
+                if (!selectedNode || !id) return;
+                
+                const suggestionsToCreate = [...branchSuggestions];
+                setBranchSuggestions([]);
+                
+                const createdNodes: any[] = [];
+                
+                for (const suggestion of suggestionsToCreate) {
+                  const isAccepted = suggestion.id === selectedSuggestion.id;
+                  const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
+                  if (newNode) {
+                    createdNodes.push({ node: newNode, suggestion, isAccepted });
+                  }
+                }
+                
+                if (createdNodes.length > 0) {
+                  const selectedNodeData = createdNodes.find(n => n.isAccepted);
+                  if (selectedNodeData) {
+                    explorationPathOps.addToPath({
+                      nodeId: selectedNodeData.node.id,
+                      nodeTitle: selectedNodeData.node.title,
+                      branchChoice: selectedNodeData.suggestion.title,
+                      parentNodeId: selectedNode?.id,
+                      branchSuggestionId: selectedNodeData.suggestion.id,
+                      alternativeBranches: suggestionsToCreate
+                    });
+                    setSelectedNode(selectedNodeData.node);
+                    setFocusedNodeId(selectedNodeData.node.id);
+                    const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
+                    const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                    setFocusedNodeIds(focusedNodes);
+                    setFocusedLinkIds(focusedLinks);
+                    const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
+                    setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
+                  }
                 }
               }}
-              onCloseBranchPreview={() => state.setBranchSuggestions([])}
               isExplorationMode={isExplorationMode}
               colorScheme={colorScheme}
               linkStyle={linkStyle}
               linkAnimation={linkAnimation}
+              templateLayout={templateLayout}
             />
           </div>
       </div>
@@ -306,6 +336,7 @@ export const GraphEditor = () => {
         aiEnabled={aiEnabled}
         onTextToGraph={() => state.setIsTextToGraphOpen(true)}
         onAIExpand={aiOps.handleAIExpand}
+        onBranchExplore={handleGetBranchSuggestions}
         onBackgroundTask={aiOps.handleBackgroundTask}
         isChatOpen={state.isChatOpen}
         setIsChatOpen={state.setIsChatOpen}
@@ -362,6 +393,7 @@ export const GraphEditor = () => {
         <ExplorationTimeline
           explorationPath={explorationPathOps.explorationPath}
           currentPathIndex={explorationPathOps.currentPathIndex}
+          sidebarMode={sidebarMode}
           onGoToIndex={(index) => {
             explorationPathOps.goToPathIndex(index);
             const pathItem = explorationPathOps.explorationPath[index];
@@ -410,6 +442,51 @@ export const GraphEditor = () => {
                 setFocusedLinkIds(focusedLinks);
                 const directChildren = getDirectChildren(node.id, nodes, edges);
                 state.setForceShowTextIds(new Set([node.id, ...directChildren]));
+              }
+            }
+          }}
+          onSwitchBranch={async (pathItem, selectedSuggestion) => {
+            const parentNode = nodes.find(n => n.id === pathItem.parentNodeId);
+            if (!parentNode) return;
+            
+            const branches = pathItem.alternativeBranches || [];
+            const createdNodes: any[] = [];
+            
+            for (const suggestion of branches) {
+              const isAccepted = suggestion.id === selectedSuggestion.id;
+              const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
+              if (newNode) {
+                createdNodes.push({ node: newNode, suggestion, isAccepted });
+              }
+            }
+            
+            if (createdNodes.length > 0) {
+              const selectedNodeData = createdNodes.find(n => n.isAccepted);
+              if (selectedNodeData) {
+                explorationPathOps.addToPath({
+                  nodeId: selectedNodeData.node.id,
+                  nodeTitle: selectedNodeData.node.title,
+                  branchChoice: selectedNodeData.suggestion.title,
+                  parentNodeId: parentNode.id,
+                  branchSuggestionId: selectedNodeData.suggestion.id,
+                  alternativeBranches: branches
+                });
+                setHistoricalAlternativeBranches(prev => [
+                  ...prev.filter(item => item.nodeId !== parentNode.id),
+                  {
+                    nodeId: parentNode.id,
+                    branches: branches,
+                    selectedBranchId: selectedSuggestion.id
+                  }
+                ]);
+                setSelectedNode(selectedNodeData.node);
+                setFocusedNodeId(selectedNodeData.node.id);
+                const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
+                const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                setFocusedNodeIds(focusedNodes);
+                setFocusedLinkIds(focusedLinks);
+                const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
+                state.setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
               }
             }
           }}
@@ -464,6 +541,7 @@ export const GraphEditor = () => {
         aiOps={aiOps}
         interactionOps={interactionOps}
         handleCloseSidebar={handleCloseSidebar}
+        isExplorationMode={isExplorationMode}
       />
     </div>
   );

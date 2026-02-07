@@ -48,6 +48,8 @@ export interface GraphEditorState {
   setCurrentPathIndex: React.Dispatch<React.SetStateAction<number>>;
   isTimelineVisible: boolean;
   setIsTimelineVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  historicalAlternativeBranches: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[];
+  setHistoricalAlternativeBranches: React.Dispatch<React.SetStateAction<{ nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[]>>;
   
   // Node Focus Mode
   focusedNodeId: string | null;
@@ -175,6 +177,7 @@ export const useGraphEditorState = (): GraphEditorState => {
   const [explorationPath, setExplorationPath] = useState<ExplorationPathItem[]>([]);
   const [currentPathIndex, setCurrentPathIndex] = useState(-1);
   const [isTimelineVisible, setIsTimelineVisible] = useState(false);
+  const [historicalAlternativeBranches, setHistoricalAlternativeBranches] = useState<{ nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[]>([]);
 
   // Node Focus Mode
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
@@ -287,5 +290,6 @@ export const useGraphEditorState = (): GraphEditorState => {
     explorationPath, setExplorationPath,
     currentPathIndex, setCurrentPathIndex,
     isTimelineVisible, setIsTimelineVisible,
+    historicalAlternativeBranches, setHistoricalAlternativeBranches,
   };
 };

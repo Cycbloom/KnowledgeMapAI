@@ -144,27 +144,27 @@ export const BranchPreview: React.FC<BranchPreviewProps> = ({
       })}
 
       <foreignObject
-        x={parentNode.x_position - 20}
-        y={parentNode.y_position - 20}
-        width={40}
-        height={40}
-        style={{ cursor: 'pointer' }}
+        x={parentNode.x_position - 25}
+        y={parentNode.y_position - 25}
+        width={50}
+        height={50}
+        style={{ cursor: 'pointer', zIndex: 1000 }}
         onClick={onClose}
       >
         <div className="w-full h-full flex items-center justify-center">
           <button
             className={`
-              w-8 h-8 rounded-full flex items-center justify-center
+              w-10 h-10 rounded-full flex items-center justify-center
               transition-all duration-200
               ${isDark 
-                ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' 
-                : 'bg-white hover:bg-gray-100 text-gray-600'
+                ? 'bg-red-900/90 hover:bg-red-800 text-white border-2 border-red-700' 
+                : 'bg-red-500 hover:bg-red-600 text-white border-2 border-red-600'
               }
-              shadow-lg border border-gray-300 dark:border-gray-600
+              shadow-xl
             `}
             title="关闭分支预览"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>

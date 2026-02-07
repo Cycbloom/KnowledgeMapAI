@@ -27,6 +27,7 @@ import dashboardRoutes from './routes/dashboard.js'
 import taskRoutes from './routes/tasks.js'
 import statisticsRoutes from './routes/statistics.js'
 import searchRoutes from './routes/search.js'
+import templateRoutes from './routes/templates.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 
@@ -119,6 +120,7 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/tasks', taskRoutes)
 app.use('/api/statistics', statisticsRoutes)
 app.use('/api/search', searchRoutes)
+app.use('/api/templates', templateRoutes)
 
 /**
  * health

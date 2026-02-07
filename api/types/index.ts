@@ -9,6 +9,7 @@ export interface Node {
   color?: string;
   level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
   properties?: Record<string, any>;
+  is_accepted?: boolean;
   updated_at?: string;
   created_at?: string;
 }

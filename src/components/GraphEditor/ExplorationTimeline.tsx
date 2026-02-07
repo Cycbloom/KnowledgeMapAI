@@ -1,6 +1,6 @@
-import React from 'react';
-import { ExplorationPathItem } from '../../types';
-import { Clock, ArrowRight, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExplorationPathItem, BranchSuggestion } from '../../types';
+import { Clock, ArrowRight, ChevronRight, ChevronDown, ChevronUp, GitBranch, Check } from 'lucide-react';
 
 interface ExplorationTimelineProps {
   explorationPath: ExplorationPathItem[];
@@ -13,6 +13,8 @@ interface ExplorationTimelineProps {
   isDark: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  sidebarMode?: 'none' | 'edit' | 'outline' | 'create' | 'detail';
+  onSwitchBranch?: (pathItem: ExplorationPathItem, suggestion: BranchSuggestion) => void;
 }
 
 export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
@@ -25,8 +27,23 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
   canGoForward,
   isDark,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  sidebarMode = 'none',
+  onSwitchBranch
 }) => {
+  const [expandedBranches, setExpandedBranches] = useState<Set<number>>(new Set());
+
+  const toggleBranchExpansion = (index: number) => {
+    setExpandedBranches(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
   const formatTime = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -51,9 +68,10 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
 
   return (
     <div className={`
-      absolute right-4 top-20 bottom-4 w-80 rounded-xl shadow-2xl border
+      absolute top-20 bottom-4 w-80 rounded-xl shadow-2xl border
       ${isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-gray-200'}
       backdrop-blur-md transition-all duration-300
+      ${sidebarMode === 'none' ? 'right-4' : 'right-[324px]'}
       ${isCollapsed ? 'h-12 overflow-hidden' : 'h-[calc(100%-2rem)] overflow-y-auto'}
     `}>
       <div className="p-4">
@@ -143,43 +161,110 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
               <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
                 历史记录
               </div>
-              {explorationPath.map((item, index) => (
-                <button
-                  key={item.nodeId}
-                  onClick={() => onGoToIndex(index)}
-                  className={`
-                    w-full text-left p-2.5 rounded-lg transition-all flex items-center gap-2
-                    ${index === currentPathIndex
-                      ? isDark 
-                        ? 'bg-blue-900/30 border-blue-500 text-blue-400' 
-                        : 'bg-blue-50 border-blue-500 text-blue-700'
-                      : isDark
-                        ? 'hover:bg-slate-800 border-transparent text-gray-300'
-                        : 'hover:bg-gray-50 border-transparent text-gray-700'
-                    }
-                    border
-                  `}
-                >
-                  <div className="flex-shrink-0">
-                    {index === currentPathIndex ? (
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    ) : (
-                      <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600" />
-                    )}
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {item.nodeTitle}
-                    </div>
-                    {item.branchChoice && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {item.branchChoice}
+              {explorationPath.map((item, index) => {
+                const isExpanded = expandedBranches.has(index);
+                const hasAlternatives = item.alternativeBranches && item.alternativeBranches.length > 0;
+                
+                return (
+                  <div key={item.nodeId}>
+                    <button
+                      onClick={() => onGoToIndex(index)}
+                      className={`
+                        w-full text-left p-2.5 rounded-lg transition-all flex items-center gap-2
+                        ${index === currentPathIndex
+                          ? isDark 
+                            ? 'bg-blue-900/30 border-blue-500 text-blue-400' 
+                            : 'bg-blue-50 border-blue-500 text-blue-700'
+                          : isDark
+                            ? 'hover:bg-slate-800 border-transparent text-gray-300'
+                            : 'hover:bg-gray-50 border-transparent text-gray-700'
+                        }
+                        border
+                      `}
+                    >
+                      <div className="flex-shrink-0">
+                        {index === currentPathIndex ? (
+                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600" />
+                        )}
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {item.nodeTitle}
+                        </div>
+                        {item.branchChoice && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            分支：{item.branchChoice}
+                          </div>
+                        )}
+                      </div>
+                      {hasAlternatives && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleBranchExpansion(index);
+                          }}
+                          className={`flex-shrink-0 p-1 rounded transition-all ${
+                            isDark ? 'hover:bg-slate-700 text-gray-400' : 'hover:bg-gray-200 text-gray-500'
+                          }`}
+                        >
+                          <GitBranch size={14} className={isExpanded ? 'text-blue-500' : ''} />
+                        </button>
+                      )}
+                      <ArrowRight size={14} className="flex-shrink-0 text-gray-400" />
+                    </button>
+                    
+                    {isExpanded && hasAlternatives && (
+                      <div className="ml-6 mt-1 space-y-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                            备选分支：
+                          </div>
+                        </div>
+                        {item.alternativeBranches?.map((branch, branchIndex) => {
+                          const isSelected = branch.id === item.branchSuggestionId;
+                          return (
+                            <button
+                              key={branch.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isSelected && onSwitchBranch) {
+                                  onSwitchBranch(item, branch);
+                                }
+                              }}
+                              disabled={isSelected}
+                              className={`
+                                w-full text-left p-2 rounded transition-all text-xs
+                                ${isSelected
+                                  ? isDark
+                                    ? 'bg-green-900/30 border-green-500 text-green-400'
+                                    : 'bg-green-50 border-green-500 text-green-700'
+                                  : isDark
+                                    ? 'hover:bg-slate-800 border-transparent text-gray-400'
+                                    : 'hover:bg-gray-100 border-transparent text-gray-600'
+                                }
+                                border
+                                ${isSelected ? 'cursor-default' : 'cursor-pointer'}
+                              `}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-green-500' : 'bg-gray-400'}`} />
+                                <span className="truncate flex-1">{branch.title}</span>
+                                {isSelected && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500 text-white">
+                                    已选择
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
-                  <ArrowRight size={14} className="flex-shrink-0 text-gray-400" />
-                </button>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

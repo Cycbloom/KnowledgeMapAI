@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node, Edge } from '../../types';
+import { Node, Edge, BranchSuggestion } from '../../types';
 import { levelLabels } from '../../config/graphConfig';
 import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
 import { getLevel } from '../../lib/graphUtils';
@@ -10,7 +10,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { 
   X, ArrowLeft, Wand2, Edit3, Trash2, Navigation, 
-  GraduationCap, Sparkles, Check, Lock, Loader2 
+  GraduationCap, Sparkles, Check, Lock, Loader2, GitBranch 
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -33,6 +33,10 @@ interface NodeDetailSidebarProps {
   isRelatedLoading: boolean;
   relatedNodes: Node[];
   onRelatedNodeClick: (node: Node) => void;
+
+  // Branch Switching
+  onUpdateNode?: (nodeId: string, updates: Partial<Node>) => void;
+  isExplorationMode?: boolean;
 }
 
 export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
@@ -51,13 +55,17 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   showRelatedSection,
   isRelatedLoading,
   relatedNodes,
-  onRelatedNodeClick
+  onRelatedNodeClick,
+  onUpdateNode,
+  isExplorationMode = false
 }) => {
   const { isDark } = useTheme();
   const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
   const isLocked = nodeStatus && nodeStatus[node.id]?.locked;
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
+
+  const isAccepted = node.is_accepted !== false;
 
   return (
     <div className="h-full flex flex-col">
@@ -207,6 +215,42 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
              </div>
            )}
         </div>
+
+        {/* Branch Status Section */}
+        {isExplorationMode && (
+          <div className="mt-4 pt-4 border-t border-blue-200">
+            <div className="flex justify-between items-center mb-2">
+              <h5 className="text-xs font-bold text-blue-700 flex items-center">
+                <GitBranch size={14} className="mr-1" />
+                分支状态
+              </h5>
+            </div>
+            <div className="bg-white/50 rounded-lg p-3 border border-gray-200">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-gray-700 mb-1">
+                    {isAccepted ? '已选择' : '未选择'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {isAccepted ? '此分支已被选中，显示为圆形+实线' : '此分支未被选中，显示为方形+虚线'}
+                  </div>
+                </div>
+                {onUpdateNode && (
+                  <button
+                    onClick={() => onUpdateNode(node.id, { is_accepted: !isAccepted })}
+                    className={`px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap ${
+                      isAccepted 
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isAccepted ? '取消选择' : '选择此分支'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 pt-4 border-t border-gray-100 flex items-center space-x-3 bg-white sticky bottom-0 z-10">

@@ -53,7 +53,6 @@ export const useGraphNodeOperations = ({
     setLoading(true);
     try {
       if (sidebarMode === 'create') {
-        // Create Node
         const newNode = await createNodeMutation.mutateAsync({
           graph_id: id,
           title: nodeForm.title,
@@ -65,7 +64,6 @@ export const useGraphNodeOperations = ({
           properties: {}
         });
 
-        // Create Edge if parent selected
         if (nodeForm.parentNodeId) {
           const newEdge = await createEdgeMutation.mutateAsync({
             source_node_id: nodeForm.parentNodeId,
@@ -116,7 +114,6 @@ export const useGraphNodeOperations = ({
           }
         });
 
-        // Handle Edge Updates
         const currentParentEdge = edges.find(e => e.target_node_id === selectedNode.id);
         const newParentId = nodeForm.parentNodeId;
         
@@ -341,12 +338,59 @@ export const useGraphNodeOperations = ({
     }
   };
 
+  const handleUpdateNode = async (nodeId: string, updates: Partial<Node>) => {
+    if (!id) return;
+    
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    setLoading(true);
+    try {
+      const beforeState = {
+        title: node.title,
+        content: node.content,
+        color: node.color,
+        level: node.level,
+        is_accepted: node.is_accepted,
+        properties: node.properties
+      };
+      
+      const afterState = {
+        ...beforeState,
+        ...updates
+      };
+      
+      await updateNodeMutation.mutateAsync({
+        id: nodeId,
+        graphId: id,
+        data: updates
+      });
+      
+      record({
+        type: 'UPDATE_NODE',
+        payload: {
+          id: nodeId,
+          before: beforeState,
+          after: afterState
+        }
+      });
+      
+      addMessage({ type: 'success', content: '节点状态已更新' });
+    } catch (err) {
+      console.error(err);
+      addMessage({ type: 'error', content: '更新节点失败' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     handleSaveNode,
     handleDeleteNode,
     handleBatchDelete,
     handleBatchColorUpdate,
     handleBatchLevelUpdate,
+    handleUpdateNode,
     handleCloseSidebar,
     handleToggleCollapse,
     handleStartCreate: () => {

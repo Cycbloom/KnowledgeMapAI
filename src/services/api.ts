@@ -141,6 +141,7 @@ export const api = {
     list: () => request('/graphs'),
     listTrash: () => request('/graphs/trash'),
     create: (data: any) => request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
+    createFromTemplate: (data: any) => request('/graphs/from-template', { method: 'POST', body: JSON.stringify(data) }),
     get: (id: string) => request(`/graphs/${id}`),
     getNodes: (id: string) => request(`/graphs/${id}/nodes`),
     getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
@@ -393,5 +394,12 @@ export const api = {
       });
     },
     import: (data: any) => request('/data/import', { method: 'POST', body: JSON.stringify(data) }),
-  }
+  },
+  templates: {
+    list: (category?: string) => request(`/templates${category ? `?category=${category}` : ''}`),
+    get: (id: string) => request(`/templates/${id}`),
+    create: (data: any) => request('/templates', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/templates/${id}`, { method: 'DELETE' }),
+  },
 };

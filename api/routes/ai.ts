@@ -94,10 +94,10 @@ router.post('/learning-material', requireAuth, validate(generateLearningMaterial
 });
 
 router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, existing_nodes, child_nodes, context_level, provider, model } = req.body;
+  const { node_title, node_content, node_level, existing_titles, current_children, expand_prompt, provider, model } = req.body;
 
   try {
-    const result = await aiService.expandKnowledge(node_title, node_content, existing_nodes || [], child_nodes || [], { provider, model, contextLevel: context_level });
+    const result = await aiService.expandKnowledge(node_title, node_content, existing_titles || [], current_children || [], { provider, model, contextLevel: node_level, expandPrompt: expand_prompt });
     res.json(result);
   } catch (error: any) {
     logger.error('AI Expand Error:', error);

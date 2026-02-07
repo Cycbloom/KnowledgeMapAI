@@ -341,6 +341,72 @@ export const api = {
         }
       }
     },
+    tutorChatStream: async (data: { message: string; graph_id?: string; history?: any[]; context_node_ids?: string[]; mode?: 'free' | 'guided'; provider?: string; model?: string }, onChunk: (content: string) => void) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+
+      const token = useStore.getState().token;
+      const response = await fetch(`${API_URL}/ai/tutor-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+         if (response.status === 401) {
+            useStore.getState().setUser(null, null);
+         }
+         const errorText = await response.text();
+         throw new Error(errorText || 'Tutor Chat Stream failed');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.replace('data: ', '');
+            if (dataStr === '[DONE]') return;
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.content) onChunk(parsed.content);
+              if (parsed.error) throw new Error(parsed.error);
+            } catch (e) {
+               console.error('Stream parse error:', e);
+            }
+          }
+        }
+      }
+    },
+    extractConcepts: (data: { text: string; existing_nodes?: string[]; max_concepts?: number; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/ai/extract-concepts', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    suggestNextTopic: (data: { node_title: string; node_content?: string; existing_nodes?: string[]; user_progress?: { mastered_count?: number; due_count?: number; current_level?: string }; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      const payload = { ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/ai/suggest-next-topic', { method: 'POST', body: JSON.stringify(payload) });
+    },
   },
   study: {
     getCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string; due?: boolean }) => {

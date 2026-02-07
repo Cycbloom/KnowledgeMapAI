@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { LayoutNode, LearningStatus, NodeLevel, CenterDotShape, ColorScheme } from '../../types';
 import { NodeRing } from './NodeRing';
 import { 
@@ -28,6 +28,7 @@ interface MindMapNodeProps {
   forceShowText?: boolean;
   hasFocusMode?: boolean;
   colorScheme?: ColorScheme;
+  isNew?: boolean;
 }
 
 const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
@@ -66,9 +67,11 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   focused = false,
   forceShowText = false,
   hasFocusMode = false,
-  colorScheme = 'default'
+  colorScheme = 'default',
+  isNew = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState<'entering' | 'pulsing' | 'none'>('none');
   const level = getLevel(node, edges);
   const styleConfig = NODE_STYLE_CONFIG[level];
   const status = getLearningStatus(nodeStatus?.[node.id]);
@@ -81,6 +84,36 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;
   const shadowStyle = getShadowStyle(styleConfig.shadow);
   const transitionDuration = styleConfig.animation.transitionDuration;
+
+  useEffect(() => {
+    if (isNew) {
+      setAnimationPhase('entering');
+      const enterTimer = setTimeout(() => {
+        setAnimationPhase('pulsing');
+        const pulseTimer = setTimeout(() => {
+          setAnimationPhase('none');
+        }, 1500);
+        return () => clearTimeout(pulseTimer);
+      }, 500);
+      return () => clearTimeout(enterTimer);
+    }
+  }, [isNew]);
+
+  const getAnimationTransform = () => {
+    switch (animationPhase) {
+      case 'entering':
+        return { scale: 0, opacity: 0 };
+      case 'pulsing':
+        return { scale: 1.1, opacity: 1 };
+      case 'none':
+      default:
+        return { scale: 1, opacity: 1 };
+    }
+  };
+
+  const animationTransform = getAnimationTransform();
+  const currentScale = animationPhase === 'none' ? hoverScale : animationTransform.scale;
+  const currentOpacity = animationPhase === 'none' ? (isAccepted ? nodeOpacity : nodeOpacity * 0.5) : animationTransform.opacity;
 
   const rings = useMemo(() => {
     const result = [];
@@ -201,7 +234,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       onMouseDown={handleMouseDown}
       style={{ 
         cursor: 'pointer', 
-        opacity: isAccepted ? nodeOpacity : nodeOpacity * 0.5, 
+        opacity: currentOpacity,
         transition: `opacity ${transitionDuration}ms ease`
       }}
     >
@@ -214,7 +247,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       <g
         style={{
           transition: `transform ${transitionDuration}ms ease`,
-          transform: `scale(${selected ?1.1 : hoverScale})`,
+          transform: `scale(${currentScale})`,
           filter: shadowStyle
         }}
       >
@@ -328,6 +361,7 @@ export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProp
     prevProps.forceShowText === nextProps.forceShowText &&
     prevProps.hasFocusMode === nextProps.hasFocusMode &&
     prevProps.colorScheme === nextProps.colorScheme &&
-    prevProps.nodeStatus?.[prevProps.node.id] === nextProps.nodeStatus?.[nextProps.node.id]
+    prevProps.nodeStatus?.[prevProps.node.id] === nextProps.nodeStatus?.[nextProps.node.id] &&
+    prevProps.isNew === nextProps.isNew
   );
 });

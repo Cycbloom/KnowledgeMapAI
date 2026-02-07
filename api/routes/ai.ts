@@ -18,7 +18,10 @@ import {
   chatSchema,
   recommendConnectionsSchema,
   documentToGraphSchema,
-  branchSuggestionsSchema
+  branchSuggestionsSchema,
+  tutorChatSchema,
+  extractConceptsSchema,
+  suggestNextTopicSchema
 } from '../schemas/index.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -796,6 +799,145 @@ router.post('/url-to-text', requireAuth, async (req: AuthRequest, res: Response)
   } catch (error: any) {
     logger.error('URL Scraping Error:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch URL content' });
+  }
+});
+
+// Tutor Chat - AI assistant for guided learning
+router.post('/tutor-chat', requireAuth, validate(tutorChatSchema), async (req: AuthRequest, res: Response) => {
+  const { message, graph_id, history = [], context_node_ids, mode = 'free', provider: providerType, model } = req.body;
+  const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
+
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  if (!provider.hasKey) {
+    const mockContent = await aiService.tutorChat(
+      [{ role: 'user', content: message }],
+      { mode },
+      { provider: providerType, model }
+    );
+    const chunks = mockContent.split('');
+    const sendMockChunks = async () => {
+      for (const chunk of chunks) {
+         res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+         await new Promise(resolve => setTimeout(resolve, 30));
+      }
+      res.write('data: [DONE]\n\n');
+      res.end();
+    };
+    sendMockChunks();
+    return;
+  }
+
+  try {
+    // Fetch context
+    let context: any = { mode };
+    
+    if (graph_id) {
+      const { nodes } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);
+      context.graphId = graph_id;
+      context.existingNodes = nodes.map((n: any) => n.title);
+      
+      // Get current node info if context_node_ids provided
+      if (context_node_ids && context_node_ids.length > 0) {
+        const currentNode = nodes.find((n: any) => n.id === context_node_ids[0]);
+        if (currentNode) {
+          context.currentNodeId = currentNode.id;
+          context.currentNodeTitle = currentNode.title;
+          context.currentNodeContent = currentNode.content;
+        }
+      }
+    }
+
+    // Prepare messages with history
+    const messages: any[] = [
+      ...history.map((msg: any) => ({ role: msg.role, content: msg.content })),
+      { role: 'user', content: message }
+    ];
+
+    const stream = await provider.client.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
+
+${mode === 'guided' 
+  ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step through the knowledge graph. Ask questions to assess understanding before moving to the next topic."
+  : "Free Mode: Allow open-ended discussion. Answer questions freely and explore topics based on user interest. Extract key concepts from the conversation that could be added to the knowledge graph."
+}
+
+Current Context:
+${context.currentNodeId ? `\nCurrent Node:\n- Title: ${context.currentNodeTitle}\n- Content: ${context.currentNodeContent || '(No content)'}` : ''}
+${context.existingNodes ? `\nExisting Nodes in Graph:\n${context.existingNodes.slice(0, 20).join(', ')}` : ''}
+
+Instructions:
+1. Be conversational and engaging
+2. Use markdown formatting for better readability
+3. When explaining concepts, provide examples
+4. In free mode, identify key concepts that could be new nodes in the knowledge graph
+5. In guided mode, follow the learning path and check understanding
+6. Respond in the same language as the user (default to Chinese)
+7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`
+        },
+        ...messages
+      ],
+      model: model || provider.model,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+    res.write('data: [DONE]\n\n');
+    res.end();
+
+  } catch (error: any) {
+    logger.error('AI Tutor Chat Error:', error);
+    res.write(`data: ${JSON.stringify({ error: error.message || 'AI 助教对话失败', code: ErrorCodes.INTERNAL_ERROR })}\n\n`);
+    res.end();
+  }
+});
+
+// Extract Concepts from conversation
+router.post('/extract-concepts', requireAuth, validate(extractConceptsSchema), async (req: AuthRequest, res: Response) => {
+  const { text, existing_nodes, max_concepts, provider: providerType, model } = req.body;
+  const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
+
+  if (!provider.hasKey) {
+    const mockResult = await aiService.extractConcepts(text, existing_nodes, { provider: providerType, model, maxConcepts: max_concepts });
+    return res.json(mockResult);
+  }
+
+  try {
+    const result = await aiService.extractConcepts(text, existing_nodes, { provider: providerType, model, maxConcepts: max_concepts });
+    res.json(result);
+  } catch (error: any) {
+    logger.error('AI Extract Concepts Error:', error);
+    res.status(500).json({ error: error.message || 'AI 概念提取失败' });
+  }
+});
+
+// Suggest Next Topic based on current node and user progress
+router.post('/suggest-next-topic', requireAuth, validate(suggestNextTopicSchema), async (req: AuthRequest, res: Response) => {
+  const { node_title, node_content, existing_nodes, user_progress, provider: providerType, model } = req.body;
+  const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
+
+  if (!provider.hasKey) {
+    const mockResult = await aiService.suggestNextTopic(node_title, node_content, existing_nodes, { provider: providerType, model, userProgress: user_progress });
+    return res.json(mockResult);
+  }
+
+  try {
+    const result = await aiService.suggestNextTopic(node_title, node_content, existing_nodes, { provider: providerType, model, userProgress: user_progress });
+    res.json(result);
+  } catch (error: any) {
+    logger.error('AI Suggest Next Topic Error:', error);
+    res.status(500).json({ error: error.message || 'AI 主题建议失败' });
   }
 });
 

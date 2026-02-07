@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Node, NodeLevel, BranchSuggestion, ExplorationPathItem } from '../types';
+import { Node, NodeLevel, BranchSuggestion, ExplorationPathItem, TutorMode, ExtractedConcept } from '../types';
 
 export interface GraphEditorState {
   // Graph Ref
@@ -146,6 +146,16 @@ export interface GraphEditorState {
   // General Loading
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+
+  // Tutor Mode
+  tutorMode: TutorMode;
+  setTutorMode: React.Dispatch<React.SetStateAction<TutorMode>>;
+  extractedConcepts: ExtractedConcept[];
+  setExtractedConcepts: React.Dispatch<React.SetStateAction<ExtractedConcept[]>>;
+  isTutorMode: boolean;
+  setIsTutorMode: React.Dispatch<React.SetStateAction<boolean>>;
+  suggestedNextTopics: Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>;
+  setSuggestedNextTopics: React.Dispatch<React.SetStateAction<Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>>>;
 }
 
 export const useGraphEditorState = (): GraphEditorState => {
@@ -246,6 +256,12 @@ export const useGraphEditorState = (): GraphEditorState => {
   // Loading
   const [loading, setLoading] = useState(false);
 
+  // Tutor Mode
+  const [tutorMode, setTutorMode] = useState<TutorMode>('free');
+  const [extractedConcepts, setExtractedConcepts] = useState<ExtractedConcept[]>([]);
+  const [isTutorMode, setIsTutorMode] = useState(false);
+  const [suggestedNextTopics, setSuggestedNextTopics] = useState<Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>>([]);
+
   return {
     graphRef,
     selectedNode, setSelectedNode,
@@ -291,5 +307,9 @@ export const useGraphEditorState = (): GraphEditorState => {
     currentPathIndex, setCurrentPathIndex,
     isTimelineVisible, setIsTimelineVisible,
     historicalAlternativeBranches, setHistoricalAlternativeBranches,
+    tutorMode, setTutorMode,
+    extractedConcepts, setExtractedConcepts,
+    isTutorMode, setIsTutorMode,
+    suggestedNextTopics, setSuggestedNextTopics,
   };
 };

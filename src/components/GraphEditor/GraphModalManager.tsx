@@ -15,6 +15,7 @@ interface GraphModalManagerProps {
   state: GraphEditorState;
   graphMeta: any;
   aiEnabled: boolean;
+  tutorOps?: any;
 }
 
 export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
@@ -22,6 +23,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   state,
   graphMeta,
   aiEnabled,
+  tutorOps
 }) => {
   const queryClient = useQueryClient();
   const { addMessage } = useMessageStore();
@@ -137,6 +139,17 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         graphId={id || ''}
         selectedNodeIds={Array.from(selectedNodeIds)}
         aiEnabled={aiEnabled}
+        isTutorMode={state.isTutorMode}
+        tutorMode={state.tutorMode}
+        extractedConcepts={state.extractedConcepts}
+        onToggleTutorMode={tutorOps?.handleToggleTutorMode}
+        onSwitchTutorMode={tutorOps?.handleSwitchTutorMode}
+        onExtractConcepts={tutorOps?.handleExtractConcepts}
+        onAddConceptToGraph={tutorOps?.handleAddConceptToGraph}
+        onAddAllConcepts={tutorOps?.handleAddAllConcepts}
+        onSuggestNextTopics={tutorOps?.handleSuggestNextTopics}
+        suggestedNextTopics={state.suggestedNextTopics}
+        onTutorChat={tutorOps?.handleTutorChat}
       />
       <ConfirmationModal
         isOpen={confirmModal.isOpen}

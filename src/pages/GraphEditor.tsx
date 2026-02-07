@@ -29,6 +29,7 @@ import { useGraphMutations } from '../hooks/useGraphMutations';
 import { useGraphHistoryHandlers } from '../hooks/useGraphHistoryHandlers';
 import { useGraphNodeOperations } from '../hooks/useGraphNodeOperations';
 import { useGraphAIOperations } from '../hooks/useGraphAIOperations';
+import { useTutorOperations } from '../hooks/useTutorOperations';
 import { useGraphExportOperations } from '../hooks/useGraphExportOperations';
 import { useGraphInteraction } from '../hooks/useGraphInteraction';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
@@ -110,6 +111,15 @@ export const GraphEditor = () => {
     record,
     navigate,
     token
+  });
+
+  const tutorOps = useTutorOperations({
+    id: id || '',
+    nodes,
+    edges,
+    state,
+    mutations,
+    record
   });
 
   const exportOps = useGraphExportOperations({
@@ -340,6 +350,8 @@ export const GraphEditor = () => {
         onBackgroundTask={aiOps.handleBackgroundTask}
         isChatOpen={state.isChatOpen}
         setIsChatOpen={state.setIsChatOpen}
+        isTutorMode={state.isTutorMode}
+        onToggleTutorMode={tutorOps.handleToggleTutorMode}
         isPathfindingMode={isPathfindingMode}
         setIsPathfindingMode={setIsPathfindingMode}
         pathfindingState={{
@@ -512,6 +524,7 @@ export const GraphEditor = () => {
         state={state}
         graphMeta={graphMeta}
         aiEnabled={aiEnabled}
+        tutorOps={tutorOps}
       />
 
       <GraphStyleSettings

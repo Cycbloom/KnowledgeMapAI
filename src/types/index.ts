@@ -269,3 +269,40 @@ export interface CreateGraphFromTemplateData {
   title: string;
   description?: string;
 }
+
+export type TutorMode = 'free' | 'guided';
+
+export interface ExtractedConcept {
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface TutorSession {
+  id: string;
+  mode: TutorMode;
+  currentTopic?: string;
+  startTime: Date;
+  messages: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
+  }>;
+  extractedConcepts: ExtractedConcept[];
+  suggestedTopics: string[];
+}
+
+export interface TutorContext {
+  graphId?: string;
+  currentNodeId?: string;
+  currentNodeTitle?: string;
+  currentNodeContent?: string;
+  existingNodes?: string[];
+  userProgress?: {
+    masteredCount: number;
+    dueCount: number;
+    currentLevel: string;
+  };
+  mode?: TutorMode;
+  learningPath?: string[];
+}

@@ -562,6 +562,227 @@ Your task:
       throw new Error(error.message || 'AI generation failed');
     }
   }
+  async suggestNextTopic(nodeTitle: string, nodeContent?: string, existingNodes?: string[], options: { provider?: AIProviderType; model?: string; userProgress?: any } = {}) {
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
+      return { 
+        suggestions: [
+          { 
+            title: `建议主题 1: ${nodeTitle} 的应用`, 
+            description: '探索实际应用场景', 
+            priority: 'high' as const, 
+            estimatedDifficulty: 3 
+          },
+          { 
+            title: `建议主题 2: ${nodeTitle} 的原理`, 
+            description: '深入理解核心原理', 
+            priority: 'medium' as const, 
+            estimatedDifficulty: 4 
+          }
+        ] 
+      };
+    }
+
+    try {
+      const progressContext = options.userProgress 
+        ? `\nUser Progress:\n- Mastered nodes: ${options.userProgress.masteredCount || 0}\n- Current level: ${options.userProgress.currentLevel || 'beginner'}`
+        : '';
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { 
+            role: "system", 
+            content: "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
+              "Each suggestion should:\n" +
+              "1. Be logically connected to the current topic\n" +
+              "2. Match the user's learning level\n" +
+              "3. Provide a clear learning path\n" +
+              "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
+              "- 'title': Brief topic title (max 30 chars)\n" +
+              "- 'description': Short explanation (max 80 chars)\n" +
+              "- 'priority': 'high', 'medium', or 'low'\n" +
+              "- 'estimatedDifficulty': Number from 1-5\n" +
+              "Example format: { \"suggestions\": [{ \"title\": \"深入原理\", \"description\": \"探索核心原理\", \"priority\": \"high\", \"estimatedDifficulty\": 4 }] }\n" +
+              "Please respond in Chinese." 
+          },
+          { 
+            role: "user", 
+            content: `Current Node:\nTitle: ${nodeTitle}\nContent: ${nodeContent || ''}${progressContext}` 
+          }
+        ],
+        model: options.model || provider.model,
+        response_format: { type: "json_object" },
+      });
+
+      const content = completion.choices[0].message.content || '';
+      const cleanedContent = this.cleanJsonString(content);
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanedContent || '{"suggestions": []}');
+      } catch (e) {
+        logger.error('[AI] JSON Parse Error (Suggest Next Topic). Raw:', { content });
+        throw new Error('Failed to parse AI response');
+      }
+
+      return { suggestions: parsed.suggestions || [] };
+    } catch (error: any) {
+      logger.error('AI Error:', error);
+      throw new Error(error.message || 'AI suggestion failed');
+    }
+  }
+
+  async tutorChat(messages: any[], context: {
+    graphId?: string;
+    currentNodeId?: string;
+    currentNodeTitle?: string;
+    currentNodeContent?: string;
+    existingNodes?: string[];
+    userProgress?: any;
+    mode?: 'free' | 'guided';
+    learningPath?: string[];
+  } = {}, options: { provider?: AIProviderType; model?: string } = {}) {
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
+      const lastMessage = messages[messages.length - 1];
+      return `[模拟助教回复] 我收到了你的消息: "${lastMessage?.content || ''}"。这是一个模拟回复，因为后端没有配置 API Key。`;
+    }
+
+    try {
+      const contextText = this.buildTutorContext(context);
+      const modePrompt = context.mode === 'guided' 
+        ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step through the knowledge graph. Ask questions to assess understanding before moving to the next topic."
+        : "Free Mode: Allow open-ended discussion. Answer questions freely and explore topics based on user interest. Extract key concepts from the conversation that could be added to the knowledge graph.";
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { 
+            role: "system", 
+            content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
+
+${modePrompt}
+
+Current Context:
+${contextText}
+
+Instructions:
+1. Be conversational and engaging
+2. Use markdown formatting for better readability
+3. When explaining concepts, provide examples
+4. In free mode, identify key concepts that could be new nodes in the knowledge graph
+5. In guided mode, follow the learning path and check understanding
+6. Respond in the same language as the user (default to Chinese)
+7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`
+          },
+          ...messages.map((msg: any) => ({ role: msg.role, content: msg.content }))
+        ],
+        model: options.model || provider.model,
+      });
+
+      return completion.choices[0].message.content || '';
+    } catch (error: any) {
+      logger.error('AI Tutor Chat Error:', error);
+      throw new Error(error.message || 'AI tutor chat failed');
+    }
+  }
+
+  private buildTutorContext(context: any): string {
+    let contextStr = '';
+    
+    if (context.currentNodeId && context.currentNodeTitle) {
+      contextStr += `\nCurrent Node:\n- Title: ${context.currentNodeTitle}\n- Content: ${context.currentNodeContent || '(No content)'}\n`;
+    }
+    
+    if (context.existingNodes && context.existingNodes.length > 0) {
+      contextStr += `\nExisting Nodes in Graph:\n${context.existingNodes.slice(0, 20).join(', ')}\n`;
+    }
+    
+    if (context.userProgress) {
+      contextStr += `\nUser Progress:\n- Mastered: ${context.userProgress.masteredCount || 0} nodes\n- Due for review: ${context.userProgress.dueCount || 0} nodes\n`;
+    }
+    
+    if (context.learningPath && context.learningPath.length > 0) {
+      contextStr += `\nSuggested Learning Path:\n${context.learningPath.join(' → ')}\n`;
+    }
+    
+    return contextStr || 'No specific context provided.';
+  }
+
+  async extractConcepts(text: string, existingNodes?: string[], options: { provider?: AIProviderType; model?: string; maxConcepts?: number } = {}) {
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
+      return {
+        concepts: [
+          { title: '概念 1', description: '这是从对话中提取的概念 1', priority: 'high' as const },
+          { title: '概念 2', description: '这是从对话中提取的概念 2', priority: 'medium' as const }
+        ]
+      };
+    }
+
+    try {
+      const existingNodesContext = existingNodes && existingNodes.length > 0
+        ? `\nExisting Nodes (DO NOT duplicate these): ${existingNodes.slice(0, 50).join(', ')}`
+        : '';
+
+      const maxConcepts = options.maxConcepts || 5;
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { 
+            role: "system", 
+            content: `You are a concept extraction expert. Analyze the given text and extract key concepts that could be added as nodes in a knowledge graph.
+
+Requirements:
+1. Extract ${maxConcepts} most important concepts
+2. Each concept should be a standalone knowledge point
+3. Avoid duplicating existing nodes
+4. Provide a brief description for each concept
+5. Assign a priority level based on importance
+6. Concepts should be specific enough to be useful, but not too narrow
+
+Return a JSON object with a 'concepts' array. Each object must have:
+- 'title': Concept name (max 20 chars)
+- 'description': Brief explanation (max 100 chars)
+- 'priority': 'high', 'medium', or 'low'
+
+Example format: { "concepts": [{ "title": "机器学习", "description": "人工智能的一个分支", "priority": "high" }] }
+Please respond in Chinese.` 
+          },
+          { 
+            role: "user", 
+            content: `Text to analyze:\n${text}${existingNodesContext}` 
+          }
+        ],
+        model: options.model || provider.model,
+        response_format: { type: "json_object" },
+      });
+
+      const content = completion.choices[0].message.content || '';
+      const cleanedContent = this.cleanJsonString(content);
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanedContent || '{"concepts": []}');
+      } catch (e) {
+        logger.error('[AI] JSON Parse Error (Extract Concepts). Raw:', { content });
+        throw new Error('Failed to parse AI response');
+      }
+
+      return { concepts: parsed.concepts || [] };
+    } catch (error: any) {
+      logger.error('AI Error:', error);
+      throw new Error(error.message || 'AI concept extraction failed');
+    }
+  }
 }
 
 export const aiService = new AIService();

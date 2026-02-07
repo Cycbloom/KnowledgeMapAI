@@ -184,6 +184,37 @@ export const branchSuggestionsSchema = z.object({
   model: z.string().optional(),
 });
 
+export const tutorChatSchema = z.object({
+  message: z.string().min(1, '消息不能为空'),
+  graph_id: z.string().uuid('无效的图谱ID').optional(),
+  history: z.array(z.any()).optional(),
+  context_node_ids: z.array(z.string().uuid()).optional(),
+  mode: z.enum(['free', 'guided']).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
+export const extractConceptsSchema = z.object({
+  text: z.string().min(1, '文本不能为空'),
+  existing_nodes: z.array(z.string()).optional(),
+  max_concepts: z.number().min(1).max(10).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
+export const suggestNextTopicSchema = z.object({
+  node_title: z.string().min(1, '节点标题不能为空'),
+  node_content: z.string().optional(),
+  existing_nodes: z.array(z.string()).optional(),
+  user_progress: z.object({
+    mastered_count: z.number().optional(),
+    due_count: z.number().optional(),
+    current_level: z.string().optional(),
+  }).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
 // --- Data Schemas ---
 export const importDataSchema = z.object({
   graph_title: z.string().min(1, '图谱标题不能为空'),

@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation } from '../../types';
@@ -36,6 +36,8 @@ interface GraphToolbarProps {
   onBackgroundTask?: (type: 'generate_questions' | 'expand_graph') => void;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
+  isTutorMode?: boolean;
+  onToggleTutorMode?: () => void;
   isPathfindingMode: boolean;
   setIsPathfindingMode: (mode: boolean) => void;
   pathfindingState: {
@@ -95,7 +97,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBatchColorUpdate, onBatchLevelUpdate,
   isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme, setColorScheme, linkStyle, setLinkStyle, linkAnimation, setLinkAnimation,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare,
-  isExplorationMode, setIsExplorationMode, isTimelineVisible, setIsTimelineVisible
+  isExplorationMode, setIsExplorationMode, isTimelineVisible, setIsTimelineVisible,
+  isTutorMode, onToggleTutorMode
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -162,6 +165,15 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         colorClass="text-purple-600" 
         title="图谱助手" 
       />
+      {onToggleTutorMode && (
+        <Button 
+          onClick={onToggleTutorMode}
+          active={isTutorMode}
+          icon={GraduationCap}
+          colorClass="text-yellow-600"
+          title={isTutorMode ? "关闭助教模式" : "开启助教模式"}
+        />
+      )}
       <Button 
         onClick={() => {
             setIsPathfindingMode(!isPathfindingMode);

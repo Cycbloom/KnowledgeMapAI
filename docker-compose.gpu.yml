@@ -9,7 +9,7 @@ services:
       - redis-data:/data
     command: redis-server --appendonly yes
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -23,10 +23,11 @@ services:
     ports:
       - "8001:8000"
     environment:
-      - TTS_MODEL=Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice
-      - TTS_VOICE=Vivian
+      - TTS_MODEL=Qwen/Qwen3-TTS-0.6B
+      - TTS_VOICE=default
       - TTS_SPEED=1.0
       - TTS_OUTPUT_FORMAT=mp3
+      - NVIDIA_VISIBLE_DEVICES=all
     volumes:
       - tts-models:/app/models
     deploy:
@@ -35,8 +36,9 @@ services:
           memory: 4G
         reservations:
           memory: 2G
+    runtime: nvidia
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

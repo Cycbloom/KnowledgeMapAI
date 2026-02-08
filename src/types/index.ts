@@ -306,3 +306,18 @@ export interface TutorContext {
   mode?: TutorMode;
   learningPath?: string[];
 }
+
+export type TTSEngine = 'browser' | 'qwen3';
+
+export interface TTSConfig {
+  engine: TTSEngine;
+  voice?: string;
+  speed?: number;
+  outputFormat?: 'mp3' | 'wav';
+}
+
+export interface TTSVoice {
+  id: string;
+  name: string;
+  lang: string;
+}

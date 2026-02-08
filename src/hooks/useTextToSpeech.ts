@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { TTSEngine } from '../types';
+import { api } from '../services/api';
 
 interface TextToSpeechOptions {
   rate?: number;
@@ -7,7 +9,7 @@ interface TextToSpeechOptions {
   voice?: SpeechSynthesisVoice | null;
 }
 
-export const useTextToSpeech = () => {
+const useBrowserTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,6 +143,7 @@ export const useTextToSpeech = () => {
   return {
     isSpeaking,
     isPaused,
+    isLoading: false,
     error,
     voices,
     selectedVoice,
@@ -150,5 +153,171 @@ export const useTextToSpeech = () => {
     cancel,
     setVoice,
     hasSupport: typeof window !== 'undefined' && 'speechSynthesis' in window
+  };
+};
+
+export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
+  const [currentEngine, setCurrentEngine] = useState<TTSEngine>(engine);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[] | string[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const browserTTS = useBrowserTTS();
+
+  const switchEngine = useCallback((newEngine: TTSEngine) => {
+    if (currentEngine !== newEngine) {
+      if (currentEngine === 'browser') {
+        window.speechSynthesis?.cancel();
+      } else {
+        if (audioUrl) {
+          URL.revokeObjectURL(audioUrl);
+          setAudioUrl(null);
+        }
+      }
+      setCurrentEngine(newEngine);
+    }
+  }, [currentEngine, audioUrl]);
+
+  const speak = useCallback(async (text: string, options?: TextToSpeechOptions) => {
+    if (currentEngine === 'browser') {
+      browserTTS.speak(text, options);
+    } else {
+      if (!text || text.trim() === '') {
+        setError('没有可朗读的文本');
+        return;
+      }
+
+      const cleanText = text
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/`[^`]+`/g, '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!cleanText) {
+        setError('没有可朗读的文本');
+        return;
+      }
+
+      setIsLoading(true);
+      setIsSpeaking(true);
+      setError(null);
+
+      try {
+        const blob = await api.tts.synthesize({
+          text: cleanText,
+          voice: typeof selectedVoice === 'string' ? selectedVoice : 'default',
+          speed: options?.rate || 1.0,
+          output_format: 'mp3'
+        });
+
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+
+        const audio = new Audio(url);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(url);
+          setAudioUrl(null);
+        };
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          setError('音频播放失败');
+          URL.revokeObjectURL(url);
+          setAudioUrl(null);
+        };
+
+        await audio.play();
+      } catch (err: any) {
+        console.error('Qwen TTS error:', err);
+        setIsSpeaking(false);
+        setError(err.message || '语音合成失败');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [currentEngine, browserTTS, selectedVoice, audioUrl]);
+
+  const pause = useCallback(() => {
+    if (currentEngine === 'browser') {
+      browserTTS.pause();
+    }
+  }, [currentEngine, browserTTS]);
+
+  const resume = useCallback(() => {
+    if (currentEngine === 'browser') {
+      browserTTS.resume();
+    }
+  }, [currentEngine, browserTTS]);
+
+  const cancel = useCallback(() => {
+    if (currentEngine === 'browser') {
+      browserTTS.cancel();
+    } else {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        setAudioUrl(null);
+      }
+    }
+    setIsSpeaking(false);
+    setIsPaused(false);
+    setIsLoading(false);
+  }, [currentEngine, browserTTS, audioUrl]);
+
+  const setVoice = useCallback((voice: SpeechSynthesisVoice | string) => {
+    if (currentEngine === 'browser') {
+      browserTTS.setVoice(voice as SpeechSynthesisVoice);
+    } else {
+      setSelectedVoice(voice as string);
+    }
+  }, [currentEngine, browserTTS]);
+
+  const loadVoices = useCallback(async () => {
+    if (currentEngine === 'browser') {
+      setVoices(browserTTS.voices);
+    } else {
+      try {
+        const data = await api.tts.voices();
+        setVoices(data.voices || []);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message || '获取语音列表失败');
+      }
+    }
+  }, [currentEngine, browserTTS]);
+
+  useEffect(() => {
+    if (currentEngine === 'browser') {
+      setVoices(browserTTS.voices);
+      setSelectedVoice(browserTTS.selectedVoice);
+    }
+  }, [currentEngine, browserTTS]);
+
+  return {
+    isSpeaking,
+    isPaused,
+    isLoading,
+    error,
+    voices,
+    selectedVoice,
+    audioUrl,
+    speak,
+    pause,
+    resume,
+    cancel,
+    setVoice,
+    loadVoices,
+    currentEngine,
+    switchEngine,
+    hasSupport: true
   };
 };

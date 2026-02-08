@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, MessageSquare, Bot, User, Loader2, Sparkles, Lightbulb, Plus, BookOpen, Volume2, VolumeX, Pause, Play, Settings2 } from 'lucide-react';
+import { X, Send, MessageSquare, Bot, User, Loader2, Sparkles, Lightbulb, Plus, BookOpen, Volume2, VolumeX, Pause, Play, Settings2, Cpu, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -7,7 +7,7 @@ import rehypeKatex from 'rehype-katex';
 import { api } from '../../services/api';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
 import { useMessageStore } from '../../store/useMessageStore';
-import { ExtractedConcept, TutorMode } from '../../types';
+import { ExtractedConcept, TutorMode, TTSEngine } from '../../types';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
 
 interface ChatDialogProps {
@@ -55,9 +55,11 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
   onTutorChat
 }) => {
   const { addMessage } = useMessageStore();
+  const [ttsEngine, setTTSEngine] = useState<TTSEngine>('browser');
   const { 
     isSpeaking, 
     isPaused, 
+    isLoading: ttsLoading,
     error: ttsError, 
     voices, 
     selectedVoice, 
@@ -66,8 +68,9 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
     resume, 
     cancel, 
     setVoice,
+    switchEngine,
     hasSupport 
-  } = useTextToSpeech();
+  } = useTextToSpeech(ttsEngine);
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -114,7 +117,9 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
   };
 
   const handleVoiceChange = (voice: SpeechSynthesisVoice) => {
-    setVoice(voice);
+    if (ttsEngine === 'browser') {
+      setVoice(voice);
+    }
     setShowVoiceSettings(false);
   };
 
@@ -270,7 +275,7 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
       {showVoiceSettings && hasSupport && (
         <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-blue-600 font-medium">选择语音</span>
+            <span className="text-xs text-blue-600 font-medium">语音设置</span>
             <button
               onClick={() => setShowVoiceSettings(false)}
               className="text-gray-400 hover:text-gray-600"
@@ -278,22 +283,67 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
               <X size={14} />
             </button>
           </div>
-          <div className="space-y-1 max-h-32 overflow-y-auto">
-            {voices.map((voice, index) => (
-              <button
-                key={index}
-                onClick={() => handleVoiceChange(voice)}
-                className={`w-full text-left px-2 py-1.5 text-xs rounded-md transition-all ${
-                  selectedVoice?.name === voice.name
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-blue-600 hover:bg-blue-100'
-                }`}
-              >
-                <div className="font-medium">{voice.name}</div>
-                <div className="opacity-75">{voice.lang}</div>
-              </button>
-            ))}
+          
+          {/* TTS Engine Toggle */}
+          <div className="mb-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-blue-600">语音引擎：</span>
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => {
+                    switchEngine('browser');
+                    setTTSEngine('browser');
+                  }}
+                  className={`flex items-center space-x-1 px-3 py-1.5 text-xs rounded-md transition-all ${
+                    ttsEngine === 'browser'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-blue-600 hover:bg-blue-100'
+                  }`}
+                >
+                  <Globe size={12} />
+                  <span>浏览器</span>
+                </button>
+                <button
+                  onClick={() => {
+                    switchEngine('qwen3');
+                    setTTSEngine('qwen3');
+                  }}
+                  className={`flex items-center space-x-1 px-3 py-1.5 text-xs rounded-md transition-all ${
+                    ttsEngine === 'qwen3'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-blue-600 hover:bg-blue-100'
+                  }`}
+                >
+                  <Cpu size={12} />
+                  <span>Qwen3-TTS</span>
+                </button>
+              </div>
+            </div>
           </div>
+          
+          {/* Voice Selection */}
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {ttsEngine === 'browser' ? (
+                voices.map((voice, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleVoiceChange(voice)}
+                    className={`w-full text-left px-2 py-1.5 text-xs rounded-md transition-all ${
+                      typeof selectedVoice === 'object' && selectedVoice?.name === voice.name
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-blue-600 hover:bg-blue-100'
+                    }`}
+                  >
+                    <div className="font-medium">{voice.name}</div>
+                    <div className="opacity-75">{voice.lang}</div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-xs text-blue-600 bg-white px-2 py-1.5 rounded-md">
+                  使用 Qwen3-TTS 默认语音
+                </div>
+              )}
+            </div>
           {ttsError && (
             <div className="mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
               {ttsError}
@@ -378,14 +428,17 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
               <div className="flex flex-col space-y-1">
                 <button
                   onClick={() => handlePlayMessage(msg)}
+                  disabled={ttsLoading}
                   className={`p-1.5 rounded-lg transition-colors ${
                     currentSpeakingMessageId === msg.id && isSpeaking
                       ? 'bg-green-100 text-green-600'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                   title={currentSpeakingMessageId === msg.id && isSpeaking ? (isPaused ? '继续播放' : '暂停') : '播放'}
                 >
-                  {currentSpeakingMessageId === msg.id && isSpeaking ? (
+                  {ttsLoading && currentSpeakingMessageId === msg.id ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : currentSpeakingMessageId === msg.id && isSpeaking ? (
                     isPaused ? <Play size={14} /> : <Pause size={14} />
                   ) : (
                     <Volume2 size={14} />

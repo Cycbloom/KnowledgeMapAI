@@ -21,7 +21,9 @@ import {
   branchSuggestionsSchema,
   tutorChatSchema,
   extractConceptsSchema,
-  suggestNextTopicSchema
+  suggestNextTopicSchema,
+  ttsSchema,
+  ttsVoicesSchema
 } from '../schemas/index.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -938,6 +940,94 @@ router.post('/suggest-next-topic', requireAuth, validate(suggestNextTopicSchema)
   } catch (error: any) {
     logger.error('AI Suggest Next Topic Error:', error);
     res.status(500).json({ error: error.message || 'AI 主题建议失败' });
+  }
+});
+
+// TTS - Text to Speech using local Qwen3-TTS model
+router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (req: AuthRequest, res: Response) => {
+  try {
+    const ttsServiceUrl = process.env.TTS_SERVICE_URL || 'http://localhost:8001';
+    
+    const response = await fetch(`${ttsServiceUrl}/voices`);
+    
+    if (!response.ok) {
+      throw new AppError('Failed to fetch TTS voices', 503, ErrorCodes.INTERNAL_ERROR);
+    }
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    logger.error('TTS Voices Error:', error);
+    res.status(500).json({ error: error.message || '获取语音列表失败' });
+  }
+});
+
+router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, res: Response) => {
+  const { text, voice, speed, output_format } = req.body;
+  
+  try {
+    const ttsServiceUrl = process.env.TTS_SERVICE_URL || 'http://localhost:8001';
+    
+    const response = await fetch(`${ttsServiceUrl}/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        voice: voice || 'default',
+        speed: speed || 1.0,
+        output_format: output_format || 'mp3'
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new AppError(`TTS synthesis failed: ${errorText}`, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+    
+    const audioBuffer = await response.arrayBuffer();
+    
+    const contentType = output_format === 'wav' ? 'audio/wav' : 'audio/mpeg';
+    const filename = output_format === 'wav' ? 'speech.wav' : 'speech.mp3';
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-Length', audioBuffer.byteLength);
+    
+    res.send(Buffer.from(audioBuffer));
+  } catch (error: any) {
+    logger.error('TTS Synthesis Error:', error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(error.message || '语音合成失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+router.get('/tts/health', requireAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const ttsServiceUrl = process.env.TTS_SERVICE_URL || 'http://localhost:8001';
+    
+    const response = await fetch(`${ttsServiceUrl}/health`);
+    
+    if (!response.ok) {
+      return res.json({ 
+        status: 'unhealthy',
+        model_loaded: false,
+        model_name: 'unknown'
+      });
+    }
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    logger.error('TTS Health Check Error:', error);
+    res.json({ 
+      status: 'unhealthy',
+      model_loaded: false,
+      model_name: 'unknown'
+    });
   }
 });
 

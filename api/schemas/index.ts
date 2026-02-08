@@ -298,3 +298,13 @@ export const createGraphFromTemplateSchema = z.object({
   title: z.string().min(1, '标题不能为空'),
   description: z.string().optional(),
 });
+
+// --- TTS Schemas ---
+export const ttsSchema = z.object({
+  text: z.string().min(1, '文本不能为空').max(5000, '文本过长'),
+  voice: z.string().optional(),
+  speed: z.number().min(0.5).max(2.0).optional(),
+  output_format: z.enum(['mp3', 'wav']).optional(),
+});
+
+export const ttsVoicesSchema = z.object({});

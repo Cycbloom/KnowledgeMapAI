@@ -408,6 +408,31 @@ export const api = {
       return request('/ai/suggest-next-topic', { method: 'POST', body: JSON.stringify(payload) });
     },
   },
+  tts: {
+    health: () => request('/ai/tts/health'),
+    voices: () => request('/ai/tts/voices'),
+    synthesize: async (data: { text: string; voice?: string; speed?: number; output_format?: string }) => {
+      const token = useStore.getState().token;
+      const response = await fetch(`${API_URL}/ai/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          useStore.getState().setUser(null, null);
+        }
+        const errorText = await response.text();
+        throw new Error(errorText || 'TTS synthesis failed');
+      }
+
+      return response.blob();
+    },
+  },
   study: {
     getCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string; due?: boolean }) => {
       const search = new URLSearchParams();

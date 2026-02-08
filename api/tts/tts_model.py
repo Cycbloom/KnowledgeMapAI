@@ -24,10 +24,22 @@ class TTSModel:
         try:
             model_name = os.getenv('TTS_MODEL', 'Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice')
             
+            # Set CUDA_LAUNCH_BLOCKING for better error messages
+            os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+            
             # Try to use CUDA, fallback to CPU if not available
             if torch.cuda.is_available():
                 self._device = 'cuda'
                 logger.info(f"Initializing TTS model: {model_name} on device: cuda (GPU)")
+                logger.info(f"CUDA version: {torch.version.cuda}")
+                logger.info(f"PyTorch version: {torch.__version__}")
+                
+                # Get GPU info
+                if torch.cuda.is_available():
+                    gpu_count = torch.cuda.device_count()
+                    logger.info(f"Available GPUs: {gpu_count}")
+                    for i in range(gpu_count):
+                        logger.info(f"GPU {i}: {torch.cuda.get_device_name(i)}")
             else:
                 self._device = 'cpu'
                 logger.info(f"Initializing TTS model: {model_name} on device: cpu")
@@ -35,10 +47,16 @@ class TTSModel:
             # Import qwen-tts with correct API
             try:
                 from qwen_tts import Qwen3TTSModel
+                
+                # Use float32 instead of float16 to avoid CUDA errors
+                dtype = torch.float32
+                
+                logger.info(f"Loading model with dtype: {dtype}")
+                
                 self._model = Qwen3TTSModel.from_pretrained(
                     model_name,
                     device_map=self._device,
-                    dtype=torch.float16 if self._device == 'cuda' else torch.float32,
+                    dtype=dtype,
                 )
                 logger.info("TTS model initialized successfully")
             except ImportError as e:
@@ -47,6 +65,7 @@ class TTSModel:
                     
         except Exception as e:
             logger.error(f"Failed to initialize TTS model: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
             raise
 
     def synthesize(
@@ -65,9 +84,9 @@ class TTSModel:
             # Generate audio using Qwen3TTSModel API
             wavs, sr = self._model.generate_custom_voice(
                 text=text,
-                language="Chinese",  # Default to Chinese, can be auto-detected
+                language="Chinese",
                 speaker=voice,
-                instruct=""  # Empty instruct for normal speech
+                instruct=""
             )
             
             # Convert to numpy array if needed
@@ -83,6 +102,7 @@ class TTSModel:
             
         except Exception as e:
             logger.error(f"Failed to synthesize audio: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
             raise
 
     def get_available_voices(self) -> list[str]:
@@ -90,12 +110,10 @@ class TTSModel:
             return []
         
         try:
-            # Try to get available speakers
             if hasattr(self._model, 'get_supported_speakers'):
                 voices = self._model.get_supported_speakers()
                 return voices
             else:
-                # Return default voices for CustomVoice model
                 return ["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric", "Ryan", "Aiden", "Ono_Anna", "Sohee"]
         except Exception as e:
             logger.error(f"Failed to get available voices: {e}")

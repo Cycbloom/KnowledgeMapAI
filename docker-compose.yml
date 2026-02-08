@@ -27,16 +27,22 @@ services:
       - TTS_VOICE=Vivian
       - TTS_SPEED=1.0
       - TTS_OUTPUT_FORMAT=mp3
+      - CUDA_LAUNCH_BLOCKING=1
     volumes:
       - tts-models:/app/models
     deploy:
       resources:
         limits:
-          memory: 4G
+          memory: 8G
         reservations:
-          memory: 2G
+          memory: 4G
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    runtime: nvidia
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
       interval: 30s
       timeout: 10s
       retries: 3

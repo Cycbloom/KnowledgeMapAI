@@ -10,12 +10,12 @@
 
 ### 硬件要求
 
-#### CPU 模式（默认）
+#### CPU 模式（可选）
 - CPU：任何现代 CPU
 - 内存：4GB
 - 速度：较慢（首次请求 10-30 秒）
 
-#### GPU 模式（推荐）
+#### GPU 模式（推荐，默认）
 - **显卡**：NVIDIA RTX 系列（如 RTX 3060、RTX 4090 等）
 - **显存**：至少 4GB（推荐 6GB+）
 - **内存**：8GB
@@ -40,80 +40,120 @@ Qwen3-TTS-0.6B 模型相对轻量，支持：
 
 ## 快速开始
 
-### CPU 模式（默认）
+### GPU 模式（推荐）
 
+**前置要求**：
+1. 已安装 NVIDIA 驱动
+2. 已安装 NVIDIA Container Toolkit（nvidia-docker2）
+
+安装 NVIDIA Container Toolkit：
 ```bash
-# 启动 TTS 服务
+# Ubuntu/Debian
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+sudo systemctl restart docker
+
+# 验证安装
+docker run --rm --gpus all nvidia/cuda:12.1.0-runtime-ubuntu22.04 nvidia-smi
+```
+
+启动 TTS 服务（GPU 模式）：
+```bash
+# 启动 TTS 服务（GPU 模式）
 docker-compose up -d tts-service
 
 # 查看日志
 docker-compose logs -f tts-service
 ```
 
-### GPU 模式（推荐，需要 NVIDIA 显卡）
+### CPU 模式
 
-如果你有 NVIDIA 显卡（如 RTX 3060），可以使用 GPU 加速：
+如果需要使用 CPU 模式，需要修改配置：
 
-```bash
-# 使用 GPU 配置启动
-docker-compose -f docker-compose.gpu.yml up -d tts-service
-
-# 查看日志
-docker-compose -f docker-compose.gpu.yml logs -f tts-service
+1. 修改 `docker-compose.yml`，注释掉 GPU 相关配置：
+```yaml
+tts-service:
+  # ... 其他配置 ...
+  # runtime: nvidia  # 注释掉这一行
+  deploy:
+    resources:
+      limits:
+        memory: 4G  # CPU 模式可以使用更少的内存
+      reservations:
+        memory: 2G
+        # devices:  # 注释掉 GPU 设备配置
+        #   - driver: nvidia
+        #     count: all
+        #     capabilities: [gpu]
 ```
 
-**注意**：使用 GPU 模式需要：
-1. 安装 NVIDIA 驱动和 CUDA
-2. 安装 NVIDIA Container Toolkit
-3. 确保 Docker 可以访问 GPU
+2. 修改 `api/tts/Dockerfile`，使用 CPU 版本的镜像：
+```dockerfile
+FROM python:3.12-slim  # 使用 CPU 版本的镜像
+```
 
-### 2. 验证服务状态
+3. 修改 `api/tts/requirements.txt`，使用 CPU 版本的 PyTorch：
+```txt
+torch>=2.0.0  # CPU 版本
+torchaudio>=2.0.0
+```
+
+4. 重新构建并启动：
+```bash
+docker-compose up -d --build tts-service
+```
+
+### 验证服务状态
 
 ```bash
 # 检查健康状态
 curl http://localhost:8001/health
+```
 
+预期返回：
+```json
+{
+  "status": "healthy",
+  "model_loaded": true,
+  "model_name": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+}
+```
+
+```bash
 # 获取可用语音列表
 curl http://localhost:8001/voices
 ```
 
-### 3. 测试语音合成
+预期返回：
+```json
+{
+  "voices": ["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric", "Ryan", "Aiden", "Ono_Anna", "Sohee"]
+}
+```
+
+### 测试语音合成
 
 ```bash
 curl -X POST http://localhost:8001/tts \
   -H "Content-Type: application/json" \
   -d '{
     "text": "你好，世界！",
-    "voice": "default",
+    "voice": "Vivian",
     "speed": 1.0,
     "output_format": "mp3"
   }' \
   --output speech.mp3
 ```
 
-## 配置说明
+### 在应用中使用
 
-### 环境变量
-
-在 `docker-compose.yml` 中可以配置以下环境变量：
-
-- `TTS_MODEL`: 模型名称（默认: Qwen/Qwen3-TTS-0.6B）
-- `TTS_VOICE`: 默认语音（默认: default）
-- `TTS_SPEED`: 默认语速（默认: 1.0）
-- `TTS_OUTPUT_FORMAT`: 输出格式（默认: mp3）
-
-### 端口配置
-
-- TTS 服务默认运行在 `8001` 端口
-- 如需修改端口，请在 `docker-compose.yml` 中调整端口映射
-
-### 资源限制
-
-默认配置：
-- 内存限制: 4GB
-- 内存预留: 2GB
-
-如需调整，请修改 `docker-compose.yml` 中的 `deploy.resources` 配置。
+1. 启动你的 KnowledgeMap 应用
+2. 打开聊天对话框
+3. 点击语音设置按钮（齿轮图标）
+4. 切换到 **Qwen3-TTS** 引擎
+5. 点击消息旁边的播放按钮即可朗读
 
 ## API 端点
 
@@ -128,7 +168,7 @@ GET /health
 {
   "status": "healthy",
   "model_loaded": true,
-  "model_name": "Qwen/Qwen3-TTS-0.6B"
+  "model_name": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
 }
 ```
 
@@ -141,7 +181,7 @@ GET /voices
 返回示例：
 ```json
 {
-  "voices": ["default", "voice1", "voice2"]
+  "voices": ["Vivian", "Serena", "Uncle_Fu", "Dylan", "Eric", "Ryan", "Aiden", "Ono_Anna", "Sohee"]
 }
 ```
 
@@ -153,7 +193,7 @@ Content-Type: application/json
 
 {
   "text": "要转换的文本",
-  "voice": "default",
+  "voice": "Vivian",
   "speed": 1.0,
   "output_format": "mp3"
 }
@@ -161,7 +201,7 @@ Content-Type: application/json
 
 参数说明：
 - `text`: 要转换的文本（必填，1-5000 字符）
-- `voice`: 语音名称（可选，默认: default）
+- `voice`: 语音名称（可选，默认: Vivian）
 - `speed`: 语速（可选，0.5-2.0，默认: 1.0）
 - `output_format`: 输出格式（可选，mp3 或 wav，默认: mp3）
 
@@ -187,6 +227,30 @@ Content-Type: application/json
 在聊天对话框中，点击语音设置按钮（齿轮图标）可以切换 TTS 引擎。
 
 ## 故障排除
+
+### GPU 未被识别
+
+如果 GPU 未被识别，请检查：
+
+1. 验证 NVIDIA 驱动是否正确安装：
+```bash
+nvidia-smi
+```
+
+2. 验证 NVIDIA Container Toolkit 是否正确安装：
+```bash
+docker run --rm --gpus all nvidia/cuda:12.1.0-runtime-ubuntu22.04 nvidia-smi
+```
+
+3. 检查 Docker 日志：
+```bash
+docker-compose logs tts-service
+```
+
+4. 查看容器内是否能检测到 GPU：
+```bash
+docker exec -it knowledgemap-tts python3 -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')"
+```
 
 ### 模型下载失败
 
@@ -216,16 +280,21 @@ docker-compose logs tts-service
 
 ## 性能优化
 
-### 首次请求优化
+### GPU 模式优化
 
-首次请求会加载模型到内存，可能需要较长时间（10-30秒）。后续请求会更快（通常在 1-3 秒内）。
+1. **使用 float16 精度**：代码已自动配置，在 GPU 上使用 float16 可以提升性能并减少显存占用
 
-### 批量处理
+2. **批量处理**：如需处理大量文本，建议分批处理，避免单个请求过长
 
-如需处理大量文本，建议：
-1. 分批处理，避免单个请求过长
-2. 使用流式输出（未来版本支持）
-3. 考虑使用更快的硬件（GPU）
+3. **模型缓存**：模型会缓存在 Docker volume 中，首次加载后后续请求会更快
+
+### CPU 模式优化
+
+1. **减少并发**：CPU 模式下，建议减少并发请求数量
+
+2. **使用更快的 CPU**：CPU 性能直接影响合成速度
+
+3. **考虑使用 GPU**：如果性能不足，强烈建议升级到 GPU 模式
 
 ## 维护
 
@@ -252,6 +321,15 @@ docker volume rm knowledgemap_tts-models
 docker-compose up -d tts-service
 ```
 
+### 重新构建镜像
+
+如果需要重新构建镜像：
+
+```bash
+docker-compose build --no-cache tts-service
+docker-compose up -d tts-service
+```
+
 ## 许可证
 
 Qwen3-TTS 模型使用 Apache 2.0 许可证，可免费商用。
@@ -261,3 +339,27 @@ Qwen3-TTS 模型使用 Apache 2.0 许可证，可免费商用。
 - [Qwen3-TTS GitHub 仓库](https://github.com/QwenLM/Qwen3-TTS)
 - [Qwen3-TTS 官方文档](https://github.com/QwenLM/Qwen3-TTS/blob/main/README.md)
 - [FastAPI 文档](https://fastapi.tiangolo.com/)
+- [NVIDIA Container Toolkit 文档](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 安装依赖
+sudo apt-get update
+sudo apt-get install -y curl
+
+# 添加密钥和仓库
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+  sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list

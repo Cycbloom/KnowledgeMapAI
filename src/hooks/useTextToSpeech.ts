@@ -211,11 +211,10 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
       setIsLoading(true);
       setIsSpeaking(true);
       setError(null);
-
       try {
         const blob = await api.tts.synthesize({
           text: cleanText,
-          voice: typeof selectedVoice === 'string' ? selectedVoice : 'default',
+          voice: typeof selectedVoice === 'string' && selectedVoice !== 'default' ? selectedVoice : 'Vivian',
           speed: options?.rate || 1.0,
           output_format: 'mp3'
         });

@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogoutMutation, useUser } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, User, Settings as SettingsIcon, ExternalLink } from 'lucide-react';
+import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X } from 'lucide-react';
+import { PromptSettingsPanel } from '../components/PromptSettingsPanel';
 
 export const Profile = () => {
   const navigate = useNavigate();
   const { user, token, setUser } = useStore();
   const { addMessage } = useMessageStore();
   const logoutMutation = useLogoutMutation();
+  const [isPromptSettingsOpen, setIsPromptSettingsOpen] = useState(false);
 
   const { data: userData, isLoading } = useUser(!!token);
 
@@ -88,6 +90,25 @@ export const Profile = () => {
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+            <div className="flex items-center justify-between">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">AI 提示词管理</h2>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">配置用户全局 AI 提示词模板 (User Scope)</p>
+                </div>
+                <button
+                    onClick={() => setIsPromptSettingsOpen(true)}
+                    className="px-4 py-2 rounded-md bg-purple-50 dark:bg-slate-700 text-purple-700 dark:text-white hover:bg-purple-100 dark:hover:bg-slate-600 flex items-center gap-2 transition-colors"
+                >
+                    <span>管理提示词</span>
+                    <ExternalLink className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-lg font-bold text-gray-900 dark:text-gray-100">快捷入口</div>
@@ -103,6 +124,31 @@ export const Profile = () => {
           </div>
         </div>
       </div>
+      {/* Prompt Settings Modal */}
+      {isPromptSettingsOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in-up">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700 shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-50 rounded-lg text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                  <MessageSquare size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">全局提示词设置</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">自定义您的个人 AI 助手行为 (User Scope)</p>
+                </div>
+              </div>
+              <button onClick={() => setIsPromptSettingsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <PromptSettingsPanel scope="user" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

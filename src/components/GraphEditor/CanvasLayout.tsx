@@ -1,5 +1,5 @@
 import React from 'react';
-import { TemplateLayout } from '../types';
+import { TemplateLayout } from '../../types';
 
 interface CanvasLayoutProps {
   layout?: TemplateLayout;

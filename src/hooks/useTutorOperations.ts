@@ -71,7 +71,7 @@ export const useTutorOperations = ({
           graph_id: id,
           history,
           context_node_ids: contextNodeIds,
-          mode: tutorMode === 'none' ? 'free' : tutorMode
+          mode: tutorMode
         },
         onChunk
       );

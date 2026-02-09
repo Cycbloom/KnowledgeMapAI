@@ -6,6 +6,8 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { getAIProviderForTask, getAIProvider } from './ai/factory.js';
 import { AIProviderType } from './ai/types.js';
 import { logger } from '../utils/logger.js';
+import { promptService } from './promptService.js';
+import { supabaseAdmin } from '../supabase.js';
 
 dotenv.config();
 
@@ -36,6 +38,8 @@ export interface GenerateCardsOptions {
   pack_type?: 'standard' | 'comprehensive' | 'custom';
   provider?: AIProviderType;
   model?: string;
+  userId?: string;
+  graphId?: string;
 }
 
 export class AIService {
@@ -159,27 +163,28 @@ export class AIService {
     const selectedPrompts = types.map(t => typePrompts[t] || "").join("\n");
 
     try {
+      // Get rendered prompt from PromptService
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabaseAdmin,
+        'generate_cards',
+        {
+          count,
+          allowedTypes: types.join(', '),
+          context: context ? `Parent/Context Info: ${context}` : '',
+          includesQA: types.includes('qa'),
+          includesChoice: types.includes('choice'),
+          includesTrueFalse: types.includes('true_false'),
+          includesMultiChoice: types.includes('multi_choice'),
+          includesFillBlank: types.includes('fill_in_the_blank'),
+          includesEssay: types.includes('essay')
+        },
+        options.userId,
+        options.graphId
+      );
+
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { role: "system", content: `You are an educational expert. Generate ${count} flashcards based on the provided topic and content. 
-          
-Context: The current node is part of a larger knowledge structure. 
-${context ? `Parent/Context Info: ${context}` : ''}
-
-Requirements:
-1. Generate exactly ${count} cards.
-2. Allowed Types: ${types.join(', ')}.
-3. Mix the types if multiple are selected.
-${selectedPrompts}
-
-Return a JSON object with a 'cards' array. Each card object must have: 
-- 'type' (qa|choice|true_false|multi_choice|fill_in_the_blank|essay)
-- 'question'
-- 'answer'
-- 'explanation' (Detailed analysis/reasoning)
-- 'options' (Array of 4 strings, ONLY for 'choice' and 'multi_choice' types)
-
-Please respond in Chinese.` },
+          { role: "system", content: systemPrompt },
           { role: "user", content: `Topic: ${topic}\nContent: ${content || 'No detailed content provided.'}` }
         ],
         model: options.model || provider.model,
@@ -206,7 +211,7 @@ Please respond in Chinese.` },
     }
   }
 
-  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string; expandPrompt?: string } = {}) {
+  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string; expandPrompt?: string; userId?: string; graphId?: string } = {}) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
       : await getAIProviderForTask('text');
@@ -227,52 +232,31 @@ Please respond in Chinese.` },
       const contextLevel = options.contextLevel || 'normal';
       const customPrompt = options.expandPrompt;
       
-      let linkingStrategy = "Linking Strategy: Check the provided 'Existing Nodes'. If a suggested concept is SEMANTICALLY IDENTICAL to an existing node, use the EXACT same title to create a link. \n" +
-            "Constraint: Do NOT force links to loosely related existing nodes. It is better to create a new specific node than to link to a generic existing one.";
+      // Prepare context for template
+      const templateContext = {
+        customPrompt,
+        nodeTitle,
+        nodeContent: nodeContent || '',
+        existingNodes: existingNodesContext,
+        childrenContext,
+        isRootOrCore: ['root', 'core'].includes(contextLevel),
+        isLeaf: contextLevel === 'leaf'
+      };
 
-      let generationStrategy = "Content Strategy: Generate diverse sub-topics. Content should be informative.";
-
-      if (['root', 'core'].includes(contextLevel)) {
-        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
-          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
-          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually. \n" +
-          "3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.";
-        
-        generationStrategy = "Content Strategy (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES. The 'content' should be a high-level summary or definition.";
-      } else if (['sub', 'normal'].includes(contextLevel)) {
-        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
-          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
-          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually. \n" +
-          "3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.";
-
-        generationStrategy = "Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS. The 'content' should be descriptive and explain 'how' or 'why'.";
-      } else if (contextLevel === 'leaf') {
-        linkingStrategy = "Linking Strategy (NETWORK): You are expanding a leaf node. You are encouraged to link to 'Existing Nodes' if they are highly relevant, especially other leaf nodes, to form knowledge connections.";
-        
-        generationStrategy = "Content Strategy (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES. The 'content' should be very specific, technical, and detailed.";
-      }
+      // Get rendered prompt from PromptService
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabaseAdmin,
+        'expand_knowledge',
+        templateContext,
+        options.userId,
+        options.graphId
+      );
 
       const completion = await provider.client.chat.completions.create({
         messages: [
           { 
             role: "system", 
-            content: customPrompt 
-              ? `You are a knowledge graph expert. ${customPrompt}\n` +
-                `${linkingStrategy}\n` +
-                `${generationStrategy}\n` +
-                "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
-                "Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.\n" +
-                "Example format: { \"suggestions\": [{ \"title\": \"Example Title\", \"content\": \"Example content\" }] }\n" +
-                "Please respond in Chinese."
-              : "You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply. \n" +
-                "Goal: Prioritize generating NEW, specific concepts to broaden the graph's coverage.\n" +
-                "Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.\n" +
-                `${linkingStrategy}\n` +
-                `${generationStrategy}\n` +
-                "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
-                "Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.\n" +
-                "Example format: { \"suggestions\": [{ \"title\": \"Example Title\", \"content\": \"Example content\" }] }\n" +
-                "Please respond in Chinese."
+            content: systemPrompt
           },
           { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
         ],
@@ -308,7 +292,7 @@ Please respond in Chinese.` },
     }
   }
 
-  async getBranchSuggestions(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string } = {}) {
+  async getBranchSuggestions(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string; userId?: string; graphId?: string } = {}) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
       : await getAIProviderForTask('text');
@@ -354,46 +338,29 @@ Please respond in Chinese.` },
         : '';
 
       const contextLevel = options.contextLevel || 'normal';
-      let linkingStrategy = "Linking Strategy: Check provided 'Existing Nodes'. If a suggested concept is SEMANTICALLY IDENTICAL to an existing node, use EXACT same title to create a link.";
 
-      let generationStrategy = "Content Strategy: Generate diverse sub-topics. Content should be informative.";
+      // Prepare context for template
+      const templateContext = {
+        nodeTitle,
+        nodeContent: nodeContent || '',
+        existingNodes: existingNodesContext,
+        childrenContext,
+        isRootOrCore: ['root', 'core'].includes(contextLevel),
+        isLeaf: contextLevel === 'leaf'
+      };
 
-      if (['root', 'core'].includes(contextLevel)) {
-        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
-          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
-          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually.";
-        
-        generationStrategy = "Content Strategy (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES.";
-      } else if (['sub', 'normal'].includes(contextLevel)) {
-        linkingStrategy = "Linking Strategy (HIERARCHICAL): \n" +
-          "1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins). \n" +
-          "2. **Vertical Links OK**: You MAY link to nodes that would be considered a 'parent' (higher level) or 'child' (lower level) contextually.";
-
-        generationStrategy = "Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS.";
-      } else if (contextLevel === 'leaf') {
-        linkingStrategy = "Linking Strategy (NETWORK): You are expanding a leaf node. You are encouraged to link to 'Existing Nodes' if they are highly relevant.";
-        
-        generationStrategy = "Content Strategy (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES.";
-      }
+      // Get rendered prompt from PromptService
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabaseAdmin,
+        'branch_suggestions',
+        templateContext,
+        options.userId,
+        options.graphId
+      );
 
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { role: "system", content: "You are a knowledge graph expert specializing in creating interactive exploration paths like story branches or adventure game choices.\n" +
-            "Goal: Generate 3-5 distinct branch suggestions for the user to explore from the current node.\n" +
-            "Each branch should represent a different direction or perspective the user could take.\n" +
-            "Quantity: Generate exactly 3-5 branches.\n" +
-            `${linkingStrategy}\n` +
-            `${generationStrategy}\n` +
-            "Do not suggest topics that are already listed in 'Current Direct Children'.\n" +
-            "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
-            "- 'id': Unique identifier for this suggestion\n" +
-            "- 'title': Brief, catchy title for the branch (max 20 chars)\n" +
-            "- 'description': Short description explaining what this branch explores (max 100 chars)\n" +
-            "- 'priority': 'high', 'medium', or 'low' based on importance\n" +
-            "- 'estimatedDifficulty': Number from 1-5 indicating difficulty\n" +
-            "- 'relatedTopics': Array of 2-3 related topic keywords\n" +
-            "Example format: { \"suggestions\": [{ \"id\": \"branch_1\", \"title\": \"深入原理\", \"description\": \"探索核心原理\", \"priority\": \"high\", \"estimatedDifficulty\": 4, \"relatedTopics\": [\"theory\", \"fundamentals\"] }] }\n" +
-            "Please respond in Chinese." },
+          { role: "system", content: systemPrompt },
           { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
         ],
         model: options.model || provider.model,

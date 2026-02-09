@@ -35,6 +35,9 @@ import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
 import { taskService } from '../services/taskService.js';
 
+import { promptService } from '../services/promptService.js';
+import { supabaseAdmin } from '../supabase.js';
+
 dotenv.config();
 
 const router = Router();
@@ -55,7 +58,7 @@ router.get('/status', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 router.post('/generate-content', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
-  const { topic, context, provider: providerType, model } = req.body;
+  const { topic, context, provider: providerType, model, graph_id, level } = req.body;
   const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   if (!provider.hasKey) {
@@ -64,15 +67,28 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
   }
 
   try {
+    // Prepare context for template
+    const templateContext = {
+      topic,
+      context: context || 'General knowledge',
+      isRoot: level === 'root' || level === 'core',
+      isNormal: level === 'sub' || level === 'normal',
+      isLeaf: level === 'leaf'
+    };
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      'generate_content',
+      templateContext,
+      req.user.id,
+      graph_id
+    );
+
     const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. " +
-                   "IMPORTANT: All mathematical formulas must be wrapped in standard LaTeX delimiters. " +
-                   "Use $...$ for inline formulas and $$...$$ for block formulas. " +
-                   "Example: $E=mc^2$ or $$\\sum_{i=1}^n i = \\frac{n(n+1)}{2}$$. " +
-                   "Please respond in Chinese." 
+          content: systemPrompt
         },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
@@ -99,10 +115,17 @@ router.post('/learning-material', requireAuth, validate(generateLearningMaterial
 });
 
 router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, node_level, existing_titles, current_children, expand_prompt, provider, model } = req.body;
+  const { node_title, node_content, node_level, existing_titles, current_children, expand_prompt, provider, model, graph_id } = req.body;
 
   try {
-    const result = await aiService.expandKnowledge(node_title, node_content, existing_titles || [], current_children || [], { provider, model, contextLevel: node_level, expandPrompt: expand_prompt });
+    const result = await aiService.expandKnowledge(node_title, node_content, existing_titles || [], current_children || [], { 
+      provider, 
+      model, 
+      contextLevel: node_level, 
+      expandPrompt: expand_prompt,
+      userId: req.user.id,
+      graphId: graph_id // Ensure graph_id is passed from frontend
+    });
     res.json(result);
   } catch (error: any) {
     logger.error('AI Expand Error:', error);
@@ -111,10 +134,16 @@ router.post('/expand-knowledge', requireAuth, validate(expandKnowledgeSchema), a
 });
 
 router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, existing_nodes, child_nodes, context_level, provider, model } = req.body;
+  const { node_title, node_content, existing_nodes, child_nodes, context_level, provider, model, graph_id } = req.body;
 
   try {
-    const result = await aiService.getBranchSuggestions(node_title, node_content, existing_nodes || [], child_nodes || [], { provider, model, contextLevel: context_level });
+    const result = await aiService.getBranchSuggestions(node_title, node_content, existing_nodes || [], child_nodes || [], { 
+      provider, 
+      model, 
+      contextLevel: context_level,
+      userId: req.user.id,
+      graphId: graph_id
+    });
     res.json(result);
   } catch (error: any) {
     logger.error('AI Branch Suggestions Error:', error);
@@ -123,7 +152,7 @@ router.post('/branch-suggestions', requireAuth, validate(branchSuggestionsSchema
 });
 
 router.post('/generate-content-stream', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
-  const { topic, context, level, provider: providerType, model } = req.body;
+  const { topic, context, level, provider: providerType, model, graph_id } = req.body;
   const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   // Set headers for SSE
@@ -151,25 +180,27 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
   }
 
   try {
-    let depthPrompt = "";
-    if (level === 'root' || level === 'core') {
-      depthPrompt = "Depth Requirement (High-Level): Provide a comprehensive OVERVIEW, core definitions, and high-level principles. Avoid excessive low-level details. Focus on the 'Why' and 'What'.";
-    } else if (level === 'sub' || level === 'normal') {
-      depthPrompt = "Depth Requirement (Mid-Level): Provide a balanced explanation covering key concepts, sub-components, and relationships. Bridge the gap between abstract theory and specific examples.";
-    } else if (level === 'leaf') {
-      depthPrompt = "Depth Requirement (Low-Level): Provide a HIGHLY DETAILED, specific, and concrete explanation. Include implementation details, code snippets (if applicable), edge cases, and practical nuances. Focus on the 'How'.";
-    }
+    const templateContext = {
+      topic,
+      context: context || 'General knowledge',
+      isRoot: level === 'root' || level === 'core',
+      isNormal: level === 'sub' || level === 'normal',
+      isLeaf: level === 'leaf'
+    };
+
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      'generate_content',
+      templateContext,
+      req.user.id,
+      graph_id
+    );
 
     const stream = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: "You are a helpful knowledge assistant. Generate detailed content for a knowledge graph node. \n" +
-                   `${depthPrompt}\n` +
-                   "IMPORTANT: All mathematical formulas must be wrapped in standard LaTeX delimiters. " +
-                   "Use $...$ for inline formulas and $$...$$ for block formulas. " +
-                   "Example: $E=mc^2$ or $$\\sum_{i=1}^n i = \\frac{n(n+1)}{2}$$. " +
-                   "Please respond in Chinese." 
+          content: systemPrompt
         },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
@@ -194,10 +225,17 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
 
 
 router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async (req: AuthRequest, res: Response) => {
-  const { node_title, node_content, count, types, provider, model } = req.body;
+  const { node_title, node_content, count, types, provider, model, graph_id } = req.body;
 
   try {
-    const aiResult = await aiService.generateCards(node_title, node_content, { count, types, provider, model });
+    const aiResult = await aiService.generateCards(node_title, node_content, { 
+      count, 
+      types, 
+      provider, 
+      model,
+      userId: req.user.id,
+      graphId: graph_id
+    });
     res.json({ cards: aiResult.cards || [] });
   } catch (error: any) {
     logger.error('AI Error:', error);
@@ -419,30 +457,19 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
   }
 
   try {
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      'text_to_graph',
+      {},
+      req.user.id,
+      graph_id
+    );
+
     const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: `You are a knowledge graph expert. Analyze the provided text and extract key concepts to build a structured Knowledge Tree.
-
-Requirements:
-1. Identify ONE main Topic as the 'root' node.
-2. Filter out irrelevant text, noise, or meta-commentary (e.g., "exam points", "irrelevant context", "ads", "author info"). Focus ONLY on the main subject matter.
-3. Organize nodes into a strict 5-level hierarchy: 'root' -> 'core' -> 'sub' -> 'normal' -> 'leaf'.
-   - 'root': The main topic (1 node).
-   - 'core': Key categories or major concepts (direct children of root).
-   - 'sub': Secondary concepts or branches (children of core).
-   - 'normal': Detailed concepts or standard nodes (children of sub).
-   - 'leaf': Specific examples, minor details, or data points (children of normal).
-4. Output a TREE structure. Minimise cross-links to keep it clean. Ensure every node (except root) has a valid parent.
-5. Return a JSON object with 'nodes' and 'edges' arrays.
-   - Nodes: { "id": "temp_id", "title": "Title", "content": "Description (must contain definition or core content, 100-200 words)", "level": "root|core|sub|normal|leaf" }
-   - Edges: { "source": "parent_temp_id", "target": "child_temp_id", "relationship": "contains|related" }
-6. **Content Richness**: Every node must have substantial 'content' description, not just a title.
-7. IMPORTANT: All mathematical formulas in 'content' must be wrapped in standard LaTeX delimiters. Use $...$ for inline formulas and $$...$$ for block formulas.
-8. Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.
-   
-Please respond in Chinese.` 
+          content: systemPrompt
         },
         { role: "user", content: `Text: ${text.substring(0, 15000)}` } // Limit input to avoid context overflow
        ],
@@ -553,21 +580,19 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
       logger.warn('Graph context truncated due to length', { graph_id, length: contextText.length });
     }
 
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      'chat',
+      { contextText },
+      req.user.id,
+      graph_id
+    );
+
     // 3. Prepare Messages with History
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { 
         role: "system", 
-        content: `You are an intelligent assistant for a Knowledge Graph. 
-Answer the user's question based on the provided Graph Context.
-
-Graph Context:
-${contextText}
-
-Instructions:
-1. Use the [Node] content to answer questions about definitions or details.
-2. Use the [Edge] relationships to explain connections, hierarchy, or flows.
-3. If the answer is not in the context, use your general knowledge but mention that it's external info.
-4. Respond in the same language as the user (default to Chinese).`
+        content: systemPrompt
       },
       ...history.map((msg: any) => ({ role: msg.role, content: msg.content })),
       { role: "user", content: message }
@@ -614,13 +639,19 @@ router.post('/recommend-connections', requireAuth, validate(recommendConnections
     const nodesSummary = nodes.map((n: any) => ({ id: n.id, title: n.title }));
 
     // 3. Ask AI for potential connections
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      'recommend_connections',
+      {},
+      req.user.id,
+      graph_id
+    );
+
     const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: `You are a knowledge graph expert. Given a new node (title and content) and a list of existing nodes in a graph, suggest 1-3 most relevant existing nodes to connect to.
-Return a JSON object with a 'recommendations' array. Each item should have 'node_id', 'node_title', and 'reason'.
-Respond in Chinese.` 
+          content: systemPrompt 
         },
         { 
           role: "user", 
@@ -706,30 +737,20 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
 
     // Reuse text-to-graph logic but with extracted text
     logger.info(`Sending ${text.length} characters to AI for graph generation...`);
+    
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      'document_to_graph',
+      {},
+      req.user.id,
+      graph_id
+    );
+
     const completion = await provider.client.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: `你是一个顶级的知识架构师，擅长从非结构化文档中还原原始的知识大纲和逻辑层级。
-          
-你的任务：
-1. **识别层级线索**：深入分析文本中的标题编号（如：第一章、1.1、一、（一）、1.）、字体特征模拟（如全大写或独立行）以及逻辑递进关系。
-2. **还原大纲结构**：将文档的目录结构映射到知识图谱的 5 层模型中：
-   - 'root': 文档总标题或核心研究对象（仅 1 个）。
-   - 'core': 一级标题/章（Chapter）。
-   - 'sub': 二级标题/节（Section）。
-   - 'normal': 三级标题/小节或核心概念点。
-   - 'leaf': 具体细节、定义、例子或支撑数据。
-3. **维护逻辑链条**：确保 edges 数组准确反映文档的父子包含关系。每个子节点必须指向其所属的直接上位标题 ID。
-4. **清理噪音**：忽略页码、重复的页眉、无意义的符号和排版残留。
-
-输出规范：
-- 必须返回 JSON 对象，包含 'nodes' 和 'edges'。
-- 节点格式：{ "id": "唯一临时ID", "title": "简洁的标题", "content": "详细的描述(必须包含该知识点的定义或核心内容，100-200字左右)", "level": "root|core|sub|normal|leaf" }
-- 节点标题要保留其在文档中的核心术语。
-- **内容丰满度**：每个节点必须有实质性的 'content' 描述，不能只有标题。
-- 所有的标题和描述必须使用中文。
-- 节点数量控制在 40-60 个左右，以保证图谱的完整性和可读性。` 
+          content: systemPrompt
         },
         { role: "user", content: `文件名: ${file.originalname}\n文本内容:\n\n${text.substring(0, 15000)}` }
       ],

@@ -28,6 +28,7 @@ import taskRoutes from './routes/tasks.js'
 import statisticsRoutes from './routes/statistics.js'
 import searchRoutes from './routes/search.js'
 import templateRoutes from './routes/templates.js'
+import promptRoutes from './routes/prompts.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 
@@ -121,6 +122,7 @@ app.use('/api/tasks', taskRoutes)
 app.use('/api/statistics', statisticsRoutes)
 app.use('/api/search', searchRoutes)
 app.use('/api/templates', templateRoutes)
+app.use('/api/prompts', promptRoutes)
 
 /**
  * health

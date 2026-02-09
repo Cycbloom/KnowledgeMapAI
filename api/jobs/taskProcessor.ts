@@ -225,12 +225,19 @@ class TaskProcessor {
     if (!currentNode) throw new Error('Source node not found');
 
     // 1. Get suggestions from AI
+    // Pass userId and graphId for prompt customization
     const aiResult = await aiService.expandKnowledge(
       node_title, 
       node_content, 
       latestExistingNodes, 
       latestChildNodes, 
-      { provider, model, contextLevel: currentNode.level }
+      { 
+        provider, 
+        model, 
+        contextLevel: currentNode.level,
+        userId: task.user_id,
+        graphId: graph_id
+      }
     );
     const suggestions = aiResult.suggestions;
 

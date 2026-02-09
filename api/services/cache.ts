@@ -25,6 +25,7 @@ export const CacheKeys = {
   STUDY_CARDS: (graphId: string) => `study_cards_${graphId}`,
   TEMPLATES: (category: string) => `templates_${category}`,
   TEMPLATE: (id: string) => `template_${id}`,
+  PROMPT_TEMPLATE: (code: string, userId: string = 'system', graphId: string = 'none') => `prompt_template_${code}_${userId}_${graphId}`,
 };
 
 export const cacheService = {

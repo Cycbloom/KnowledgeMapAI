@@ -498,4 +498,12 @@ export const api = {
     update: (id: string, data: any) => request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/templates/${id}`, { method: 'DELETE' }),
   },
+  prompts: {
+    list: (graphId?: string) => request(`/prompts${graphId ? `?graph_id=${graphId}` : ''}`),
+    save: (data: { code: string; scope: 'user'|'graph'; template_content: string; graph_id?: string }) => 
+      request('/prompts', { method: 'POST', body: JSON.stringify(data) }),
+    reset: (id: string) => request(`/prompts/${id}`, { method: 'DELETE' }),
+    optimize: (data: { template_content: string; instruction?: string }) => 
+      request('/prompts/optimize', { method: 'POST', body: JSON.stringify(data) }),
+  },
 };

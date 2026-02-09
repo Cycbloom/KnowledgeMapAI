@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation } from '../../types';
@@ -85,6 +85,7 @@ interface GraphToolbarProps {
   onRefresh?: () => void;
   onOpenHelp?: () => void;
   onShare?: () => void;
+  onOpenAnalysis?: () => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -98,7 +99,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme, setColorScheme, linkStyle, setLinkStyle, linkAnimation, setLinkAnimation,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare,
   isExplorationMode, setIsExplorationMode, isTimelineVisible, setIsTimelineVisible,
-  isTutorMode, onToggleTutorMode
+  isTutorMode, onToggleTutorMode, onOpenAnalysis
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -635,6 +636,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <MenuItem onClick={() => setIsFocusMode(true)} icon={Maximize} label="专注模式 (F)" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={onOpenSettings} icon={Settings} label="图谱参数设置" />
+        <MenuItem onClick={onOpenAnalysis} icon={BarChart3} label="图谱分析" disabled={!onOpenAnalysis} />
         <MenuItem onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} icon={Download} label="导出图谱" active={isExportMenuOpen} />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={exportActions.onDeleteGraph} icon={Trash2} label="彻底删除此图谱" colorClass="text-red-500" />

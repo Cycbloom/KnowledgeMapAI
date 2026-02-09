@@ -146,6 +146,10 @@ export interface GraphEditorState {
   // General Loading
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  
+  // Graph Analysis
+  isAnalysisPanelOpen: boolean;
+  setIsAnalysisPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Tutor Mode
   tutorMode: TutorMode;
@@ -255,6 +259,9 @@ export const useGraphEditorState = (): GraphEditorState => {
 
   // Loading
   const [loading, setLoading] = useState(false);
+  
+  // Graph Analysis
+  const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
 
   // Tutor Mode
   const [tutorMode, setTutorMode] = useState<TutorMode>('free');
@@ -301,6 +308,7 @@ export const useGraphEditorState = (): GraphEditorState => {
     recommendations, setRecommendations,
     isRecommending, setIsRecommending,
     loading, setLoading,
+    isAnalysisPanelOpen, setIsAnalysisPanelOpen,
     isExplorationMode, setIsExplorationMode,
     branchSuggestions, setBranchSuggestions,
     explorationPath, setExplorationPath,

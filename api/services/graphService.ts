@@ -532,6 +532,346 @@ export class GraphService {
 
     return status;
   }
+
+  async analyzeGraph(supabase: SupabaseClient, userId: string, graphId: string) {
+    // Verify access
+    const { data: graph } = await supabase
+      .from('knowledge_graphs')
+      .select('id, user_id, is_public')
+      .eq('id', graphId)
+      .is('deleted_at', null)
+      .single();
+
+    if (!graph) throw new Error('Graph not found');
+    if (!graph.is_public && graph.user_id !== userId) {
+      throw new Error('Access denied');
+    }
+
+    // Get nodes and edges
+    const { nodes, edges } = await this.getGraphNodes(supabase, userId, graphId);
+    
+    // Import analysis function (we'll need to port it to backend or use a shared utility)
+    // For now, we'll do a simplified analysis here
+    const analysis = this.performGraphAnalysis(nodes, edges);
+    return analysis;
+  }
+
+  async findMissingConnections(supabase: SupabaseClient, userId: string, graphId: string, maxSuggestions: number = 10) {
+    // Verify access
+    const { data: graph } = await supabase
+      .from('knowledge_graphs')
+      .select('id, user_id, is_public')
+      .eq('id', graphId)
+      .is('deleted_at', null)
+      .single();
+
+    if (!graph) throw new Error('Graph not found');
+    if (!graph.is_public && graph.user_id !== userId) {
+      throw new Error('Access denied');
+    }
+
+    const { nodes, edges } = await this.getGraphNodes(supabase, userId, graphId);
+    return this.findMissingConnectionsInternal(nodes, edges, maxSuggestions);
+  }
+
+  private performGraphAnalysis(nodes: any[], edges: any[]): any {
+    const normalizeId = (id: any) => String(id).trim();
+    
+    // Build adjacency lists
+    const outDegree = new Map<string, number>();
+    const inDegree = new Map<string, number>();
+    const childrenMap = new Map<string, Set<string>>();
+    
+    nodes.forEach(node => {
+      const id = normalizeId(node.id);
+      outDegree.set(id, 0);
+      inDegree.set(id, 0);
+      childrenMap.set(id, new Set());
+    });
+    
+    edges.forEach(edge => {
+      const src = normalizeId(edge.source_node_id);
+      const tgt = normalizeId(edge.target_node_id);
+      
+      outDegree.set(src, (outDegree.get(src) || 0) + 1);
+      inDegree.set(tgt, (inDegree.get(tgt) || 0) + 1);
+      childrenMap.get(src)?.add(tgt);
+    });
+    
+    // Calculate degrees
+    const degrees = new Map<string, number>();
+    nodes.forEach(node => {
+      const id = normalizeId(node.id);
+      const degree = (outDegree.get(id) || 0) + (inDegree.get(id) || 0);
+      degrees.set(id, degree);
+    });
+    
+    // Find isolated nodes
+    const isolatedNodes = nodes
+      .filter(node => (degrees.get(normalizeId(node.id)) || 0) === 0)
+      .map(node => node.id);
+    
+    // Find disconnected components
+    const visited = new Set<string>();
+    let componentCount = 0;
+    
+    const bfs = (startId: string) => {
+      const queue = [startId];
+      visited.add(startId);
+      
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        const children = childrenMap.get(current) || new Set();
+        
+        children.forEach(neighbor => {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            queue.push(neighbor);
+          }
+        });
+      }
+    };
+    
+    nodes.forEach(node => {
+      const id = normalizeId(node.id);
+      if (!visited.has(id)) {
+        bfs(id);
+        componentCount++;
+      }
+    });
+    
+    // Calculate depth
+    const depths = new Map<string, number>();
+    const rootNodes: string[] = [];
+    
+    nodes.forEach(node => {
+      const id = normalizeId(node.id);
+      if ((inDegree.get(id) || 0) === 0 && (outDegree.get(id) || 0) > 0) {
+        rootNodes.push(node.id);
+      }
+    });
+    
+    if (rootNodes.length === 0) {
+      const sortedByOutDegree = [...nodes]
+        .sort((a, b) => (outDegree.get(normalizeId(b.id)) || 0) - (outDegree.get(normalizeId(a.id)) || 0))
+        .slice(0, Math.min(3, nodes.length));
+      rootNodes.push(...sortedByOutDegree.map(n => n.id));
+    }
+    
+    const calculateDepth = (startId: string) => {
+      const queue: Array<{ id: string; depth: number }> = [{ id: normalizeId(startId), depth: 0 }];
+      const localVisited = new Set<string>();
+      
+      while (queue.length > 0) {
+        const { id, depth } = queue.shift()!;
+        if (localVisited.has(id)) continue;
+        localVisited.add(id);
+        
+        const currentDepth = depths.get(id) || 0;
+        depths.set(id, Math.max(currentDepth, depth));
+        
+        const children = childrenMap.get(id) || new Set();
+        children.forEach(childId => {
+          if (!localVisited.has(childId)) {
+            queue.push({ id: childId, depth: depth + 1 });
+          }
+        });
+      }
+    };
+    
+    rootNodes.forEach(rootId => calculateDepth(rootId));
+    
+    nodes.forEach(node => {
+      const id = normalizeId(node.id);
+      if (!depths.has(id)) {
+        depths.set(id, 0);
+      }
+    });
+    
+    const depthValues = Array.from(depths.values());
+    const maxDepth = depthValues.length > 0 ? Math.max(...depthValues) : 0;
+    const avgDepth = depthValues.length > 0 
+      ? Math.round((depthValues.reduce((a, b) => a + b, 0) / depthValues.length) * 10) / 10
+      : 0;
+    
+    // Level distribution
+    const levelDistribution: Record<string, number> = {
+      root: 0,
+      core: 0,
+      sub: 0,
+      normal: 0,
+      leaf: 0
+    };
+    
+    nodes.forEach(node => {
+      const level = node.level || 'normal';
+      if (levelDistribution.hasOwnProperty(level)) {
+        levelDistribution[level]++;
+      }
+    });
+    
+    // Degree statistics
+    const degreeValues = Array.from(degrees.values());
+    const avgDegree = degreeValues.length > 0 
+      ? Math.round((degreeValues.reduce((a, b) => a + b, 0) / degreeValues.length) * 10) / 10
+      : 0;
+    const maxDegree = degreeValues.length > 0 ? Math.max(...degreeValues) : 0;
+    const minDegree = degreeValues.length > 0 ? Math.min(...degreeValues) : 0;
+    
+    // Central nodes
+    const centralNodes = [...nodes]
+      .map(node => ({
+        id: node.id,
+        degree: degrees.get(normalizeId(node.id)) || 0,
+        title: node.title
+      }))
+      .sort((a, b) => b.degree - a.degree)
+      .slice(0, 5);
+    
+    // Leaf nodes
+    const leafNodes = nodes
+      .filter(node => (outDegree.get(normalizeId(node.id)) || 0) === 0)
+      .map(node => node.id);
+    
+    // Nodes without content
+    const nodesWithoutContent = nodes
+      .filter(node => !node.content || node.content.trim().length === 0)
+      .map(node => node.id);
+    
+    // Nodes with many children
+    const nodesWithManyChildren = [...nodes]
+      .map(node => ({
+        id: node.id,
+        childrenCount: childrenMap.get(normalizeId(node.id))?.size || 0,
+        title: node.title
+      }))
+      .filter(n => n.childrenCount >= 5)
+      .sort((a, b) => b.childrenCount - a.childrenCount)
+      .slice(0, 10);
+    
+    // Health score
+    const healthIssues: string[] = [];
+    let healthScore = 100;
+    
+    if (isolatedNodes.length > 0) {
+      const penalty = Math.min(20, isolatedNodes.length * 2);
+      healthScore -= penalty;
+      healthIssues.push(`${isolatedNodes.length} 个孤立节点`);
+    }
+    
+    if (componentCount > 1) {
+      const penalty = Math.min(15, (componentCount - 1) * 5);
+      healthScore -= penalty;
+      healthIssues.push(`${componentCount} 个不连通的组件`);
+    }
+    
+    if (nodesWithoutContent.length > nodes.length * 0.3) {
+      const penalty = Math.min(15, Math.floor(nodesWithoutContent.length / nodes.length * 30));
+      healthScore -= penalty;
+      healthIssues.push(`${nodesWithoutContent.length} 个节点缺少内容`);
+    }
+    
+    if (rootNodes.length === 0) {
+      healthScore -= 10;
+      healthIssues.push('缺少根节点');
+    }
+    
+    if (avgDegree < 1) {
+      healthScore -= 10;
+      healthIssues.push('平均连接度较低');
+    }
+    
+    healthScore = Math.max(0, healthScore);
+    
+    if (healthScore === 100) {
+      healthIssues.push('图谱结构健康');
+    }
+    
+    return {
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+      isolatedNodes,
+      disconnectedComponents: componentCount,
+      maxDepth,
+      avgDepth,
+      levelDistribution,
+      avgDegree,
+      maxDegree,
+      minDegree,
+      centralNodes,
+      rootNodes,
+      leafNodes,
+      nodesWithoutContent,
+      nodesWithManyChildren,
+      healthScore: Math.round(healthScore),
+      healthIssues
+    };
+  }
+
+  private findMissingConnectionsInternal(nodes: any[], edges: any[], maxSuggestions: number): any[] {
+    const normalizeId = (id: any) => String(id).trim();
+    const suggestions: Array<{ sourceId: string; targetId: string; reason: string }> = [];
+    
+    // Build existing connections set
+    const existingConnections = new Set<string>();
+    edges.forEach(edge => {
+      const src = normalizeId(edge.source_node_id);
+      const tgt = normalizeId(edge.target_node_id);
+      existingConnections.add(`${src}-${tgt}`);
+      existingConnections.add(`${tgt}-${src}`);
+    });
+    
+    // Find nodes with same parent
+    const parentMap = new Map<string, Set<string>>();
+    edges.forEach(edge => {
+      const src = normalizeId(edge.source_node_id);
+      const tgt = normalizeId(edge.target_node_id);
+      if (!parentMap.has(tgt)) {
+        parentMap.set(tgt, new Set());
+      }
+      parentMap.get(tgt)!.add(src);
+    });
+    
+    // Group nodes by parent
+    const siblingsMap = new Map<string, string[]>();
+    nodes.forEach(node => {
+      const id = normalizeId(node.id);
+      const parents = parentMap.get(id) || new Set();
+      parents.forEach(parentId => {
+        if (!siblingsMap.has(parentId)) {
+          siblingsMap.set(parentId, []);
+        }
+        siblingsMap.get(parentId)!.push(id);
+      });
+    });
+    
+    // Suggest connections between siblings
+    siblingsMap.forEach((siblings, parentId) => {
+      for (let i = 0; i < siblings.length; i++) {
+        for (let j = i + 1; j < siblings.length; j++) {
+          const src = siblings[i];
+          const tgt = siblings[j];
+          const key = `${src}-${tgt}`;
+          
+          if (!existingConnections.has(key)) {
+            const sourceNode = nodes.find(n => normalizeId(n.id) === src);
+            const targetNode = nodes.find(n => normalizeId(n.id) === tgt);
+            
+            if (sourceNode && targetNode) {
+              const parentNode = nodes.find(n => normalizeId(n.id) === parentId);
+              suggestions.push({
+                sourceId: sourceNode.id,
+                targetId: targetNode.id,
+                reason: `同属于 "${parentNode?.title || '未知'}" 的子节点`
+              });
+            }
+          }
+        }
+      }
+    });
+    
+    return suggestions.slice(0, maxSuggestions);
+  }
 }
 
 

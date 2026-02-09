@@ -13,6 +13,7 @@ import { GraphStyleSettings } from '../components/GraphEditor/GraphStyleSettings
 // New Managers and Hooks
 import { GraphModalManager } from '../components/GraphEditor/GraphModalManager';
 import { GraphSidebarManager } from '../components/GraphEditor/GraphSidebarManager';
+import { GraphAnalysisPanel } from '../components/GraphEditor/GraphAnalysisPanel';
 import { useGraphEffects } from '../hooks/useGraphEffects';
 
 import { useTheme } from '../hooks/useTheme';
@@ -82,7 +83,8 @@ export const GraphEditor = () => {
     explorationPath, setExplorationPath,
     currentPathIndex, setCurrentPathIndex,
     isTimelineVisible, setIsTimelineVisible,
-    historicalAlternativeBranches, setHistoricalAlternativeBranches
+    historicalAlternativeBranches, setHistoricalAlternativeBranches,
+    isAnalysisPanelOpen, setIsAnalysisPanelOpen
   } = state;
 
   // Mutations Hook
@@ -393,6 +395,7 @@ export const GraphEditor = () => {
         onRefresh={() => window.location.reload()}
         onOpenHelp={() => state.setIsHelpOpen(true)}
         onShare={() => state.setIsShareModalOpen(true)}
+        onOpenAnalysis={() => setIsAnalysisPanelOpen(true)}
         viewMode={viewMode}
         setViewMode={setViewMode}
         isExplorationMode={isExplorationMode}
@@ -555,6 +558,30 @@ export const GraphEditor = () => {
         interactionOps={interactionOps}
         handleCloseSidebar={handleCloseSidebar}
         isExplorationMode={isExplorationMode}
+      />
+      
+      <GraphAnalysisPanel
+        graphId={id || ''}
+        isOpen={isAnalysisPanelOpen}
+        onClose={() => setIsAnalysisPanelOpen(false)}
+        nodes={nodes}
+        onNodeClick={(nodeId) => {
+          const node = nodes.find(n => n.id === nodeId);
+          if (node) handleNodeClick(node);
+        }}
+        onCreateConnection={async (sourceId, targetId) => {
+          try {
+            await mutations.createEdgeMutation.mutateAsync({
+              source_node_id: sourceId,
+              target_node_id: targetId,
+              graphId: id || '',
+              relationship_type: 'related'
+            });
+            addMessage({ content: '连接已创建', type: 'success' });
+          } catch (error: any) {
+            addMessage({ content: '创建连接失败: ' + (error.message || '未知错误'), type: 'error' });
+          }
+        }}
       />
     </div>
   );

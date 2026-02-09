@@ -151,6 +151,11 @@ export const api = {
     restore: (id: string) => request(`/graphs/${id}/restore`, { method: 'POST' }),
     permanentDelete: (id: string) => request(`/graphs/${id}/permanent`, { method: 'DELETE' }),
     getLearningPath: (id: string) => request(`/graphs/${id}/learning-path`),
+    analyze: (id: string) => request(`/graphs/${id}/analyze`),
+    getMissingConnections: (id: string, max?: number) => {
+      const url = max ? `/graphs/${id}/missing-connections?max=${max}` : `/graphs/${id}/missing-connections`;
+      return request(url);
+    },
   },
   nodes: {
     create: (data: any) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),

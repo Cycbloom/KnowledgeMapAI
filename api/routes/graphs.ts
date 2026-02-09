@@ -123,4 +123,31 @@ router.get('/:id/learning-path', optionalAuth, validate({ params: uuidParamsSche
   res.json({ path: data });
 });
 
+// Analyze graph structure (Auth Required)
+router.get('/:id/analyze', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  
+  try {
+    const analysis = await graphService.analyzeGraph(req.supabase!, userId, id);
+    res.json(analysis);
+  } catch (error: any) {
+    throw new AppError(error.message || '图谱分析失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+// Get missing connection suggestions (Auth Required)
+router.get('/:id/missing-connections', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  const maxSuggestions = parseInt(req.query.max as string) || 10;
+  
+  try {
+    const suggestions = await graphService.findMissingConnections(req.supabase!, userId, id, maxSuggestions);
+    res.json({ suggestions });
+  } catch (error: any) {
+    throw new AppError(error.message || '获取连接建议失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
 export default router;

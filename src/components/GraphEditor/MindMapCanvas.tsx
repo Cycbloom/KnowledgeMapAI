@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, BranchSuggestion, TemplateLayout, NodeSizeMode, EdgeWidthMode } from '../../types';
+import { 
+  Node, 
+  Edge, 
+  ColorScheme, 
+  LinkStyle, 
+  LinkAnimation, 
+  BranchSuggestion, 
+  TemplateLayout, 
+  NodeSizeMode, 
+  EdgeWidthMode, 
+  LayoutNode 
+} from '../../types';
 import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
 import { MindMapLink } from './MindMapLink';
@@ -36,6 +47,7 @@ interface MindMapCanvasProps {
   templateLayout?: TemplateLayout;
   nodeSizeMode?: NodeSizeMode;
   edgeWidthMode?: EdgeWidthMode;
+  onNodeContextMenu?: (event: React.MouseEvent, node: LayoutNode) => void;
 }
 
 interface Transform {
@@ -69,7 +81,8 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   historicalAlternativeBranches = [],
   templateLayout,
   nodeSizeMode = 'fixed',
-  edgeWidthMode = 'fixed'
+  edgeWidthMode = 'fixed',
+  onNodeContextMenu
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -301,6 +314,7 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               nodeSizeMode={nodeSizeMode}
               nodeImportance={nodeImportanceMap.get(node.id)}
               allNodes={nodes}
+              onContextMenu={onNodeContextMenu}
             />
           ))}
           {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {

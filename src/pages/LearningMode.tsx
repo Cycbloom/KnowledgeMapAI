@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import { TermTooltip } from '../components/TermTooltip';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -590,6 +591,16 @@ export const LearningMode = () => {
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm, remarkMath]} 
                         rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                        components={{
+                          a: ({node, ...props}) => {
+                            const { href, children } = props;
+                            if (href && href.startsWith('term:')) {
+                                const explanation = href.replace('term:', '');
+                                return <TermTooltip term={String(children)} explanation={decodeURIComponent(explanation)} />;
+                            }
+                            return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;
+                          }
+                        }}
                       >
                         {preprocessMarkdown(articleContent)}
                       </ReactMarkdown>
@@ -681,6 +692,16 @@ export const LearningMode = () => {
                                     <ReactMarkdown 
                                       remarkPlugins={[remarkGfm, remarkMath]}
                                       rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                                      components={{
+                                        a: ({node, ...props}) => {
+                                          const { href, children } = props;
+                                          if (href && href.startsWith('term:')) {
+                                              const explanation = href.replace('term:', '');
+                                              return <TermTooltip term={String(children)} explanation={decodeURIComponent(explanation)} />;
+                                          }
+                                          return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;
+                                        }
+                                      }}
                                     >
                                       {msg.role === 'assistant' ? preprocessMarkdown(msg.content) : msg.content}
                                     </ReactMarkdown>

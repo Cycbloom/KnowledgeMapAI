@@ -488,6 +488,89 @@ Your task:
     }
   }
 
+  async annotateTerms(nodeContent: string, options: { provider?: AIProviderType; model?: string; userId?: string; graphId?: string } = {}) {
+    if (!nodeContent || nodeContent.length < 5) return nodeContent;
+
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
+
+    if (!provider.hasKey) return nodeContent;
+
+    try {
+      // 1. Get Prompt
+      let systemPrompt = '';
+      try {
+          // This calls promptService.getRenderedPrompt which automatically appends the JSON schema
+          systemPrompt = await promptService.getRenderedPrompt(
+            supabaseAdmin,
+            'term_annotation',
+            { content: nodeContent },
+            options.userId,
+            options.graphId
+          );
+      } catch (e) {
+          // Fallback if template not found
+          systemPrompt = `Analyze the following text and extract key technical terms.
+          
+          Return a JSON array where each object has "term" (the exact text found in the source) and "explanation" (a concise definition under 20 words).`;
+      }
+
+      // 2. Call AI
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Text:\n${nodeContent}` }
+        ],
+        model: options.model || provider.model,
+        response_format: { type: "json_object" },
+      });
+
+      const result = completion.choices[0].message.content || '';
+      const cleanedResult = this.cleanJsonString(result);
+      
+      let parsed: { term: string, explanation: string }[] = [];
+      try {
+        const json = JSON.parse(cleanedResult);
+        parsed = Array.isArray(json) ? json : (json.terms || []);
+      } catch (e) {
+        logger.error('Failed to parse annotation result', { result });
+        return nodeContent;
+      }
+
+      // 3. Replace in Text
+      let newContent = nodeContent;
+      // Sort by length desc to avoid partial matches being replaced first
+      parsed.sort((a, b) => b.term.length - a.term.length);
+
+      for (const item of parsed) {
+          if (!item.term || !item.explanation) continue;
+          
+          // Escape regex special characters in term
+          const escapedTerm = item.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          
+          // Regex to match term NOT inside markdown link []() or existing term: syntax
+          // Using a negative lookbehind for '[' and negative lookahead for ']' to avoid breaking existing links
+          try {
+             const regex = new RegExp(`(?<!\\[)${escapedTerm}(?!\\])`, 'g');
+             newContent = newContent.replace(regex, `[${item.term}](term:${encodeURIComponent(item.explanation)})`);
+          } catch (e) {
+             // Fallback for environments not supporting lookbehind (Safari < 16.4, etc. - though this is backend Node.js)
+             // Node.js supported lookbehind since v8.10.0
+             const regex = new RegExp(escapedTerm, 'g');
+             // Simple check to avoid replacing inside brackets if possible, but hard without lookbehind
+             newContent = newContent.replace(regex, `[${item.term}](term:${encodeURIComponent(item.explanation)})`);
+          }
+      }
+
+      return newContent;
+
+    } catch (error) {
+      logger.error('Annotate Terms Error:', error);
+      return nodeContent;
+    }
+  }
+
   async generateLearningMaterial(topic: string, context: string, options: { provider?: AIProviderType; model?: string; level?: string } = {}) {
     const provider = options.provider
       ? await getAIProvider(options.provider)

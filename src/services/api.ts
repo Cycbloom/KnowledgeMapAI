@@ -129,7 +129,33 @@ const getAIConfig = (taskType: 'text' | 'embedding' | 'reasoning' = 'text') => {
   };
 };
 
+export interface AIActionVariables {
+  includeParent?: boolean;
+  includeSiblings?: boolean;
+  includeChildren?: boolean;
+}
+
+export interface AIAction {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  target_mode: 'show_result' | 'update_node' | 'spawn_children';
+  scope: 'system' | 'user' | 'graph';
+  user_id?: string;
+  graph_id?: string;
+  prompt_template: string;
+  variables?: AIActionVariables;
+}
+
 export const api = {
+  aiActions: {
+    list: (graphId?: string) => request(`/ai-actions${graphId ? `?graph_id=${graphId}` : ''}`),
+    create: (data: Partial<AIAction>) => request('/ai-actions', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<AIAction>) => request(`/ai-actions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/ai-actions/${id}`, { method: 'DELETE' }),
+    execute: (data: { action_id: string; node_id: string; graph_id?: string }) => request('/ai-actions/execute', { method: 'POST', body: JSON.stringify(data) }),
+  },
   auth: {
     register: (data: any) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
     login: (data: any) => request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
@@ -177,6 +203,17 @@ export const api = {
       if (!payload.provider && config.provider) payload.provider = config.provider;
       if (!payload.model && config.model) payload.model = config.model;
       return request('/ai/generate-content', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    annotateTerms: (data: { node_id: string; node_content: string; graph_id: string; provider?: string; model?: string }) => {
+      const config = getAIConfig('text');
+      return request('/ai/annotate-terms', { 
+        method: 'POST', 
+        body: JSON.stringify({
+          ...data,
+          provider: data.provider || config.provider,
+          model: data.model || config.model
+        }) 
+      });
     },
     generateLearningMaterial: (data: { topic: string; context?: string; level?: string; provider?: string; model?: string }) => {
       const config = getAIConfig('text');

@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X } from 'lucide-react';
 import { PromptSettingsPanel } from '../components/PromptSettingsPanel';
+import { AIActionSettingsPanel } from '../components/AIActionSettingsPanel';
 
 export const Profile = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export const Profile = () => {
   const { addMessage } = useMessageStore();
   const logoutMutation = useLogoutMutation();
   const [isPromptSettingsOpen, setIsPromptSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'prompts' | 'actions'>('prompts');
 
   const { data: userData, isLoading } = useUser(!!token);
 
@@ -134,8 +136,8 @@ export const Profile = () => {
                   <MessageSquare size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">全局提示词设置</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">自定义您的个人 AI 助手行为 (User Scope)</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI 个性化设置</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">配置全局提示词与自定义动作 (User Scope)</p>
                 </div>
               </div>
               <button onClick={() => setIsPromptSettingsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
@@ -143,8 +145,29 @@ export const Profile = () => {
               </button>
             </div>
             
+            <div className="flex border-b border-gray-100 dark:border-gray-700 px-6 bg-gray-50/50 dark:bg-gray-800/50">
+                <button 
+                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'prompts' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                    onClick={() => setActiveTab('prompts')}
+                >
+                    提示词模板
+                    {activeTab === 'prompts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
+                </button>
+                <button 
+                    className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'actions' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                    onClick={() => setActiveTab('actions')}
+                >
+                    自定义动作
+                    {activeTab === 'actions' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
+                </button>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              <PromptSettingsPanel scope="user" />
+              {activeTab === 'prompts' ? (
+                <PromptSettingsPanel scope="user" />
+              ) : (
+                <AIActionSettingsPanel scope="user" />
+              )}
             </div>
           </div>
         </div>

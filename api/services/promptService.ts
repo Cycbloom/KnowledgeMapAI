@@ -58,7 +58,12 @@ Please respond in Chinese.`,
 
   recommend_connections: `
 Return a JSON object with a 'recommendations' array. Each item should have 'node_id', 'node_title', and 'reason'.
-Respond in Chinese.`
+Respond in Chinese.`,
+
+  term_annotation: `
+Return a JSON array where each object has "term" (the exact text found in the source) and "explanation" (a concise definition under 20 words).
+Example format: [{"term": "RAG", "explanation": "检索增强生成，一种结合检索系统和生成模型的技术。"}]
+Please respond in Chinese.`
 };
 
 export class PromptService {

@@ -1052,4 +1052,35 @@ router.get('/tts/health', requireAuth, async (req: AuthRequest, res: Response) =
   }
 });
 
+router.post('/annotate-terms', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { node_id, node_content, graph_id, provider: providerType, model } = req.body;
+
+  if (!node_id || !node_content) {
+     return res.status(400).json({ error: 'Node ID and Content are required' });
+  }
+
+  try {
+    const newContent = await aiService.annotateTerms(node_content, {
+      provider: providerType,
+      model,
+      userId: req.user.id,
+      graphId: graph_id
+    });
+
+    if (newContent !== node_content) {
+        const { error } = await req.supabase!
+            .from('nodes')
+            .update({ content: newContent })
+            .eq('id', node_id);
+        
+        if (error) throw error;
+    }
+
+    res.json({ content: newContent });
+  } catch (error: any) {
+    logger.error('Annotate Terms Route Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to annotate terms' });
+  }
+});
+
 export default router;

@@ -281,3 +281,11 @@ Instructions:
 5. In guided mode, follow the learning path and check understanding
 6. Respond in the same language as the user (default to Chinese)
 7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$');
+
+
+INSERT INTO prompt_templates (code, scope, template_content)
+VALUES (
+  'term_annotation',
+  'system',
+  '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。'
+);

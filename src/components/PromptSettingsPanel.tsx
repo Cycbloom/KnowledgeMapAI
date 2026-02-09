@@ -17,7 +17,8 @@ const PROMPT_NAME_MAP: Record<string, string> = {
   text_to_graph: '文本转图谱 (Text to Graph)',
   recommend_connections: '推荐连线 (Recommend Connections)',
   tutor_chat: 'AI 助教 (Tutor Chat)',
-  document_to_graph: '文档转图谱 (Document to Graph)'
+  document_to_graph: '文档转图谱 (Document to Graph)',
+  term_annotation: '术语标注 (Term Annotation)'
 };
 
 const SOURCE_NAME_MAP: Record<string, string> = {
@@ -93,7 +94,8 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
 
   const promptCodes = [
     'expand_knowledge', 'generate_cards', 'branch_suggestions', 
-    'generate_content', 'chat', 'text_to_graph', 'recommend_connections', 'tutor_chat', 'document_to_graph'
+    'generate_content', 'chat', 'text_to_graph', 'recommend_connections', 'tutor_chat', 'document_to_graph',
+    'term_annotation'
   ];
   
   // Variables mapping for suggestion chips
@@ -106,7 +108,8 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
     text_to_graph: [],
     recommend_connections: ['node_title', 'node_content', 'existing_nodes_json'],
     tutor_chat: ['isGuided', 'currentNodeId', 'currentNodeTitle', 'currentNodeContent', 'existingNodes'],
-    document_to_graph: []
+    document_to_graph: [],
+    term_annotation: []
   };
 
   if (editingCode) {

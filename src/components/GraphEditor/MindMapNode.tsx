@@ -32,6 +32,7 @@ interface MindMapNodeProps {
   nodeSizeMode?: NodeSizeMode;
   nodeImportance?: number;
   allNodes?: Node[];
+  onContextMenu?: (event: React.MouseEvent, node: LayoutNode) => void;
 }
 
 const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
@@ -74,7 +75,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   isNew = false,
   nodeSizeMode = 'fixed',
   nodeImportance,
-  allNodes = []
+  allNodes = [],
+  onContextMenu
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'entering' | 'pulsing' | 'none'>('none');
@@ -259,6 +261,13 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     onMouseLeave?.();
   }, [onMouseLeave]);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    if (onContextMenu) {
+      e.preventDefault();
+      onContextMenu(e, node);
+    }
+  }, [onContextMenu, node]);
+
   return (
     <g
       transform={`translate(${node.x}, ${node.y})`}
@@ -266,8 +275,9 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
+      onContextMenu={handleContextMenu}
       style={{ 
-        cursor: 'pointer', 
+        cursor: 'pointer',  
         opacity: currentOpacity,
         transition: `opacity ${transitionDuration}ms ease`
       }}

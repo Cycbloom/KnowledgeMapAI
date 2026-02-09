@@ -4,6 +4,7 @@ import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
 import { usePerformanceStore } from '../../store/usePerformanceStore';
 import { PromptSettingsPanel } from '../PromptSettingsPanel';
+import { AIActionSettingsPanel } from '../AIActionSettingsPanel';
 
 interface GraphSettingsModalProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   const { addMessage } = useMessageStore();
   const { quality, setQuality, showStats, toggleStats } = usePerformanceStore();
   
-  const [activeTab, setActiveTab] = useState<'general' | 'prompts'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'prompts' | 'actions'>('general');
   const [gamificationEnabled, setGamificationEnabled] = useState(true);
   const [learningDirection, setLearningDirection] = useState<'top_down' | 'bottom_up'>('top_down');
   const [textDisplayLevel, setTextDisplayLevel] = useState<'all' | 'important' | 'root_only'>('important');
@@ -91,6 +92,17 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
           >
             <MessageSquare size={16} className="mr-2" />
               AI 提示词
+            </button>
+          <button
+            onClick={() => setActiveTab('actions')}
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center ${
+              activeTab === 'actions'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Zap size={16} className="mr-2" />
+              AI 动作
             </button>
         </div>
 
@@ -264,8 +276,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                 </p>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'prompts' ? (
             <PromptSettingsPanel graphId={graphId} scope="graph" />
+          ) : (
+            <AIActionSettingsPanel graphId={graphId} scope="graph" />
           )}
         </div>
 

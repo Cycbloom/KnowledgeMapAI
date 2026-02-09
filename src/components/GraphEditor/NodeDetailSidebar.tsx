@@ -4,6 +4,7 @@ import { levelLabels } from '../../config/graphConfig';
 import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
 import { getLevel } from '../../lib/graphUtils';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
+import { TermTooltip } from '../TermTooltip';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -118,7 +119,14 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             rehypePlugins={[rehypeKatex]}
             components={{
               img: ({node, ...props}) => <img {...props} className="rounded-lg max-w-full h-auto" loading="lazy" />,
-              a: ({node, ...props}) => <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />
+              a: ({node, ...props}) => {
+                const { href, children } = props;
+                if (href && href.startsWith('term:')) {
+                    const explanation = href.replace('term:', '');
+                    return <TermTooltip term={String(children)} explanation={decodeURIComponent(explanation)} />;
+                }
+                return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;
+              }
             }}
           >
             {preprocessMarkdown(node.content || '*暂无内容*')}

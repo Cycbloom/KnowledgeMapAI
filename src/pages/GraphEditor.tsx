@@ -41,6 +41,10 @@ import { HierarchyView } from '../components/GraphEditor/views/HierarchyView';
 import { TimelineView } from '../components/GraphEditor/views/TimelineView';
 import { TreeView } from '../components/GraphEditor/views/TreeView';
 import { ViewModeSelector } from '../components/GraphEditor/ViewModeSelector';
+import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
+import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
+import { api, AIAction } from '../services/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,8 +53,11 @@ export const GraphEditor = () => {
   const { addMessage } = useMessageStore();
   const { isDark, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   
   const [isStyleSettingsOpen, setIsStyleSettingsOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, nodeId: string } | null>(null);
+  const [actionResult, setActionResult] = useState<{ title: string; content: string } | null>(null);
   const [colorScheme, setColorScheme] = useState<ColorScheme>('default');
   const [linkStyle, setLinkStyle] = useState<LinkStyle>('curved');
   const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>('none');
@@ -264,8 +271,52 @@ export const GraphEditor = () => {
     state.setForceShowTextIds(new Set());
   }, [setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
 
+  const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: any) => {
+    event.preventDefault();
+    setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+  }, []);
+
+  const handleExecuteAction = async (action: AIAction, nodeId: string) => {
+    try {
+        addMessage({ type: 'info', content: `正在执行动作: ${action.name}...` });
+        const res = await api.aiActions.execute({
+            action_id: action.id,
+            node_id: nodeId,
+            graph_id: id
+        });
+        
+        // Handle show_result or fallback if data is string
+        if (action.target_mode === 'show_result' || typeof res.data === 'string') {
+            setActionResult({
+                title: action.name,
+                content: typeof res.data === 'string' ? res.data : JSON.stringify(res.data, null, 2)
+            });
+            addMessage({ type: 'success', content: `动作执行成功` });
+        } else {
+            // Invalidate graphData to trigger refetch of nodes/edges
+            await queryClient.invalidateQueries({ queryKey: ['graphData', id] });
+            // Also invalidate graph stats
+            await queryClient.invalidateQueries({ queryKey: ['graphNodeStatus', id] });
+            
+            let feedback = `动作执行成功: ${action.name}`;
+            if (res.message) feedback += ` (${res.message})`;
+            
+            if (action.target_mode === 'update_node' && res.data?.updatedFields) {
+                feedback += `。已更新: ${res.data.updatedFields.join(', ')}`;
+            } else if (action.target_mode === 'spawn_children' && res.data?.createdCount) {
+                feedback += `。已生成 ${res.data.createdCount} 个子节点`;
+            }
+            
+            addMessage({ type: 'success', content: feedback });
+        }
+    } catch (err: any) {
+        console.error(err);
+        addMessage({ type: 'error', content: `执行失败: ${err.message}` });
+    }
+  };
+
   return (
-    <div className="flex h-full relative">
+    <div className={`h-screen w-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>
       {/* Main Canvas Area */}
       <div className={`flex-1 h-full relative ${isDeleteMode ? 'cursor-not-allowed' : ''}`}>
         {isGraphLoading && (
@@ -275,6 +326,33 @@ export const GraphEditor = () => {
                <p className="text-gray-600 font-medium">正在加载数据...</p>
              </div>
           </div>
+        )}
+
+        <div className="absolute top-4 left-4 z-10 flex gap-2">
+          <ViewModeSelector currentMode={viewMode} onModeChange={setViewMode} />
+          <button
+            onClick={() => navigate('/graphs')}
+            className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            title="返回图谱列表"
+          >
+            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
+          </button>
+        </div>
+
+        {contextMenu && id && (
+          <NodeContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            nodeId={contextMenu.nodeId}
+            graphId={id}
+            nodeContent={nodes.find(n => n.id === contextMenu.nodeId)?.content || ''}
+            onClose={() => setContextMenu(null)}
+            onExecuteAction={handleExecuteAction}
+            onRefresh={() => {
+                queryClient.invalidateQueries({ queryKey: ['graph', id] });
+                queryClient.invalidateQueries({ queryKey: ['graphNodes', id] });
+            }}
+          />
         )}
         
         <div className="h-full w-full bg-white relative">
@@ -339,6 +417,7 @@ export const GraphEditor = () => {
               templateLayout={templateLayout}
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
+              onNodeContextMenu={handleNodeContextMenu}
             />
           )}
           {viewMode === 'hierarchy' && (
@@ -576,6 +655,13 @@ export const GraphEditor = () => {
         </button>
       )}
       
+      <ActionResultModal
+        isOpen={!!actionResult}
+        onClose={() => setActionResult(null)}
+        title={actionResult?.title || ''}
+        content={actionResult?.content || ''}
+      />
+
       <GraphModalManager 
         id={id || ''}
         state={state}

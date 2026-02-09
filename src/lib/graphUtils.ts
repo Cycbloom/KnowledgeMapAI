@@ -591,3 +591,241 @@ export const findMissingConnections = (
   
   return suggestions.slice(0, maxSuggestions);
 };
+
+// ========== Node Importance & Edge Strength Calculation ==========
+
+import type { NodeImportance, EdgeStrength} from '../types';
+
+/**
+ * Calculate node importance score
+ */
+export const calculateNodeImportance = (
+  node: Node,
+  nodes: Node[],
+  edges: Edge[],
+  nodeStatus?: Record<string, any>
+): NodeImportance => {
+  const normalizeId = (id: any) => String(id).trim();
+  const nodeId = normalizeId(node.id);
+  
+  // 1. Calculate degree (total connections)
+  const degree = edges.filter(e => 
+    normalizeId(e.source_node_id) === nodeId || 
+    normalizeId(e.target_node_id) === nodeId
+  ).length;
+  
+  // 2. Calculate children count
+  const childrenCount = edges.filter(e => 
+    normalizeId(e.source_node_id) === nodeId
+  ).length;
+  
+  // 3. Level weight (root=1.0, core=0.8, sub=0.6, normal=0.4, leaf=0.2)
+  const levelWeights: Record<NodeLevel, number> = {
+    root: 1.0,
+    core: 0.8,
+    sub: 0.6,
+    normal: 0.4,
+    leaf: 0.2
+  };
+  const level = getLevel(node, edges);
+  const levelWeight = levelWeights[level] || 0.2;
+  
+  // 4. Content length (normalized, max 2000 chars = 1.0)
+  const contentLength = node.content ? Math.min(node.content.length / 2000, 1.0) : 0;
+  
+  // 5. Mastery weight (if node is mastered, add bonus)
+  const masteryWeight = nodeStatus?.[node.id]?.mastered ? 0.1 : 0;
+  
+  // Normalize factors (0-1 range)
+  const maxDegree = Math.max(1, ...nodes.map(n => 
+    edges.filter(e => 
+      normalizeId(e.source_node_id) === normalizeId(n.id) || 
+      normalizeId(e.target_node_id) === normalizeId(n.id)
+    ).length
+  ));
+  const normalizedDegree = Math.min(degree / maxDegree, 1.0);
+  
+  const maxChildren = Math.max(1, ...nodes.map(n => 
+    edges.filter(e => normalizeId(e.source_node_id) === normalizeId(n.id)).length
+  ));
+  const normalizedChildren = Math.min(childrenCount / maxChildren, 1.0);
+  
+  // Calculate importance score
+  const score = (
+    normalizedDegree * 0.3 +
+    normalizedChildren * 0.25 +
+    levelWeight * 0.2 +
+    contentLength * 0.15 +
+    masteryWeight * 0.1
+  );
+  
+  return {
+    score: Math.min(Math.max(score, 0), 1), // Clamp to 0-1
+    factors: {
+      degree: normalizedDegree,
+      childrenCount: normalizedChildren,
+      level: levelWeight,
+      contentLength
+    }
+  };
+};
+
+/**
+ * Calculate edge strength score
+ */
+export const calculateEdgeStrength = (
+  edge: Edge,
+  nodes: Node[],
+  edges: Edge[]
+): EdgeStrength => {
+  const normalizeId = (id: any) => String(id).trim();
+  const sourceId = normalizeId(edge.source_node_id);
+  const targetId = normalizeId(edge.target_node_id);
+  
+  // 1. Relationship type weight
+  const relationshipWeights: Record<string, number> = {
+    'contains': 1.0,
+    'related': 0.7,
+    'depends_on': 0.8,
+    'similar_to': 0.6,
+    'part_of': 0.9
+  };
+  const relationshipType = edge.relationship_type || 'related';
+  const relationshipTypeWeight = relationshipWeights[relationshipType] || 0.5;
+  
+  // 2. Common connections (nodes that connect to both source and target)
+  const sourceConnections = new Set<string>();
+  const targetConnections = new Set<string>();
+  
+  edges.forEach(e => {
+    const src = normalizeId(e.source_node_id);
+    const tgt = normalizeId(e.target_node_id);
+    
+    if (src === sourceId || tgt === sourceId) {
+      if (src === sourceId) sourceConnections.add(tgt);
+      if (tgt === sourceId) sourceConnections.add(src);
+    }
+    if (src === targetId || tgt === targetId) {
+      if (src === targetId) targetConnections.add(tgt);
+      if (tgt === targetId) targetConnections.add(src);
+    }
+  });
+  
+  let commonConnections = 0;
+  sourceConnections.forEach(id => {
+    if (targetConnections.has(id)) commonConnections++;
+  });
+  
+  // Normalize common connections (max 10 = 1.0)
+  const normalizedCommonConnections = Math.min(commonConnections / 10, 1.0);
+  
+  // 3. Path count (number of paths between source and target)
+  const pathCount = countPaths(sourceId, targetId, nodes, edges);
+  const normalizedPathCount = Math.min(pathCount / 5, 1.0); // Max 5 paths = 1.0
+  
+  // 4. Hierarchy weight (parent-child > sibling > other)
+  const sourceNode = nodes.find(n => normalizeId(n.id) === sourceId);
+  const targetNode = nodes.find(n => normalizeId(n.id) === targetId);
+  
+  let hierarchyWeight = 0.5; // Default: other relationship
+  if (sourceNode && targetNode) {
+    // Check if source is parent of target
+    const isParentChild = edges.some(e => 
+      normalizeId(e.source_node_id) === sourceId && 
+      normalizeId(e.target_node_id) === targetId
+    );
+    
+    if (isParentChild) {
+      hierarchyWeight = 1.0;
+    } else {
+      // Check if they are siblings (same parent)
+      const sourceParents = edges
+        .filter(e => normalizeId(e.target_node_id) === sourceId)
+        .map(e => normalizeId(e.source_node_id));
+      const targetParents = edges
+        .filter(e => normalizeId(e.target_node_id) === targetId)
+        .map(e => normalizeId(e.source_node_id));
+      
+      const commonParent = sourceParents.find(p => targetParents.includes(p));
+      if (commonParent) {
+        hierarchyWeight = 0.8; // Sibling relationship
+      }
+    }
+  }
+  
+  // Calculate strength score
+  const score = (
+    relationshipTypeWeight * 0.4 +
+    normalizedCommonConnections * 0.3 +
+    normalizedPathCount * 0.2 +
+    hierarchyWeight * 0.1
+  );
+  
+  return {
+    score: Math.min(Math.max(score, 0), 1), // Clamp to 0-1
+    factors: {
+      relationshipType: relationshipType,
+      commonConnections: normalizedCommonConnections,
+      pathCount: normalizedPathCount
+    }
+  };
+};
+
+/**
+ * Count number of paths between two nodes (BFS, max depth 3)
+ */
+const countPaths = (
+  startId: string,
+  endId: string,
+  nodes: Node[],
+  edges: Edge[]
+): number => {
+  const normalizeId = (id: any) => String(id).trim();
+  const start = normalizeId(startId);
+  const end = normalizeId(endId);
+  
+  if (start === end) return 1;
+  
+  // Build adjacency list
+  const adj = new Map<string, Set<string>>();
+  nodes.forEach(node => {
+    adj.set(normalizeId(node.id), new Set());
+  });
+  
+  edges.forEach(edge => {
+    const src = normalizeId(edge.source_node_id);
+    const tgt = normalizeId(edge.target_node_id);
+    adj.get(src)?.add(tgt);
+    adj.get(tgt)?.add(src); // Undirected
+  });
+  
+  // BFS to count paths (limited depth)
+  let pathCount = 0;
+  const queue: Array<{ id: string; depth: number; visited: Set<string> }> = [
+    { id: start, depth: 0, visited: new Set([start]) }
+  ];
+  
+  while (queue.length > 0) {
+    const { id, depth, visited } = queue.shift()!;
+    
+    if (depth > 3) continue; // Max depth 3
+    
+    const neighbors = adj.get(id) || new Set();
+    for (const neighbor of neighbors) {
+      if (neighbor === end) {
+        pathCount++;
+        continue;
+      }
+      
+      if (!visited.has(neighbor) && depth < 3) {
+        queue.push({
+          id: neighbor,
+          depth: depth + 1,
+          visited: new Set([...visited, neighbor])
+        });
+      }
+    }
+  }
+  
+  return Math.min(pathCount, 5); // Cap at 5
+};

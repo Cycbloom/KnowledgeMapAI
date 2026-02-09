@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Node, NodeLevel, BranchSuggestion, ExplorationPathItem, TutorMode, ExtractedConcept } from '../types';
+import { Node, NodeLevel, BranchSuggestion, ExplorationPathItem, TutorMode, ExtractedConcept, GraphViewMode } from '../types';
 
 export interface GraphEditorState {
   // Graph Ref
@@ -26,8 +26,8 @@ export interface GraphEditorState {
   setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
   collapsedNodeIds: Set<string>;
   setCollapsedNodeIds: React.Dispatch<React.SetStateAction<Set<string>>>;
-  viewMode: 'outline' | 'mindmap';
-  setViewMode: React.Dispatch<React.SetStateAction<'outline' | 'mindmap'>>;
+  viewMode: GraphViewMode;
+  setViewMode: React.Dispatch<React.SetStateAction<GraphViewMode>>;
   
   // Interaction
   isPathfindingMode: boolean;
@@ -178,7 +178,7 @@ export const useGraphEditorState = (): GraphEditorState => {
   // Layout & View
   const [showGrid, setShowGrid] = useState(false);
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'outline' | 'mindmap'>('mindmap');
+  const [viewMode, setViewMode] = useState<GraphViewMode>('mindmap');
 
   // Interaction
   const [isPathfindingMode, setIsPathfindingMode] = useState(false);

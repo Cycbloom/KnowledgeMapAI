@@ -11,8 +11,8 @@ import {
   getCenterDotPath
 } from '../../config/nodeStyleConfig';
 import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
-import { getLevel } from '../../lib/graphUtils';
-import { Edge } from '../../types';
+import { getLevel, calculateNodeImportance } from '../../lib/graphUtils';
+import { Edge, NodeSizeMode, Node } from '../../types';
 
 interface MindMapNodeProps {
   node: LayoutNode;
@@ -29,6 +29,9 @@ interface MindMapNodeProps {
   hasFocusMode?: boolean;
   colorScheme?: ColorScheme;
   isNew?: boolean;
+  nodeSizeMode?: NodeSizeMode;
+  nodeImportance?: number;
+  allNodes?: Node[];
 }
 
 const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
@@ -68,12 +71,43 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   forceShowText = false,
   hasFocusMode = false,
   colorScheme = 'default',
-  isNew = false
+  isNew = false,
+  nodeSizeMode = 'fixed',
+  nodeImportance,
+  allNodes = []
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'entering' | 'pulsing' | 'none'>('none');
   const level = getLevel(node, edges);
-  const styleConfig = NODE_STYLE_CONFIG[level];
+  
+  // Calculate dynamic size based on mode
+  const dynamicSize = useMemo(() => {
+    if (nodeSizeMode === 'fixed') {
+      return 1.0;
+    }
+    
+    if (nodeImportance !== undefined) {
+      // Use provided importance score
+      return 0.8 + nodeImportance * 0.7; // Range: 0.8 - 1.5
+    }
+    
+    if (allNodes.length > 0) {
+      // Calculate importance on the fly
+      const importance = calculateNodeImportance(node as Node, allNodes, edges, nodeStatus);
+      return 0.8 + importance.score * 0.7;
+    }
+    
+    return 1.0;
+  }, [nodeSizeMode, nodeImportance, allNodes, node, edges, nodeStatus]);
+  
+  const styleConfig = useMemo(() => {
+    const baseConfig = NODE_STYLE_CONFIG[level];
+    return {
+      ...baseConfig,
+      baseRadius: baseConfig.baseRadius * dynamicSize
+    };
+  }, [level, dynamicSize]);
+  
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark, colorScheme);
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);

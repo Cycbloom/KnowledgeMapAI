@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ColorScheme, NodeStyleVariant, LinkStyle, LinkAnimation, CenterDotShape, NodeShape } from '../../types';
+import { ColorScheme, NodeStyleVariant, LinkStyle, LinkAnimation, CenterDotShape, NodeShape, NodeSizeMode, EdgeWidthMode } from '../../types';
 import { getColorSchemeNames } from '../../config/learningStatusColors';
 
 interface GraphStyleSettingsProps {
@@ -11,6 +11,10 @@ interface GraphStyleSettingsProps {
   onColorSchemeChange: (scheme: ColorScheme) => void;
   onLinkStyleChange: (style: LinkStyle) => void;
   onLinkAnimationChange: (animation: LinkAnimation) => void;
+  nodeSizeMode?: NodeSizeMode;
+  onNodeSizeModeChange?: (mode: NodeSizeMode) => void;
+  edgeWidthMode?: EdgeWidthMode;
+  onEdgeWidthModeChange?: (mode: EdgeWidthMode) => void;
 }
 
 export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
@@ -21,9 +25,13 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   currentLinkAnimation,
   onColorSchemeChange,
   onLinkStyleChange,
-  onLinkAnimationChange
+  onLinkAnimationChange,
+  nodeSizeMode = 'fixed',
+  onNodeSizeModeChange,
+  edgeWidthMode = 'fixed',
+  onEdgeWidthModeChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges'>('colors');
 
   if (!isOpen) return null;
 
@@ -89,6 +97,26 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             }`}
           >
             动画效果
+          </button>
+          <button
+            onClick={() => setActiveTab('nodes')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeTab === 'nodes'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            节点大小
+          </button>
+          <button
+            onClick={() => setActiveTab('edges')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeTab === 'edges'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            边粗细
           </button>
         </div>
 
@@ -222,6 +250,63 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                     <li>• <strong>虚线</strong>: 显示为虚线样式</li>
                     <li>• <strong>无</strong>: 不显示任何动画效果</li>
                   </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'nodes' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">节点大小模式</h3>
+                <div className="space-y-2">
+                  {[
+                    { key: 'fixed' as NodeSizeMode, name: '固定大小', description: '所有节点使用相同大小' },
+                    { key: 'importance' as NodeSizeMode, name: '按重要性', description: '根据节点重要性动态调整' },
+                    { key: 'degree' as NodeSizeMode, name: '按连接度', description: '根据连接数调整大小' },
+                    { key: 'children' as NodeSizeMode, name: '按子节点数', description: '根据子节点数量调整大小' }
+                  ].map((mode) => (
+                    <button
+                      key={mode.key}
+                      onClick={() => onNodeSizeModeChange?.(mode.key)}
+                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                        nodeSizeMode === mode.key
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="font-medium text-gray-900 dark:text-white">{mode.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{mode.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'edges' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">边粗细模式</h3>
+                <div className="space-y-2">
+                  {[
+                    { key: 'fixed' as EdgeWidthMode, name: '固定粗细', description: '所有边使用相同粗细' },
+                    { key: 'strength' as EdgeWidthMode, name: '按连接强度', description: '根据连接强度动态调整' },
+                    { key: 'relationship' as EdgeWidthMode, name: '按关系类型', description: '根据关系类型调整粗细' }
+                  ].map((mode) => (
+                    <button
+                      key={mode.key}
+                      onClick={() => onEdgeWidthModeChange?.(mode.key)}
+                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                        edgeWidthMode === mode.key
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="font-medium text-gray-900 dark:text-white">{mode.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{mode.description}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

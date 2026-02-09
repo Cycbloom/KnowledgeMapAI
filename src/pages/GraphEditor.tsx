@@ -36,7 +36,11 @@ import { useGraphInteraction } from '../hooks/useGraphInteraction';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { useExplorationPath } from '../hooks/useExplorationPath';
 import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
-import type { Node as GraphNode, ColorScheme, LinkStyle, LinkAnimation } from '../types';
+import type { Node as GraphNode, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, NodeSizeMode, EdgeWidthMode } from '../types';
+import { HierarchyView } from '../components/GraphEditor/views/HierarchyView';
+import { TimelineView } from '../components/GraphEditor/views/TimelineView';
+import { TreeView } from '../components/GraphEditor/views/TreeView';
+import { ViewModeSelector } from '../components/GraphEditor/ViewModeSelector';
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +54,8 @@ export const GraphEditor = () => {
   const [colorScheme, setColorScheme] = useState<ColorScheme>('default');
   const [linkStyle, setLinkStyle] = useState<LinkStyle>('curved');
   const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>('none');
+  const [nodeSizeMode, setNodeSizeMode] = useState<NodeSizeMode>('fixed');
+  const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>('fixed');
   
   // React Query Hooks
   const { data: graphMeta } = useGraph(id || '');
@@ -214,7 +220,9 @@ export const GraphEditor = () => {
     },
     saveNode: nodeOps.handleSaveNode,
     sidebarMode,
-    selectedNode
+    selectedNode,
+    viewMode,
+    setViewMode
   });
 
   const handleCloseSidebar = useCallback(() => {
@@ -270,46 +278,47 @@ export const GraphEditor = () => {
         )}
         
         <div className="h-full w-full bg-white relative">
-          <MindMapCanvas
-              nodes={nodes}
-              edges={edges}
-              nodeStatus={nodeStatus}
-              selectedNodeId={selectedNode?.id}
-              onNodeClick={handleNodeClick}
-              sidebarMode={sidebarMode}
-              focusedNodeIds={focusedNodeIds}
-              focusedLinkIds={focusedLinkIds}
-              onCanvasClick={handleCanvasClick}
-              forceShowTextIds={forceShowTextIds}
-              focusedNodeId={focusedNodeId}
-              branchSuggestions={branchSuggestions}
-              selectedNodeForBranch={selectedNode}
-              historicalAlternativeBranches={historicalAlternativeBranches}
-              onSelectBranch={async (selectedSuggestion) => {
-                if (!selectedNode || !id) return;
-                
-                const suggestionsToCreate = [...branchSuggestions];
-                setBranchSuggestions([]);
-                
-                const createdNodes: any[] = [];
-                
-                for (const suggestion of suggestionsToCreate) {
-                  const isAccepted = suggestion.id === selectedSuggestion.id;
-                  const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
-                  if (newNode) {
-                    createdNodes.push({ node: newNode, suggestion, isAccepted });
+          {viewMode === 'mindmap' && (
+            <MindMapCanvas
+                nodes={nodes}
+                edges={edges}
+                nodeStatus={nodeStatus}
+                selectedNodeId={selectedNode?.id}
+                onNodeClick={handleNodeClick}
+                sidebarMode={sidebarMode}
+                focusedNodeIds={focusedNodeIds}
+                focusedLinkIds={focusedLinkIds}
+                onCanvasClick={handleCanvasClick}
+                forceShowTextIds={forceShowTextIds}
+                focusedNodeId={focusedNodeId}
+                branchSuggestions={branchSuggestions}
+                selectedNodeForBranch={selectedNode}
+                historicalAlternativeBranches={historicalAlternativeBranches}
+                onSelectBranch={async (selectedSuggestion) => {
+                  if (!selectedNode || !id) return;
+                  
+                  const suggestionsToCreate = [...branchSuggestions];
+                  setBranchSuggestions([]);
+                  
+                  const createdNodes: any[] = [];
+                  
+                  for (const suggestion of suggestionsToCreate) {
+                    const isAccepted = suggestion.id === selectedSuggestion.id;
+                    const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
+                    if (newNode) {
+                      createdNodes.push({ node: newNode, suggestion, isAccepted });
+                    }
                   }
-                }
-                
-                if (createdNodes.length > 0) {
-                  const selectedNodeData = createdNodes.find(n => n.isAccepted);
-                  if (selectedNodeData) {
-                    explorationPathOps.addToPath({
-                      nodeId: selectedNodeData.node.id,
-                      nodeTitle: selectedNodeData.node.title,
-                      branchChoice: selectedNodeData.suggestion.title,
-                      parentNodeId: selectedNode?.id,
-                      branchSuggestionId: selectedNodeData.suggestion.id,
+                  
+                  if (createdNodes.length > 0) {
+                    const selectedNodeData = createdNodes.find(n => n.isAccepted);
+                    if (selectedNodeData) {
+                      explorationPathOps.addToPath({
+                        nodeId: selectedNodeData.node.id,
+                        nodeTitle: selectedNodeData.node.title,
+                        branchChoice: selectedNodeData.suggestion.title,
+                        parentNodeId: selectedNode?.id,
+                        branchSuggestionId: selectedNodeData.suggestion.id,
                       alternativeBranches: suggestionsToCreate
                     });
                     setSelectedNode(selectedNodeData.node);
@@ -328,8 +337,53 @@ export const GraphEditor = () => {
               linkStyle={linkStyle}
               linkAnimation={linkAnimation}
               templateLayout={templateLayout}
+              nodeSizeMode={nodeSizeMode}
+              edgeWidthMode={edgeWidthMode}
             />
-          </div>
+          )}
+          {viewMode === 'hierarchy' && (
+            <HierarchyView
+              nodes={nodes}
+              edges={edges}
+              nodeStatus={nodeStatus}
+              selectedNodeId={selectedNode?.id || null}
+              onNodeClick={handleNodeClick}
+              colorScheme={colorScheme}
+              linkStyle={linkStyle}
+              linkAnimation={linkAnimation}
+              nodeSizeMode={nodeSizeMode}
+              edgeWidthMode={edgeWidthMode}
+            />
+          )}
+          {viewMode === 'timeline' && (
+            <TimelineView
+              nodes={nodes}
+              edges={edges}
+              nodeStatus={nodeStatus}
+              selectedNodeId={selectedNode?.id || null}
+              onNodeClick={handleNodeClick}
+              colorScheme={colorScheme}
+              linkStyle={linkStyle}
+              linkAnimation={linkAnimation}
+              nodeSizeMode={nodeSizeMode}
+              edgeWidthMode={edgeWidthMode}
+            />
+          )}
+          {viewMode === 'tree' && (
+            <TreeView
+              nodes={nodes}
+              edges={edges}
+              nodeStatus={nodeStatus}
+              selectedNodeId={selectedNode?.id || null}
+              onNodeClick={handleNodeClick}
+              colorScheme={colorScheme}
+              linkStyle={linkStyle}
+              linkAnimation={linkAnimation}
+              nodeSizeMode={nodeSizeMode}
+              edgeWidthMode={edgeWidthMode}
+            />
+          )}
+        </div>
       </div>
 
       <GraphToolbar 

@@ -177,6 +177,30 @@ export interface NodeStyle {
 
 export type ExplorationMode = 'none' | 'branch' | 'timeline';
 
+export type GraphViewMode = 'mindmap' | 'hierarchy' | 'timeline' | 'tree';
+
+export interface NodeImportance {
+  score: number;
+  factors: {
+    degree: number;
+    childrenCount: number;
+    level: number;
+    contentLength: number;
+  };
+}
+
+export interface EdgeStrength {
+  score: number;
+  factors: {
+    relationshipType: string;
+    commonConnections: number;
+    pathCount: number;
+  };
+}
+
+export type NodeSizeMode = 'fixed' | 'importance' | 'degree' | 'children';
+export type EdgeWidthMode = 'fixed' | 'strength' | 'relationship';
+
 export interface BranchSuggestion {
   id: string;
   title: string;

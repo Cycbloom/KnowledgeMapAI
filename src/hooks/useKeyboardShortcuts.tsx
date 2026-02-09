@@ -3,7 +3,7 @@ import React from 'react';
 import { Maximize, Minimize } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 
-import { Node } from '../types';
+import { Node, GraphViewMode } from '../types';
 
 interface UseKeyboardShortcutsProps {
   undo: () => void;
@@ -20,6 +20,8 @@ interface UseKeyboardShortcutsProps {
   saveNode: () => void;
   sidebarMode: string;
   selectedNode: Node | null;
+  viewMode?: GraphViewMode;
+  setViewMode?: (mode: GraphViewMode) => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -36,7 +38,9 @@ export const useKeyboardShortcuts = ({
   toggleSidebar,
   saveNode,
   sidebarMode,
-  selectedNode
+  selectedNode,
+  viewMode,
+  setViewMode
 }: UseKeyboardShortcutsProps) => {
   const { addMessage } = useMessageStore();
 
@@ -115,6 +119,23 @@ export const useKeyboardShortcuts = ({
         toggleExplorationMode();
       }
       
+      // View Mode Shortcuts (Ctrl/Cmd + 1-4)
+      else if ((e.ctrlKey || e.metaKey) && !isInput && setViewMode) {
+        if (e.key === '1') {
+          e.preventDefault();
+          setViewMode('mindmap');
+        } else if (e.key === '2') {
+          e.preventDefault();
+          setViewMode('hierarchy');
+        } else if (e.key === '3') {
+          e.preventDefault();
+          setViewMode('timeline');
+        } else if (e.key === '4') {
+          e.preventDefault();
+          setViewMode('tree');
+        }
+      }
+      
       // Exit Focus Mode / Close Sidebar (Escape)
       else if (e.key === 'Escape') {
         // This is handled by components usually, but we can add global Esc logic if needed
@@ -127,6 +148,7 @@ export const useKeyboardShortcuts = ({
     undo, redo, canUndo, canRedo, 
     deleteNode, toggleDeleteMode, togglePathfindingMode, toggleExplorationMode,
     toggleGrid, toggleFocusMode, toggleSidebar, 
-    saveNode, sidebarMode, selectedNode
+    saveNode, sidebarMode, selectedNode,
+    viewMode, setViewMode
   ]);
 };

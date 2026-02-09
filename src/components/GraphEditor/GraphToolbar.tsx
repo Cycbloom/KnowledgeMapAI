@@ -4,10 +4,11 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import { Node, ColorScheme, LinkStyle, LinkAnimation } from '../../types';
+import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode } from '../../types';
+import { ViewModeSelector } from './ViewModeSelector';
 
 interface GraphToolbarProps {
   // Navigation & History
@@ -21,8 +22,8 @@ interface GraphToolbarProps {
   title: string;
   sidebarMode: 'none' | 'create' | 'edit' | 'outline' | 'detail';
   setSidebarMode: (mode: 'none' | 'create' | 'edit' | 'outline' | 'detail') => void;
-  viewMode: 'outline' | 'mindmap';
-  setViewMode: (mode: 'outline' | 'mindmap') => void;
+  viewMode: GraphViewMode;
+  setViewMode: (mode: GraphViewMode) => void;
   showGrid: boolean;
   setShowGrid: (show: boolean) => void;
   isFocusMode: boolean;
@@ -594,7 +595,27 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       {/* 4. View Tools Dropdown */}
       <DropdownButton id="view" icon={List} label="视图">
         <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label="大纲学习模式" colorClass="text-indigo-600" />
-        <MenuItem onClick={() => setViewMode('mindmap')} icon={Network} label="思维导图" active={viewMode === 'mindmap'} colorClass="text-green-600" />
+        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        <div className="px-3 py-2">
+          <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase">视图模式</div>
+          <div className="space-y-1">
+            {[
+              { mode: 'mindmap' as const, label: '思维导图', icon: Network },
+              { mode: 'hierarchy' as const, label: '层级视图', icon: Layers },
+              { mode: 'timeline' as const, label: '时间线', icon: Clock },
+              { mode: 'tree' as const, label: '树形视图', icon: GitBranch }
+            ].map(({ mode, label, icon: Icon }) => (
+              <MenuItem
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                icon={Icon}
+                label={label}
+                active={viewMode === mode}
+                colorClass="text-blue-600"
+              />
+            ))}
+          </div>
+        </div>
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="侧边栏大纲" active={sidebarMode === 'outline'} />
         <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label="搜索节点" />

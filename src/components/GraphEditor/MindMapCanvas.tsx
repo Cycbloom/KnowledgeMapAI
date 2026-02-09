@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, BranchSuggestion, TemplateLayout } from '../../types';
+import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, BranchSuggestion, TemplateLayout, NodeSizeMode, EdgeWidthMode } from '../../types';
 import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
 import { MindMapLink } from './MindMapLink';
@@ -8,6 +8,7 @@ import { CanvasLayout } from './CanvasLayout';
 import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
+import { calculateNodeImportance, calculateEdgeStrength } from '../../lib/graphUtils';
 
 interface MindMapCanvasProps {
   nodes: Node[];
@@ -33,6 +34,8 @@ interface MindMapCanvasProps {
   isExplorationMode?: boolean;
   historicalAlternativeBranches?: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[];
   templateLayout?: TemplateLayout;
+  nodeSizeMode?: NodeSizeMode;
+  edgeWidthMode?: EdgeWidthMode;
 }
 
 interface Transform {
@@ -65,6 +68,8 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   isExplorationMode = false,
   historicalAlternativeBranches = [],
   templateLayout,
+  nodeSizeMode = 'fixed',
+  edgeWidthMode = 'fixed'
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -119,15 +124,40 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   const visibleLinks = useMemo(() => {
     if (!layout) return [];
     
-    const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+    const visibleNodeIds = new Set(visibleNodes.map(n => String(n.id).trim()));
     
     return layout.links.filter(link => {
-      const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
-      const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+      const sourceId = typeof link.source === 'string' ? String(link.source).trim() : String(link.source.id).trim();
+      const targetId = typeof link.target === 'string' ? String(link.target).trim() : String(link.target.id).trim();
       
       return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
     });
   }, [layout, visibleNodes]);
+
+  // Calculate node importance map
+  const nodeImportanceMap = useMemo(() => {
+    if (nodeSizeMode === 'fixed') return new Map<string, number>();
+    const map = new Map<string, number>();
+    visibleNodes.forEach(node => {
+      const importance = calculateNodeImportance(node as Node, nodes, edges, nodeStatus);
+      map.set(node.id, importance.score);
+    });
+    return map;
+  }, [visibleNodes, nodes, edges, nodeStatus, nodeSizeMode]);
+
+  // Calculate edge strength map
+  const edgeStrengthMap = useMemo(() => {
+    if (edgeWidthMode === 'fixed') return new Map<string, number>();
+    const map = new Map<string, number>();
+    visibleLinks.forEach(link => {
+      const edge = edges.find(e => e.id === link.id);
+      if (edge) {
+        const strength = calculateEdgeStrength(edge, nodes, edges);
+        map.set(link.id, strength.score);
+      }
+    });
+    return map;
+  }, [visibleLinks, edges, nodes, edgeWidthMode]);
 
   const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
     e.preventDefault();
@@ -246,6 +276,10 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               hasFocusMode={hasFocusMode}
               linkStyle={linkStyle}
               linkAnimation={linkAnimation}
+              edgeWidthMode={edgeWidthMode}
+              edgeStrength={edgeStrengthMap.get(link.id)}
+              allNodes={nodes}
+              allEdges={edges}
             />
           ))}
           {visibleNodes.map(node => (
@@ -264,6 +298,9 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               forceShowText={forceShowTextIds.has(node.id)}
               hasFocusMode={hasFocusMode}
               colorScheme={colorScheme}
+              nodeSizeMode={nodeSizeMode}
+              nodeImportance={nodeImportanceMap.get(node.id)}
+              allNodes={nodes}
             />
           ))}
           {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {

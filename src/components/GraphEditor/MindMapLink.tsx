@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation } from '../../types';
+import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation, EdgeWidthMode, Edge, Node } from '../../types';
 import { THEME_COLORS } from '../../config/learningStatusColors';
+import { calculateEdgeStrength } from '../../lib/graphUtils';
 
 interface MindMapLinkProps {
   link: LayoutLink;
@@ -11,6 +12,10 @@ interface MindMapLinkProps {
   hasFocusMode?: boolean;
   linkStyle?: LinkStyle;
   linkAnimation?: LinkAnimation;
+  edgeWidthMode?: EdgeWidthMode;
+  edgeStrength?: number;
+  allNodes?: Node[];
+  allEdges?: Edge[];
 }
 
 const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
@@ -21,18 +26,47 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   focused = false,
   hasFocusMode = false,
   linkStyle = 'curved',
-  linkAnimation = 'none'
+  linkAnimation = 'none',
+  edgeWidthMode = 'fixed',
+  edgeStrength,
+  allNodes = [],
+  allEdges = []
 }) => {
-  const source = typeof link.source === 'string' ? nodes.get(link.source) : link.source;
-  const target = typeof link.target === 'string' ? nodes.get(link.target) : link.target;
+  // Normalize IDs for matching
+  const normalizeId = (id: any) => String(id).trim();
+  const sourceId = typeof link.source === 'string' ? normalizeId(link.source) : normalizeId(link.source.id);
+  const targetId = typeof link.target === 'string' ? normalizeId(link.target) : normalizeId(link.target.id);
+  
+  const source = typeof link.source === 'string' ? nodes.get(sourceId) : link.source;
+  const target = typeof link.target === 'string' ? nodes.get(targetId) : link.target;
 
   if (!source || !target) return null;
 
   const colors = useMemo(() => isDark ? THEME_COLORS.dark : THEME_COLORS.light, [isDark]);
   
+  // Calculate dynamic width based on mode
+  const dynamicWidth = useMemo(() => {
+    if (edgeWidthMode === 'fixed') {
+      return 2;
+    }
+    
+    if (edgeStrength !== undefined) {
+      // Use provided strength score
+      return 1 + edgeStrength * 4; // Range: 1px - 5px
+    }
+    
+    if (allNodes.length > 0 && allEdges.length > 0) {
+      // Calculate strength on the fly
+      const strength = calculateEdgeStrength(link as Edge, allNodes, allEdges);
+      return 1 + strength.score * 4;
+    }
+    
+    return 2;
+  }, [edgeWidthMode, edgeStrength, allNodes, allEdges, link]);
+  
   const linkStyleConfig = useMemo(() => {
     let strokeColor = colors.link;
-    let strokeWidth = 2;
+    let strokeWidth = dynamicWidth;
     let opacity = 0.4;
     let strokeDasharray = 'none';
     
@@ -41,25 +75,25 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     if (!isTargetAccepted) {
       strokeDasharray = '6,4';
       opacity = 0.3;
-      strokeWidth = 1.5;
+      strokeWidth = Math.max(1, dynamicWidth * 0.75);
     }
     
     if (!hasFocusMode) {
       opacity = isTargetAccepted ? 0.4 : 0.3;
     } else if (focused) {
       strokeColor = colors.linkHighlight;
-      strokeWidth = 3;
+      strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else if (highlighted) {
       strokeColor = colors.linkHighlight;
-      strokeWidth = 3;
+      strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else {
       opacity = isTargetAccepted ? 0.1 : 0.05;
     }
 
     return { strokeColor, strokeWidth, opacity, strokeDasharray };
-  }, [colors, hasFocusMode, focused, highlighted, target]);
+  }, [colors, hasFocusMode, focused, highlighted, target, dynamicWidth]);
 
   const pathData = useMemo(() => {
     const dx = target.x - source.x;

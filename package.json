@@ -39,6 +39,7 @@
     "ioredis": "^5.9.2",
     "katex": "^0.16.28",
     "lucide-react": "^0.511.0",
+    "mermaid": "^11.12.2",
     "multer": "^2.0.2",
     "node-cache": "^5.1.2",
     "openai": "^4.26.0",

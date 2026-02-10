@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Node, Edge } from '../../types';
 import { GraphEditorState } from '../../hooks/useGraphEditorState';
 import { NodeDetailSidebar } from './NodeDetailSidebar';
 import { NodeEditSidebar } from './NodeEditSidebar';
 import { GraphOutline } from './GraphOutline';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { X } from 'lucide-react';
+import { X, GripVertical } from 'lucide-react';
 
 interface GraphSidebarManagerProps {
   state: GraphEditorState;
@@ -42,6 +42,38 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
     showRelatedSection, isRelatedLoading, relatedNodes,
   } = state;
 
+  // Sidebar Resizing Logic
+  const [width, setWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (isResizing) {
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth >= 300 && newWidth <= 800) {
+        setWidth(newWidth);
+      }
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', resize);
+    window.addEventListener('mouseup', stopResizing);
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [resize, stopResizing]);
+
   if (sidebarMode === 'none') return null;
 
   return (
@@ -51,7 +83,19 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
         <button onClick={handleCloseSidebar} className="text-blue-600 hover:underline">关闭侧边栏</button>
       </div>
     }>
-      <div className={`w-80 bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== 'outline' ? 'p-4 overflow-y-auto' : ''}`}>
+      <div 
+        ref={sidebarRef}
+        className={`bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== 'outline' ? 'p-4 overflow-y-auto' : ''}`}
+        style={{ width: width }}
+      >
+        {/* Resize Handle */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 z-50 flex items-center justify-center group transition-colors"
+          onMouseDown={startResizing}
+        >
+          <div className="h-8 w-1 bg-gray-300 rounded-full group-hover:bg-blue-500 transition-colors" />
+        </div>
+
         {sidebarMode === 'outline' ? (
            <div className="h-full relative flex flex-col">
              <div className="absolute right-2 top-2 z-10">
@@ -77,7 +121,8 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
            </div>
         ) : sidebarMode === 'detail' && selectedNode ? (
           <NodeDetailSidebar
-            node={selectedNode}
+            node={nodes.find(n => n.id === selectedNode.id) || selectedNode}
+            nodes={nodes}
             edges={edges}
             prevSidebarMode={prevSidebarMode}
             nodeStatus={nodeStatus}
@@ -87,9 +132,19 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
               setPrevSidebarMode('none');
             }}
             onEdit={() => {
-              setPrevSidebarMode(sidebarMode);
-              setSidebarMode('edit');
-            }}
+            if (selectedNode) {
+              const parentEdge = edges.find(e => e.target_node_id === selectedNode.id);
+              setNodeForm({
+                title: selectedNode.title,
+                content: selectedNode.content || '',
+                color: selectedNode.color || '#3B82F6',
+                parentNodeId: parentEdge ? parentEdge.source_node_id : '',
+                level: selectedNode.level || 'normal'
+              });
+            }
+            setPrevSidebarMode(sidebarMode);
+            setSidebarMode('edit');
+          }}
             onDelete={() => nodeOps.handleDeleteNode()}
             onStartLevelTest={aiOps.handleStartLevelTest}
             onStartLearningMode={aiOps.handleStartLearningMode}
@@ -105,6 +160,10 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
               nodeOps.handleUpdateNode(nodeId, updates);
             }}
             isExplorationMode={isExplorationMode}
+            onGenerateNodeContent={aiOps.handleGenerateNodeContent}
+            onDeepAnalysis={() => aiOps.handleBackgroundTask('deep_analysis')}
+            onGenerateQuiz={() => aiOps.handleBackgroundTask('generate_questions')}
+            onBackgroundGenerate={() => aiOps.handleBackgroundTask('expand_graph')}
           />
         ) : (sidebarMode === 'create' || sidebarMode === 'edit') ? (
           <NodeEditSidebar

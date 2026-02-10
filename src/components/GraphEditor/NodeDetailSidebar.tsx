@@ -11,12 +11,15 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { 
   X, ArrowLeft, Wand2, Edit3, Trash2, Navigation, 
-  GraduationCap, Sparkles, Check, Lock, Loader2, GitBranch 
+  GraduationCap, Sparkles, Check, Lock, Loader2, GitBranch,
+  Calendar, Activity, Link as LinkIcon, ChevronRight
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
+import { Mermaid } from '../Mermaid';
 
 interface NodeDetailSidebarProps {
   node: Node;
+  nodes?: Node[]; // Optional to avoid breaking if not passed immediately, but we just passed it
   edges: Edge[];
   prevSidebarMode: 'none' | 'create' | 'edit' | 'outline' | 'detail';
   nodeStatus?: Record<string, any>;
@@ -38,6 +41,12 @@ interface NodeDetailSidebarProps {
   // Branch Switching
   onUpdateNode?: (nodeId: string, updates: Partial<Node>) => void;
   isExplorationMode?: boolean;
+
+  // New AI Actions
+  onGenerateNodeContent: () => void;
+  onDeepAnalysis: () => void;
+  onGenerateQuiz: () => void;
+  onBackgroundGenerate: () => void;
 }
 
 export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
@@ -58,7 +67,12 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   relatedNodes,
   onRelatedNodeClick,
   onUpdateNode,
-  isExplorationMode = false
+  isExplorationMode = false,
+  onGenerateNodeContent,
+  onDeepAnalysis,
+  onGenerateQuiz,
+  onBackgroundGenerate,
+  nodes = []
 }) => {
   const { isDark } = useTheme();
   const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
@@ -67,6 +81,22 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   const colors = getStatusColors(status, isDark);
 
   const isAccepted = node.is_accepted !== false;
+
+  // Navigation Logic
+  const parentNode = React.useMemo(() => {
+    if (!node || !edges || !nodes) return null;
+    const parentEdge = edges.find(e => e.target_node_id === node.id);
+    if (!parentEdge) return null;
+    return nodes.find(n => n.id === parentEdge.source_node_id);
+  }, [node, edges, nodes]);
+
+  const childNodes = React.useMemo(() => {
+    if (!node || !edges || !nodes) return [];
+    const childEdges = edges.filter(e => e.source_node_id === node.id);
+    const childIds = childEdges.map(e => e.target_node_id);
+    return nodes.filter(n => childIds.includes(n.id));
+  }, [node, edges, nodes]);
+
 
   return (
     <div className="h-full flex flex-col">
@@ -91,25 +121,30 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
 
       <div className="flex-1 space-y-6 overflow-y-auto pr-1">
         <section>
-          <h1 className="text-xl font-bold text-gray-900 leading-tight mb-2">{node.title}</h1>
-          <div className="flex items-center space-x-2">
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border`} style={{ 
-              borderColor: colors.primary,
-              color: colors.text,
-              backgroundColor: colors.background
-            }}>
-              {levelLabels[getLevel(node, edges)] || '未知层级'}
-            </span>
-            {isMastered && (
-              <span className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-                <Check size={12} className="mr-1" /> 已掌握
-              </span>
-            )}
-            {isLocked && (
-              <span className="flex items-center text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                <Lock size={12} className="mr-1" /> 未解锁
-              </span>
-            )}
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-3">{node.title}</h1>
+          
+          {/* Metadata Row */}
+          <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-4">
+            <div className="flex items-center bg-gray-50 px-2 py-1 rounded">
+              <Activity size={14} className="mr-1.5 text-blue-500" />
+              <span>{levelLabels[getLevel(node, edges)] || '普通节点'}</span>
+            </div>
+            
+            <div className="flex items-center bg-gray-50 px-2 py-1 rounded">
+              <Calendar size={14} className="mr-1.5 text-gray-400" />
+              <span>{node.created_at ? new Date(node.created_at).toLocaleDateString() : '未知日期'}</span>
+            </div>
+
+            {isMastered ? (
+                <div className="flex items-center bg-green-50 text-green-700 px-2 py-1 rounded border border-green-100">
+                  <Check size={14} className="mr-1" /> 已掌握
+                </div>
+              ) : (
+                 <div className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                   <div className={`w-2 h-2 rounded-full mr-1.5`} style={{ backgroundColor: colors.primary }} />
+                   {status === 'new' ? '未开始' : '学习中'}
+                 </div>
+              )}
           </div>
         </section>
 
@@ -118,6 +153,14 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             remarkPlugins={[remarkGfm, remarkMath]} 
             rehypePlugins={[rehypeKatex]}
             components={{
+              code(props) {
+                const {children, className, node, ...rest} = props
+                const match = /language-(\w+)/.exec(className || '')
+                if (match && match[1] === 'mermaid') {
+                  return <Mermaid chart={String(children).replace(/\n$/, '')} />
+                }
+                return <code {...rest} className={className}>{children}</code>
+              },
               img: ({node, ...props}) => <img {...props} className="rounded-lg max-w-full h-auto" loading="lazy" />,
               a: ({node, ...props}) => {
                 const { href, children } = props;
@@ -132,6 +175,15 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             {preprocessMarkdown(node.content || '*暂无内容*')}
           </ReactMarkdown>
         </section>
+
+        {/* Quick AI Generate Content Action */}
+        <button 
+          onClick={onGenerateNodeContent}
+          className="w-full flex items-center justify-center p-2.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-100 transition-colors text-sm font-bold"
+        >
+          <Wand2 size={16} className="mr-2" />
+          生成/补充节点内容
+        </button>
 
         {/* Learning Actions */}
         <section className="grid grid-cols-2 gap-3">
@@ -172,17 +224,67 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           <p className="text-xs text-purple-700 mb-4 leading-relaxed">
             使用 AI 分析当前节点，发现潜在的关联知识点或生成深度思考问题。
           </p>
-          <div className="flex space-x-2">
-            <button className="flex-1 bg-white text-purple-700 text-xs font-bold py-2 rounded-lg border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors">
+          <div className="grid grid-cols-2 gap-2">
+            <button 
+              onClick={onDeepAnalysis}
+              className="bg-white text-purple-700 text-xs font-bold py-2 rounded-lg border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors"
+            >
               深度解析
             </button>
-            <button className="flex-1 bg-white text-purple-700 text-xs font-bold py-2 rounded-lg border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors">
+            <button 
+              onClick={onGenerateQuiz}
+              className="bg-white text-purple-700 text-xs font-bold py-2 rounded-lg border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors"
+            >
               生成测验
             </button>
-            <button className="flex-1 bg-white text-purple-700 text-xs font-bold py-2 rounded-lg border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors">
+            <button 
+              onClick={onBackgroundGenerate}
+              className="bg-white text-purple-700 text-xs font-bold py-2 rounded-lg border border-purple-200 shadow-sm hover:bg-purple-50 transition-colors"
+            >
               后台生成
             </button>
           </div>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="space-y-4 pt-2 border-t border-gray-100">
+           {/* Parent */}
+           {parentNode && (
+             <div>
+               <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
+                 <LinkIcon size={10} className="mr-1" /> 上一级 (Parent)
+               </div>
+               <button 
+                 onClick={() => onRelatedNodeClick(parentNode)}
+                 className="w-full text-left p-2.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm text-gray-700 font-medium flex items-center transition-colors border border-gray-100 hover:border-blue-200 hover:text-blue-700"
+               >
+                 <ArrowLeft size={14} className="mr-2 text-gray-400" />
+                 {parentNode.title}
+               </button>
+             </div>
+           )}
+
+           {/* Children */}
+           {childNodes.length > 0 && (
+             <div>
+               <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
+                 <LinkIcon size={10} className="mr-1" /> 下一级 (Children)
+               </div>
+               <div className="flex flex-col gap-1.5">
+                 {childNodes.map(child => (
+                   <button 
+                     key={child.id} 
+                     onClick={() => onRelatedNodeClick(child)}
+                     className="w-full text-left p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm text-gray-700 flex items-center transition-colors group border border-transparent hover:border-gray-200"
+                   >
+                     <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2 group-hover:scale-125 transition-transform" />
+                     <span className="truncate">{child.title}</span>
+                     <ChevronRight size={14} className="ml-auto text-gray-300 group-hover:text-gray-500" />
+                   </button>
+                 ))}
+               </div>
+             </div>
+           )}
         </div>
         
         {/* Related Nodes Section */}

@@ -20,6 +20,7 @@ interface UseGraphAIOperationsProps {
     createTaskMutation: any;
     createNodeMutation: any;
     createEdgeMutation: any;
+    updateNodeMutation: any;
     recommendConnectionsMutation: any;
   };
   record: (action: HistoryAction) => void;
@@ -51,7 +52,8 @@ export const useGraphAIOperations = ({
     createCardsBatchMutation,
     createTaskMutation,
     createNodeMutation,
-    createEdgeMutation
+    createEdgeMutation,
+    updateNodeMutation
   } = mutations;
 
   const getNextLevel = (parentLevel: string): NodeLevel => {
@@ -274,7 +276,7 @@ export const useGraphAIOperations = ({
     }
   };
 
-  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions') => {
+  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis') => {
     // If it's a batch generate success notification, just show the message
     if (type === 'batch_generate_questions') {
       addMessage({
@@ -538,6 +540,48 @@ export const useGraphAIOperations = ({
     }
   };
 
+  const handleGenerateNodeContent = async () => {
+    if (!selectedNode || !id) return;
+    setLoading(true);
+    addMessage({ content: 'AI 内容生成任务已开始...', type: 'info' });
+    
+    try {
+      let prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用`;
+      
+      let generatedContent = '';
+      
+      await api.ai.generateContentStream(
+        { 
+          topic: selectedNode.title, 
+          context: prompt,
+          level: selectedNode.level
+        },
+        (chunk) => {
+          generatedContent += chunk;
+        }
+      );
+
+      if (generatedContent) {
+        await updateNodeMutation.mutateAsync({
+            id: selectedNode.id,
+            graphId: id,
+            data: { content: generatedContent }
+        });
+        
+        // Update local state if needed, though react-query should handle it
+        addMessage({ content: 'AI 内容生成完成', type: 'success' });
+        
+        // Invalidate queries to ensure UI updates
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
+      }
+    } catch (err) {
+      console.error(err);
+      addMessage({ content: 'AI 生成失败', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     handleAIGenerate,
     handleAIExpand,
@@ -548,6 +592,7 @@ export const useGraphAIOperations = ({
     handleFetchRelatedNodes,
     handleGetBranchSuggestions,
     handleCreateBranch,
-    handleSwitchBranch
+    handleSwitchBranch,
+    handleGenerateNodeContent
   };
 };

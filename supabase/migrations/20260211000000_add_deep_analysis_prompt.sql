@@ -13,4 +13,5 @@ Please provide a structured analysis including:
 4. Cross-disciplinary Connections
 5. Current Research Trends (if applicable)
 
-Format your response in Markdown.');
+Format your response in Markdown.
+IMPORTANT: Directly output the analysis content. Do NOT include any conversational filler (e.g., "Okay", "Here is the analysis", "As an expert...").');

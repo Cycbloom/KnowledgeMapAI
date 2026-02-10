@@ -152,6 +152,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           <ReactMarkdown 
             remarkPlugins={[remarkGfm, remarkMath]} 
             rehypePlugins={[rehypeKatex]}
+            urlTransform={(url) => url} // Disable default URL validation to ensure 'term:' protocol is preserved
             components={{
               code(props) {
                 const {children, className, node, ...rest} = props
@@ -164,9 +165,12 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               img: ({node, ...props}) => <img {...props} className="rounded-lg max-w-full h-auto" loading="lazy" />,
               a: ({node, ...props}) => {
                 const { href, children } = props;
-                if (href && href.startsWith('term:')) {
-                    const explanation = href.replace('term:', '');
-                    return <TermTooltip term={String(children)} explanation={decodeURIComponent(explanation)} />;
+                // Decode and trim to handle potential encoding or spacing issues
+                const cleanHref = href ? decodeURIComponent(href).trim() : '';
+                
+                if (cleanHref.startsWith('term:')) {
+                    const explanation = cleanHref.substring(5); // Remove 'term:' (length 5)
+                    return <TermTooltip term={String(children)} explanation={explanation} />;
                 }
                 return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;
               }

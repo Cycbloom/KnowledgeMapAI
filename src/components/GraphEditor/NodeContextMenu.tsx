@@ -50,6 +50,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
   const handleAnnotateTerms = async () => {
     if (!nodeContent) return;
     setAnnotating(true);
+    addMessage({ content: '正在进行术语标注...', type: 'info' });
     try {
         const res = await api.ai.annotateTerms({
             node_id: nodeId,

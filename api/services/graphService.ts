@@ -164,6 +164,38 @@ export class GraphService {
     await cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
   }
 
+  async updateNode(supabase: SupabaseClient, userId: string, graphId: string, nodeId: string, updates: any) {
+    // Verify access to the graph
+    const { data: graph } = await supabase
+      .from('knowledge_graphs')
+      .select('id, user_id, is_public')
+      .eq('id', graphId)
+      .is('deleted_at', null)
+      .single();
+
+    if (!graph) throw new Error('Graph not found');
+    if (!graph.is_public && graph.user_id !== userId) {
+      throw new Error('Access denied');
+    }
+
+    // Update the node
+    const { data, error } = await supabase
+      .from('nodes')
+      .update(updates)
+      .eq('id', nodeId)
+      .eq('graph_id', graphId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Invalidate cache
+    await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
+    await cacheService.del(CacheKeys.GRAPH_NODES('public', graphId));
+
+    return data;
+  }
+
   async getGraphNodes(supabase: SupabaseClient, userId: string | null, graphId: string) {
     // userId can be null for public graphs
     // Use a composite cache key that handles null userId (e.g. "public")

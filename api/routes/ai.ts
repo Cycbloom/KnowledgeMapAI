@@ -57,6 +57,123 @@ router.get('/status', requireAuth, async (req: AuthRequest, res: Response) => {
   });
 });
 
+// Annotate terms in text
+router.post('/annotate-terms', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { node_content, graph_id, node_id } = req.body;
+  const provider = await getAIProviderForTask('text');
+
+  if (!provider.hasKey) {
+    throw new AppError('AI provider not configured', 503, ErrorCodes.INTERNAL_ERROR);
+  }
+
+  try {
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      'annotate_terms',
+      { nodeContent: node_content },
+      req.user.id,
+      graph_id
+    );
+
+    // If no template found, use default logic
+    // We now ask for JSON format to handle text replacement safely in backend
+    const prompt = systemPrompt || `请分析以下内容，识别其中的专业术语。对于每个术语，提供一个简短的解释（不超过20字）。
+请返回一个 JSON 格式的数组，包含对象 { "term": "术语", "explanation": "解释" }。
+
+内容：
+${node_content}`;
+
+    const completion = await provider.client.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: "你是一个专业的学术编辑。请仅返回 JSON 格式的数据。不要包含 markdown 代码块标记。"
+        },
+        { role: "user", content: prompt }
+      ],
+      model: provider.model,
+      response_format: { type: "json_object" }
+    });
+
+    const content = completion.choices[0].message.content || '{}';
+    let terms: { term: string, explanation: string }[] = [];
+    
+    try {
+        const parsed = JSON.parse(content);
+        // Handle various possible JSON structures (array directly, or object with key)
+        if (Array.isArray(parsed)) {
+            terms = parsed;
+        } else if (parsed.terms && Array.isArray(parsed.terms)) {
+            terms = parsed.terms;
+        } else {
+            // Try to find any array in values
+            const values = Object.values(parsed);
+            const arrayVal = values.find(v => Array.isArray(v));
+            if (arrayVal) terms = arrayVal as any;
+        }
+    } catch (e) {
+        logger.error('Failed to parse annotation terms JSON', { content, error: e });
+    }
+
+    // Backend text replacement logic
+    let annotatedContent = node_content || '';
+    
+    if (terms.length > 0) {
+        const placeholders: string[] = [];
+        
+        // 1. Mask code blocks (```...``` and `...`) to protect them
+        annotatedContent = annotatedContent.replace(/```[\s\S]*?```|`[^`]*`/g, (match) => {
+            placeholders.push(match);
+            return `__CODE_BLOCK_${placeholders.length - 1}__`;
+        });
+
+        // 2. Replace terms (only first occurrence per term to avoid clutter)
+        terms.forEach(({ term, explanation }) => {
+            if (!term || !explanation) return;
+            
+            // Escape term for regex
+            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // Match the term only if it's NOT already part of a markdown link [term](...)
+            // and try to match whole words if possible (though challenging for mixed languages)
+            // We use a simplified lookahead to avoid replacing inside existing links
+            
+            // Check if term exists
+            const index = annotatedContent.indexOf(term);
+            if (index !== -1) {
+                 // Simple string replacement for the first occurrence
+                 // We need to be careful not to replace if it's inside a placeholder (already handled by masking)
+                 // or inside an existing markdown link structure.
+                 
+                 // Regex: Match term, ensuring it's not preceded by '[' (start of link) 
+                 // and not followed by '](term:' (end of link description)
+                 const regex = new RegExp(`(?<!\\[)${escapedTerm}(?!\\]\\(term:)`);
+                 
+                 annotatedContent = annotatedContent.replace(regex, `[${term}](term:${explanation})`);
+            }
+        });
+
+        // 3. Unmask code blocks
+        placeholders.forEach((code, i) => {
+            annotatedContent = annotatedContent.replace(`__CODE_BLOCK_${i}__`, () => code);
+        });
+    }
+
+    // Update the node content directly
+    if (node_id && annotatedContent !== node_content) {
+        await graphService.updateNode(req.supabase!, req.user.id, graph_id, node_id, {
+            content: annotatedContent
+        });
+    }
+
+    res.json({ content: annotatedContent });
+
+  } catch (error: any) {
+    logger.error('Annotate Terms Error:', error);
+    res.status(500).json({ error: error.message || 'Annotation failed' });
+  }
+});
+
 router.post('/generate-content', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
   const { topic, context, provider: providerType, model, graph_id, level } = req.body;
   const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');

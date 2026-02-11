@@ -54,6 +54,7 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
   cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+  cacheService.del(CacheKeys.LEARNING_PATH(graph_id));
   
   res.status(201).json(data);
 });
@@ -109,6 +110,7 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, data.graph_id));
   cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
+  cacheService.del(CacheKeys.LEARNING_PATH(data.graph_id));
   
   res.json(data);
 });
@@ -198,6 +200,7 @@ router.delete('/nodes/:id', requireAuth, validate({ params: uuidParamsSchema }),
   // Invalidate cache
   await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, data.graph_id));
   await cacheService.del(CacheKeys.STUDY_CARDS(data.graph_id));
+  await cacheService.del(CacheKeys.LEARNING_PATH(data.graph_id));
 
   res.json({ message: '节点已删除' });
 });
@@ -233,6 +236,7 @@ router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Re
   for (const gid of graphIds) {
     await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, gid));
     await cacheService.del(CacheKeys.STUDY_CARDS(gid));
+    await cacheService.del(CacheKeys.LEARNING_PATH(gid));
   }
   await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
 
@@ -286,6 +290,7 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
   
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, sourceNode.graph_id));
+  cacheService.del(CacheKeys.LEARNING_PATH(sourceNode.graph_id));
   
   res.status(201).json(data);
 });
@@ -317,6 +322,7 @@ router.delete('/edges/:id', requireAuth, validate({ params: uuidParamsSchema }),
   const graphId = edge.graph_id;
   if (graphId) {
     cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graphId));
+    cacheService.del(CacheKeys.LEARNING_PATH(graphId));
   }
   
   res.json({ message: 'Edge deleted' });

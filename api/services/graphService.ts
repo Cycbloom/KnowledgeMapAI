@@ -124,6 +124,7 @@ export class GraphService {
     // Let's clear it.
     await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
     await cacheService.del(CacheKeys.GRAPH_NODES('public', id));
+    await cacheService.del(CacheKeys.LEARNING_PATH(id));
   }
 
   async restoreGraph(supabase: SupabaseClient, userId: string, id: string) {
@@ -137,6 +138,7 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
+    await cacheService.del(CacheKeys.LEARNING_PATH(id));
   }
 
   async permanentDeleteGraph(supabase: SupabaseClient, userId: string, id: string) {
@@ -152,6 +154,7 @@ export class GraphService {
     await cacheService.del(CacheKeys.GRAPH(id));
     await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
     await cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
+    await cacheService.del(CacheKeys.LEARNING_PATH(id));
   }
 
   async updateNode(supabase: SupabaseClient, userId: string, graphId: string, nodeId: string, updates: any) {
@@ -182,6 +185,7 @@ export class GraphService {
     // Invalidate cache
     await cacheService.del(CacheKeys.GRAPH_NODES(userId, graphId));
     await cacheService.del(CacheKeys.GRAPH_NODES('public', graphId));
+    await cacheService.del(CacheKeys.LEARNING_PATH(graphId));
 
     return data;
   }
@@ -208,69 +212,91 @@ export class GraphService {
         throw new Error('Access denied');
       }
 
-      // Fetch nodes with pagination
-      // Note: Supabase/PostgREST has a default limit of 1000 rows per query
-      // We need to fetch in batches to handle large graphs
-      const batchSize = 1000;
-      let allNodes: any[] = [];
-      let offset = 0;
-      let hasMore = true;
+      // Fetch nodes and edges in parallel
+      const fetchNodes = async () => {
+        const batchSize = 1000;
+        let allNodes: any[] = [];
+        let offset = 0;
+        let hasMore = true;
 
-      while (hasMore) {
-        const { data: nodes, error: nodesError } = await supabase
-          .from('nodes')
-          .select('*')
-          .eq('graph_id', graphId)
-          .is('deleted_at', null)
-          .range(offset, offset + batchSize - 1);
+        while (hasMore) {
+          const { data: nodes, error: nodesError } = await supabase
+            .from('nodes')
+            .select('*')
+            .eq('graph_id', graphId)
+            .is('deleted_at', null)
+            .range(offset, offset + batchSize - 1);
 
-        if (nodesError) throw nodesError;
+          if (nodesError) throw nodesError;
 
-        if (nodes && nodes.length > 0) {
-          allNodes = allNodes.concat(nodes);
-          offset += nodes.length;
-          hasMore = nodes.length === batchSize;
-        } else {
-          hasMore = false;
+          if (nodes && nodes.length > 0) {
+            allNodes = allNodes.concat(nodes);
+            offset += nodes.length;
+            hasMore = nodes.length === batchSize;
+          } else {
+            hasMore = false;
+          }
         }
-      }
+        return allNodes;
+      };
 
-      console.log(`[GraphService] Graph ${graphId}: Fetched ${allNodes.length} nodes`);
+      const fetchEdges = async () => {
+        const batchSize = 1000;
+        let allEdges: any[] = [];
+        let offset = 0;
+        let hasMore = true;
 
-      // Fetch edges with pagination
-      // Note: Supabase/PostgREST has a default limit of 1000 rows per query
-      // We need to fetch in batches to handle large graphs
-      let allEdges: any[] = [];
-      offset = 0;
-      hasMore = true;
+        while (hasMore) {
+          const { data: edges, error: edgesError } = await supabase
+            .from('edges')
+            .select('*')
+            .eq('graph_id', graphId)
+            .is('deleted_at', null)
+            .range(offset, offset + batchSize - 1);
 
-      while (hasMore) {
-        const { data: edges, error: edgesError } = await supabase
-          .from('edges')
-          .select('*')
-          .eq('graph_id', graphId)
-          .is('deleted_at', null)
-          .range(offset, offset + batchSize - 1);
+          if (edgesError) throw edgesError;
 
-        if (edgesError) throw edgesError;
-
-        if (edges && edges.length > 0) {
-          allEdges = allEdges.concat(edges);
-          offset += edges.length;
-          hasMore = edges.length === batchSize;
-        } else {
-          hasMore = false;
+          if (edges && edges.length > 0) {
+            allEdges = allEdges.concat(edges);
+            offset += edges.length;
+            hasMore = edges.length === batchSize;
+          } else {
+            hasMore = false;
+          }
         }
-      }
+        return allEdges;
+      };
 
-      console.log(`[GraphService] Graph ${graphId}: Fetched ${allEdges.length} edges`);
+      const [allNodes, allEdges] = await Promise.all([fetchNodes(), fetchEdges()]);
+
+      console.log(`[GraphService] Graph ${graphId}: Fetched ${allNodes.length} nodes, ${allEdges.length} edges`);
 
       return { nodes: allNodes, edges: allEdges };
     });
   }
 
   async getLearningPath(supabase: SupabaseClient, userId: string | null, graphId: string) {
-    // 1. Get graph nodes and edges
+    // 1. Check Cache
+    const cacheKey = CacheKeys.LEARNING_PATH(graphId);
+    const cached = await cacheService.get<string[]>(cacheKey);
+
+    if (cached) {
+      // Verify access quickly
+      const { data: graph, error } = await supabase
+        .from('knowledge_graphs')
+        .select('id, user_id, is_public')
+        .eq('id', graphId)
+        .is('deleted_at', null)
+        .single();
+        
+      if (error || !graph) throw new Error('Graph not found');
+      if (!graph.is_public && (!userId || graph.user_id !== userId)) {
+        throw new Error('Access denied');
+      }
+      return cached;
+    }
+
+    // 2. Get graph nodes and edges
     const { nodes, edges } = await this.getGraphNodes(supabase, userId, graphId);
 
     // 2. Identify Root nodes (in-degree 0) or explicitly level='root'
@@ -412,7 +438,12 @@ export class GraphService {
     }
 
     // Return ordered node objects
-    return result.map(id => nodeMap.get(id));
+    const path = result.map(id => nodeMap.get(id));
+
+    // Set Cache
+    await cacheService.set(cacheKey, path);
+
+    return path;
   }
 
   async getGraphNodeStatus(supabase: SupabaseClient, userId: string | null, graphId: string) {

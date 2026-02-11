@@ -112,6 +112,12 @@ export const GraphEditor = () => {
 
     const dfs = (nodeId: string) => {
       if (visited.has(nodeId)) return;
+      
+      const node = nodes.find(n => n.id === nodeId);
+      // Visibility check based on mode
+      if (!node) return;
+      if (!state.isExplorationMode && node.is_accepted === false) return;
+
       visited.add(nodeId);
       path.push(nodeId);
       
@@ -124,7 +130,7 @@ export const GraphEditor = () => {
 
     if (root) dfs(root.id);
     return path;
-  }, [nodes, edges]);
+  }, [nodes, edges, state.isExplorationMode]);
 
   // Sync focused node when step changes
   React.useEffect(() => {
@@ -133,10 +139,20 @@ export const GraphEditor = () => {
       if (nodeId) {
         setFocusedNodeId(nodeId);
         const node = nodes.find(n => n.id === nodeId);
-        if (node) setSelectedNode(node);
+        if (node) {
+          setSelectedNode(node);
+          // Sync sidebar selection
+          setSelectedNodeIds(new Set([nodeId]));
+          
+          // Calculate and sync focused nodes/links for highlighting
+          const focusedNodes = getFocusedNodes(nodeId, nodes, edges);
+          setFocusedNodeIds(focusedNodes);
+          const focusedLinks = getFocusedLinks(focusedNodes, edges);
+          setFocusedLinkIds(focusedLinks);
+        }
       }
     }
-  }, [state.isPresentationMode, state.presentationStep, presentationPath, nodes, setFocusedNodeId, setSelectedNode]);
+  }, [state.isPresentationMode, state.presentationStep, presentationPath, nodes, edges, setFocusedNodeId, setSelectedNode, setSelectedNodeIds, setFocusedNodeIds, setFocusedLinkIds]);
 
   // Mutations Hook
   const mutations = useGraphMutations();
@@ -576,6 +592,10 @@ export const GraphEditor = () => {
         onTogglePresentation={() => {
           if (state.isPresentationMode) {
             state.setIsPresentationMode(false);
+            // Reset focus state when exiting presentation mode
+            state.setFocusedNodeId(null);
+            state.setFocusedNodeIds(new Set());
+            state.setFocusedLinkIds(new Set());
           } else {
             state.setIsPresentationMode(true);
             state.setPresentationStep(0);
@@ -589,7 +609,13 @@ export const GraphEditor = () => {
           totalSteps={presentationPath.length}
           onNext={() => state.setPresentationStep(p => Math.min(p + 1, presentationPath.length - 1))}
           onPrev={() => state.setPresentationStep(p => Math.max(p - 1, 0))}
-          onExit={() => state.setIsPresentationMode(false)}
+          onExit={() => {
+            state.setIsPresentationMode(false);
+            // Reset focus state when exiting presentation mode
+            state.setFocusedNodeId(null);
+            state.setFocusedNodeIds(new Set());
+            state.setFocusedLinkIds(new Set());
+          }}
         />
       )}
 

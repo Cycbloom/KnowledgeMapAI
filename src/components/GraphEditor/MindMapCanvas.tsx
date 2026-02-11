@@ -109,6 +109,60 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
     }
   }, []);
 
+  // Animation Frame Reference
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Smooth Camera Animation
+  const animateCamera = useCallback((targetX: number, targetY: number, targetK: number, duration: number = 500) => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    const startX = transformRef.current.x;
+    const startY = transformRef.current.y;
+    const startK = transformRef.current.k;
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease-in-out cubic function
+      const ease = progress < 0.5 
+        ? 4 * progress * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      const newX = startX + (targetX - startX) * ease;
+      const newY = startY + (targetY - startY) * ease;
+      const newK = startK + (targetK - startK) * ease;
+
+      const newTransform = { x: newX, y: newY, k: newK };
+      
+      transformRef.current = newTransform;
+      updateTransformDOM(newTransform);
+      
+      // Update React state at the end or intermittently if needed, 
+      // but usually only at end to avoid re-renders
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        updateTransformState(newTransform);
+        animationFrameRef.current = null;
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, [updateTransformDOM, updateTransformState]);
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
   // Sync ref and DOM when state changes (e.g. initial load or external reset)
   useMemo(() => {
     // Only update ref if state is significantly different (avoid loops)
@@ -294,6 +348,21 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
     updateTransformDOM(newTransform);
     updateTransformState(newTransform);
   }, [updateTransformDOM, updateTransformState]);
+
+  // Focus on node when focusedNodeId changes
+  useEffect(() => {
+    if (focusedNodeId && layout) {
+      const node = layout.nodes.find(n => n.id === focusedNodeId);
+      if (node) {
+        const targetK = 1.2; 
+        const targetX = (width / 2) - node.x * targetK;
+        const targetY = (height / 2) - node.y * targetK;
+
+        // Use smooth animation instead of instant jump
+        animateCamera(targetX, targetY, targetK, 800);
+      }
+    }
+  }, [focusedNodeId, layout, width, height, animateCamera]);
 
   if (!layout) {
     return (

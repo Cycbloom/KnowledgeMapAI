@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode } from '../../types';
@@ -87,6 +87,9 @@ interface GraphToolbarProps {
   onOpenHelp?: () => void;
   onShare?: () => void;
   onOpenAnalysis?: () => void;
+  
+  // Presentation
+  onTogglePresentation?: () => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -100,7 +103,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme, setColorScheme, linkStyle, setLinkStyle, linkAnimation, setLinkAnimation,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare,
   isExplorationMode, setIsExplorationMode, isTimelineVisible, setIsTimelineVisible,
-  isTutorMode, onToggleTutorMode, onOpenAnalysis
+  isTutorMode, onToggleTutorMode, onOpenAnalysis,
+  onTogglePresentation
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -622,6 +626,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={() => setIsExplorationMode(!isExplorationMode)} icon={GitBranch} label={isExplorationMode ? "退出探索模式" : "探索分支模式"} active={isExplorationMode} colorClass="text-purple-600" />
         <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? "隐藏时间轴" : "显示时间轴"} active={isTimelineVisible} colorClass="text-blue-500" />
+        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        <MenuItem onClick={onTogglePresentation} icon={MonitorPlay} label="演示播放" colorClass="text-orange-500" disabled={!onTogglePresentation} />
       </DropdownButton>
 
       {/* AI Status Badge */}

@@ -160,6 +160,12 @@ export interface GraphEditorState {
   setIsTutorMode: React.Dispatch<React.SetStateAction<boolean>>;
   suggestedNextTopics: Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>;
   setSuggestedNextTopics: React.Dispatch<React.SetStateAction<Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>>>;
+
+  // Presentation Mode
+  isPresentationMode: boolean;
+  setIsPresentationMode: React.Dispatch<React.SetStateAction<boolean>>;
+  presentationStep: number;
+  setPresentationStep: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const useGraphEditorState = (): GraphEditorState => {
@@ -226,6 +232,11 @@ export const useGraphEditorState = (): GraphEditorState => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
+
+  // Presentation Mode
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [presentationStep, setPresentationStep] = useState(0);
+
   const [isExportPDFOpen, setIsExportPDFOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -297,6 +308,11 @@ export const useGraphEditorState = (): GraphEditorState => {
     isChatOpen, setIsChatOpen,
     isExportMenuOpen, setIsExportMenuOpen,
     isExportImageModalOpen, setIsExportImageModalOpen,
+    
+    // Presentation Mode
+    isPresentationMode, setIsPresentationMode,
+    presentationStep, setPresentationStep,
+
     isExportPDFOpen, setIsExportPDFOpen,
     isShareModalOpen, setIsShareModalOpen,
     isHelpOpen, setIsHelpOpen,

@@ -41,6 +41,7 @@ import { HierarchyView } from '../components/GraphEditor/views/HierarchyView';
 import { TimelineView } from '../components/GraphEditor/views/TimelineView';
 import { TreeView } from '../components/GraphEditor/views/TreeView';
 import { ViewModeSelector } from '../components/GraphEditor/ViewModeSelector';
+import { PresentationControls } from '../components/GraphEditor/PresentationControls';
 import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
 import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
 import { api, AIAction } from '../services/api';
@@ -99,6 +100,43 @@ export const GraphEditor = () => {
     historicalAlternativeBranches, setHistoricalAlternativeBranches,
     isAnalysisPanelOpen, setIsAnalysisPanelOpen
   } = state;
+
+  // Presentation Mode Logic
+  const presentationPath = useMemo(() => {
+    if (!nodes || nodes.length === 0) return [];
+    
+    // Simple DFS
+    const root = nodes.find(n => n.level === 'root') || nodes[0];
+    const path: string[] = [];
+    const visited = new Set<string>();
+
+    const dfs = (nodeId: string) => {
+      if (visited.has(nodeId)) return;
+      visited.add(nodeId);
+      path.push(nodeId);
+      
+      const children = edges
+        .filter(e => e.source_node_id === nodeId)
+        .map(e => e.target_node_id);
+      
+      children.forEach(childId => dfs(childId));
+    };
+
+    if (root) dfs(root.id);
+    return path;
+  }, [nodes, edges]);
+
+  // Sync focused node when step changes
+  React.useEffect(() => {
+    if (state.isPresentationMode && presentationPath.length > 0) {
+      const nodeId = presentationPath[state.presentationStep];
+      if (nodeId) {
+        setFocusedNodeId(nodeId);
+        const node = nodes.find(n => n.id === nodeId);
+        if (node) setSelectedNode(node);
+      }
+    }
+  }, [state.isPresentationMode, state.presentationStep, presentationPath, nodes, setFocusedNodeId, setSelectedNode]);
 
   // Mutations Hook
   const mutations = useGraphMutations();
@@ -535,7 +573,25 @@ export const GraphEditor = () => {
         setIsExplorationMode={setIsExplorationMode}
         isTimelineVisible={isTimelineVisible}
         setIsTimelineVisible={setIsTimelineVisible}
+        onTogglePresentation={() => {
+          if (state.isPresentationMode) {
+            state.setIsPresentationMode(false);
+          } else {
+            state.setIsPresentationMode(true);
+            state.setPresentationStep(0);
+          }
+        }}
       />
+
+      {state.isPresentationMode && (
+        <PresentationControls
+          currentStep={state.presentationStep}
+          totalSteps={presentationPath.length}
+          onNext={() => state.setPresentationStep(p => Math.min(p + 1, presentationPath.length - 1))}
+          onPrev={() => state.setPresentationStep(p => Math.max(p - 1, 0))}
+          onExit={() => state.setIsPresentationMode(false)}
+        />
+      )}
 
       {isTimelineVisible && isExplorationMode && (
         <ExplorationTimeline

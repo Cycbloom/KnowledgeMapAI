@@ -14,9 +14,9 @@ import dotenv from 'dotenv'
 import helmet from 'helmet'
 import compression from 'compression'
 import rateLimit from 'express-rate-limit'
-import Redis from 'ioredis'
 import { RedisStore } from 'rate-limit-redis'
 import { fileURLToPath } from 'url'
+import redisClient from './utils/redis.js'
 import authRoutes from './routes/auth.js'
 import graphRoutes from './routes/graphs.js'
 import nodeRoutes from './routes/nodes.js'
@@ -49,13 +49,21 @@ const app: express.Application = express()
 app.use(helmet())
 
 // Gzip Compression
-app.use(compression())
+app.use(compression({
+  level: 6, // Balanced setting
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      // don't compress responses with this request header
+      return false
+    }
+    // fallback to standard filter function
+    return compression.filter(req, res)
+  }
+}))
 
-// Redis Client for Rate Limiting
-const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : undefined;
-if (redisClient) {
-  redisClient.on('error', (err) => logger.error('Redis Client Error (Rate Limit):', err));
-}
+// Trust Proxy (Required for correct IP rate limiting behind proxies like Vercel/Nginx)
+app.set('trust proxy', 1);
 
 // Rate Limiting
 const limiter = rateLimit({

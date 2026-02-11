@@ -1,0 +1,143 @@
+export interface ParsedGraph {
+  graph_title: string;
+  nodes: any[];
+  edges: any[];
+}
+
+export const parseMarkdownToGraph = (text: string): ParsedGraph => {
+  const lines = text.split('\n');
+  const nodes: any[] = [];
+  const edges: any[] = [];
+  
+  // Stack to keep track of the current parent at each level
+  // index 0 = H1 parent, index 1 = H2 parent, etc.
+  const parentStack: (string | null)[] = new Array(7).fill(null);
+  
+  // Store potential links to resolve after all nodes are created
+  const potentialLinks: { sourceId: string; targetTitle: string }[] = [];
+  
+  let currentNode: any = null;
+  let graphTitle = 'Untitled Graph';
+  let firstHeaderFound = false;
+
+  // Helper to determine color based on level
+  const getLevelInfo = (depth: number) => {
+    switch (depth) {
+      case 1: return { level: 'root', color: '#8B5CF6' };   // Purple
+      case 2: return { level: 'core', color: '#EF4444' };   // Red
+      case 3: return { level: 'sub', color: '#F59E0B' };    // Orange
+      case 4: return { level: 'normal', color: '#3B82F6' }; // Blue
+      default: return { level: 'leaf', color: '#10B981' };  // Green
+    }
+  };
+
+  lines.forEach((line, index) => {
+    // Check for headers
+    const headerMatch = line.match(/^(#{1,6})\s+(.*)/);
+    
+    if (headerMatch) {
+      const depth = headerMatch[1].length;
+      const title = headerMatch[2].trim();
+      const nodeId = `md-node-${nodes.length + 1}`;
+      
+      // If this is the first H1, use it as graph title
+      if (depth === 1 && !firstHeaderFound) {
+        graphTitle = title;
+        firstHeaderFound = true;
+      }
+
+      const { level, color } = getLevelInfo(depth);
+
+      // Create new node
+      currentNode = {
+        id: nodeId,
+        title: title,
+        content: '', // Will accumulate content
+        level,
+        color,
+        x_position: Math.round((Math.random() - 0.5) * 100), // Random init pos
+        y_position: Math.round((Math.random() - 0.5) * 100),
+      };
+      nodes.push(currentNode);
+
+      // Create edge from parent (if exists)
+      // Parent is the last node seen at depth - 1
+      const parentId = parentStack[depth - 1];
+      if (parentId) {
+        edges.push({
+          source: parentId,
+          target: nodeId,
+          relationship: 'contains'
+        });
+      }
+
+      // Update stack: this node becomes the parent for the next level (depth + 1)
+      // Also clear any deeper levels in the stack because we've started a new branch
+      parentStack[depth] = nodeId;
+      for (let i = depth + 1; i < parentStack.length; i++) {
+        parentStack[i] = null;
+      }
+
+    } else if (currentNode) {
+      // Append non-header lines to current node's content
+      const trimmedLine = line.trim();
+      if (trimmedLine) {
+        currentNode.content = currentNode.content 
+          ? currentNode.content + '\n' + trimmedLine 
+          : trimmedLine;
+      }
+    }
+
+    // Extract Obsidian-style links: [[Target Node Title]]
+    if (currentNode) {
+      const linkRegex = /\[\[(.*?)\]\]/g;
+      let match;
+      while ((match = linkRegex.exec(line)) !== null) {
+        potentialLinks.push({
+          sourceId: currentNode.id,
+          targetTitle: match[1].trim()
+        });
+      }
+    }
+  });
+
+  // If no headers found, treat entire text as one root node
+  if (nodes.length === 0 && text.trim()) {
+    const title = text.split('\n')[0].substring(0, 20) || 'Untitled';
+    const nodeId = 'md-node-1';
+    nodes.push({
+      id: nodeId,
+      title: title,
+      content: text,
+      level: 'root',
+      color: '#8B5CF6'
+    });
+    graphTitle = title;
+  }
+
+  // Resolve collected links
+  potentialLinks.forEach(link => {
+    const targetNode = nodes.find(n => n.title.toLowerCase() === link.targetTitle.toLowerCase());
+    
+    if (targetNode && targetNode.id !== link.sourceId) {
+      const exists = edges.some(e => 
+        (e.source === link.sourceId && e.target === targetNode.id) ||
+        (e.source === targetNode.id && e.target === link.sourceId)
+      );
+      
+      if (!exists) {
+        edges.push({
+          source: link.sourceId,
+          target: targetNode.id,
+          relationship: 'relates_to'
+        });
+      }
+    }
+  });
+
+  return {
+    graph_title: graphTitle,
+    nodes,
+    edges
+  };
+};

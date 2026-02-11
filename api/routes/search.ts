@@ -50,11 +50,16 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
            // Use top 5 nodes as context
            const contextNodes = nodes.slice(0, 5);
            const contextText = contextNodes.map((n, i) => 
-             `[${i+1}] Title: ${n.title}\nContent: ${n.content || '(No content)'}\nGraph: ${n.knowledge_graphs?.title}`
-           ).join('\n\n');
+             `[${i+1}] Title: ${n.title}\nGraph: ${n.knowledge_graphs?.title}\nContent: ${n.content || '(No content)'}\nExplanation: ${n.explanation || '(No explanation)'}`
+           ).join('\n\n---\n\n');
 
            const messages = [
-             { role: 'system', content: 'You are a helpful knowledge assistant. Answer the user\'s question based ONLY on the provided context nodes. If the answer is not in the context, say so. Keep the answer concise and helpful. Respond in the same language as the user query (likely Chinese).' },
+             { role: 'system', content: `You are an intelligent Knowledge Graph assistant. 
+Your goal is to answer the user's question accurately using ONLY the provided context information.
+If the provided context does not contain the answer, explicitly state that you cannot find the answer in the knowledge base.
+Do not hallucinate or use outside knowledge unless it is general common sense to interpret the context.
+Format your answer in Markdown.
+Respond in the same language as the user's question (detect from question).` },
              { role: 'user', content: `Context:\n${contextText}\n\nQuestion: ${query}` }
            ];
 

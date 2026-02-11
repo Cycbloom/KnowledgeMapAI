@@ -1,21 +1,14 @@
 import NodeCache from 'node-cache';
-import Redis from 'ioredis';
-import dotenv from 'dotenv';
+import redisClient from '../utils/redis.js';
+import { logger } from '../utils/logger.js';
 
-dotenv.config();
+// Determine mode: Use Redis if client exists
+const useRedis = !!redisClient;
 
-// Determine mode: Use Redis if REDIS_URL is set, otherwise fallback to in-memory
-const useRedis = !!process.env.REDIS_URL;
-
-let redis: Redis | null = null;
 let localCache: NodeCache | null = null;
 
-if (useRedis) {
-  console.log('🚀 Using Redis Cache');
-  redis = new Redis(process.env.REDIS_URL!);
-  redis.on('error', (err) => console.error('Redis Client Error', err));
-} else {
-  console.log('⚠️  Redis URL not found, using In-Memory Cache');
+if (!useRedis) {
+  logger.warn('⚠️ Redis not available, using In-Memory Cache');
   localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 }
 
@@ -34,37 +27,37 @@ export const CacheKeys = {
 
 export const cacheService = {
   get: async <T>(key: string): Promise<T | undefined> => {
-    if (redis) {
-      const data = await redis.get(key);
+    if (redisClient) {
+      const data = await redisClient.get(key);
       return data ? JSON.parse(data) : undefined;
     }
     return localCache?.get<T>(key);
   },
 
   set: async <T>(key: string, value: T, ttl?: number): Promise<boolean> => {
-    if (redis) {
-      const result = await redis.set(key, JSON.stringify(value), 'EX', ttl || 300);
+    if (redisClient) {
+      const result = await redisClient.set(key, JSON.stringify(value), 'EX', ttl || 300);
       return result === 'OK';
     }
     return localCache?.set(key, value, ttl || 300) || false;
   },
 
   del: async (key: string | string[]): Promise<number> => {
-    if (redis) {
+    if (redisClient) {
       if (Array.isArray(key)) {
         if (key.length === 0) return 0;
-        return await redis.del(...key);
+        return await redisClient.del(...key);
       }
-      return await redis.del(key);
+      return await redisClient.del(key);
     }
     return localCache?.del(key) || 0;
   },
 
   delByPrefix: async (prefix: string): Promise<number> => {
-    if (redis) {
-      const keys = await redis.keys(`${prefix}*`);
+    if (redisClient) {
+      const keys = await redisClient.keys(`${prefix}*`);
       if (keys.length > 0) {
-        return await redis.del(...keys);
+        return await redisClient.del(...keys);
       }
       return 0;
     }
@@ -80,8 +73,8 @@ export const cacheService = {
   },
 
   flush: async (): Promise<void> => {
-    if (redis) {
-      await redis.flushdb();
+    if (redisClient) {
+      await redisClient.flushdb();
     } else {
       localCache?.flushAll();
     }

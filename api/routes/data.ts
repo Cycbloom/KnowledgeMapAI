@@ -6,6 +6,8 @@ import { cacheService, CacheKeys } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { pdfService } from '../services/pdfService.js';
+import { parseMarkdownToGraph } from '../utils/markdownParser.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -27,10 +29,14 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     
   if (!graph) return res.status(404).json({ error: 'Graph not found' });
 
-  const { data: nodes } = await req.supabase!.from('nodes').select('*').eq('graph_id', graph_id);
-  
-  const nodeIds = nodes?.map(n => n.id) || [];
-  const { data: edges } = await req.supabase!.from('edges').select('*').in('source_node_id', nodeIds);
+  // Parallel fetch for better performance
+  const [nodesResult, edgesResult] = await Promise.all([
+    req.supabase!.from('nodes').select('*').eq('graph_id', graph_id),
+    req.supabase!.from('edges').select('*').eq('graph_id', graph_id)
+  ]);
+
+  const nodes = nodesResult.data || [];
+  const edges = edgesResult.data || [];
 
   const exportData = {
     graph,
@@ -56,34 +62,85 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
 
     const nodeById = new Map(nodes?.map((n: any) => [n.id, n]));
     
-    // Group edges by source
-    const edgesBySource = new Map<string, any[]>();
+    // Build tree structure
+    const childrenMap = new Map<string, any[]>();
+    const incomingEdges = new Set<string>(); // target_node_ids
+    
     edges?.forEach((e: any) => {
-        const list = edgesBySource.get(e.source_node_id) || [];
-        list.push(e);
-        edgesBySource.set(e.source_node_id, list);
+        const list = childrenMap.get(e.source_node_id) || [];
+        const child = nodeById.get(e.target_node_id);
+        if (child) {
+            list.push(child);
+            childrenMap.set(e.source_node_id, list);
+            incomingEdges.add(e.target_node_id);
+        }
     });
 
-    nodes?.forEach((node: any) => {
-        md += `## ${node.title}\n\n`;
-        if (node.content) {
-            md += `${node.content}\n\n`;
-        }
+    const visited = new Set<string>();
 
-        const outgoing = edgesBySource.get(node.id);
-        if (outgoing && outgoing.length > 0) {
-            md += `### Related\n`;
-            outgoing.forEach((e: any) => {
-                const target = nodeById.get(e.target_node_id);
-                if (target) {
-                    md += `- [[${target.title}]]\n`;
-                }
-            });
-            md += `\n`;
-        }
+    const getHeaderPrefix = (level: string, depth: number): string => {
+      switch (level) {
+        case 'root': return '## ';
+        case 'core': return '### ';
+        case 'sub': return '#### ';
+        case 'normal': return '##### ';
+        case 'leaf': return '- '; 
+        default: return '#'.repeat(Math.min(depth + 1, 6)) + ' ';
+      }
+    };
+
+    const renderNode = (node: any, depth: number) => {
+        if (visited.has(node.id)) return;
+        visited.add(node.id);
+
+        const isLeaf = node.level === 'leaf';
+        const prefix = getHeaderPrefix(node.level || 'normal', depth);
         
-        md += `---\n\n`;
-    });
+        // Indent for leaves if nested? Markdown lists handle indentation naturally if we use 2 spaces
+        // But here we are flattening structure slightly. 
+        // Let's stick to the prefix logic.
+        
+        if (isLeaf) {
+             // For leaves, we might want to just list them.
+             // If parent was a header, this is a list item.
+             md += `${prefix}**${node.title}**\n`;
+        } else {
+             md += `${prefix}${node.title}\n`;
+        }
+
+        if (node.content) {
+            const content = node.content.trim();
+            if (content) {
+                 // Indent content for leaves
+                 const contentPrefix = isLeaf ? '  ' : '';
+                 md += content.split('\n').map((line: string) => `${contentPrefix}${line}`).join('\n') + '\n\n';
+            } else {
+                 md += '\n';
+            }
+        } else {
+            md += '\n';
+        }
+
+        const children = childrenMap.get(node.id) || [];
+        children.forEach(child => renderNode(child, depth + 1));
+    };
+
+    // Find roots: Nodes with 'root' level OR no incoming edges
+    const roots = nodes?.filter((n: any) => n.level === 'root' || !incomingEdges.has(n.id)) || [];
+
+    // Fallback
+    if (roots.length === 0 && nodes && nodes.length > 0) {
+        roots.push(nodes[0]);
+    }
+
+    roots.forEach(root => renderNode(root, 1));
+
+    // Render remaining disconnected nodes
+    const remaining = nodes?.filter((n: any) => !visited.has(n.id)) || [];
+    if (remaining.length > 0) {
+        md += `\n---\n\n## Unconnected Nodes\n\n`;
+        remaining.forEach(n => renderNode(n, 1));
+    }
 
     return res.send(md);
   } else if (format === 'pdf') {
@@ -110,6 +167,107 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
   }
 
   throw new AppError('Unsupported format', 400, ErrorCodes.VALIDATION_ERROR);
+});
+
+// Import Markdown
+router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { content } = req.body;
+  
+  if (!content || typeof content !== 'string') {
+    return res.status(400).json({ error: 'Content is required and must be a string' });
+  }
+
+  try {
+    const { graph_title, nodes, edges } = parseMarkdownToGraph(content);
+
+    // Reuse the same logic as regular import, but we need to call it internally or duplicate logic.
+    // Let's duplicate logic for now but keep it clean, or refactor to a service.
+    // Since graphService.createGraph exists, we should use it? 
+    // But createGraph only creates the graph, not nodes/edges in batch.
+    // We'll stick to the transaction logic here.
+
+    // 1. Create Graph
+    const { data: graph, error: graphError } = await req.supabase!
+      .from('knowledge_graphs')
+      .insert([{ user_id: req.user.id, title: graph_title }])
+      .select()
+      .single();
+
+    if (graphError) throw new Error(graphError.message);
+
+    // 2. Create Nodes
+    const nodeMap = new Map(); // Old ID to New ID
+    const nodesToInsert = [];
+    
+    if (nodes && Array.isArray(nodes)) {
+      for (const n of nodes) {
+        nodesToInsert.push({
+          graph_id: graph.id,
+          title: n.title,
+          content: n.content,
+          x_position: n.x_position || 0,
+          y_position: n.y_position || 0,
+          color: n.color,
+          level: n.level || 'normal',
+          properties: n.properties || {}
+        });
+      }
+      
+      const { data: insertedNodes, error: nodesError } = await req.supabase!
+        .from('nodes')
+        .insert(nodesToInsert)
+        .select();
+
+      if (nodesError) throw new Error(nodesError.message);
+
+      // Build ID map
+      if (insertedNodes && insertedNodes.length === nodes.length) {
+        for (let i = 0; i < nodes.length; i++) {
+          const oldId = nodes[i].id;
+          const newId = insertedNodes[i].id;
+          if (oldId) {
+            nodeMap.set(oldId, newId);
+          }
+        }
+      }
+
+      // 3. Create Edges
+      if (edges && Array.isArray(edges) && edges.length > 0) {
+        const edgesToInsert = [];
+        
+        for (const e of edges) {
+          const sourceId = nodeMap.get(e.source);
+          const targetId = nodeMap.get(e.target);
+          
+          if (sourceId && targetId) {
+            edgesToInsert.push({
+              source_node_id: sourceId,
+              target_node_id: targetId,
+              relationship_type: e.relationship || 'related',
+              graph_id: graph.id
+            });
+          }
+        }
+        
+        if (edgesToInsert.length > 0) {
+          const { error: edgesError } = await req.supabase!
+            .from('edges')
+            .insert(edgesToInsert);
+            
+          if (edgesError) throw new Error(edgesError.message);
+        }
+      }
+    }
+
+    // Success! Invalidate user graphs cache
+    await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
+    
+    res.status(201).json({ graph });
+
+  } catch (error: any) {
+    logger.error('Import Markdown Error:', error);
+    res.status(500).json({ error: error.message || 'Import failed' });
+  }
 });
 
 // Import data with Manual Rollback Transaction

@@ -127,6 +127,34 @@ export const LearningMode = () => {
     }
   };
 
+  // Helper for manual card generation
+  const handleGenerateCards = async (targetNodeId: string) => {
+    setIsGeneratingCards(true);
+    try {
+      const result = await api.ai.batchGenerateCards([targetNodeId], {
+        count: 10,
+        types: ['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank']
+      });
+      
+      if (result.success) {
+        addMessage({ 
+          type: 'success', 
+          content: '题目自动生成任务已提交至后台',
+          duration: 5000,
+          action: {
+            label: '查看任务',
+            onClick: () => navigate('/tasks')
+          }
+        });
+      }
+    } catch (cardError) {
+      console.error('Failed to generate cards:', cardError);
+      addMessage({ type: 'error', content: '题目生成失败' });
+    } finally {
+      setIsGeneratingCards(false);
+    }
+  };
+
   // Load Node and Generate Content
   useEffect(() => {
     if (!nodeId) {
@@ -172,32 +200,18 @@ export const LearningMode = () => {
             await api.nodes.update(nodeId, {
               learning_material: response.content
             });
-            addMessage({ type: 'success', content: '学习教材已自动保存' });
             
-            // 5. Automatically generate questions (via background task)
-            setIsGeneratingCards(true);
-            try {
-              const result = await api.ai.batchGenerateCards([nodeId], {
-                count: 10,
-                types: ['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank']
-              });
-              
-              if (result.success) {
-                addMessage({ 
-                  type: 'success', 
-                  content: '题目自动生成任务已提交至后台',
-                  duration: 5000,
-                  action: {
-                    label: '查看任务',
-                    onClick: () => navigate('/tasks')
-                  }
-                });
+            // OPTIMIZATION: Manual trigger for questions instead of automatic
+            addMessage({ 
+              type: 'success', 
+              content: '学习教材已生成',
+              duration: 8000,
+              action: {
+                label: '生成练习题',
+                onClick: () => handleGenerateCards(nodeId)
               }
-            } catch (cardError) {
-              console.error('Failed to generate cards:', cardError);
-            } finally {
-              setIsGeneratingCards(false);
-            }
+            });
+            
           } catch (saveError) {
             console.error('Failed to save learning material:', saveError);
             addMessage({ type: 'error', content: '教材保存失败，下次进入将重新生成' });

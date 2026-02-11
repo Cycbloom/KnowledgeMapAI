@@ -97,8 +97,29 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   
   const updateOption = (index: number, value: string) => {
     const newOptions = [...formData.options];
+    const oldOption = newOptions[index];
     newOptions[index] = value;
-    setFormData(prev => ({ ...prev, options: newOptions }));
+    
+    // Sync answer if it matches the old option
+    let newAnswer = formData.answer;
+    
+    if (formData.card_type === 'choice') {
+      if (formData.answer === oldOption) {
+        newAnswer = value;
+      }
+    } else if (formData.card_type === 'multi_choice') {
+      try {
+        const currentAnswers: string[] = JSON.parse(formData.answer || '[]');
+        if (Array.isArray(currentAnswers) && currentAnswers.includes(oldOption)) {
+          const updatedAnswers = currentAnswers.map(a => a === oldOption ? value : a);
+          newAnswer = JSON.stringify(updatedAnswers);
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    setFormData(prev => ({ ...prev, options: newOptions, answer: newAnswer }));
   };
   
   const removeOption = (index: number) => {

@@ -10,7 +10,13 @@ interface PromptSettingsPanelProps {
 
 const PROMPT_NAME_MAP: Record<string, string> = {
   expand_knowledge: '知识扩展 (Expand Knowledge)',
-  generate_cards: '生成卡片 (Generate Cards)',
+  generate_cards: '生成卡片 (Generate Cards - Generic)',
+  generate_cards_qa: '生成卡片: 问答 (Generate QA)',
+  generate_cards_choice: '生成卡片: 单选 (Generate Choice)',
+  generate_cards_true_false: '生成卡片: 判断 (Generate True/False)',
+  generate_cards_multi_choice: '生成卡片: 多选 (Generate Multi-Choice)',
+  generate_cards_fill_blank: '生成卡片: 填空 (Generate Fill-Blank)',
+  generate_cards_essay: '生成卡片: 问答/论述 (Generate Essay)',
   branch_suggestions: '分支建议 (Branch Suggestions)',
   generate_content: '内容生成 (Generate Content)',
   chat: 'AI 对话 (Chat)',
@@ -93,7 +99,10 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
   };
 
   const promptCodes = [
-    'expand_knowledge', 'generate_cards', 'branch_suggestions', 
+    'expand_knowledge', 
+    'generate_cards', 'generate_cards_qa', 'generate_cards_choice', 'generate_cards_true_false', 
+    'generate_cards_multi_choice', 'generate_cards_fill_blank', 'generate_cards_essay',
+    'branch_suggestions', 
     'generate_content', 'chat', 'text_to_graph', 'recommend_connections', 'tutor_chat', 'document_to_graph',
     'term_annotation'
   ];

@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
+import { QuestionBank } from '../components/Study/QuestionBank';
+import { StatsOverview } from '../components/StatsOverview';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
@@ -38,8 +40,8 @@ export const Study = () => {
   const [finished, setFinished] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
-  // View State: 'dashboard' | 'quiz'
-  const [viewState, setViewState] = useState<'dashboard' | 'quiz'>('dashboard');
+  // View State: 'dashboard' | 'quiz' | 'bank'
+  const [viewState, setViewState] = useState<'dashboard' | 'quiz' | 'bank'>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [tableMode, setTableMode] = useState<'due' | 'all'>('due');
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,8 +82,24 @@ export const Study = () => {
     const total = allCards.length;
     const mastered = allCards.filter(c => (c.review_count || 0) > 0).length;
     const due = dueCards.length;
-    return { total, mastered, due };
+    
+    // FSRS Distribution
+    const distribution = {
+      new: allCards.filter(c => (c.fsrs_state || 0) === 0).length,
+      learning: allCards.filter(c => (c.fsrs_state || 0) === 1).length,
+      review: allCards.filter(c => (c.fsrs_state || 0) === 2).length,
+      relearning: allCards.filter(c => (c.fsrs_state || 0) === 3).length,
+    };
+
+    return { total, mastered, due, distribution };
   }, [allCards, dueCards]);
+
+  const pieData = [
+    { name: '新卡片', value: stats.distribution.new, color: '#94a3b8' }, // Slate-400
+    { name: '学习中', value: stats.distribution.learning, color: '#60a5fa' }, // Blue-400
+    { name: '复习中', value: stats.distribution.review, color: '#34d399' }, // Emerald-400
+    { name: '重学中', value: stats.distribution.relearning, color: '#fbbf24' }, // Amber-400
+  ].filter(d => d.value > 0);
 
   const tableCards = useMemo(() => (tableMode === 'due' ? dueCards : allCards), [tableMode, dueCards, allCards]);
 
@@ -193,8 +211,8 @@ export const Study = () => {
 
   if (isLoading) return <div className={`min-h-full flex items-center justify-center p-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>正在加载学习资源...</div>;
 
-  // --- Dashboard View ---
-  if (viewState === 'dashboard') {
+  // --- Dashboard & Bank View ---
+  if (viewState === 'dashboard' || viewState === 'bank') {
     return (
       <div className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'} p-8`}>
         <div className="max-w-6xl mx-auto space-y-8">
@@ -218,138 +236,177 @@ export const Study = () => {
                 </p>
               </div>
             </div>
-            {graphId && (
-              <button 
-                onClick={() => navigate(`/graph/${graphId}`)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-medium ${
-                  isDark 
-                    ? 'bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60' 
-                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                }`}
-              >
-                <LayoutGrid size={18} />
-                <span>进入闯关图谱</span>
-              </button>
-            )}
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
-                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
-              }`}
-            >
-              <div className={`p-4 rounded-2xl ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-                <LayoutGrid size={24} />
-              </div>
-              <div>
-                <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片数</p>
-                <p className="text-3xl font-black">{stats.total}</p>
-              </div>
-            </motion.div>
             
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
-                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
-              }`}
-            >
-              <div className={`p-4 rounded-2xl ${isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-                <Trophy size={24} />
-              </div>
-              <div>
-                <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
-                <p className="text-3xl font-black">{stats.mastered}</p>
-              </div>
-            </motion.div>
+            <div className="flex items-center space-x-2">
+                <div className={`flex p-1 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+                    <button
+                        onClick={() => setViewState('dashboard')}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            viewState === 'dashboard' 
+                            ? (isDark ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-900')
+                            : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')
+                        }`}
+                    >
+                        概览
+                    </button>
+                    <button
+                        onClick={() => setViewState('bank')}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            viewState === 'bank'
+                            ? (isDark ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-900')
+                            : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')
+                        }`}
+                    >
+                        题库管理
+                    </button>
+                </div>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
-                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
-              }`}
-            >
-              <div className={`p-4 rounded-2xl ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
-                <Clock size={24} />
-              </div>
-              <div>
-                <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
-                <p className="text-3xl font-black text-amber-500">{stats.due}</p>
-              </div>
-            </motion.div>
+                {graphId && (
+                <button 
+                    onClick={() => navigate(`/graph/${graphId}`)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                    isDark 
+                        ? 'bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60' 
+                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                    }`}
+                >
+                    <LayoutGrid size={18} />
+                    <span>进入闯关图谱</span>
+                </button>
+                )}
+            </div>
           </div>
 
-          {/* Action Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4 }}
-              onClick={() => handleStartQuiz('due')}
-              disabled={dueCards.length === 0}
-              className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group relative overflow-hidden ${
-                dueCards.length > 0 
-                  ? (isDark ? 'bg-indigo-900/20 border-indigo-800/50 hover:border-indigo-500 shadow-lg shadow-indigo-900/20' : 'bg-indigo-50 border-indigo-100 hover:border-indigo-400 shadow-xl shadow-indigo-100/50')
-                  : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
-              }`}
-            >
-              {dueCards.length > 0 && (
-                <div className="absolute top-4 right-4 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
-                </div>
-              )}
-              <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
-                isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-white text-indigo-600 shadow-md'
-              }`}>
-                <Brain size={48} />
-              </div>
-              <h3 className={`text-2xl font-black mb-2 ${isDark ? 'text-indigo-300' : 'text-indigo-900'}`}>今日待复习</h3>
-              <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-indigo-400/80' : 'text-indigo-700/70'}`}>基于 FSRS 算法为您定制的最佳复习计划</p>
-              <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
-                dueCards.length > 0 
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 group-hover:bg-indigo-700 group-hover:-translate-y-1' 
-                  : 'bg-gray-300 text-gray-500'
-              }`}>
-                {dueCards.length > 0 ? `立即开始 (${dueCards.length})` : '暂无复习任务'}
-              </div>
-            </motion.button>
+          {viewState === 'bank' ? (
+            <QuestionBank cards={allCards} />
+          ) : (
+            <>
+          {/* Stats Cards & Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+                  }`}
+                >
+                  <div className={`p-4 rounded-2xl ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                    <LayoutGrid size={24} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片数</p>
+                    <p className="text-3xl font-black">{stats.total}</p>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+                  }`}
+                >
+                  <div className={`p-4 rounded-2xl ${isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                    <Trophy size={24} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
+                    <p className="text-3xl font-black">{stats.mastered}</p>
+                  </div>
+                </motion.div>
 
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5 }}
-              onClick={() => handleStartQuiz('all')}
-              disabled={allCards.length === 0}
-              className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group ${
-                allCards.length > 0 
-                  ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 shadow-lg' : 'bg-white border-gray-100 hover:border-indigo-400 shadow-xl shadow-gray-100/50')
-                  : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
-              }`}
-            >
-              <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
-                isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-50 text-gray-600'
-              }`}>
-                <Play size={48} />
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+                  }`}
+                >
+                  <div className={`p-4 rounded-2xl ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+                    <Clock size={24} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
+                    <p className="text-3xl font-black text-amber-500">{stats.due}</p>
+                  </div>
+                </motion.div>
+               </div>
+
+               {/* Action Cards */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 }}
+                  onClick={() => handleStartQuiz('due')}
+                  disabled={dueCards.length === 0}
+                  className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group relative overflow-hidden ${
+                    dueCards.length > 0 
+                      ? (isDark ? 'bg-indigo-900/20 border-indigo-800/50 hover:border-indigo-500 shadow-lg shadow-indigo-900/20' : 'bg-indigo-50 border-indigo-100 hover:border-indigo-400 shadow-xl shadow-indigo-100/50')
+                      : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
+                  }`}
+                >
+                  {dueCards.length > 0 && (
+                    <div className="absolute top-4 right-4 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                    </div>
+                  )}
+                  <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
+                    isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-white text-indigo-600 shadow-md'
+                  }`}>
+                    <Brain size={48} />
+                  </div>
+                  <h3 className={`text-2xl font-black mb-2 ${isDark ? 'text-indigo-300' : 'text-indigo-900'}`}>今日待复习</h3>
+                  <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-indigo-400/80' : 'text-indigo-700/70'}`}>基于 FSRS 算法为您定制的最佳复习计划</p>
+                  <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
+                    dueCards.length > 0 
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 group-hover:bg-indigo-700 group-hover:-translate-y-1' 
+                      : 'bg-gray-300 text-gray-500'
+                  }`}>
+                    {dueCards.length > 0 ? `立即开始 (${dueCards.length})` : '暂无复习任务'}
+                  </div>
+                </motion.button>
+
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 }}
+                  onClick={() => handleStartQuiz('all')}
+                  disabled={allCards.length === 0}
+                  className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group ${
+                    allCards.length > 0 
+                      ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 shadow-lg' : 'bg-white border-gray-100 hover:border-indigo-400 shadow-xl shadow-gray-100/50')
+                      : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
+                  }`}
+                >
+                  <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
+                    isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-50 text-gray-600'
+                  }`}>
+                    <Play size={48} />
+                  </div>
+                  <h3 className="text-2xl font-black mb-2">自由练习</h3>
+                  <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>随机测验当前范围内的所有内容，巩固基础</p>
+                  <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
+                    allCards.length > 0 
+                      ? (isDark ? 'bg-slate-700 text-white border border-slate-600 group-hover:bg-slate-600 group-hover:-translate-y-1' : 'bg-white text-gray-700 border-2 border-gray-100 shadow-sm group-hover:border-indigo-200 group-hover:-translate-y-1')
+                      : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {allCards.length > 0 ? `开始自测 (${allCards.length})` : '暂无卡片数据'}
+                  </div>
+                </motion.button>
               </div>
-              <h3 className="text-2xl font-black mb-2">自由练习</h3>
-              <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>随机测验当前范围内的所有内容，巩固基础</p>
-              <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
-                allCards.length > 0 
-                  ? (isDark ? 'bg-slate-700 text-white border border-slate-600 group-hover:bg-slate-600 group-hover:-translate-y-1' : 'bg-white text-gray-700 border-2 border-gray-100 shadow-sm group-hover:border-indigo-200 group-hover:-translate-y-1')
-                  : 'bg-gray-200 text-gray-500'
-              }`}>
-                {allCards.length > 0 ? `开始自测 (${allCards.length})` : '暂无卡片数据'}
-              </div>
-            </motion.button>
+            </div>
+
+            {/* Chart */}
+            <div className="lg:col-span-1">
+              <StatsOverview data={pieData} />
+            </div>
           </div>
 
           {/* Cards List Section */}
@@ -544,6 +601,8 @@ export const Study = () => {
               </div>
             )}
           </div>
+          </>
+        )}
         </div>
 
         {/* Card Preview Modal */}

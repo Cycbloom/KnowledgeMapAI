@@ -16,14 +16,7 @@ export interface PromptTemplate {
   updated_at: string;
 }
 
-// Fixed output schemas (Hidden from user editing)
-const OUTPUT_SCHEMAS: Record<string, string> = {
-  expand_knowledge: `
-Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.
-Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content" }] }
-Please respond in Chinese.`,
-
-  generate_cards: `
+const GENERATE_CARDS_SCHEMA = `
 Return a JSON object with a 'cards' array. Each card object must have: 
 - 'type' (qa|choice|true_false|multi_choice|fill_in_the_blank|essay)
 - 'question'
@@ -31,7 +24,23 @@ Return a JSON object with a 'cards' array. Each card object must have:
 - 'explanation' (Detailed analysis/reasoning)
 - 'options' (Array of 4 strings, ONLY for 'choice' and 'multi_choice' types)
 
+Please respond in Chinese.`;
+
+// Fixed output schemas (Hidden from user editing)
+const OUTPUT_SCHEMAS: Record<string, string> = {
+  expand_knowledge: `
+Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.
+Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content" }] }
 Please respond in Chinese.`,
+
+  generate_cards: GENERATE_CARDS_SCHEMA,
+  generate_cards_qa: GENERATE_CARDS_SCHEMA,
+  generate_cards_choice: GENERATE_CARDS_SCHEMA,
+  generate_cards_true_false: GENERATE_CARDS_SCHEMA,
+  generate_cards_multi_choice: GENERATE_CARDS_SCHEMA,
+  generate_cards_fill_blank: GENERATE_CARDS_SCHEMA,
+  generate_cards_essay: GENERATE_CARDS_SCHEMA,
+
 
   branch_suggestions: `
 Return a JSON object with a 'suggestions' array. Each object must have:

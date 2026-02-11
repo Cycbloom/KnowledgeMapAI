@@ -151,6 +151,7 @@ export class AIService {
       };
     }
 
+    // Hardcoded fallbacks if templates are missing from DB
     const typePrompts: Record<string, string> = {
       qa: "For 'qa' type: Create thought-provoking open-ended questions that test deep understanding. Provide a detailed 'explanation' analyzing the answer.",
       choice: "For 'choice' type: Create multiple-choice questions with 4 plausible options. Provide the correct answer and a detailed 'explanation' of why it is correct and others are wrong.",
@@ -160,27 +161,59 @@ export class AIService {
       essay: "For 'essay' type: Create complex questions requiring a long-form structured answer. The 'answer' should be a model response with key points. Provide a detailed 'explanation' with scoring criteria."
     };
 
-    const selectedPrompts = types.map(t => typePrompts[t] || "").join("\n");
-
     try {
-      // Get rendered prompt from PromptService
-      const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
-        'generate_cards',
-        {
-          count,
-          allowedTypes: types.join(', '),
-          context: context ? `Parent/Context Info: ${context}` : '',
-          includesQA: types.includes('qa'),
-          includesChoice: types.includes('choice'),
-          includesTrueFalse: types.includes('true_false'),
-          includesMultiChoice: types.includes('multi_choice'),
-          includesFillBlank: types.includes('fill_in_the_blank'),
-          includesEssay: types.includes('essay')
-        },
-        options.userId,
-        options.graphId
-      );
+      // Try to fetch specific templates for each requested type
+      const promptParts = await Promise.all(types.map(async (type) => {
+        const code = `generate_cards_${type}`;
+        const rendered = await promptService.getRenderedPrompt(
+          supabaseAdmin,
+          code,
+          { count: Math.ceil(count / types.length) }, // Distribute count approx
+          options.userId,
+          options.graphId
+        );
+
+        // If template exists (non-empty), use it.
+        if (rendered && rendered.trim().length > 0) {
+          return rendered;
+        }
+
+        // Fallback to hardcoded string + Generic Schema (since we can't access PromptService's internal schema map easily)
+        // We assume the generic system prompt below will handle the schema if we fail here, 
+        // OR we just rely on the fact that if this fails, we are likely using the generic 'generate_cards' strategy.
+        return typePrompts[type] || "";
+      }));
+
+      // If we successfully fetched ANY specific templates, use them.
+      // Otherwise, fallback to the legacy 'generate_cards' single template.
+      let systemPrompt = promptParts.filter(p => p.length > 0).join('\n\n---\n\n');
+
+      if (!systemPrompt.trim()) {
+        systemPrompt = await promptService.getRenderedPrompt(
+          supabaseAdmin,
+          'generate_cards',
+          {
+            count,
+            allowedTypes: types.join(', '),
+            context: context ? `Parent/Context Info: ${context}` : '',
+            includesQA: types.includes('qa'),
+            includesChoice: types.includes('choice'),
+            includesTrueFalse: types.includes('true_false'),
+            includesMultiChoice: types.includes('multi_choice'),
+            includesFillBlank: types.includes('fill_in_the_blank'),
+            includesEssay: types.includes('essay')
+          },
+          options.userId,
+          options.graphId
+        );
+      } else {
+        // Prepend general instruction if we are using specific parts
+        systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
+      
+Context: ${context || 'None'}
+
+` + systemPrompt;
+      }
 
       const completion = await provider.client.chat.completions.create({
         messages: [

@@ -378,15 +378,26 @@ export const Settings = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
                <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-               <h2 className="text-lg font-bold text-gray-900">学习算法配置 (FSRS)</h2>
+               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">学习算法配置 (FSRS)</h2>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
                 <div className="flex justify-between items-center mb-2">
-                   <label className="font-semibold text-gray-700 text-sm">目标保留率 (Request Retention)</label>
-                   <span className="text-indigo-600 font-bold">{Number(retention).toFixed(2)}</span>
+                   <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">目标保留率 (Request Retention)</label>
+                   <input
+                       type="number"
+                       min="0.70"
+                       max="0.99"
+                       step="0.01"
+                       value={retention}
+                       onChange={(e) => {
+                           const val = parseFloat(e.target.value);
+                           if (!isNaN(val) && val >= 0.7 && val <= 0.99) setRetention(val);
+                       }}
+                       className="w-20 p-1 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500"
+                   />
                 </div>
                 <input 
                    type="range" 
@@ -395,28 +406,38 @@ export const Settings = () => {
                    step="0.01"
                    value={retention}
                    onChange={(e) => setRetention(Number(e.target.value))}
-                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                   className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                    设定您希望在复习时记住的概率。值越高，复习越频繁，记忆越牢固。建议范围：0.80 - 0.95。
                 </p>
              </div>
              
-             <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
                 <div className="flex justify-between items-center mb-2">
-                   <label className="font-semibold text-gray-700 text-sm">最大复习间隔 (天)</label>
-                   <span className="text-indigo-600 font-bold">{maxInterval} 天</span>
+                   <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">最大复习间隔 (天)</label>
+                   <input
+                       type="number"
+                       min="1"
+                       max="36500"
+                       value={maxInterval}
+                       onChange={(e) => {
+                           const val = parseInt(e.target.value);
+                           if (!isNaN(val) && val >= 1 && val <= 36500) setMaxInterval(val);
+                       }}
+                       className="w-24 p-1 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500"
+                   />
                 </div>
                 <input 
                    type="range" 
                    min="1" 
                    max="36500" 
-                   step="100"
+                   step="10"
                    value={maxInterval}
                    onChange={(e) => setMaxInterval(Number(e.target.value))}
-                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                   className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                    限制卡片复习的最大间隔天数。默认 36500 天（100年）。
                 </p>
              </div>

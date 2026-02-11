@@ -486,6 +486,9 @@ export const api = {
       return request(`/study/cards${query ? `?${query}` : ''}`);
     },
     createCardsBatch: (cards: any[]) => request('/study/cards/batch', { method: 'POST', body: JSON.stringify({ cards }) }),
+    update: (id: string, data: any) => request(`/study/cards/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/study/cards/${id}`, { method: 'DELETE' }),
+    deleteBatch: (ids: string[]) => request('/study/cards/batch', { method: 'DELETE', body: JSON.stringify({ ids }) }),
     updateProgress: (id: string, quality: number) => request(`/study/cards/${id}/progress`, { method: 'PUT', body: JSON.stringify({ quality }) }),
   },
   dashboard: {

@@ -464,6 +464,38 @@ export const useUpdateCardProgressMutation = () => {
   });
 };
 
+
+
+export const useUpdateCardMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.study.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['studyCards'] });
+    }
+  });
+};
+
+export const useDeleteCardMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.study.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['studyCards'] });
+    }
+  });
+};
+
+export const useDeleteCardsBatchMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => api.study.deleteBatch(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['studyCards'] });
+    }
+  });
+};
+
 export const useAIGenerateMutation = () => {
   return useMutation({ mutationFn: api.ai.generateContent });
 };

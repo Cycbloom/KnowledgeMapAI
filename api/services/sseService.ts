@@ -47,6 +47,26 @@ class SSEService {
       console.log(`[SSE] Broadcasted to user ${userId}: ${JSON.stringify(data).substring(0, 100)}...`);
     }
   }
+
+  // 启动心跳检测
+  startHeartbeat(intervalMs: number = 30000) {
+    setInterval(() => {
+      this.clients.forEach((clients, userId) => {
+        if (clients.length > 0) {
+          clients.forEach(client => {
+            try {
+              client.write(': keep-alive\n\n');
+            } catch (error) {
+              console.error(`[SSE] Error sending heartbeat to user ${userId}:`, error);
+              // 连接可能已断开，但在 close 事件中未被移除
+              // 这里可以不做处理，依赖 removeClient 或下次 write 失败
+            }
+          });
+        }
+      });
+    }, intervalMs);
+  }
 }
 
 export const sseService = new SSEService();
+sseService.startHeartbeat(); // Start heartbeat immediately

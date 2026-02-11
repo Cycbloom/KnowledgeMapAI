@@ -87,7 +87,43 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<SVGGElement>(null);
+  
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
+  const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
+  
+  // Debounce helper for transform state updates
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const updateTransformState = useCallback((newTransform: Transform) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      setTransform(newTransform);
+    }, 100);
+  }, []);
+
+  const updateTransformDOM = useCallback((t: Transform) => {
+    if (contentRef.current) {
+      contentRef.current.setAttribute('transform', `translate(${t.x}, ${t.y}) scale(${t.k})`);
+    }
+  }, []);
+
+  // Sync ref and DOM when state changes (e.g. initial load or external reset)
+  useMemo(() => {
+    // Only update ref if state is significantly different (avoid loops)
+    if (Math.abs(transform.x - transformRef.current.x) > 0.1 ||
+        Math.abs(transform.y - transformRef.current.y) > 0.1 ||
+        Math.abs(transform.k - transformRef.current.k) > 0.001) {
+       transformRef.current = transform;
+    }
+  }, [transform]);
+
+  // Ensure DOM is in sync after render
+  useEffect(() => {
+    updateTransformDOM(transformRef.current);
+  }, [updateTransformDOM]); // dependency on transformRef.current is implicit via ref access
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -177,63 +213,87 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
     const scaleFactor = 1.1;
     const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
     
-    setTransform(prev => {
-      const newK = Math.max(0.1, Math.min(5, prev.k * delta));
-      
-      const rect = svgRef.current?.getBoundingClientRect();
-      if (!rect) return { ...prev, k: newK };
-      
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      const newX = mouseX - (mouseX - prev.x) * delta;
-      const newY = mouseY - (mouseY - prev.y) * delta;
-      
-      return { x: newX, y: newY, k: newK };
-    });
-  }, []);
+    const prev = transformRef.current;
+    const newK = Math.max(0.1, Math.min(5, prev.k * delta));
+    
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    const newX = mouseX - (mouseX - prev.x) * delta;
+    const newY = mouseY - (mouseY - prev.y) * delta;
+    
+    const newTransform = { x: newX, y: newY, k: newK };
+    
+    // Update Ref and DOM immediately
+    transformRef.current = newTransform;
+    updateTransformDOM(newTransform);
+    
+    // Debounce state update
+    updateTransformState(newTransform);
+  }, [updateTransformDOM, updateTransformState]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
       setIsDragging(true);
-      setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+      setDragStart({ 
+        x: e.clientX - transformRef.current.x, 
+        y: e.clientY - transformRef.current.y 
+      });
       if (onCanvasClick && e.button === 2) {
         onCanvasClick();
       }
     }
-  }, [transform, onCanvasClick]);
+  }, [onCanvasClick]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isDragging) {
-      setTransform({
+      const newTransform = {
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
-        k: transform.k
-      });
+        k: transformRef.current.k
+      };
+      
+      transformRef.current = newTransform;
+      updateTransformDOM(newTransform);
+      updateTransformState(newTransform);
     }
-  }, [isDragging, dragStart, transform.k]);
+  }, [isDragging, dragStart, updateTransformDOM, updateTransformState]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
   const handleZoomIn = useCallback(() => {
-    setTransform(prev => ({
+    const prev = transformRef.current;
+    const newTransform = {
       ...prev,
       k: Math.min(5, prev.k * 1.2)
-    }));
-  }, []);
+    };
+    transformRef.current = newTransform;
+    updateTransformDOM(newTransform);
+    updateTransformState(newTransform);
+  }, [updateTransformDOM, updateTransformState]);
 
   const handleZoomOut = useCallback(() => {
-    setTransform(prev => ({
+    const prev = transformRef.current;
+    const newTransform = {
       ...prev,
       k: Math.max(0.1, prev.k / 1.2)
-    }));
-  }, []);
+    };
+    transformRef.current = newTransform;
+    updateTransformDOM(newTransform);
+    updateTransformState(newTransform);
+  }, [updateTransformDOM, updateTransformState]);
 
   const handleResetView = useCallback(() => {
-    setTransform({ x: 0, y: 0, k: 1 });
-  }, []);
+    const newTransform = { x: 0, y: 0, k: 1 };
+    transformRef.current = newTransform;
+    updateTransformDOM(newTransform);
+    updateTransformState(newTransform);
+  }, [updateTransformDOM, updateTransformState]);
 
   if (!layout) {
     return (
@@ -272,7 +332,7 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
         onMouseLeave={handleMouseUp}
         onContextMenu={(e) => e.preventDefault()}
       >
-        <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
+        <g ref={contentRef}>
           <CanvasLayout
             layout={templateLayout}
             width={containerSize.width}

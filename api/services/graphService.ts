@@ -65,39 +65,26 @@ export class GraphService {
   }
 
   async getGraph(supabase: SupabaseClient, userId: string | null, id: string) {
-    const query = supabase
-      .from('knowledge_graphs')
-      .select('*')
-      .eq('id', id)
-      .is('deleted_at', null)
-      .single();
-
-    if (userId) {
-      // If user is logged in, they can see their own graphs OR public graphs
-      // But Supabase RLS might restrict it. 
-      // Since we are using service role or authenticated client, we need to handle logic.
-      // If using RLS, we just query. But here we might want to enforce ownership check explicitly OR allow if public.
-      // Assuming RLS handles "read own" + "read public".
-      // But to be safe and explicit:
-      // The query above will fail if RLS prevents it.
-      // If we want to check ownership specifically:
-      // .or(`user_id.eq.${userId},is_public.eq.true`)
-      // But standard .select().eq('id', id) combined with RLS is best.
-      
-      // However, the original code had .eq('user_id', userId). We need to relax that.
-      // Let's rely on the result.
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
+    const cacheKey = CacheKeys.GRAPH(id);
     
+    const graph = await cacheService.getOrSet(cacheKey, async () => {
+      const { data, error } = await supabase
+        .from('knowledge_graphs')
+        .select('*')
+        .eq('id', id)
+        .is('deleted_at', null)
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
+
     // Manual check if not using RLS for public access (double safety)
-    if (!data.is_public && (!userId || data.user_id !== userId)) {
+    if (!graph.is_public && (!userId || graph.user_id !== userId)) {
        throw new Error('Access denied');
     }
 
-    return data;
+    return graph;
   }
 
   async updateGraph(supabase: SupabaseClient, userId: string, id: string, updates: any) {
@@ -113,6 +100,7 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.del(CacheKeys.GRAPH(id));
     // Also invalidate graph node cache as metadata changed
     await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
     return data;
@@ -129,6 +117,7 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.del(CacheKeys.GRAPH(id));
     // We don't necessarily need to delete the node cache immediately if we allow viewing trash,
     // but usually we want to clear it to prevent stale data if we restore it differently.
     // However, if we soft delete, the `getGraphNodes` should also block access unless we allow reading deleted graphs.
@@ -160,6 +149,7 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    await cacheService.del(CacheKeys.GRAPH(id));
     await cacheService.del(CacheKeys.GRAPH_NODES(userId, id));
     await cacheService.delByPrefix(CacheKeys.STUDY_CARDS(id));
   }

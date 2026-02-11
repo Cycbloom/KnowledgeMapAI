@@ -108,6 +108,8 @@ export default defineConfig({
           'vendor-ui': ['lucide-react', 'framer-motion'],
           'vendor-charts': ['recharts'],
           'vendor-utils': ['clsx', 'tailwind-merge'],
+          'pdf-lib': ['pdfjs-dist'],
+          'mermaid': ['mermaid'],
         }
       }
     }

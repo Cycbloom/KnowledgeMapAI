@@ -6,7 +6,7 @@ interface BatchGenerateDialogProps {
   isOpen: boolean;
   onClose: () => void;
   selectedNodeIds: string[];
-  onSuccess?: () => void;
+  onSuccess?: (config?: any) => void;
 }
 
 export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
@@ -78,28 +78,15 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
   }, [taskId, onClose, onSuccess]);
   */
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (types.length === 0) return;
-    setIsLoading(true);
     
-    // api.ai.batchGenerateCards now handles provider/model injection from store if not provided
-    // So we don't need to manually read from localStorage
-
-    try {
-      const res: any = await api.ai.batchGenerateCards(selectedNodeIds, {
-        types: types as any,
-        count,
-        pack_template: packTemplate as any
-      });
-      
-      onSuccess?.();
-      onClose();
-    } catch (error) {
-      console.error(error);
-      alert('任务提交失败，请重试');
-    } finally {
-      setIsLoading(false);
-    }
+    onSuccess?.({
+      types,
+      count,
+      pack_template: packTemplate
+    });
+    onClose();
   };
 
   if (!isOpen) return null;

@@ -276,18 +276,7 @@ export const useGraphAIOperations = ({
     }
   };
 
-  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis') => {
-    // If it's a batch generate success notification, just show the message
-    if (type === 'batch_generate_questions') {
-      addMessage({
-        type: 'success',
-        content: '批量生成任务已提交',
-        duration: 3000,
-        action: { label: '查看任务', onClick: () => navigate('/tasks') }
-      });
-      return;
-    }
-
+  const handleBackgroundTask = async (type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | 'deep_analysis', params?: any) => {
     // If no nodes selected, do nothing
     if (selectedNodeIds.size === 0 && !selectedNode) return;
     if (!id) return;
@@ -305,6 +294,32 @@ export const useGraphAIOperations = ({
       const provider = aiConfig?.provider;
       const model = aiConfig?.model;
 
+      // Special handling for batch generation using optimized backend endpoint
+      if (type === 'batch_generate_questions') {
+        addMessage({
+            type: 'info',
+            content: `正在提交 ${nodesToProcess.length} 个节点的题目生成任务...`,
+            duration: 2000
+        });
+
+        const nodeIds = nodesToProcess.map(n => n!.id);
+        
+        // Use the params passed from BatchGenerateDialog
+        await api.ai.batchGenerateCards(nodeIds, {
+          ...params,
+          provider,
+          model
+        });
+
+        addMessage({
+          type: 'success',
+          content: `成功提交 ${nodesToProcess.length} 个生成任务，请在任务列表中查看进度`,
+          duration: 3000,
+          action: { label: '查看任务', onClick: () => navigate('/tasks') }
+        });
+        return;
+      }
+
       for (const node of nodesToProcess) {
         if (!node) continue;
         
@@ -314,7 +329,8 @@ export const useGraphAIOperations = ({
           node_title: node.title,
           node_content: node.content,
           provider,
-          model
+          model,
+          ...params
         };
 
         if (type === 'expand_graph') {

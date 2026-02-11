@@ -110,10 +110,10 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
               selectedNodeId={selectedNode?.id}
               selectedNodeIds={selectedNodeIds}
               onSelectionChange={setSelectedNodeIds}
-              onBatchAction={(action: string) => {
+              onBatchAction={(action: string, data?: any) => {
                 if (action === 'expand_graph') aiOps.handleBackgroundTask('expand_graph');
                 else if (action === 'delete') nodeOps.handleBatchDelete();
-                else if (action === 'batch_generate_questions') aiOps.handleBackgroundTask('batch_generate_questions');
+                else if (action === 'batch_generate_questions') aiOps.handleBackgroundTask('batch_generate_questions', data);
               }}
               className="h-full"
               stats={graphStats}

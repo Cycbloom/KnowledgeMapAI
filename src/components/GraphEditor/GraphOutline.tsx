@@ -255,10 +255,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     }
   }, [selectedNodeIds.size, nodes, onSelectionChange]);
 
-  const handleBatchGenerateSuccess = useCallback(() => {
+  const handleBatchGenerateSuccess = useCallback((config?: any) => {
     onSelectionChange?.(new Set());
     setIsMultiSelectMode(false);
-    onBatchAction?.('batch_generate_questions'); 
+    onBatchAction?.('batch_generate_questions', config); 
   }, [onSelectionChange, onBatchAction]);
 
   // List Mode: Flat List (Used for Search, Filter, or explicit List View)
@@ -384,8 +384,18 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           </div>
           
           {isMultiSelectMode && (
-            <div onClick={(e) => { e.stopPropagation(); handleToggleSelection(node.id); }} className="mr-2 cursor-pointer text-slate-400 hover:text-blue-500">
-              {isSelected ? <CheckSquare size={16} className="text-blue-500" /> : <Square size={16} />}
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleSelection(node.id);
+              }} 
+              className="mr-2 cursor-pointer text-slate-400 hover:text-blue-500"
+            >
+              {isSelected ? (
+                <CheckSquare size={16} className="text-blue-500" />
+              ) : (
+                <Square size={16} />
+              )}
             </div>
           )}
 

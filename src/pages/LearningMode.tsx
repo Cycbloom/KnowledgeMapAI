@@ -49,6 +49,7 @@ export const LearningMode = () => {
   const [newNodeColor, setNewNodeColor] = useState('#3B82F6');
   const [newNodeLevel, setNewNodeLevel] = useState<NodeLevel>('leaf');
   const [selectedParentNodeId, setSelectedParentNodeId] = useState<string>('');
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -395,6 +396,44 @@ export const LearningMode = () => {
     }
   };
 
+  const handleBatchAction = async (action: 'expand_graph' | 'delete' | 'batch_generate_questions', data?: any) => {
+    if (action === 'batch_generate_questions' && data) {
+      const nodeIds = Array.from(selectedNodeIds);
+      if (nodeIds.length === 0) return;
+      
+      if (!isOnline) {
+        addMessage({ type: 'error', content: '离线模式下无法生成题目' });
+        return;
+      }
+
+      setIsGeneratingCards(true);
+      try {
+        const result = await api.ai.batchGenerateCards(nodeIds, data);
+        if (result.success) {
+          addMessage({ 
+            type: 'success', 
+            content: `已为 ${nodeIds.length} 个节点提交生成任务`,
+            duration: 5000,
+            action: {
+              label: '查看任务',
+              onClick: () => navigate('/tasks')
+            }
+          });
+          setSelectedNodeIds(new Set());
+        } else {
+          addMessage({ type: 'error', content: '任务提交失败，请重试' });
+        }
+      } catch (error) {
+        console.error('Batch generation failed:', error);
+        addMessage({ type: 'error', content: '批量生成失败，请稍后重试' });
+      } finally {
+        setIsGeneratingCards(false);
+      }
+    } else {
+      addMessage({ type: 'info', content: '此模式下暂不支持该批量操作' });
+    }
+  };
+
   return (
     <div className={`h-screen flex flex-col ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'}`}>
       {/* Header */}
@@ -554,6 +593,9 @@ export const LearningMode = () => {
                  edges={graphData.edges}
                  onNodeClick={(node) => navigate(`/learning?graph_id=${graphId}&node_id=${node.id}`)}
                  selectedNodeId={nodeId}
+                 selectedNodeIds={selectedNodeIds}
+                 onSelectionChange={setSelectedNodeIds}
+                 onBatchAction={handleBatchAction}
                  onAddNode={() => setIsCreateNodeModalOpen(true)}
                  className="h-full border-none"
                />

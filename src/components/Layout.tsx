@@ -11,6 +11,7 @@ import { GlobalSearch } from './GlobalSearch';
 import { HelpModal } from './HelpModal';
 import { SSEStatusIndicator } from './SSEStatusIndicator';
 import { OfflineIndicator } from './OfflineIndicator';
+import { FocusTimer } from './FocusTimer';
 import { useTheme } from '../hooks/useTheme';
 
 export const Layout = () => {
@@ -233,6 +234,7 @@ export const Layout = () => {
           </div>
           <MessageBar />
           <OfflineIndicator />
+          <FocusTimer />
           <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
         </div>
       </div>

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/useQueries';
-import { Search, Trash2, Edit, Plus, Filter, CheckSquare, Square, X, Save, AlertTriangle, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Trash2, Edit, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
+import { QuestionForm, QuestionFormData } from './QuestionForm';
 
 interface QuestionBankProps {
   cards: StudyCard[];
@@ -24,20 +25,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingCard, setEditingCard] = useState<StudyCard | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [newCard, setNewCard] = useState<{
-    question: string;
-    answer: string;
-    card_type: string;
-    explanation: string;
-    options: string[];
-  }>({
-    question: '',
-    answer: '',
-    card_type: 'qa',
-    explanation: '',
-    options: []
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const formRef = useRef<HTMLDivElement>(null);
 
   const deleteCardMutation = useDeleteCardMutation();
   const deleteBatchMutation = useDeleteCardsBatchMutation();
@@ -76,8 +65,6 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
         if (nextReviewRange.start || nextReviewRange.end) {
           const reviewDate = new Date(card.next_review).getTime();
           if (nextReviewRange.start && reviewDate < new Date(nextReviewRange.start).getTime()) return false;
-          // End date should be inclusive (end of day), so we add 1 day or set time to 23:59:59
-          // Or just simple comparison:
           if (nextReviewRange.end) {
             const endDate = new Date(nextReviewRange.end);
             endDate.setHours(23, 59, 59, 999);
@@ -110,8 +97,6 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
     setSelectedFsrsStates(newSet);
   };
 
-
-  // Handlers
   const handleSelectAll = () => {
     if (selectedIds.size === filteredCards.length) {
       setSelectedIds(new Set());
@@ -134,57 +119,44 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
     }
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingCard) return;
-    await updateCardMutation.mutateAsync({ 
-        id: editingCard.id, 
-        data: { 
-            question: editingCard.question, 
-            answer: editingCard.answer,
-            explanation: editingCard.explanation 
-        } 
-    });
-    setEditingCard(null);
-  };
-
-  // Option Handlers
-  const addOption = () => {
-    setNewCard(prev => ({ ...prev, options: [...prev.options, ''] }));
-  };
-  
-  const updateOption = (index: number, value: string) => {
-    const newOptions = [...newCard.options];
-    newOptions[index] = value;
-    setNewCard(prev => ({ ...prev, options: newOptions }));
-  };
-  
-  const removeOption = (index: number) => {
-    setNewCard(prev => ({ ...prev, options: prev.options.filter((_, i) => i !== index) }));
-  };
-
-  const handleCreate = async () => {
-    // Validation
-    const newErrors: Record<string, string> = {};
-    if (!newCard.question.trim()) newErrors.question = '请输入问题';
-    else if (newCard.question.length > 500) newErrors.question = '问题不能超过500字';
-    
-    if (!newCard.answer.trim()) newErrors.answer = '请输入答案';
-    
-    if ((newCard.card_type === 'choice' || newCard.card_type === 'multi_choice') && newCard.options.length < 2) {
-        newErrors.options = '选择题至少需要2个选项';
-    } else if ((newCard.card_type === 'choice' || newCard.card_type === 'multi_choice') && newCard.options.some(o => !o.trim())) {
-        newErrors.options = '选项内容不能为空';
+  const handleFormSubmit = async (data: QuestionFormData) => {
+    if (editingCard) {
+      await updateCardMutation.mutateAsync({
+        id: editingCard.id,
+        data: {
+          question: data.question,
+          answer: data.answer,
+          explanation: data.explanation,
+          options: data.options,
+          card_type: data.card_type as any
+        }
+      });
+      setEditingCard(null);
+    } else {
+      await createCardsMutation.mutateAsync([{
+        ...data,
+        card_type: data.card_type as any
+      }]);
+      setIsCreating(false);
     }
-    
-    if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-    }
+  };
 
-    await createCardsMutation.mutateAsync([newCard]);
+  const startEditing = (card: StudyCard) => {
+    setEditingCard(card);
     setIsCreating(false);
-    setNewCard({ question: '', answer: '', card_type: 'qa', explanation: '', options: [] });
-    setErrors({});
+    // Scroll to form
+    setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const startCreating = () => {
+    setIsCreating(true);
+    setEditingCard(null);
+    // Scroll to form
+    setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   return (
@@ -242,7 +214,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
           )}
           
           <button
-            onClick={() => setIsCreating(true)}
+            onClick={startCreating}
             className="flex items-center gap-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <PlusCircle size={18} />
@@ -328,192 +300,18 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
         </div>
       )}
 
-      {/* Create Form */}
-      {isCreating && (
-        <div className={`p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-indigo-50/50'}`}>
-          <div className="space-y-4 max-w-2xl">
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-1">
-                  问题 <span className="text-red-500">*</span>
-                  <span className={`ml-2 text-xs font-normal ${newCard.question.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>
-                    {newCard.question.length}/500
-                  </span>
-                </label>
-                <textarea
-                  value={newCard.question}
-                  onChange={e => setNewCard({...newCard, question: e.target.value})}
-                  className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.question ? 'border-red-500' : ''}`}
-                  rows={2}
-                  placeholder="输入问题内容..."
-                />
-                {errors.question && <p className="text-red-500 text-xs mt-1">{errors.question}</p>}
-              </div>
-              <div className="w-32">
-                <label className="block text-sm font-medium mb-1">类型</label>
-                <select
-                  value={newCard.card_type}
-                  onChange={e => {
-                      const type = e.target.value;
-                      setNewCard({
-                          ...newCard, 
-                          card_type: type, 
-                          options: (type === 'choice' || type === 'multi_choice') ? ['', '', '', ''] : [],
-                          answer: ''
-                      });
-                  }}
-                  className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
-                >
-                  <option value="qa">问答</option>
-                  <option value="choice">单选</option>
-                  <option value="multi_choice">多选</option>
-                  <option value="true_false">判断</option>
-                  <option value="fill_in_the_blank">填空</option>
-                  <option value="essay">论述</option>
-                </select>
-              </div>
-            </div>
-            
-            {/* Options for Choice/Multi-Choice */}
-            {(newCard.card_type === 'choice' || newCard.card_type === 'multi_choice') && (
-                <div>
-                    <label className="block text-sm font-medium mb-1">
-                        选项 & 正确答案 <span className="text-red-500">*</span>
-                    </label>
-                    <div className="space-y-2">
-                        {newCard.options.map((option, idx) => {
-                            const isChecked = newCard.card_type === 'choice' 
-                                ? newCard.answer === option
-                                : (() => {
-                                    try {
-                                        const ans = JSON.parse(newCard.answer || '[]');
-                                        return Array.isArray(ans) && ans.includes(option);
-                                    } catch { return false; }
-                                })();
-
-                            return (
-                            <div key={idx} className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        if (!option.trim()) return;
-                                        if (newCard.card_type === 'choice') {
-                                            setNewCard({...newCard, answer: option});
-                                        } else {
-                                            // Multi-choice logic
-                                            let currentAnswers: string[] = [];
-                                            try { currentAnswers = JSON.parse(newCard.answer || '[]'); } catch(e) {}
-                                            if (!Array.isArray(currentAnswers)) currentAnswers = [];
-                                            
-                                            if (currentAnswers.includes(option)) {
-                                                currentAnswers = currentAnswers.filter(a => a !== option);
-                                            } else {
-                                                currentAnswers.push(option);
-                                            }
-                                            setNewCard({...newCard, answer: JSON.stringify(currentAnswers)});
-                                        }
-                                    }}
-                                    className={`w-6 h-6 flex items-center justify-center rounded-full border transition-colors ${
-                                        isChecked
-                                        ? 'bg-green-500 border-green-500 text-white' 
-                                        : 'border-gray-300 hover:border-green-400'
-                                    }`}
-                                    title="设为正确答案"
-                                >
-                                    {isChecked && <CheckSquare size={14} />}
-                                </button>
-                                <span className="font-mono text-gray-400 w-6">{String.fromCharCode(65 + idx)}.</span>
-                                <input
-                                    type="text"
-                                    value={option}
-                                    onChange={e => updateOption(idx, e.target.value)}
-                                    className={`flex-1 p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
-                                    placeholder={`选项 ${idx + 1}`}
-                                />
-                                <button onClick={() => removeOption(idx)} className="text-gray-400 hover:text-red-500">
-                                    <X size={18} />
-                                </button>
-                            </div>
-                            );
-                        })}
-                        <button 
-                            onClick={addOption}
-                            className="text-sm text-indigo-500 hover:text-indigo-600 font-medium flex items-center gap-1"
-                        >
-                            <Plus size={16} /> 添加选项
-                        </button>
-                    </div>
-                    {errors.options && <p className="text-red-500 text-xs mt-1">{errors.options}</p>}
-                </div>
-            )}
-
-            {/* Answer Input */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                {(newCard.card_type === 'choice' || newCard.card_type === 'multi_choice') ? '答案预览 (自动生成)' : '答案'} <span className="text-red-500">*</span>
-              </label>
-              
-              {newCard.card_type === 'true_false' ? (
-                  <div className="flex gap-4">
-                      {['True', 'False'].map(val => (
-                          <label key={val} className="flex items-center gap-2 cursor-pointer">
-                              <input 
-                                  type="radio" 
-                                  name="tf_answer" 
-                                  value={val}
-                                  checked={newCard.answer === val}
-                                  onChange={e => setNewCard({...newCard, answer: e.target.value})}
-                                  className="w-4 h-4 text-indigo-600"
-                              />
-                              <span>{val === 'True' ? '正确 (True)' : '错误 (False)'}</span>
-                          </label>
-                      ))}
-                  </div>
-              ) : (newCard.card_type === 'choice' || newCard.card_type === 'multi_choice') ? (
-                  <div className={`p-2 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>
-                      {newCard.answer || '请点击上方选项左侧圆圈选择正确答案'}
-                  </div>
-              ) : (
-                  <textarea
-                    value={newCard.answer}
-                    onChange={e => setNewCard({...newCard, answer: e.target.value})}
-                    className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.answer ? 'border-red-500' : ''}`}
-                    rows={2}
-                    placeholder="输入标准答案..."
-                  />
-              )}
-              {errors.answer && <p className="text-red-500 text-xs mt-1">{errors.answer}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">解析 (可选)</label>
-              <textarea
-                value={newCard.explanation}
-                onChange={e => setNewCard({...newCard, explanation: e.target.value})}
-                className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
-                rows={1}
-                placeholder="输入解析..."
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button 
-                onClick={() => {
-                    setIsCreating(false);
-                    setErrors({});
-                }}
-                className="px-3 py-1.5 text-gray-500 hover:text-gray-700"
-              >
-                取消
-              </button>
-              <button 
-                onClick={handleCreate}
-                disabled={!newCard.question || !newCard.answer}
-                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-              >
-                保存
-              </button>
-            </div>
-          </div>
+      {/* Form Area */}
+      {(isCreating || editingCard) && (
+        <div ref={formRef}>
+          <QuestionForm 
+            initialData={editingCard || undefined}
+            onSubmit={handleFormSubmit}
+            onCancel={() => {
+              setIsCreating(false);
+              setEditingCard(null);
+            }}
+            isSubmitting={createCardsMutation.isPending || updateCardMutation.isPending}
+          />
         </div>
       )}
 
@@ -539,7 +337,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
           </thead>
           <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-gray-100'}`}>
             {paginatedCards.map(card => (
-              <tr key={card.id} className={`group ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-gray-50'}`}>
+              <tr key={card.id} className={`group ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-gray-50'} ${editingCard?.id === card.id ? 'bg-indigo-50/50' : ''}`}>
                 <td className="p-4">
                   <button onClick={() => toggleSelect(card.id)}>
                     {selectedIds.has(card.id) ? (
@@ -559,29 +357,13 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                   </span>
                 </td>
                 <td className="p-4 max-w-xl">
-                  {editingCard?.id === card.id ? (
-                    <div className="space-y-2">
-                      <textarea 
-                        className="w-full p-2 border rounded bg-transparent"
-                        value={editingCard.question}
-                        onChange={e => setEditingCard({...editingCard, question: e.target.value})}
-                      />
-                      <textarea 
-                        className="w-full p-2 border rounded bg-transparent text-sm text-gray-500"
-                        value={editingCard.answer}
-                        onChange={e => setEditingCard({...editingCard, answer: e.target.value})}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setEditingCard(null)} className="p-1 hover:bg-gray-200 rounded"><X size={16}/></button>
-                        <button onClick={handleSaveEdit} className="p-1 hover:bg-green-200 text-green-600 rounded"><Save size={16}/></button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="font-medium line-clamp-2">{card.question}</div>
-                      <div className="text-sm text-gray-500 line-clamp-1 mt-1">{card.answer}</div>
-                    </div>
-                  )}
+                  <div>
+                    <div className="font-medium line-clamp-2">{card.question}</div>
+                    <div className="text-sm text-gray-500 line-clamp-1 mt-1">{card.answer}</div>
+                    {card.explanation && (
+                        <div className="text-xs text-gray-400 line-clamp-1 mt-1">解析: {card.explanation}</div>
+                    )}
+                  </div>
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-2">
@@ -600,7 +382,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                 <td className="p-4">
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
-                      onClick={() => setEditingCard(card)}
+                      onClick={() => startEditing(card)}
                       className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded"
                       title="编辑"
                     >
@@ -650,7 +432,6 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                // Logic to show a sliding window of pages if many pages exist
                 let pageNum = i + 1;
                 if (totalPages > 5) {
                   if (currentPage <= 3) pageNum = i + 1;

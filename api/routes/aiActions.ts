@@ -27,9 +27,24 @@ router.post('/', requireAuth, async (req, res) => {
       action.user_id = userId;
   } else if (action.scope === 'graph') {
       // Verify graph ownership
-      if (!action.graph_id) throw new AppError('Graph ID required for graph scope', 400, ErrorCodes.VALIDATION_ERROR);
-      // TODO: Check if user owns graph
-      action.user_id = userId; // Assign creator
+    if (!action.graph_id) throw new AppError('Graph ID required for graph scope', 400, ErrorCodes.VALIDATION_ERROR);
+    
+    // Check if user owns graph
+    const { data: graph, error } = await supabaseAdmin
+      .from('graphs')
+      .select('user_id')
+      .eq('id', action.graph_id)
+      .single();
+
+    if (error || !graph) {
+      throw new AppError('Graph not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+    }
+
+    if (graph.user_id !== userId) {
+      throw new AppError('Not authorized to create action for this graph', 403, ErrorCodes.FORBIDDEN);
+    }
+
+    action.user_id = userId; // Assign creator
   } else if (action.scope === 'system') {
       // Only admin can create system actions (Skip check for now or assume backend protection)
   }

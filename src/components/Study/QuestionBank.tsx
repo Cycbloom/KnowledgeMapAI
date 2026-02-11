@@ -1,16 +1,19 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/useQueries';
-import { Search, Trash2, Edit, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Trash2, Edit, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
+import { StudyCardPreview } from './StudyCardPreview';
+import { StudyCardDetailModal } from './StudyCardDetailModal';
 
 interface QuestionBankProps {
   cards: StudyCard[];
 }
 
 export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
-  const { isDark } = useTheme();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -23,6 +26,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const [nextReviewRange, setNextReviewRange] = useState<{start: string, end: string}>({ start: '', end: '' });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+  const [previewCard, setPreviewCard] = useState<StudyCard | null>(null);
   const [editingCard, setEditingCard] = useState<StudyCard | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   
@@ -203,13 +208,25 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button 
+            onClick={handleSelectAll}
+            className={`p-2 rounded-lg border transition-colors ${
+              selectedIds.size === filteredCards.length && filteredCards.length > 0
+                ? 'bg-indigo-100 border-indigo-200 text-indigo-600'
+                : isDark ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-400'
+            }`}
+            title={selectedIds.size === filteredCards.length ? "取消全选" : "全选当前页"}
+          >
+            {selectedIds.size === filteredCards.length && filteredCards.length > 0 ? <CheckSquare size={20} /> : <Square size={20} />}
+          </button>
+
           {selectedIds.size > 0 && (
             <button 
               onClick={handleBatchDelete}
               className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
             >
               <Trash2 size={18} />
-              <span>批量删除</span>
+              <span>批量删除 ({selectedIds.size})</span>
             </button>
           )}
           
@@ -315,98 +332,35 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className={`text-sm ${isDark ? 'bg-slate-800/50 text-slate-400' : 'bg-gray-50 text-gray-500'}`}>
-              <th className="p-4 w-12">
-                <button onClick={handleSelectAll} className="flex items-center">
-                  {selectedIds.size === filteredCards.length && filteredCards.length > 0 ? (
-                    <CheckSquare size={20} className="text-indigo-500" />
-                  ) : (
-                    <Square size={20} className="text-gray-400" />
-                  )}
-                </button>
-              </th>
-              <th className="p-4 w-24">类型</th>
-              <th className="p-4">题目内容</th>
-              <th className="p-4 w-32">熟练度</th>
-              <th className="p-4 w-24">操作</th>
-            </tr>
-          </thead>
-          <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-gray-100'}`}>
+      {/* Card Grid */}
+      <div className="p-4">
+        {filteredCards.length === 0 ? (
+          <div className="p-16 text-center flex flex-col items-center justify-center gap-4 text-gray-500">
+             <div className={`p-4 rounded-full ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                <Search size={32} className="opacity-50" />
+             </div>
+             <p>没有找到符合条件的题目</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {paginatedCards.map(card => (
-              <tr key={card.id} className={`group ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-gray-50'} ${editingCard?.id === card.id ? 'bg-indigo-50/50' : ''}`}>
-                <td className="p-4">
-                  <button onClick={() => toggleSelect(card.id)}>
-                    {selectedIds.has(card.id) ? (
-                      <CheckSquare size={20} className="text-indigo-500" />
-                    ) : (
-                      <Square size={20} className="text-gray-400 group-hover:text-gray-500" />
-                    )}
-                  </button>
-                </td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    card.card_type === 'qa' ? 'bg-blue-100 text-blue-700' :
-                    card.card_type === 'choice' ? 'bg-green-100 text-green-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {card.card_type}
-                  </span>
-                </td>
-                <td className="p-4 max-w-xl">
-                  <div>
-                    <div className="font-medium line-clamp-2">{card.question}</div>
-                    <div className="text-sm text-gray-500 line-clamp-1 mt-1">{card.answer}</div>
-                    {card.explanation && (
-                        <div className="text-xs text-gray-400 line-clamp-1 mt-1">解析: {card.explanation}</div>
-                    )}
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${
-                          (card.fsrs_state || 0) > 2 ? 'bg-green-500' : 
-                          (card.fsrs_state || 0) > 0 ? 'bg-yellow-500' : 'bg-gray-400'
-                        }`} 
-                        style={{ width: `${Math.min(((card.review_count || 0) / 5) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-400">{card.review_count || 0}次</span>
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => startEditing(card)}
-                      className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded"
-                      title="编辑"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      onClick={async () => {
-                        if(confirm('删除此卡片?')) await deleteCardMutation.mutateAsync(card.id);
-                      }}
-                      className="p-1.5 hover:bg-red-50 text-red-600 rounded"
-                      title="删除"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+              <div key={card.id} className="h-full">
+                <StudyCardPreview
+                  card={card}
+                  isDark={isDark}
+                  onPreview={setPreviewCard}
+                  onEdit={startEditing}
+                  onDelete={async (c) => {
+                    if(confirm('删除此卡片?')) await deleteCardMutation.mutateAsync(c.id);
+                  }}
+                  onSelect={(c) => toggleSelect(c.id)}
+                  selected={selectedIds.has(card.id)}
+                  selectionMode={true}
+                  showStatus={true}
+                />
+              </div>
             ))}
-          </tbody>
-        </table>
-        {filteredCards.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
-                没有找到符合条件的题目
-            </div>
+          </div>
         )}
       </div>
 
@@ -469,6 +423,14 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
           </div>
         </div>
       )}
+
+      {/* Card Detail Modal */}
+      <StudyCardDetailModal
+        card={previewCard}
+        isOpen={!!previewCard}
+        onClose={() => setPreviewCard(null)}
+        isDark={isDark}
+      />
     </div>
   );
 };

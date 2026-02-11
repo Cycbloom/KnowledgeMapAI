@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
 import { QuestionBank } from '../components/Study/QuestionBank';
+import { StudyCardPreview } from '../components/Study/StudyCardPreview';
+import { StudyCardDetailModal } from '../components/Study/StudyCardDetailModal';
 import { StatsOverview } from '../components/StatsOverview';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
@@ -466,77 +468,20 @@ export const Study = () => {
                 </div>
               ) : (
                 paginatedCards.map((card) => (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    key={card.id}
-                    className={`group p-5 rounded-2xl border transition-all hover:shadow-xl flex flex-col h-full ${
-                      isDark 
-                        ? 'bg-slate-800 border-slate-700 hover:border-indigo-500/50' 
-                        : 'bg-white border-gray-100 hover:border-indigo-200 shadow-sm'
-                    }`}
-                  >
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                          (card.review_count || 0) > 0 
-                            ? (isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
-                            : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')
-                        }`}>
-                          {(card.review_count || 0) > 0 ? '已学习' : '新内容'}
-                        </span>
-                        <div className={`flex items-center gap-1 text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                          <Calendar size={10} />
-                          <span>{card.next_review ? new Date(card.next_review).toLocaleDateString() : '尚未开始'}</span>
-                        </div>
-                      </div>
-                      
-                      <h4 className="font-bold line-clamp-2 leading-snug min-h-[2.8rem]">{card.question}</h4>
-                      <p className={`text-sm line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{card.answer}</p>
-                    </div>
-
-                    <div className="mt-5 pt-4 border-t border-gray-50 dark:border-slate-700/50 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-1.5 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-50'}`}>
-                          <Tag size={12} className="text-indigo-400" />
-                        </div>
-                        <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                          {card.card_type === 'choice' ? '单选题' : 
-                           card.card_type === 'multi_choice' ? '多选题' : 
-                           card.card_type === 'fill_in_the_blank' ? '填空题' : '问答题'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => setPreviewCard(card)}
-                          className={`p-1.5 rounded-lg transition-all ${
-                            isDark 
-                              ? 'text-slate-400 hover:text-indigo-400 hover:bg-slate-700' 
-                              : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
-                          }`}
-                          title="预览内容"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setQuizCards([card]);
-                            setCurrentCardIndex(0);
-                            setFinished(false);
-                            setViewState('quiz');
-                          }}
-                          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                            isDark 
-                              ? 'text-indigo-400 hover:bg-indigo-500/10' 
-                              : 'text-indigo-600 hover:bg-indigo-50'
-                          }`}
-                        >
-                          单独练习
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
+                  <div key={card.id} className="h-full">
+                    <StudyCardPreview
+                      card={card}
+                      isDark={isDark}
+                      onPreview={setPreviewCard}
+                      onPractice={(c) => {
+                        setQuizCards([c]);
+                        setCurrentCardIndex(0);
+                        setFinished(false);
+                        setViewState('quiz');
+                      }}
+                      showStatus={true}
+                    />
+                  </div>
                 ))
               )}
             </div>
@@ -606,124 +551,18 @@ export const Study = () => {
         </div>
 
         {/* Card Preview Modal */}
-        <AnimatePresence>
-          {previewCard && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setPreviewCard(null)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className={`relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[2.5rem] shadow-2xl flex flex-col ${
-                  isDark ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-gray-100'
-                }`}
-              >
-                {/* Modal Header */}
-                <div className={`p-6 border-b flex items-center justify-between shrink-0 ${
-                  isDark ? 'border-slate-800' : 'border-gray-50'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-2xl ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-                      <Info size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-lg">卡片详情</h3>
-                      <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                        {previewCard.card_type === 'choice' ? '单选题' : 
-                         previewCard.card_type === 'multi_choice' ? '多选题' : 
-                         previewCard.card_type === 'fill_in_the_blank' ? '填空题' : '问答题'}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setPreviewCard(null)}
-                    className={`p-2 rounded-xl transition-all ${
-                      isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-
-                {/* Modal Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
-                  <section className="space-y-3">
-                    <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>问题</h4>
-                    <div className={`text-xl font-bold leading-relaxed ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      {previewCard.question}
-                    </div>
-                  </section>
-
-                  {/* Options for Choice Cards */}
-                  {(previewCard.card_type === 'choice' || previewCard.card_type === 'multi_choice') && previewCard.options && (
-                    <section className="space-y-3">
-                      <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>选项</h4>
-                      <div className="grid gap-3">
-                        {(() => {
-                          let opts = [];
-                          try {
-                            opts = typeof previewCard.options === 'string' ? JSON.parse(previewCard.options) : previewCard.options;
-                          } catch (e) {}
-                          return Array.isArray(opts) ? opts.map((opt, i) => (
-                            <div key={i} className={`p-4 rounded-2xl border ${
-                              isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-gray-50 border-gray-100 text-slate-600'
-                            }`}>
-                              <span className="font-bold mr-3 opacity-50">{String.fromCharCode(65 + i)}.</span>
-                              {opt}
-                            </div>
-                          )) : null;
-                        })()}
-                      </div>
-                    </section>
-                  )}
-
-                  <section className="space-y-3">
-                    <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>正确答案</h4>
-                    <div className={`p-5 rounded-2xl font-bold ${
-                      isDark ? 'bg-emerald-900/20 border border-emerald-900/50 text-emerald-400' : 'bg-emerald-50 border border-emerald-100 text-emerald-700'
-                    }`}>
-                      {previewCard.answer}
-                    </div>
-                  </section>
-
-                  {previewCard.explanation && (
-                    <section className="space-y-3">
-                      <h4 className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>解析</h4>
-                      <div className={`p-5 rounded-2xl leading-relaxed ${
-                        isDark ? 'bg-slate-800/50 text-slate-300' : 'bg-slate-50 text-slate-600'
-                      }`}>
-                        {previewCard.explanation}
-                      </div>
-                    </section>
-                  )}
-                </div>
-
-                {/* Modal Footer */}
-                <div className={`p-6 border-t shrink-0 flex gap-3 ${isDark ? 'border-slate-800' : 'border-gray-50'}`}>
-                  <button
-                    onClick={() => {
-                      setQuizCards([previewCard]);
-                      setCurrentCardIndex(0);
-                      setFinished(false);
-                      setViewState('quiz');
-                      setPreviewCard(null);
-                    }}
-                    className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Play size={20} fill="currentColor" />
-                    立即开始练习
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+        <StudyCardDetailModal
+          card={previewCard}
+          isOpen={!!previewCard}
+          onClose={() => setPreviewCard(null)}
+          isDark={isDark}
+          onPractice={(card) => {
+            setQuizCards([card]);
+            setCurrentCardIndex(0);
+            setFinished(false);
+            setViewState('quiz');
+          }}
+        />
       </div>
     );
   }

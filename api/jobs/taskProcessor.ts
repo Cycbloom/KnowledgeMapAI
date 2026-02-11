@@ -89,32 +89,31 @@ class TaskProcessor {
     const provider = config?.provider || task.payload.provider;
     const model = config?.model || task.payload.model;
     
-    // Use remaining count strategy to ensure exact total count
+    // Pre-calculate counts for each type
     let remainingCount = totalRequestCount;
+    const tasksToRun: { type: string; count: number }[] = [];
+
+    for (let i = 0; i < types.length; i++) {
+        const countPerType = Math.ceil(remainingCount / (types.length - i));
+        remainingCount -= countPerType;
+        if (countPerType > 0) {
+            tasksToRun.push({ type: types[i], count: countPerType });
+        }
+    }
 
     console.log(`[TaskProcessor] Generating questions for node ${node_title}. Types: ${types.join(',')}, Total: ${totalRequestCount}`);
 
-    for (let i = 0; i < types.length; i++) {
-        const type = types[i];
-        
-        // Calculate count for this type
-        const countPerType = Math.ceil(remainingCount / (types.length - i));
-        remainingCount -= countPerType;
-        
-        if (countPerType <= 0) continue;
-        
-        // Update Progress
-        const progress = Math.round((i / types.length) * 100);
-        await taskService.updateTaskStatus(supabaseAdmin, task.id, 'processing', { 
-            progress, 
-            current_node: `正在生成 ${this.getTypeName(type)}...` 
-        });
+    // Concurrency control
+    const CONCURRENCY = 3;
+    let completedTasks = 0;
 
+    // Helper function to process a single type
+    const processType = async ({ type, count }: { type: string; count: number }) => {
         try {
             // Generate for specific type
             const aiResult = await aiService.generateCards(node_title, truncatedContent, { 
                 type: type as any, 
-                count: countPerType,
+                count: count,
                 provider,
                 model
             });
@@ -158,8 +157,21 @@ class TaskProcessor {
         } catch (err: any) {
             console.error(`[TaskProcessor] Error generating type ${type}:`, err);
             errors.push(`Failed to generate ${type}: ${err.message}`);
-            // Continue to next type even if one fails
+        } finally {
+            completedTasks++;
+            // Update Progress
+            const progress = Math.round((completedTasks / tasksToRun.length) * 100);
+            await taskService.updateTaskStatus(supabaseAdmin, task.id, 'processing', { 
+                progress, 
+                current_node: `正在生成 ${this.getTypeName(type)}...` 
+            });
         }
+    };
+
+    // Execute in chunks
+    for (let i = 0; i < tasksToRun.length; i += CONCURRENCY) {
+        const chunk = tasksToRun.slice(i, i + CONCURRENCY);
+        await Promise.all(chunk.map(t => processType(t)));
     }
 
     if (totalCount === 0 && errors.length > 0) {

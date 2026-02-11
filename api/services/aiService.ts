@@ -7,6 +7,7 @@ import { getAIProviderForTask, getAIProvider } from './ai/factory.js';
 import { AIProviderType } from './ai/types.js';
 import { logger } from '../utils/logger.js';
 import { promptService } from './promptService.js';
+import { cacheService, CacheKeys } from './cache.js';
 import { supabaseAdmin } from '../supabase.js';
 
 dotenv.config();
@@ -225,17 +226,9 @@ Context: ${context || 'None'}
       });
 
       const result = completion.choices[0].message.content || '';
-      const cleanedResult = this.cleanJsonString(result);
+      const parsed = this.parseAIResponse<{ cards: any[] }>(result, 'Generate Cards');
       
-      logger.debug(`[AI] Raw result for ${topic}:`, { preview: result.substring(0, 100) + '...' });
-      
-      let parsed;
-      try {
-        parsed = JSON.parse(cleanedResult || '{"cards": []}');
-      } catch (e) {
-        logger.error('[AI] JSON Parse Error. Raw:', { result });
-        throw new Error('Failed to parse AI response');
-      }
+      logger.debug(`[AI] Generated cards for ${topic}:`, { count: parsed.cards?.length });
       
       return { cards: parsed.cards || [] };
     } catch (error: any) {
@@ -251,6 +244,13 @@ Context: ${context || 'None'}
 
     if (!provider.hasKey) {
       return { suggestions: getMockResponse('expand', nodeTitle) };
+    }
+
+    // Check cache first
+    const cacheKey = CacheKeys.AI_EXPAND(nodeTitle, options.contextLevel || 'normal');
+    const cached = await cacheService.get<{ suggestions: any[] }>(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     try {
@@ -298,30 +298,35 @@ Context: ${context || 'None'}
       });
 
       const content = completion.choices[0].message.content || '';
-      const cleanedContent = this.cleanJsonString(content);
       
-      let parsed;
-      try {
-        parsed = JSON.parse(cleanedContent || '{"suggestions": []}');
-      } catch (e) {
-         logger.error('[AI] JSON Parse Error (Expand). Raw:', { content });
-         // Fallback: try to find JSON array/object inside text
-         const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-         if (match) {
-             try {
-                 parsed = JSON.parse(match[0]);
-             } catch (e2) {
-                 throw new Error('Failed to parse AI response');
-             }
-         } else {
-             throw new Error('Failed to parse AI response');
-         }
-      }
-
-      return { suggestions: parsed.suggestions || parsed };
+      const parsed = this.parseAIResponse<{ suggestions: any[] }>(content, 'Expand Knowledge');
+      const result = { suggestions: parsed.suggestions || parsed };
+      
+      // Cache result for 24 hours
+      await cacheService.set(cacheKey, result, 60 * 60 * 24);
+      
+      return result;
     } catch (error: any) {
       logger.error('AI Error:', error);
       throw new Error(error.message || 'AI expansion failed');
+    }
+  }
+
+  private parseAIResponse<T>(content: string, context: string): T {
+    const cleaned = this.cleanJsonString(content);
+    try {
+      return JSON.parse(cleaned);
+    } catch (e) {
+      logger.warn(`[AI] JSON Parse Error (${context}). Attempting regex fallback.`);
+      const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      if (match) {
+        try {
+          return JSON.parse(match[0]);
+        } catch (e2) {
+           throw new Error(`Failed to parse AI response for ${context}`);
+        }
+      }
+      throw new Error(`Failed to parse AI response for ${context}`);
     }
   }
 
@@ -401,24 +406,8 @@ Context: ${context || 'None'}
       });
 
       const content = completion.choices[0].message.content || '';
-      const cleanedContent = this.cleanJsonString(content);
       
-      let parsed;
-      try {
-        parsed = JSON.parse(cleanedContent || '{"suggestions": []}');
-      } catch (e) {
-         logger.error('[AI] JSON Parse Error (Branch Suggestions). Raw:', { content });
-         const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-         if (match) {
-             try {
-                 parsed = JSON.parse(match[0]);
-             } catch (e2) {
-                 throw new Error('Failed to parse AI response');
-             }
-         } else {
-             throw new Error('Failed to parse AI response');
-         }
-      }
+      const parsed = this.parseAIResponse<{ suggestions: any[] }>(content, 'Branch Suggestions');
 
       return { suggestions: parsed.suggestions || [] };
     } catch (error: any) {

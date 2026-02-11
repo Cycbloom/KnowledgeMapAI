@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode } from '../../types';
@@ -90,6 +90,7 @@ interface GraphToolbarProps {
   
   // Presentation
   onTogglePresentation?: () => void;
+  onTogglePodcast?: () => void;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -104,7 +105,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare,
   isExplorationMode, setIsExplorationMode, isTimelineVisible, setIsTimelineVisible,
   isTutorMode, onToggleTutorMode, onOpenAnalysis,
-  onTogglePresentation
+  onTogglePresentation, onTogglePodcast
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -628,6 +629,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? "隐藏时间轴" : "显示时间轴"} active={isTimelineVisible} colorClass="text-blue-500" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={onTogglePresentation} icon={MonitorPlay} label="演示播放" colorClass="text-orange-500" disabled={!onTogglePresentation} />
+        <MenuItem onClick={onTogglePodcast} icon={Headphones} label="播客模式 (AI)" colorClass="text-pink-500" disabled={!onTogglePodcast} />
       </DropdownButton>
 
       {/* AI Status Badge */}

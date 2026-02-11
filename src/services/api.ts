@@ -449,6 +449,19 @@ export const api = {
       if (!payload.model && config.model) payload.model = config.model;
       return request('/ai/suggest-next-topic', { method: 'POST', body: JSON.stringify(payload) });
     },
+    generatePodcastScript: (context: string, language: string = 'zh', graph_id?: string) => {
+      const config = getAIConfig('text');
+      return request('/ai/podcast/script', { 
+        method: 'POST', 
+        body: JSON.stringify({ 
+          context, 
+          language,
+          graph_id,
+          provider: config.provider,
+          model: config.model 
+        }) 
+      });
+    },
   },
   tts: {
     health: () => request('/ai/tts/health'),

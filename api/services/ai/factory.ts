@@ -21,7 +21,7 @@ export const getAIProvider = async (type?: AIProviderType): Promise<AIProvider> 
 };
 
 export const getAIProviderForTask = async (
-  task: 'text' | 'embedding' | 'reasoning' = 'text', 
+  task: 'text' | 'embedding' | 'reasoning' | 'tts' = 'text', 
   providerOverride?: string, 
   modelOverride?: string
 ): Promise<AIProvider> => {

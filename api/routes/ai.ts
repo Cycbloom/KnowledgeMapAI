@@ -174,6 +174,26 @@ ${node_content}`;
   }
 });
 
+router.post('/podcast/script', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { context, language, graph_id } = req.body;
+  
+  try {
+    const script = await aiService.generatePodcastScript(context, language);
+
+    // Save script if graph_id is provided
+    if (graph_id) {
+        await graphService.updateGraph(req.supabase!, req.user.id, graph_id, {
+            podcast_script: script
+        });
+    }
+
+    res.json({ script });
+  } catch (error: any) {
+    logger.error('Podcast Script Generation Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/generate-content', requireAuth, validate(generateContentSchema), async (req: AuthRequest, res: Response) => {
   const { topic, context, provider: providerType, model, graph_id, level } = req.body;
   const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
@@ -1081,19 +1101,18 @@ router.post('/suggest-next-topic', requireAuth, validate(suggestNextTopicSchema)
   }
 });
 
-// TTS - Text to Speech using local Qwen3-TTS model
+// TTS - Text to Speech using AI Provider
 router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (req: AuthRequest, res: Response) => {
   try {
-    const ttsServiceUrl = process.env.TTS_SERVICE_URL || 'http://localhost:8001';
-    
-    const response = await fetch(`${ttsServiceUrl}/voices`);
-    
-    if (!response.ok) {
-      throw new AppError('Failed to fetch TTS voices', 503, ErrorCodes.INTERNAL_ERROR);
-    }
-    
-    const data = await response.json();
-    res.json(data);
+    // Return standard Aliyun Qwen3-TTS voices
+    const voices = [
+      { id: 'Cherry', name: 'Cherry (Female, Chinese)', lang: 'zh' },
+      { id: 'Harry', name: 'Harry (Male, Chinese)', lang: 'zh' },
+      { id: 'Winnie', name: 'Winnie (Child, Chinese)', lang: 'zh' },
+      { id: 'Farrah', name: 'Farrah (Female, English)', lang: 'en' },
+      { id: 'David', name: 'David (Male, English)', lang: 'en' }
+    ];
+    res.json(voices);
   } catch (error: any) {
     logger.error('TTS Voices Error:', error);
     res.status(500).json({ error: error.message || '获取语音列表失败' });
@@ -1104,36 +1123,28 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
   const { text, voice, speed, output_format } = req.body;
   
   try {
-    const ttsServiceUrl = process.env.TTS_SERVICE_URL || 'http://localhost:8001';
-    
-    const response = await fetch(`${ttsServiceUrl}/tts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text,
-        voice: voice || 'default',
-        speed: speed || 1.0,
-        output_format: output_format || 'mp3'
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new AppError(`TTS synthesis failed: ${errorText}`, 500, ErrorCodes.INTERNAL_ERROR);
+    const provider = await getAIProviderForTask('tts');
+    if (!provider.hasKey || !provider.synthesizeSpeech) {
+        throw new AppError('TTS Provider not configured', 503, ErrorCodes.SERVICE_UNAVAILABLE);
     }
+
+    const buffer = await provider.synthesizeSpeech(text, voice, speed, output_format);
     
-    const audioBuffer = await response.arrayBuffer();
+    let contentType = output_format === 'wav' ? 'audio/wav' : 'audio/mpeg';
+    let filename = output_format === 'wav' ? 'speech.wav' : 'speech.mp3';
     
-    const contentType = output_format === 'wav' ? 'audio/wav' : 'audio/mpeg';
-    const filename = output_format === 'wav' ? 'speech.wav' : 'speech.mp3';
-    
+    // Detect actual format from buffer header (RIFF = WAV)
+    // This handles the case where AliyunProvider forces WAV for long text concatenation
+    if (buffer.length > 4 && buffer.subarray(0, 4).toString() === 'RIFF') {
+        contentType = 'audio/wav';
+        filename = 'speech.wav';
+    }
+
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-    res.setHeader('Content-Length', audioBuffer.byteLength);
+    res.setHeader('Content-Length', buffer.length);
     
-    res.send(Buffer.from(audioBuffer));
+    return res.send(buffer);
   } catch (error: any) {
     logger.error('TTS Synthesis Error:', error);
     if (error instanceof AppError) {
@@ -1145,20 +1156,21 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
 
 router.get('/tts/health', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const ttsServiceUrl = process.env.TTS_SERVICE_URL || 'http://localhost:8001';
-    
-    const response = await fetch(`${ttsServiceUrl}/health`);
-    
-    if (!response.ok) {
-      return res.json({ 
-        status: 'unhealthy',
-        model_loaded: false,
-        model_name: 'unknown'
-      });
+    // Check if provider is configured
+    const provider = await getAIProviderForTask('tts');
+    if (provider.hasKey) {
+        res.json({ 
+            status: 'healthy',
+            model_loaded: true,
+            model_name: 'aliyun-qwen3-tts'
+        });
+    } else {
+        res.json({ 
+            status: 'unhealthy',
+            model_loaded: false,
+            model_name: 'unknown'
+        });
     }
-    
-    const data = await response.json();
-    res.json(data);
   } catch (error: any) {
     logger.error('TTS Health Check Error:', error);
     res.json({ 

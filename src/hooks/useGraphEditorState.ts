@@ -90,6 +90,8 @@ export interface GraphEditorState {
   // Modals Visibility
   isTextToGraphOpen: boolean;
   setIsTextToGraphOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isPodcastModalOpen: boolean;
+  setIsPodcastModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isSettingsOpen: boolean;
   setIsSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isChatOpen: boolean;
@@ -228,6 +230,7 @@ export const useGraphEditorState = (): GraphEditorState => {
 
   // Modals
   const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
+  const [isPodcastModalOpen, setIsPodcastModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -303,8 +306,12 @@ export const useGraphEditorState = (): GraphEditorState => {
     highlightedPath, setHighlightedPath,
     nodeForm, setNodeForm,
     aiPrompt, setAiPrompt,
-    isTextToGraphOpen, setIsTextToGraphOpen,
-    isSettingsOpen, setIsSettingsOpen,
+    isTextToGraphOpen,
+    setIsTextToGraphOpen,
+    isPodcastModalOpen,
+    setIsPodcastModalOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
     isChatOpen, setIsChatOpen,
     isExportMenuOpen, setIsExportMenuOpen,
     isExportImageModalOpen, setIsExportImageModalOpen,

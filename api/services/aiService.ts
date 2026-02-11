@@ -128,6 +128,48 @@ export class AIService {
     }
   }
 
+  async generatePodcastScript(context: string, language: string = 'zh'): Promise<string> {
+    const prompt = `You are a professional podcast host. 
+Your task is to create an engaging, educational podcast script based on the provided knowledge graph content.
+The script should be:
+1. Conversational and easy to listen to.
+2. Structured with an intro, key points (deep dive), and a conclusion.
+3. About 3-5 minutes long when spoken.
+4. Written in ${language} (if the content is mixed, prefer ${language}).
+5. Use clear markers for the speaker (e.g., "Host:").
+
+Content to cover:
+${context}
+
+Please output the script in raw Markdown format.
+IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \`\`\`). Just return the raw Markdown text directly.`;
+
+    const provider = await getAIProviderForTask('text');
+    
+    if (!provider.hasKey) {
+        return `**主持人**: 大家好，欢迎来到今天的知识播客！今天我们要聊的主题非常有意思。
+
+**主持人**: 不过，很遗憾，由于我还没有连接到 AI 大脑（API Key 未配置），我只能简单和你打个招呼。
+
+**主持人**: 请配置好 API Key 后，我将为你带来精彩的深度解读！`;
+    }
+
+    try {
+        const completion = await provider.client.chat.completions.create({
+            messages: [
+                { role: 'system', content: 'You are an expert podcast script writer.' },
+                { role: 'user', content: prompt }
+            ],
+            model: provider.model,
+        });
+
+        return completion.choices[0].message.content || '';
+    } catch (error: any) {
+        logger.error('Generate Podcast Script Error:', error);
+        throw new Error(error.message || 'Failed to generate podcast script');
+    }
+  }
+
   async generateCards(topic: string, content: string, options: GenerateCardsOptions = {}) {
     // If options.type is provided (single string), wrap it in array for types (compatibility)
     const types = options.type ? [options.type] : (options.types || ['qa', 'choice']);

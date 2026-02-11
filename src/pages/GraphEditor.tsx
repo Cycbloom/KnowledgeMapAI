@@ -601,6 +601,7 @@ export const GraphEditor = () => {
             state.setPresentationStep(0);
           }
         }}
+        onTogglePodcast={() => state.setIsPodcastModalOpen(true)}
       />
 
       {state.isPresentationMode && (

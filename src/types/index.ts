@@ -45,6 +45,7 @@ export interface Graph {
   };
   created_at: string;
   nodes_count?: number;
+  podcast_script?: string;
 }
 
 export type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';

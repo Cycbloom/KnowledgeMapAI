@@ -5,6 +5,7 @@ import { HelpModal } from '../HelpModal';
 import { ExportDialog } from './ExportDialog';
 import { ShareModal } from './ShareModal';
 import { ChatDialog } from './ChatDialog';
+import { PodcastModal } from './PodcastModal';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { queryKeys } from '../../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
     isSettingsOpen, setIsSettingsOpen,
     isHelpOpen, setIsHelpOpen,
     isChatOpen, setIsChatOpen,
+    isPodcastModalOpen, setIsPodcastModalOpen,
     isExportImageModalOpen, setIsExportImageModalOpen,
     isShareModalOpen, setIsShareModalOpen,
     confirmModal, setConfirmModal,
@@ -150,6 +152,14 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         onSuggestNextTopics={tutorOps?.handleSuggestNextTopics}
         suggestedNextTopics={state.suggestedNextTopics}
         onTutorChat={tutorOps?.handleTutorChat}
+      />
+      <PodcastModal 
+        isOpen={isPodcastModalOpen}
+        onClose={() => setIsPodcastModalOpen(false)}
+        nodes={state.graphRef.current?.getNodes() || []}
+        graphTitle={graphMeta?.title || '未命名图谱'}
+        graphId={id}
+        initialScript={graphMeta?.podcast_script}
       />
       <ConfirmationModal
         isOpen={confirmModal.isOpen}

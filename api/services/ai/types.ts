@@ -16,4 +16,5 @@ export interface AIProvider {
   providerType: AIProviderType;
   hasKey: boolean;
   createEmbedding?: (text: string) => Promise<number[] | null>;
+  synthesizeSpeech?: (text: string, voice?: string, speed?: number, format?: string) => Promise<Buffer>;
 }

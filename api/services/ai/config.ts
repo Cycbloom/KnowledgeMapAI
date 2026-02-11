@@ -64,7 +64,7 @@ export const getDefaultProvider = async (): Promise<AIProviderType> => {
   return (process.env.AI_DEFAULT_PROVIDER as AIProviderType) || 'deepseek';
 };
 
-export const getProviderForTask = async (task: 'text' | 'embedding' | 'reasoning' = 'text'): Promise<AIProviderType> => {
+export const getProviderForTask = async (task: 'text' | 'embedding' | 'reasoning' | 'tts' = 'text'): Promise<AIProviderType> => {
     try {
         const sysConfig = await settingsService.getSetting<{ task_mapping: Record<string, string> }>('system_config');
         if (sysConfig && sysConfig.task_mapping && sysConfig.task_mapping[task]) {
@@ -78,7 +78,8 @@ export const getProviderForTask = async (task: 'text' | 'embedding' | 'reasoning
     const envMap: Record<string, string | undefined> = {
         'text': 'deepseek',
         'embedding': 'volcengine',
-        'reasoning': 'aliyun'
+        'reasoning': 'aliyun',
+        'tts': 'aliyun'
     };
 
     return (envMap[task] as AIProviderType) || await getDefaultProvider();

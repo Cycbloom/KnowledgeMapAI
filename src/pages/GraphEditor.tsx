@@ -2,7 +2,7 @@ import React, { useRef, useMemo, lazy, Suspense, useCallback, useState } from 'r
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { ArrowLeft, LayoutList, Network, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -45,6 +45,11 @@ import { useFocusStore } from '../store/useFocusStore';
 import { PresentationControls } from '../components/GraphEditor/PresentationControls';
 import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
 import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
+import { CommandPalette, CommandItem } from '../components/GraphEditor/CommandPalette';
+import { 
+  Home, ListChecks, Network, GitBranch, Layers, Clock, 
+  Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
+} from 'lucide-react';
 import { api, AIAction } from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -66,8 +71,23 @@ export const GraphEditor = () => {
   const [nodeSizeMode, setNodeSizeMode] = useState<NodeSizeMode>('fixed');
   const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>('fixed');
   const [coloringMode, setColoringMode] = useState<GraphColorMode>('level'); // Default to level (structure) as requested
-  
-  // React Query Hooks
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Command Palette Logic
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+
+
   const { data: graphMeta } = useGraph(id || '');
   const { data: graphData, isLoading: isGraphLoading } = useGraphData(id || '');
   const { data: nodeStatus } = useGraphNodeStatus(id || '');
@@ -87,8 +107,6 @@ export const GraphEditor = () => {
     isDeleteMode, setIsDeleteMode, isPathfindingMode, setIsPathfindingMode,
     showGrid, setShowGrid,
     isFocusMode, setIsFocusMode,
-    collapsedNodeIds,
-    highlightedPath,
     viewMode, setViewMode,
     focusedNodeId, setFocusedNodeId,
     focusedNodeIds, setFocusedNodeIds,
@@ -96,8 +114,6 @@ export const GraphEditor = () => {
     forceShowTextIds, setForceShowTextIds,
     isExplorationMode, setIsExplorationMode,
     branchSuggestions, setBranchSuggestions,
-    explorationPath, setExplorationPath,
-    currentPathIndex, setCurrentPathIndex,
     isTimelineVisible, setIsTimelineVisible,
     historicalAlternativeBranches, setHistoricalAlternativeBranches,
     isAnalysisPanelOpen, setIsAnalysisPanelOpen
@@ -370,6 +386,117 @@ export const GraphEditor = () => {
         addMessage({ type: 'error', content: `执行失败: ${err.message}` });
     }
   };
+
+  const commands: CommandItem[] = useMemo(() => [
+    // Navigation
+    {
+      id: 'nav-home',
+      label: '返回首页',
+      icon: <Home size={18} />,
+      category: 'navigation',
+      action: () => navigate('/'),
+      keywords: ['home', 'index', 'back']
+    },
+    {
+      id: 'nav-graphs',
+      label: '图谱列表',
+      icon: <LayoutList size={18} />,
+      category: 'navigation',
+      action: () => navigate('/graphs'),
+      keywords: ['list', 'graphs', 'all']
+    },
+    // View Modes
+    {
+      id: 'view-mindmap',
+      label: '思维导图视图',
+      icon: <Network size={18} />,
+      category: 'view',
+      action: () => setViewMode('mindmap'),
+      keywords: ['mindmap', 'graph', 'canvas']
+    },
+    {
+      id: 'view-hierarchy',
+      label: '层级视图',
+      icon: <Layers size={18} />,
+      category: 'view',
+      action: () => setViewMode('hierarchy'),
+      keywords: ['hierarchy', 'tree', 'level']
+    },
+    {
+      id: 'view-timeline',
+      label: '时间轴视图',
+      icon: <Clock size={18} />,
+      category: 'view',
+      action: () => setViewMode('timeline'),
+      keywords: ['timeline', 'chronology', 'history']
+    },
+    {
+      id: 'view-tree',
+      label: '树形视图',
+      icon: <GitBranch size={18} />,
+      category: 'view',
+      action: () => setViewMode('tree'),
+      keywords: ['tree', 'structure']
+    },
+    // Toggles
+    {
+      id: 'toggle-sidebar',
+      label: sidebarMode === 'none' ? '打开侧边栏' : '关闭侧边栏',
+      icon: <Layout size={18} />,
+      category: 'view',
+      shortcut: 'Space',
+      action: () => {
+         if (sidebarMode === 'none') setSidebarMode('outline');
+         else setSidebarMode('none');
+      },
+      keywords: ['sidebar', 'panel', 'drawer']
+    },
+    {
+      id: 'toggle-theme',
+      label: isDark ? '切换亮色模式' : '切换暗色模式',
+      icon: isDark ? <Sun size={18} /> : <Moon size={18} />,
+      category: 'view',
+      action: toggleTheme,
+      keywords: ['theme', 'dark', 'light', 'mode']
+    },
+    {
+      id: 'toggle-focus',
+      label: isFocusMode ? '退出专注模式' : '进入专注模式',
+      icon: <Focus size={18} />,
+      category: 'view',
+      action: () => setIsFocusMode(prev => !prev),
+      keywords: ['focus', 'zen', 'mode']
+    },
+    // Actions
+    {
+        id: 'create-node',
+        label: '新建子节点',
+        icon: <Plus size={18} />,
+        category: 'action',
+        shortcut: 'Tab',
+        action: () => {
+            if (selectedNode) {
+                 addMessage({ type: 'info', content: '请使用 Tab 键创建子节点' });
+            } else {
+                addMessage({ type: 'warning', content: '请先选择一个节点' });
+            }
+        }
+    },
+    {
+        id: 'delete-node',
+        label: '删除节点',
+        icon: <Trash2 size={18} />,
+        category: 'action',
+        shortcut: 'Del',
+        action: () => {
+             if (selectedNode) {
+                 nodeOps.handleDeleteNode(selectedNode);
+             } else {
+                addMessage({ type: 'warning', content: '请先选择一个节点' });
+             }
+        }
+    }
+  ], [navigate, setViewMode, sidebarMode, setSidebarMode, isDark, toggleTheme, isFocusMode, setIsFocusMode, selectedNode, nodeOps, addMessage]);
 
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>
@@ -821,6 +948,22 @@ export const GraphEditor = () => {
             addMessage({ content: '连接已创建', type: 'success' });
           } catch (error: any) {
             addMessage({ content: '创建连接失败: ' + (error.message || '未知错误'), type: 'error' });
+          }
+        }}
+      />
+      
+      <CommandPalette 
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        commands={commands}
+        nodes={nodes}
+        onNodeSelect={(nodeId) => {
+          const node = nodes.find(n => n.id === nodeId);
+          if (node) {
+            handleNodeClick(node);
+            if (viewMode !== 'mindmap') {
+               setViewMode('mindmap');
+            }
           }
         }}
       />

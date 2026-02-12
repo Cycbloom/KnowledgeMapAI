@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ColorScheme, NodeStyleVariant, LinkStyle, LinkAnimation, CenterDotShape, NodeShape, NodeSizeMode, EdgeWidthMode } from '../../types';
-import { getColorSchemeNames } from '../../config/learningStatusColors';
+import { ColorScheme, NodeStyleVariant, LinkStyle, LinkAnimation, CenterDotShape, NodeShape, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../types';
+import { getColorSchemeNames, COLOR_SCHEMES } from '../../config/learningStatusColors';
 
 interface GraphStyleSettingsProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ interface GraphStyleSettingsProps {
   onNodeSizeModeChange?: (mode: NodeSizeMode) => void;
   edgeWidthMode?: EdgeWidthMode;
   onEdgeWidthModeChange?: (mode: EdgeWidthMode) => void;
+  coloringMode?: GraphColorMode;
 }
 
 export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
@@ -29,7 +30,8 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   nodeSizeMode = 'fixed',
   onNodeSizeModeChange,
   edgeWidthMode = 'fixed',
-  onEdgeWidthModeChange
+  onEdgeWidthModeChange,
+  coloringMode = 'level'
 }) => {
   const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges'>('colors');
 
@@ -123,29 +125,52 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           {activeTab === 'colors' && (
             <div className="space-y-4">
+              {coloringMode === 'level' && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    当前处于"结构"着色模式，配色方案仅在"热力图"模式下生效。
+                  </p>
+                </div>
+              )}
+              
               <div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">选择配色方案</h3>
                 <div className="grid grid-cols-3 gap-3">
-                  {colorSchemes.map((scheme) => (
-                    <button
-                      key={scheme.key}
-                      onClick={() => onColorSchemeChange(scheme.key)}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        currentColorScheme === scheme.key
-                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="flex space-x-1">
-                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  {colorSchemes.map((scheme) => {
+                    // Get representative colors for the scheme
+                    const schemeColors = COLOR_SCHEMES[scheme.key] || COLOR_SCHEMES.default;
+                    const previewColors = [
+                      schemeColors.mastered.primary,
+                      schemeColors.due.primary,
+                      schemeColors.new.primary
+                    ];
+
+                    return (
+                      <button
+                        key={scheme.key}
+                        onClick={() => onColorSchemeChange(scheme.key)}
+                        disabled={coloringMode === 'level'}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          currentColorScheme === scheme.key
+                            ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                        } ${coloringMode === 'level' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="flex space-x-1">
+                            {previewColors.map((color, idx) => (
+                              <div 
+                                key={idx} 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{scheme.name}</span>
                         </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{scheme.name}</span>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -158,11 +183,22 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                     </p>
                   </div>
                   <div className="flex space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-green-500"></div>
-                    <div className="w-8 h-8 rounded-full bg-orange-500"></div>
-                    <div className="w-8 h-8 rounded-full bg-blue-500"></div>
-                    <div className="w-8 h-8 rounded-full bg-purple-500"></div>
-                    <div className="w-8 h-8 rounded-full bg-gray-500"></div>
+                    {(() => {
+                      const currentColors = COLOR_SCHEMES[currentColorScheme] || COLOR_SCHEMES.default;
+                      return [
+                        currentColors.mastered.primary,
+                        currentColors.due.primary,
+                        currentColors.new.primary,
+                        currentColors.learning.primary,
+                        currentColors.locked.primary
+                      ].map((color, idx) => (
+                        <div 
+                          key={idx} 
+                          className="w-8 h-8 rounded-full" 
+                          style={{ backgroundColor: color }}
+                        />
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>

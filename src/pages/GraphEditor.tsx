@@ -773,6 +773,11 @@ export const GraphEditor = () => {
         onColorSchemeChange={setColorScheme}
         onLinkStyleChange={setLinkStyle}
         onLinkAnimationChange={setLinkAnimation}
+        nodeSizeMode={nodeSizeMode}
+        onNodeSizeModeChange={setNodeSizeMode}
+        edgeWidthMode={edgeWidthMode}
+        onEdgeWidthModeChange={setEdgeWidthMode}
+        coloringMode={coloringMode}
       />
       
       {!isDeleteMode && !isPathfindingMode && selectedNodeIds.size === 0 && (

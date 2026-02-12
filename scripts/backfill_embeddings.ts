@@ -12,12 +12,11 @@ const aiService = new AIService();
 async function backfillEmbeddings() {
   console.log('🚀 开始为现有节点批量生成向量...');
 
-  // 1. 获取所有没有向量或向量维度不正确的节点
-  // 注意：由于我们刚刚改了维度到 1024，建议清理旧的向量重新生成
+  // 1. 获取所有节点（重新生成所有向量）
   const { data: nodes, error } = await supabaseAdmin
     .from('nodes')
     .select('id, title, content')
-    .or('embedding.is.null'); // 只处理没有向量的节点
+    .or('embedding.is.null'); // 已移除过滤，强制重新生成所有
 
   if (error) {
     console.error('❌ 获取节点失败:', error);

@@ -47,8 +47,13 @@ export class VolcengineProvider extends BaseAIProvider {
         }
       ],
       dimensions: 1024,
-      encoding_format: "float"
-      // Instructions omitted as they are optional and task-specific
+      encoding_format: "float",
+      multi_embedding: {
+        type: "enabled"
+      },
+      sparse_embedding: {
+        type: "enabled"
+      }
     };
 
     try {

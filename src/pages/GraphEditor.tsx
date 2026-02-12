@@ -583,6 +583,7 @@ export const GraphEditor = () => {
           onPDF: exportOps.handleExportPDF,
           onJSON: exportOps.handleExportJSON,
           onImage: () => state.setIsExportImageModalOpen(true),
+          onAnki: exportOps.handleExportAnki,
           onDeleteGraph: exportOps.handleDeleteGraph
         }}
         onRefresh={() => window.location.reload()}

@@ -3,7 +3,7 @@ import { Node, Edge, Graph } from '../types';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
-import { generateJSON, downloadFile, downloadImage } from '../utils/exportUtils';
+import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../utils/exportUtils';
 
 interface UseGraphExportOperationsProps {
   id: string;
@@ -72,6 +72,29 @@ export const useGraphExportOperations = ({
     }
   };
 
+  const handleExportAnki = async () => {
+    if (!id || !graphMeta) return;
+    try {
+      setIsExportMenuOpen(false);
+      addMessage({ content: '正在生成 Anki 卡片...', type: 'info' });
+      
+      const cards = await api.study.getCards({ graph_id: id });
+      
+      if (!cards || cards.length === 0) {
+        addMessage({ content: '当前图谱没有复习卡片', type: 'warning' });
+        return;
+      }
+
+      const content = generateAnkiDeck(cards, graphMeta.title);
+      downloadFile(content, `${graphMeta.title}_anki.txt`, 'text/plain');
+      
+      addMessage({ content: 'Anki 导出成功', type: 'success' });
+    } catch (err) {
+      console.error(err);
+      addMessage({ content: 'Anki 导出失败', type: 'error' });
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!id || !graphMeta) return;
     setIsExportMenuOpen(false);
@@ -129,6 +152,7 @@ export const useGraphExportOperations = ({
   return {
     handleExportJSON,
     handleExportMarkdown,
+    handleExportAnki,
     handleExportPDF,
     handleDeleteGraph,
     handleExportImage,

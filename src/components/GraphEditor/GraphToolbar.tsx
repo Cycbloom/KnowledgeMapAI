@@ -83,6 +83,7 @@ interface GraphToolbarProps {
     onPDF: () => void;
     onJSON: () => void;
     onImage: () => void;
+    onAnki: () => void;
     onDeleteGraph: () => void;
   };
   onRefresh?: () => void;
@@ -381,7 +382,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
              {/* Reuse existing export menu items */}
              <div className="py-1">
                <button onClick={exportActions.onMarkdown} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 Markdown</button>
-               <button onClick={exportActions.onPDF} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 PDF</button>
+         <button onClick={exportActions.onAnki} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 Anki 卡片</button>
+         <button onClick={exportActions.onPDF} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 PDF</button>
                <button onClick={exportActions.onJSON} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 JSON (备份)</button>
                <button onClick={exportActions.onImage} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出为图片</button>
                <div className={`border-t my-1 ${themeClasses.divider}`}></div>
@@ -676,7 +678,15 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={onOpenSettings} icon={Settings} label="图谱参数设置" />
         <MenuItem onClick={onOpenAnalysis} icon={BarChart3} label="图谱分析" disabled={!onOpenAnalysis} />
-        <MenuItem onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} icon={Download} label="导出图谱" active={isExportMenuOpen} />
+        
+        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        <div className="px-3 py-1 text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase">导出</div>
+        <MenuItem onClick={exportActions.onMarkdown} icon={Download} label="导出 Markdown" />
+        <MenuItem onClick={exportActions.onAnki} icon={BookOpen} label="导出 Anki 卡片" />
+        <MenuItem onClick={exportActions.onPDF} icon={Download} label="导出 PDF" />
+        <MenuItem onClick={exportActions.onJSON} icon={Download} label="导出 JSON (备份)" />
+        <MenuItem onClick={exportActions.onImage} icon={Download} label="导出图片" />
+
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={exportActions.onDeleteGraph} icon={Trash2} label="彻底删除此图谱" colorClass="text-red-500" />
       </DropdownButton>

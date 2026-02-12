@@ -414,6 +414,7 @@ export const GraphEditor = () => {
         <div className="h-full w-full bg-white relative">
           {viewMode === 'mindmap' && (
             <MindMapCanvas
+                ref={graphRef}
                 nodes={nodes}
                 edges={edges}
                 nodeStatus={nodeStatus}
@@ -760,6 +761,7 @@ export const GraphEditor = () => {
         graphMeta={graphMeta}
         aiEnabled={aiEnabled}
         tutorOps={tutorOps}
+        nodes={nodes}
       />
 
       <GraphStyleSettings

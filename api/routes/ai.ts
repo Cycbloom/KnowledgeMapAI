@@ -1125,7 +1125,7 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
   try {
     const provider = await getAIProviderForTask('tts');
     if (!provider.hasKey || !provider.synthesizeSpeech) {
-        throw new AppError('TTS Provider not configured', 503, ErrorCodes.SERVICE_UNAVAILABLE);
+        throw new AppError('TTS Provider not configured', 503, ErrorCodes.INTERNAL_ERROR);
     }
 
     const buffer = await provider.synthesizeSpeech(text, voice, speed, output_format);

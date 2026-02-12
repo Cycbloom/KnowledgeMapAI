@@ -138,7 +138,11 @@ export const useGraphExportOperations = ({
 
   const confirmExportImage = async () => {
     try {
-      if (!graphRef.current) return;
+      if (!graphRef.current) {
+        addMessage({ content: '当前视图不支持图片导出', type: 'error' });
+        setIsExportImageModalOpen(false);
+        return;
+      }
       const dataUrl = await graphRef.current.captureScreenshot(exportImageOptions);
       downloadImage(dataUrl, `${graphMeta?.title || 'graph'}_snapshot.png`);
       setIsExportImageModalOpen(false);

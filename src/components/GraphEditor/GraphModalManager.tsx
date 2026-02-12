@@ -17,6 +17,7 @@ interface GraphModalManagerProps {
   graphMeta: any;
   aiEnabled: boolean;
   tutorOps?: any;
+  nodes: any[];
 }
 
 export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
@@ -24,7 +25,8 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   state,
   graphMeta,
   aiEnabled,
-  tutorOps
+  tutorOps,
+  nodes
 }) => {
   const queryClient = useQueryClient();
   const { addMessage } = useMessageStore();
@@ -156,7 +158,7 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
       <PodcastModal 
         isOpen={isPodcastModalOpen}
         onClose={() => setIsPodcastModalOpen(false)}
-        nodes={state.graphRef.current?.getNodes() || []}
+        nodes={nodes}
         graphTitle={graphMeta?.title || '未命名图谱'}
         graphId={id}
         initialScript={graphMeta?.podcast_script}

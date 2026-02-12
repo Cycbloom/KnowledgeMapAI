@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useImperativeHandle, forwardRef } from 'react';
+import html2canvas from 'html2canvas';
 import { 
   Node, 
   Edge, 
@@ -58,7 +59,7 @@ interface Transform {
   k: number;
 }
 
-export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
+export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   nodes,
   edges,
   nodeStatus,
@@ -86,9 +87,29 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   edgeWidthMode = 'fixed',
   onNodeContextMenu,
   coloringMode = 'status' // Default to status for backward compatibility unless we change it in GraphEditor
-}) => {
+}, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    captureScreenshot: async (options?: any) => {
+      if (!svgRef.current) return null;
+      try {
+        const element = svgRef.current.parentElement as HTMLElement;
+        const canvas = await html2canvas(element, {
+          backgroundColor: options?.backgroundColor || (isDark ? '#0f172a' : '#ffffff'),
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          ignoreElements: (element) => element.tagName === 'BUTTON'
+        });
+        return canvas.toDataURL('image/png');
+      } catch (error) {
+        console.error('Screenshot failed:', error);
+        throw error;
+      }
+    }
+  }));
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<SVGGElement>(null);
   
@@ -516,4 +537,4 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
       </div>
     </div>
   );
-};
+});

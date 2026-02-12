@@ -27,7 +27,6 @@
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "d3-force": "^3.0.0",
-    "d3-force-3d": "^3.0.6",
     "d3-hierarchy": "^3.1.2",
     "dotenv": "^17.2.1",
     "event-source-polyfill": "^1.0.31",

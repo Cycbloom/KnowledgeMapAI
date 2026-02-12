@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, GraphColorMode } from '../../types';
@@ -446,25 +446,47 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     </div>
   );
 
-  const MenuItem = ({ onClick, icon: Icon, label, active, colorClass, activeClass, disabled }: any) => (
-    <button
-      disabled={disabled}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-        setOpenDropdown(null);
-      }}
-      className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all ${
-        disabled ? themeClasses.button.disabled :
-        active 
-          ? (activeClass || (isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'))
-          : `${themeClasses.itemHover} ${colorClass || (isDark ? 'text-gray-300' : 'text-gray-700')}`
-      }`}
-    >
-      <Icon size={18} className="flex-shrink-0" />
-      <span className="flex-grow text-left font-medium">{label}</span>
-    </button>
-  );
+  const MenuItem = ({ onClick, icon: Icon, label, active, colorClass, activeClass, disabled, children }: any) => {
+    const [isHovered, setIsHovered] = useState(false);
+    
+    return (
+      <div 
+        className="relative w-full"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <button
+          disabled={disabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!children) {
+              onClick?.();
+              setOpenDropdown(null);
+            }
+          }}
+          className={`flex items-center space-x-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all ${
+            disabled ? themeClasses.button.disabled :
+            active 
+              ? (activeClass || (isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'))
+              : `${themeClasses.itemHover} ${colorClass || (isDark ? 'text-gray-300' : 'text-gray-700')}`
+          }`}
+        >
+          <Icon size={18} className="flex-shrink-0" />
+          <span className="flex-grow text-left font-medium">{label}</span>
+          {children && (
+            <ChevronRight size={14} className="opacity-50" />
+          )}
+        </button>
+        
+        {/* Submenu */}
+        {children && isHovered && (
+          <div className={`absolute top-0 left-full ml-1 p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in slide-in-from-left-2 duration-150`}>
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Desktop Layout - Priority Sorted with Dropdowns
   return (
@@ -680,12 +702,14 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <MenuItem onClick={onOpenAnalysis} icon={BarChart3} label="图谱分析" disabled={!onOpenAnalysis} />
         
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <div className="px-3 py-1 text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase">导出</div>
-        <MenuItem onClick={exportActions.onMarkdown} icon={Download} label="导出 Markdown" />
-        <MenuItem onClick={exportActions.onAnki} icon={BookOpen} label="导出 Anki 卡片" />
-        <MenuItem onClick={exportActions.onPDF} icon={Download} label="导出 PDF" />
-        <MenuItem onClick={exportActions.onJSON} icon={Download} label="导出 JSON (备份)" />
-        <MenuItem onClick={exportActions.onImage} icon={Download} label="导出图片" />
+        
+        <MenuItem icon={Download} label="导出图谱">
+          <MenuItem onClick={exportActions.onMarkdown} icon={Download} label="Markdown" />
+          <MenuItem onClick={exportActions.onAnki} icon={BookOpen} label="Anki 卡片" />
+          <MenuItem onClick={exportActions.onPDF} icon={Download} label="PDF 文档" />
+          <MenuItem onClick={exportActions.onJSON} icon={Download} label="JSON 备份" />
+          <MenuItem onClick={exportActions.onImage} icon={Download} label="图片 (PNG)" />
+        </MenuItem>
 
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={exportActions.onDeleteGraph} icon={Trash2} label="彻底删除此图谱" colorClass="text-red-500" />

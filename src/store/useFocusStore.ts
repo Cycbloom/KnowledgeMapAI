@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { api } from '../services/api';
 
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -75,6 +76,25 @@ export const useFocusStore = create<FocusState>()(
           set({ timeLeft: timeLeft - 1 });
         } else {
           // Timer finished
+          const { mode, focusDuration, shortBreakDuration, longBreakDuration } = get();
+          
+          // Calculate duration in minutes
+          let duration = 0;
+          if (mode === 'focus') duration = focusDuration;
+          else if (mode === 'shortBreak') duration = shortBreakDuration;
+          else if (mode === 'longBreak') duration = longBreakDuration;
+
+          // Save to backend (fire and forget)
+          const endTime = new Date();
+          const startTime = new Date(endTime.getTime() - duration * 60 * 1000);
+          
+          api.focus.saveSession({
+            duration,
+            mode,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString()
+          }).catch(err => console.error('Failed to save focus session:', err));
+
           set((state) => ({ 
             isActive: false,
             sessionsCompleted: mode === 'focus' ? state.sessionsCompleted + 1 : state.sessionsCompleted

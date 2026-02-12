@@ -1,0 +1,100 @@
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../services/api';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Clock, CheckCircle2, Zap } from 'lucide-react';
+
+export const FocusStats = () => {
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['focus-stats'],
+    queryFn: async () => {
+      const res = await api.focus.getStats();
+      return res.data;
+    }
+  });
+
+  if (isLoading || !stats) return <div className="animate-pulse h-64 bg-gray-100 dark:bg-slate-800 rounded-xl" />;
+
+  const chartData = stats.daily.map((d: any) => ({
+    name: d.date.slice(5), // MM-DD
+    minutes: d.minutes
+  }));
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard 
+          icon={<Clock className="text-blue-500" />} 
+          label="今日专注" 
+          value={`${stats.today.minutes} 分钟`}
+          subValue={`${stats.today.sessions} 次会话`}
+        />
+        <StatCard 
+          icon={<Zap className="text-amber-500" />} 
+          label="累计专注" 
+          value={`${(stats.total.minutes / 60).toFixed(1)} 小时`}
+          subValue={`${stats.total.sessions} 次会话`}
+        />
+        <StatCard 
+          icon={<CheckCircle2 className="text-emerald-500" />} 
+          label="平均时长" 
+          value={`${stats.total.sessions ? Math.round(stats.total.minutes / stats.total.sessions) : 0} 分钟`}
+          subValue="每次会话"
+        />
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-200 dark:border-slate-700">
+        <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-200">近7天专注趋势</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                dy={10}
+              />
+              <YAxis 
+                hide 
+              />
+              <Tooltip 
+                cursor={{ fill: 'transparent' }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-gray-900 text-white text-xs py-1 px-2 rounded">
+                        {payload[0].value} 分钟
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar dataKey="minutes" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={entry.minutes > 0 ? '#3b82f6' : '#e2e8f0'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ icon, label, value, subValue }: any) => (
+  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-slate-700 flex items-center gap-4">
+    <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+      {icon}
+    </div>
+    <div>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+      <div className="flex items-baseline gap-2">
+        <h4 className="text-xl font-bold text-gray-900 dark:text-white">{value}</h4>
+        <span className="text-xs text-gray-400">{subValue}</span>
+      </div>
+    </div>
+  </div>
+);

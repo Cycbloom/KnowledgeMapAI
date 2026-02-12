@@ -559,4 +559,9 @@ export const api = {
     optimize: (data: { template_content: string; instruction?: string }) => 
       request('/prompts/optimize', { method: 'POST', body: JSON.stringify(data) }),
   },
+  focus: {
+    saveSession: (data: { duration: number; mode: string; start_time: string; end_time: string }) => 
+      request('/focus/sessions', { method: 'POST', body: JSON.stringify(data) }),
+    getStats: () => request('/focus/stats'),
+  },
 };

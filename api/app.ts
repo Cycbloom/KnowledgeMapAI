@@ -30,6 +30,7 @@ import searchRoutes from './routes/search.js'
 import templateRoutes from './routes/templates.js'
 import promptRoutes from './routes/prompts.js'
 import aiActionRoutes from './routes/aiActions.js'
+import focusRoutes from './routes/focus.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 
@@ -133,6 +134,7 @@ app.use('/api/search', searchRoutes)
 app.use('/api/templates', templateRoutes)
 app.use('/api/prompts', promptRoutes)
 app.use('/api/ai-actions', aiActionRoutes)
+app.use('/api/focus', focusRoutes)
 
 /**
  * health

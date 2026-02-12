@@ -5,6 +5,7 @@ import { StudyCard } from '../types';
 import { QuestionBank } from '../components/Study/QuestionBank';
 import { StudyCardPreview } from '../components/Study/StudyCardPreview';
 import { StudyCardDetailModal } from '../components/Study/StudyCardDetailModal';
+import { FocusStats } from '../components/Study/FocusStats';
 import { StatsOverview } from '../components/StatsOverview';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
@@ -42,8 +43,8 @@ export const Study = () => {
   const [finished, setFinished] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
-  // View State: 'dashboard' | 'quiz' | 'bank'
-  const [viewState, setViewState] = useState<'dashboard' | 'quiz' | 'bank'>('dashboard');
+  // View State: 'dashboard' | 'quiz' | 'bank' | 'focus'
+  const [viewState, setViewState] = useState<'dashboard' | 'quiz' | 'bank' | 'focus'>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [tableMode, setTableMode] = useState<'due' | 'all'>('due');
   const [currentPage, setCurrentPage] = useState(1);
@@ -213,8 +214,8 @@ export const Study = () => {
 
   if (isLoading) return <div className={`min-h-full flex items-center justify-center p-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>正在加载学习资源...</div>;
 
-  // --- Dashboard & Bank View ---
-  if (viewState === 'dashboard' || viewState === 'bank') {
+  // --- Dashboard & Bank & Focus View ---
+  if (viewState === 'dashboard' || viewState === 'bank' || viewState === 'focus') {
     return (
       <div className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'} p-8`}>
         <div className="max-w-6xl mx-auto space-y-8">
@@ -261,6 +262,16 @@ export const Study = () => {
                     >
                         题库管理
                     </button>
+                    <button
+                        onClick={() => setViewState('focus')}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            viewState === 'focus'
+                            ? (isDark ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-900')
+                            : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')
+                        }`}
+                    >
+                        专注统计
+                    </button>
                 </div>
 
                 {graphId && (
@@ -281,6 +292,8 @@ export const Study = () => {
 
           {viewState === 'bank' ? (
             <QuestionBank cards={allCards} />
+          ) : viewState === 'focus' ? (
+            <FocusStats />
           ) : (
             <>
           {/* Stats Cards & Chart */}

@@ -83,6 +83,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'entering' | 'pulsing' | 'none'>('none');
   const level = getLevel(node, edges);
+  const tags = useMemo(() => node.tags || node.properties?.tags || [], [node.tags, node.properties]);
   
   // Calculate dynamic size based on mode
   const dynamicSize = useMemo(() => {
@@ -238,6 +239,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const textOffset = useMemo(() => maxRadius + 12, [maxRadius]);
   const baseFontSize = level === 'root' ? 14 : level === 'core' ? 12 : 10;
   const scaledFontSize = useMemo(() => baseFontSize / zoomLevel, [baseFontSize, zoomLevel]);
+  const tagOffset = useMemo(() => textOffset + scaledFontSize * 1.4, [textOffset, scaledFontSize]);
   const shadowBlur = useMemo(() => 3 / zoomLevel, [zoomLevel]);
   const shadowOffset = useMemo(() => 1 / zoomLevel, [zoomLevel]);
 
@@ -394,6 +396,28 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           }}
         >
           {node.title || '未命名'}
+        </text>
+      )}
+      
+      {textVisibility.visible && tags && tags.length > 0 && (
+        <text
+          x={0}
+          y={tagOffset}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={scaledFontSize * 0.8}
+          fontWeight={400}
+          fill={isDark ? '#cbd5e1' : '#475569'}
+          opacity={textVisibility.opacity * 0.8}
+          style={{
+            pointerEvents: 'none',
+            transition: `opacity ${transitionDuration}ms ease`,
+            textShadow: isDark 
+              ? `0 ${1 / zoomLevel}px ${2 / zoomLevel}px rgba(0,0,0,0.8)` 
+              : 'none'
+          }}
+        >
+          {tags.slice(0, 3).join(', ') + (tags.length > 3 ? '...' : '')}
         </text>
       )}
     </g>

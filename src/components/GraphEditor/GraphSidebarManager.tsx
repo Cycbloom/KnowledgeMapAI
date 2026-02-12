@@ -139,7 +139,8 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
                 content: selectedNode.content || '',
                 color: selectedNode.color || '#3B82F6',
                 parentNodeId: parentEdge ? parentEdge.source_node_id : '',
-                level: selectedNode.level || 'normal'
+                level: selectedNode.level || 'normal',
+                tags: selectedNode.tags || selectedNode.properties?.tags || []
               });
             }
             setPrevSidebarMode(sidebarMode);

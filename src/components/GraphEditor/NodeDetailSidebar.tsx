@@ -81,6 +81,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   const colors = getStatusColors(status, isDark);
 
   const isAccepted = node.is_accepted !== false;
+  const tags = node.tags || node.properties?.tags || [];
 
   // Navigation Logic
   const parentNode = React.useMemo(() => {
@@ -146,6 +147,19 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                  </div>
               )}
           </div>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {tags.map((tag, index) => (
+                <span 
+                  key={index} 
+                  className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full border border-gray-200"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="prose prose-sm max-w-none text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-100">

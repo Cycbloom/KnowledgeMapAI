@@ -76,6 +76,7 @@ export interface GraphEditorState {
     color: string;
     parentNodeId: string;
     level: NodeLevel;
+    tags: string[];
   };
   setNodeForm: React.Dispatch<React.SetStateAction<{
     title: string;
@@ -83,6 +84,7 @@ export interface GraphEditorState {
     color: string;
     parentNodeId: string;
     level: NodeLevel;
+    tags: string[];
   }>>;
   aiPrompt: string;
   setAiPrompt: React.Dispatch<React.SetStateAction<string>>;
@@ -224,12 +226,14 @@ export const useGraphEditorState = (): GraphEditorState => {
     color: string;
     parentNodeId: string;
     level: NodeLevel;
+    tags: string[];
   }>({
     title: '',
     content: '',
     color: '#3B82F6',
     parentNodeId: '',
-    level: 'leaf'
+    level: 'leaf',
+    tags: []
   });
   const [aiPrompt, setAiPrompt] = useState('');
 

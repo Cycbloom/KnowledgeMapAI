@@ -60,6 +60,7 @@ export interface Node {
   color?: string;
   level?: NodeLevel;
   properties?: Record<string, any>;
+  tags?: string[];
   learning_material?: string;
   is_accepted?: boolean;
   updated_at?: string;

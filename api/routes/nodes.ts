@@ -32,7 +32,9 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
 
   // Generate embedding
   try {
-    const textToEmbed = content || title;
+    const tags = properties?.tags?.join(', ') || '';
+    const textToEmbed = [title, content, tags].filter(Boolean).join('\n');
+    
     if (textToEmbed) {
       const embedding = await aiService.generateEmbedding(textToEmbed);
       if (embedding) {
@@ -81,12 +83,31 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
   const { id } = req.params;
   const updates = req.body;
   
-  // Generate embedding if content is updated
-  if (updates.content) {
+  // Generate embedding if content, title or tags are updated
+  if (updates.content || updates.title || updates.properties?.tags) {
     try {
-      const embedding = await aiService.generateEmbedding(updates.content);
-      if (embedding) {
-        updates.embedding = embedding;
+      // Fetch current node data to merge
+      const { data: currentNode } = await req.supabase!
+        .from('nodes')
+        .select('title, content, properties')
+        .eq('id', id)
+        .single();
+
+      if (currentNode) {
+        const title = updates.title || currentNode.title || '';
+        const content = updates.content || currentNode.content || '';
+        const tags = updates.properties?.tags || currentNode.properties?.tags || [];
+        
+        const textToEmbed = [title, content, Array.isArray(tags) ? tags.join(', ') : '']
+          .filter(Boolean)
+          .join('\n');
+
+        if (textToEmbed) {
+          const embedding = await aiService.generateEmbedding(textToEmbed);
+          if (embedding) {
+            updates.embedding = embedding;
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to generate embedding for updated node:', error);

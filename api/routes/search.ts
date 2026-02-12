@@ -98,7 +98,7 @@ Respond in the same language as the user's question (detect from question).` },
       const { data: keywordNodes, error: nodeError } = await req.supabase!
         .from('nodes')
         .select('id, title, content, graph_id, knowledge_graphs(title)')
-        .or(`title.ilike.${pattern},content.ilike.${pattern}`)
+        .or(`title.ilike.${pattern},content.ilike.${pattern},properties->>tags.ilike.${pattern}`)
         .limit(20);
 
       if (nodeError) throw nodeError;

@@ -180,6 +180,8 @@ export type ExplorationMode = 'none' | 'branch' | 'timeline';
 
 export type GraphViewMode = 'mindmap' | 'hierarchy' | 'timeline' | 'tree';
 
+export type GraphColorMode = 'level' | 'status';
+
 export interface NodeImportance {
   score: number;
   factors: {

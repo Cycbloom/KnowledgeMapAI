@@ -36,11 +36,12 @@ import { useGraphInteraction } from '../hooks/useGraphInteraction';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { useExplorationPath } from '../hooks/useExplorationPath';
 import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
-import type { Node as GraphNode, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, NodeSizeMode, EdgeWidthMode } from '../types';
+import type { Node as GraphNode, ColorScheme, GraphColorMode, LinkStyle, LinkAnimation, GraphViewMode, NodeSizeMode, EdgeWidthMode, BranchSuggestion } from '../types';
 import { HierarchyView } from '../components/GraphEditor/views/HierarchyView';
 import { TimelineView } from '../components/GraphEditor/views/TimelineView';
 import { TreeView } from '../components/GraphEditor/views/TreeView';
 import { ViewModeSelector } from '../components/GraphEditor/ViewModeSelector';
+import { useFocusStore } from '../store/useFocusStore';
 import { PresentationControls } from '../components/GraphEditor/PresentationControls';
 import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
 import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
@@ -64,6 +65,7 @@ export const GraphEditor = () => {
   const [linkAnimation, setLinkAnimation] = useState<LinkAnimation>('none');
   const [nodeSizeMode, setNodeSizeMode] = useState<NodeSizeMode>('fixed');
   const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>('fixed');
+  const [coloringMode, setColoringMode] = useState<GraphColorMode>('level'); // Default to level (structure) as requested
   
   // React Query Hooks
   const { data: graphMeta } = useGraph(id || '');
@@ -471,6 +473,7 @@ export const GraphEditor = () => {
               templateLayout={templateLayout}
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
+              coloringMode={coloringMode}
               onNodeContextMenu={handleNodeContextMenu}
             />
           )}
@@ -486,6 +489,7 @@ export const GraphEditor = () => {
               linkAnimation={linkAnimation}
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
+              coloringMode={coloringMode}
             />
           )}
           {viewMode === 'timeline' && (
@@ -500,6 +504,7 @@ export const GraphEditor = () => {
               linkAnimation={linkAnimation}
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
+              coloringMode={coloringMode}
             />
           )}
           {viewMode === 'tree' && (
@@ -514,6 +519,7 @@ export const GraphEditor = () => {
               linkAnimation={linkAnimation}
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
+              coloringMode={coloringMode}
             />
           )}
         </div>
@@ -587,6 +593,8 @@ export const GraphEditor = () => {
         setViewMode={setViewMode}
         isExplorationMode={isExplorationMode}
         setIsExplorationMode={setIsExplorationMode}
+        coloringMode={coloringMode}
+        setColoringMode={setColoringMode}
         isTimelineVisible={isTimelineVisible}
         setIsTimelineVisible={setIsTimelineVisible}
         onTogglePresentation={() => {

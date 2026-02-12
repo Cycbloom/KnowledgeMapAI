@@ -1,4 +1,4 @@
-import { LearningStatus, ColorScheme } from '../types';
+import { LearningStatus, ColorScheme, NodeLevel } from '../types';
 
 export interface ColorConfig {
   primary: string;
@@ -373,4 +373,61 @@ const adjustColorForDarkMode = (color: string): string => {
   };
   
   return colorMap[color] || color;
+};
+
+export const LEVEL_COLORS: Record<NodeLevel, ColorConfig> = {
+  root: {
+    primary: '#8B5CF6',
+    secondary: '#A78BFA',
+    glow: '#C4B5FD',
+    background: '#F5F3FF',
+    text: '#5B21B6',
+    gradient: { enabled: true, colors: ['#8B5CF6', '#A78BFA', '#C4B5FD'] }
+  },
+  core: {
+    primary: '#EF4444',
+    secondary: '#F87171',
+    glow: '#FCA5A5',
+    background: '#FEF2F2',
+    text: '#991B1B',
+    gradient: { enabled: true, colors: ['#EF4444', '#F87171', '#FCA5A5'] }
+  },
+  sub: {
+    primary: '#F59E0B',
+    secondary: '#FBBF24',
+    glow: '#FCD34D',
+    background: '#FFFBEB',
+    text: '#92400E',
+    gradient: { enabled: true, colors: ['#F59E0B', '#FBBF24', '#FCD34D'] }
+  },
+  normal: {
+    primary: '#3B82F6',
+    secondary: '#60A5FA',
+    glow: '#93C5FD',
+    background: '#EFF6FF',
+    text: '#1E40AF',
+    gradient: { enabled: true, colors: ['#3B82F6', '#60A5FA', '#93C5FD'] }
+  },
+  leaf: {
+    primary: '#10B981',
+    secondary: '#34D399',
+    glow: '#6EE7B7',
+    background: '#ECFDF5',
+    text: '#065F46',
+    gradient: { enabled: true, colors: ['#10B981', '#34D399', '#6EE7B7'] }
+  }
+};
+
+export const getLevelColors = (level: NodeLevel, isDark: boolean = false): ColorConfig => {
+  const colors = LEVEL_COLORS[level] || LEVEL_COLORS.leaf;
+  
+  if (isDark) {
+    return {
+      ...colors,
+      background: adjustColorForDarkMode(colors.background),
+      text: adjustColorForDarkMode(colors.text)
+    };
+  }
+  
+  return colors;
 };

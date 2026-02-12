@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
-import { LayoutNode, LearningStatus, NodeLevel, CenterDotShape, ColorScheme } from '../../types';
+import { LayoutNode, LearningStatus, NodeLevel, CenterDotShape, ColorScheme, GraphColorMode } from '../../types';
 import { NodeRing } from './NodeRing';
 import { 
   NODE_STYLE_CONFIG, 
@@ -10,7 +10,7 @@ import {
   getGradientId,
   getCenterDotPath
 } from '../../config/nodeStyleConfig';
-import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
+import { getLearningStatus, getStatusColors, getLevelColors } from '../../config/learningStatusColors';
 import { getLevel, calculateNodeImportance } from '../../lib/graphUtils';
 import { Edge, NodeSizeMode, Node } from '../../types';
 
@@ -28,6 +28,7 @@ interface MindMapNodeProps {
   forceShowText?: boolean;
   hasFocusMode?: boolean;
   colorScheme?: ColorScheme;
+  coloringMode?: GraphColorMode;
   isNew?: boolean;
   nodeSizeMode?: NodeSizeMode;
   nodeImportance?: number;
@@ -72,6 +73,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   forceShowText = false,
   hasFocusMode = false,
   colorScheme = 'default',
+  coloringMode = 'status',
   isNew = false,
   nodeSizeMode = 'fixed',
   nodeImportance,
@@ -111,7 +113,13 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   }, [level, dynamicSize]);
   
   const status = getLearningStatus(nodeStatus?.[node.id]);
-  const colors = getStatusColors(status, isDark, colorScheme);
+  const colors = useMemo(() => {
+    if (coloringMode === 'level') {
+      return getLevelColors(level, isDark);
+    }
+    return getStatusColors(status, isDark, colorScheme);
+  }, [coloringMode, level, status, isDark, colorScheme]);
+  
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
   
   const nodeOpacity = !hasFocusMode ?1 : (focused ?1 : 0.3);
@@ -392,20 +400,4 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   );
 };
 
-export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProps) => {
-  return (
-    prevProps.node.id === nextProps.node.id &&
-    prevProps.node.x === nextProps.node.x &&
-    prevProps.node.y === nextProps.node.y &&
-    prevProps.node.title === nextProps.node.title &&
-    prevProps.selected === nextProps.selected &&
-    prevProps.isDark === nextProps.isDark &&
-    prevProps.zoomLevel === nextProps.zoomLevel &&
-    prevProps.focused === nextProps.focused &&
-    prevProps.forceShowText === nextProps.forceShowText &&
-    prevProps.hasFocusMode === nextProps.hasFocusMode &&
-    prevProps.colorScheme === nextProps.colorScheme &&
-    prevProps.nodeStatus?.[prevProps.node.id] === nextProps.nodeStatus?.[nextProps.node.id] &&
-    prevProps.isNew === nextProps.isNew
-  );
-});
+export const MindMapNode = React.memo(MindMapNodeComponent);

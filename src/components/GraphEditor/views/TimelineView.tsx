@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation } from '../../../types';
+import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode } from '../../../types';
 import type { Node as GraphNode } from '../../../types';
 import { MindMapNode } from '../MindMapNode';
 import { MindMapLink } from '../MindMapLink';
@@ -23,6 +23,7 @@ interface TimelineViewProps {
   nodeSizeMode?: NodeSizeMode;
   edgeWidthMode?: EdgeWidthMode;
   sortBy?: 'created_at' | 'updated_at';
+  coloringMode?: GraphColorMode;
 }
 
 interface Transform {
@@ -44,7 +45,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   linkAnimation = 'none',
   nodeSizeMode = 'fixed',
   edgeWidthMode = 'fixed',
-  sortBy = 'created_at'
+  sortBy = 'created_at',
+  coloringMode = 'level'
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -249,6 +251,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 nodeSizeMode={nodeSizeMode}
                 nodeImportance={nodeImportanceMap.get(node.id)}
                 allNodes={nodes}
+                coloringMode={coloringMode}
               />
             ))}
           </g>

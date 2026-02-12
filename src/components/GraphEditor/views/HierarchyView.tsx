@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation } from '../../../types';
+import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode } from '../../../types';
 import type { Node as GraphNode } from '../../../types';
 import { MindMapNode } from '../MindMapNode';
 import { MindMapLink } from '../MindMapLink';
@@ -22,6 +22,7 @@ interface HierarchyViewProps {
   linkAnimation?: LinkAnimation;
   nodeSizeMode?: NodeSizeMode;
   edgeWidthMode?: EdgeWidthMode;
+  coloringMode?: GraphColorMode;
 }
 
 interface Transform {
@@ -42,7 +43,8 @@ export const HierarchyView: React.FC<HierarchyViewProps> = ({
   linkStyle = 'curved',
   linkAnimation = 'none',
   nodeSizeMode = 'fixed',
-  edgeWidthMode = 'fixed'
+  edgeWidthMode = 'fixed',
+  coloringMode = 'level'
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -246,6 +248,7 @@ export const HierarchyView: React.FC<HierarchyViewProps> = ({
                 nodeSizeMode={nodeSizeMode}
                 nodeImportance={nodeImportanceMap.get(node.id)}
                 allNodes={nodes}
+                coloringMode={coloringMode}
               />
             ))}
           </g>

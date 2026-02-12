@@ -9,7 +9,8 @@ import {
   TemplateLayout, 
   NodeSizeMode, 
   EdgeWidthMode, 
-  LayoutNode 
+  LayoutNode,
+  GraphColorMode 
 } from '../../types';
 import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
@@ -48,6 +49,7 @@ interface MindMapCanvasProps {
   nodeSizeMode?: NodeSizeMode;
   edgeWidthMode?: EdgeWidthMode;
   onNodeContextMenu?: (event: React.MouseEvent, node: LayoutNode) => void;
+  coloringMode?: GraphColorMode;
 }
 
 interface Transform {
@@ -82,7 +84,8 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
   templateLayout,
   nodeSizeMode = 'fixed',
   edgeWidthMode = 'fixed',
-  onNodeContextMenu
+  onNodeContextMenu,
+  coloringMode = 'status' // Default to status for backward compatibility unless we change it in GraphEditor
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -444,6 +447,7 @@ export const MindMapCanvas: React.FC<MindMapCanvasProps> = ({
               nodeImportance={nodeImportanceMap.get(node.id)}
               allNodes={nodes}
               onContextMenu={onNodeContextMenu}
+              coloringMode={coloringMode}
             />
           ))}
           {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {

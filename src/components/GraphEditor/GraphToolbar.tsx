@@ -4,10 +4,10 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode } from '../../types';
+import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, GraphColorMode } from '../../types';
 import { ViewModeSelector } from './ViewModeSelector';
 
 interface GraphToolbarProps {
@@ -49,6 +49,8 @@ interface GraphToolbarProps {
   };
   isExplorationMode: boolean;
   setIsExplorationMode: (mode: boolean) => void;
+  coloringMode: GraphColorMode;
+  setColoringMode: (mode: GraphColorMode) => void;
   isTimelineVisible: boolean;
   setIsTimelineVisible: (visible: boolean) => void;
 
@@ -103,7 +105,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBatchColorUpdate, onBatchLevelUpdate,
   isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme, setColorScheme, linkStyle, setLinkStyle, linkAnimation, setLinkAnimation,
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare,
-  isExplorationMode, setIsExplorationMode, isTimelineVisible, setIsTimelineVisible,
+  isExplorationMode, setIsExplorationMode, coloringMode, setColoringMode, isTimelineVisible, setIsTimelineVisible,
   isTutorMode, onToggleTutorMode, onOpenAnalysis,
   onTogglePresentation, onTogglePodcast
 }) => {
@@ -626,6 +628,14 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label="搜索节点" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={() => setIsExplorationMode(!isExplorationMode)} icon={GitBranch} label={isExplorationMode ? "退出探索模式" : "探索分支模式"} active={isExplorationMode} colorClass="text-purple-600" />
+        
+        <MenuItem 
+          onClick={() => setColoringMode(coloringMode === 'level' ? 'status' : 'level')} 
+          icon={coloringMode === 'level' ? Layers : Activity} 
+          label={coloringMode === 'level' ? "着色模式: 结构" : "着色模式: 热力图"} 
+          colorClass={coloringMode === 'level' ? "text-blue-500" : "text-orange-500"}
+        />
+
         <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? "隐藏时间轴" : "显示时间轴"} active={isTimelineVisible} colorClass="text-blue-500" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={onTogglePresentation} icon={MonitorPlay} label="演示播放" colorClass="text-orange-500" disabled={!onTogglePresentation} />

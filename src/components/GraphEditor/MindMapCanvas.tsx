@@ -598,11 +598,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
 
       {/* Controls */}
       <div 
-        className="absolute bottom-4 flex flex-col gap-2 items-end pointer-events-none transition-all duration-300"
+        className="absolute bottom-4 flex flex-row gap-4 items-end pointer-events-none transition-all duration-300"
         style={{ right: rightPanelWidth > 0 ? rightPanelWidth + 16 : 16 }}
       >
         {showMiniMap && layout && (
-          <div className="mb-2 pointer-events-auto">
+          <div className="pointer-events-auto">
             <MiniMap 
               nodes={visibleNodes}
               transform={transform}

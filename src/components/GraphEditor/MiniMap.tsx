@@ -185,9 +185,9 @@ export const MiniMap: React.FC<MiniMapProps> = ({
               key={node.id}
               cx={node.x}
               cy={node.y}
-              r={Math.max(20 / scale, 40)} // Adjust node size for visibility
+              r={Math.max(40, 5 / scale)} // Ensure at least ~5px visual size
               fill={isDark ? '#94a3b8' : '#64748b'}
-              opacity={0.6}
+              opacity={0.8}
             />
           ))}
         </g>

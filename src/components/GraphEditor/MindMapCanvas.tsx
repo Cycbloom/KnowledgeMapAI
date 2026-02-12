@@ -18,6 +18,7 @@ import { MindMapNode } from './MindMapNode';
 import { MindMapLink } from './MindMapLink';
 import { AlternativeBranches } from './AlternativeBranches';
 import { CanvasLayout } from './CanvasLayout';
+import { MiniMap } from './MiniMap';
 import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
@@ -51,6 +52,8 @@ interface MindMapCanvasProps {
   edgeWidthMode?: EdgeWidthMode;
   onNodeContextMenu?: (event: React.MouseEvent, node: LayoutNode) => void;
   coloringMode?: GraphColorMode;
+  isRightPanelOpen?: boolean;
+  rightPanelWidth?: number;
 }
 
 interface Transform {
@@ -86,7 +89,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   nodeSizeMode = 'fixed',
   edgeWidthMode = 'fixed',
   onNodeContextMenu,
-  coloringMode = 'status' // Default to status for backward compatibility unless we change it in GraphEditor
+  coloringMode = 'status', // Default to status for backward compatibility unless we change it in GraphEditor
+  isRightPanelOpen = false,
+  rightPanelWidth = 0
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -107,6 +112,24 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       } catch (error) {
         console.error('Screenshot failed:', error);
         throw error;
+      }
+    },
+    centerNode: (nodeId: string, options?: { forceRightPanelOpen?: boolean }) => {
+      if (!layout) return;
+      const node = layout.nodes.find(n => n.id === nodeId);
+      if (node) {
+        // Use current rightPanelWidth if available, otherwise fallback to 340 if forced
+        const effectiveRightWidth = options?.forceRightPanelOpen 
+          ? (rightPanelWidth || 340) 
+          : rightPanelWidth;
+        
+        const effectiveVisualCenterX = (containerSize.width - effectiveRightWidth) / 2;
+        
+        const targetK = 1.2;
+        // Use visualCenterX/Y to center in the visible area
+        const targetX = effectiveVisualCenterX - node.x * targetK;
+        const targetY = visualCenterY - node.y * targetK;
+        animateCamera(targetX, targetY, targetK, 800);
       }
     }
   }));
@@ -205,10 +228,25 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const [containerSize, setContainerSize] = useState({ width, height });
+  
+  // Initialize with window size to minimize layout thrashing on load
+  const [containerSize, setContainerSize] = useState({ 
+    width: typeof window !== 'undefined' ? window.innerWidth : width, 
+    height: typeof window !== 'undefined' ? window.innerHeight : height 
+  });
+  
+  const [showMiniMap, setShowMiniMap] = useState(false);
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
   const hasFocusMode = focusedNodeId !== null;
+
+  // Handle MiniMap transform updates
+  const handleMiniMapTransformChange = useCallback((newTransform: Transform) => {
+    hasUserInteracted.current = true;
+    transformRef.current = newTransform;
+    updateTransformDOM(newTransform);
+    updateTransformState(newTransform);
+  }, [updateTransformDOM, updateTransformState]);
 
   useEffect(() => {
     const updateContainerSize = () => {
@@ -286,7 +324,19 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     return map;
   }, [visibleLinks, edges, nodes, edgeWidthMode]);
 
+  const hasUserInteracted = useRef(false);
+  const prevNodeCount = useRef(0);
+
+  // Reset interaction state when nodes are first loaded
+  useEffect(() => {
+    if (nodes.length > 0 && prevNodeCount.current === 0) {
+      hasUserInteracted.current = false;
+    }
+    prevNodeCount.current = nodes.length;
+  }, [nodes.length]);
+
   const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
+    hasUserInteracted.current = true;
     e.preventDefault();
     const scaleFactor = 1.1;
     const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
@@ -315,6 +365,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
 
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
+      hasUserInteracted.current = true;
       setIsDragging(true);
       setDragStart({ 
         x: e.clientX - transformRef.current.x, 
@@ -345,6 +396,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   }, []);
 
   const handleZoomIn = useCallback(() => {
+    hasUserInteracted.current = true;
     const prev = transformRef.current;
     const newTransform = {
       ...prev,
@@ -356,6 +408,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   }, [updateTransformDOM, updateTransformState]);
 
   const handleZoomOut = useCallback(() => {
+    hasUserInteracted.current = true;
     const prev = transformRef.current;
     const newTransform = {
       ...prev,
@@ -366,12 +419,54 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     updateTransformState(newTransform);
   }, [updateTransformDOM, updateTransformState]);
 
+  // Calculate visual center based on right panel state
+  const visualCenterX = useMemo(() => {
+    // If right panel is open, the visual center shifts left
+    return (containerSize.width - rightPanelWidth) / 2;
+  }, [rightPanelWidth, containerSize.width]);
+
+  const visualCenterY = containerSize.height / 2;
+
   const handleResetView = useCallback(() => {
-    const newTransform = { x: 0, y: 0, k: 1 };
+    hasUserInteracted.current = true;
+    // Recalculate center based on visual center and root node if possible
+    let targetX = 0;
+    let targetY = 0;
+    
+    if (layout && layout.nodes.length > 0) {
+      // Find root node or fallback to first node
+      const rootNode = layout.nodes.find(n => n.level === 'root') || layout.nodes[0];
+      targetX = visualCenterX - rootNode.x;
+      targetY = visualCenterY - rootNode.y;
+    }
+
+    const newTransform = { x: targetX, y: targetY, k: 1 };
     transformRef.current = newTransform;
     updateTransformDOM(newTransform);
     updateTransformState(newTransform);
-  }, [updateTransformDOM, updateTransformState]);
+  }, [layout, visualCenterX, visualCenterY, updateTransformDOM, updateTransformState]);
+
+  // Auto-center root node on initial load or layout change if no user interaction
+  useEffect(() => {
+    if (layout && layout.nodes.length > 0 && !focusedNodeId && !hasUserInteracted.current) {
+      // Find root node or fallback to first node
+      const rootNode = layout.nodes.find(n => n.level === 'root') || layout.nodes[0];
+      const targetK = transformRef.current.k;
+      const targetX = visualCenterX - rootNode.x * targetK;
+      const targetY = visualCenterY - rootNode.y * targetK;
+      
+      // Only update if significantly different to avoid loops
+      if (Math.abs(transformRef.current.x - targetX) > 1 || 
+          Math.abs(transformRef.current.y - targetY) > 1) {
+        const newTransform = { x: targetX, y: targetY, k: targetK };
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        updateTransformState(newTransform);
+      }
+    }
+  }, [layout, visualCenterX, visualCenterY, focusedNodeId, updateTransformDOM, updateTransformState]);
+
+
 
   // Focus on node when focusedNodeId changes
   useEffect(() => {
@@ -379,14 +474,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       const node = layout.nodes.find(n => n.id === focusedNodeId);
       if (node) {
         const targetK = 1.2; 
-        const targetX = (width / 2) - node.x * targetK;
-        const targetY = (height / 2) - node.y * targetK;
+        const targetX = visualCenterX - node.x * targetK;
+        const targetY = visualCenterY - node.y * targetK;
 
         // Use smooth animation instead of instant jump
         animateCamera(targetX, targetY, targetK, 800);
       }
     }
-  }, [focusedNodeId, layout, width, height, animateCamera]);
+  }, [focusedNodeId, layout, visualCenterX, visualCenterY, animateCamera]);
 
   if (!layout) {
     return (
@@ -501,35 +596,76 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         </g>
       </svg>
 
-      <div className={`absolute bottom-4 flex flex-col gap-2 transition-all duration-300 ${sidebarMode === 'none' ? 'right-4' : 'right-[324px]'}`}>
-        <button
-          onClick={handleZoomIn}
-          className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-          title="放大"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <button
-          onClick={handleZoomOut}
-          className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-          title="缩小"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <button
-          onClick={handleResetView}
-          className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-          title="重置视图"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M3 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+      {/* Controls */}
+      <div 
+        className="absolute bottom-4 flex flex-col gap-2 items-end pointer-events-none transition-all duration-300"
+        style={{ right: rightPanelWidth > 0 ? rightPanelWidth + 16 : 16 }}
+      >
+        {showMiniMap && layout && (
+          <div className="mb-2 pointer-events-auto">
+            <MiniMap 
+              nodes={visibleNodes}
+              transform={transform}
+              containerWidth={containerSize.width}
+              containerHeight={containerSize.height}
+              onTransformChange={handleMiniMapTransformChange}
+              width={240}
+              height={160}
+              viewCenterX={visualCenterX}
+              viewCenterY={visualCenterY}
+            />
+          </div>
+        )}
+        
+        <div className="flex flex-col gap-2 pointer-events-auto">
+          <button
+            onClick={() => setShowMiniMap(!showMiniMap)}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            title={showMiniMap ? "隐藏小地图" : "显示小地图"}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="9" y1="21" x2="9" y2="9" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => {
+              const newK = Math.min(5, transformRef.current.k * 1.2);
+              animateCamera(transformRef.current.x, transformRef.current.y, newK);
+            }}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            title="放大"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={() => {
+              const newK = Math.max(0.1, transformRef.current.k / 1.2);
+              animateCamera(transformRef.current.x, transformRef.current.y, newK);
+            }}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            title="缩小"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={handleResetView}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            title="重置视角"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="absolute bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">

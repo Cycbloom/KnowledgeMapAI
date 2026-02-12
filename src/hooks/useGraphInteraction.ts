@@ -69,6 +69,11 @@ export const useGraphInteraction = ({
     setSelectedNodeIds(new Set([node.id]));
     setPrevSidebarMode(sidebarMode);
     setSidebarMode('detail');
+    
+    // Center the view on the clicked node
+    if (state.graphRef.current?.centerNode) {
+      state.graphRef.current.centerNode(node.id, { forceRightPanelOpen: true });
+    }
   };
 
   const handleSelectionChange = (ids: string[]) => {

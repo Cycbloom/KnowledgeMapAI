@@ -40,10 +40,10 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
     nodeForm, setNodeForm,
     loading,
     showRelatedSection, isRelatedLoading, relatedNodes,
+    sidebarWidth, setSidebarWidth,
   } = state;
 
   // Sidebar Resizing Logic
-  const [width, setWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -60,10 +60,10 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
     if (isResizing) {
       const newWidth = window.innerWidth - e.clientX;
       if (newWidth >= 300 && newWidth <= 800) {
-        setWidth(newWidth);
+        setSidebarWidth(newWidth);
       }
     }
-  }, [isResizing]);
+  }, [isResizing, setSidebarWidth]);
 
   useEffect(() => {
     window.addEventListener('mousemove', resize);
@@ -86,7 +86,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
       <div 
         ref={sidebarRef}
         className={`bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== 'outline' ? 'p-4 overflow-y-auto' : ''}`}
-        style={{ width: width }}
+        style={{ width: sidebarWidth }}
       >
         {/* Resize Handle */}
         <div

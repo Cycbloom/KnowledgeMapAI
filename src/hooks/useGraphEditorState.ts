@@ -168,6 +168,10 @@ export interface GraphEditorState {
   setIsPresentationMode: React.Dispatch<React.SetStateAction<boolean>>;
   presentationStep: number;
   setPresentationStep: React.Dispatch<React.SetStateAction<number>>;
+
+  // Sidebar Dimensions
+  sidebarWidth: number;
+  setSidebarWidth: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const useGraphEditorState = (): GraphEditorState => {
@@ -182,6 +186,7 @@ export const useGraphEditorState = (): GraphEditorState => {
   const [sidebarMode, setSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [prevSidebarMode, setPrevSidebarMode] = useState<'none' | 'create' | 'edit' | 'outline' | 'detail'>('none');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(340);
 
   // Layout & View
   const [showGrid, setShowGrid] = useState(false);
@@ -291,6 +296,7 @@ export const useGraphEditorState = (): GraphEditorState => {
     sidebarMode, setSidebarMode,
     prevSidebarMode, setPrevSidebarMode,
     isMobileMenuOpen, setIsMobileMenuOpen,
+    sidebarWidth, setSidebarWidth,
     showGrid, setShowGrid,
     collapsedNodeIds, setCollapsedNodeIds,
     viewMode, setViewMode,

@@ -476,6 +476,8 @@ export const GraphEditor = () => {
               edgeWidthMode={edgeWidthMode}
               coloringMode={coloringMode}
               onNodeContextMenu={handleNodeContextMenu}
+              isRightPanelOpen={sidebarMode !== 'none' || state.isChatOpen}
+              rightPanelWidth={Math.max(state.isChatOpen ? 500 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
             />
           )}
           {viewMode === 'hierarchy' && (

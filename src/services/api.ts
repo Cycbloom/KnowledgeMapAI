@@ -564,4 +564,8 @@ export const api = {
       request('/focus/sessions', { method: 'POST', body: JSON.stringify(data) }),
     getStats: () => request('/focus/stats'),
   },
+  achievements: {
+    list: () => request('/achievements'),
+    check: (type: string, value: number) => request('/achievements/check', { method: 'POST', body: JSON.stringify({ type, value }) }),
+  },
 };

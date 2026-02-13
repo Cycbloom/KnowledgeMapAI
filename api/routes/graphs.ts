@@ -7,6 +7,7 @@ import { templateService } from '../services/templateService.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { achievementService } from '../services/achievementService.js';
 
 const router = Router();
 
@@ -26,6 +27,10 @@ router.get('/trash', requireAuth, async (req: AuthRequest, res: Response) => {
 router.post('/', requireAuth, validate({ body: createGraphSchema }), async (req: AuthRequest, res: Response) => {
   const { title, description } = req.body;
   const data = await graphService.createGraph(req.supabase!, req.user.id, title, description);
+  
+  // Update achievements
+  achievementService.updateCreationStats(req.user.id).catch(console.error);
+  
   res.status(201).json(data);
 });
 

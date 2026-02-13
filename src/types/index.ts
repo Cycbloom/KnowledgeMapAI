@@ -19,6 +19,8 @@ export interface User {
     [key: string]: any;
   };
   profile?: {
+    xp?: number;
+    level?: number;
     settings?: {
       request_retention?: number;
       maximum_interval?: number;
@@ -98,6 +100,24 @@ export interface Task {
   error?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Achievement {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  category: 'study' | 'focus' | 'creation';
+  icon: string;
+  xp_reward: number;
+  condition_type: string;
+  condition_value: number;
+  unlocked_at?: string;
+}
+
+export interface UserProfile extends User {
+  xp: number;
+  level: number;
 }
 
 export type LearningStatus = 'mastered' | 'due' | 'locked' | 'new' | 'learning';

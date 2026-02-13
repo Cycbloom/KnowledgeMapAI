@@ -2,6 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { z } from 'zod';
 import { validate } from '../middleware/validate.js';
+import { achievementService } from '../services/achievementService.js';
 
 const router = Router();
 
@@ -44,6 +45,11 @@ router.post('/sessions', requireAuth, validate(createSessionSchema), async (req:
 
   if (error) {
     throw error;
+  }
+
+  if (completed) {
+    // Update achievements asynchronously
+    achievementService.updateFocusStats(req.user.id).catch(console.error);
   }
 
   res.status(201).json({ success: true, data });

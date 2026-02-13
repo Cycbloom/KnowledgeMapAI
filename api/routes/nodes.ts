@@ -6,6 +6,7 @@ import { cacheService, CacheKeys } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { aiService } from '../services/aiService.js';
+import { achievementService } from '../services/achievementService.js';
 
 const router = Router();
 
@@ -58,6 +59,9 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
   cacheService.del(CacheKeys.LEARNING_PATH(graph_id));
   
+  // Update achievements
+  achievementService.updateCreationStats(req.user.id).catch(console.error);
+
   res.status(201).json(data);
 });
 

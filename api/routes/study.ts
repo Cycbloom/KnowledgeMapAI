@@ -6,6 +6,7 @@ import { cacheService, CacheKeys } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { fsrs, Card, Rating, State, createEmptyCard } from 'ts-fsrs';
+import { achievementService } from '../services/achievementService.js';
 
 const router = Router();
 
@@ -307,6 +308,12 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
   if (card?.nodes?.graph_id) {
     await cacheService.del(CacheKeys.STUDY_CARDS(card.nodes.graph_id));
   }
+
+  // Award XP and check achievements asynchronously
+  Promise.all([
+    achievementService.addXp(req.user.id, 10),
+    achievementService.updateMasteredStats(req.user.id)
+  ]).catch(err => console.error('Achievement update failed:', err));
 
   res.json(data);
 });

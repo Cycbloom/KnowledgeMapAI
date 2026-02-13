@@ -13,6 +13,7 @@ import { SSEStatusIndicator } from './SSEStatusIndicator';
 import { OfflineIndicator } from './OfflineIndicator';
 import { FocusTimer } from './FocusTimer';
 import { useTheme } from '../hooks/useTheme';
+import { api } from '../services/api';
 
 export const Layout = () => {
   const { user, setUser, token } = useStore();
@@ -44,6 +45,20 @@ export const Layout = () => {
         handleLogout();
     }
   }, [userData, isUserLoading, setUser, token]);
+
+  // Daily Check-in
+  useEffect(() => {
+    if (user?.id) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastCheckIn = localStorage.getItem(`lastCheckIn_${user.id}`);
+      
+      if (lastCheckIn !== today) {
+        api.achievements.checkIn().then(() => {
+          localStorage.setItem(`lastCheckIn_${user.id}`, today);
+        }).catch(console.error);
+      }
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (!Array.isArray(tasksData)) return;

@@ -33,4 +33,29 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// Get daily tasks
+router.get('/daily-tasks', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthRequest).user.id;
+    const tasks = await achievementService.getDailyTasks(userId);
+    res.json(tasks);
+  } catch (error: any) {
+    throw new AppError(error.message, 500);
+  }
+});
+
+// Daily Check-in
+router.post('/daily-tasks/check-in', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthRequest).user.id;
+    // Initialize tasks if they don't exist
+    await achievementService.initDailyTasks(userId);
+    // Mark login task
+    await achievementService.updateDailyTask(userId, 'login', 1);
+    res.json({ success: true });
+  } catch (error: any) {
+    throw new AppError(error.message, 500);
+  }
+});
+
 export default router;

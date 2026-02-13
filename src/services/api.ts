@@ -567,5 +567,7 @@ export const api = {
   achievements: {
     list: () => request('/achievements'),
     check: (type: string, value: number) => request('/achievements/check', { method: 'POST', body: JSON.stringify({ type, value }) }),
+    getDailyTasks: () => request('/achievements/daily-tasks'),
+    checkIn: () => request('/achievements/daily-tasks/check-in', { method: 'POST' }),
   },
 };

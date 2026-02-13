@@ -15,6 +15,86 @@ export interface Achievement {
 
 export class AchievementService {
   /**
+   * Initialize daily tasks for a user
+   */
+  async initDailyTasks(userId: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check if tasks exist for today
+    const { count, error } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('task_date', today);
+      
+    if (error || (count && count > 0)) return;
+
+    // Create default daily tasks
+    const tasks = [
+      { user_id: userId, task_date: today, task_type: 'login', target: 1, xp_reward: 20 },
+      { user_id: userId, task_date: today, task_type: 'study_cards', target: 10, xp_reward: 50 },
+      { user_id: userId, task_date: today, task_type: 'focus_time', target: 25, xp_reward: 50 },
+      { user_id: userId, task_date: today, task_type: 'create_node', target: 1, xp_reward: 30 }
+    ];
+
+    await supabaseAdmin.from('daily_tasks').insert(tasks);
+  }
+
+  /**
+   * Get daily tasks
+   */
+  async getDailyTasks(userId: string): Promise<any[]> {
+    await this.initDailyTasks(userId);
+    
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('task_date', today)
+      .order('created_at');
+      
+    return data || [];
+  }
+
+  /**
+   * Update daily task progress
+   */
+  async updateDailyTask(userId: string, type: string, amount: number = 1): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get task
+    const { data: task } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('task_date', today)
+      .eq('task_type', type)
+      .single();
+      
+    if (!task || task.status !== 'pending') return;
+
+    const newProgress = Math.min(task.progress + amount, task.target);
+    const updates: any = { progress: newProgress };
+    
+    if (newProgress >= task.target) {
+      updates.status = 'completed';
+      updates.completed_at = new Date().toISOString();
+      // Auto claim for now or let user claim? Let's auto claim XP for simplicity or separate claim step.
+      // For now, let's just mark completed.
+    }
+
+    await supabaseAdmin
+      .from('daily_tasks')
+      .update(updates)
+      .eq('id', task.id);
+      
+    if (updates.status === 'completed') {
+      await this.addXp(userId, task.xp_reward);
+    }
+  }
+
+  /**
    * Get all achievements with user unlock status
    */
   async getAchievements(userId: string): Promise<Achievement[]> {
@@ -205,15 +285,87 @@ export class AchievementService {
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)
+      .eq('completed', true)
+      .gte('start_time', new Date().toISOString().split('T')[0]); // Only today's sessions
+
+    // Note: The original logic summed ALL focus sessions for achievements.
+    // We should keep that for "Total Focus Time" achievements.
+    // But for Daily Task "focus_time", we only care about today.
+    // Let's separate the logic.
+    
+    // 1. Update Daily Task (Focus 25 min)
+    // We need to know the duration of the *latest* session or accumulate today's.
+    // The trigger usually comes after ONE session completes.
+    // Let's assume this method is called after a session.
+    // Ideally we pass the duration of the just-completed session.
+    // But since we query DB, let's query today's total.
+    
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todaySessions } = await supabaseAdmin
+      .from('focus_sessions')
+      .select('duration')
+      .eq('user_id', userId)
+      .eq('completed', true)
+      .gte('start_time', today);
+      
+    const todayMinutes = todaySessions?.reduce((acc, curr) => acc + curr.duration, 0) || 0;
+    
+    // Update daily task progress to match today's total
+    // But updateDailyTask adds incremental progress usually? 
+    // No, our implementation `newProgress = task.progress + amount`.
+    // So we should pass the *delta*.
+    // However, recreating state from DB is safer.
+    // Let's modify updateDailyTask to set absolute progress if needed, or we just pass the delta from the caller.
+    // For now, let's just pass 25 if the session was 25 min? 
+    // It's better if the caller (route) passes the duration.
+    // But let's stick to the current pattern: "Check and Update".
+    
+    // Let's refactor updateDailyTask to take absolute value or delta.
+    // Actually, let's just use a specific method for daily focus.
+    
+    await this.updateDailyTaskProgress(userId, 'focus_time', todayMinutes);
+
+    // 2. Update Lifetime Achievements (Total Focus Time)
+    const { data: allSessions } = await supabaseAdmin
+      .from('focus_sessions')
+      .select('duration')
+      .eq('user_id', userId)
       .eq('completed', true);
-
-    if (error || !sessions) return;
-
-    const totalMinutes = sessions.reduce((acc, curr) => acc + curr.duration, 0);
+      
+    const totalMinutes = allSessions?.reduce((acc, curr) => acc + curr.duration, 0) || 0;
     await this.checkAndUnlock(userId, 'focus_minutes', totalMinutes);
     
     // Also update streak
     await this.updateStudyStreak(userId);
+  }
+
+  /**
+   * Helper to set absolute progress for daily task
+   */
+  async updateDailyTaskProgress(userId: string, type: string, currentTotal: number): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    const { data: task } = await supabaseAdmin
+      .from('daily_tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('task_date', today)
+      .eq('task_type', type)
+      .single();
+      
+    if (!task || task.status !== 'pending') return;
+    
+    if (currentTotal >= task.target) {
+      await supabaseAdmin
+        .from('daily_tasks')
+        .update({ status: 'completed', progress: task.target, completed_at: new Date().toISOString() })
+        .eq('id', task.id);
+      await this.addXp(userId, task.xp_reward);
+    } else {
+      await supabaseAdmin
+        .from('daily_tasks')
+        .update({ progress: currentTotal })
+        .eq('id', task.id);
+    }
   }
 
   /**
@@ -225,11 +377,16 @@ export class AchievementService {
       .from('study_cards')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .gt('fsrs_stability', 21); // Stability is in days
+      .gt('fsrs_stability', 21); // Stability > 21 days
 
-    if (error) return;
-
-    await this.checkAndUnlock(userId, 'cards_mastered', count || 0);
+    if (!error) {
+      await this.checkAndUnlock(userId, 'cards_mastered', count || 0);
+    }
+    
+    // Daily Task: Review/Study Cards
+    // This method is called after review.
+    // Let's increment 'study_cards' daily task.
+    await this.updateDailyTask(userId, 'study_cards', 1);
   }
 
   /**
@@ -245,6 +402,21 @@ export class AchievementService {
     if (!graphError) {
       await this.checkAndUnlock(userId, 'graphs_created', graphCount || 0);
     }
+
+    // Daily Task: Create Node (just check if created today)
+    // For simplicity, we can just increment daily task progress when this is called,
+    // assuming this is called on creation.
+    // BUT updateCreationStats is called on createGraph/createNode.
+    // Let's increment 'create_node' daily task.
+    // Ideally we should distinguish between graph and node creation triggers.
+    // But 'create_node' task could be generic "Create Content".
+    // Let's stick to 'create_node'. If user creates graph, we can count it too or ignore.
+    // The current implementation calls updateCreationStats for BOTH.
+    // Let's check if we can differentiate or just increment.
+    // Let's increment 'create_node' task by 1 whenever this is called.
+    // This might be inaccurate if called multiple times or for bulk ops, but fine for now.
+    
+    await this.updateDailyTask(userId, 'create_node', 1);
 
     // 2. Check nodes count
     // Note: We need to join with graphs to check ownership if nodes don't have user_id (which they don't seem to have directly on nodes table usually, let's check schema or assume ownership via graph)

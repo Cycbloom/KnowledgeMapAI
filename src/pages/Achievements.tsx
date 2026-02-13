@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { Achievement } from '../types';
+import { Achievement, DailyTask } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { 
   Trophy, Medal, Target, Flame, Zap, Crown, Timer, Brain, 
-  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award
+  GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -14,15 +14,30 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   Flame, Zap, Crown, Timer, Brain, GraduationCap, BookOpen, Trophy, Medal, Target, Star
 };
 
+const taskTypeMap: Record<string, { label: string, icon: any }> = {
+  login: { label: '每日登录', icon: Calendar },
+  study_cards: { label: '复习卡片', icon: BookOpen },
+  focus_time: { label: '专注时刻', icon: Timer },
+  create_node: { label: '创造知识', icon: Zap },
+};
+
 export const Achievements = () => {
   const { isDark } = useTheme();
   const { user } = useStore();
   
   // Fetch Achievements
-  const { data: achievements, isLoading } = useQuery({
+  const { data: achievements, isLoading: loadingAchievements } = useQuery({
     queryKey: ['achievements'],
     queryFn: () => api.achievements.list()
   });
+
+  // Fetch Daily Tasks
+  const { data: dailyTasks, isLoading: loadingTasks } = useQuery({
+    queryKey: ['daily-tasks'],
+    queryFn: () => api.achievements.getDailyTasks()
+  });
+
+  const isLoading = loadingAchievements || loadingTasks;
 
   // Calculate Stats
   const unlockedCount = achievements?.filter((a: Achievement) => a.unlocked_at).length || 0;
@@ -67,9 +82,20 @@ export const Achievements = () => {
     return acc;
   }, {});
 
+  const getDailyTaskDescription = (task: DailyTask) => {
+    switch(task.task_type) {
+      case 'login': return '每日登录应用';
+      case 'study_cards': return `复习 ${task.target} 张知识卡片`;
+      case 'focus_time': return `专注学习 ${task.target} 分钟`;
+      case 'create_node': return `创建 ${task.target} 个新知识点`;
+      default: return '完成任务';
+    }
+  };
+
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-8">
-      {/* Header / Stats */}
+    <div className="h-full overflow-y-auto p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header / Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Level Card */}
         <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
@@ -119,6 +145,73 @@ export const Achievements = () => {
               <p className="text-slate-500 text-sm">已解锁成就</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Daily Tasks */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
+          <Calendar className="text-slate-400" size={20} />
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+            每日任务
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {dailyTasks?.map((task: DailyTask) => {
+            const isCompleted = task.status === 'completed';
+            const progressPercent = Math.min(100, (task.progress / task.target) * 100);
+            const TaskIcon = taskTypeMap[task.task_type]?.icon || Star;
+            const taskLabel = taskTypeMap[task.task_type]?.label || '任务';
+
+            return (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`relative p-4 rounded-xl border transition-all ${
+                  isCompleted 
+                    ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' 
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                    isCompleted 
+                      ? 'bg-green-100 text-green-600 dark:bg-green-800 dark:text-green-100' 
+                      : 'bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-300'
+                  }`}>
+                    <TaskIcon size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-medium text-slate-800 dark:text-slate-100 truncate">
+                        {taskLabel}
+                      </h4>
+                      {isCompleted && <CheckCircle2 size={16} className="text-green-500 shrink-0" />}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                      {getDailyTaskDescription(task)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>{task.progress} / {task.target}</span>
+                    <span className="font-medium text-amber-600">+{task.xp_reward} XP</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                      }`}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 
@@ -201,6 +294,7 @@ export const Achievements = () => {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

@@ -120,6 +120,18 @@ export interface UserProfile extends User {
   level: number;
 }
 
+export interface DailyTask {
+  id: string;
+  user_id: string;
+  task_date: string;
+  task_type: 'login' | 'study_cards' | 'focus_time' | 'create_node';
+  status: 'pending' | 'completed';
+  progress: number;
+  target: number;
+  xp_reward: number;
+  completed_at?: string;
+}
+
 export type LearningStatus = 'mastered' | 'due' | 'locked' | 'new' | 'learning';
 
 export interface NodeStatus {

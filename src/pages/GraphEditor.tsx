@@ -40,6 +40,7 @@ import type { Node as GraphNode, ColorScheme, GraphColorMode, LinkStyle, LinkAni
 import { HierarchyView } from '../components/GraphEditor/views/HierarchyView';
 import { TimelineView } from '../components/GraphEditor/views/TimelineView';
 import { TreeView } from '../components/GraphEditor/views/TreeView';
+import { PlanetView } from '../three/PlanetView';
 import { ViewModeSelector } from '../components/GraphEditor/ViewModeSelector';
 import { useFocusStore } from '../store/useFocusStore';
 import { PresentationControls } from '../components/GraphEditor/PresentationControls';
@@ -649,6 +650,16 @@ export const GraphEditor = () => {
               linkAnimation={linkAnimation}
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
+              coloringMode={coloringMode}
+            />
+          )}
+          {viewMode === 'planet' && (
+            <PlanetView
+              nodes={nodes}
+              edges={edges}
+              selectedNodeId={selectedNode?.id || null}
+              onNodeClick={handleNodeClick}
+              colorScheme={colorScheme}
               coloringMode={coloringMode}
             />
           )}

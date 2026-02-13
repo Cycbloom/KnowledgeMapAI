@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, GraphColorMode } from '../../types';
@@ -634,7 +634,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
               { mode: 'mindmap' as const, label: '思维导图', icon: Network },
               { mode: 'hierarchy' as const, label: '层级视图', icon: Layers },
               { mode: 'timeline' as const, label: '时间线', icon: Clock },
-              { mode: 'tree' as const, label: '树形视图', icon: GitBranch }
+              { mode: 'tree' as const, label: '树形视图', icon: GitBranch },
+              { mode: 'planet' as const, label: '知识星球', icon: Globe }
             ].map(({ mode, label, icon: Icon }) => (
               <MenuItem
                 key={mode}

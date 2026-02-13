@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, Layers, Clock, GitBranch } from 'lucide-react';
+import { Network, Layers, Clock, GitBranch, Globe } from 'lucide-react';
 import { GraphViewMode } from '../../types';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -32,6 +32,12 @@ const viewModes: Array<{ mode: GraphViewMode; label: string; icon: React.Compone
     label: '树形视图',
     icon: GitBranch,
     description: '严格的树形结构，适合查看知识树'
+  },
+  {
+    mode: 'planet',
+    label: '知识星球',
+    icon: Globe,
+    description: '3D 星球视图，沉浸式探索知识宇宙'
   }
 ];
 

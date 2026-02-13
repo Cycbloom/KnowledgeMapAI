@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useCallback, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html, Stars, Line } from '@react-three/drei';
+import { OrbitControls, Text, Stars, Line, Billboard } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Node, Edge, ColorScheme, GraphColorMode } from '../types';
@@ -62,6 +62,8 @@ function PlanetNode({
   isDark
 }: PlanetNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const { camera } = useThree();
+  const [scale, setScale] = useState(1);
   const type = getNodeType(node, layoutLinks);
   
   const baseSize = useMemo(() => {
@@ -84,7 +86,17 @@ function PlanetNode({
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.003;
     }
+    
+    const nodePos = new THREE.Vector3(node.x, node.z, node.y);
+    const distance = camera.position.distanceTo(nodePos);
+    const baseDistance = 200;
+    const newScale = Math.max(0.3, Math.min(2, distance / baseDistance));
+    setScale(newScale);
   });
+
+  const titleFontSize = 5 * scale;
+  const tagFontSize = 3 * scale;
+  const labelOffset = baseSize + 3;
 
   return (
     <group position={[node.x, node.z, node.y]}>
@@ -114,38 +126,30 @@ function PlanetNode({
         />
       </mesh>
 
-      <Html
-        position={[0, baseSize + 5, 0]}
-        center
-        style={{
-          pointerEvents: 'none',
-          whiteSpace: 'nowrap',
-          zIndex: 1,
-        }}
-      >
-        <div className={`px-3 py-1.5 rounded-lg shadow-lg border transition-all ${
-          isDark 
-            ? (isSelected || isHovered 
-                ? 'bg-slate-900/95 border-slate-400/40' 
-                : 'bg-slate-800/90 border-slate-600/20')
-            : (isSelected || isHovered 
-                ? 'bg-white/95 border-slate-400/50' 
-                : 'bg-white/90 border-slate-300/30')
-        }`}>
-          <div className={`text-sm font-medium ${
-            isDark ? 'text-white' : 'text-slate-900'
-          }`}>
-            {node.data.title}
-          </div>
-          {tags && tags.length > 0 && (
-            <div className={`text-xs mt-1 ${
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            }`}>
-              {tags.slice(0, 3).join(' · ')}
-            </div>
-          )}
-        </div>
-      </Html>
+      <Billboard position={[0, labelOffset, 0]}>
+        <Text
+          position={[0, 0, 0]}
+          fontSize={titleFontSize}
+          color={isDark ? '#ffffff' : '#1e293b'}
+          anchorX="center"
+          anchorY="bottom"
+          outlineWidth={0.3}
+          outlineColor={isDark ? '#000000' : '#ffffff'}
+        >
+          {node.data.title}
+        </Text>
+        {tags && tags.length > 0 && (
+          <Text
+            position={[0, titleFontSize + 1, 0]}
+            fontSize={tagFontSize}
+            color={isDark ? '#94a3b8' : '#64748b'}
+            anchorX="center"
+            anchorY="bottom"
+          >
+            {tags.slice(0, 3).join(' · ')}
+          </Text>
+        )}
+      </Billboard>
     </group>
   );
 }
@@ -313,7 +317,9 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
           ? 'linear-gradient(135deg, #050510 0%, #0a0a1a 50%, #0f0f2a 100%)'
           : 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%)',
         borderRadius: '8px',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        position: 'relative',
+        zIndex: 0,
       }}
     >
       <Canvas

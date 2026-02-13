@@ -47,6 +47,7 @@ interface PlanetNodeProps {
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   colorScheme: ColorScheme;
+  isDark: boolean;
 }
 
 function PlanetNode({ 
@@ -57,7 +58,8 @@ function PlanetNode({
   onClick,
   onPointerEnter,
   onPointerLeave,
-  colorScheme 
+  colorScheme,
+  isDark
 }: PlanetNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const type = getNodeType(node, layoutLinks);
@@ -73,6 +75,10 @@ function PlanetNode({
     if (isHovered) return NODE_COLORS.hover;
     return NODE_COLORS[type];
   }, [isSelected, isHovered, type]);
+
+  const tags = useMemo(() => {
+    return node.data.tags || node.data.properties?.tags || [];
+  }, [node.data.tags, node.data.properties]);
 
   useFrame(() => {
     if (meshRef.current) {
@@ -108,20 +114,38 @@ function PlanetNode({
         />
       </mesh>
 
-      {(isSelected || isHovered) && (
-        <Html
-          position={[0, baseSize + 5, 0]}
-          center
-          style={{
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <div className="px-3 py-1.5 bg-black/80 text-white text-sm rounded-lg shadow-lg border border-white/20">
+      <Html
+        position={[0, baseSize + 5, 0]}
+        center
+        style={{
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+          zIndex: 1,
+        }}
+      >
+        <div className={`px-3 py-1.5 rounded-lg shadow-lg border transition-all ${
+          isDark 
+            ? (isSelected || isHovered 
+                ? 'bg-slate-900/95 border-slate-400/40' 
+                : 'bg-slate-800/90 border-slate-600/20')
+            : (isSelected || isHovered 
+                ? 'bg-white/95 border-slate-400/50' 
+                : 'bg-white/90 border-slate-300/30')
+        }`}>
+          <div className={`text-sm font-medium ${
+            isDark ? 'text-white' : 'text-slate-900'
+          }`}>
             {node.data.title}
           </div>
-        </Html>
-      )}
+          {tags && tags.length > 0 && (
+            <div className={`text-xs mt-1 ${
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            }`}>
+              {tags.slice(0, 3).join(' · ')}
+            </div>
+          )}
+        </div>
+      </Html>
     </group>
   );
 }
@@ -171,7 +195,8 @@ function Scene({
   hoveredNodeId,
   onNodeClick,
   onNodeHover,
-  colorScheme
+  colorScheme,
+  isDark
 }: { 
   layoutNodes: LayoutNode3D[];
   layoutLinks: LayoutLink3D[];
@@ -180,6 +205,7 @@ function Scene({
   onNodeClick: (node: LayoutNode3D) => void;
   onNodeHover: (id: string | null) => void;
   colorScheme: ColorScheme;
+  isDark: boolean;
 }) {
   const controlsRef = useRef<any>(null);
   
@@ -221,6 +247,7 @@ function Scene({
           onPointerEnter={() => onNodeHover(node.id)}
           onPointerLeave={() => onNodeHover(null)}
           colorScheme={colorScheme}
+          isDark={isDark}
         />
       ))}
       
@@ -282,7 +309,9 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
       style={{ 
         width: '100%', 
         height: '100%',
-        background: isDark ? '#050510' : '#0f0f1a',
+        background: isDark 
+          ? 'linear-gradient(135deg, #050510 0%, #0a0a1a 50%, #0f0f2a 100%)'
+          : 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%)',
         borderRadius: '8px',
         overflow: 'hidden'
       }}
@@ -300,6 +329,7 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
             onNodeClick={handleNodeClick}
             onNodeHover={handleNodeHover}
             colorScheme={colorScheme}
+            isDark={isDark}
           />
         </Suspense>
       </Canvas>

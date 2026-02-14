@@ -46,7 +46,6 @@ export const createNodeSchema = z.object({
   content: z.string().optional(),
   x_position: z.number().optional(),
   y_position: z.number().optional(),
-  color: z.string().optional(),
   properties: z.record(z.any()).optional(),
   learning_material: z.string().optional(),
   level: z.enum(['root', 'core', 'sub', 'normal', 'leaf']).optional(),

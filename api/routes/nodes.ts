@@ -12,7 +12,7 @@ const router = Router();
 
 // Create a new node
 router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthRequest, res: Response) => {
-  const { id, graph_id, title, content, x_position, y_position, color, properties, level, is_accepted } = req.body;
+  const { id, graph_id, title, content, x_position, y_position, properties, level, is_accepted } = req.body;
 
   // Verify graph ownership
   const { data: graph } = await req.supabase!
@@ -26,12 +26,11 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
   }
 
   const nodeData: any = { 
-    graph_id, title, content, x_position, y_position, color, properties, level, is_accepted,
-    deleted_at: null // Ensure restored if upserting
+    graph_id, title, content, x_position, y_position, properties, level, is_accepted,
+    deleted_at: null
   };
   if (id) nodeData.id = id;
 
-  // Generate embedding
   try {
     const tags = properties?.tags?.join(', ') || '';
     const textToEmbed = [title, content, tags].filter(Boolean).join('\n');
@@ -46,13 +45,34 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
     console.error('Failed to generate embedding for new node:', error);
   }
 
-  const { data, error } = await req.supabase!
-    .from('nodes')
-    .upsert([nodeData], { onConflict: 'id' })
-    .select()
-    .single();
+  let data, error;
+  
+  if (id) {
+    const result = await req.supabase!
+      .from('nodes')
+      .upsert([nodeData], { onConflict: 'id' })
+      .select()
+      .single();
+    data = result.data;
+    error = result.error;
+  } else {
+    const result = await req.supabase!
+      .from('nodes')
+      .insert([nodeData])
+      .select()
+      .single();
+    data = result.data;
+    error = result.error;
+  }
 
-  if (error) throw new AppError(error.message || '创建节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+  if (error) {
+    console.error('Create node error:', error);
+    throw new AppError(error.message || '创建节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+  
+  if (!data) {
+    throw new AppError('创建节点失败：无法获取创建的节点', 500, ErrorCodes.INTERNAL_ERROR);
+  }
   
   // Invalidate cache
   cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));

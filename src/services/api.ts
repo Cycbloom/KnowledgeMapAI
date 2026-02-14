@@ -302,6 +302,9 @@ export const api = {
       if (!payloadConfig.model && aiConfig.model) payloadConfig.model = aiConfig.model;
       return request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config: payloadConfig }) });
     },
+    batchExpandGraph: (node_ids: string[]) => {
+      return request('/ai/batch-expand-graph', { method: 'POST', body: JSON.stringify({ node_ids }) });
+    },
     getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
     textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: any[]; edges?: any[]; provider?: string; model?: string }) => {
       const config = getAIConfig('text');

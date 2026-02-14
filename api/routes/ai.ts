@@ -418,6 +418,47 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
   }
 });
 
+router.post('/batch-expand-graph', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { node_ids } = req.body;
+
+  if (!node_ids || !Array.isArray(node_ids) || node_ids.length === 0) {
+    throw new AppError('请提供有效的节点ID列表', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+
+  try {
+    const taskIds = [];
+    const supabase = req.supabase!;
+
+    const { data: nodes } = await supabase
+      .from('nodes')
+      .select('id, title, content, graph_id')
+      .in('id', node_ids);
+
+    if (nodes && nodes.length > 0) {
+      for (const node of nodes) {
+        const task = await taskService.createTask(
+          req.user.id,
+          'expand_graph',
+          {
+            node_id: node.id,
+            node_title: node.title,
+            node_content: node.content,
+            graph_id: node.graph_id
+          },
+          `拓展图谱: ${node.title}`
+        );
+        taskIds.push(task.id);
+      }
+    }
+
+    res.json({ success: true, taskIds: taskIds, message: `${taskIds.length} tasks started` });
+
+  } catch (error: any) {
+    logger.error('Batch Expand Error:', error);
+    throw new AppError(error.message || 'Batch expand failed', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
 router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   

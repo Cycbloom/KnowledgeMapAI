@@ -59,7 +59,6 @@ export interface Node {
   content?: string;
   x_position: number;
   y_position: number;
-  color?: string;
   level?: NodeLevel;
   properties?: Record<string, any>;
   tags?: string[];

@@ -7,6 +7,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
@@ -46,10 +47,10 @@ export const LearningMode = () => {
   const [isCreateNodeModalOpen, setIsCreateNodeModalOpen] = useState(false);
   const [newNodeTitle, setNewNodeTitle] = useState('');
   const [newNodeContent, setNewNodeContent] = useState('');
-  const [newNodeColor, setNewNodeColor] = useState('#3B82F6');
   const [newNodeLevel, setNewNodeLevel] = useState<NodeLevel>('leaf');
   const [selectedParentNodeId, setSelectedParentNodeId] = useState<string>('');
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -336,7 +337,6 @@ export const LearningMode = () => {
         content: newNodeContent,
         x_position: Math.round((Math.random() - 0.5) * 20),
         y_position: Math.round((Math.random() - 0.5) * 20),
-        color: newNodeColor,
         level: newNodeLevel,
         properties: {}
       });
@@ -353,10 +353,12 @@ export const LearningMode = () => {
       
       setNewNodeTitle('');
       setNewNodeContent('');
-      setNewNodeColor('#3B82F6');
       setNewNodeLevel('leaf');
       setSelectedParentNodeId('');
       setIsCreateNodeModalOpen(false);
+
+      queryClient.invalidateQueries({ queryKey: ['graphData', graphId] });
+      queryClient.invalidateQueries({ queryKey: ['graphLearningPath', graphId] });
 
       if (graphData) {
         navigate(`/learning?graph_id=${graphId}&node_id=${newNode.id}`);
@@ -411,10 +413,49 @@ export const LearningMode = () => {
   };
 
   const handleBatchAction = async (action: 'expand_graph' | 'delete' | 'batch_generate_questions', data?: any) => {
-    if (action === 'batch_generate_questions' && data) {
-      const nodeIds = Array.from(selectedNodeIds);
-      if (nodeIds.length === 0) return;
-      
+    const nodeIds = Array.from(selectedNodeIds);
+    if (nodeIds.length === 0) {
+      addMessage({ type: 'warning', content: '请先选择节点' });
+      return;
+    }
+
+    if (action === 'delete') {
+      try {
+        await api.nodes.batchDelete(nodeIds);
+        addMessage({ type: 'success', content: `已删除 ${nodeIds.length} 个节点` });
+        setSelectedNodeIds(new Set());
+        queryClient.invalidateQueries({ queryKey: ['graphData', graphId] });
+        queryClient.invalidateQueries({ queryKey: ['graphLearningPath', graphId] });
+      } catch (error) {
+        console.error('Batch delete failed:', error);
+        addMessage({ type: 'error', content: '批量删除失败，请重试' });
+      }
+    } else if (action === 'expand_graph') {
+      if (!isOnline) {
+        addMessage({ type: 'error', content: '离线模式下无法拓展图谱' });
+        return;
+      }
+      try {
+        const result = await api.ai.batchExpandGraph(nodeIds);
+        if (result.success) {
+          addMessage({ 
+            type: 'success', 
+            content: `已为 ${nodeIds.length} 个节点提交拓展任务`,
+            duration: 5000,
+            action: {
+              label: '查看任务',
+              onClick: () => navigate('/tasks')
+            }
+          });
+          setSelectedNodeIds(new Set());
+        } else {
+          addMessage({ type: 'error', content: '任务提交失败，请重试' });
+        }
+      } catch (error) {
+        console.error('Batch expand failed:', error);
+        addMessage({ type: 'error', content: '批量拓展失败，请稍后重试' });
+      }
+    } else if (action === 'batch_generate_questions' && data) {
       if (!isOnline) {
         addMessage({ type: 'error', content: '离线模式下无法生成题目' });
         return;
@@ -443,8 +484,6 @@ export const LearningMode = () => {
       } finally {
         setIsGeneratingCards(false);
       }
-    } else {
-      addMessage({ type: 'info', content: '此模式下暂不支持该批量操作' });
     }
   };
 
@@ -896,42 +935,25 @@ export const LearningMode = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                      节点颜色
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={newNodeColor}
-                        onChange={(e) => setNewNodeColor(e.target.value)}
-                        className="w-10 h-10 rounded-lg cursor-pointer border-0"
-                      />
-                      <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{newNodeColor}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                      节点等级
-                    </label>
-                    <select
-                      value={newNodeLevel}
-                      onChange={(e) => setNewNodeLevel(e.target.value as NodeLevel)}
-                      className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
-                        isDark 
-                          ? 'bg-slate-700 border-slate-600 text-white' 
-                          : 'bg-white border-gray-300 text-gray-900'
-                      }`}
-                    >
-                      <option value="root">根节点</option>
-                      <option value="core">核心</option>
-                      <option value="sub">次级</option>
-                      <option value="normal">普通</option>
-                      <option value="leaf">叶子</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    节点等级
+                  </label>
+                  <select
+                    value={newNodeLevel}
+                    onChange={(e) => setNewNodeLevel(e.target.value as NodeLevel)}
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
+                      isDark 
+                        ? 'bg-slate-700 border-slate-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="root">根节点</option>
+                    <option value="core">核心</option>
+                    <option value="sub">次级</option>
+                    <option value="normal">普通</option>
+                    <option value="leaf">叶子</option>
+                  </select>
                 </div>
 
                 <div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { TermTooltip } from '../TermTooltip';
+import { CodeBlock } from '../CodeBlock';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -49,6 +50,11 @@ export const ActionResultModal: React.FC<ActionResultModalProps> = ({ isOpen, on
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[rehypeKatex]}
               components={{
+                code: ({ className, children, node }) => (
+                  <CodeBlock className={className} isDark={isDark} node={node}>
+                    {children}
+                  </CodeBlock>
+                ),
                 a: ({node, ...props}) => {
                   const { href, children } = props;
                   if (href && href.startsWith('term:')) {

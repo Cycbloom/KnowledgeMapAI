@@ -4,11 +4,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import { CodeBlock } from '../CodeBlock';
 import { api } from '../../services/api';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
 import { useMessageStore } from '../../store/useMessageStore';
 import { ExtractedConcept, TutorMode, TTSEngine } from '../../types';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
+import { useTheme } from '../../hooks/useTheme';
 
 interface ChatDialogProps {
   isOpen: boolean;
@@ -55,6 +57,7 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
   onTutorChat
 }) => {
   const { addMessage } = useMessageStore();
+  const { isDark } = useTheme();
   const [ttsEngine, setTTSEngine] = useState<TTSEngine>('browser');
   const { 
     isSpeaking, 
@@ -413,6 +416,13 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm, remarkMath]} 
                     rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                    components={{
+                      code: ({ className, children, node }) => (
+                        <CodeBlock className={className} isDark={isDark} node={node}>
+                          {children}
+                        </CodeBlock>
+                      )
+                    }}
                   >
                     {preprocessMarkdown(msg.content)}
                   </ReactMarkdown>

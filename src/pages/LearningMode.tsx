@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { TermTooltip } from '../components/TermTooltip';
+import { CodeBlock } from '../components/CodeBlock';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -687,6 +688,11 @@ export const LearningMode = () => {
                         remarkPlugins={[remarkGfm, remarkMath]} 
                         rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
                         components={{
+                          code: ({ className, children, node }) => (
+                            <CodeBlock className={className} isDark={isDark} node={node}>
+                              {children}
+                            </CodeBlock>
+                          ),
                           a: ({node, ...props}) => {
                             const { href, children } = props;
                             if (href && href.startsWith('term:')) {
@@ -788,6 +794,11 @@ export const LearningMode = () => {
                                       remarkPlugins={[remarkGfm, remarkMath]}
                                       rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
                                       components={{
+                                        code: ({ className, children, node }) => (
+                                          <CodeBlock className={className} isDark={isDark} node={node}>
+                                            {children}
+                                          </CodeBlock>
+                                        ),
                                         a: ({node, ...props}) => {
                                           const { href, children } = props;
                                           if (href && href.startsWith('term:')) {

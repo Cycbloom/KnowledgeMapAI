@@ -706,7 +706,6 @@ export const GraphEditor = () => {
         selectedNodeIds={selectedNodeIds}
         onDeleteSelected={nodeOps.handleDeleteNode}
         onBatchDelete={nodeOps.handleBatchDelete}
-        onBatchColorUpdate={nodeOps.handleBatchColorUpdate}
         onBatchLevelUpdate={nodeOps.handleBatchLevelUpdate}
         isStyleSettingsOpen={isStyleSettingsOpen}
         setIsStyleSettingsOpen={setIsStyleSettingsOpen}

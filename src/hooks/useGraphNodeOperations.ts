@@ -255,47 +255,6 @@ export const useGraphNodeOperations = ({
     });
   };
 
-  const handleBatchColorUpdate = async (color: string) => {
-    if (!id || selectedNodeIds.size === 0) return;
-    
-    setLoading(true);
-    const nodeIds = Array.from(selectedNodeIds);
-    
-    const batchAction: HistoryAction = {
-      type: 'BATCH',
-      payload: []
-    };
-    
-    nodeIds.forEach(nodeId => {
-      const node = nodes.find(n => n.id === nodeId);
-      if (node) {
-        batchAction.payload.push({
-          type: 'UPDATE_NODE',
-          payload: {
-            id: nodeId,
-            before: { color: node.color },
-            after: { color }
-          }
-        });
-      }
-    });
-    
-    try {
-      await Promise.all(nodeIds.map(nodeId => 
-        updateNodeMutation.mutateAsync({ id: nodeId, graphId: id, data: { color } })
-      ));
-      if (batchAction.payload.length > 0) {
-        record(batchAction);
-      }
-      addMessage({ content: `已将 ${selectedNodeIds.size} 个节点颜色修改为 ${color}`, type: 'success' });
-    } catch (err) {
-      console.error(err);
-      addMessage({ content: '批量修改颜色失败', type: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleBatchLevelUpdate = async (level: string) => {
     if (!id || selectedNodeIds.size === 0) return;
     
@@ -348,7 +307,6 @@ export const useGraphNodeOperations = ({
       const beforeState = {
         title: node.title,
         content: node.content,
-        color: node.color,
         level: node.level,
         is_accepted: node.is_accepted,
         properties: node.properties
@@ -387,7 +345,6 @@ export const useGraphNodeOperations = ({
     handleSaveNode,
     handleDeleteNode,
     handleBatchDelete,
-    handleBatchColorUpdate,
     handleBatchLevelUpdate,
     handleUpdateNode,
     handleCloseSidebar,

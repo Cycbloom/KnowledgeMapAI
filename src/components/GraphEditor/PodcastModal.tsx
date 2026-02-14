@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, RefreshCw, Volume2, StopCircle, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import { CodeBlock } from '../CodeBlock';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
+import { useTheme } from '../../hooks/useTheme';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
 import { Node } from '../../types';
@@ -27,6 +29,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
   const [script, setScript] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(-1);
+  const { isDark } = useTheme();
   
   const { 
     speak, 
@@ -40,7 +43,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
     setVoice,
     currentEngine,
     switchEngine
-  } = useTextToSpeech('qwen3'); // Default to qwen3 (server TTS) for better quality
+  } = useTextToSpeech('qwen3');
 
   const { addMessage } = useMessageStore();
   const scriptContainerRef = useRef<HTMLDivElement>(null);
@@ -146,7 +149,17 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
                 className="flex-1 overflow-y-auto p-6 space-y-4 prose dark:prose-invert max-w-none"
               >
                  {script ? (
-                   <ReactMarkdown>{script}</ReactMarkdown>
+                   <ReactMarkdown
+                     components={{
+                       code: ({ className, children, node }) => (
+                         <CodeBlock className={className} isDark={isDark} node={node}>
+                           {children}
+                         </CodeBlock>
+                       )
+                     }}
+                   >
+                     {script}
+                   </ReactMarkdown>
                  ) : (
                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
                      <FileText size={48} className="mb-4 opacity-50" />

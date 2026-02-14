@@ -5,6 +5,7 @@ import { getLearningStatus, getStatusColors } from '../../config/learningStatusC
 import { getLevel } from '../../lib/graphUtils';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
 import { TermTooltip } from '../TermTooltip';
+import { CodeBlock } from '../CodeBlock';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -166,7 +167,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           <ReactMarkdown 
             remarkPlugins={[remarkGfm, remarkMath]} 
             rehypePlugins={[rehypeKatex]}
-            urlTransform={(url) => url} // Disable default URL validation to ensure 'term:' protocol is preserved
+            urlTransform={(url) => url}
             components={{
               code(props) {
                 const {children, className, node, ...rest} = props
@@ -174,16 +175,15 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 if (match && match[1] === 'mermaid') {
                   return <Mermaid chart={String(children).replace(/\n$/, '')} />
                 }
-                return <code {...rest} className={className}>{children}</code>
+                return <CodeBlock className={className} isDark={isDark} node={node}>{children}</CodeBlock>
               },
               img: ({node, ...props}) => <img {...props} className="rounded-lg max-w-full h-auto" loading="lazy" />,
               a: ({node, ...props}) => {
                 const { href, children } = props;
-                // Decode and trim to handle potential encoding or spacing issues
                 const cleanHref = href ? decodeURIComponent(href).trim() : '';
                 
                 if (cleanHref.startsWith('term:')) {
-                    const explanation = cleanHref.substring(5); // Remove 'term:' (length 5)
+                    const explanation = cleanHref.substring(5);
                     return <TermTooltip term={String(children)} explanation={explanation} />;
                 }
                 return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;

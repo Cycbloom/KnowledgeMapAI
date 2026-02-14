@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser, Plus } from 'lucide-react';
-import { Node, Edge } from '../../types';
+import { Node, Edge, NodeLevel } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
 import { GraphStatsSummary } from './GraphStatsSummary';
+import { getLevelColors } from '../../config/learningStatusColors';
 
 interface GraphOutlineProps {
   nodes: Node[];
@@ -296,7 +297,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
           <div 
             className="w-2 h-2 rounded-full shrink-0"
-            style={{ backgroundColor: node.color || '#3B82F6' }}
+            style={{ backgroundColor: getLevelColors(node.level || 'leaf').background }}
           />
           <span className="truncate flex-1 font-medium">
             {node.title || '未命名节点'}
@@ -401,7 +402,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
           <div 
             className="w-2 h-2 rounded-full shrink-0 mr-2"
-            style={{ backgroundColor: node.color || '#3B82F6' }}
+            style={{ backgroundColor: getLevelColors(node.level || 'leaf').background }}
           />
           
           <span className="truncate flex-1 font-medium">

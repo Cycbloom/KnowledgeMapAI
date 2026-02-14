@@ -362,11 +362,11 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 <div className="flex items-center gap-4 text-sm">
                   <span className="flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    {learningPath.completed_nodes} 已完成
+                    {learningPath.completed_nodes ?? 0} 已完成
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-4 h-4 text-blue-500" />
-                    {learningPath.estimated_hours?.toFixed(1) || '-'} 小时
+                    {learningPath.estimated_hours?.toFixed(1) ?? '-'} 小时
                   </span>
                   {learningPath.target_completion_date && (
                     <span className="flex items-center gap-1">
@@ -379,11 +379,11 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                   <div className={`h-2 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
                     <div 
                       className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                      style={{ width: `${learningPath.progress_percentage}%` }}
+                      style={{ width: `${learningPath.progress_percentage ?? 0}%` }}
                     />
                   </div>
                 </div>
-                <span className="text-sm font-medium">{learningPath.progress_percentage.toFixed(0)}%</span>
+                <span className="text-sm font-medium">{(learningPath.progress_percentage ?? 0).toFixed(0)}%</span>
               </div>
 
               <DndContext

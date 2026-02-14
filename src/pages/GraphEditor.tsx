@@ -637,6 +637,10 @@ export const GraphEditor = () => {
               onNodeContextMenu={handleNodeContextMenu}
               isRightPanelOpen={sidebarMode !== 'none' || state.isChatOpen}
               rightPanelWidth={Math.max(state.isChatOpen ? 500 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
+              graphId={id}
+              onLayoutUpdate={(positions) => {
+                queryClient.invalidateQueries({ queryKey: ['graphData', id] });
+              }}
             />
           )}
           {viewMode === 'hierarchy' && (
@@ -950,12 +954,6 @@ export const GraphEditor = () => {
         onEdgeWidthModeChange={setEdgeWidthMode}
         coloringMode={coloringMode}
       />
-      
-      {!isDeleteMode && !isPathfindingMode && selectedNodeIds.size === 0 && (
-        <div className="absolute bottom-4 left-4 text-[10px] text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-slate-900/50 px-2 py-1 rounded backdrop-blur-sm pointer-events-none">
-          按住 Shift 键并拖动鼠标进行框选
-        </div>
-      )}
       
       <GraphSidebarManager 
         state={state}

@@ -53,16 +53,17 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
   const stats = useMemo(() => {
     if (!learningPath) return null;
     
-    const completed = learningPath.nodes.filter(n => n.status === 'completed').length;
-    const inProgress = learningPath.nodes.filter(n => n.status === 'in_progress').length;
-    const pending = learningPath.nodes.filter(n => n.status === 'pending').length;
-    const totalMinutes = learningPath.nodes.reduce((sum, n) => sum + n.estimated_minutes, 0);
-    const completedMinutes = learningPath.nodes
+    const nodes = learningPath.nodes || [];
+    const completed = nodes.filter(n => n.status === 'completed').length;
+    const inProgress = nodes.filter(n => n.status === 'in_progress').length;
+    const pending = nodes.filter(n => n.status === 'pending').length;
+    const totalMinutes = nodes.reduce((sum, n) => sum + n.estimated_minutes, 0);
+    const completedMinutes = nodes
       .filter(n => n.status === 'completed')
       .reduce((sum, n) => sum + n.estimated_minutes, 0);
     
-    const currentNodeIndex = learningPath.nodes.findIndex(n => n.node_id === currentNodeId);
-    const currentNode = currentNodeIndex >= 0 ? learningPath.nodes[currentNodeIndex] : null;
+    const currentNodeIndex = nodes.findIndex(n => n.node_id === currentNodeId);
+    const currentNode = currentNodeIndex >= 0 ? nodes[currentNodeIndex] : null;
     
     return {
       completed,
@@ -72,8 +73,10 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
       completedMinutes,
       currentNodeIndex,
       currentNode,
-      remainingNodes: learningPath.nodes.length - completed,
-      averageDifficulty: learningPath.nodes.reduce((sum, n) => sum + n.difficulty_level, 0) / learningPath.nodes.length
+      remainingNodes: nodes.length - completed,
+      averageDifficulty: nodes.length > 0 
+        ? nodes.reduce((sum, n) => sum + n.difficulty_level, 0) / nodes.length 
+        : 0
     };
   }, [learningPath, currentNodeId]);
 
@@ -93,17 +96,17 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
       <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-gray-50'}`}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">{learningPath.title}</span>
-          <span className="text-xs text-gray-500">{learningPath.progress_percentage.toFixed(0)}%</span>
+          <span className="text-xs text-gray-500">{(learningPath.progress_percentage ?? 0).toFixed(0)}%</span>
         </div>
         <div className={`h-2 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
           <div 
             className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
-            style={{ width: `${learningPath.progress_percentage}%` }}
+            style={{ width: `${learningPath.progress_percentage ?? 0}%` }}
           />
         </div>
         <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-          <span>{stats?.completed}/{learningPath.total_nodes} 已完成</span>
-          <span>{stats?.remainingNodes} 剩余</span>
+          <span>{stats?.completed}/{learningPath.total_nodes ?? 0} 已完成</span>
+          <span>{stats?.remainingNodes ?? 0} 剩余</span>
         </div>
       </div>
     );
@@ -164,12 +167,12 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-500">学习进度</span>
-            <span className="text-sm font-medium">{learningPath.progress_percentage.toFixed(1)}%</span>
+            <span className="text-sm font-medium">{(learningPath.progress_percentage ?? 0).toFixed(1)}%</span>
           </div>
           <div className={`h-3 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
             <div 
               className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500"
-              style={{ width: `${learningPath.progress_percentage}%` }}
+              style={{ width: `${learningPath.progress_percentage ?? 0}%` }}
             />
           </div>
         </div>
@@ -184,7 +187,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
               <div>
                 <div className="font-medium">{stats.currentNode.node?.title}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  第 {stats.currentNodeIndex + 1} / {learningPath.total_nodes} 个知识点
+                  第 {(stats.currentNodeIndex ?? 0) + 1} / {learningPath.total_nodes ?? 0} 个知识点
                 </div>
               </div>
               <button
@@ -201,7 +204,7 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
         <div className="mt-4">
           <h4 className="text-sm font-medium mb-3">学习路径预览</h4>
           <div className="flex items-center gap-1 overflow-x-auto pb-2">
-            {learningPath.nodes.slice(0, 10).map((node, index) => (
+            {(learningPath.nodes || []).slice(0, 10).map((node, index) => (
               <React.Fragment key={node.id}>
                 <button
                   onClick={() => node.node && onNodeClick(node.node.id)}
@@ -221,13 +224,13 @@ export const LearningPathProgress: React.FC<LearningPathProgressProps> = ({
                 >
                   {node.status === 'completed' ? '✓' : index + 1}
                 </button>
-                {index < Math.min(learningPath.nodes.length, 10) - 1 && (
+                {index < Math.min((learningPath.nodes || []).length, 10) - 1 && (
                   <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
                 )}
               </React.Fragment>
             ))}
-            {learningPath.nodes.length > 10 && (
-              <span className="text-xs text-gray-500 ml-2">+{learningPath.nodes.length - 10} 更多</span>
+            {(learningPath.nodes || []).length > 10 && (
+              <span className="text-xs text-gray-500 ml-2">+{(learningPath.nodes || []).length - 10} 更多</span>
             )}
           </div>
         </div>

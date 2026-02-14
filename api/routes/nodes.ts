@@ -288,6 +288,53 @@ router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Re
   res.json({ message: `成功删除 ${count} 个节点`, count });
 });
 
+// Batch update node positions (for layout reorganization)
+router.post('/nodes/batch-update-positions', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { positions } = req.body; // Expect array of { id, x_position, y_position }
+
+  if (!positions || !Array.isArray(positions) || positions.length === 0) {
+    throw new AppError('请提供有效的位置数据', 400, ErrorCodes.INVALID_PARAMS);
+  }
+
+  // Get graph_ids for cache invalidation
+  const nodeIds = positions.map((p: { id: string }) => p.id);
+  const { data: nodes } = await req.supabase!
+    .from('nodes')
+    .select('id, graph_id')
+    .in('id', nodeIds);
+    
+  if (!nodes || nodes.length === 0) {
+    return res.json({ message: '未找到匹配的节点', count: 0 });
+  }
+
+  // Update each node's position
+  const updatePromises = positions.map((pos: { id: string; x_position: number; y_position: number }) => 
+    req.supabase!
+      .from('nodes')
+      .update({ 
+        x_position: pos.x_position, 
+        y_position: pos.y_position 
+      })
+      .eq('id', pos.id)
+  );
+
+  const results = await Promise.all(updatePromises);
+  
+  // Check for errors
+  const errors = results.filter(r => r.error);
+  if (errors.length > 0) {
+    console.error('Batch position update errors:', errors);
+  }
+
+  // Invalidate caches for all affected graphs
+  const graphIds = [...new Set(nodes.map((n: { graph_id: string }) => n.graph_id))];
+  for (const gid of graphIds) {
+    await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, gid));
+  }
+
+  res.json({ message: `成功更新 ${positions.length} 个节点位置`, count: positions.length });
+});
+
 // Create an edge
 router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthRequest, res: Response) => {
   const { source_node_id, target_node_id, relationship_type } = req.body;

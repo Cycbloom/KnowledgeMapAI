@@ -19,6 +19,7 @@ import { MindMapLink } from './MindMapLink';
 import { AlternativeBranches } from './AlternativeBranches';
 import { CanvasLayout } from './CanvasLayout';
 import { MiniMap } from './MiniMap';
+import { LayoutOrganizer } from './LayoutOrganizer';
 import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
@@ -54,6 +55,8 @@ interface MindMapCanvasProps {
   coloringMode?: GraphColorMode;
   isRightPanelOpen?: boolean;
   rightPanelWidth?: number;
+  graphId?: string;
+  onLayoutUpdate?: (positions: Map<string, { x: number; y: number }>) => void;
 }
 
 interface Transform {
@@ -91,7 +94,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   onNodeContextMenu,
   coloringMode = 'status', // Default to status for backward compatibility unless we change it in GraphEditor
   isRightPanelOpen = false,
-  rightPanelWidth = 0
+  rightPanelWidth = 0,
+  graphId,
+  onLayoutUpdate
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -618,6 +623,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         )}
         
         <div className="flex flex-col gap-2 pointer-events-auto">
+          {graphId && onLayoutUpdate && (
+            <LayoutOrganizer
+              graphId={graphId}
+              nodes={nodes}
+              edges={edges}
+              onLayoutUpdate={onLayoutUpdate}
+            />
+          )}
           <button
             onClick={() => setShowMiniMap(!showMiniMap)}
             className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
@@ -668,7 +681,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
+      <div className="absolute bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm pointer-events-none">
         缩放: {Math.round(transform.k * 100)}%
       </div>
     </div>

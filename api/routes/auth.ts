@@ -17,10 +17,15 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     const { email, password, name } = req.body;
     // Manual validation removed as it is handled by middleware
 
-    // 1. Sign up with Supabase Auth
+    // 1. Sign up with Supabase Auth (trigger will create user in public.users)
     const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name: name,
+        },
+      },
     });
 
     if (authError) {
@@ -31,24 +36,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
       throw new AppError('创建用户失败', 500, ErrorCodes.INTERNAL_ERROR);
     }
 
-    // 2. Create user record in public.users
-    const { error: dbError } = await supabaseAdmin
-      .from('users')
-      .insert([
-        {
-          id: authData.user.id,
-          email: email,
-          password_hash: 'MANAGED_BY_SUPABASE_AUTH', // We don't store actual hash here
-          name: name,
-        },
-      ]);
-
-    if (dbError) {
-      // Cleanup auth user if db insert fails (optional but good practice)
-      // await supabase.auth.admin.deleteUser(authData.user.id);
-      res.status(500).json({ error: '创建用户资料失败: ' + dbError.message });
-      return;
-    }
+    // Note: User record is created automatically by handle_new_user trigger
 
     res.status(201).json({ user: authData.user, session: authData.session });
   } catch (error: any) {

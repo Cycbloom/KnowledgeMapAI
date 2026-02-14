@@ -4,7 +4,7 @@ import {
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe, Keyboard
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, GraphColorMode } from '../../types';
@@ -88,6 +88,7 @@ interface GraphToolbarProps {
   };
   onRefresh?: () => void;
   onOpenHelp?: () => void;
+  onOpenShortcutSettings?: () => void;
   onShare?: () => void;
   onOpenAnalysis?: () => void;
   
@@ -105,7 +106,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
   isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme, setColorScheme, linkStyle, setLinkStyle, linkAnimation, setLinkAnimation,
-  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onShare,
+  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onOpenShortcutSettings, onShare,
   isExplorationMode, setIsExplorationMode, coloringMode, setColoringMode, isTimelineVisible, setIsTimelineVisible,
   isTutorMode, onToggleTutorMode, onOpenAnalysis,
   onTogglePresentation, onTogglePodcast
@@ -692,6 +693,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       <DropdownButton id="system" icon={Settings} label="设置">
         <MenuItem onClick={onRefresh} icon={RefreshCw} label="刷新数据" disabled={!onRefresh} />
         <MenuItem onClick={onOpenHelp} icon={HelpCircle} label="操作指南" disabled={!onOpenHelp} />
+        <MenuItem onClick={onOpenShortcutSettings} icon={Keyboard} label="快捷键设置" disabled={!onOpenShortcutSettings} />
         <MenuItem onClick={() => navigate('/profile')} icon={User} label="个人设置" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <MenuItem onClick={() => setIsStyleSettingsOpen(true)} icon={Palette} label="样式设置" active={isStyleSettingsOpen} />

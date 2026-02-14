@@ -1,0 +1,271 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { X, RotateCcw, Search, Keyboard } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
+import { useShortcutStore } from '../store/useShortcutStore';
+import { 
+  DEFAULT_SHORTCUTS, 
+  CATEGORY_LABELS, 
+  CATEGORY_ORDER,
+  formatShortcutKey,
+  ShortcutDefinition,
+  ShortcutKey
+} from '../config/shortcuts';
+
+interface ShortcutHelpPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
+  isOpen,
+  onClose
+}) => {
+  const { isDark } = useTheme();
+  const { bindings, setBinding, resetBinding, resetAllBindings } = useShortcutStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pressedKeys, setPressedKeys] = useState<Partial<ShortcutKey>>({});
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  useEffect(() => {
+    if (editingId && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [editingId]);
+  
+  const filteredShortcuts = DEFAULT_SHORTCUTS.filter(shortcut => 
+    shortcut.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    shortcut.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    CATEGORY_LABELS[shortcut.category].toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const groupedShortcuts = CATEGORY_ORDER.reduce((acc, category) => {
+    const items = filteredShortcuts.filter(s => s.category === category);
+    if (items.length > 0) {
+      acc[category] = items;
+    }
+    return acc;
+  }, {} as Record<string, ShortcutDefinition[]>);
+  
+  const handleKeyCapture = (e: React.KeyboardEvent, shortcutId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.key === 'Escape') {
+      setEditingId(null);
+      setPressedKeys({});
+      return;
+    }
+    
+    const newKey: ShortcutKey = {
+      key: e.key === ' ' ? 'Space' : e.key,
+      ctrl: e.ctrlKey,
+      meta: e.metaKey,
+      shift: e.shiftKey,
+      alt: e.altKey
+    };
+    
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && 
+        !['Enter', 'Space', 'Tab', 'Escape', 'Delete', 'Backspace', 
+          'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+      return;
+    }
+    
+    setBinding(shortcutId, newKey);
+    setEditingId(null);
+    setPressedKeys({});
+  };
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] px-4">
+      <div 
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      <div className={`
+        relative w-full max-w-3xl max-h-[75vh] rounded-xl shadow-2xl overflow-hidden flex flex-col
+        ${isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white border border-gray-200 text-gray-900'}
+      `}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+          <div className="flex items-center gap-3">
+            <Keyboard className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-semibold">快捷键设置</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => resetAllBindings()}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                isDark 
+                  ? 'text-slate-400 hover:text-white hover:bg-slate-800' 
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <RotateCcw size={14} />
+              重置全部
+            </button>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg transition-colors ${
+                isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-100'
+              }`}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+        
+        <div className={`px-6 py-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+          <div className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+            <Search className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
+            <input
+              type="text"
+              placeholder="搜索快捷键..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`flex-1 bg-transparent text-sm focus:outline-none ${
+                isDark ? 'placeholder-slate-500' : 'placeholder-gray-400'
+              }`}
+            />
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4">
+          {Object.entries(groupedShortcuts).map(([category, shortcuts]) => (
+            <div key={category} className="mb-6 last:mb-0">
+              <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 px-2 ${
+                isDark ? 'text-slate-500' : 'text-gray-400'
+              }`}>
+                {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS]}
+              </h3>
+              <div className="space-y-1">
+                {shortcuts.map(shortcut => {
+                  const binding = bindings[shortcut.id];
+                  const isEditing = editingId === shortcut.id;
+                  
+                  return (
+                    <div
+                      key={shortcut.id}
+                      className={`
+                        flex items-center justify-between px-3 py-2.5 rounded-lg
+                        ${isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-50'}
+                      `}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{shortcut.name}</span>
+                          {binding && !binding.enabled && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                              isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-600'
+                            }`}>
+                              已禁用
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          {shortcut.description}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {isEditing ? (
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            readOnly
+                            placeholder="按下新的快捷键..."
+                            onKeyDown={(e) => handleKeyCapture(e, shortcut.id)}
+                            onBlur={() => {
+                              setEditingId(null);
+                              setPressedKeys({});
+                            }}
+                            className={`
+                              w-32 px-2 py-1 text-sm text-center rounded border-2 border-blue-500
+                              ${isDark ? 'bg-slate-800' : 'bg-white'}
+                              focus:outline-none
+                            `}
+                          />
+                        ) : (
+                          <button
+                            onClick={() => setEditingId(shortcut.id)}
+                            className={`
+                              flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border transition-colors
+                              ${isDark 
+                                ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500' 
+                                : 'bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-300'
+                              }
+                            `}
+                          >
+                            {binding ? formatShortcutKey(binding.keys) : '未设置'}
+                          </button>
+                        )}
+                        
+                        {binding && JSON.stringify(binding.keys) !== JSON.stringify(shortcut.defaultKeys) && (
+                          <button
+                            onClick={() => resetBinding(shortcut.id)}
+                            className={`p-1 rounded transition-colors ${
+                              isDark 
+                                ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800' 
+                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                            }`}
+                            title="重置为默认"
+                          >
+                            <RotateCcw size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          
+          {Object.keys(groupedShortcuts).length === 0 && (
+            <div className="py-12 text-center">
+              <p className={isDark ? 'text-slate-500' : 'text-gray-400'}>
+                未找到匹配的快捷键
+              </p>
+            </div>
+          )}
+        </div>
+        
+        <div className={`px-6 py-3 border-t text-xs ${isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400'}`}>
+          <div className="flex justify-between items-center">
+            <span>点击快捷键按钮可以自定义</span>
+            <span>共 {DEFAULT_SHORTCUTS.length} 个快捷键</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const ShortcutHint: React.FC<{ actionId: string; className?: string }> = ({ 
+  actionId,
+  className = ''
+}) => {
+  const { isDark } = useTheme();
+  const { bindings, getShortcut } = useShortcutStore();
+  const shortcut = getShortcut(actionId);
+  const binding = bindings[actionId];
+  
+  if (!shortcut || !binding || !binding.enabled) {
+    return null;
+  }
+  
+  return (
+    <kbd className={`
+      hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded border
+      ${isDark 
+        ? 'bg-slate-800 border-slate-700 text-slate-400' 
+        : 'bg-gray-100 border-gray-200 text-gray-500'
+      }
+      ${className}
+    `}>
+      {formatShortcutKey(binding.keys)}
+    </kbd>
+  );
+};

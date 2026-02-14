@@ -6,7 +6,7 @@ import { CodeBlock } from '../components/CodeBlock';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X, Plus, Target, Route } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
@@ -18,6 +18,8 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { GenerateCardsModal } from '../components/LearningMode/GenerateCardsModal';
+import { LearningPathEditor } from '../components/LearningMode/LearningPathEditor';
+import { LearningPathProgress } from '../components/LearningMode/LearningPathProgress';
 import { Node, NodeLevel } from '../types';
 
 type Message = {
@@ -46,6 +48,7 @@ export const LearningMode = () => {
   const isOnline = useNetworkStatus();
 
   const [isCreateNodeModalOpen, setIsCreateNodeModalOpen] = useState(false);
+  const [isPathEditorOpen, setIsPathEditorOpen] = useState(false);
   const [newNodeTitle, setNewNodeTitle] = useState('');
   const [newNodeContent, setNewNodeContent] = useState('');
   const [newNodeLevel, setNewNodeLevel] = useState<NodeLevel>('leaf');
@@ -569,18 +572,32 @@ export const LearningMode = () => {
           </button>
 
           {!isMobile && (
-            <button
-              onClick={() => navigate(`/graph/${graphId}`)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
-                isDark 
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              title="进入 3D 思维导图"
-            >
-              <Network size={18} />
-              <span className="hidden sm:inline">思维导图</span>
-            </button>
+            <>
+              <button
+                onClick={() => setIsPathEditorOpen(true)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+                  isDark 
+                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title="学习路径"
+              >
+                <Route size={18} />
+                <span className="hidden sm:inline">学习路径</span>
+              </button>
+              <button
+                onClick={() => navigate(`/graph/${graphId}`)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+                  isDark 
+                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title="进入 3D 思维导图"
+              >
+                <Network size={18} />
+                <span className="hidden sm:inline">思维导图</span>
+              </button>
+            </>
           )}
 
           {nodeId && (
@@ -1016,6 +1033,17 @@ export const LearningMode = () => {
           </div>
         </div>
       )}
+
+      {/* Learning Path Editor */}
+      <LearningPathEditor
+        graphId={graphId || ''}
+        learningPath={learningPathData || null}
+        nodes={graphData?.nodes || []}
+        onNodeSelect={(nodeId) => navigate(`/learning?graph_id=${graphId}&node_id=${nodeId}`)}
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['graphLearningPath', graphId] })}
+        isOpen={isPathEditorOpen}
+        onClose={() => setIsPathEditorOpen(false)}
+      />
     </div>
   );
 };

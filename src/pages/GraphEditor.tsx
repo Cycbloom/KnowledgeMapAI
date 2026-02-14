@@ -34,6 +34,7 @@ import { useTutorOperations } from '../hooks/useTutorOperations';
 import { useGraphExportOperations } from '../hooks/useGraphExportOperations';
 import { useGraphInteraction } from '../hooks/useGraphInteraction';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
+import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { useExplorationPath } from '../hooks/useExplorationPath';
 import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
 import type { Node as GraphNode, ColorScheme, GraphColorMode, LinkStyle, LinkAnimation, GraphViewMode, NodeSizeMode, EdgeWidthMode, BranchSuggestion } from '../types';
@@ -47,6 +48,7 @@ import { PresentationControls } from '../components/GraphEditor/PresentationCont
 import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
 import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
 import { CommandPalette, CommandItem } from '../components/GraphEditor/CommandPalette';
+import { ShortcutHelpPanel } from '../components/ShortcutHelpPanel';
 import { 
   Home, ListChecks, Network, GitBranch, Layers, Clock, 
   Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
@@ -73,6 +75,7 @@ export const GraphEditor = () => {
   const [edgeWidthMode, setEdgeWidthMode] = useState<EdgeWidthMode>('fixed');
   const [coloringMode, setColoringMode] = useState<GraphColorMode>('level'); // Default to level (structure) as requested
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
 
   // Command Palette Logic
   React.useEffect(() => {
@@ -303,6 +306,34 @@ export const GraphEditor = () => {
     selectedNode,
     viewMode,
     setViewMode
+  });
+
+  // Global Shortcuts (new system)
+  useGlobalShortcuts({
+    handlers: {
+      'showHelp': () => setIsShortcutHelpOpen(true),
+      'openCommandPalette': () => setIsCommandPaletteOpen(prev => !prev),
+      'toggleTheme': toggleTheme,
+      'setViewMode:mindmap': () => setViewMode('mindmap'),
+      'setViewMode:hierarchy': () => setViewMode('hierarchy'),
+      'setViewMode:timeline': () => setViewMode('timeline'),
+      'setViewMode:tree': () => setViewMode('tree'),
+      'setViewMode:planet': () => setViewMode('planet'),
+      'goHome': () => navigate('/'),
+      'presentationNext': () => {
+        if (state.isPresentationMode) {
+          state.setPresentationStep(p => Math.min(p + 1, presentationPath.length - 1));
+        }
+      },
+      'presentationPrev': () => {
+        if (state.isPresentationMode) {
+          state.setPresentationStep(p => Math.max(p - 1, 0));
+        }
+      },
+    },
+    context: {
+      presentationMode: state.isPresentationMode
+    }
   });
 
   const handleCloseSidebar = useCallback(() => {
@@ -728,6 +759,7 @@ export const GraphEditor = () => {
         }}
         onRefresh={() => window.location.reload()}
         onOpenHelp={() => state.setIsHelpOpen(true)}
+        onOpenShortcutSettings={() => setIsShortcutHelpOpen(true)}
         onShare={() => state.setIsShareModalOpen(true)}
         onOpenAnalysis={() => setIsAnalysisPanelOpen(true)}
         viewMode={viewMode}
@@ -976,6 +1008,11 @@ export const GraphEditor = () => {
             }
           }
         }}
+      />
+      
+      <ShortcutHelpPanel
+        isOpen={isShortcutHelpOpen}
+        onClose={() => setIsShortcutHelpOpen(false)}
       />
     </div>
   );

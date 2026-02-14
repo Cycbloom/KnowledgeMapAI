@@ -207,20 +207,11 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     icon: 'Network'
   },
   {
-    id: 'view-hierarchy',
-    name: '层级视图',
-    description: '切换到层级视图',
-    category: 'view',
-    defaultKeys: { key: '2', ctrl: true },
-    action: 'setViewMode:hierarchy',
-    icon: 'Layers'
-  },
-  {
     id: 'view-timeline',
     name: '时间轴视图',
     description: '切换到时间轴视图',
     category: 'view',
-    defaultKeys: { key: '3', ctrl: true },
+    defaultKeys: { key: '2', ctrl: true },
     action: 'setViewMode:timeline',
     icon: 'Clock'
   },
@@ -229,7 +220,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     name: '树形视图',
     description: '切换到树形视图',
     category: 'view',
-    defaultKeys: { key: '4', ctrl: true },
+    defaultKeys: { key: '3', ctrl: true },
     action: 'setViewMode:tree',
     icon: 'GitBranch'
   },
@@ -238,7 +229,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     name: '3D星球视图',
     description: '切换到3D星球视图',
     category: 'view',
-    defaultKeys: { key: '5', ctrl: true },
+    defaultKeys: { key: '4', ctrl: true },
     action: 'setViewMode:planet',
     icon: 'Globe'
   },

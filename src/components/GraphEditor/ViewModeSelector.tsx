@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, Layers, Clock, GitBranch, Globe } from 'lucide-react';
+import { Network, Clock, GitBranch, Globe } from 'lucide-react';
 import { GraphViewMode } from '../../types';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -14,12 +14,6 @@ const viewModes: Array<{ mode: GraphViewMode; label: string; icon: React.Compone
     label: '思维导图',
     icon: Network,
     description: '力导向图布局，适合探索知识关系'
-  },
-  {
-    mode: 'hierarchy',
-    label: '层级视图',
-    icon: Layers,
-    description: '按层级排列，清晰展示知识结构'
   },
   {
     mode: 'timeline',

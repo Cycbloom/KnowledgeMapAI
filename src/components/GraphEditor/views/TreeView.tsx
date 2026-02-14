@@ -23,6 +23,8 @@ interface TreeViewProps {
   nodeSizeMode?: NodeSizeMode;
   edgeWidthMode?: EdgeWidthMode;
   coloringMode?: GraphColorMode;
+  focusedNodeIds?: Set<string>;
+  focusedLinkIds?: Set<string>;
 }
 
 interface Transform {
@@ -44,7 +46,9 @@ export const TreeView: React.FC<TreeViewProps> = ({
   linkAnimation = 'none',
   nodeSizeMode = 'fixed',
   edgeWidthMode = 'fixed',
-  coloringMode = 'level'
+  coloringMode = 'level',
+  focusedNodeIds = new Set(),
+  focusedLinkIds = new Set()
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -56,6 +60,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
   const [containerSize, setContainerSize] = useState({ width, height });
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
+  const hasFocusMode = focusedNodeIds.size > 0;
 
   useEffect(() => {
     const updateContainerSize = () => {
@@ -98,7 +103,6 @@ export const TreeView: React.FC<TreeViewProps> = ({
     });
   }, [layout, visibleNodes]);
 
-  // Calculate node importance map
   const nodeImportanceMap = useMemo(() => {
     if (nodeSizeMode === 'fixed') return new Map<string, number>();
     const map = new Map<string, number>();
@@ -109,7 +113,6 @@ export const TreeView: React.FC<TreeViewProps> = ({
     return map;
   }, [visibleNodes, nodes, edges, nodeStatus, nodeSizeMode]);
 
-  // Calculate edge strength map
   const edgeStrengthMap = useMemo(() => {
     if (edgeWidthMode === 'fixed') return new Map<string, number>();
     const map = new Map<string, number>();
@@ -165,10 +168,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
 
   if (!layout) return null;
 
-  // Create nodesMap with all layout nodes (not just visible) for link resolution
   const nodesMap = new Map(layout.nodes.map(n => [String(n.id).trim(), n]));
-  
-  // Filter links to only show those connecting visible nodes
   const visibleNodeIds = new Set(visibleNodes.map(n => String(n.id).trim()));
 
   return (
@@ -178,6 +178,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
         width={containerSize.width}
         height={containerSize.height}
         className="absolute inset-0"
+        style={{ backgroundColor: colors.background }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -185,32 +186,29 @@ export const TreeView: React.FC<TreeViewProps> = ({
         onMouseLeave={handleMouseUp}
       >
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
-          {/* Links */}
           <g className="links">
             {visibleLinks.map(link => {
               const sourceId = typeof link.source === 'string' ? String(link.source).trim() : String(link.source.id).trim();
               const targetId = typeof link.target === 'string' ? String(link.target).trim() : String(link.target.id).trim();
               
-              // Only render link if both source and target are visible
               if (!visibleNodeIds.has(sourceId) || !visibleNodeIds.has(targetId)) {
                 return null;
               }
               
-              // Get the actual node objects from nodesMap
               const sourceNode = nodesMap.get(sourceId);
               const targetNode = nodesMap.get(targetId);
               
-              // Skip if nodes not found
               if (!sourceNode || !targetNode) {
                 return null;
               }
               
-              // Create link with node objects instead of IDs
               const linkWithNodes = {
                 ...link,
                 source: sourceNode,
                 target: targetNode
               };
+              
+              const isFocused = focusedLinkIds.has(link.id);
               
               return (
                 <MindMapLink
@@ -224,37 +222,42 @@ export const TreeView: React.FC<TreeViewProps> = ({
                   edgeStrength={edgeStrengthMap.get(link.id)}
                   allNodes={nodes}
                   allEdges={edges}
+                  focused={isFocused}
+                  hasFocusMode={hasFocusMode}
                 />
               );
             })}
           </g>
 
-          {/* Nodes */}
           <g className="nodes">
-            {visibleNodes.map(node => (
-              <MindMapNode
-                key={node.id}
-                node={node}
-                edges={edges}
-                nodeStatus={nodeStatus}
-                selected={selectedNodeId === node.id}
-                isDark={isDark}
-                zoomLevel={transform.k}
-                onClick={() => onNodeClick(node as GraphNode)}
-                onMouseEnter={() => setHoveredNodeId(node.id)}
-                onMouseLeave={() => setHoveredNodeId(null)}
-                focused={hoveredNodeId === node.id}
-                colorScheme={colorScheme}
-                nodeSizeMode={nodeSizeMode}
-                nodeImportance={nodeImportanceMap.get(node.id)}
-                allNodes={nodes}
-                coloringMode={coloringMode}
-              />
-            ))}
+            {visibleNodes.map(node => {
+              const isFocused = focusedNodeIds.has(node.id);
+              
+              return (
+                <MindMapNode
+                  key={node.id}
+                  node={node}
+                  edges={edges}
+                  nodeStatus={nodeStatus}
+                  selected={selectedNodeId === node.id}
+                  isDark={isDark}
+                  zoomLevel={transform.k}
+                  onClick={() => onNodeClick(node as GraphNode)}
+                  onMouseEnter={() => setHoveredNodeId(node.id)}
+                  onMouseLeave={() => setHoveredNodeId(null)}
+                  focused={isFocused}
+                  hasFocusMode={hasFocusMode}
+                  colorScheme={colorScheme}
+                  nodeSizeMode={nodeSizeMode}
+                  nodeImportance={nodeImportanceMap.get(node.id)}
+                  allNodes={nodes}
+                  coloringMode={coloringMode}
+                />
+              );
+            })}
           </g>
         </g>
       </svg>
     </div>
   );
 };
-

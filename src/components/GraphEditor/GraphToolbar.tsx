@@ -633,7 +633,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           <div className="space-y-1">
             {[
               { mode: 'mindmap' as const, label: '思维导图', icon: Network },
-              { mode: 'hierarchy' as const, label: '层级视图', icon: Layers },
               { mode: 'timeline' as const, label: '时间线', icon: Clock },
               { mode: 'tree' as const, label: '树形视图', icon: GitBranch },
               { mode: 'planet' as const, label: '知识星球', icon: Globe }

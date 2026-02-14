@@ -126,13 +126,13 @@ export const useKeyboardShortcuts = ({
           setViewMode('mindmap');
         } else if (e.key === '2') {
           e.preventDefault();
-          setViewMode('hierarchy');
+          setViewMode('timeline');
         } else if (e.key === '3') {
           e.preventDefault();
-          setViewMode('timeline');
+          setViewMode('tree');
         } else if (e.key === '4') {
           e.preventDefault();
-          setViewMode('tree');
+          setViewMode('planet');
         }
       }
       

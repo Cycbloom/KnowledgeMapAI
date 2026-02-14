@@ -38,7 +38,6 @@ import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { useExplorationPath } from '../hooks/useExplorationPath';
 import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
 import type { Node as GraphNode, ColorScheme, GraphColorMode, LinkStyle, LinkAnimation, GraphViewMode, NodeSizeMode, EdgeWidthMode, BranchSuggestion } from '../types';
-import { HierarchyView } from '../components/GraphEditor/views/HierarchyView';
 import { TimelineView } from '../components/GraphEditor/views/TimelineView';
 import { TreeView } from '../components/GraphEditor/views/TreeView';
 import { PlanetView } from '../three/PlanetView';
@@ -50,7 +49,7 @@ import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
 import { CommandPalette, CommandItem } from '../components/GraphEditor/CommandPalette';
 import { ShortcutHelpPanel } from '../components/ShortcutHelpPanel';
 import { 
-  Home, ListChecks, Network, GitBranch, Layers, Clock, 
+  Home, ListChecks, Network, GitBranch, Clock, 
   Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
 } from 'lucide-react';
 import { api, AIAction } from '../services/api';
@@ -315,17 +314,16 @@ export const GraphEditor = () => {
       'openCommandPalette': () => setIsCommandPaletteOpen(prev => !prev),
       'toggleTheme': toggleTheme,
       'setViewMode:mindmap': () => setViewMode('mindmap'),
-      'setViewMode:hierarchy': () => setViewMode('hierarchy'),
       'setViewMode:timeline': () => setViewMode('timeline'),
       'setViewMode:tree': () => setViewMode('tree'),
       'setViewMode:planet': () => setViewMode('planet'),
       'goHome': () => navigate('/'),
-      'presentationNext': () => {
+      presentationNext: () => {
         if (state.isPresentationMode) {
           state.setPresentationStep(p => Math.min(p + 1, presentationPath.length - 1));
         }
       },
-      'presentationPrev': () => {
+      presentationPrev: () => {
         if (state.isPresentationMode) {
           state.setPresentationStep(p => Math.max(p - 1, 0));
         }
@@ -445,14 +443,6 @@ export const GraphEditor = () => {
       category: 'view',
       action: () => setViewMode('mindmap'),
       keywords: ['mindmap', 'graph', 'canvas']
-    },
-    {
-      id: 'view-hierarchy',
-      label: '层级视图',
-      icon: <Layers size={18} />,
-      category: 'view',
-      action: () => setViewMode('hierarchy'),
-      keywords: ['hierarchy', 'tree', 'level']
     },
     {
       id: 'view-timeline',
@@ -643,21 +633,6 @@ export const GraphEditor = () => {
               }}
             />
           )}
-          {viewMode === 'hierarchy' && (
-            <HierarchyView
-              nodes={nodes}
-              edges={edges}
-              nodeStatus={nodeStatus}
-              selectedNodeId={selectedNode?.id || null}
-              onNodeClick={handleNodeClick}
-              colorScheme={colorScheme}
-              linkStyle={linkStyle}
-              linkAnimation={linkAnimation}
-              nodeSizeMode={nodeSizeMode}
-              edgeWidthMode={edgeWidthMode}
-              coloringMode={coloringMode}
-            />
-          )}
           {viewMode === 'timeline' && (
             <TimelineView
               nodes={nodes}
@@ -686,6 +661,8 @@ export const GraphEditor = () => {
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
               coloringMode={coloringMode}
+              focusedNodeIds={focusedNodeIds}
+              focusedLinkIds={focusedLinkIds}
             />
           )}
           {viewMode === 'planet' && (

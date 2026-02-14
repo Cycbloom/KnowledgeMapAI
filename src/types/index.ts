@@ -210,7 +210,7 @@ export interface NodeStyle {
 
 export type ExplorationMode = 'none' | 'branch' | 'timeline';
 
-export type GraphViewMode = 'mindmap' | 'hierarchy' | 'timeline' | 'tree' | 'planet';
+export type GraphViewMode = 'mindmap' | 'timeline' | 'tree' | 'planet';
 
 export type GraphColorMode = 'level' | 'status';
 

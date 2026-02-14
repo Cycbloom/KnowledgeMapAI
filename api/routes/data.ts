@@ -207,7 +207,6 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
           content: n.content,
           x_position: n.x_position || 0,
           y_position: n.y_position || 0,
-          color: n.color,
           level: n.level || 'normal',
           properties: n.properties || {}
         });
@@ -298,7 +297,6 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
           content: n.content,
           x_position: n.x_position || 0,
           y_position: n.y_position || 0,
-          color: n.color,
           level: n.level || 'normal',
           properties: n.properties || {}
         });

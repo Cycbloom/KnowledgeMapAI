@@ -522,10 +522,6 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
             content: node.content || '',
             x_position: Math.round((Math.random() - 0.5) * 50),
             y_position: Math.round((Math.random() - 0.5) * 50),
-            color: node.level === 'root' ? '#8B5CF6' : 
-                   node.level === 'core' ? '#EF4444' : 
-                   node.level === 'sub' ? '#F59E0B' : 
-                   node.level === 'normal' ? '#3B82F6' : '#10B981',
             level: node.level || 'leaf',
             properties: { 
               ...node.properties, 

@@ -149,7 +149,6 @@ export class TemplateService {
             content: '',
             x_position: templateNode.x_position || 0,
             y_position: templateNode.y_position || 0,
-            color: templateNode.color,
             level: templateNode.level,
             properties: {
               ai_prompt: templateNode.aiPrompt,

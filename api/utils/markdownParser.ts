@@ -20,19 +20,17 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
   let graphTitle = 'Untitled Graph';
   let firstHeaderFound = false;
 
-  // Helper to determine color based on level
   const getLevelInfo = (depth: number) => {
     switch (depth) {
-      case 1: return { level: 'root', color: '#8B5CF6' };   // Purple
-      case 2: return { level: 'core', color: '#EF4444' };   // Red
-      case 3: return { level: 'sub', color: '#F59E0B' };    // Orange
-      case 4: return { level: 'normal', color: '#3B82F6' }; // Blue
-      default: return { level: 'leaf', color: '#10B981' };  // Green
+      case 1: return 'root';
+      case 2: return 'core';
+      case 3: return 'sub';
+      case 4: return 'normal';
+      default: return 'leaf';
     }
   };
 
   lines.forEach((line, index) => {
-    // Check for headers
     const headerMatch = line.match(/^(#{1,6})\s+(.*)/);
     
     if (headerMatch) {
@@ -40,22 +38,19 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
       const title = headerMatch[2].trim();
       const nodeId = `md-node-${nodes.length + 1}`;
       
-      // If this is the first H1, use it as graph title
       if (depth === 1 && !firstHeaderFound) {
         graphTitle = title;
         firstHeaderFound = true;
       }
 
-      const { level, color } = getLevelInfo(depth);
+      const level = getLevelInfo(depth);
 
-      // Create new node
       currentNode = {
         id: nodeId,
         title: title,
-        content: '', // Will accumulate content
+        content: '',
         level,
-        color,
-        x_position: Math.round((Math.random() - 0.5) * 100), // Random init pos
+        x_position: Math.round((Math.random() - 0.5) * 100),
         y_position: Math.round((Math.random() - 0.5) * 100),
       };
       nodes.push(currentNode);
@@ -109,8 +104,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
       id: nodeId,
       title: title,
       content: text,
-      level: 'root',
-      color: '#8B5CF6'
+      level: 'root'
     });
     graphTitle = title;
   }

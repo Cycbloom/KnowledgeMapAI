@@ -6,7 +6,6 @@ import { X, ArrowLeft, Save, Loader2 } from 'lucide-react';
 interface NodeFormState {
   title: string;
   content: string;
-  color: string;
   parentNodeId: string;
   level: NodeLevel;
   tags: string[];
@@ -98,20 +97,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
              />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-           <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">颜色</label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  value={nodeForm.color}
-                  onChange={(e) => setNodeForm({ ...nodeForm, color: e.target.value })}
-                  className="h-9 w-9 p-0.5 rounded border border-gray-300 cursor-pointer"
-                />
-                <span className="text-xs text-gray-500 font-mono">{nodeForm.color}</span>
-              </div>
-           </div>
-           <div>
+          <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">层级</label>
               <select
                 value={nodeForm.level}
@@ -125,7 +111,6 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 <option value="leaf">叶子节点</option>
               </select>
            </div>
-         </div>
 
          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">内容</label>

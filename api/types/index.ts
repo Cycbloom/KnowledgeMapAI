@@ -6,7 +6,6 @@ export interface Node {
   content?: string;
   x_position: number;
   y_position: number;
-  color?: string;
   level?: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
   properties?: Record<string, any>;
   is_accepted?: boolean;

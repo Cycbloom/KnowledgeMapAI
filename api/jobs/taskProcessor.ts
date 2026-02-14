@@ -308,8 +308,7 @@ class TaskProcessor {
               content: item.content || '',
               x_position: x,
               y_position: y,
-              level: newLevel,
-              color: '#10B981'
+              level: newLevel
             })
             .select()
             .single();

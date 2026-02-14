@@ -8,40 +8,70 @@ export class GraphService {
     const cacheKey = CacheKeys.USER_GRAPHS(userId);
     
     return cacheService.getOrSet(cacheKey, async () => {
-      const { data, error } = await supabase
+      const { data: graphs, error } = await supabase
         .from('knowledge_graphs')
-        .select('*, nodes(count)')
+        .select('*')
         .eq('user_id', userId)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Transform data to flat structure
-      return data.map((g: any) => ({
+      const graphIds = graphs?.map((g: any) => g.id) || [];
+      
+      if (graphIds.length === 0) {
+        return [];
+      }
+      
+      const { data: nodeCounts } = await supabase
+        .from('nodes')
+        .select('graph_id')
+        .in('graph_id', graphIds)
+        .is('deleted_at', null);
+      
+      const countMap = new Map<string, number>();
+      nodeCounts?.forEach((n: any) => {
+        countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
+      });
+      
+      return graphs?.map((g: any) => ({
         ...g,
-        nodes_count: g.nodes?.[0]?.count || 0,
-        nodes: undefined // cleanup
-      }));
+        nodes_count: countMap.get(g.id) || 0
+      })) || [];
     });
   }
 
   async listTrash(supabase: SupabaseClient, userId: string) {
-    // Trash is usually not cached or has a separate cache
-    const { data, error } = await supabase
+    const { data: graphs, error } = await supabase
       .from('knowledge_graphs')
-      .select('*, nodes(count)')
+      .select('*')
       .eq('user_id', userId)
       .not('deleted_at', 'is', null)
       .order('deleted_at', { ascending: false });
 
     if (error) throw error;
     
-    return data.map((g: any) => ({
+    const graphIds = graphs?.map((g: any) => g.id) || [];
+    
+    if (graphIds.length === 0) {
+      return [];
+    }
+    
+    const { data: nodeCounts } = await supabase
+      .from('nodes')
+      .select('graph_id')
+      .in('graph_id', graphIds)
+      .is('deleted_at', null);
+    
+    const countMap = new Map<string, number>();
+    nodeCounts?.forEach((n: any) => {
+      countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
+    });
+    
+    return graphs?.map((g: any) => ({
       ...g,
-      nodes_count: g.nodes?.[0]?.count || 0,
-      nodes: undefined
-    }));
+      nodes_count: countMap.get(g.id) || 0
+    })) || [];
   }
 
   async createGraph(supabase: SupabaseClient, userId: string, title: string, description: string = '') {

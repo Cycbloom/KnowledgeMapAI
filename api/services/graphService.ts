@@ -118,6 +118,23 @@ export class GraphService {
   }
 
   async updateGraph(supabase: SupabaseClient, userId: string, id: string, updates: any) {
+    // If updating settings, merge with existing settings
+    if (updates.settings) {
+      const { data: existingGraph } = await supabase
+        .from('knowledge_graphs')
+        .select('settings')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .single();
+      
+      if (existingGraph) {
+        updates.settings = {
+          ...(existingGraph.settings || {}),
+          ...updates.settings
+        };
+      }
+    }
+    
     // Only owner can update
     const { data, error } = await supabase
       .from('knowledge_graphs')

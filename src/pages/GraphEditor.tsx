@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, lazy, Suspense, useCallback, useState } from 'react';
+import React, { useRef, useMemo, lazy, Suspense, useCallback, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
@@ -243,8 +243,15 @@ export const GraphEditor = () => {
     isGraphLoading
   });
 
+  // Auto-show timeline when entering exploration mode
+  useEffect(() => {
+    if (isExplorationMode) {
+      setIsTimelineVisible(true);
+    }
+  }, [isExplorationMode, setIsTimelineVisible]);
+
   // Exploration Path Hook
-  const explorationPathOps = useExplorationPath();
+  const explorationPathOps = useExplorationPath({ graphId: id });
 
   // Computed Values
   const lockedNodeIds = useMemo(() => {

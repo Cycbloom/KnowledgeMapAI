@@ -661,8 +661,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           colorClass={coloringMode === 'level' ? "text-blue-500" : "text-orange-500"}
         />
 
-        <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? "隐藏时间轴" : "显示时间轴"} active={isTimelineVisible} colorClass="text-blue-500" />
-        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+        {isExplorationMode && (
+          <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? "隐藏时间轴" : "显示时间轴"} active={isTimelineVisible} colorClass="text-blue-500" />
+        )}
+        {isExplorationMode && <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>}
         <MenuItem onClick={onTogglePresentation} icon={MonitorPlay} label="演示播放" colorClass="text-orange-500" disabled={!onTogglePresentation} />
         <MenuItem onClick={onTogglePodcast} icon={Headphones} label="播客模式 (AI)" colorClass="text-pink-500" disabled={!onTogglePodcast} />
       </DropdownButton>

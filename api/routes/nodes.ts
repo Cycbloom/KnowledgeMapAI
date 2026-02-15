@@ -361,22 +361,46 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
     throw new AppError('Target node not found or unauthorized', 404, ErrorCodes.NODE_NOT_FOUND);
   }
 
-  // 3. Create edge
-  const { data, error } = await req.supabase!
+  // 3. Check if edge already exists (including soft-deleted)
+  const { data: existingEdge } = await req.supabase!
     .from('edges')
-    .upsert([
-      { source_node_id, target_node_id, relationship_type, graph_id: sourceNode.graph_id, deleted_at: null }
-    ], { onConflict: 'id' }) // Ideally conflict on (source, target)? But id is PK. We don't have unique constraint on source-target?
-    // If user creates duplicate edge, it's a new ID usually.
-    // If we want to restore, we need to know the ID.
-    // But edge creation usually doesn't pass ID from frontend unless it's Undo.
-    // Frontend `addEdge` usually generates temp ID then server returns real ID.
-    // If "Undo" creates edge, it might not have the ID.
-    // So soft delete for edges is mostly for cascading?
-    // If we just INSERT, it creates a NEW row. The old soft-deleted row stays there.
-    // This is fine. "Zombie" edges are acceptable.
-    .select()
-    .single();
+    .select('id, deleted_at')
+    .eq('source_node_id', source_node_id)
+    .eq('target_node_id', target_node_id)
+    .eq('relationship_type', relationship_type)
+    .maybeSingle();
+
+  let data: any;
+  let error: any;
+
+  if (existingEdge) {
+    // Edge exists, restore it if soft-deleted, or just return it
+    if (existingEdge.deleted_at) {
+      const result = await req.supabase!
+        .from('edges')
+        .update({ deleted_at: null })
+        .eq('id', existingEdge.id)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      // Edge already exists and is active, just return it
+      data = existingEdge;
+      error = null;
+    }
+  } else {
+    // Create new edge
+    const result = await req.supabase!
+      .from('edges')
+      .insert([
+        { source_node_id, target_node_id, relationship_type, graph_id: sourceNode.graph_id }
+      ])
+      .select()
+      .single();
+    data = result.data;
+    error = result.error;
+  }
 
   if (error) throw new AppError(error.message || '创建边失败', 500, ErrorCodes.INTERNAL_ERROR);
   

@@ -53,12 +53,15 @@ export const AlternativeBranches: React.FC<AlternativeBranchesProps> = ({
     return 'text-red-500/70';
   };
 
+  const nodeX = 'x' in parentNode ? parentNode.x : parentNode.x_position;
+  const nodeY = 'y' in parentNode ? parentNode.y : parentNode.y_position;
+
   const calculatePosition = (index: number, total: number) => {
     const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
     const radius = 120;
     return {
-      x: parentNode.x_position + Math.cos(angle) * radius,
-      y: parentNode.y_position + Math.sin(angle) * radius
+      x: nodeX + Math.cos(angle) * radius,
+      y: nodeY + Math.sin(angle) * radius
     };
   };
 
@@ -73,8 +76,8 @@ export const AlternativeBranches: React.FC<AlternativeBranchesProps> = ({
         return (
           <g key={branch.id}>
             <line
-              x1={parentNode.x_position}
-              y1={parentNode.y_position}
+              x1={nodeX}
+              y1={nodeY}
               x2={pos.x}
               y2={pos.y}
               stroke={isSelected 

@@ -61,6 +61,7 @@ interface MindMapCanvasProps {
   onSelectParent?: (nodeId: string) => void;
   currentNodeId?: string;
   selectedParentIds?: string[];
+  leftPanelWidth?: number;
 }
 
 interface Transform {
@@ -104,7 +105,8 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   isSelectingParent = false,
   onSelectParent,
   currentNodeId,
-  selectedParentIds = []
+  selectedParentIds = [],
+  leftPanelWidth = 0
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -432,11 +434,12 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     updateTransformState(newTransform);
   }, [updateTransformDOM, updateTransformState]);
 
-  // Calculate visual center based on right panel state
+  // Calculate visual center based on right panel and left panel state
   const visualCenterX = useMemo(() => {
     // If right panel is open, the visual center shifts left
-    return (containerSize.width - rightPanelWidth) / 2;
-  }, [rightPanelWidth, containerSize.width]);
+    // If left panel is open, the visual center shifts right
+    return (containerSize.width - rightPanelWidth + leftPanelWidth) / 2;
+  }, [rightPanelWidth, leftPanelWidth, containerSize.width]);
 
   const visualCenterY = containerSize.height / 2;
 

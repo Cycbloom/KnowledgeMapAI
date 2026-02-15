@@ -37,6 +37,7 @@ interface GraphToolbarProps {
   onBackgroundTask?: (type: 'generate_questions' | 'expand_graph') => void;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
+  ragChatWidth?: number;
   isTutorMode?: boolean;
   onToggleTutorMode?: () => void;
   isPathfindingMode: boolean;
@@ -113,7 +114,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isExplorationMode, setIsExplorationMode, coloringMode, setColoringMode, isTimelineVisible, setIsTimelineVisible,
   isTutorMode, onToggleTutorMode, onOpenAnalysis,
   onTogglePresentation, onTogglePodcast,
-  isRAGChatOpen
+  isRAGChatOpen, ragChatWidth = 420
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -495,7 +496,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
   // Desktop Layout - Priority Sorted with Dropdowns
   return (
-    <div className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border transition-transform duration-300 ${themeClasses.container} ${isRAGChatOpen ? 'translate-x-[420px]' : ''}`}>
+    <div 
+      className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border transition-transform duration-300 ${themeClasses.container}`}
+      style={{ transform: isRAGChatOpen ? `translateX(${ragChatWidth}px)` : undefined }}
+    >
       {/* 1. Navigation & Basic Info (Always visible) */}
       <div className="flex items-center">
         <button onClick={onBack} className={`p-2 rounded-lg transition-colors ${themeClasses.button.default}`} title="返回">

@@ -77,6 +77,7 @@ export const GraphEditor = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
+  const [ragChatWidth, setRagChatWidth] = useState(420);
   const [isSelectingParent, setIsSelectingParent] = useState(false);
 
   const handleStartSelectingParent = useCallback(() => {
@@ -650,8 +651,8 @@ export const GraphEditor = () => {
               edgeWidthMode={edgeWidthMode}
               coloringMode={coloringMode}
               onNodeContextMenu={handleNodeContextMenu}
-              isRightPanelOpen={sidebarMode !== 'none' || isRAGChatOpen}
-              rightPanelWidth={Math.max(isRAGChatOpen ? 420 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
+              isRightPanelOpen={sidebarMode !== 'none'}
+              rightPanelWidth={sidebarMode !== 'none' ? state.sidebarWidth : 0}
               graphId={id}
               onLayoutUpdate={(positions) => {
                 queryClient.invalidateQueries({ queryKey: ['graphData', id] });
@@ -660,6 +661,7 @@ export const GraphEditor = () => {
               onSelectParent={handleSelectParentFromGraph}
               currentNodeId={selectedNode?.id}
               selectedParentIds={state.nodeForm.parentNodeIds}
+              leftPanelWidth={isRAGChatOpen ? ragChatWidth : 0}
             />
           )}
           {viewMode === 'timeline' && (
@@ -675,8 +677,8 @@ export const GraphEditor = () => {
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
               coloringMode={coloringMode}
-              isRightPanelOpen={sidebarMode !== 'none' || isRAGChatOpen}
-              rightPanelWidth={Math.max(isRAGChatOpen ? 420 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
+              isRightPanelOpen={sidebarMode !== 'none'}
+              rightPanelWidth={sidebarMode !== 'none' ? state.sidebarWidth : 0}
             />
           )}
           {viewMode === 'tree' && (
@@ -883,6 +885,7 @@ export const GraphEditor = () => {
         }}
         onTogglePodcast={() => state.setIsPodcastModalOpen(true)}
         isRAGChatOpen={isRAGChatOpen}
+        ragChatWidth={ragChatWidth}
       />
 
       {state.isPresentationMode && (
@@ -1136,6 +1139,8 @@ export const GraphEditor = () => {
         onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
         suggestedNextTopics={state.suggestedNextTopics}
         onTutorChat={tutorOps.handleTutorChat}
+        width={ragChatWidth}
+        onWidthChange={setRagChatWidth}
       />
     </div>
   );

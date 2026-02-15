@@ -67,6 +67,8 @@ interface RAGChatPanelProps {
   onSuggestNextTopics?: () => void;
   suggestedNextTopics?: Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>;
   onTutorChat?: (message: string, history: any[], onChunk: (content: string) => void) => void;
+  width?: number;
+  onWidthChange?: (width: number) => void;
 }
 
 export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
@@ -88,7 +90,9 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   onAddAllConcepts,
   onSuggestNextTopics,
   suggestedNextTopics = [],
-  onTutorChat
+  onTutorChat,
+  width = 420,
+  onWidthChange
 }) => {
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
@@ -117,8 +121,38 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [currentSpeakingMessageId, setCurrentSpeakingMessageId] = useState<string | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    const newWidth = e.clientX;
+    if (newWidth >= 300 && newWidth <= 800) {
+      onWidthChange?.(newWidth);
+    }
+  }, [isResizing, onWidthChange]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -335,14 +369,22 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
   return (
     <motion.div
+      ref={panelRef}
       initial={{ opacity: 0, x: -300 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -300 }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className={`flex flex-col h-full ${
+      className={`flex flex-col h-full relative ${
         isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'
       } border-r`}
+      style={{ width: `${width}px` }}
     >
+      <div
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 z-50 flex items-center justify-center group transition-colors"
+        onMouseDown={handleMouseDown}
+      >
+        <div className={`h-8 w-1 rounded-full group-hover:bg-blue-500 transition-colors ${isResizing ? 'bg-blue-500' : 'bg-gray-300'}`} />
+      </div>
       <div className={`flex items-center justify-between p-4 border-b ${
         isDark ? 'border-slate-700' : 'border-gray-200'
       } bg-gradient-to-r ${headerBgClass} text-white`}>
@@ -923,6 +965,8 @@ interface RAGChatButtonProps {
   onSuggestNextTopics?: () => void;
   suggestedNextTopics?: Array<{ title: string; description: string; priority: 'high' | 'medium' | 'low'; estimatedDifficulty: number }>;
   onTutorChat?: (message: string, history: any[], onChunk: (content: string) => void) => void;
+  width?: number;
+  onWidthChange?: (width: number) => void;
 }
 
 export const RAGChatButton: React.FC<RAGChatButtonProps> = ({
@@ -944,7 +988,9 @@ export const RAGChatButton: React.FC<RAGChatButtonProps> = ({
   onAddAllConcepts,
   onSuggestNextTopics,
   suggestedNextTopics,
-  onTutorChat
+  onTutorChat,
+  width = 420,
+  onWidthChange
 }) => {
   const { isDark } = useTheme();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -981,7 +1027,7 @@ export const RAGChatButton: React.FC<RAGChatButtonProps> = ({
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed top-0 left-0 bottom-0 z-50 w-full max-w-md pointer-events-none">
+          <div className="fixed top-0 left-0 bottom-0 z-50 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, x: -300 }}
               animate={{ opacity: 1, x: 0 }}
@@ -1009,6 +1055,8 @@ export const RAGChatButton: React.FC<RAGChatButtonProps> = ({
                 onSuggestNextTopics={onSuggestNextTopics}
                 suggestedNextTopics={suggestedNextTopics}
                 onTutorChat={onTutorChat}
+                width={width}
+                onWidthChange={onWidthChange}
               />
             </motion.div>
           </div>

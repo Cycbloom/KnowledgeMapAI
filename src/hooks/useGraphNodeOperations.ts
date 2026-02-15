@@ -64,14 +64,16 @@ export const useGraphNodeOperations = ({
           properties: {}
         });
 
-        if (nodeForm.parentNodeId) {
-          const newEdge = await createEdgeMutation.mutateAsync({
-            source_node_id: nodeForm.parentNodeId,
-            target_node_id: newNode.id,
-            relationship_type: 'related',
-            graphId: id
-          });
-          record({ type: 'CREATE_EDGE', payload: newEdge });
+        for (const parentId of nodeForm.parentNodeIds) {
+          if (parentId !== newNode.id) {
+            const newEdge = await createEdgeMutation.mutateAsync({
+              source_node_id: parentId,
+              target_node_id: newNode.id,
+              relationship_type: 'related',
+              graphId: id
+            });
+            record({ type: 'CREATE_EDGE', payload: newEdge });
+          }
         }
 
         record({ type: 'CREATE_NODE', payload: newNode });
@@ -113,24 +115,29 @@ export const useGraphNodeOperations = ({
           }
         });
 
-        const currentParentEdge = edges.find(e => e.target_node_id === selectedNode.id);
-        const newParentId = nodeForm.parentNodeId;
+        const currentParentEdges = edges.filter(e => e.target_node_id === selectedNode.id);
+        const currentParentIds = currentParentEdges.map(e => e.source_node_id);
+        const newParentIds = nodeForm.parentNodeIds.filter(id => id !== selectedNode.id);
         
-        if (currentParentEdge && currentParentEdge.source_node_id !== newParentId) {
-          await deleteEdgeMutation.mutateAsync({ id: currentParentEdge.id });
-          actions.push({ type: 'DELETE_EDGE', payload: currentParentEdge });
+        const parentIdsToRemove = currentParentIds.filter(id => !newParentIds.includes(id));
+        const parentIdsToAdd = newParentIds.filter(id => !currentParentIds.includes(id));
+        
+        for (const parentId of parentIdsToRemove) {
+          const edgeToDelete = currentParentEdges.find(e => e.source_node_id === parentId);
+          if (edgeToDelete) {
+            await deleteEdgeMutation.mutateAsync({ id: edgeToDelete.id });
+            actions.push({ type: 'DELETE_EDGE', payload: edgeToDelete });
+          }
         }
         
-        if (newParentId && (!currentParentEdge || currentParentEdge.source_node_id !== newParentId)) {
-          if (newParentId !== selectedNode.id) {
-            const newEdge = await createEdgeMutation.mutateAsync({
-              source_node_id: newParentId,
-              target_node_id: selectedNode.id,
-              relationship_type: 'related',
-              graphId: id
-            });
-            actions.push({ type: 'CREATE_EDGE', payload: newEdge });
-          }
+        for (const parentId of parentIdsToAdd) {
+          const newEdge = await createEdgeMutation.mutateAsync({
+            source_node_id: parentId,
+            target_node_id: selectedNode.id,
+            relationship_type: 'related',
+            graphId: id
+          });
+          actions.push({ type: 'CREATE_EDGE', payload: newEdge });
         }
         
         if (actions.length === 1) {
@@ -353,7 +360,7 @@ export const useGraphNodeOperations = ({
       setNodeForm({
         title: '',
         content: '',
-        parentNodeId: selectedNode?.id || '',
+        parentNodeIds: selectedNode?.id ? [selectedNode.id] : [],
         level: 'leaf',
         tags: []
       });

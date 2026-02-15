@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Node as GraphNode, NodeLevel } from '../../types';
 import { getLevelColor, getLevelLabel } from '../../lib/graphUtils';
-import { X, ArrowLeft, Save, Loader2, Search, ChevronDown, Circle, MousePointer2 } from 'lucide-react';
+import { X, ArrowLeft, Save, Loader2, Search, ChevronDown, Circle, MousePointer2, Check } from 'lucide-react';
 
 interface NodeFormState {
   title: string;
   content: string;
-  parentNodeId: string;
+  parentNodeIds: string[];
   level: NodeLevel;
   tags: string[];
 }
@@ -47,9 +47,9 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedParent = useMemo(() => {
-    return nodes.find(n => n.id === nodeForm.parentNodeId);
-  }, [nodes, nodeForm.parentNodeId]);
+  const selectedParents = useMemo(() => {
+    return nodes.filter(n => nodeForm.parentNodeIds.includes(n.id));
+  }, [nodes, nodeForm.parentNodeIds]);
 
   const filteredNodes = useMemo(() => {
     const search = parentSearch.toLowerCase();
@@ -68,12 +68,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   }, [nodes, parentSearch, currentNodeId]);
 
   useEffect(() => {
-    if (selectedParent) {
-      setParentSearch(selectedParent.title);
-    } else {
-      setParentSearch('');
-    }
-  }, [selectedParent]);
+    setParentSearch('');
+  }, [nodeForm.parentNodeIds]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -85,23 +81,26 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleParentSelect = (node: GraphNode | null) => {
-    setNodeForm({ ...nodeForm, parentNodeId: node?.id || '' });
-    setParentSearch(node?.title || '');
-    setShowParentDropdown(false);
+  const toggleParent = (nodeId: string) => {
+    const currentIds = nodeForm.parentNodeIds;
+    if (currentIds.includes(nodeId)) {
+      setNodeForm({ ...nodeForm, parentNodeIds: currentIds.filter(id => id !== nodeId) });
+    } else {
+      setNodeForm({ ...nodeForm, parentNodeIds: [...currentIds, nodeId] });
+    }
   };
 
   const handleParentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setParentSearch(e.target.value);
-    if (!e.target.value.trim()) {
-      setNodeForm({ ...nodeForm, parentNodeId: '' });
-    }
     setShowParentDropdown(true);
   };
 
-  const handleClearParent = () => {
-    setNodeForm({ ...nodeForm, parentNodeId: '' });
-    setParentSearch('');
+  const removeParent = (nodeId: string) => {
+    setNodeForm({ ...nodeForm, parentNodeIds: nodeForm.parentNodeIds.filter(id => id !== nodeId) });
+  };
+
+  const clearAllParents = () => {
+    setNodeForm({ ...nodeForm, parentNodeIds: [] });
     inputRef.current?.focus();
   };
 
@@ -144,13 +143,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
            <div className="flex items-center justify-between">
              <div className="flex items-center gap-2">
                <MousePointer2 size={16} className="text-amber-600 animate-pulse" />
-               <span className="text-sm text-amber-700 font-medium">请在图谱上点击选择父节点</span>
+               <span className="text-sm text-amber-700 font-medium">点击图谱选择父节点（可多选）</span>
              </div>
              <button
                onClick={onCancelSelectingParent}
                className="px-2 py-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 rounded transition-colors"
              >
-               取消
+               完成
              </button>
            </div>
          </div>
@@ -169,7 +168,9 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
          </div>
          
          <div className="relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">父节点 (可选)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              父节点 (可多选)
+            </label>
             
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -186,11 +187,11 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   placeholder="搜索选择父节点..."
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {nodeForm.parentNodeId && (
+                  {nodeForm.parentNodeIds.length > 0 && (
                     <button
-                      onClick={handleClearParent}
+                      onClick={clearAllParents}
                       className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                      title="清除选择"
+                      title="清除全部"
                     >
                       <X size={14} />
                     </button>
@@ -206,13 +207,13 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 {showParentDropdown && (
                   <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     <button
-                      onClick={() => handleParentSelect(null)}
+                      onClick={clearAllParents}
                       className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b ${
-                        !nodeForm.parentNodeId ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
+                        nodeForm.parentNodeIds.length === 0 ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
                       }`}
                     >
                       <Circle size={12} className="text-gray-400" />
-                      <span className="text-sm">无父节点 (根节点)</span>
+                      <span className="text-sm">无父节点</span>
                     </button>
                     
                     {filteredNodes.length === 0 ? (
@@ -220,23 +221,33 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                         {parentSearch ? '没有匹配的节点' : '没有可选的节点'}
                       </div>
                     ) : (
-                      filteredNodes.map(node => (
-                        <button
-                          key={node.id}
-                          onClick={() => handleParentSelect(node)}
-                          className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between ${
-                            nodeForm.parentNodeId === node.id ? 'bg-blue-50' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className={`w-2 h-2 rounded-full ${getLevelColor(node.level || 'normal')}`}></div>
-                            <span className="truncate text-sm text-gray-800">{node.title}</span>
-                          </div>
-                          <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${getLevelBadgeStyle(node.level || 'normal')}`}>
-                            {getLevelLabel(node.level || 'normal')}
-                          </span>
-                        </button>
-                      ))
+                      filteredNodes.map(node => {
+                        const isSelected = nodeForm.parentNodeIds.includes(node.id);
+                        return (
+                          <button
+                            key={node.id}
+                            onClick={() => toggleParent(node.id)}
+                            className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between ${
+                              isSelected ? 'bg-blue-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                isSelected 
+                                  ? 'bg-blue-500 border-blue-500' 
+                                  : 'border-gray-300'
+                              }`}>
+                                {isSelected && <Check size={10} className="text-white" />}
+                              </div>
+                              <div className={`w-2 h-2 rounded-full ${getLevelColor(node.level || 'normal')}`}></div>
+                              <span className="truncate text-sm text-gray-800">{node.title}</span>
+                            </div>
+                            <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${getLevelBadgeStyle(node.level || 'normal')}`}>
+                              {getLevelLabel(node.level || 'normal')}
+                            </span>
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 )}
@@ -250,25 +261,29 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                     ? 'bg-amber-100 border-amber-300 text-amber-600'
                     : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-blue-500 hover:border-blue-300'
                 }`}
-                title={isSelectingParent ? '取消选择' : '从图谱选择'}
+                title={isSelectingParent ? '完成选择' : '从图谱选择'}
               >
                 <MousePointer2 size={16} className={isSelectingParent ? 'animate-pulse' : ''} />
               </button>
             </div>
 
-            {nodeForm.parentNodeId && (
-              <div className="mt-2 px-2 py-1.5 bg-blue-50 rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs text-blue-600">已选择：</span>
-                  <span className="text-sm text-blue-800 font-medium truncate">{selectedParent?.title}</span>
-                </div>
-                <button
-                  onClick={handleClearParent}
-                  className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-100 rounded flex-shrink-0"
-                  title="清除选择"
-                >
-                  <X size={12} />
-                </button>
+            {selectedParents.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {selectedParents.map(parent => (
+                  <div 
+                    key={parent.id}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm"
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${getLevelColor(parent.level || 'normal')}`}></div>
+                    <span className="truncate max-w-[120px]">{parent.title}</span>
+                    <button
+                      onClick={() => removeParent(parent.id)}
+                      className="p-0.5 hover:bg-blue-100 rounded"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
          </div>

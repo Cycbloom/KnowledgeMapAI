@@ -60,6 +60,7 @@ interface MindMapCanvasProps {
   isSelectingParent?: boolean;
   onSelectParent?: (nodeId: string) => void;
   currentNodeId?: string;
+  selectedParentIds?: string[];
 }
 
 interface Transform {
@@ -102,7 +103,8 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   onLayoutUpdate,
   isSelectingParent = false,
   onSelectParent,
-  currentNodeId
+  currentNodeId,
+  selectedParentIds = []
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -556,6 +558,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
           ))}
           {visibleNodes.map(node => {
             const isSelectableAsParent = isSelectingParent && node.id !== currentNodeId;
+            const isSelectedAsParent = selectedParentIds.includes(node.id);
             return (
               <MindMapNode
                 key={node.id}
@@ -587,6 +590,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
                 coloringMode={coloringMode}
                 isSelectableAsParent={isSelectableAsParent}
                 isExcludedAsParent={isSelectingParent && node.id === currentNodeId}
+                isSelectedAsParent={isSelectedAsParent}
               />
             );
           })}

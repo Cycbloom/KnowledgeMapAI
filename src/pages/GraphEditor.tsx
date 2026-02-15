@@ -135,9 +135,21 @@ export const GraphEditor = () => {
 
   const handleSelectParentFromGraph = useCallback((nodeId: string) => {
     if (selectedNode?.id === nodeId) return;
-    state.setNodeForm(prev => ({ ...prev, parentNodeId: nodeId }));
-    setIsSelectingParent(false);
+    state.setNodeForm(prev => {
+      const currentIds = prev.parentNodeIds;
+      if (currentIds.includes(nodeId)) {
+        return { ...prev, parentNodeIds: currentIds.filter(id => id !== nodeId) };
+      } else {
+        return { ...prev, parentNodeIds: [...currentIds, nodeId] };
+      }
+    });
   }, [selectedNode, state]);
+
+  useEffect(() => {
+    if (sidebarMode === 'none' || (sidebarMode !== 'create' && sidebarMode !== 'edit')) {
+      setIsSelectingParent(false);
+    }
+  }, [sidebarMode]);
 
   // Presentation Mode Logic
   const presentationPath = useMemo(() => {
@@ -647,6 +659,7 @@ export const GraphEditor = () => {
               isSelectingParent={isSelectingParent}
               onSelectParent={handleSelectParentFromGraph}
               currentNodeId={selectedNode?.id}
+              selectedParentIds={state.nodeForm.parentNodeIds}
             />
           )}
           {viewMode === 'timeline' && (

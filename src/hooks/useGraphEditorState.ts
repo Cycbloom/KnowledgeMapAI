@@ -73,14 +73,14 @@ export interface GraphEditorState {
   nodeForm: {
     title: string;
     content: string;
-    parentNodeId: string;
+    parentNodeIds: string[];
     level: NodeLevel;
     tags: string[];
   };
   setNodeForm: React.Dispatch<React.SetStateAction<{
     title: string;
     content: string;
-    parentNodeId: string;
+    parentNodeIds: string[];
     level: NodeLevel;
     tags: string[];
   }>>;
@@ -221,13 +221,13 @@ export const useGraphEditorState = (): GraphEditorState => {
   const [nodeForm, setNodeForm] = useState<{
     title: string;
     content: string;
-    parentNodeId: string;
+    parentNodeIds: string[];
     level: NodeLevel;
     tags: string[];
   }>({
     title: '',
     content: '',
-    parentNodeId: '',
+    parentNodeIds: [],
     level: 'leaf',
     tags: []
   });

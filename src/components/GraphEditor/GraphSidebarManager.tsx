@@ -139,11 +139,11 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             }}
             onEdit={() => {
             if (selectedNode) {
-              const parentEdge = edges.find(e => e.target_node_id === selectedNode.id);
+              const parentEdges = edges.filter(e => e.target_node_id === selectedNode.id);
               setNodeForm({
                 title: selectedNode.title,
                 content: selectedNode.content || '',
-                parentNodeId: parentEdge ? parentEdge.source_node_id : '',
+                parentNodeIds: parentEdges.map(e => e.source_node_id),
                 level: selectedNode.level || 'normal',
                 tags: selectedNode.tags || selectedNode.properties?.tags || []
               });

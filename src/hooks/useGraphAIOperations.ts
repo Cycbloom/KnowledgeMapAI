@@ -1,5 +1,5 @@
 import { Node, Edge, NodeLevel, BranchSuggestion } from '../types';
-import { getLevel } from '../lib/graphUtils';
+import { getLevel, getNextLevel, getLevelColorHex } from '../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
@@ -55,27 +55,6 @@ export const useGraphAIOperations = ({
     createEdgeMutation,
     updateNodeMutation
   } = mutations;
-
-  const getNextLevel = (parentLevel: string): NodeLevel => {
-    switch (parentLevel) {
-      case 'root': return 'core';
-      case 'core': return 'sub';
-      case 'sub': return 'normal';
-      case 'normal': return 'leaf';
-      default: return 'leaf';
-    }
-  };
-
-  const getLevelColor = (level: NodeLevel): string => {
-    switch (level) {
-      case 'root': return '#8B5CF6';
-      case 'core': return '#EF4444';
-      case 'sub': return '#F59E0B';
-      case 'normal': return '#3B82F6';
-      case 'leaf': return '#10B981';
-      default: return '#3B82F6';
-    }
-  };
 
   const handleAIGenerate = async () => {
     if (!nodeForm.title) return;
@@ -207,7 +186,7 @@ export const useGraphAIOperations = ({
             content: s.content,
             x_position: x,
             y_position: y,
-            color: getLevelColor(newLevel), 
+            color: getLevelColorHex(newLevel), 
             level: newLevel,
             properties: {}
           });
@@ -443,7 +422,7 @@ export const useGraphAIOperations = ({
         content: suggestion.description,
         x_position: x,
         y_position: y,
-        color: getLevelColor(newLevel),
+        color: getLevelColorHex(newLevel),
         level: newLevel,
         is_accepted: isAccepted,
         properties: {
@@ -491,7 +470,7 @@ export const useGraphAIOperations = ({
           content: branch.description,
           x_position: parentNode.x_position + (Math.random() - 0.5) * 8,
           y_position: parentNode.y_position + (Math.random() - 0.5) * 8,
-          color: getLevelColor(getLevel(parentNode, edges)),
+          color: getLevelColorHex(getLevel(parentNode, edges)),
           level: getLevel(parentNode, edges),
           is_accepted: isAccepted,
           properties: {

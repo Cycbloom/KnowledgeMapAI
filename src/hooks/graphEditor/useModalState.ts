@@ -1,0 +1,60 @@
+import { useState } from 'react';
+
+export interface ModalState {
+  isTextToGraphOpen: boolean;
+  setIsTextToGraphOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isPodcastModalOpen: boolean;
+  setIsPodcastModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isSettingsOpen: boolean;
+  setIsSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isChatOpen: boolean;
+  setIsChatOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isExportMenuOpen: boolean;
+  setIsExportMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isExportImageModalOpen: boolean;
+  setIsExportImageModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isExportPDFOpen: boolean;
+  setIsExportPDFOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isShareModalOpen: boolean;
+  setIsShareModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isHelpOpen: boolean;
+  setIsHelpOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isAnalysisPanelOpen: boolean;
+  setIsAnalysisPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export const useModalState = (): ModalState => {
+  const [isTextToGraphOpen, setIsTextToGraphOpen] = useState(false);
+  const [isPodcastModalOpen, setIsPodcastModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isExportImageModalOpen, setIsExportImageModalOpen] = useState(false);
+  const [isExportPDFOpen, setIsExportPDFOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
+
+  return {
+    isTextToGraphOpen,
+    setIsTextToGraphOpen,
+    isPodcastModalOpen,
+    setIsPodcastModalOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    isChatOpen,
+    setIsChatOpen,
+    isExportMenuOpen,
+    setIsExportMenuOpen,
+    isExportImageModalOpen,
+    setIsExportImageModalOpen,
+    isExportPDFOpen,
+    setIsExportPDFOpen,
+    isShareModalOpen,
+    setIsShareModalOpen,
+    isHelpOpen,
+    setIsHelpOpen,
+    isAnalysisPanelOpen,
+    setIsAnalysisPanelOpen,
+  };
+};

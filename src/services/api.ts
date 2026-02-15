@@ -712,4 +712,37 @@ export const api = {
       body: JSON.stringify({ graph_id: graphId }) 
     }),
   },
+  autoGraph: {
+    generate: (data: {
+      topic: string;
+      depth?: number;
+      style?: 'academic' | 'practical' | 'beginner';
+      sources?: string[];
+      graph_id?: string;
+      provider?: string;
+      model?: string;
+    }) => {
+      const config = getAIConfig('text');
+      const payload = { depth: 3, style: 'academic', ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/auto-graph', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    save: (data: {
+      graph_id: string;
+      nodes: any[];
+      edges: any[];
+    }) => request('/auto-graph/save', { method: 'POST', body: JSON.stringify(data) }),
+  },
+  learningPath: {
+    generate: (data: {
+      graph_id: string;
+      target_node_id?: string;
+      learning_style?: 'sequential' | 'exploratory' | 'focused';
+      daily_time_minutes?: number;
+      provider?: string;
+      model?: string;
+    }) => request('/learning-path/generate', { method: 'POST', body: JSON.stringify(data) }),
+    getProgress: (graphId: string) => request(`/learning-path/progress/${graphId}`),
+  },
 };

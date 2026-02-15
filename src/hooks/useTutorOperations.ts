@@ -1,4 +1,5 @@
 import { Node, Edge, NodeLevel, ExtractedConcept, TutorMode } from '../types';
+import { getNextLevel, getLevelColorHex } from '../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
@@ -37,27 +38,6 @@ export const useTutorOperations = ({
   } = state;
 
   const { createNodeMutation, createEdgeMutation } = mutations;
-
-  const getNextLevel = (parentLevel: string): NodeLevel => {
-    switch (parentLevel) {
-      case 'root': return 'core';
-      case 'core': return 'sub';
-      case 'sub': return 'normal';
-      case 'normal': return 'leaf';
-      default: return 'leaf';
-    }
-  };
-
-  const getLevelColor = (level: NodeLevel): string => {
-    switch (level) {
-      case 'root': return '#8B5CF6';
-      case 'core': return '#EF4444';
-      case 'sub': return '#F59E0B';
-      case 'normal': return '#3B82F6';
-      case 'leaf': return '#10B981';
-      default: return '#3B82F6';
-    }
-  };
 
   const handleTutorChat = async (message: string, history: any[] = [], onChunk: (content: string) => void) => {
     try {
@@ -140,7 +120,7 @@ export const useTutorOperations = ({
         content: concept.description,
         x_position: x,
         y_position: y,
-        color: getLevelColor(newLevel),
+        color: getLevelColorHex(newLevel),
         level: newLevel,
         properties: {
           isNew: true,
@@ -205,7 +185,7 @@ export const useTutorOperations = ({
           content: concept.description,
           x_position: x,
           y_position: y,
-          color: getLevelColor(newLevel),
+          color: getLevelColorHex(newLevel),
           level: newLevel,
           properties: {
             isNew: true,

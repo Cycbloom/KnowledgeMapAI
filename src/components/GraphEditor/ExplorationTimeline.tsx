@@ -44,9 +44,12 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
       return newSet;
     });
   };
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | string) => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return '未知时间';
+    
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = now.getTime() - dateObj.getTime();
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -54,7 +57,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
     if (seconds < 60) return '刚刚';
     if (minutes < 60) return `${minutes} 分钟前`;
     if (hours < 24) return `${hours} 小时前`;
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    return dateObj.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
   };
 
   const getCurrentItem = () => {

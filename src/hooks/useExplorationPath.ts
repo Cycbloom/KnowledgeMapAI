@@ -34,8 +34,12 @@ export const useExplorationPath = (options: UseExplorationPathOptions = {}) => {
     try {
       const graph = await api.graphs.get(graphId);
       const savedPath = graph?.settings?.explorationPath || [];
-      setExplorationPath(savedPath);
-      setCurrentPathIndex(savedPath.length > 0 ? savedPath.length - 1 : -1);
+      const parsedPath = savedPath.map((item: any) => ({
+        ...item,
+        timestamp: item.timestamp ? new Date(item.timestamp) : new Date()
+      }));
+      setExplorationPath(parsedPath);
+      setCurrentPathIndex(parsedPath.length > 0 ? parsedPath.length - 1 : -1);
     } catch (error) {
       console.error('Failed to load exploration path:', error);
     } finally {

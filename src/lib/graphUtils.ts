@@ -1,5 +1,27 @@
 import { Node, Edge, NodeLevel } from '../types';
 
+export const getLevelColor = (level: NodeLevel): string => {
+  const colors = {
+    root: 'bg-purple-500',
+    core: 'bg-red-500',
+    sub: 'bg-orange-500',
+    normal: 'bg-blue-500',
+    leaf: 'bg-green-500'
+  };
+  return colors[level] || colors.normal;
+};
+
+export const getLevelLabel = (level: NodeLevel): string => {
+  const labels = {
+    root: '根节点',
+    core: '核心节点',
+    sub: '次级节点',
+    normal: '普通节点',
+    leaf: '叶子节点'
+  };
+  return labels[level] || labels.normal;
+};
+
 export const getLinkNodeId = (node: string | any): string => {
   if (typeof node === 'string') return node;
   return node.id;

@@ -1,7 +1,7 @@
-import React from 'react';
-import { Node, NodeLevel } from '../../types';
-import { getLevel } from '../../lib/graphUtils';
-import { X, ArrowLeft, Save, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Node as GraphNode, NodeLevel } from '../../types';
+import { getLevelColor, getLevelLabel } from '../../lib/graphUtils';
+import { X, ArrowLeft, Save, Loader2, Search, ChevronDown, Circle } from 'lucide-react';
 
 interface NodeFormState {
   title: string;
@@ -20,7 +20,8 @@ interface NodeEditSidebarProps {
   onBack: () => void;
   prevSidebarMode: 'none' | 'create' | 'edit' | 'outline' | 'detail';
   loading: boolean;
-  nodes: Node[];
+  nodes: GraphNode[];
+  currentNodeId?: string;
 }
 
 export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
@@ -32,8 +33,83 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   onBack,
   prevSidebarMode,
   loading,
-  nodes
+  nodes,
+  currentNodeId
 }) => {
+  const [parentSearch, setParentSearch] = useState('');
+  const [showParentDropdown, setShowParentDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selectedParent = useMemo(() => {
+    return nodes.find(n => n.id === nodeForm.parentNodeId);
+  }, [nodes, nodeForm.parentNodeId]);
+
+  const filteredNodes = useMemo(() => {
+    const search = parentSearch.toLowerCase();
+    return nodes
+      .filter(n => {
+        if (currentNodeId && n.id === currentNodeId) return false;
+        if (!search) return true;
+        return n.title.toLowerCase().includes(search);
+      })
+      .sort((a, b) => {
+        const levelOrder = { root: 0, core: 1, sub: 2, normal: 3, leaf: 4 };
+        const levelA = levelOrder[a.level || 'normal'] ?? 3;
+        const levelB = levelOrder[b.level || 'normal'] ?? 3;
+        return levelA - levelB;
+      });
+  }, [nodes, parentSearch, currentNodeId]);
+
+  useEffect(() => {
+    if (selectedParent) {
+      setParentSearch(selectedParent.title);
+    } else {
+      setParentSearch('');
+    }
+  }, [selectedParent]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as globalThis.Node)) {
+        setShowParentDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleParentSelect = (node: GraphNode | null) => {
+    setNodeForm({ ...nodeForm, parentNodeId: node?.id || '' });
+    setParentSearch(node?.title || '');
+    setShowParentDropdown(false);
+  };
+
+  const handleParentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setParentSearch(e.target.value);
+    if (!e.target.value.trim()) {
+      setNodeForm({ ...nodeForm, parentNodeId: '' });
+    }
+    setShowParentDropdown(true);
+  };
+
+  const handleClearParent = () => {
+    setNodeForm({ ...nodeForm, parentNodeId: '' });
+    setParentSearch('');
+    inputRef.current?.focus();
+  };
+
+  const getLevelBadgeStyle = (level: NodeLevel) => {
+    const styles = {
+      root: 'bg-purple-100 text-purple-700 border-purple-200',
+      core: 'bg-red-100 text-red-700 border-red-200',
+      sub: 'bg-orange-100 text-orange-700 border-orange-200',
+      normal: 'bg-blue-100 text-blue-700 border-blue-200',
+      leaf: 'bg-green-100 text-green-700 border-green-200'
+    };
+    return styles[level] || styles.normal;
+  };
+
   return (
     <div className="h-full flex flex-col">
        <div className="flex justify-between items-center mb-6">
@@ -69,18 +145,84 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
             />
          </div>
          
-         <div>
+         <div className="relative" ref={dropdownRef}>
             <label className="block text-sm font-medium text-gray-700 mb-1">父节点 (可选)</label>
-            <select
-              value={nodeForm.parentNodeId}
-              onChange={(e) => setNodeForm({ ...nodeForm, parentNodeId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="">无父节点 (根节点)</option>
-              {nodes.map(n => (
-                <option key={n.id} value={n.id}>{n.title}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Search size={16} />
+              </div>
+              <input
+                ref={inputRef}
+                type="text"
+                value={parentSearch}
+                onChange={handleParentInputChange}
+                onFocus={() => setShowParentDropdown(true)}
+                className="w-full pl-9 pr-16 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                placeholder="搜索选择父节点..."
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {nodeForm.parentNodeId && (
+                  <button
+                    onClick={handleClearParent}
+                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                    title="清除选择"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowParentDropdown(!showParentDropdown)}
+                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                >
+                  <ChevronDown size={14} className={`transition-transform ${showParentDropdown ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {showParentDropdown && (
+              <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <button
+                  onClick={() => handleParentSelect(null)}
+                  className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b ${
+                    !nodeForm.parentNodeId ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
+                  }`}
+                >
+                  <Circle size={12} className="text-gray-400" />
+                  <span className="text-sm">无父节点 (根节点)</span>
+                </button>
+                
+                {filteredNodes.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-gray-400 text-sm">
+                    {parentSearch ? '没有匹配的节点' : '没有可选的节点'}
+                  </div>
+                ) : (
+                  filteredNodes.map(node => (
+                    <button
+                      key={node.id}
+                      onClick={() => handleParentSelect(node)}
+                      className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between ${
+                        nodeForm.parentNodeId === node.id ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={`w-2 h-2 rounded-full ${getLevelColor(node.level || 'normal')}`}></div>
+                        <span className="truncate text-sm text-gray-800">{node.title}</span>
+                      </div>
+                      <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${getLevelBadgeStyle(node.level || 'normal')}`}>
+                        {getLevelLabel(node.level || 'normal')}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+
+            {nodeForm.parentNodeId && (
+              <div className="mt-2 px-2 py-1.5 bg-blue-50 rounded-lg flex items-center gap-2">
+                <span className="text-xs text-blue-600">已选择：</span>
+                <span className="text-sm text-blue-800 font-medium truncate">{selectedParent?.title}</span>
+              </div>
+            )}
          </div>
 
          <div>

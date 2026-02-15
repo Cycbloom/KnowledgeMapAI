@@ -179,6 +179,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             prevSidebarMode={prevSidebarMode}
             loading={loading}
             nodes={nodes}
+            currentNodeId={selectedNode?.id}
           />
         ) : null}
       </div>

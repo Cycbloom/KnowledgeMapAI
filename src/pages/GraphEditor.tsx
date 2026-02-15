@@ -646,6 +646,8 @@ export const GraphEditor = () => {
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
               coloringMode={coloringMode}
+              isRightPanelOpen={sidebarMode !== 'none' || state.isChatOpen}
+              rightPanelWidth={Math.max(state.isChatOpen ? 500 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
             />
           )}
           {viewMode === 'tree' && (

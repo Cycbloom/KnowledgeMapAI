@@ -715,12 +715,12 @@ export const Study = () => {
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-8 mt-4">
                 {/* Question Section - Left Aligned */}
                 <div className="flex flex-col items-start text-left">
-                  <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-4 px-3 py-1 rounded-md ${
+                  <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-3 px-3 py-1 rounded-md ${
                     isDark ? 'bg-indigo-900/30 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
                   }`}>
                     问题
                   </h3>
-                  <div className={`text-xl md:text-2xl font-semibold leading-relaxed ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
+                  <div className={`text-lg md:text-xl font-semibold leading-snug ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
                     {currentCard.question}
                   </div>
                 </div>
@@ -762,20 +762,20 @@ export const Study = () => {
 
                   {/* Options Section (Always visible for selection types) */}
                   {isChoice && currentOptions.length > 0 && (
-                    <div className="grid grid-cols-1 gap-4 mt-8">
+                    <div className="flex flex-col gap-2 mt-4">
                       {currentOptions.map((option, idx) => {
                         const isSelected = selectedOption === option;
                         const isCorrect = option === currentCard.answer;
                         
-                        let btnClass = "p-5 rounded-2xl border-2 text-left transition-all relative flex items-start gap-4 ";
+                        let btnClass = "group p-3 rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm ";
                         if (showAnswer) {
-                          if (isCorrect) btnClass += isDark ? "bg-emerald-900/20 border-emerald-500 text-emerald-400" : "bg-emerald-50 border-emerald-500 text-emerald-700";
-                          else if (isSelected) btnClass += isDark ? "bg-red-900/20 border-red-500 text-red-400" : "bg-red-50 border-red-500 text-red-700";
-                          else btnClass += isDark ? "bg-slate-800 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
+                          if (isCorrect) btnClass += isDark ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md" : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
+                          else if (isSelected) btnClass += isDark ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md" : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
+                          else btnClass += isDark ? "bg-slate-800/50 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
                         } else {
                           btnClass += isDark 
-                            ? "bg-slate-800 border-slate-700 hover:border-indigo-500 hover:bg-slate-700/80 cursor-pointer text-slate-200" 
-                            : "bg-white border-gray-100 hover:border-indigo-300 hover:shadow-md cursor-pointer text-gray-700";
+                            ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-indigo-900/30 hover:to-slate-800/50 hover:border-indigo-500 cursor-pointer text-slate-200 hover:shadow-md" 
+                            : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-indigo-50 hover:to-white hover:border-indigo-300 cursor-pointer text-gray-700 hover:shadow-md";
                         }
 
                         return (
@@ -785,14 +785,16 @@ export const Study = () => {
                             disabled={showAnswer}
                             className={btnClass}
                           >
-                            <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                              isSelected ? 'bg-indigo-600 text-white' : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')
+                            <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
+                              isSelected 
+                                ? 'bg-indigo-500 text-white shadow-sm scale-105' 
+                                : (isDark ? 'bg-slate-700 text-slate-400 group-hover:bg-slate-600' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600')
                             }`}>
                               {String.fromCharCode(65 + idx)}
                             </span>
-                            <span className="flex-1 pt-0.5 font-medium">{option}</span>
-                            {showAnswer && isCorrect && <Check className="text-emerald-500 mt-1" size={20} />}
-                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 mt-1" size={20} />}
+                            <span className="flex-1 text-sm font-medium leading-snug">{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 flex-shrink-0" size={18} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 flex-shrink-0" size={18} />}
                           </button>
                         );
                       })}
@@ -800,7 +802,7 @@ export const Study = () => {
                   )}
 
                   {isMultiChoice && currentOptions.length > 0 && (
-                    <div className="grid grid-cols-1 gap-4 mt-8">
+                    <div className="flex flex-col gap-2 mt-4">
                       {currentOptions.map((option, idx) => {
                         const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
                         const isSelected = selectedList.includes(option);
@@ -808,15 +810,15 @@ export const Study = () => {
                         try { correctList = JSON.parse(currentCard.answer); } catch(e) {}
                         const isCorrect = correctList.includes(option);
                         
-                        let btnClass = "p-5 rounded-2xl border-2 text-left transition-all relative flex items-start gap-4 ";
+                        let btnClass = "group p-3 rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm ";
                         if (showAnswer) {
-                          if (isCorrect) btnClass += isDark ? "bg-emerald-900/20 border-emerald-500 text-emerald-400" : "bg-emerald-50 border-emerald-500 text-emerald-700";
-                          else if (isSelected) btnClass += isDark ? "bg-red-900/20 border-red-500 text-red-400" : "bg-red-50 border-red-500 text-red-700";
-                          else btnClass += isDark ? "bg-slate-800 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
+                          if (isCorrect) btnClass += isDark ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md" : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
+                          else if (isSelected) btnClass += isDark ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md" : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
+                          else btnClass += isDark ? "bg-slate-800/50 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
                         } else {
                           btnClass += isSelected 
-                            ? (isDark ? "bg-indigo-900/30 border-indigo-500 text-indigo-300" : "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm") 
-                            : (isDark ? "bg-slate-800 border-slate-700 hover:border-indigo-500 hover:bg-slate-700/80 cursor-pointer text-slate-200" : "bg-white border-gray-100 hover:border-indigo-300 hover:shadow-md cursor-pointer text-gray-700");
+                            ? (isDark ? "bg-gradient-to-r from-indigo-900/40 to-indigo-900/20 border-indigo-500 text-indigo-300 shadow-md" : "bg-gradient-to-r from-indigo-100 to-indigo-50 border-indigo-400 text-indigo-700 shadow-md") 
+                            : (isDark ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-indigo-900/30 hover:to-slate-800/50 hover:border-indigo-500 cursor-pointer text-slate-200 hover:shadow-md" : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-indigo-50 hover:to-white hover:border-indigo-300 cursor-pointer text-gray-700 hover:shadow-md");
                         }
 
                         return (
@@ -826,14 +828,16 @@ export const Study = () => {
                             disabled={showAnswer}
                             className={btnClass}
                           >
-                            <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                              isSelected ? 'bg-indigo-600 text-white' : (isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500')
+                            <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
+                              isSelected 
+                                ? 'bg-indigo-500 text-white shadow-sm scale-105' 
+                                : (isDark ? 'bg-slate-700 text-slate-400 group-hover:bg-slate-600' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600')
                             }`}>
                               {String.fromCharCode(65 + idx)}
                             </span>
-                            <span className="flex-1 pt-0.5 font-medium">{option}</span>
-                            {showAnswer && isCorrect && <Check className="text-emerald-500 mt-1" size={20} />}
-                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 mt-1" size={20} />}
+                            <span className="flex-1 text-sm font-medium leading-snug">{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 flex-shrink-0" size={18} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 flex-shrink-0" size={18} />}
                           </button>
                         );
                       })}
@@ -841,20 +845,20 @@ export const Study = () => {
                   )}
 
                   {isTrueFalse && (
-                    <div className="flex flex-col md:flex-row gap-4 justify-center mt-8">
+                    <div className="flex flex-col md:flex-row gap-3 justify-center mt-4">
                       {['True', 'False'].map((option) => {
                         const isSelected = selectedOption === option;
                         const isCorrect = option === currentCard.answer;
                         
-                        let btnClass = "flex-1 p-6 rounded-2xl border-2 text-center font-bold text-lg transition-all relative flex flex-col items-center justify-center gap-2 ";
+                        let btnClass = "group flex-1 p-4 rounded-xl border transition-all duration-200 font-bold text-base relative flex flex-col items-center justify-center gap-2 shadow-sm ";
                         if (showAnswer) {
-                           if (isCorrect) btnClass += isDark ? "bg-emerald-900/20 border-emerald-500 text-emerald-400" : "bg-emerald-50 border-emerald-500 text-emerald-700";
-                           else if (isSelected) btnClass += isDark ? "bg-red-900/20 border-red-500 text-red-400" : "bg-red-50 border-red-500 text-red-700";
-                           else btnClass += isDark ? "bg-slate-800 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
+                           if (isCorrect) btnClass += isDark ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md" : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
+                           else if (isSelected) btnClass += isDark ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md" : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
+                           else btnClass += isDark ? "bg-slate-800/50 border-slate-700 text-slate-500" : "bg-gray-50 border-gray-200 text-gray-400";
                         } else {
                           btnClass += isDark 
-                            ? "bg-slate-800 border-slate-700 hover:border-indigo-500 hover:bg-slate-700/80 cursor-pointer text-slate-200" 
-                            : "bg-white border-gray-100 hover:border-indigo-300 hover:shadow-md cursor-pointer text-gray-700";
+                            ? "bg-gradient-to-r from-slate-800 to-slate-800/50 border-slate-700 hover:from-indigo-900/30 hover:to-slate-800/50 hover:border-indigo-500 cursor-pointer text-slate-200 hover:shadow-md" 
+                            : "bg-gradient-to-r from-white to-slate-50 border-slate-200 hover:from-indigo-50 hover:to-white hover:border-indigo-300 cursor-pointer text-gray-700 hover:shadow-md";
                         }
 
                         return (
@@ -864,10 +868,10 @@ export const Study = () => {
                             disabled={showAnswer}
                             className={btnClass}
                           >
-                            <span className="text-xl">{option === 'True' ? '正确' : '错误'}</span>
-                            <span className="text-xs opacity-60 uppercase tracking-widest">{option}</span>
-                            {showAnswer && isCorrect && <Check className="text-emerald-500 absolute top-4 right-4" size={20} />}
-                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 absolute top-4 right-4" size={20} />}
+                            <span className="text-lg font-bold">{option === 'True' ? '正确' : '错误'}</span>
+                            <span className="text-xs opacity-50 uppercase tracking-wider">{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 absolute top-3 right-3" size={16} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 absolute top-3 right-3" size={16} />}
                           </button>
                         )
                       })}

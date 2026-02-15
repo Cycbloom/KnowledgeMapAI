@@ -77,6 +77,15 @@ export const GraphEditor = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
+  const [isSelectingParent, setIsSelectingParent] = useState(false);
+
+  const handleStartSelectingParent = useCallback(() => {
+    setIsSelectingParent(true);
+  }, []);
+
+  const handleCancelSelectingParent = useCallback(() => {
+    setIsSelectingParent(false);
+  }, []);
 
   // Command Palette Logic
   React.useEffect(() => {
@@ -123,6 +132,12 @@ export const GraphEditor = () => {
     historicalAlternativeBranches, setHistoricalAlternativeBranches,
     isAnalysisPanelOpen, setIsAnalysisPanelOpen
   } = state;
+
+  const handleSelectParentFromGraph = useCallback((nodeId: string) => {
+    if (selectedNode?.id === nodeId) return;
+    state.setNodeForm(prev => ({ ...prev, parentNodeId: nodeId }));
+    setIsSelectingParent(false);
+  }, [selectedNode, state]);
 
   // Presentation Mode Logic
   const presentationPath = useMemo(() => {
@@ -629,6 +644,9 @@ export const GraphEditor = () => {
               onLayoutUpdate={(positions) => {
                 queryClient.invalidateQueries({ queryKey: ['graphData', id] });
               }}
+              isSelectingParent={isSelectingParent}
+              onSelectParent={handleSelectParentFromGraph}
+              currentNodeId={selectedNode?.id}
             />
           )}
           {viewMode === 'timeline' && (
@@ -1031,6 +1049,10 @@ export const GraphEditor = () => {
         interactionOps={interactionOps}
         handleCloseSidebar={handleCloseSidebar}
         isExplorationMode={isExplorationMode}
+        isSelectingParent={isSelectingParent}
+        onStartSelectingParent={handleStartSelectingParent}
+        onCancelSelectingParent={handleCancelSelectingParent}
+        onSelectParentFromGraph={handleSelectParentFromGraph}
       />
       
       <GraphAnalysisPanel

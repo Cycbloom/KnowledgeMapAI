@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Node as GraphNode, NodeLevel } from '../../types';
 import { getLevelColor, getLevelLabel } from '../../lib/graphUtils';
-import { X, ArrowLeft, Save, Loader2, Search, ChevronDown, Circle } from 'lucide-react';
+import { X, ArrowLeft, Save, Loader2, Search, ChevronDown, Circle, MousePointer2 } from 'lucide-react';
 
 interface NodeFormState {
   title: string;
@@ -22,6 +22,9 @@ interface NodeEditSidebarProps {
   loading: boolean;
   nodes: GraphNode[];
   currentNodeId?: string;
+  isSelectingParent?: boolean;
+  onStartSelectingParent?: () => void;
+  onCancelSelectingParent?: () => void;
 }
 
 export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
@@ -34,7 +37,10 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   prevSidebarMode,
   loading,
   nodes,
-  currentNodeId
+  currentNodeId,
+  isSelectingParent = false,
+  onStartSelectingParent,
+  onCancelSelectingParent
 }) => {
   const [parentSearch, setParentSearch] = useState('');
   const [showParentDropdown, setShowParentDropdown] = useState(false);
@@ -133,6 +139,23 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
          </button>
        </div>
 
+       {isSelectingParent && (
+         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+           <div className="flex items-center justify-between">
+             <div className="flex items-center gap-2">
+               <MousePointer2 size={16} className="text-amber-600 animate-pulse" />
+               <span className="text-sm text-amber-700 font-medium">请在图谱上点击选择父节点</span>
+             </div>
+             <button
+               onClick={onCancelSelectingParent}
+               className="px-2 py-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 rounded transition-colors"
+             >
+               取消
+             </button>
+           </div>
+         </div>
+       )}
+
        <div className="space-y-4 flex-1 overflow-y-auto pr-1">
          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">标题</label>
@@ -147,80 +170,105 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
          
          <div className="relative" ref={dropdownRef}>
             <label className="block text-sm font-medium text-gray-700 mb-1">父节点 (可选)</label>
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <Search size={16} />
-              </div>
-              <input
-                ref={inputRef}
-                type="text"
-                value={parentSearch}
-                onChange={handleParentInputChange}
-                onFocus={() => setShowParentDropdown(true)}
-                className="w-full pl-9 pr-16 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                placeholder="搜索选择父节点..."
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {nodeForm.parentNodeId && (
-                  <button
-                    onClick={handleClearParent}
-                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                    title="清除选择"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowParentDropdown(!showParentDropdown)}
-                  className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  <ChevronDown size={14} className={`transition-transform ${showParentDropdown ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-            </div>
-
-            {showParentDropdown && (
-              <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                <button
-                  onClick={() => handleParentSelect(null)}
-                  className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b ${
-                    !nodeForm.parentNodeId ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
-                  }`}
-                >
-                  <Circle size={12} className="text-gray-400" />
-                  <span className="text-sm">无父节点 (根节点)</span>
-                </button>
-                
-                {filteredNodes.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-gray-400 text-sm">
-                    {parentSearch ? '没有匹配的节点' : '没有可选的节点'}
-                  </div>
-                ) : (
-                  filteredNodes.map(node => (
+            
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10">
+                  <Search size={16} />
+                </div>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={parentSearch}
+                  onChange={handleParentInputChange}
+                  onFocus={() => setShowParentDropdown(true)}
+                  className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  placeholder="搜索选择父节点..."
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  {nodeForm.parentNodeId && (
                     <button
-                      key={node.id}
-                      onClick={() => handleParentSelect(node)}
-                      className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between ${
-                        nodeForm.parentNodeId === node.id ? 'bg-blue-50' : ''
+                      onClick={handleClearParent}
+                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                      title="清除选择"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowParentDropdown(!showParentDropdown)}
+                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                  >
+                    <ChevronDown size={14} className={`transition-transform ${showParentDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+                
+                {showParentDropdown && (
+                  <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <button
+                      onClick={() => handleParentSelect(null)}
+                      className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b ${
+                        !nodeForm.parentNodeId ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className={`w-2 h-2 rounded-full ${getLevelColor(node.level || 'normal')}`}></div>
-                        <span className="truncate text-sm text-gray-800">{node.title}</span>
-                      </div>
-                      <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${getLevelBadgeStyle(node.level || 'normal')}`}>
-                        {getLevelLabel(node.level || 'normal')}
-                      </span>
+                      <Circle size={12} className="text-gray-400" />
+                      <span className="text-sm">无父节点 (根节点)</span>
                     </button>
-                  ))
+                    
+                    {filteredNodes.length === 0 ? (
+                      <div className="px-3 py-4 text-center text-gray-400 text-sm">
+                        {parentSearch ? '没有匹配的节点' : '没有可选的节点'}
+                      </div>
+                    ) : (
+                      filteredNodes.map(node => (
+                        <button
+                          key={node.id}
+                          onClick={() => handleParentSelect(node)}
+                          className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between ${
+                            nodeForm.parentNodeId === node.id ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`w-2 h-2 rounded-full ${getLevelColor(node.level || 'normal')}`}></div>
+                            <span className="truncate text-sm text-gray-800">{node.title}</span>
+                          </div>
+                          <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${getLevelBadgeStyle(node.level || 'normal')}`}>
+                            {getLevelLabel(node.level || 'normal')}
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+              
+              <button
+                type="button"
+                onClick={isSelectingParent ? onCancelSelectingParent : onStartSelectingParent}
+                className={`p-2 rounded-lg border transition-all ${
+                  isSelectingParent
+                    ? 'bg-amber-100 border-amber-300 text-amber-600'
+                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-blue-500 hover:border-blue-300'
+                }`}
+                title={isSelectingParent ? '取消选择' : '从图谱选择'}
+              >
+                <MousePointer2 size={16} className={isSelectingParent ? 'animate-pulse' : ''} />
+              </button>
+            </div>
 
             {nodeForm.parentNodeId && (
-              <div className="mt-2 px-2 py-1.5 bg-blue-50 rounded-lg flex items-center gap-2">
-                <span className="text-xs text-blue-600">已选择：</span>
-                <span className="text-sm text-blue-800 font-medium truncate">{selectedParent?.title}</span>
+              <div className="mt-2 px-2 py-1.5 bg-blue-50 rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-blue-600">已选择：</span>
+                  <span className="text-sm text-blue-800 font-medium truncate">{selectedParent?.title}</span>
+                </div>
+                <button
+                  onClick={handleClearParent}
+                  className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-100 rounded flex-shrink-0"
+                  title="清除选择"
+                >
+                  <X size={12} />
+                </button>
               </div>
             )}
          </div>

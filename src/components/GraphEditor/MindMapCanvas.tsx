@@ -57,6 +57,9 @@ interface MindMapCanvasProps {
   rightPanelWidth?: number;
   graphId?: string;
   onLayoutUpdate?: (positions: Map<string, { x: number; y: number }>) => void;
+  isSelectingParent?: boolean;
+  onSelectParent?: (nodeId: string) => void;
+  currentNodeId?: string;
 }
 
 interface Transform {
@@ -92,11 +95,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   nodeSizeMode = 'fixed',
   edgeWidthMode = 'fixed',
   onNodeContextMenu,
-  coloringMode = 'status', // Default to status for backward compatibility unless we change it in GraphEditor
+  coloringMode = 'status',
   isRightPanelOpen = false,
   rightPanelWidth = 0,
   graphId,
-  onLayoutUpdate
+  onLayoutUpdate,
+  isSelectingParent = false,
+  onSelectParent,
+  currentNodeId
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -548,29 +554,42 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
               allEdges={edges}
             />
           ))}
-          {visibleNodes.map(node => (
-            <MindMapNode
-              key={node.id}
-              node={node}
-              edges={edges}
-              nodeStatus={nodeStatus}
-              selected={node.id === selectedNodeId}
-              isDark={isDark}
-              zoomLevel={transform.k}
-              onClick={() => onNodeClick(node)}
-              onMouseEnter={() => setHoveredNodeId(node.id)}
-              onMouseLeave={() => setHoveredNodeId(null)}
-              focused={focusedNodeIds.has(node.id)}
-              forceShowText={forceShowTextIds.has(node.id)}
-              hasFocusMode={hasFocusMode}
-              colorScheme={colorScheme}
-              nodeSizeMode={nodeSizeMode}
-              nodeImportance={nodeImportanceMap.get(node.id)}
-              allNodes={nodes}
-              onContextMenu={onNodeContextMenu}
-              coloringMode={coloringMode}
-            />
-          ))}
+          {visibleNodes.map(node => {
+            const isSelectableAsParent = isSelectingParent && node.id !== currentNodeId;
+            return (
+              <MindMapNode
+                key={node.id}
+                node={node}
+                edges={edges}
+                nodeStatus={nodeStatus}
+                selected={node.id === selectedNodeId}
+                isDark={isDark}
+                zoomLevel={transform.k}
+                onClick={() => {
+                  if (isSelectingParent && onSelectParent) {
+                    if (node.id !== currentNodeId) {
+                      onSelectParent(node.id);
+                    }
+                  } else {
+                    onNodeClick(node);
+                  }
+                }}
+                onMouseEnter={() => setHoveredNodeId(node.id)}
+                onMouseLeave={() => setHoveredNodeId(null)}
+                focused={focusedNodeIds.has(node.id)}
+                forceShowText={forceShowTextIds.has(node.id)}
+                hasFocusMode={hasFocusMode}
+                colorScheme={colorScheme}
+                nodeSizeMode={nodeSizeMode}
+                nodeImportance={nodeImportanceMap.get(node.id)}
+                allNodes={nodes}
+                onContextMenu={onNodeContextMenu}
+                coloringMode={coloringMode}
+                isSelectableAsParent={isSelectableAsParent}
+                isExcludedAsParent={isSelectingParent && node.id === currentNodeId}
+              />
+            );
+          })}
           {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {
             const layoutNode = visibleNodes.find(n => String(n.id).trim() === String(selectedNodeForBranch.id).trim());
             if (!layoutNode) return null;

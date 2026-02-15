@@ -34,6 +34,8 @@ interface MindMapNodeProps {
   nodeImportance?: number;
   allNodes?: Node[];
   onContextMenu?: (event: React.MouseEvent, node: LayoutNode) => void;
+  isSelectableAsParent?: boolean;
+  isExcludedAsParent?: boolean;
 }
 
 const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
@@ -78,7 +80,9 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   nodeSizeMode = 'fixed',
   nodeImportance,
   allNodes = [],
-  onContextMenu
+  onContextMenu,
+  isSelectableAsParent = false,
+  isExcludedAsParent = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'entering' | 'pulsing' | 'none'>('none');
@@ -287,8 +291,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       onMouseDown={handleMouseDown}
       onContextMenu={handleContextMenu}
       style={{ 
-        cursor: 'pointer',  
-        opacity: currentOpacity,
+        cursor: isExcludedAsParent ? 'not-allowed' : isSelectableAsParent ? 'crosshair' : 'pointer',  
+        opacity: isExcludedAsParent ? 0.3 : currentOpacity,
         transition: `opacity ${transitionDuration}ms ease`
       }}
     >
@@ -298,6 +302,17 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         </defs>
       </svg>
       
+      {isSelectableAsParent && (
+        <circle
+          r={styleConfig.baseRadius + 12}
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth={2}
+          strokeDasharray="6 3"
+          opacity={0.6}
+          className="animate-pulse"
+        />
+      )}
       <g
         style={{
           transition: `transform ${transitionDuration}ms ease`,

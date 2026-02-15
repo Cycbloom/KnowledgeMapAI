@@ -18,6 +18,10 @@ interface GraphSidebarManagerProps {
   interactionOps: any;
   handleCloseSidebar: () => void;
   isExplorationMode?: boolean;
+  isSelectingParent?: boolean;
+  onStartSelectingParent?: () => void;
+  onCancelSelectingParent?: () => void;
+  onSelectParentFromGraph?: (nodeId: string) => void;
 }
 
 export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
@@ -30,7 +34,11 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   aiOps,
   interactionOps,
   handleCloseSidebar,
-  isExplorationMode = false
+  isExplorationMode = false,
+  isSelectingParent = false,
+  onStartSelectingParent,
+  onCancelSelectingParent,
+  onSelectParentFromGraph
 }) => {
   const {
     sidebarMode, setSidebarMode,
@@ -43,7 +51,6 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
     sidebarWidth, setSidebarWidth,
   } = state;
 
-  // Sidebar Resizing Logic
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +95,6 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
         className={`bg-white shadow-lg border-l border-gray-200 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== 'outline' ? 'p-4 overflow-y-auto' : ''}`}
         style={{ width: sidebarWidth }}
       >
-        {/* Resize Handle */}
         <div
           className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 z-50 flex items-center justify-center group transition-colors"
           onMouseDown={startResizing}
@@ -180,6 +186,9 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             loading={loading}
             nodes={nodes}
             currentNodeId={selectedNode?.id}
+            isSelectingParent={isSelectingParent}
+            onStartSelectingParent={onStartSelectingParent}
+            onCancelSelectingParent={onCancelSelectingParent}
           />
         ) : null}
       </div>

@@ -617,7 +617,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           label="后台自动拓展" 
           colorClass="text-blue-500"
         />
-        <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label="图谱助手" active={isChatOpen} colorClass="text-purple-500" />
+        <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label="智能问答" active={isChatOpen} colorClass="text-purple-500" />
         <MenuItem 
           onClick={() => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); }} 
           icon={Navigation} 

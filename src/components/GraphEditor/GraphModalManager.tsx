@@ -4,7 +4,6 @@ import { GraphSettingsModal } from './GraphSettingsModal';
 import { HelpModal } from '../HelpModal';
 import { ExportDialog } from './ExportDialog';
 import { ShareModal } from './ShareModal';
-import { ChatDialog } from './ChatDialog';
 import { PodcastModal } from './PodcastModal';
 import { ConfirmationModal } from '../ConfirmationModal';
 import { queryKeys } from '../../hooks/useQueries';
@@ -33,13 +32,11 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   const {
     isSettingsOpen, setIsSettingsOpen,
     isHelpOpen, setIsHelpOpen,
-    isChatOpen, setIsChatOpen,
     isPodcastModalOpen, setIsPodcastModalOpen,
     isExportImageModalOpen, setIsExportImageModalOpen,
     isShareModalOpen, setIsShareModalOpen,
     confirmModal, setConfirmModal,
     exportImageOptions, setExportImageOptions,
-    selectedNodeIds,
     isExportPDFOpen, setIsExportPDFOpen,
   } = state;
 
@@ -136,24 +133,6 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
              queryClient.setQueryData(queryKeys.graph(id || ''), { ...graphMeta, is_public: newStatus });
           }
         }}
-      />
-      <ChatDialog 
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        graphId={id || ''}
-        selectedNodeIds={Array.from(selectedNodeIds)}
-        aiEnabled={aiEnabled}
-        isTutorMode={state.isTutorMode}
-        tutorMode={state.tutorMode}
-        extractedConcepts={state.extractedConcepts}
-        onToggleTutorMode={tutorOps?.handleToggleTutorMode}
-        onSwitchTutorMode={tutorOps?.handleSwitchTutorMode}
-        onExtractConcepts={tutorOps?.handleExtractConcepts}
-        onAddConceptToGraph={tutorOps?.handleAddConceptToGraph}
-        onAddAllConcepts={tutorOps?.handleAddAllConcepts}
-        onSuggestNextTopics={tutorOps?.handleSuggestNextTopics}
-        suggestedNextTopics={state.suggestedNextTopics}
-        onTutorChat={tutorOps?.handleTutorChat}
       />
       <PodcastModal 
         isOpen={isPodcastModalOpen}

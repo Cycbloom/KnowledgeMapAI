@@ -623,8 +623,8 @@ export const GraphEditor = () => {
               edgeWidthMode={edgeWidthMode}
               coloringMode={coloringMode}
               onNodeContextMenu={handleNodeContextMenu}
-              isRightPanelOpen={sidebarMode !== 'none' || state.isChatOpen}
-              rightPanelWidth={Math.max(state.isChatOpen ? 500 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
+              isRightPanelOpen={sidebarMode !== 'none' || isRAGChatOpen}
+              rightPanelWidth={Math.max(isRAGChatOpen ? 420 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
               graphId={id}
               onLayoutUpdate={(positions) => {
                 queryClient.invalidateQueries({ queryKey: ['graphData', id] });
@@ -644,8 +644,8 @@ export const GraphEditor = () => {
               nodeSizeMode={nodeSizeMode}
               edgeWidthMode={edgeWidthMode}
               coloringMode={coloringMode}
-              isRightPanelOpen={sidebarMode !== 'none' || state.isChatOpen}
-              rightPanelWidth={Math.max(state.isChatOpen ? 500 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
+              isRightPanelOpen={sidebarMode !== 'none' || isRAGChatOpen}
+              rightPanelWidth={Math.max(isRAGChatOpen ? 420 : 0, sidebarMode !== 'none' ? state.sidebarWidth : 0)}
             />
           )}
           {viewMode === 'tree' && (
@@ -783,8 +783,8 @@ export const GraphEditor = () => {
         onAIExpand={aiOps.handleAIExpand}
         onBranchExplore={handleGetBranchSuggestions}
         onBackgroundTask={aiOps.handleBackgroundTask}
-        isChatOpen={state.isChatOpen}
-        setIsChatOpen={state.setIsChatOpen}
+        isChatOpen={isRAGChatOpen}
+        setIsChatOpen={setIsRAGChatOpen}
         isTutorMode={state.isTutorMode}
         onToggleTutorMode={tutorOps.handleToggleTutorMode}
         isPathfindingMode={isPathfindingMode}
@@ -1088,6 +1088,19 @@ export const GraphEditor = () => {
         }}
         isOpen={isRAGChatOpen}
         onOpenChange={setIsRAGChatOpen}
+        selectedNodeIds={Array.from(selectedNodeIds)}
+        aiEnabled={aiEnabled}
+        isTutorMode={state.isTutorMode}
+        tutorMode={state.tutorMode}
+        extractedConcepts={state.extractedConcepts}
+        onToggleTutorMode={tutorOps.handleToggleTutorMode}
+        onSwitchTutorMode={state.setTutorMode}
+        onExtractConcepts={tutorOps.handleExtractConcepts}
+        onAddConceptToGraph={tutorOps.handleAddConceptToGraph}
+        onAddAllConcepts={tutorOps.handleAddAllConcepts}
+        onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
+        suggestedNextTopics={state.suggestedNextTopics}
+        onTutorChat={tutorOps.handleTutorChat}
       />
     </div>
   );

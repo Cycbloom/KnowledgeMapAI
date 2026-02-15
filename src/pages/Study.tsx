@@ -10,7 +10,7 @@ import { StatsOverview } from '../components/StatsOverview';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const Study = () => {
   const { isDark } = useTheme();
@@ -51,12 +51,11 @@ export const Study = () => {
   const pageSize = 8;
   const [previewCard, setPreviewCard] = useState<StudyCard | null>(null);
 
-  // Gesture motion values
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-25, 25]);
-  const opacity = useTransform(x, [-200, -150, 0, 150, 200], [0, 1, 1, 1, 0]);
-  const successOpacity = useTransform(x, [50, 150], [0, 1]);
-  const failOpacity = useTransform(x, [-150, -50], [1, 0]);
+  // Swipe state - use regular state for better control
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [dragDirection, setDragDirection] = useState<'left' | 'right' | null>(null);
+  const [cardKey, setCardKey] = useState(0); // Force re-mount card on change
+  const [cardRotation, setCardRotation] = useState(0); // 卡片旋转角度
 
   // Reset state when params change
   useEffect(() => {
@@ -74,11 +73,6 @@ export const Study = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [tableMode, searchQuery]);
-
-  // Reset swipe position when card changes
-  useEffect(() => {
-    x.set(0);
-  }, [currentCardIndex, x]);
 
   // Stats
   const stats = useMemo(() => {
@@ -163,6 +157,20 @@ export const Study = () => {
     }
   };
 
+  const handleSwipeRate = async (quality: number) => {
+    if (!quizCards[currentCardIndex]) return;
+    
+    try {
+      await updateProgressMutation.mutateAsync({
+        id: quizCards[currentCardIndex].id,
+        quality
+      });
+    } catch (err) {
+      console.error(err);
+      addMessage({ type: 'error', content: '保存进度失败' });
+    }
+  };
+
   const handleOptionClick = (option: string) => {
     if (showAnswer) return;
     setSelectedOption(option);
@@ -174,16 +182,40 @@ export const Study = () => {
     setCurrentCardIndex(0);
     setShowAnswer(false);
     setSelectedOption(null);
+    setSwipeDirection(null);
+    setCardKey(k => k + 1);
     
     // Reshuffle current set
     setQuizCards(prev => [...prev].sort(() => Math.random() - 0.5));
   };
 
   const handleDragEnd = (_: any, info: any) => {
-    if (info.offset.x > 150) {
-      handleRate(3); // Good/Remembered
-    } else if (info.offset.x < -150) {
-      handleRate(1); // Again/Not remembered
+    const threshold = 100;
+    const velocity = info.velocity.x;
+    const offset = info.offset.x;
+    
+    setDragDirection(null);
+    setCardRotation(0);
+    
+    const shouldSwipeRight = offset > threshold && velocity > 0;
+    const shouldSwipeLeft = offset < -threshold && velocity < 0;
+    
+    if (shouldSwipeRight) {
+      setSwipeDirection('right');
+      handleSwipeRate(3);
+      setTimeout(() => {
+        handleNextCard();
+        setCardKey(k => k + 1);
+        setSwipeDirection(null);
+      }, 450);
+    } else if (shouldSwipeLeft) {
+      setSwipeDirection('left');
+      handleSwipeRate(1);
+      setTimeout(() => {
+        handleNextCard();
+        setCardKey(k => k + 1);
+        setSwipeDirection(null);
+      }, 450);
     }
   };
 
@@ -669,42 +701,194 @@ export const Study = () => {
         </div>
 
         <div className="relative perspective-1000 h-[550px] md:h-[600px]">
-          <AnimatePresence mode="wait">
+          {quizCards.slice(currentCardIndex + 1, currentCardIndex + 3).map((stackCard, index) => {
+            const stackIndex = index + 1;
+            const isNext = stackIndex === 1;
+            const stackCardOptions = (() => {
+              if (!stackCard.options) return [];
+              if (Array.isArray(stackCard.options)) return stackCard.options;
+              try {
+                if (typeof stackCard.options === 'string') return JSON.parse(stackCard.options);
+              } catch { }
+              return [];
+            })();
+            const isStackQA = !stackCard.card_type || stackCard.card_type === 'qa';
+            const isStackChoice = stackCard.card_type === 'choice';
+            const isStackMultiChoice = stackCard.card_type === 'multi_choice';
+            const isStackTrueFalse = stackCard.card_type === 'true_false';
+            const isStackFillBlank = stackCard.card_type === 'fill_in_the_blank';
+            
+            return (
+              <motion.div
+                key={`stack-${stackCard.id}`}
+                className={`absolute inset-0 rounded-3xl shadow-lg transition-colors border overflow-hidden ${
+                  isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+                }`}
+                initial={{ 
+                  rotate: -8 * stackIndex, 
+                  y: stackIndex * 20, 
+                  scale: 1 - stackIndex * 0.03, 
+                  opacity: 0 
+                }}
+                animate={{ 
+                  rotate: -8 * stackIndex, 
+                  y: stackIndex * 20, 
+                  scale: 1 - stackIndex * 0.03, 
+                  opacity: isNext ? 1 : 0.6
+                }}
+                exit={{ 
+                  rotate: 0, 
+                  y: 0, 
+                  scale: 1, 
+                  opacity: 1 
+                }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                style={{ 
+                  zIndex: 10 - stackIndex, 
+                  transformOrigin: 'bottom center',
+                }}
+              >
+                {isNext && (
+                  <div className="p-5 md:p-8 flex flex-col h-full">
+                    <div className={`absolute top-4 right-4 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      下一张
+                    </div>
+                    <div className="flex-1 overflow-hidden mt-2">
+                      <h3 className={`uppercase tracking-widest text-[10px] font-bold mb-2 px-2 py-0.5 rounded-md inline-block ${
+                        isDark ? 'bg-indigo-900/30 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
+                      }`}>
+                        问题
+                      </h3>
+                      <div className={`text-base md:text-lg font-semibold leading-snug mb-3 line-clamp-2 ${
+                        isDark ? 'text-slate-200' : 'text-gray-800'
+                      }`}>
+                        {stackCard.question}
+                      </div>
+                      
+                      {isStackChoice && stackCardOptions.length > 0 && (
+                        <div className="flex flex-col gap-1.5">
+                          {stackCardOptions.slice(0, 4).map((option, idx) => (
+                            <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg text-sm ${
+                              isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-gray-50 text-gray-600'
+                            }`}>
+                              <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold ${
+                                isDark ? 'bg-slate-600 text-slate-400' : 'bg-gray-200 text-gray-500'
+                              }`}>
+                                {String.fromCharCode(65 + idx)}
+                              </span>
+                              <span className="truncate flex-1">{option}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {isStackMultiChoice && stackCardOptions.length > 0 && (
+                        <div className="flex flex-col gap-1.5">
+                          {stackCardOptions.slice(0, 4).map((option, idx) => (
+                            <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg text-sm ${
+                              isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-gray-50 text-gray-600'
+                            }`}>
+                              <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold ${
+                                isDark ? 'bg-slate-600 text-slate-400' : 'bg-gray-200 text-gray-500'
+                              }`}>
+                                {String.fromCharCode(65 + idx)}
+                              </span>
+                              <span className="truncate flex-1">{option}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {isStackTrueFalse && (
+                        <div className="flex gap-2">
+                          <div className={`flex-1 p-2 rounded-lg text-center text-sm font-medium ${
+                            isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-gray-50 text-gray-600'
+                          }`}>
+                            正确
+                          </div>
+                          <div className={`flex-1 p-2 rounded-lg text-center text-sm font-medium ${
+                            isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-gray-50 text-gray-600'
+                          }`}>
+                            错误
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(isStackQA || isStackFillBlank) && (
+                        <div className={`mt-2 p-3 rounded-lg text-sm ${
+                          isDark ? 'bg-slate-700/30 text-slate-400' : 'bg-gray-50 text-gray-500'
+                        }`}>
+                          <span className="text-xs font-medium opacity-70">答案：</span>
+                          <span className="ml-1 line-clamp-1">{stackCard.answer}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+          <AnimatePresence mode="popLayout">
             <motion.div
-              key={currentCard.id}
-              style={{ x, rotate, opacity }}
+              key={cardKey}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              onDragEnd={handleDragEnd}
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ 
-                x: x.get() > 0 ? 500 : -500, 
-                opacity: 0,
-                transition: { duration: 0.3 }
+              dragElastic={0.15}
+              onDrag={(_, info) => {
+                const rotation = info.offset.x * 0.12;
+                setCardRotation(rotation);
+                if (info.offset.x > 30) {
+                  setDragDirection('right');
+                } else if (info.offset.x < -30) {
+                  setDragDirection('left');
+                } else {
+                  setDragDirection(null);
+                }
               }}
+              onDragEnd={handleDragEnd}
+              initial={{ rotate: -20, y: 40, scale: 0.92, opacity: 0 }}
+              animate={{ rotate: 0, y: 0, scale: 1, opacity: 1 }}
+              exit={{ 
+                rotate: swipeDirection === 'right' ? 150 : -150,
+                y: -80,
+                x: swipeDirection === 'right' ? 200 : -200,
+                opacity: 0,
+                scale: 0.85,
+                transition: { duration: 0.55, ease: [0.4, 0, 0.2, 1] }
+              }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
               className={`absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 md:p-10 flex flex-col cursor-grab active:cursor-grabbing transition-colors border ${
                 isDark ? 'border-slate-700' : 'border-gray-100'
               }`}
+              style={{ transformOrigin: 'bottom center', rotate: cardRotation, zIndex: 10 }}
             >
-              {/* Swipe Feedback Icons */}
+              {/* Swipe Feedback Icons - On Card */}
               <motion.div 
-                style={{ opacity: successOpacity }}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                animate={{ 
+                  opacity: dragDirection === 'right' ? 1 : 0,
+                  scale: dragDirection === 'right' ? 1 : 0.8
+                }}
+                transition={{ duration: 0.15 }}
               >
                 <div className="bg-green-500/20 p-8 rounded-full border-4 border-green-500 text-green-500">
                   <ThumbsUp size={80} />
                 </div>
               </motion.div>
               <motion.div 
-                style={{ opacity: failOpacity }}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                animate={{ 
+                  opacity: dragDirection === 'left' ? 1 : 0,
+                  scale: dragDirection === 'left' ? 1 : 0.8
+                }}
+                transition={{ duration: 0.15 }}
               >
                 <div className="bg-red-500/20 p-8 rounded-full border-4 border-red-500 text-red-500">
                   <ThumbsDown size={80} />
                 </div>
               </motion.div>
-
               {/* Card Type Badge */}
               <div className={`absolute top-6 right-6 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider z-10 ${
                 isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-500'
@@ -713,7 +897,7 @@ export const Study = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-8 mt-4">
-                {/* Question Section - Left Aligned */}
+                {/* Question Section */}
                 <div className="flex flex-col items-start text-left">
                   <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-3 px-3 py-1 rounded-md ${
                     isDark ? 'bg-indigo-900/30 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
@@ -725,11 +909,10 @@ export const Study = () => {
                   </div>
                 </div>
 
-                {/* Answer Content Section (Only shown when showAnswer is true) */}
+                {/* Answer Content Section */}
                 <div className="w-full pb-6">
                   {showAnswer && (
                     <div className="space-y-8 animate-fade-in">
-                      {/* Standard Answer Display for QA/Essay/FillBlank */}
                       {(isQA || isEssay || isFillBlank) && (
                         <div className={`border-t pt-8 ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
                           <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-4 px-3 py-1 rounded-md w-fit ${
@@ -743,7 +926,6 @@ export const Study = () => {
                         </div>
                       )}
 
-                      {/* Explanation if exists */}
                       {currentCard.explanation && (
                         <div className={`pt-8 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
                           <div className="flex items-center gap-2 mb-4 text-indigo-500">
@@ -760,7 +942,7 @@ export const Study = () => {
                     </div>
                   )}
 
-                  {/* Options Section (Always visible for selection types) */}
+                  {/* Options Section */}
                   {isChoice && currentOptions.length > 0 && (
                     <div className="flex flex-col gap-2 mt-4">
                       {currentOptions.map((option, idx) => {
@@ -806,8 +988,8 @@ export const Study = () => {
                       {currentOptions.map((option, idx) => {
                         const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
                         const isSelected = selectedList.includes(option);
-                        let correctList = [];
-                        try { correctList = JSON.parse(currentCard.answer); } catch(e) {}
+                        let correctList: string[] = [];
+                        try { correctList = JSON.parse(currentCard.answer); } catch { }
                         const isCorrect = correctList.includes(option);
                         
                         let btnClass = "group p-3 rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm ";
@@ -873,14 +1055,14 @@ export const Study = () => {
                             {showAnswer && isCorrect && <Check className="text-emerald-500 absolute top-3 right-3" size={16} />}
                             {showAnswer && isSelected && !isCorrect && <X className="text-red-500 absolute top-3 right-3" size={16} />}
                           </button>
-                        )
+                        );
                       })}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Action Footer - Fixed at bottom of card */}
+              {/* Action Footer */}
               <div className={`mt-auto pt-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
                 <AnimatePresence mode="wait">
                   {!showAnswer ? (
@@ -977,7 +1159,7 @@ export const Study = () => {
         {!showAnswer && (
           <div className="mt-8 text-center animate-bounce-slow">
             <p className={`text-sm font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-              左右滑动卡片快速评分 (左: 困难, 右: 良好)
+              左右滑动卡片快速评分 (左: 重来, 右: 良好)
             </p>
           </div>
         )}

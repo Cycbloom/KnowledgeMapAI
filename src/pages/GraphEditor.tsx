@@ -665,6 +665,93 @@ export const GraphEditor = () => {
               coloringMode={coloringMode}
               focusedNodeIds={focusedNodeIds}
               focusedLinkIds={focusedLinkIds}
+              isExplorationMode={isExplorationMode}
+              branchSuggestions={branchSuggestions}
+              selectedNodeForBranch={selectedNode}
+              onSelectBranch={async (selectedSuggestion) => {
+                if (!selectedNode || !id) return;
+                
+                const suggestionsToCreate = [...branchSuggestions];
+                setBranchSuggestions([]);
+                
+                const createdNodes: any[] = [];
+                
+                for (const suggestion of suggestionsToCreate) {
+                  const isAccepted = suggestion.id === selectedSuggestion.id;
+                  const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
+                  if (newNode) {
+                    createdNodes.push({ node: newNode, suggestion, isAccepted });
+                  }
+                }
+                
+                if (createdNodes.length > 0) {
+                  const selectedNodeData = createdNodes.find(n => n.isAccepted);
+                  if (selectedNodeData) {
+                    explorationPathOps.addToPath({
+                      nodeId: selectedNodeData.node.id,
+                      nodeTitle: selectedNodeData.node.title,
+                      branchChoice: selectedNodeData.suggestion.title,
+                      parentNodeId: selectedNode?.id,
+                      branchSuggestionId: selectedNodeData.suggestion.id,
+                      alternativeBranches: suggestionsToCreate
+                    });
+                    setSelectedNode(selectedNodeData.node);
+                    setFocusedNodeId(selectedNodeData.node.id);
+                    const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
+                    const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                    setFocusedNodeIds(focusedNodes);
+                    setFocusedLinkIds(focusedLinks);
+                    const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
+                    setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
+                  }
+                }
+              }}
+              onSwitchBranch={async (pathItem, selectedSuggestion) => {
+                const parentNode = nodes.find(n => n.id === pathItem.parentNodeId);
+                if (!parentNode) return;
+                
+                const branches = pathItem.alternativeBranches || [];
+                const createdNodes: any[] = [];
+                
+                for (const suggestion of branches) {
+                  const isAccepted = suggestion.id === selectedSuggestion.id;
+                  const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
+                  if (newNode) {
+                    createdNodes.push({ node: newNode, suggestion, isAccepted });
+                  }
+                }
+                
+                if (createdNodes.length > 0) {
+                  const selectedNodeData = createdNodes.find(n => n.isAccepted);
+                  if (selectedNodeData) {
+                    explorationPathOps.addToPath({
+                      nodeId: selectedNodeData.node.id,
+                      nodeTitle: selectedNodeData.node.title,
+                      branchChoice: selectedNodeData.suggestion.title,
+                      parentNodeId: parentNode.id,
+                      branchSuggestionId: selectedNodeData.suggestion.id,
+                      alternativeBranches: branches
+                    });
+                    setHistoricalAlternativeBranches(prev => [
+                      ...prev.filter(item => item.nodeId !== parentNode.id),
+                      {
+                        nodeId: parentNode.id,
+                        branches: branches,
+                        selectedBranchId: selectedSuggestion.id
+                      }
+                    ]);
+                    setSelectedNode(selectedNodeData.node);
+                    setFocusedNodeId(selectedNodeData.node.id);
+                    const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
+                    const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                    setFocusedNodeIds(focusedNodes);
+                    setFocusedLinkIds(focusedLinks);
+                    const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
+                    state.setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
+                  }
+                }
+              }}
+              historicalAlternativeBranches={historicalAlternativeBranches}
             />
           )}
           {viewMode === 'planet' && (

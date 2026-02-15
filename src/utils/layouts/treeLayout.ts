@@ -14,8 +14,9 @@ export const createTreeLayout = (
 ): { nodes: LayoutNode[]; links: LayoutLink[] } => {
   const { width, height, nodeSize = [200, 150] } = options;
   
-  // Find root nodes (nodes with no incoming edges)
   const normalizeId = (id: any) => String(id).trim();
+  
+  // Find root nodes (nodes with no incoming edges)
   const incomingEdges = new Set<string>();
   edges.forEach(edge => {
     incomingEdges.add(normalizeId(edge.target_node_id));
@@ -30,23 +31,8 @@ export const createTreeLayout = (
     rootNodes.push(nodes[0]);
   }
   
-  // Build tree structure from first root
-  const rootNode = rootNodes[0];
-  if (!rootNode) {
-    // If no root, return all nodes in a simple layout
-    const layoutNodes: LayoutNode[] = nodes.map((node, index) => ({
-      ...node,
-      x: (index % 10) * 200 + 100,
-      y: Math.floor(index / 10) * 200 + 100,
-      fx: (index % 10) * 200 + 100,
-      fy: Math.floor(index / 10) * 200 + 100
-    }));
-    const layoutLinks: LayoutLink[] = edges.map(edge => ({
-      ...edge,
-      source: normalizeId(edge.source_node_id),
-      target: normalizeId(edge.target_node_id)
-    }));
-    return { nodes: layoutNodes, links: layoutLinks };
+  if (rootNodes.length === 0) {
+    return { nodes: [], links: [] };
   }
   
   // Build children map
@@ -67,63 +53,91 @@ export const createTreeLayout = (
   });
   
   // Convert to d3-hierarchy format
-  // d3-hierarchy expects the data directly, not wrapped in { data: ... }
   const buildHierarchy = (node: Node): any => {
     const children = childrenMap.get(normalizeId(node.id)) || [];
     if (children.length === 0) {
-      return node; // Leaf node: return node directly
+      return node;
     }
-    // Non-leaf node: return node with children
     return {
       ...node,
       children: children.map(buildHierarchy)
     };
   };
   
-  const root = hierarchy(buildHierarchy(rootNode));
-  
-  // Create tree layout
-  const treeLayout = tree<Node>()
-    .nodeSize(nodeSize)
-    .separation((a, b) => (a.parent === b.parent ? 1 : 1.5));
-  
-  treeLayout(root);
-  
-  // Convert to layout nodes
+  // Process all root nodes
   const layoutNodes: LayoutNode[] = [];
   const addedNodeIds = new Set<string>();
-  root.each((d: any) => {
-    // d.data is the original node object
-    const node = d.data;
-    const nodeId = normalizeId(node.id);
+  let currentYOffset = 100;
+  
+  rootNodes.forEach((rootNode, rootIndex) => {
+    const root = hierarchy(buildHierarchy(rootNode));
     
-    // Skip if node already added (to avoid duplicates)
-    if (addedNodeIds.has(nodeId)) {
-      return;
-    }
+    const treeLayout = tree<Node>()
+      .nodeSize(nodeSize)
+      .separation((a, b) => (a.parent === b.parent ? 1 : 1.5));
     
-    // Mark node as added
-    addedNodeIds.add(nodeId);
+    treeLayout(root);
     
-    // Ensure we preserve all node properties
-    layoutNodes.push({
-      ...node,
-      x: d.x + width / 2,
-      y: d.y + 100,
-      fx: d.x + width / 2,
-      fy: d.y + 100
+    // Calculate the width of this tree
+    let minX = Infinity, maxX = -Infinity;
+    root.each((d: any) => {
+      minX = Math.min(minX, d.x);
+      maxX = Math.max(maxX, d.x);
     });
+    const treeWidth = maxX - minX;
+    
+    // Add nodes from this tree
+    root.each((d: any) => {
+      const node = d.data;
+      const nodeId = normalizeId(node.id);
+      
+      if (addedNodeIds.has(nodeId)) {
+        return;
+      }
+      
+      addedNodeIds.add(nodeId);
+      
+      layoutNodes.push({
+        ...node,
+        x: d.x + width / 2,
+        y: d.y + currentYOffset,
+        fx: d.x + width / 2,
+        fy: d.y + currentYOffset
+      });
+    });
+    
+    // Calculate the height of this tree
+    let maxDepth = 0;
+    root.each((d: any) => {
+      maxDepth = Math.max(maxDepth, d.depth);
+    });
+    
+    // Update Y offset for next tree (add spacing between trees)
+    currentYOffset += (maxDepth + 1) * nodeSize[1] + 100;
   });
   
-  // Create layout links - include all links between nodes in the tree
+  // Add any remaining nodes that weren't part of any tree
+  nodes.forEach((node, index) => {
+    const nodeId = normalizeId(node.id);
+    if (!addedNodeIds.has(nodeId)) {
+      addedNodeIds.add(nodeId);
+      layoutNodes.push({
+        ...node,
+        x: (index % 10) * 200 + 100,
+        y: currentYOffset + Math.floor(index / 10) * 150,
+        fx: (index % 10) * 200 + 100,
+        fy: currentYOffset + Math.floor(index / 10) * 150
+      });
+    }
+  });
+  
+  // Create layout links
   const treeNodeIds = new Set(layoutNodes.map(n => normalizeId(n.id)));
-  const nodeIdMap = new Map(layoutNodes.map(n => [normalizeId(n.id), n]));
   
   const layoutLinks: LayoutLink[] = edges
     .filter(edge => {
       const src = normalizeId(edge.source_node_id);
       const tgt = normalizeId(edge.target_node_id);
-      // Only include links where both nodes are in the tree layout
       return treeNodeIds.has(src) && treeNodeIds.has(tgt);
     })
     .map(edge => ({
@@ -134,4 +148,3 @@ export const createTreeLayout = (
   
   return { nodes: layoutNodes, links: layoutLinks };
 };
-

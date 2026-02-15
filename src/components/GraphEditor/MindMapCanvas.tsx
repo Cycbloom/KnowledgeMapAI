@@ -572,7 +572,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
             />
           ))}
           {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {
-            const layoutNode = visibleNodes.find(n => n.id === selectedNodeForBranch.id);
+            const layoutNode = visibleNodes.find(n => String(n.id).trim() === String(selectedNodeForBranch.id).trim());
             if (!layoutNode) return null;
             return (
               <AlternativeBranches
@@ -584,7 +584,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
             );
           })()}
           {isExplorationMode && historicalAlternativeBranches.map((item, index) => {
-            const node = visibleNodes.find(n => n.id === item.nodeId);
+            const node = visibleNodes.find(n => String(n.id).trim() === String(item.nodeId).trim());
             if (!node) return null;
             return (
               <AlternativeBranches

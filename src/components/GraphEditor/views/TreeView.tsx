@@ -1,8 +1,9 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode } from '../../../types';
+import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, BranchSuggestion } from '../../../types';
 import type { Node as GraphNode } from '../../../types';
 import { MindMapNode } from '../MindMapNode';
 import { MindMapLink } from '../MindMapLink';
+import { AlternativeBranches } from '../AlternativeBranches';
 import { createTreeLayout } from '../../../utils/layouts/treeLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from '../../../hooks/useTheme';
@@ -25,6 +26,12 @@ interface TreeViewProps {
   coloringMode?: GraphColorMode;
   focusedNodeIds?: Set<string>;
   focusedLinkIds?: Set<string>;
+  isExplorationMode?: boolean;
+  branchSuggestions?: BranchSuggestion[];
+  selectedNodeForBranch?: GraphNode | null;
+  onSelectBranch?: (suggestion: BranchSuggestion) => void;
+  onSwitchBranch?: (pathItem: any, suggestion: BranchSuggestion) => void;
+  historicalAlternativeBranches?: { nodeId: string; branches: BranchSuggestion[]; selectedBranchId: string }[];
 }
 
 interface Transform {
@@ -48,7 +55,13 @@ export const TreeView: React.FC<TreeViewProps> = ({
   edgeWidthMode = 'fixed',
   coloringMode = 'level',
   focusedNodeIds = new Set(),
-  focusedLinkIds = new Set()
+  focusedLinkIds = new Set(),
+  isExplorationMode = false,
+  branchSuggestions = [],
+  selectedNodeForBranch = null,
+  onSelectBranch,
+  onSwitchBranch,
+  historicalAlternativeBranches = []
 }) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -90,8 +103,13 @@ export const TreeView: React.FC<TreeViewProps> = ({
 
   const visibleNodes = useMemo(() => {
     if (!layout) return [];
-    return layout.nodes.filter(node => node.is_accepted !== false);
-  }, [layout]);
+    
+    if (!isExplorationMode) {
+      return layout.nodes.filter(node => node.is_accepted !== false);
+    }
+    
+    return layout.nodes;
+  }, [layout, isExplorationMode]);
 
   const visibleLinks = useMemo(() => {
     if (!layout) return [];
@@ -256,6 +274,34 @@ export const TreeView: React.FC<TreeViewProps> = ({
               );
             })}
           </g>
+
+          {isExplorationMode && selectedNodeForBranch && branchSuggestions.length > 0 && (() => {
+            const layoutNode = visibleNodes.find(n => String(n.id).trim() === String(selectedNodeForBranch.id).trim());
+            if (!layoutNode) return null;
+            return (
+              <AlternativeBranches
+                parentNode={layoutNode}
+                branches={branchSuggestions}
+                isDark={isDark}
+                onSelectBranch={onSelectBranch}
+              />
+            );
+          })()}
+          {isExplorationMode && historicalAlternativeBranches.map((item, index) => {
+            const node = visibleNodes.find(n => String(n.id).trim() === String(item.nodeId).trim());
+            if (!node) return null;
+            return (
+              <AlternativeBranches
+                key={`historical-${item.nodeId}-${index}`}
+                parentNode={node}
+                branches={item.branches}
+                selectedBranchId={item.selectedBranchId}
+                isDark={isDark}
+                pathItem={item}
+                onSwitchBranch={onSwitchBranch}
+              />
+            );
+          })}
         </g>
       </svg>
     </div>

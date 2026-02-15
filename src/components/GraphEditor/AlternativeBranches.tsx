@@ -53,8 +53,8 @@ export const AlternativeBranches: React.FC<AlternativeBranchesProps> = ({
     return 'text-red-500/70';
   };
 
-  const nodeX = 'x' in parentNode ? parentNode.x : parentNode.x_position;
-  const nodeY = 'y' in parentNode ? parentNode.y : parentNode.y_position;
+  const nodeX: number = 'x' in parentNode ? (parentNode as any).x : (parentNode as any).x_position;
+  const nodeY: number = 'y' in parentNode ? (parentNode as any).y : (parentNode as any).y_position;
 
   const calculatePosition = (index: number, total: number) => {
     const angle = (index / total) * Math.PI * 2 - Math.PI / 2;

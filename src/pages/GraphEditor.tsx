@@ -48,6 +48,7 @@ import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
 import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
 import { CommandPalette, CommandItem } from '../components/GraphEditor/CommandPalette';
 import { ShortcutHelpPanel } from '../components/ShortcutHelpPanel';
+import { RAGChatButton } from '../components/GraphEditor/RAGChatPanel';
 import { 
   Home, ListChecks, Network, GitBranch, Clock, 
   Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
@@ -75,6 +76,7 @@ export const GraphEditor = () => {
   const [coloringMode, setColoringMode] = useState<GraphColorMode>('level'); // Default to level (structure) as requested
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
+  const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
 
   // Command Palette Logic
   React.useEffect(() => {
@@ -540,17 +542,6 @@ export const GraphEditor = () => {
           </div>
         )}
 
-        <div className="absolute top-4 left-4 z-10 flex gap-2">
-          <ViewModeSelector currentMode={viewMode} onModeChange={setViewMode} />
-          <button
-            onClick={() => navigate('/graphs')}
-            className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-            title="返回图谱列表"
-          >
-            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
-          </button>
-        </div>
-
         {contextMenu && id && (
           <NodeContextMenu
             x={contextMenu.x}
@@ -860,6 +851,7 @@ export const GraphEditor = () => {
           }
         }}
         onTogglePodcast={() => state.setIsPodcastModalOpen(true)}
+        isRAGChatOpen={isRAGChatOpen}
       />
 
       {state.isPresentationMode && (
@@ -1084,6 +1076,18 @@ export const GraphEditor = () => {
       <ShortcutHelpPanel
         isOpen={isShortcutHelpOpen}
         onClose={() => setIsShortcutHelpOpen(false)}
+      />
+
+      <RAGChatButton
+        graphId={id}
+        currentNodeId={selectedNode?.id}
+        currentNodeTitle={selectedNode?.title}
+        onNodeClick={(nodeId) => {
+          const node = nodes.find(n => n.id === nodeId);
+          if (node) handleNodeClick(node);
+        }}
+        isOpen={isRAGChatOpen}
+        onOpenChange={setIsRAGChatOpen}
       />
     </div>
   );

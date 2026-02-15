@@ -32,6 +32,7 @@ import promptRoutes from './routes/prompts.js'
 import aiActionRoutes from './routes/aiActions.js'
 import focusRoutes from './routes/focus.js'
 import achievementRoutes from './routes/achievements.js'
+import ragRoutes from './routes/rag.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 
@@ -137,6 +138,7 @@ app.use('/api/prompts', promptRoutes)
 app.use('/api/ai-actions', aiActionRoutes)
 app.use('/api/focus', focusRoutes)
 app.use('/api/achievements', achievementRoutes)
+app.use('/api/rag', ragRoutes)
 
 /**
  * health

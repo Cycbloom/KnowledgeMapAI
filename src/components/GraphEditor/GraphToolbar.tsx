@@ -95,6 +95,9 @@ interface GraphToolbarProps {
   // Presentation
   onTogglePresentation?: () => void;
   onTogglePodcast?: () => void;
+  
+  // RAG Chat Panel
+  isRAGChatOpen?: boolean;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -109,7 +112,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onOpenShortcutSettings, onShare,
   isExplorationMode, setIsExplorationMode, coloringMode, setColoringMode, isTimelineVisible, setIsTimelineVisible,
   isTutorMode, onToggleTutorMode, onOpenAnalysis,
-  onTogglePresentation, onTogglePodcast
+  onTogglePresentation, onTogglePodcast,
+  isRAGChatOpen
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -491,7 +495,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
   // Desktop Layout - Priority Sorted with Dropdowns
   return (
-    <div className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border ${themeClasses.container}`}>
+    <div className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border transition-transform duration-300 ${themeClasses.container} ${isRAGChatOpen ? 'translate-x-[420px]' : ''}`}>
       {/* 1. Navigation & Basic Info (Always visible) */}
       <div className="flex items-center">
         <button onClick={onBack} className={`p-2 rounded-lg transition-colors ${themeClasses.button.default}`} title="返回">

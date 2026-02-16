@@ -388,7 +388,7 @@ export const api = {
         }
       }
     },
-    tutorChatStream: async (data: { message: string; graph_id?: string; history?: any[]; context_node_ids?: string[]; mode?: 'free' | 'guided'; provider?: string; model?: string }, onChunk: (content: string) => void) => {
+    tutorChatStream: async (data: { message: string; graph_id?: string; history?: any[]; context_node_ids?: string[]; mode?: 'free' | 'guided' | 'learning-path'; provider?: string; model?: string }, onChunk: (content: string) => void) => {
       const config = getAIConfig('text');
       const payload = { ...data };
       if (!payload.provider && config.provider) payload.provider = config.provider;
@@ -762,11 +762,15 @@ export const api = {
     }) => request('/auto-graph/optimize-prompt', { method: 'POST', body: JSON.stringify(data) }),
   },
   learningPath: {
+    getQuestions: (data: { graph_id: string }) => 
+      request('/learning-path/questions', { method: 'POST', body: JSON.stringify(data) }),
     generate: (data: {
       graph_id: string;
+      target_goal?: string;
       target_node_id?: string;
-      learning_style?: 'sequential' | 'exploratory' | 'focused';
+      learning_style?: 'sequential' | 'exploratory' | 'focused' | 'custom';
       daily_time_minutes?: number;
+      current_knowledge?: string;
       provider?: string;
       model?: string;
     }) => request('/learning-path/generate', { method: 'POST', body: JSON.stringify(data) }),

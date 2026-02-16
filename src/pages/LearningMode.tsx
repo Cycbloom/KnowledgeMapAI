@@ -6,20 +6,19 @@ import { CodeBlock } from '../components/CodeBlock';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X, Plus, Target, Route } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X, Plus, Target, Route, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
-import { useGraphData, useGraphLearningPath, useGraphNodeStatus } from '../hooks/useQueries';
+import { useGraphData, useGraphNodeStatus } from '../hooks/useQueries';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { GenerateCardsModal } from '../components/LearningMode/GenerateCardsModal';
-import { LearningPathEditor } from '../components/LearningMode/LearningPathEditor';
-import { LearningPathProgress } from '../components/LearningMode/LearningPathProgress';
+import { LearningPathPanel } from '../components/LearningPath/LearningPathPanel';
 import { Node, NodeLevel } from '../types';
 
 type Message = {
@@ -48,7 +47,7 @@ export const LearningMode = () => {
   const isOnline = useNetworkStatus();
 
   const [isCreateNodeModalOpen, setIsCreateNodeModalOpen] = useState(false);
-  const [isPathEditorOpen, setIsPathEditorOpen] = useState(false);
+  const [rightPanelMode, setRightPanelMode] = useState<'chat' | 'learning-path'>('chat');
   const [newNodeTitle, setNewNodeTitle] = useState('');
   const [newNodeContent, setNewNodeContent] = useState('');
   const [newNodeLevel, setNewNodeLevel] = useState<NodeLevel>('leaf');
@@ -71,7 +70,6 @@ export const LearningMode = () => {
   
   // Fetch Graph Data for Outline
   const { data: graphData } = useGraphData(graphId || '');
-  const { data: learningPathData } = useGraphLearningPath(graphId || '');
   const { data: nodeStatus } = useGraphNodeStatus(graphId || '');
 
   // Chat State
@@ -574,11 +572,16 @@ export const LearningMode = () => {
           {!isMobile && (
             <>
               <button
-                onClick={() => setIsPathEditorOpen(true)}
+                onClick={() => {
+                  setRightPanelMode('learning-path');
+                  setIsChatOpen(true);
+                }}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
-                  isDark 
-                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  rightPanelMode === 'learning-path' && isChatOpen
+                    ? 'bg-indigo-600 text-white'
+                    : (isDark 
+                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
                 }`}
                 title="学习路径"
               >
@@ -755,21 +758,49 @@ export const LearningMode = () => {
                       <div className="p-4 border-b dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
                         <div className="flex items-center space-x-2">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                            <Bot size={18} />
+                            {rightPanelMode === 'chat' ? <Bot size={18} /> : <Route size={18} />}
                           </div>
                           <div>
-                            <h3 className="font-bold text-sm">AI 助教</h3>
+                            <h3 className="font-bold text-sm">{rightPanelMode === 'chat' ? 'AI 助教' : '学习路径'}</h3>
                             <div className="flex items-center text-[10px] text-green-500">
                               <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
-                              在线
+                              {rightPanelMode === 'chat' ? '在线' : 'AI 驱动'}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">
+                          <div className="flex gap-1 mr-2">
+                            <button
+                              onClick={() => setRightPanelMode('chat')}
+                              className={`p-1.5 rounded-md transition-colors ${
+                                rightPanelMode === 'chat'
+                                  ? 'bg-indigo-500 text-white'
+                                  : (isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500')
+                              }`}
+                              title="AI 助教"
+                            >
+                              <MessageCircle size={14} />
+                            </button>
+                            <button
+                              onClick={() => setRightPanelMode('learning-path')}
+                              className={`p-1.5 rounded-md transition-colors ${
+                                rightPanelMode === 'learning-path'
+                                  ? 'bg-indigo-500 text-white'
+                                  : (isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500')
+                              }`}
+                              title="学习路径"
+                            >
+                              <Route size={14} />
+                            </button>
+                          </div>
                           <button 
-                            onClick={() => setMessages([{ id: 'welcome', role: 'assistant', content: '你好！我是你的专属学习导师。' }])}
+                            onClick={() => {
+                              if (rightPanelMode === 'chat') {
+                                setMessages([{ id: 'welcome', role: 'assistant', content: '你好！我是你的专属学习导师。' }]);
+                              }
+                            }}
                             className={`p-1.5 rounded-md transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
-                            title="清空对话"
+                            title={rightPanelMode === 'chat' ? "清空对话" : "刷新路径"}
                           >
                             <RefreshCw size={14} />
                           </button>
@@ -782,109 +813,124 @@ export const LearningMode = () => {
                         </div>
                       </div>
 
-                      {/* Chat Messages */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                        {messages.map((msg) => (
-                          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`flex max-w-[90%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-2`}>
-                              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                msg.role === 'user' 
-                                  ? 'bg-indigo-600 text-white' 
-                                  : (isDark ? 'bg-slate-800 text-indigo-400 border border-slate-700' : 'bg-white text-indigo-600 border border-gray-100 shadow-sm')
-                              }`}>
-                                {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
-                              </div>
-                              <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
-                                msg.role === 'user'
-                                  ? 'bg-indigo-600 text-white rounded-tr-none'
-                                  : (isDark ? 'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700' : 'bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100')
-                              }`}>
-                                {msg.isStreaming && !msg.content ? (
-                                  <div className="flex items-center space-x-2">
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                                  </div>
-                                ) : (
-                                  <div className="prose prose-sm dark:prose-invert prose-indigo max-w-none">
-                                    <ReactMarkdown 
-                                      remarkPlugins={[remarkGfm, remarkMath]}
-                                      rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
-                                      components={{
-                                        code: ({ className, children, node }) => (
-                                          <CodeBlock className={className} isDark={isDark} node={node}>
-                                            {children}
-                                          </CodeBlock>
-                                        ),
-                                        a: ({node, ...props}) => {
-                                          const { href, children } = props;
-                                          if (href && href.startsWith('term:')) {
-                                              const explanation = href.replace('term:', '');
-                                              return <TermTooltip term={String(children)} explanation={decodeURIComponent(explanation)} />;
-                                          }
-                                          return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;
-                                        }
-                                      }}
-                                    >
-                                      {msg.role === 'assistant' ? preprocessMarkdown(msg.content) : msg.content}
-                                    </ReactMarkdown>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                      {/* Content Area */}
+                      <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        {rightPanelMode === 'learning-path' ? (
+                          <div className="p-4">
+                            <LearningPathPanel
+                              graphId={graphId || ''}
+                              onNodeSelect={(nodeId) => {
+                                navigate(`/learning?graph_id=${graphId}&node_id=${nodeId}`);
+                              }}
+                            />
                           </div>
-                        ))}
-                        <div ref={messagesEndRef} />
+                        ) : (
+                          <div className="p-4 space-y-4">
+                            {messages.map((msg) => (
+                              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`flex max-w-[90%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-2`}>
+                                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                                    msg.role === 'user' 
+                                      ? 'bg-indigo-600 text-white' 
+                                      : (isDark ? 'bg-slate-800 text-indigo-400 border border-slate-700' : 'bg-white text-indigo-600 border border-gray-100 shadow-sm')
+                                  }`}>
+                                    {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
+                                  </div>
+                                  <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
+                                    msg.role === 'user'
+                                      ? 'bg-indigo-600 text-white rounded-tr-none'
+                                      : (isDark ? 'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700' : 'bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100')
+                                  }`}>
+                                    {msg.isStreaming && !msg.content ? (
+                                      <div className="flex items-center space-x-2">
+                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                      </div>
+                                    ) : (
+                                      <div className="prose prose-sm dark:prose-invert prose-indigo max-w-none">
+                                        <ReactMarkdown 
+                                          remarkPlugins={[remarkGfm, remarkMath]}
+                                          rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
+                                          components={{
+                                            code: ({ className, children, node }) => (
+                                              <CodeBlock className={className} isDark={isDark} node={node}>
+                                                {children}
+                                              </CodeBlock>
+                                            ),
+                                            a: ({node, ...props}) => {
+                                              const { href, children } = props;
+                                              if (href && href.startsWith('term:')) {
+                                                  const explanation = href.replace('term:', '');
+                                                  return <TermTooltip term={String(children)} explanation={decodeURIComponent(explanation)} />;
+                                              }
+                                              return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;
+                                            }
+                                          }}
+                                        >
+                                          {msg.role === 'assistant' ? preprocessMarkdown(msg.content) : msg.content}
+                                        </ReactMarkdown>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Chat Input */}
-                      <div className="p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                        <form onSubmit={handleChatSubmit} className="relative">
-                          <textarea
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleChatSubmit(e);
-                              }
-                            }}
-                            placeholder="有问题尽管问我..."
-                            className={`w-full p-3 pr-20 pl-4 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all ${
-                              isDark ? 'bg-slate-800 text-white placeholder-slate-500 border-slate-700' : 'bg-white text-gray-900 placeholder-gray-400 border-gray-200'
-                            } border`}
-                            rows={2}
-                          />
-                          <div className="absolute right-2 bottom-2 flex items-center space-x-1">
-                            <button
-                              type="button"
-                              onClick={toggleListening}
-                              className={`p-2 rounded-lg transition-all ${
-                                isListening 
-                                  ? 'bg-red-500 text-white animate-pulse' 
-                                  : (isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-indigo-400' : 'text-gray-400 hover:bg-gray-100 hover:text-indigo-600')
-                              }`}
-                              title={isListening ? "停止录音" : "语音提问"}
-                            >
-                              {isListening ? <Mic size={18} /> : <MicOff size={18} />}
-                            </button>
-                            <button
-                              type="submit"
-                              disabled={!input.trim() || isChatLoading}
-                              className={`p-2 rounded-lg transition-all ${
-                                input.trim() && !isChatLoading
-                                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
-                              }`}
-                            >
-                              {isChatLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                            </button>
-                          </div>
-                        </form>
-                        <p className={`text-[10px] mt-2 text-center ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                          由 AI 导师提供支持，内容仅供参考
-                        </p>
-                      </div>
+                      {/* Chat Input - Only show in chat mode */}
+                      {rightPanelMode === 'chat' && (
+                        <div className="p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                          <form onSubmit={handleChatSubmit} className="relative">
+                            <textarea
+                              value={input}
+                              onChange={(e) => setInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleChatSubmit(e);
+                                }
+                              }}
+                              placeholder="有问题尽管问我..."
+                              className={`w-full p-3 pr-20 pl-4 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all ${
+                                isDark ? 'bg-slate-800 text-white placeholder-slate-500 border-slate-700' : 'bg-white text-gray-900 placeholder-gray-400 border-gray-200'
+                              } border`}
+                              rows={2}
+                            />
+                            <div className="absolute right-2 bottom-2 flex items-center space-x-1">
+                              <button
+                                type="button"
+                                onClick={toggleListening}
+                                className={`p-2 rounded-lg transition-all ${
+                                  isListening 
+                                    ? 'bg-red-500 text-white animate-pulse' 
+                                    : (isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-indigo-400' : 'text-gray-400 hover:bg-gray-100 hover:text-indigo-600')
+                                }`}
+                                title={isListening ? "停止录音" : "语音提问"}
+                              >
+                                {isListening ? <Mic size={18} /> : <MicOff size={18} />}
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={!input.trim() || isChatLoading}
+                                className={`p-2 rounded-lg transition-all ${
+                                  input.trim() && !isChatLoading
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                                    : 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
+                                }`}
+                              >
+                                {isChatLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                              </button>
+                            </div>
+                          </form>
+                          <p className={`text-[10px] mt-2 text-center ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            由 AI 导师提供支持，内容仅供参考
+                          </p>
+                        </div>
+                      )}
                     </motion.div>
                   </>
                 )}
@@ -1033,17 +1079,6 @@ export const LearningMode = () => {
           </div>
         </div>
       )}
-
-      {/* Learning Path Editor */}
-      <LearningPathEditor
-        graphId={graphId || ''}
-        learningPath={learningPathData || null}
-        nodes={graphData?.nodes || []}
-        onNodeSelect={(nodeId) => navigate(`/learning?graph_id=${graphId}&node_id=${nodeId}`)}
-        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['graphLearningPath', graphId] })}
-        isOpen={isPathEditorOpen}
-        onClose={() => setIsPathEditorOpen(false)}
-      />
     </div>
   );
 };

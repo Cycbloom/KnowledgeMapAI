@@ -308,19 +308,50 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
   const handleGeneratePath = useCallback(async () => {
     setIsGenerating(true);
     try {
-      const result = await api.learningPaths.generate({
-        goal: '根据图谱结构生成最优学习路径',
-        goal_type: 'graph_node',
-        target_node_id: nodes.find(n => n.level === 'root')?.id || nodes[0]?.id,
+      if (learningPath) {
+        try {
+          await api.learningPaths.delete(learningPath.id);
+        } catch (e) {
+          console.warn('Failed to delete old path:', e);
+        }
+      }
+      
+      const result = await api.learningPath.generate({
+        graph_id: graphId,
+        target_goal: '根据图谱结构生成最优学习路径',
+        learning_style: 'sequential',
+        daily_time_minutes: 30
       });
-      addMessage({ type: 'success', content: '学习路径已生成' });
-      onRefresh();
+      
+      if (result.stages && result.stages.length > 0) {
+        const learningPathCreate = await api.learningPaths.create({
+          title: `学习路径 - ${result.graphTitle}`,
+          description: result.targetGoal || 'AI 生成的学习路径',
+          goal_type: 'graph_node',
+          target_node_id: result.stages[0]?.nodeId,
+          daily_minutes_target: 30
+        });
+        
+        for (const stage of result.stages) {
+          await api.learningPaths.addNode(learningPathCreate.id, {
+            node_id: stage.nodeId,
+            estimated_minutes: stage.estimatedTime,
+            difficulty_level: stage.priority === 'high' ? 4 : stage.priority === 'medium' ? 3 : 2
+          });
+        }
+        
+        addMessage({ type: 'success', content: 'AI 学习路径已生成！' });
+        onRefresh();
+      } else {
+        addMessage({ type: 'warning', content: '无法生成学习路径，请检查图谱是否有节点' });
+      }
     } catch (error) {
+      console.error('Generate path error:', error);
       addMessage({ type: 'error', content: '生成学习路径失败' });
     } finally {
       setIsGenerating(false);
     }
-  }, [nodes, addMessage, onRefresh]);
+  }, [graphId, learningPath, addMessage, onRefresh]);
 
   if (!isOpen) return null;
 
@@ -475,17 +506,31 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
 
         {learningPath && (
           <div className={`flex items-center justify-between px-6 py-3 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-            <button
-              onClick={() => setIsAddingNode(true)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                isDark 
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <Plus className="w-4 h-4" />
-              添加节点
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsAddingNode(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Plus className="w-4 h-4" />
+                添加节点
+              </button>
+              <button
+                onClick={handleGeneratePath}
+                disabled={isGenerating}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50`}
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                AI 重新生成
+              </button>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={onClose}

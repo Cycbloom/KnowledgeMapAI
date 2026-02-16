@@ -7,7 +7,8 @@ import {
   Lightbulb,
   Settings2,
   GraduationCap,
-  MessageCircle
+  MessageCircle,
+  Route
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useTheme } from '../../hooks/useTheme';
@@ -20,6 +21,7 @@ import { ChatInput } from './ChatInput';
 import { VoiceSettings, VoiceControl } from './VoiceSettings';
 import { ConceptsPanel } from './ConceptsPanel';
 import { SuggestionsPanel } from './SuggestionsPanel';
+import { LearningPathPanel } from '../LearningPath/LearningPathPanel';
 import 'katex/dist/katex.min.css';
 
 interface RAGChatPanelProps {
@@ -372,6 +374,18 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
               >
                 引导学习
               </button>
+              <button
+                onClick={() => onSwitchTutorMode?.('learning-path')}
+                className={`px-3 py-1 text-xs rounded-md transition-all ${
+                  tutorMode === 'learning-path'
+                    ? 'bg-amber-500 text-white'
+                    : isDark 
+                      ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+                      : 'bg-white text-amber-600 hover:bg-amber-100'
+                }`}
+              >
+                学习路径
+              </button>
             </div>
           </div>
         </div>
@@ -384,65 +398,72 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
       )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {chatState.messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <div className={`p-4 rounded-2xl mb-4 ${
-              isTutorMode 
-                ? isDark ? 'bg-amber-900/30' : 'bg-amber-50'
-                : isDark ? 'bg-indigo-900/30' : 'bg-indigo-50'
-            }`}>
-              <Bot size={40} className={isTutorMode 
-                ? isDark ? 'text-amber-400' : 'text-amber-600'
-                : isDark ? 'text-indigo-400' : 'text-indigo-600'
-              } />
-            </div>
-            <h4 className={`font-semibold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-              {isTutorMode ? '你好！我是你的 AI 助教' : '你好！我是知识图谱助手'}
-            </h4>
-            <p className={`text-sm mb-6 max-w-[280px] ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-              {isTutorMode 
-                ? '我可以帮助你学习知识图谱，提取关键概念，并建议下一步的学习方向。' 
-                : '我可以帮你理解知识图谱中的内容，回答问题，发现知识关联。'}
-            </p>
-            
-            {chatState.suggestedQuestions.length > 0 && (
-              <div className="w-full space-y-2">
-                <p className={`text-xs font-medium mb-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                  试试这些问题：
+        {isTutorMode && tutorMode === 'learning-path' && graphId ? (
+          <LearningPathPanel
+            graphId={graphId}
+            onNodeSelect={onNodeClick}
+          />
+        ) : (
+          <>
+            {chatState.messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                <div className={`p-4 rounded-2xl mb-4 ${
+                  isTutorMode 
+                    ? isDark ? 'bg-amber-900/30' : 'bg-amber-50'
+                    : isDark ? 'bg-indigo-900/30' : 'bg-indigo-50'
+                }`}>
+                  <Bot size={40} className={isTutorMode 
+                    ? isDark ? 'text-amber-400' : 'text-amber-600'
+                    : isDark ? 'text-indigo-400' : 'text-indigo-600'
+                  } />
+                </div>
+                <h4 className={`font-semibold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                  {isTutorMode ? '你好！我是你的 AI 助教' : '你好！我是知识图谱助手'}
+                </h4>
+                <p className={`text-sm mb-6 max-w-[280px] ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                  {isTutorMode 
+                    ? '我可以帮助你学习知识图谱，提取关键概念，并建议下一步的学习方向。' 
+                    : '我可以帮你理解知识图谱中的内容，回答问题，发现知识关联。'}
                 </p>
-                {chatState.suggestedQuestions.map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(q)}
-                    className={`w-full text-left p-3 rounded-xl text-sm transition-all ${
-                      isDark 
-                        ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' 
-                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Lightbulb size={14} className={isTutorMode 
-                        ? isDark ? 'text-amber-400' : 'text-amber-500'
-                        : isDark ? 'text-indigo-400' : 'text-indigo-500'
-                      } />
-                      <span>{q}</span>
-                    </div>
-                  </button>
-                ))}
+                
+                {chatState.suggestedQuestions.length > 0 && (
+                  <div className="w-full space-y-2">
+                    <p className={`text-xs font-medium mb-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                      试试这些问题：
+                    </p>
+                    {chatState.suggestedQuestions.map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSend(q)}
+                        className={`w-full text-left p-3 rounded-xl text-sm transition-all ${
+                          isDark 
+                            ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' 
+                            : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Lightbulb size={14} className={isTutorMode 
+                            ? isDark ? 'text-amber-400' : 'text-amber-500'
+                            : isDark ? 'text-indigo-400' : 'text-indigo-500'
+                          } />
+                          <span>{q}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {chatState.messages.map((message) => (
-          <ChatMessage
-            key={message.id}
-            message={message}
-            isDark={isDark}
-            isTutorMode={isTutorMode}
-            onNodeClick={onNodeClick}
-            voiceControl={
-              hasSupport && !message.isStreaming && message.content ? (
+            {chatState.messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                isDark={isDark}
+                isTutorMode={isTutorMode}
+                onNodeClick={onNodeClick}
+                voiceControl={
+                  hasSupport && !message.isStreaming && message.content ? (
                 <VoiceControl
                   messageId={message.id}
                   content={message.content}
@@ -466,6 +487,8 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
         )}
 
         <div ref={messagesEndRef} />
+          </>
+        )}
       </div>
 
       {showConceptsPanel && extractedConcepts.length > 0 && (
@@ -506,22 +529,24 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
         </div>
       )}
 
-      <ChatInput
-        input={chatState.input}
-        isDark={isDark}
-        isTutorMode={isTutorMode}
-        isLoading={chatState.isLoading}
-        selectedNodeCount={selectedNodeIds.length}
-        onInputChange={chatState.setInput}
-        onKeyDown={handleKeyDown}
-        onSend={() => handleSend()}
-        onExtractConcepts={handleExtractConcepts}
-        onSuggestNextTopics={onSuggestNextTopics ? () => {
-          onSuggestNextTopics();
-          setShowSuggestionsPanel(true);
-        } : undefined}
-        hasAssistantMessages={chatState.messages.some(m => m.role === 'assistant')}
-      />
+      {!(isTutorMode && tutorMode === 'learning-path') && (
+        <ChatInput
+          input={chatState.input}
+          isDark={isDark}
+          isTutorMode={isTutorMode}
+          isLoading={chatState.isLoading}
+          selectedNodeCount={selectedNodeIds.length}
+          onInputChange={chatState.setInput}
+          onKeyDown={handleKeyDown}
+          onSend={() => handleSend()}
+          onExtractConcepts={handleExtractConcepts}
+          onSuggestNextTopics={onSuggestNextTopics ? () => {
+            onSuggestNextTopics();
+            setShowSuggestionsPanel(true);
+          } : undefined}
+          hasAssistantMessages={chatState.messages.some(m => m.role === 'assistant')}
+        />
+      )}
     </motion.div>
   );
 };

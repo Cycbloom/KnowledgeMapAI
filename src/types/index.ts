@@ -329,7 +329,7 @@ export interface CreateGraphFromTemplateData {
   description?: string;
 }
 
-export type TutorMode = 'free' | 'guided';
+export type TutorMode = 'free' | 'guided' | 'learning-path';
 
 export interface ExtractedConcept {
   title: string;

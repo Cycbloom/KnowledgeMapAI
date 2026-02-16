@@ -66,6 +66,59 @@ Important:
 - Each node must have title and content
 - Respond in Chinese`,
 
+  learning_path_generate: `
+Return a JSON object with the following structure:
+{
+  "path": [
+    {
+      "nodeId": "node-uuid-or-title",
+      "nodeTitle": "Node Title",
+      "priority": "high|medium|low",
+      "reason": "Why this node should be learned at this position",
+      "estimatedTime": 15,
+      "prerequisites": ["prerequisite-node-id-1", "prerequisite-node-id-2"]
+    }
+  ],
+  "suggestions": [
+    "Suggestion 1 for the learner",
+    "Suggestion 2 for the learner"
+  ]
+}
+
+Important:
+- Order nodes in optimal learning sequence
+- nodeId can be the actual UUID or the exact title (will be matched)
+- estimatedTime should be in minutes (5-60)
+- priority determines learning importance
+- prerequisites should reference nodeIds from earlier in the path
+- Provide 2-4 helpful suggestions
+- Respond in Chinese`,
+
+  learning_path_questions: `
+Return a JSON object with the following structure:
+{
+  "suggestedGoals": [
+    "Goal 1: Clear, specific learning objective",
+    "Goal 2: Another achievable goal",
+    "Goal 3: Advanced mastery goal"
+  ],
+  "prerequisiteQuestions": [
+    {
+      "topic": "Knowledge area name",
+      "description": "Brief description of what this includes",
+      "options": ["不了解", "了解一点", "比较熟悉", "非常熟悉"]
+    }
+  ]
+}
+
+Important:
+- Generate 3-4 suggested goals with different difficulty levels
+- Generate 3-5 prerequisite questions relevant to the topic
+- Goals should be specific and motivating
+- Questions should identify knowledge that helps learn this topic
+- Always use the exact 4 options: 不了解, 了解一点, 比较熟悉, 非常熟悉
+- Respond in Chinese`,
+
   generate_cards: GENERATE_CARDS_SCHEMA,
   generate_cards_qa: GENERATE_CARDS_SCHEMA,
   generate_cards_choice: GENERATE_CARDS_SCHEMA,

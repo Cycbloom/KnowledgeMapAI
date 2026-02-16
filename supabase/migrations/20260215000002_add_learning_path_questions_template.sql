@@ -1,8 +1,7 @@
 -- Migration: Add learning_path_questions prompt template
 
-INSERT INTO "public"."prompt_templates" ("id", "code", "scope", "user_id", "graph_id", "template_content", "created_at", "updated_at") VALUES 
+INSERT INTO "public"."prompt_templates" ("code", "scope", "user_id", "graph_id", "template_content", "created_at", "updated_at") VALUES 
 (
-  'c4d5e6f7-a8b9-0c1d-2e3f-4a5b6c7d8e9f',
   'learning_path_questions',
   'system',
   null,

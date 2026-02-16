@@ -22,20 +22,12 @@ class TaskProcessor {
           break;
         case 'batch_generate_questions':
           await taskService.processBatchGenerateCards(task.id, task.user_id, task.payload);
-          // Result is handled by processBatchGenerateCards, but we need to return something to avoid double completion overwriting with undefined if we were to return here.
-          // However, processTask continues to set completed.
-          // Let's return the final result from the task itself?
-          // processBatchGenerateCards doesn't return the result.
-          // We can just break, and the subsequent updateTaskStatus will overwrite 'completed' with 'completed' (and undefined result if we don't set it).
-          // But processBatchGenerateCards sets a detailed result.
-          // If we break here, result is undefined.
-          // Then updateTaskStatus(..., 'completed', undefined) is called.
-          // My updateTaskStatus implementation: if (r !== undefined) updateData.result = r;
-          // So if result is undefined, it WON'T overwrite the result in DB!
-          // Perfect.
           break;
         case 'expand_graph':
           result = await this.handleExpandGraph(task);
+          break;
+        case 'recursive_graph_generation':
+          await taskService.processRecursiveGraphGeneration(task.id, task.user_id, task.payload);
           break;
         default:
           throw new Error(`Unknown task type: ${task.type}`);

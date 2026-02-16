@@ -9,7 +9,10 @@ import {
   ChevronRight, 
   ChevronLeft,
   Check,
-  Wand2
+  Wand2,
+  AlertTriangle,
+  Plus,
+  FolderPlus
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
@@ -53,6 +56,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCreatingGraphs, setIsCreatingGraphs] = useState(false);
   const [questionsData, setQuestionsData] = useState<QuestionsData | null>(null);
   
   const [selectedGoal, setSelectedGoal] = useState<string>('');
@@ -60,6 +64,8 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   const [knowledgeAnswers, setKnowledgeAnswers] = useState<Record<string, string>>({});
   const [learningStyle, setLearningStyle] = useState<'sequential' | 'exploratory' | 'focused'>('sequential');
   const [dailyTime, setDailyTime] = useState(30);
+  const [selectedPrerequisites, setSelectedPrerequisites] = useState<Set<string>>(new Set());
+  const [createdGraphs, setCreatedGraphs] = useState<Array<{ topic: string; graphId: string }>>([]);
   
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
@@ -88,15 +94,75 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     }
   };
 
+  const unknownPrerequisites = Object.entries(knowledgeAnswers)
+    .filter(([_, level]) => level === '不了解')
+    .map(([topic]) => topic);
+
   const handleNext = () => {
-    if (step < 3) {
-      setStep(step + 1);
+    if (step < 4) {
+      if (step === 2 && unknownPrerequisites.length === 0) {
+        setStep(4);
+      } else {
+        setStep(step + 1);
+      }
     }
   };
 
   const handleBack = () => {
     if (step > 1) {
-      setStep(step - 1);
+      if (step === 4 && unknownPrerequisites.length === 0) {
+        setStep(2);
+      } else {
+        setStep(step - 1);
+      }
+    }
+  };
+
+  const togglePrerequisite = (topic: string) => {
+    const newSelected = new Set(selectedPrerequisites);
+    if (newSelected.has(topic)) {
+      newSelected.delete(topic);
+    } else {
+      newSelected.add(topic);
+    }
+    setSelectedPrerequisites(newSelected);
+  };
+
+  const handleCreatePrerequisiteGraphs = async () => {
+    if (selectedPrerequisites.size === 0) {
+      addMessage({ type: 'warning', content: '请选择要创建图谱的前置知识' });
+      return;
+    }
+
+    setIsCreatingGraphs(true);
+    try {
+      const topics = Array.from(selectedPrerequisites).map(topic => ({
+        topic,
+        mastery_level: '不了解'
+      }));
+
+      console.log('Creating prerequisite graphs:', { graphId, topics, selectedPrerequisites: Array.from(selectedPrerequisites) });
+
+      const result = await api.graphs.createPrerequisiteGraphs(graphId, { 
+        topics,
+        depth: 2,
+        style: 'academic'
+      });
+      
+      console.log('Create prerequisite graphs result:', result);
+
+      setCreatedGraphs(result.created);
+      addMessage({ 
+        type: 'success', 
+        content: `已创建 ${result.created.length} 个前置知识图谱` 
+      });
+      
+      setSelectedPrerequisites(new Set());
+    } catch (error) {
+      console.error('Create prerequisite graphs error:', error);
+      handleError(error, { context: 'CreateGraphs', fallbackMessage: '创建前置图谱失败' });
+    } finally {
+      setIsCreatingGraphs(false);
     }
   };
 
@@ -129,6 +195,8 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         return true;
       case 3:
         return true;
+      case 4:
+        return true;
       default:
         return false;
     }
@@ -143,6 +211,9 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     );
   }
 
+  const totalSteps = unknownPrerequisites.length > 0 ? 4 : 3;
+  const stepIndicator = unknownPrerequisites.length > 0 ? [1, 2, 3, 4] : [1, 2, 3];
+
   return (
     <div className="learning-path-wizard">
       <div className="flex items-center justify-between mb-6">
@@ -151,7 +222,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           AI 学习路径规划
         </h3>
         <div className="flex items-center gap-2">
-          {[1, 2, 3].map((s) => (
+          {stepIndicator.map((s) => (
             <div
               key={s}
               className={`w-8 h-1 rounded-full transition-colors ${
@@ -255,36 +326,46 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             </p>
 
             <div className="space-y-4">
-              {questionsData?.prerequisiteQuestions.map((question, index) => (
-                <div key={index} className="space-y-2">
-                  <div>
-                    <span className="font-medium text-gray-900 dark:text-white">{question.topic}</span>
-                    {question.description && (
-                      <span className="text-xs text-gray-500 ml-2">({question.description})</span>
-                    )}
+              {questionsData?.prerequisiteQuestions.map((question, index) => {
+                const isUnknown = knowledgeAnswers[question.topic] === '不了解';
+                return (
+                  <div key={index} className={`space-y-2 p-2 rounded-lg ${isUnknown ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-medium text-gray-900 dark:text-white">{question.topic}</span>
+                        {question.description && (
+                          <span className="text-xs text-gray-500 ml-2">({question.description})</span>
+                        )}
+                      </div>
+                      {isUnknown && (
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {KNOWLEDGE_LEVELS.map((level) => (
+                        <button
+                          key={level}
+                          onClick={() => setKnowledgeAnswers(prev => ({ ...prev, [question.topic]: level }))}
+                          className={`px-3 py-1.5 text-xs rounded-full transition-all ${
+                            knowledgeAnswers[question.topic] === level
+                              ? level === '不了解' 
+                                ? 'bg-red-500 text-white' 
+                                : 'bg-indigo-500 text-white'
+                              : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {KNOWLEDGE_LEVELS.map((level) => (
-                      <button
-                        key={level}
-                        onClick={() => setKnowledgeAnswers(prev => ({ ...prev, [question.topic]: level }))}
-                        className={`px-3 py-1.5 text-xs rounded-full transition-all ${
-                          knowledgeAnswers[question.topic] === level
-                            ? 'bg-indigo-500 text-white'
-                            : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
-                        }`}
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}
 
-        {step === 3 && (
+        {step === 3 && unknownPrerequisites.length > 0 && (
           <motion.div
             key="step3"
             initial={{ opacity: 0, x: 20 }}
@@ -293,8 +374,87 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+              <FolderPlus className="w-4 h-4 text-indigo-500" />
+              <span>第 3 步：创建前置知识图谱</span>
+            </div>
+            
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                以下知识你标注为「不了解」，建议先学习。可以为这些知识创建独立的学习图谱：
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {unknownPrerequisites.map((topic) => (
+                <button
+                  key={topic}
+                  onClick={() => togglePrerequisite(topic)}
+                  className={`w-full p-3 rounded-lg text-left text-sm transition-all flex items-center gap-3 ${
+                    selectedPrerequisites.has(topic)
+                      ? 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500'
+                      : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded flex items-center justify-center ${
+                    selectedPrerequisites.has(topic)
+                      ? 'bg-indigo-500 text-white'
+                      : 'border-2 border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {selectedPrerequisites.has(topic) && <Check className="w-3 h-3" />}
+                  </div>
+                  <span className="flex-1">{topic}</span>
+                  <span className="text-xs text-gray-400">点击选择</span>
+                </button>
+              ))}
+            </div>
+
+            {createdGraphs.length > 0 && (
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                <p className="text-sm text-green-800 dark:text-green-200 font-medium mb-2">
+                  已创建的图谱：
+                </p>
+                <ul className="space-y-1">
+                  {createdGraphs.map((g) => (
+                    <li key={g.graphId} className="text-sm text-green-700 dark:text-green-300 flex items-center gap-2">
+                      <Check className="w-3 h-3" />
+                      {g.topic}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <button
+              onClick={handleCreatePrerequisiteGraphs}
+              disabled={isCreatingGraphs || selectedPrerequisites.size === 0}
+              className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isCreatingGraphs ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  创建中...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  为选中的知识创建学习图谱
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+
+        {step === 4 && (
+          <motion.div
+            key="step4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <Settings2 className="w-4 h-4 text-indigo-500" />
-              <span>第 3 步：学习偏好</span>
+              <span>{unknownPrerequisites.length > 0 ? '第 4 步' : '第 3 步'}：学习偏好</span>
             </div>
 
             <div className="space-y-4">
@@ -352,7 +512,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
           {step === 1 ? '取消' : '上一步'}
         </button>
         
-        {step < 3 ? (
+        {step < 4 ? (
           <button
             onClick={handleNext}
             disabled={!canProceed()}

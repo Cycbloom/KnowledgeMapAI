@@ -182,6 +182,17 @@ export const api = {
       const url = max ? `/graphs/${id}/missing-connections?max=${max}` : `/graphs/${id}/missing-connections`;
       return request(url);
     },
+    getRelations: (id: string) => request(`/graphs/${id}/relations`),
+    createPrerequisiteGraph: (id: string, data: { topic: string; description?: string; auto_generate?: boolean }) => 
+      request(`/graphs/${id}/prerequisite-graph`, { method: 'POST', body: JSON.stringify(data) }),
+    createPrerequisiteGraphs: (id: string, data: { 
+      topics: Array<{ topic: string; description?: string; mastery_level: string }>;
+      depth?: number;
+      style?: 'academic' | 'practical' | 'beginner';
+    }) => 
+      request(`/graphs/${id}/prerequisite-graphs/batch`, { method: 'POST', body: JSON.stringify(data) }),
+    deleteRelation: (graphId: string, relationId: string) => 
+      request(`/graphs/${graphId}/relations/${relationId}`, { method: 'DELETE' }),
   },
   nodes: {
     create: (data: any) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),

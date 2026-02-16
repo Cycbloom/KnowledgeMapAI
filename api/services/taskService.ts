@@ -1,6 +1,7 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { aiService } from './aiService.js';
+import { getAIProviderForTask } from './ai/factory.js';
 import { taskQueue } from './queue.js';
 import { sseService } from './sseService.js';
 import { logger } from '../utils/logger.js';
@@ -304,6 +305,271 @@ export class TaskService {
       logger.error('Task failed:', error);
       await this.updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
     }
+  }
+
+  async processRecursiveGraphGeneration(taskId: string, userId: string, payload: any) {
+    const supabase = defaultClient;
+    try {
+      await this.updateTaskStatus(supabase, taskId, 'processing', { 
+        stage: 'init', 
+        progress: 0 
+      }, undefined, userId);
+
+      const { graph_id, topic, depth = 3, style = 'academic' } = payload;
+
+      const { data: graph } = await supabase
+        .from('knowledge_graphs')
+        .select('id, title')
+        .eq('id', graph_id)
+        .single();
+
+      if (!graph) {
+        throw new Error('Graph not found');
+      }
+
+      const provider = await getAIProviderForTask('text');
+      if (!provider.hasKey) {
+        throw new Error('AI provider not configured');
+      }
+
+      let totalNodes = 0;
+      let totalEdges = 0;
+      const nodeMap = new Map<string, string>();
+
+      const systemPrompt = await this.getAutoGraphPrompt(supabase, userId, graph_id, 'init', {
+        topic,
+        isAcademic: style === 'academic',
+        hasSources: false,
+        isInit: true
+      });
+
+      const initCompletion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `主题：${topic}\n\n请生成知识图谱的根节点和核心节点。` }
+        ],
+        model: provider.model,
+        response_format: { type: "json_object" },
+        max_tokens: 4000,
+      });
+
+      const initParsed = JSON.parse(initCompletion.choices[0].message.content || '{"root": null, "coreNodes": []}');
+      
+      const rootData = initParsed.root || { title: topic, content: `${topic}的核心概念` };
+      const coreNodes = initParsed.coreNodes || [];
+
+      const { data: rootNode } = await supabase
+        .from('nodes')
+        .insert({
+          graph_id,
+          title: rootData.title,
+          content: rootData.content || '',
+          level: 'root',
+          x_position: 400,
+          y_position: 300
+        })
+        .select('id')
+        .single();
+
+      if (rootNode) {
+        nodeMap.set(rootData.title, rootNode.id);
+        totalNodes++;
+
+        for (const coreNode of coreNodes) {
+          const { data: childNode } = await supabase
+            .from('nodes')
+            .insert({
+              graph_id,
+              title: coreNode.title,
+              content: coreNode.content || '',
+              level: 'core',
+              x_position: 200 + Math.random() * 400,
+              y_position: 500 + Math.random() * 200
+            })
+            .select('id')
+            .single();
+
+          if (childNode) {
+            nodeMap.set(coreNode.title, childNode.id);
+            totalNodes++;
+
+            await supabase
+              .from('edges')
+              .insert({
+                graph_id,
+                source_node_id: rootNode.id,
+                target_node_id: childNode.id,
+                relationship_type: 'contains'
+              });
+            totalEdges++;
+          }
+        }
+      }
+
+      await this.updateTaskStatus(supabase, taskId, 'processing', { 
+        stage: 'init_complete', 
+        progress: 30,
+        totalNodes 
+      }, undefined, userId);
+
+      if (depth >= 2) {
+        const coreNodeEntries = Array.from(nodeMap.entries()).filter(([title]) => title !== rootData.title);
+        
+        for (let i = 0; i < coreNodeEntries.length; i++) {
+          const [nodeTitle, nodeId] = coreNodeEntries[i];
+          
+          await this.updateTaskStatus(supabase, taskId, 'processing', { 
+            stage: 'expanding', 
+            progress: 30 + Math.round((i / coreNodeEntries.length) * 40),
+            currentNode: nodeTitle
+          }, undefined, userId);
+
+          try {
+            const expandPrompt = await this.getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
+              nodeTitle: nodeTitle,
+              nodeContent: '',
+              nodeLevel: 'core',
+              isAcademic: style === 'academic',
+              hasExistingChildren: false,
+              existingChildren: ''
+            });
+
+            const expandCompletion = await provider.client.chat.completions.create({
+              messages: [
+                { role: "system", content: expandPrompt },
+                { role: "user", content: `请为「${nodeTitle}」生成子节点。` }
+              ],
+              model: provider.model,
+              response_format: { type: "json_object" },
+              max_tokens: 3000,
+            });
+
+            const expandParsed = JSON.parse(expandCompletion.choices[0].message.content || '{"children": []}');
+            const children = expandParsed.children || [];
+
+            for (const child of children.slice(0, 5)) {
+              const { data: subNode } = await supabase
+                .from('nodes')
+                .insert({
+                  graph_id,
+                  title: child.title,
+                  content: child.content || '',
+                  level: 'sub',
+                  x_position: 100 + Math.random() * 600,
+                  y_position: 700 + Math.random() * 200
+                })
+                .select('id')
+                .single();
+
+              if (subNode) {
+                nodeMap.set(child.title, subNode.id);
+                totalNodes++;
+
+                await supabase
+                  .from('edges')
+                  .insert({
+                    graph_id,
+                    source_node_id: nodeId,
+                    target_node_id: subNode.id,
+                    relationship_type: 'contains'
+                  });
+                totalEdges++;
+              }
+            }
+          } catch (expandError) {
+            logger.warn(`Failed to expand node ${nodeTitle}:`, expandError);
+          }
+        }
+      }
+
+      if (depth >= 3) {
+        const subNodeEntries = Array.from(nodeMap.entries()).filter(([title]) => {
+          return title !== rootData.title && !coreNodes.some((c: any) => c.title === title);
+        });
+
+        for (let i = 0; i < Math.min(subNodeEntries.length, 10); i++) {
+          const [nodeTitle, nodeId] = subNodeEntries[i];
+          
+          await this.updateTaskStatus(supabase, taskId, 'processing', { 
+            stage: 'deep_expanding', 
+            progress: 70 + Math.round((i / Math.min(subNodeEntries.length, 10)) * 25),
+            currentNode: nodeTitle
+          }, undefined, userId);
+
+          try {
+            const expandPrompt = await this.getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
+              nodeTitle: nodeTitle,
+              nodeContent: '',
+              nodeLevel: 'sub',
+              isAcademic: style === 'academic',
+              hasExistingChildren: false,
+              existingChildren: ''
+            });
+
+            const expandCompletion = await provider.client.chat.completions.create({
+              messages: [
+                { role: "system", content: expandPrompt },
+                { role: "user", content: `请为「${nodeTitle}」生成子节点。` }
+              ],
+              model: provider.model,
+              response_format: { type: "json_object" },
+              max_tokens: 2000,
+            });
+
+            const expandParsed = JSON.parse(expandCompletion.choices[0].message.content || '{"children": []}');
+            const children = expandParsed.children || [];
+
+            for (const child of children.slice(0, 3)) {
+              const { data: leafNode } = await supabase
+                .from('nodes')
+                .insert({
+                  graph_id,
+                  title: child.title,
+                  content: child.content || '',
+                  level: 'leaf',
+                  x_position: 50 + Math.random() * 700,
+                  y_position: 900 + Math.random() * 200
+                })
+                .select('id')
+                .single();
+
+              if (leafNode) {
+                totalNodes++;
+
+                await supabase
+                  .from('edges')
+                  .insert({
+                    graph_id,
+                    source_node_id: nodeId,
+                    target_node_id: leafNode.id,
+                    relationship_type: 'contains'
+                  });
+                totalEdges++;
+              }
+            }
+          } catch (expandError) {
+            logger.warn(`Failed to expand sub-node ${nodeTitle}:`, expandError);
+          }
+        }
+      }
+
+      await this.updateTaskStatus(supabase, taskId, 'completed', { 
+        success: true, 
+        totalNodes,
+        totalEdges,
+        graphId: graph_id
+      }, undefined, userId);
+
+    } catch (error: any) {
+      logger.error('Recursive graph generation failed:', error);
+      await this.updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
+    }
+  }
+
+  private async getAutoGraphPrompt(supabase: any, userId: string, graphId: string, type: 'init' | 'expand', data: any): Promise<string> {
+    const { promptService } = await import('./promptService.js');
+    const templateCode = type === 'init' ? 'auto_graph_init' : 'auto_graph_expand';
+    return promptService.getRenderedPrompt(supabase, templateCode, data, userId, graphId);
   }
 }
 

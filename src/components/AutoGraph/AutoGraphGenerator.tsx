@@ -7,10 +7,12 @@ import {
   ChevronUp, 
   Plus, 
   Check,
-  Settings,
   BookOpen,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  Layers,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
@@ -23,23 +25,174 @@ interface AutoGraphGeneratorProps {
 }
 
 interface GeneratedNode {
-  id: string;
   title: string;
   content: string;
-  level: 'root' | 'core' | 'sub' | 'normal' | 'leaf';
+  level?: string;
 }
 
-interface GeneratedEdge {
-  source: string;
-  target: string;
-  relationship: string;
+interface TreeNode extends GeneratedNode {
+  id: string;
+  children?: TreeNode[];
+  isExpanded?: boolean;
+  isLoading?: boolean;
 }
 
 const styleOptions = [
-  { value: 'academic', label: '学术风格', icon: GraduationCap, description: '适合学术研究和理论学习' },
-  { value: 'practical', label: '实用风格', icon: Briefcase, description: '适合实际应用和技能学习' },
-  { value: 'beginner', label: '入门风格', icon: BookOpen, description: '适合初学者快速入门' },
+  { 
+    value: 'academic', 
+    label: '学术风格', 
+    icon: GraduationCap, 
+    details: '专业术语，理论框架'
+  },
+  { 
+    value: 'practical', 
+    label: '实用风格', 
+    icon: Briefcase, 
+    details: '通俗易懂，实际应用'
+  },
+  { 
+    value: 'beginner', 
+    label: '入门风格', 
+    icon: BookOpen, 
+    details: '简单易懂，循序渐进'
+  },
 ];
+
+const getLevelColor = (level?: string) => {
+  switch (level) {
+    case 'root': return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300';
+    case 'core': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300';
+    case 'sub': return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300';
+    case 'normal': return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300';
+    case 'leaf': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300';
+  }
+};
+
+const getNextLevel = (currentLevel?: string): string => {
+  switch (currentLevel) {
+    case 'root': return 'core';
+    case 'core': return 'sub';
+    case 'sub': return 'normal';
+    case 'normal': return 'leaf';
+    default: return 'leaf';
+  }
+};
+
+let nodeIdCounter = 0;
+const generateNodeId = () => `node-${++nodeIdCounter}`;
+
+interface NodeItemProps {
+  node: TreeNode;
+  depth: number;
+  style: 'academic' | 'practical' | 'beginner';
+  graphId?: string;
+  onExpand: (nodeId: string) => Promise<TreeNode[] | null>;
+  onNodeUpdate: (nodeId: string, updates: Partial<TreeNode>) => void;
+}
+
+const NodeItem: React.FC<NodeItemProps> = ({ 
+  node, 
+  depth, 
+  style, 
+  graphId,
+  onExpand,
+  onNodeUpdate 
+}) => {
+  const [isExpanding, setIsExpanding] = useState(false);
+
+  const handleExpand = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (node.isLoading || isExpanding) return;
+    
+    setIsExpanding(true);
+    onNodeUpdate(node.id, { isLoading: true });
+    
+    try {
+      const children = await onExpand(node.id);
+      if (children && children.length > 0) {
+        onNodeUpdate(node.id, { 
+          children, 
+          isExpanded: true,
+          isLoading: false 
+        });
+      } else {
+        onNodeUpdate(node.id, { isLoading: false });
+      }
+    } catch (error) {
+      onNodeUpdate(node.id, { isLoading: false });
+    } finally {
+      setIsExpanding(false);
+    }
+  };
+
+  const toggleExpand = () => {
+    onNodeUpdate(node.id, { isExpanded: !node.isExpanded });
+  };
+
+  const hasChildren = node.children && node.children.length > 0;
+  const indent = depth * 16;
+
+  return (
+    <div className="node-item">
+      <div 
+        className={`p-3 rounded-lg border cursor-pointer hover:shadow-sm transition-all ${getLevelColor(node.level)}`}
+        style={{ marginLeft: `${indent}px` }}
+        onClick={toggleExpand}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium truncate">{node.title}</div>
+            <p className="text-sm mt-1 opacity-70 line-clamp-1">{node.content}</p>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={handleExpand}
+              disabled={node.isLoading || isExpanding}
+              className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 transition-colors"
+              title="AI 展开此节点"
+            >
+              {node.isLoading || isExpanding ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Sparkles size={14} />
+              )}
+            </button>
+            {hasChildren && (
+              <ChevronRight 
+                size={16} 
+                className={`transition-transform ${node.isExpanded ? 'rotate-90' : ''}`} 
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {node.isExpanded && hasChildren && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="children-container"
+          >
+            {node.children!.map((child) => (
+              <NodeItem
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                style={style}
+                graphId={graphId}
+                onExpand={onExpand}
+                onNodeUpdate={onNodeUpdate}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   graphId,
@@ -47,16 +200,16 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   onClose
 }) => {
   const [topic, setTopic] = useState('');
-  const [depth, setDepth] = useState(3);
   const [style, setStyle] = useState<'academic' | 'practical' | 'beginner'>('academic');
   const [sources, setSources] = useState<string[]>([]);
   const [newSource, setNewSource] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState<string>('');
-  const [generatedNodes, setGeneratedNodes] = useState<GeneratedNode[]>([]);
-  const [generatedEdges, setGeneratedEdges] = useState<GeneratedEdge[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [rootNode, setRootNode] = useState<TreeNode | null>(null);
+  const [createdGraphId, setCreatedGraphId] = useState<string | null>(null);
   
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
@@ -72,92 +225,184 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     setSources(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleGenerate = useCallback(async () => {
+  const handleInitialize = useCallback(async () => {
     if (!topic.trim()) {
       addMessage({ type: 'warning', content: '请输入主题' });
       return;
     }
 
-    setIsGenerating(true);
-    setProgress('正在分析主题...');
-    setGeneratedNodes([]);
-    setGeneratedEdges([]);
-    setSuggestions([]);
+    setIsInitializing(true);
+    setRootNode(null);
+    nodeIdCounter = 0;
 
     try {
-      const result = await api.autoGraph.generate({
+      const result = await api.autoGraph.init({
         topic,
-        depth,
         style,
         sources: sources.length > 0 ? sources : undefined,
         graph_id: graphId
       });
 
-      if (result.nodes && result.nodes.length > 0) {
-        setGeneratedNodes(result.nodes);
-        setGeneratedEdges(result.edges || []);
-        setSuggestions(result.suggestions || []);
-        setProgress(`生成完成：${result.nodes.length} 个节点，${result.edges?.length || 0} 条关系`);
-        addMessage({ 
-          type: 'success', 
-          content: `知识图谱生成成功：${result.nodes.length} 个节点` 
-        });
-      } else {
-        setProgress('未能生成有效节点，请尝试调整主题');
-        addMessage({ type: 'warning', content: '未能生成有效节点' });
-      }
+      const root: TreeNode = {
+        id: generateNodeId(),
+        title: result.root.title,
+        content: result.root.content,
+        level: 'root',
+        children: result.coreNodes.map((n: any) => ({
+          id: generateNodeId(),
+          title: n.title,
+          content: n.content,
+          level: n.level || 'core',
+          children: [],
+          isExpanded: false
+        })),
+        isExpanded: true
+      };
+
+      setRootNode(root);
+      addMessage({ type: 'success', content: '知识图谱初始化成功！点击 ✨ 展开节点' });
+
     } catch (error) {
-      handleError(error, { context: 'AutoGraphGenerator', fallbackMessage: '知识图谱生成失败' });
-      setProgress('生成失败，请重试');
+      handleError(error, { context: 'AutoGraphInit', fallbackMessage: '初始化失败' });
     } finally {
-      setIsGenerating(false);
+      setIsInitializing(false);
     }
-  }, [topic, depth, style, sources, graphId, addMessage, handleError]);
+  }, [topic, style, sources, graphId, addMessage, handleError]);
+
+  const handleExpandNode = useCallback(async (nodeId: string, node: TreeNode): Promise<TreeNode[] | null> => {
+    try {
+      const result = await api.autoGraph.expand({
+        node_id: nodeId,
+        node_title: node.title,
+        node_content: node.content,
+        node_level: node.level,
+        graph_id: createdGraphId || graphId || 'temp',
+        style,
+        existing_children: node.children?.map(c => ({ title: c.title }))
+      });
+
+      return result.children.map((n: any) => ({
+        id: generateNodeId(),
+        title: n.title,
+        content: n.content,
+        level: n.level || getNextLevel(node.level),
+        children: [],
+        isExpanded: false
+      }));
+
+    } catch (error) {
+      handleError(error, { context: 'ExpandNode', fallbackMessage: '展开失败' });
+      return null;
+    }
+  }, [createdGraphId, graphId, style, handleError]);
+
+  const updateNodeInTree = useCallback((node: TreeNode, nodeId: string, updates: Partial<TreeNode>): TreeNode => {
+    if (node.id === nodeId) {
+      return { ...node, ...updates };
+    }
+    if (node.children) {
+      return {
+        ...node,
+        children: node.children.map(child => updateNodeInTree(child, nodeId, updates))
+      };
+    }
+    return node;
+  }, []);
+
+  const handleNodeUpdate = useCallback((nodeId: string, updates: Partial<TreeNode>) => {
+    setRootNode(prev => {
+      if (!prev) return prev;
+      return updateNodeInTree(prev, nodeId, updates);
+    });
+  }, [updateNodeInTree]);
+
+  const handleExpandWrapper = useCallback((nodeId: string): Promise<TreeNode[] | null> => {
+    const findNode = (node: TreeNode, id: string): TreeNode | null => {
+      if (node.id === id) return node;
+      if (node.children) {
+        for (const child of node.children) {
+          const found = findNode(child, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    if (!rootNode) return Promise.resolve(null);
+    const node = findNode(rootNode, nodeId);
+    if (!node) return Promise.resolve(null);
+    
+    return handleExpandNode(nodeId, node);
+  }, [rootNode, handleExpandNode]);
+
+  const collectAllNodes = useCallback((node: TreeNode, parentId?: string): any[] => {
+    const nodes = [{ 
+      id: node.id,
+      title: node.title, 
+      content: node.content, 
+      level: node.level,
+      parentId 
+    }];
+    if (node.children) {
+      node.children.forEach(child => {
+        nodes.push(...collectAllNodes(child, node.id));
+      });
+    }
+    return nodes;
+  }, []);
 
   const handleSaveToGraph = useCallback(async () => {
-    if (!graphId || generatedNodes.length === 0) return;
+    if (!rootNode) return;
 
-    setIsGenerating(true);
-    setProgress('正在保存到图谱...');
+    setIsSaving(true);
 
     try {
-      await api.autoGraph.save({
-        graph_id: graphId,
-        nodes: generatedNodes,
-        edges: generatedEdges
+      let targetGraphId = graphId;
+      
+      if (!targetGraphId) {
+        const createResult = await api.graphs.create({
+          title: topic,
+          description: rootNode.content
+        });
+        targetGraphId = createResult.id;
+        setCreatedGraphId(targetGraphId);
+      }
+
+      const allNodes = collectAllNodes(rootNode);
+
+      await api.autoGraph.saveNodes({
+        graph_id: targetGraphId,
+        nodes: allNodes
       });
 
       addMessage({ type: 'success', content: '知识图谱已保存' });
-      onGraphGenerated?.(generatedNodes, generatedEdges);
+      onGraphGenerated?.(allNodes, []);
       onClose?.();
+
     } catch (error) {
       handleError(error, { context: 'SaveGraph', fallbackMessage: '保存失败' });
     } finally {
-      setIsGenerating(false);
+      setIsSaving(false);
     }
-  }, [graphId, generatedNodes, generatedEdges, onGraphGenerated, onClose, addMessage, handleError]);
-
-  const getLevelColor = (level: string) => {
-    const colors = {
-      root: 'bg-purple-100 text-purple-800 border-purple-200',
-      core: 'bg-red-100 text-red-800 border-red-200',
-      sub: 'bg-orange-100 text-orange-800 border-orange-200',
-      normal: 'bg-blue-100 text-blue-800 border-blue-200',
-      leaf: 'bg-green-100 text-green-800 border-green-200'
-    };
-    return colors[level as keyof typeof colors] || colors.normal;
-  };
+  }, [graphId, rootNode, topic, collectAllNodes, onGraphGenerated, onClose, addMessage, handleError]);
 
   return (
-    <div className="auto-graph-generator bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg">
-          <Sparkles className="w-6 h-6 text-white" />
+    <div className="auto-graph-generator bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg">
+            <Layers className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI 知识图谱生成器</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">渐进式生成，无限展开</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI 知识图谱生成器</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">输入主题，AI 自动生成完整的知识图谱</p>
-        </div>
+        {onClose && (
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -169,9 +414,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="例如：机器学习基础、量子计算入门、区块链技术原理"
+            placeholder="例如：机器学习基础、量子计算入门"
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
-            disabled={isGenerating}
+            disabled={isInitializing}
           />
         </div>
 
@@ -186,19 +431,26 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 <button
                   key={option.value}
                   onClick={() => setStyle(option.value as any)}
-                  disabled={isGenerating}
-                  className={`p-3 rounded-lg border-2 transition-all ${
+                  disabled={isInitializing}
+                  className={`p-3 rounded-lg border-2 transition-all text-left ${
                     style === option.value
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 mx-auto mb-1 ${
-                    style === option.value ? 'text-blue-500' : 'text-gray-400'
-                  }`} />
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {option.label}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon className={`w-4 h-4 ${
+                      style === option.value ? 'text-blue-500' : 'text-gray-400'
+                    }`} />
+                    <span className={`text-sm font-medium ${
+                      style === option.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      {option.label}
+                    </span>
                   </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {option.details}
+                  </p>
                 </button>
               );
             })}
@@ -210,7 +462,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
           {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          高级设置
+          参考来源
         </button>
 
         <AnimatePresence>
@@ -219,90 +471,66 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="space-y-4 overflow-hidden"
+              className="space-y-3 overflow-hidden"
             >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  生成深度: {depth} 层
-                </label>
+              <div className="flex gap-2">
                 <input
-                  type="range"
-                  min={1}
-                  max={5}
-                  value={depth}
-                  onChange={(e) => setDepth(parseInt(e.target.value))}
-                  className="w-full"
-                  disabled={isGenerating}
+                  type="text"
+                  value={newSource}
+                  onChange={(e) => setNewSource(e.target.value)}
+                  placeholder="输入 URL 或文本内容"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white"
+                  disabled={isInitializing}
                 />
-                <div className="flex justify-between text-xs text-gray-400">
-                  <span>简洁</span>
-                  <span>详细</span>
-                </div>
+                <button
+                  onClick={handleAddSource}
+                  disabled={isInitializing || !newSource.trim()}
+                  className="px-3 py-2 bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50"
+                >
+                  <Plus size={16} />
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  参考来源（可选）
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newSource}
-                    onChange={(e) => setNewSource(e.target.value)}
-                    placeholder="输入 URL 或文本"
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white"
-                    disabled={isGenerating}
-                  />
-                  <button
-                    onClick={handleAddSource}
-                    disabled={isGenerating || !newSource.trim()}
-                    className="px-3 py-2 bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-                {sources.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {sources.map((source, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded text-xs"
+              {sources.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {sources.map((source, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded text-xs"
+                    >
+                      {source.slice(0, 30)}...
+                      <button
+                        onClick={() => handleRemoveSource(index)}
+                        className="text-gray-400 hover:text-red-500"
                       >
-                        {source.slice(0, 30)}...
-                        <button
-                          onClick={() => handleRemoveSource(index)}
-                          className="text-gray-400 hover:text-red-500"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
         <button
-          onClick={handleGenerate}
-          disabled={isGenerating || !topic.trim()}
+          onClick={handleInitialize}
+          disabled={isInitializing || !topic.trim()}
           className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {isGenerating ? (
+          {isInitializing ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              {progress}
+              正在初始化...
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              生成知识图谱
+              开始生成
             </>
           )}
         </button>
 
-        {generatedNodes.length > 0 && (
+        {rootNode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -313,57 +541,33 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 生成结果
               </h3>
               <span className="text-sm text-gray-500">
-                {generatedNodes.length} 个节点 · {generatedEdges.length} 条关系
+                点击 ✨ 展开任意节点
               </span>
             </div>
 
-            <div className="max-h-64 overflow-y-auto space-y-2 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-              {generatedNodes.map((node) => (
-                <div
-                  key={node.id}
-                  className={`p-2 rounded-lg border ${getLevelColor(node.level)}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium uppercase opacity-70">
-                      {node.level}
-                    </span>
-                    <span className="font-medium">{node.title}</span>
-                  </div>
-                  {node.content && (
-                    <p className="text-xs mt-1 opacity-80 line-clamp-2">
-                      {node.content}
-                    </p>
-                  )}
-                </div>
-              ))}
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              <NodeItem
+                node={rootNode}
+                depth={0}
+                style={style}
+                graphId={createdGraphId || graphId}
+                onExpand={handleExpandWrapper}
+                onNodeUpdate={handleNodeUpdate}
+              />
             </div>
 
-            {suggestions.length > 0 && (
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                  AI 建议
-                </h4>
-                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                  {suggestions.map((suggestion, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 flex-shrink-0" />
-                      {suggestion}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {graphId && (
-              <button
-                onClick={handleSaveToGraph}
-                disabled={isGenerating}
-                className="w-full py-2 px-4 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
+            <button
+              onClick={handleSaveToGraph}
+              disabled={isSaving}
+              className="w-full py-2 px-4 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
                 <Check className="w-4 h-4" />
-                保存到当前图谱
-              </button>
-            )}
+              )}
+              {graphId ? '保存到当前图谱' : '创建新图谱并保存'}
+            </button>
           </motion.div>
         )}
       </div>

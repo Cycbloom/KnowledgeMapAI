@@ -713,9 +713,8 @@ export const api = {
     }),
   },
   autoGraph: {
-    generate: (data: {
+    init: (data: {
       topic: string;
-      depth?: number;
       style?: 'academic' | 'practical' | 'beginner';
       sources?: string[];
       graph_id?: string;
@@ -723,16 +722,38 @@ export const api = {
       model?: string;
     }) => {
       const config = getAIConfig('text');
-      const payload = { depth: 3, style: 'academic', ...data };
+      const payload = { style: 'academic', ...data };
       if (!payload.provider && config.provider) payload.provider = config.provider;
       if (!payload.model && config.model) payload.model = config.model;
-      return request('/auto-graph', { method: 'POST', body: JSON.stringify(payload) });
+      return request('/auto-graph/init', { method: 'POST', body: JSON.stringify(payload) });
     },
-    save: (data: {
+    expand: (data: {
+      node_id: string;
+      node_title: string;
+      node_content?: string;
+      node_level?: string;
       graph_id: string;
-      nodes: any[];
-      edges: any[];
-    }) => request('/auto-graph/save', { method: 'POST', body: JSON.stringify(data) }),
+      style?: 'academic' | 'practical' | 'beginner';
+      existing_children?: Array<{ title: string; content?: string }>;
+      provider?: string;
+      model?: string;
+    }) => {
+      const config = getAIConfig('text');
+      const payload = { style: 'academic', ...data };
+      if (!payload.provider && config.provider) payload.provider = config.provider;
+      if (!payload.model && config.model) payload.model = config.model;
+      return request('/auto-graph/expand', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    saveNodes: (data: {
+      graph_id: string;
+      nodes: Array<{ 
+        id?: string;
+        title: string; 
+        content?: string; 
+        level?: string;
+        parentId?: string;
+      }>;
+    }) => request('/auto-graph/save-nodes', { method: 'POST', body: JSON.stringify(data) }),
   },
   learningPath: {
     generate: (data: {

@@ -33,6 +33,39 @@ Return a JSON object with a 'suggestions' array. Each object in the array must h
 Example format: { "suggestions": [{ "title": "Example Title", "content": "Example content" }] }
 Please respond in Chinese.`,
 
+  auto_graph_init: `
+Return a JSON object with the following structure:
+{
+  "root": {
+    "title": "Root Node Title",
+    "content": "Comprehensive overview of the topic (100-150 words)"
+  },
+  "coreNodes": [
+    { "title": "Core Node 1", "content": "Description of core concept (80-120 words)", "level": "core" },
+    { "title": "Core Node 2", "content": "Description of core concept (80-120 words)", "level": "core" }
+  ]
+}
+
+Important:
+- Generate exactly 1 root node and 3-5 core nodes
+- Each node must have title and content
+- Respond in Chinese`,
+
+  auto_graph_expand: `
+Return a JSON object with the following structure:
+{
+  "children": [
+    { "title": "Child Node 1", "content": "Description (60-100 words)", "level": "sub|normal|leaf" },
+    { "title": "Child Node 2", "content": "Description (60-100 words)", "level": "sub|normal|leaf" }
+  ]
+}
+
+Important:
+- Generate 3-5 child nodes
+- level should be appropriate: sub (if parent is core), normal (if parent is sub), leaf (if parent is normal)
+- Each node must have title and content
+- Respond in Chinese`,
+
   generate_cards: GENERATE_CARDS_SCHEMA,
   generate_cards_qa: GENERATE_CARDS_SCHEMA,
   generate_cards_choice: GENERATE_CARDS_SCHEMA,

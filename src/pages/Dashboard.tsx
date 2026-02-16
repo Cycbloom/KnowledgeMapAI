@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation } from '../hooks/useQueries';
-import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network, ArrowRight } from 'lucide-react';
+import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, queryKeys } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network, ArrowRight, Sparkles } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { BlindSpotList } from '../components/BlindSpotList';
 import { TemplateSelector } from '../components/TemplateSelector';
+import { AutoGraphGenerator } from '../components/AutoGraph/AutoGraphGenerator';
 import { Template } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
 export const Dashboard = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: graphsData, isLoading, error } = useGraphs();
   const { data: statsData } = useDashboardStats();
   const createGraphMutation = useCreateGraphMutation();
@@ -36,6 +39,8 @@ export const Dashboard = () => {
     id: '',
     title: ''
   });
+  
+  const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
 
   const graphs = Array.isArray(graphsData) ? graphsData : [];
   
@@ -219,6 +224,14 @@ export const Dashboard = () => {
               <Plus size={20} />
               <span>新建图谱</span>
             </button>
+            
+            <button
+              onClick={() => setIsAIGeneratorOpen(true)}
+              className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md hover:shadow-lg transition-all font-medium active:scale-95"
+            >
+              <Sparkles size={20} />
+              <span>AI 生成</span>
+            </button>
           </div>
         </div>
 
@@ -373,6 +386,23 @@ export const Dashboard = () => {
             onSelectTemplate={handleSelectTemplate}
             onCancel={() => setIsTemplateSelectorOpen(false)}
           />
+        )}
+
+        {/* AI Graph Generator Modal */}
+        {isAIGeneratorOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl">
+              <AutoGraphGenerator
+                onClose={() => setIsAIGeneratorOpen(false)}
+                onGraphGenerated={(nodes, edges) => {
+                  setIsAIGeneratorOpen(false);
+                  queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+                  queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+                  addMessage({ type: 'success', content: `成功生成 ${nodes.length} 个节点！` });
+                }}
+              />
+            </div>
+          </div>
         )}
 
         {/* Graphs Grid */}

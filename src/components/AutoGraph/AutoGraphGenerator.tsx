@@ -12,7 +12,8 @@ import {
   GraduationCap,
   Layers,
   ChevronRight,
-  X
+  X,
+  PenTool
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
@@ -56,6 +57,12 @@ const styleOptions = [
     icon: BookOpen, 
     details: '简单易懂，循序渐进'
   },
+  { 
+    value: 'custom', 
+    label: '自定义', 
+    icon: PenTool, 
+    details: '自己编写生成规则'
+  },
 ];
 
 const getLevelColor = (level?: string) => {
@@ -85,7 +92,7 @@ const generateNodeId = () => `node-${++nodeIdCounter}`;
 interface NodeItemProps {
   node: TreeNode;
   depth: number;
-  style: 'academic' | 'practical' | 'beginner';
+  style: 'academic' | 'practical' | 'beginner' | 'custom';
   graphId?: string;
   onExpand: (nodeId: string) => Promise<TreeNode[] | null>;
   onNodeUpdate: (nodeId: string, updates: Partial<TreeNode>) => void;
@@ -200,13 +207,15 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   onClose
 }) => {
   const [topic, setTopic] = useState('');
-  const [style, setStyle] = useState<'academic' | 'practical' | 'beginner'>('academic');
+  const [style, setStyle] = useState<'academic' | 'practical' | 'beginner' | 'custom'>('academic');
+  const [customPrompt, setCustomPrompt] = useState('');
   const [sources, setSources] = useState<string[]>([]);
   const [newSource, setNewSource] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [isInitializing, setIsInitializing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isInputCollapsed, setIsInputCollapsed] = useState(false);
   
   const [rootNode, setRootNode] = useState<TreeNode | null>(null);
   const [createdGraphId, setCreatedGraphId] = useState<string | null>(null);
@@ -231,6 +240,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       return;
     }
 
+    if (style === 'custom' && !customPrompt.trim()) {
+      addMessage({ type: 'warning', content: '请输入自定义生成规则' });
+      return;
+    }
+
     setIsInitializing(true);
     setRootNode(null);
     nodeIdCounter = 0;
@@ -239,6 +253,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       const result = await api.autoGraph.init({
         topic,
         style,
+        customPrompt: style === 'custom' ? customPrompt : undefined,
         sources: sources.length > 0 ? sources : undefined,
         graph_id: graphId
       });
@@ -260,6 +275,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       };
 
       setRootNode(root);
+      setIsInputCollapsed(true);
       addMessage({ type: 'success', content: '知识图谱初始化成功！点击 ✨ 展开节点' });
 
     } catch (error) {
@@ -278,6 +294,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         node_level: node.level,
         graph_id: createdGraphId || graphId || 'temp',
         style,
+        customPrompt: style === 'custom' ? customPrompt : undefined,
         existing_children: node.children?.map(c => ({ title: c.title }))
       });
 
@@ -406,135 +423,219 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       </div>
 
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            主题 <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="例如：机器学习基础、量子计算入门"
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
-            disabled={isInitializing}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            生成风格
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {styleOptions.map((option) => {
-              const Icon = option.icon;
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => setStyle(option.value as any)}
-                  disabled={isInitializing}
-                  className={`p-3 rounded-lg border-2 transition-all text-left ${
-                    style === option.value
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Icon className={`w-4 h-4 ${
-                      style === option.value ? 'text-blue-500' : 'text-gray-400'
-                    }`} />
-                    <span className={`text-sm font-medium ${
-                      style === option.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-                    }`}>
-                      {option.label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {option.details}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          参考来源
-        </button>
-
-        <AnimatePresence>
-          {showAdvanced && (
+        <AnimatePresence mode="wait">
+          {isInputCollapsed && rootNode ? (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="space-y-3 overflow-hidden"
+              key="collapsed"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg"
             >
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newSource}
-                  onChange={(e) => setNewSource(e.target.value)}
-                  placeholder="输入 URL 或文本内容"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white"
-                  disabled={isInitializing}
-                />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">主题：</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{topic}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 px-2 py-0.5 bg-gray-200 dark:bg-slate-600 rounded">
+                    {style === 'custom' ? '自定义' : style === 'academic' ? '学术' : style === 'practical' ? '实用' : '入门'}
+                  </span>
+                </div>
                 <button
-                  onClick={handleAddSource}
-                  disabled={isInitializing || !newSource.trim()}
-                  className="px-3 py-2 bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50"
+                  onClick={() => setIsInputCollapsed(false)}
+                  className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"
                 >
-                  <Plus size={16} />
+                  <ChevronDown size={14} />
+                  修改
                 </button>
               </div>
-              {sources.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {sources.map((source, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded text-xs"
-                    >
-                      {source.slice(0, 30)}...
+            </motion.div>
+          ) : (
+            <motion.div
+              key="expanded"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  主题 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="例如：机器学习基础、量子计算入门"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
+                  disabled={isInitializing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  生成风格
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {styleOptions.map((option) => {
+                    const Icon = option.icon;
+                    return (
                       <button
-                        onClick={() => handleRemoveSource(index)}
-                        className="text-gray-400 hover:text-red-500"
+                        key={option.value}
+                        onClick={() => setStyle(option.value as any)}
+                        disabled={isInitializing}
+                        className={`p-2 rounded-lg border-2 transition-all text-left ${
+                          style === option.value
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                        }`}
                       >
-                        ×
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <Icon className={`w-3.5 h-3.5 ${
+                            style === option.value ? 'text-blue-500' : 'text-gray-400'
+                          }`} />
+                          <span className={`text-xs font-medium ${
+                            style === option.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                          }`}>
+                            {option.label}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">
+                          {option.details}
+                        </p>
                       </button>
-                    </span>
-                  ))}
+                    );
+                  })}
                 </div>
-              )}
+                
+                <AnimatePresence>
+                  {style === 'custom' && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between mb-2 mt-3">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          自定义生成规则
+                        </label>
+                        <button
+                          onClick={async () => {
+                            if (!topic.trim()) {
+                              addMessage({ type: 'warning', content: '请先输入主题' });
+                              return;
+                            }
+                            try {
+                              const result = await api.autoGraph.optimizePrompt({ topic, currentPrompt: customPrompt });
+                              setCustomPrompt(result.optimizedPrompt);
+                              addMessage({ type: 'success', content: '规则已优化' });
+                            } catch (error) {
+                              handleError(error, { context: 'OptimizePrompt', fallbackMessage: '优化失败' });
+                            }
+                          }}
+                          disabled={isInitializing}
+                          className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:opacity-50"
+                        >
+                          <Sparkles size={12} />
+                          AI 优化
+                        </button>
+                      </div>
+                      <textarea
+                        value={customPrompt}
+                        onChange={(e) => setCustomPrompt(e.target.value)}
+                        placeholder="例如：请用简单的语言解释概念，每个节点不超过50字，重点关注实际应用场景..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white min-h-[100px] resize-y"
+                        disabled={isInitializing}
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        描述你希望 AI 如何生成知识图谱节点
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                参考来源
+              </button>
+
+              <AnimatePresence>
+                {showAdvanced && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="space-y-3 overflow-hidden"
+                  >
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newSource}
+                        onChange={(e) => setNewSource(e.target.value)}
+                        placeholder="输入 URL 或文本内容"
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white"
+                        disabled={isInitializing}
+                      />
+                      <button
+                        onClick={handleAddSource}
+                        disabled={isInitializing || !newSource.trim()}
+                        className="px-3 py-2 bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                    {sources.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {sources.map((source, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded text-xs"
+                          >
+                            {source.slice(0, 30)}...
+                            <button
+                              onClick={() => handleRemoveSource(index)}
+                              className="text-gray-400 hover:text-red-500"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                onClick={handleInitialize}
+                disabled={isInitializing || !topic.trim()}
+                className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isInitializing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    正在初始化...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    开始生成
+                  </>
+                )}
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
-
-        <button
-          onClick={handleInitialize}
-          disabled={isInitializing || !topic.trim()}
-          className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {isInitializing ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              正在初始化...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              开始生成
-            </>
-          )}
-        </button>
 
         {rootNode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 space-y-4"
+            className="space-y-4"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -545,7 +646,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               </span>
             </div>
 
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
               <NodeItem
                 node={rootNode}
                 depth={0}

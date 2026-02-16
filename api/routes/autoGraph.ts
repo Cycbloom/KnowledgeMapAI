@@ -34,7 +34,8 @@ async function processSource(source: string): Promise<string> {
 
 const initGraphSchema = z.object({
   topic: z.string().min(2).max(200),
-  style: z.enum(['academic', 'practical', 'beginner']).default('academic'),
+  style: z.enum(['academic', 'practical', 'beginner', 'custom']).default('academic'),
+  customPrompt: z.string().optional(),
   sources: z.array(z.string()).optional(),
   graph_id: z.string().uuid().optional(),
   provider: z.string().optional(),
@@ -47,7 +48,8 @@ const expandNodeSchema = z.object({
   node_content: z.string().optional(),
   node_level: z.string().optional(),
   graph_id: z.string().min(1),
-  style: z.enum(['academic', 'practical', 'beginner']).default('academic'),
+  style: z.enum(['academic', 'practical', 'beginner', 'custom']).default('academic'),
+  customPrompt: z.string().optional(),
   existing_children: z.array(z.object({
     title: z.string(),
     content: z.string().optional(),
@@ -56,8 +58,13 @@ const expandNodeSchema = z.object({
   model: z.string().optional(),
 });
 
+const optimizePromptSchema = z.object({
+  topic: z.string().min(1),
+  currentPrompt: z.string().optional(),
+});
+
 router.post('/init', requireAuth, validate(initGraphSchema), async (req: AuthRequest, res: Response) => {
-  const { topic, style, sources, graph_id, provider: providerType, model } = req.body;
+  const { topic, style, customPrompt, sources, graph_id, provider: providerType, model } = req.body;
   const supabase = req.supabase!;
   const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
@@ -71,22 +78,41 @@ router.post('/init', requireAuth, validate(initGraphSchema), async (req: AuthReq
       processedSources = await Promise.all(sources.map(processSource));
     }
 
-    const templateData: Record<string, any> = {
-      topic,
-      isAcademic: style === 'academic',
-      isPractical: style === 'practical',
-      hasSources: processedSources.length > 0,
-      sources: processedSources.join('\n\n---\n\n'),
-      isInit: true
-    };
+    let systemPrompt: string;
+    
+    if (style === 'custom' && customPrompt) {
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        'auto_graph_init',
+        {
+          topic,
+          isCustom: true,
+          customPrompt,
+          hasSources: processedSources.length > 0,
+          sources: processedSources.join('\n\n---\n\n'),
+          isInit: true
+        },
+        req.user.id,
+        graph_id
+      );
+    } else {
+      const templateData: Record<string, any> = {
+        topic,
+        isAcademic: style === 'academic',
+        isPractical: style === 'practical',
+        hasSources: processedSources.length > 0,
+        sources: processedSources.join('\n\n---\n\n'),
+        isInit: true
+      };
 
-    const systemPrompt = await promptService.getRenderedPrompt(
-      supabase,
-      'auto_graph_init',
-      templateData,
-      req.user.id,
-      graph_id
-    );
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        'auto_graph_init',
+        templateData,
+        req.user.id,
+        graph_id
+      );
+    }
 
     const completion = await provider.client.chat.completions.create({
       messages: [
@@ -127,6 +153,7 @@ router.post('/expand', requireAuth, validate(expandNodeSchema), async (req: Auth
     node_level,
     graph_id, 
     style, 
+    customPrompt,
     existing_children,
     provider: providerType, 
     model 
@@ -139,23 +166,43 @@ router.post('/expand', requireAuth, validate(expandNodeSchema), async (req: Auth
   }
 
   try {
-    const templateData: Record<string, any> = {
-      nodeTitle: node_title,
-      nodeContent: node_content || '',
-      nodeLevel: node_level || 'normal',
-      isAcademic: style === 'academic',
-      isPractical: style === 'practical',
-      hasExistingChildren: existing_children && existing_children.length > 0,
-      existingChildren: existing_children?.map((c: any) => c.title).join('、') || ''
-    };
+    let systemPrompt: string;
+    
+    if (style === 'custom' && customPrompt) {
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        'auto_graph_expand',
+        {
+          nodeTitle: node_title,
+          nodeContent: node_content || '',
+          nodeLevel: node_level || 'normal',
+          isCustom: true,
+          customPrompt,
+          hasExistingChildren: existing_children && existing_children.length > 0,
+          existingChildren: existing_children?.map((c: any) => c.title).join('、') || ''
+        },
+        req.user.id,
+        graph_id
+      );
+    } else {
+      const templateData: Record<string, any> = {
+        nodeTitle: node_title,
+        nodeContent: node_content || '',
+        nodeLevel: node_level || 'normal',
+        isAcademic: style === 'academic',
+        isPractical: style === 'practical',
+        hasExistingChildren: existing_children && existing_children.length > 0,
+        existingChildren: existing_children?.map((c: any) => c.title).join('、') || ''
+      };
 
-    const systemPrompt = await promptService.getRenderedPrompt(
-      supabase,
-      'auto_graph_expand',
-      templateData,
-      req.user.id,
-      graph_id
-    );
+      systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        'auto_graph_expand',
+        templateData,
+        req.user.id,
+        graph_id
+      );
+    }
 
     const completion = await provider.client.chat.completions.create({
       messages: [
@@ -185,6 +232,65 @@ router.post('/expand', requireAuth, validate(expandNodeSchema), async (req: Auth
     logger.error('Auto Graph Expand Error:', error);
     if (error instanceof AppError) throw error;
     throw new AppError(error.message || '节点展开失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+router.post('/optimize-prompt', requireAuth, validate(optimizePromptSchema), async (req: AuthRequest, res: Response) => {
+  const { topic, currentPrompt } = req.body;
+  const provider = await getAIProviderForTask('text');
+
+  if (!provider.hasKey) {
+    throw new AppError('AI provider not configured', 503, ErrorCodes.INTERNAL_ERROR);
+  }
+
+  try {
+    const systemPrompt = `You are a prompt optimization expert. Your task is to improve the user's custom prompt for generating knowledge graph nodes.
+
+## Guidelines for Optimization
+1. Make the instructions more specific and actionable
+2. Add constraints on content length, depth, and style
+3. Include examples of desired output format
+4. Ensure the prompt is clear and unambiguous
+5. Keep the user's original intent
+
+## Output Format
+Return a JSON object with:
+{
+  "optimizedPrompt": "The improved prompt text"
+}
+
+Respond in Chinese.`;
+
+    const userMessage = `主题：${topic}
+
+${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : '用户尚未输入任何规则，请根据主题生成一个合适的默认规则。'}
+
+请优化这个规则，使其更适合生成知识图谱节点。`;
+
+    const completion = await provider.client.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage }
+      ],
+      model: provider.model,
+      response_format: { type: "json_object" },
+      max_tokens: 1000,
+    });
+
+    const content = completion.choices[0].message.content;
+    let parsed;
+    try {
+      parsed = JSON.parse(content || '{"optimizedPrompt": ""}');
+    } catch (e) {
+      throw new AppError('优化结果解析失败', 422, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    res.json({ optimizedPrompt: parsed.optimizedPrompt || '' });
+
+  } catch (error: any) {
+    logger.error('Optimize Prompt Error:', error);
+    if (error instanceof AppError) throw error;
+    throw new AppError(error.message || '优化失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

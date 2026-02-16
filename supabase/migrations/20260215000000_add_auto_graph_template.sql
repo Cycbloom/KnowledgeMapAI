@@ -12,6 +12,10 @@ INSERT INTO "public"."prompt_templates" ("code", "scope", "user_id", "graph_id",
 ## Task
 Generate the ROOT node and 3-5 CORE nodes for the topic. This is the FIRST step of progressive graph building.
 
+{{#if isCustom}}
+## Custom Instructions
+{{customPrompt}}
+{{else}}
 ## Style Guidelines
 {{#if isAcademic}}
 ### Academic Style (学术风格)
@@ -29,6 +33,7 @@ Generate the ROOT node and 3-5 CORE nodes for the topic. This is the FIRST step 
 - Use simple, easy-to-understand language
 - Use analogies and real-life examples
 - Each concept should have a concise explanation
+{{/if}}
 {{/if}}
 {{/if}}
 
@@ -59,6 +64,10 @@ Generate 3-5 child nodes for the given parent node. Each child should be a speci
 {{#if nodeContent}}- Parent Content: {{nodeContent}}{{/if}}
 - Parent Level: {{nodeLevel}}
 
+{{#if isCustom}}
+## Custom Instructions
+{{customPrompt}}
+{{else}}
 ## Style Guidelines
 {{#if isAcademic}}
 ### Academic Style (学术风格)
@@ -76,6 +85,7 @@ Generate 3-5 child nodes for the given parent node. Each child should be a speci
 - Use simple language
 - Use analogies
 - Keep explanations concise
+{{/if}}
 {{/if}}
 {{/if}}
 

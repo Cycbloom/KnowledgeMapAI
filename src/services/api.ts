@@ -715,7 +715,8 @@ export const api = {
   autoGraph: {
     init: (data: {
       topic: string;
-      style?: 'academic' | 'practical' | 'beginner';
+      style?: 'academic' | 'practical' | 'beginner' | 'custom';
+      customPrompt?: string;
       sources?: string[];
       graph_id?: string;
       provider?: string;
@@ -733,7 +734,8 @@ export const api = {
       node_content?: string;
       node_level?: string;
       graph_id: string;
-      style?: 'academic' | 'practical' | 'beginner';
+      style?: 'academic' | 'practical' | 'beginner' | 'custom';
+      customPrompt?: string;
       existing_children?: Array<{ title: string; content?: string }>;
       provider?: string;
       model?: string;
@@ -754,6 +756,10 @@ export const api = {
         parentId?: string;
       }>;
     }) => request('/auto-graph/save-nodes', { method: 'POST', body: JSON.stringify(data) }),
+    optimizePrompt: (data: {
+      topic: string;
+      currentPrompt?: string;
+    }) => request('/auto-graph/optimize-prompt', { method: 'POST', body: JSON.stringify(data) }),
   },
   learningPath: {
     generate: (data: {

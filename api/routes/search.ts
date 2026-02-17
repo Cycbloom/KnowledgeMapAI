@@ -53,7 +53,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
              `[${i+1}] Title: ${n.title}\nGraph: ${n.knowledge_graphs?.title}\nContent: ${n.content || '(No content)'}\nExplanation: ${n.explanation || '(No explanation)'}`
            ).join('\n\n---\n\n');
 
-           const messages = [
+           const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
              { role: 'system', content: `You are an intelligent Knowledge Graph assistant. 
 Your goal is to answer the user's question accurately using ONLY the provided context information.
 If the provided context does not contain the answer, explicitly state that you cannot find the answer in the knowledge base.

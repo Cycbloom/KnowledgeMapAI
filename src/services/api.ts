@@ -804,24 +804,6 @@ export const api = {
     }) => request('/learning-path/generate', { method: 'POST', body: JSON.stringify(data) }),
     getProgress: (graphId: string) => request(`/learning-path/progress/${graphId}`),
   },
-  battles: {
-    create: (data: {
-      graph_id: string;
-      opponent_id?: string;
-      total_rounds?: number;
-      time_limit?: number;
-    }) => request('/battles/create', { method: 'POST', body: JSON.stringify(data) }),
-    getPending: () => request('/battles/pending'),
-    join: (battleId: string) => request(`/battles/join/${battleId}`, { method: 'POST' }),
-    get: (battleId: string) => request(`/battles/${battleId}`),
-    submitAnswer: (data: {
-      battle_id: string;
-      round_number: number;
-      answer: string;
-      time_taken?: number;
-    }) => request('/battles/submit-answer', { method: 'POST', body: JSON.stringify(data) }),
-    getHistory: () => request('/battles/history/me'),
-  },
   health: {
     getOverview: () => request('/health/overview'),
     getHeatmap: () => request('/health/heatmap'),

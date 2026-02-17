@@ -36,7 +36,6 @@ import ragRoutes from './routes/rag.js'
 import autoGraphRoutes from './routes/autoGraph.js'
 import learningPathRoutes from './routes/learningPath.js'
 import graphRelationsRoutes from './routes/graphRelations.js'
-import battleRoutes from './routes/battles.js'
 import healthRoutes from './routes/health.js'
 import collaborationRoutes from './routes/collaboration.js'
 import swaggerUi from 'swagger-ui-express'
@@ -148,7 +147,6 @@ app.use('/api/achievements', achievementRoutes)
 app.use('/api/rag', ragRoutes)
 app.use('/api/auto-graph', aiLimiter, autoGraphRoutes)
 app.use('/api/learning-path', learningPathRoutes)
-app.use('/api/battles', battleRoutes)
 app.use('/api/health', healthRoutes)
 app.use('/api/collaboration', collaborationRoutes)
 

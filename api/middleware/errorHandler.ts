@@ -70,7 +70,7 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     ? 'Internal Server Error'
     : err.message || '内部服务器错误';
   
-  res.status(status).json({
+  return res.status(status).json({
     success: false,
     code: ErrorCodes.INTERNAL_ERROR,
     error: message,

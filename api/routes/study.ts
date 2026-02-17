@@ -279,7 +279,7 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
   
   const f = await getFSRS(req.user.id, req.supabase);
   const scheduling_cards = f.repeat(fsrsCard, now);
-  const scheduledCard = scheduling_cards[rating].card;
+  const scheduledCard = (scheduling_cards as unknown as Record<Rating, { card: Card }>)[rating].card;
 
   const { data, error } = await req.supabase!
     .from('study_cards')

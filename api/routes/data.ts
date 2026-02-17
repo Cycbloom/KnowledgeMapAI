@@ -85,7 +85,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
         case 'sub': return '#### ';
         case 'normal': return '##### ';
         case 'leaf': return '- '; 
-        default: return '#'.repeat(Math.min(depth + 1, 6)) + ' ';
+        default: return `${'#'.repeat(Math.min(depth + 1, 6))  } `;
       }
     };
 
@@ -113,7 +113,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
             if (content) {
                  // Indent content for leaves
                  const contentPrefix = isLeaf ? '  ' : '';
-                 md += content.split('\n').map((line: string) => `${contentPrefix}${line}`).join('\n') + '\n\n';
+                 md += `${content.split('\n').map((line: string) => `${contentPrefix}${line}`).join('\n')  }\n\n`;
             } else {
                  md += '\n';
             }

@@ -72,7 +72,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
     } catch (error: any) {
       addMessage({ 
         type: 'error',
-        content: '加载分析数据失败: ' + (error.message || '未知错误')
+        content: `加载分析数据失败: ${  error.message || '未知错误'}`
       });
     } finally {
       setIsLoading(false);

@@ -1,10 +1,9 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useStatistics, useUser } from '../hooks/useQueries';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
-import { StatsOverview } from '../components/StatsOverview';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  AreaChart, Area, LineChart, Line, ReferenceLine, Legend
+  AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
 import { BookOpen, Brain, Clock, TrendingUp } from 'lucide-react';
 
@@ -32,7 +31,7 @@ const ForecastChart = ({ data }: { data: any[] }) => (
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis 
             dataKey="date" 
-            tickFormatter={(value) => new Date(value).getDate().toString() + '日'}
+            tickFormatter={(value) => `${new Date(value).getDate().toString()  }日`}
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#64748b', fontSize: 12 }}
@@ -70,7 +69,7 @@ const GrowthChart = ({ data }: { data: any[] }) => (
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis 
             dataKey="date" 
-            tickFormatter={(value, index) => index % 5 === 0 ? new Date(value).getMonth() + 1 + '/' + new Date(value).getDate() : ''}
+            tickFormatter={(value, index) => index % 5 === 0 ? `${new Date(value).getMonth() + 1  }/${  new Date(value).getDate()}` : ''}
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#64748b', fontSize: 12 }}
@@ -138,7 +137,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionT
               tickFormatter={(val) => `${val}%`}
             />
             <RechartsTooltip 
-              formatter={(value: number) => [`${value}%`, '记忆保留率']}
+              formatter={(value) => [`${value}%`, '记忆保留率']}
               labelFormatter={(label) => `第 ${label} 天`}
               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             />

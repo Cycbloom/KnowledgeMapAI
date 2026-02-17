@@ -1,7 +1,7 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { createNodeSchema, updateNodeSchema, createEdgeSchema, uuidParamsSchema } from '../schemas/index.js';
+import { createNodeSchema, updateNodeSchema, createEdgeSchema, uuidParamsSchema, batchDeleteNodesSchema, batchUpdatePositionsSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
@@ -251,12 +251,8 @@ router.delete('/nodes/:id', requireAuth, validate({ params: uuidParamsSchema }),
 });
 
 // Batch delete nodes
-router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { node_ids } = req.body; // Expect array of UUIDs
-
-  if (!node_ids || !Array.isArray(node_ids) || node_ids.length === 0) {
-    throw new AppError('请提供有效的节点ID列表', 400, ErrorCodes.INVALID_PARAMS);
-  }
+router.post('/nodes/batch-delete', requireAuth, validate(batchDeleteNodesSchema), async (req: AuthRequest, res: Response) => {
+  const { node_ids } = req.body;
 
   // First, get one node to identify the graph (assuming all nodes belong to same graph for now, or just handle cache later)
   // Actually, we should get all graph_ids involved to invalidate caches.
@@ -289,12 +285,8 @@ router.post('/nodes/batch-delete', requireAuth, async (req: AuthRequest, res: Re
 });
 
 // Batch update node positions (for layout reorganization)
-router.post('/nodes/batch-update-positions', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { positions } = req.body; // Expect array of { id, x_position, y_position }
-
-  if (!positions || !Array.isArray(positions) || positions.length === 0) {
-    throw new AppError('请提供有效的位置数据', 400, ErrorCodes.INVALID_PARAMS);
-  }
+router.post('/nodes/batch-update-positions', requireAuth, validate(batchUpdatePositionsSchema), async (req: AuthRequest, res: Response) => {
+  const { positions } = req.body;
 
   // Get graph_ids for cache invalidation
   const nodeIds = positions.map((p: { id: string }) => p.id);

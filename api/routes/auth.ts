@@ -23,7 +23,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
       password,
       options: {
         data: {
-          name: name,
+          name,
         },
       },
     });
@@ -76,7 +76,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
       await supabaseAdmin.from('users').insert([
         {
           id: data.user.id,
-          email: email,
+          email,
           name: data.user.user_metadata?.name || 'Restored User',
           password_hash: 'MANAGED_BY_SUPABASE_AUTH'
         }

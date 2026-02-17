@@ -97,16 +97,46 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['lucide-react', 'framer-motion'],
-          'vendor-charts': ['recharts'],
-          'vendor-utils': ['clsx', 'tailwind-merge'],
-          'pdf-lib': ['pdfjs-dist'],
-          'mermaid': ['mermaid'],
-        }
-      }
-    }
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('three') || id.includes('@react-three')) {
+              return 'vendor-three';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('lucide-react') || id.includes('framer-motion')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('react-markdown') || id.includes('remark-') || id.includes('rehype-') || id.includes('katex')) {
+              return 'vendor-markdown';
+            }
+            if (id.includes('mermaid')) {
+              return 'vendor-mermaid';
+            }
+            if (id.includes('zustand') || id.includes('@tanstack/react-query')) {
+              return 'vendor-state';
+            }
+            if (id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'vendor-utils';
+            }
+          }
+        },
+        compact: true,
+        experimentalMinChunkSize: 10000,
+      },
+    },
+    target: 'es2020',
+    minify: 'esbuild',
+    sourcemap: false,
+    cssCodeSplit: true,
+    reportCompressedSize: true,
+    modulePreload: {
+      polyfill: true,
+    },
   },
   server: {
     host: true, // 允许局域网访问

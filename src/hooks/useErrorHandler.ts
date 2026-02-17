@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store/useStore';
-import { useMessageStore } from '../store/useMessageStore';
+import { useMessageStore, MessageType } from '../store/useMessageStore';
 import { useNavigate } from 'react-router-dom';
 
 interface ApiError {
@@ -116,9 +116,9 @@ export const useErrorHandler = () => {
 };
 
 export class ErrorHandlerService {
-  private addMessage: (msg: { type: string; content: string; duration?: number }) => void;
+  private addMessage: (msg: { type: MessageType; content: string; duration?: number }) => void;
 
-  constructor(addMessage: (msg: { type: string; content: string; duration?: number }) => void) {
+  constructor(addMessage: (msg: { type: MessageType; content: string; duration?: number }) => void) {
     this.addMessage = addMessage;
   }
 

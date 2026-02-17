@@ -520,7 +520,7 @@ export const useGraphAIOperations = ({
           ...prev.filter(item => item.nodeId !== parentNode.id),
           {
             nodeId: parentNode.id,
-            branches: branches,
+            branches,
             selectedBranchId: suggestion.id
           }
         ]);
@@ -541,7 +541,7 @@ export const useGraphAIOperations = ({
     addMessage({ content: 'AI 内容生成任务已开始...', type: 'info' });
     
     try {
-      let prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如“好的”、“作为...”）、结束语或无关的对话内容。`;
+      const prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如“好的”、“作为...”）、结束语或无关的对话内容。`;
       
       let generatedContent = '';
       

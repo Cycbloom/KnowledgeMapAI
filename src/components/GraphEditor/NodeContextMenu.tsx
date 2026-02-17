@@ -67,11 +67,11 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
     }
   };
 
-  if (loading) return (
+  if (loading) {return (
       <div className="fixed bg-white dark:bg-gray-800 shadow-xl rounded-lg p-2 z-50 border dark:border-gray-700" style={{ top: y, left: x }}>
           <Loader2 className="animate-spin h-4 w-4 text-gray-500" />
       </div>
-  );
+  );}
 
   return (
     <div 

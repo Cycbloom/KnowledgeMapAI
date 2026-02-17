@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTemplates, useCreateTemplateMutation, useUpdateTemplateMutation, useDeleteTemplateMutation } from '../hooks/useQueries';
 import { Template, TemplateCategory } from '../types';
@@ -40,7 +40,7 @@ export const Templates = () => {
   const [newTemplateDescription, setNewTemplateDescription] = useState('');
   const [newTemplateCategory, setNewTemplateCategory] = useState<TemplateCategory>('learning');
 
-  const filteredTemplates = templates.filter(t => {
+  const filteredTemplates = templates.filter((t: Template) => {
     const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
@@ -204,7 +204,7 @@ export const Templates = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map((template) => (
+            {filteredTemplates.map((template: Template) => (
               <div
                 key={template.id}
                 className={`rounded-2xl border-2 p-5 transition-all hover:shadow-lg ${
@@ -222,14 +222,14 @@ export const Templates = () => {
                       template.category === 'analysis' ? 'bg-orange-50 text-orange-600' :
                       'bg-pink-50 text-pink-600'
                     }`}>
-                      {categoryIcons[template.category]}
+                      {categoryIcons[template.category as TemplateCategory]}
                     </div>
                     <div>
                       <h3 className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {template.name}
                       </h3>
                       <span className="text-xs text-gray-500">
-                        {categoryLabels[template.category]}模板
+                        {categoryLabels[template.category as TemplateCategory]}模板
                       </span>
                     </div>
                   </div>

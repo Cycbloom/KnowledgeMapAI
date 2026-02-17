@@ -83,7 +83,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         setSelectedGoal(result.suggestedGoals[0]);
       }
       const initialAnswers: Record<string, string> = {};
-      result.prerequisiteQuestions.forEach(q => {
+      result.prerequisiteQuestions.forEach((q: PrerequisiteQuestion) => {
         initialAnswers[q.topic] = q.options[0];
       });
       setKnowledgeAnswers(initialAnswers);

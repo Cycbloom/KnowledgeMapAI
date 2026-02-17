@@ -4,9 +4,7 @@ import {
   DEFAULT_SHORTCUTS, 
   ShortcutDefinition, 
   ShortcutKey, 
-  ShortcutBinding,
-  shortcutKeyToString,
-  parseShortcutKey
+  ShortcutBinding
 } from '../config/shortcuts';
 
 interface ShortcutState {

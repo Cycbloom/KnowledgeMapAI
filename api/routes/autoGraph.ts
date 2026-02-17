@@ -10,6 +10,7 @@ import { supabaseAdmin } from '../supabase.js';
 import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
 import { z } from 'zod';
+import { saveNodesSchema } from '../schemas/index.js';
 
 const router = Router();
 
@@ -294,16 +295,8 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : '用�
   }
 });
 
-router.post('/save-nodes', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: AuthRequest, res: Response) => {
   const { graph_id, nodes } = req.body;
-
-  if (!graph_id) {
-    throw new AppError('Graph ID is required', 400, ErrorCodes.VALIDATION_ERROR);
-  }
-
-  if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
-    throw new AppError('No nodes provided', 400, ErrorCodes.VALIDATION_ERROR);
-  }
 
   try {
     const { data: existingNodes } = await req.supabase!
@@ -342,7 +335,7 @@ router.post('/save-nodes', requireAuth, async (req: AuthRequest, res: Response) 
       return res.json({ success: true, nodeCount: 0, edgeCount: 0 });
     }
 
-    const nodesToInsert = nodesWithTempId.map(({ tempId, parentId, ...node }) => node);
+    const nodesToInsert = nodesWithTempId.map(({ tempId, parentId, ...node }: { tempId: string; parentId: string | null; [key: string]: any }) => node);
     
     const { data: insertedNodes, error: nodeError } = await req.supabase!
       .from('nodes')
@@ -352,18 +345,18 @@ router.post('/save-nodes', requireAuth, async (req: AuthRequest, res: Response) 
     if (nodeError) throw new AppError(nodeError.message, 500, ErrorCodes.INTERNAL_ERROR);
 
     const titleToDbId = new Map<string, string>();
-    insertedNodes?.forEach((node: any) => {
+    insertedNodes?.forEach((node: { id: string; title: string }) => {
       titleToDbId.set(node.title, node.id);
     });
 
     logger.info('Title to DB ID mapping:', Object.fromEntries(titleToDbId));
-    logger.info('Nodes with temp ID:', nodesWithTempId.map(n => ({ tempId: n.tempId, parentId: n.parentId, title: n.title })));
+    logger.info('Nodes with temp ID:', nodesWithTempId.map((n: { tempId: string; parentId: string | null; title: string }) => ({ tempId: n.tempId, parentId: n.parentId, title: n.title })));
 
     const edgesToInsert: any[] = [];
     
-    nodesWithTempId.forEach((nodeData) => {
+    nodesWithTempId.forEach((nodeData: { tempId: string; parentId: string | null; title: string }) => {
       if (nodeData.parentId) {
-        const parentNode = nodesWithTempId.find(n => n.tempId === nodeData.parentId);
+        const parentNode = nodesWithTempId.find((n: { tempId: string }) => n.tempId === nodeData.parentId);
         if (parentNode) {
           const parentDbId = titleToDbId.get(parentNode.title);
           const childDbId = titleToDbId.get(nodeData.title);

@@ -73,7 +73,7 @@ export class AIService {
 
     // Fallback: simple markdown removal if no clear JSON structure found
     // (This handles cases where the string might be just a value or malformed)
-    let cleaned = str.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+    const cleaned = str.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     return cleaned.trim();
   }
 
@@ -255,7 +255,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       
 Context: ${context || 'None'}
 
-` + systemPrompt;
+${  systemPrompt}`;
       }
 
       const completion = await provider.client.chat.completions.create({
@@ -529,7 +529,7 @@ Your task:
             ]
           }
         ],
-        model: model,
+        model,
         response_format: { type: "json_object" },
         max_tokens: 4000,
       });

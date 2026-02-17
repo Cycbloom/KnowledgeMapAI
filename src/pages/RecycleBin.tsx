@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTrashGraphs, useRestoreGraphMutation, usePermanentDeleteGraphMutation } from '../hooks/useQueries';
 import { Trash2, RefreshCw, Search, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';

@@ -136,7 +136,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
     if (!editingCode) return;
     await api.prompts.save({
       code: editingCode,
-      scope: scope,
+      scope,
       template_content: content,
       graph_id: scope === 'graph' ? graphId : undefined
     });

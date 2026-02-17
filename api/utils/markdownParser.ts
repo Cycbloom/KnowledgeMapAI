@@ -47,7 +47,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
 
       currentNode = {
         id: nodeId,
-        title: title,
+        title,
         content: '',
         level,
         x_position: Math.round((Math.random() - 0.5) * 100),
@@ -78,7 +78,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
       const trimmedLine = line.trim();
       if (trimmedLine) {
         currentNode.content = currentNode.content 
-          ? currentNode.content + '\n' + trimmedLine 
+          ? `${currentNode.content  }\n${  trimmedLine}` 
           : trimmedLine;
       }
     }
@@ -102,7 +102,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
     const nodeId = 'md-node-1';
     nodes.push({
       id: nodeId,
-      title: title,
+      title,
       content: text,
       level: 'root'
     });

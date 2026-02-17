@@ -2,9 +2,9 @@ import { useStore } from '../store/useStore';
 
 const API_URL = '/api';
 
-// Queue for pending requests during refresh
 let isRefreshing = false;
 let failedQueue: any[] = [];
+let csrfInitialized = false;
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(prom => {
@@ -17,11 +17,40 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+const getCookie = (name: string): string | null => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+};
+
+export const initCsrf = async (): Promise<void> => {
+  if (csrfInitialized) return;
+  
+  const existingToken = getCookie('csrf-token');
+  if (existingToken) {
+    csrfInitialized = true;
+    return;
+  }
+
+  try {
+    await fetch(`${API_URL}/csrf-token`, {
+      credentials: 'include',
+    });
+    csrfInitialized = true;
+  } catch {
+    console.warn('Failed to initialize CSRF token');
+  }
+};
+
 const getHeaders = () => {
   const token = useStore.getState().token;
+  const csrfToken = getCookie('csrf-token');
+  
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
   };
 };
 
@@ -60,6 +89,7 @@ const request = async (url: string, options: RequestInit = {}) => {
     return fetch(`${API_URL}${url}`, {
       ...options,
       headers,
+      credentials: 'include',
     }).then(handleResponse);
   };
 

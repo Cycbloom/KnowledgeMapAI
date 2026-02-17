@@ -57,7 +57,7 @@ export class AIActionService {
     // Since we want to prioritize or merge, we can just fetch all accessible and filter/sort in app or let UI handle it.
     // Here we return all accessible actions.
     
-    let query = supabase.from('ai_actions').select('*');
+    const query = supabase.from('ai_actions').select('*');
     
     // If we rely on RLS, simple select is enough.
     // However, for explicit filtering:
@@ -207,7 +207,7 @@ export class AIActionService {
     // 5. Append Schema/Instructions
     const schema = ACTION_SCHEMAS[action.target_mode];
     if (schema) {
-        prompt += '\n\n' + schema;
+        prompt += `\n\n${  schema}`;
     }
 
     // 6. Call AI

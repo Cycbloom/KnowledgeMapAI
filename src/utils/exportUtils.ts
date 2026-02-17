@@ -54,7 +54,7 @@ export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): st
     // Content
     if (node.content) {
       const contentLines = node.content.split('\n');
-      const contentIndent = node.level === 'leaf' ? indent + '  ' : '';
+      const contentIndent = node.level === 'leaf' ? `${indent  }  ` : '';
       contentLines.forEach(line => {
         if (line.trim()) {
            md += `${contentIndent}${line}\n`;

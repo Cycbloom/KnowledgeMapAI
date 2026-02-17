@@ -213,7 +213,7 @@ export class PromptService {
 
     // Append fixed schema if exists
     if (OUTPUT_SCHEMAS[code]) {
-        content += '\n\n' + OUTPUT_SCHEMAS[code];
+        content += `\n\n${  OUTPUT_SCHEMAS[code]}`;
     }
     
     return content;
@@ -236,7 +236,7 @@ export class PromptService {
 
     // Fetch all relevant templates for this code
     // We fetch system templates, user templates (if userId), and graph templates (if graphId)
-    let query = supabase
+    const query = supabase
       .from('prompt_templates')
       .select('*')
       .eq('code', code);

@@ -23,7 +23,11 @@ import {
   extractConceptsSchema,
   suggestNextTopicSchema,
   ttsSchema,
-  ttsVoicesSchema
+  ttsVoicesSchema,
+  annotateTermsSchema,
+  podcastScriptSchema,
+  batchExpandGraphSchema,
+  urlToTextSchema
 } from '../schemas/index.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -58,8 +62,8 @@ router.get('/status', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // Annotate terms in text
-router.post('/annotate-terms', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { node_content, graph_id, node_id } = req.body;
+router.post('/annotate-terms', requireAuth, validate(annotateTermsSchema), async (req: AuthRequest, res: Response) => {
+  const { content, graph_id } = req.body;
   const provider = await getAIProviderForTask('text');
 
   if (!provider.hasKey) {
@@ -70,7 +74,7 @@ router.post('/annotate-terms', requireAuth, async (req: AuthRequest, res: Respon
     const systemPrompt = await promptService.getRenderedPrompt(
       supabaseAdmin,
       'annotate_terms',
-      { nodeContent: node_content },
+      { nodeContent: content },
       req.user.id,
       graph_id
     );
@@ -81,7 +85,7 @@ router.post('/annotate-terms', requireAuth, async (req: AuthRequest, res: Respon
 请返回一个 JSON 格式的数组，包含对象 { "term": "术语", "explanation": "解释" }。
 
 内容：
-${node_content}`;
+${content}`;
 
     const completion = await provider.client.chat.completions.create({
       messages: [
@@ -95,11 +99,11 @@ ${node_content}`;
       response_format: { type: "json_object" }
     });
 
-    const content = completion.choices[0].message.content || '{}';
+    const aiContent = completion.choices[0].message.content || '{}';
     let terms: { term: string, explanation: string }[] = [];
     
     try {
-        const parsed = JSON.parse(content);
+        const parsed = JSON.parse(aiContent);
         // Handle various possible JSON structures (array directly, or object with key)
         if (Array.isArray(parsed)) {
             terms = parsed;
@@ -112,17 +116,17 @@ ${node_content}`;
             if (arrayVal) terms = arrayVal as any;
         }
     } catch (e) {
-        logger.error('Failed to parse annotation terms JSON', { content, error: e });
+        logger.error('Failed to parse annotation terms JSON', { aiContent, error: e });
     }
 
     // Backend text replacement logic
-    let annotatedContent = node_content || '';
+    let annotatedContent = content || '';
     
     if (terms.length > 0) {
         const placeholders: string[] = [];
         
         // 1. Mask code blocks (```...``` and `...`) to protect them
-        annotatedContent = annotatedContent.replace(/```[\s\S]*?```|`[^`]*`/g, (match) => {
+        annotatedContent = annotatedContent.replace(/```[\s\S]*?```|`[^`]*`/g, (match: string) => {
             placeholders.push(match);
             return `__CODE_BLOCK_${placeholders.length - 1}__`;
         });
@@ -159,13 +163,6 @@ ${node_content}`;
         });
     }
 
-    // Update the node content directly
-    if (node_id && annotatedContent !== node_content) {
-        await graphService.updateNode(req.supabase!, req.user.id, graph_id, node_id, {
-            content: annotatedContent
-        });
-    }
-
     res.json({ content: annotatedContent });
 
   } catch (error: any) {
@@ -174,18 +171,11 @@ ${node_content}`;
   }
 });
 
-router.post('/podcast/script', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { context, language, graph_id } = req.body;
+router.post('/podcast/script', requireAuth, validate(podcastScriptSchema), async (req: AuthRequest, res: Response) => {
+  const { topic, content, style, duration_minutes } = req.body;
   
   try {
-    const script = await aiService.generatePodcastScript(context, language);
-
-    // Save script if graph_id is provided
-    if (graph_id) {
-        await graphService.updateGraph(req.supabase!, req.user.id, graph_id, {
-            podcast_script: script
-        });
-    }
+    const script = await aiService.generatePodcastScript(topic, content);
 
     res.json({ script });
   } catch (error: any) {
@@ -199,8 +189,7 @@ router.post('/generate-content', requireAuth, validate(generateContentSchema), a
   const provider = providerType ? await getAIProvider(providerType) : await getAIProviderForTask('text');
 
   if (!provider.hasKey) {
-    // @ts-ignore
-    return res.json({ content: getMockResponse('content', topic) });
+    return res.json({ content: getMockResponse('content', topic) as string });
   }
 
   try {
@@ -298,8 +287,6 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
   res.setHeader('Connection', 'keep-alive');
 
   if (!provider.hasKey) {
-    // Mock Streaming
-    // @ts-ignore
     const mockContent = getMockResponse('content', topic) as string;
     const chunks = mockContent.split('');
     
@@ -402,7 +389,7 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
                      node_id: node.id, 
                      node_title: node.title, 
                      node_content: node.content,
-                     config: config // Pass config (types, count) to individual task
+                     config // Pass config (types, count) to individual task
                  }, 
                  `生成题目: ${node.title}`
              );
@@ -410,7 +397,7 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
         }
     }
 
-    res.json({ success: true, taskIds: taskIds, message: `${taskIds.length} tasks started` });
+    res.json({ success: true, taskIds, message: `${taskIds.length} tasks started` });
 
   } catch (error: any) {
     logger.error('Batch Generation Error:', error);
@@ -418,12 +405,8 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
   }
 });
 
-router.post('/batch-expand-graph', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { node_ids } = req.body;
-
-  if (!node_ids || !Array.isArray(node_ids) || node_ids.length === 0) {
-    throw new AppError('请提供有效的节点ID列表', 400, ErrorCodes.VALIDATION_ERROR);
-  }
+router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema), async (req: AuthRequest, res: Response) => {
+  const { graph_id, node_ids, max_depth, provider, model } = req.body;
 
   try {
     const taskIds = [];
@@ -451,7 +434,7 @@ router.post('/batch-expand-graph', requireAuth, async (req: AuthRequest, res: Re
       }
     }
 
-    res.json({ success: true, taskIds: taskIds, message: `${taskIds.length} tasks started` });
+    res.json({ success: true, taskIds, message: `${taskIds.length} tasks started` });
 
   } catch (error: any) {
     logger.error('Batch Expand Error:', error);
@@ -508,7 +491,7 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
         .map((node: any) => {
           // Generate UUID
           const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
           });
           
@@ -684,7 +667,6 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
   res.setHeader('Connection', 'keep-alive');
 
   if (!provider.hasKey) {
-    // @ts-ignore
     const mockContent = getMockResponse('chat', message) as string;
     const chunks = mockContent.split('');
     const sendMockChunks = async () => {
@@ -750,7 +732,7 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
 
     // Truncate if too long
     if (contextText.length > MAX_CONTEXT_LENGTH) {
-      contextText = contextText.substring(0, MAX_CONTEXT_LENGTH) + "...(truncated)";
+      contextText = `${contextText.substring(0, MAX_CONTEXT_LENGTH)  }...(truncated)`;
       logger.warn('Graph context truncated due to length', { graph_id, length: contextText.length });
     }
 
@@ -894,7 +876,7 @@ router.post('/document-to-graph', requireAuth, upload.single('file'), async (req
         }
       } catch (pdfErr: any) {
         logger.error('PDF Parse detailed error:', pdfErr);
-        throw new AppError('PDF parsing failed: ' + pdfErr.message, 500, ErrorCodes.INTERNAL_ERROR);
+        throw new AppError(`PDF parsing failed: ${  pdfErr.message}`, 500, ErrorCodes.INTERNAL_ERROR);
       }
     } else {
       text = file.buffer.toString('utf-8');
@@ -984,11 +966,8 @@ router.post('/image-to-graph', requireAuth, upload.single('file'), async (req: A
   }
 });
 
-router.post('/url-to-text', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post('/url-to-text', requireAuth, validate(urlToTextSchema), async (req: AuthRequest, res: Response) => {
   const { url } = req.body;
-  if (!url) {
-    throw new AppError('URL is required', 400, ErrorCodes.VALIDATION_ERROR);
-  }
 
   try {
     const result = await scrapeUrl(url);
@@ -1030,7 +1009,7 @@ router.post('/tutor-chat', requireAuth, validate(tutorChatSchema), async (req: A
 
   try {
     // Fetch context
-    let context: any = { mode };
+    const context: any = { mode };
     
     if (graph_id) {
       const { nodes } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);

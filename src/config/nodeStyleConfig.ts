@@ -274,7 +274,7 @@ export const getCenterDotPath = (radius: number, shape: CenterDotShape): string 
       let rot = Math.PI / 2 * 3;
       const cx = 0;
       const cy = 0;
-      let step = Math.PI / spikes;
+      const step = Math.PI / spikes;
       let path = '';
       
       path += `M ${cx} ${cy - outerRadius} `;

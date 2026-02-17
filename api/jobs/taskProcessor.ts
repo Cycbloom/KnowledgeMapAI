@@ -108,7 +108,7 @@ class TaskProcessor {
             // Generate for specific type
             const aiResult = await aiService.generateCards(node_title, truncatedContent, { 
                 type: type as any, 
-                count: count,
+                count,
                 provider,
                 model
             });
@@ -118,8 +118,8 @@ class TaskProcessor {
             if (cards.length > 0) {
                 const cardsToInsert = cards.map((card: any) => ({
                     user_id: task.user_id,
-                    node_id: node_id,
-                    graph_id: graph_id, // Add graph_id
+                    node_id,
+                    graph_id, // Add graph_id
                     question: card.question,
                     answer: card.answer,
                     explanation: card.explanation, // Add explanation
@@ -277,7 +277,7 @@ class TaskProcessor {
               const { data: edge } = await supabaseAdmin
                 .from('edges')
                 .insert({
-                  graph_id: graph_id,
+                  graph_id,
                   source_node_id: node_id,
                   target_node_id: existingNode.id,
                   relationship_type: 'related'
@@ -298,7 +298,7 @@ class TaskProcessor {
           const { data: newNode, error: nodeError } = await supabaseAdmin
             .from('nodes')
             .insert({
-              graph_id: graph_id,
+              graph_id,
               title: item.title,
               content: item.content || '',
               x_position: x,
@@ -316,7 +316,7 @@ class TaskProcessor {
             const { data: edge, error: edgeError } = await supabaseAdmin
               .from('edges')
               .insert({
-                graph_id: graph_id,
+                graph_id,
                 source_node_id: node_id,
                 target_node_id: newNode.id,
                 relationship_type: 'related'

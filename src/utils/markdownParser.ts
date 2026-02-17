@@ -52,7 +52,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
       // Create new node
       currentNode = {
         id: nodeId,
-        title: title,
+        title,
         content: '', // Will accumulate content
         level,
         color,
@@ -84,7 +84,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
       const trimmedLine = line.trim();
       if (trimmedLine) {
         currentNode.content = currentNode.content 
-          ? currentNode.content + '\n' + trimmedLine 
+          ? `${currentNode.content  }\n${  trimmedLine}` 
           : trimmedLine;
       }
     }
@@ -108,7 +108,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
     const nodeId = 'md-node-1';
     nodes.push({
       id: nodeId,
-      title: title,
+      title,
       content: text,
       level: 'root',
       color: '#8B5CF6'

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Template, TemplateNode } from '../types';
 import { ChevronRight } from 'lucide-react';
 
@@ -19,11 +19,18 @@ const getNodeLevelColor = (level: string) => {
   }
 };
 
-const renderNode = (node: TemplateNode, allNodes: TemplateNode[], depth = 0) => {
-  const children = allNodes.filter(n => n.parentId === node.id);
+const TreeNode: React.FC<{
+  node: TemplateNode;
+  allNodes: TemplateNode[];
+  depth: number;
+}> = memo(({ node, allNodes, depth }) => {
+  const children = useMemo(
+    () => allNodes.filter(n => n.parentId === node.id),
+    [allNodes, node.id]
+  );
 
   return (
-    <div key={node.id} className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <div 
         className="flex items-center gap-2 py-1.5 px-3 rounded-lg transition-all hover:bg-gray-50"
         style={{ marginLeft: `${depth * 20}px` }}
@@ -37,13 +44,20 @@ const renderNode = (node: TemplateNode, allNodes: TemplateNode[], depth = 0) => 
           <span className="text-xs text-blue-500 flex-shrink-0">AI</span>
         )}
       </div>
-      {children.map(child => renderNode(child, allNodes, depth + 1))}
+      {children.map(child => (
+        <TreeNode key={child.id} node={child} allNodes={allNodes} depth={depth + 1} />
+      ))}
     </div>
   );
-};
+});
 
-export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ template }) => {
-  const rootNode = template.nodes.find(n => !n.parentId);
+TreeNode.displayName = 'TreeNode';
+
+const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({ template }) => {
+  const rootNode = useMemo(
+    () => template.nodes.find(n => !n.parentId),
+    [template.nodes]
+  );
 
   if (!rootNode) {
     return (
@@ -56,8 +70,10 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({ template }) =>
   return (
     <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 max-h-80 overflow-y-auto">
       <div className="flex flex-col gap-1">
-        {renderNode(rootNode, template.nodes)}
+        <TreeNode node={rootNode} allNodes={template.nodes} depth={0} />
       </div>
     </div>
   );
 };
+
+export const TemplatePreview = memo(TemplatePreviewComponent);

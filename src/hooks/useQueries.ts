@@ -261,7 +261,7 @@ export const useCreateNodeMutation = () => {
         
         // Create a temporary node
         const tempNode: Node = {
-          id: 'temp-' + Date.now(),
+          id: `temp-${  Date.now()}`,
           ...newNodeVariables,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -414,7 +414,7 @@ export const useCreateEdgeMutation = () => {
          if (!old) return { nodes: [], edges: [] };
          
          const tempEdge: Edge = {
-             id: 'temp-edge-' + Date.now(),
+             id: `temp-edge-${  Date.now()}`,
              ...edgeData,
           };
          

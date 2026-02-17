@@ -797,7 +797,7 @@ export const calculateEdgeStrength = (
   return {
     score: Math.min(Math.max(score, 0), 1), // Clamp to 0-1
     factors: {
-      relationshipType: relationshipType,
+      relationshipType,
       commonConnections: normalizedCommonConnections,
       pathCount: normalizedPathCount
     }

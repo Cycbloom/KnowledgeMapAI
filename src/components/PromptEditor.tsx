@@ -36,7 +36,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
         const text = textarea.value;
         const before = text.substring(0, start);
         const after = text.substring(end, text.length);
-        const newContent = before + `{{${variable}}}` + after;
+        const newContent = `${before  }{{${variable}}}${  after}`;
         setContent(newContent);
         
         // Restore focus and cursor position after render
@@ -46,7 +46,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
             textarea.setSelectionRange(newPos, newPos);
         }, 0);
     } else {
-        setContent(prev => prev + ` {{${variable}}}`);
+        setContent(prev => `${prev  } {{${variable}}}`);
     }
   };
 
@@ -64,7 +64,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
     } catch (error) {
       console.error("Optimization failed", error);
       // Ideally show a toast here
-      alert('优化失败: ' + (error as any).message);
+      alert(`优化失败: ${  (error as any).message}`);
     } finally {
       setIsOptimizing(false);
     }
@@ -76,7 +76,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       await onSave(content);
     } catch (error) {
         console.error("Save failed", error);
-        alert('保存失败: ' + (error as any).message);
+        alert(`保存失败: ${  (error as any).message}`);
     } finally {
       setIsSaving(false);
     }

@@ -117,16 +117,16 @@ export class AliyunProvider extends BaseAIProvider {
                 // 'X-DashScope-Async': 'enable' // Removed to fix AccessDenied
             },
             body: JSON.stringify({
-                model: model,
+                model,
                 input: {
-                    text: text,
-                    voice: voice,
+                    text,
+                    voice,
                     language_type: 'Chinese' // Default to Chinese context as per user preference
                 },
                 parameters: {
                     // Qwen3-TTS might not support all these, but standard DashScope usually allows them in parameters
                     rate: speed, 
-                    format: format
+                    format
                 }
             })
         });

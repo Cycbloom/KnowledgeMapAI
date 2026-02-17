@@ -349,7 +349,7 @@ export const GraphEditor = () => {
     handlers: {
       'showHelp': () => setIsShortcutHelpOpen(true),
       'openCommandPalette': () => setIsCommandPaletteOpen(prev => !prev),
-      'toggleTheme': toggleTheme,
+      toggleTheme,
       'setViewMode:mindmap': () => setViewMode('mindmap'),
       'setViewMode:timeline': () => setViewMode('timeline'),
       'setViewMode:tree': () => setViewMode('tree'),
@@ -593,7 +593,7 @@ export const GraphEditor = () => {
                 nodes={nodes}
                 edges={edges}
                 nodeStatus={nodeStatus}
-                selectedNodeId={selectedNode?.id}
+                selectedNodeId={selectedNode?.id ?? null}
                 onNodeClick={handleNodeClick}
                 sidebarMode={sidebarMode}
                 focusedNodeIds={focusedNodeIds}
@@ -768,7 +768,7 @@ export const GraphEditor = () => {
                       ...prev.filter(item => item.nodeId !== parentNode.id),
                       {
                         nodeId: parentNode.id,
-                        branches: branches,
+                        branches,
                         selectedBranchId: selectedSuggestion.id
                       }
                     ]);
@@ -991,7 +991,7 @@ export const GraphEditor = () => {
                   ...prev.filter(item => item.nodeId !== parentNode.id),
                   {
                     nodeId: parentNode.id,
-                    branches: branches,
+                    branches,
                     selectedBranchId: selectedSuggestion.id
                   }
                 ]);
@@ -1091,7 +1091,7 @@ export const GraphEditor = () => {
             });
             addMessage({ content: '连接已创建', type: 'success' });
           } catch (error: any) {
-            addMessage({ content: '创建连接失败: ' + (error.message || '未知错误'), type: 'error' });
+            addMessage({ content: `创建连接失败: ${  error.message || '未知错误'}`, type: 'error' });
           }
         }}
       />

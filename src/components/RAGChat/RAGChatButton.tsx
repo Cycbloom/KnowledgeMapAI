@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, GraduationCap } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
+import { TutorMode } from '../../types';
 
 interface SimpleRAGChatButtonProps {
   isDark: boolean;
@@ -46,10 +47,10 @@ interface RAGChatButtonProps {
   selectedNodeIds?: string[];
   aiEnabled?: boolean;
   isTutorMode?: boolean;
-  tutorMode?: 'free' | 'guided';
+  tutorMode?: TutorMode;
   extractedConcepts?: any[];
   onToggleTutorMode?: () => void;
-  onSwitchTutorMode?: (mode: 'free' | 'guided') => void;
+  onSwitchTutorMode?: (mode: TutorMode) => void;
   onExtractConcepts?: (text: string) => void;
   onAddConceptToGraph?: (concept: any) => void;
   onAddAllConcepts?: () => void;

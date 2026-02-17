@@ -69,7 +69,7 @@ export const useFocusStore = create<FocusState>()(
       },
       
       tick: () => {
-        const { timeLeft, isActive, mode, soundEnabled } = get();
+        const { timeLeft, isActive, soundEnabled } = get();
         if (!isActive) return;
         
         if (timeLeft > 0) {

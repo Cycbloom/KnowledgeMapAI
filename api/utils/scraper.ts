@@ -60,7 +60,7 @@ export async function scrapeUrl(url: string): Promise<{ title: string; text: str
 
     // Truncate if too huge (AI context limit protection)
     if (content.length > 50000) {
-      content = content.substring(0, 50000) + '... (truncated)';
+      content = `${content.substring(0, 50000)  }... (truncated)`;
     }
 
     logger.info(`Scraped ${content.length} chars from ${url}`);

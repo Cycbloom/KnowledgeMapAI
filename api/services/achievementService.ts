@@ -249,7 +249,7 @@ export class AchievementService {
     }
 
     let streak = 0;
-    let currentDate = new Date();
+    const currentDate = new Date();
     // Normalize to YYYY-MM-DD
     const dateString = (d: Date) => d.toISOString().split('T')[0];
     
@@ -262,7 +262,7 @@ export class AchievementService {
       // If Today has data, streak = 1. Then check Yesterday.
       // If Today no data, check Yesterday. If Yesterday has data, streak = 1.
       
-      let checkDate = new Date();
+      const checkDate = new Date();
       // If today has no data, start from yesterday
       if (!dates.has(dateString(checkDate))) {
         checkDate.setDate(checkDate.getDate() - 1);

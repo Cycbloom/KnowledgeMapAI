@@ -148,6 +148,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       }, 500);
       return () => clearTimeout(enterTimer);
     }
+    return undefined;
   }, [isNew]);
 
   const getAnimationTransform = () => {

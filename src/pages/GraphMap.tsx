@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
@@ -13,7 +13,7 @@ import { AIExpansionPanel } from '../components/GraphMap/AIExpansionPanel';
 import { PromptEditor } from '../components/PromptEditor';
 import type { Graph, GraphRelation, GraphMapFilterMode, GraphRelationType, QuickCreateGraphRequest, MapAnalysisResult, InfiniteExpansionProgress } from '../types';
 
-export const GraphMap: React.FC = () => {
+export const GraphMap = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -52,10 +52,10 @@ export const GraphMap: React.FC = () => {
     },
   });
 
-  const graphs = mapData?.graphs || [];
-  const relations = mapData?.relations || [];
+  const graphs: Graph[] = mapData?.graphs || [];
+  const relations: GraphRelation[] = mapData?.relations || [];
 
-  const fromGraph = graphs.find(g => g.id === fromGraphId);
+  const fromGraph = graphs.find((g: Graph) => g.id === fromGraphId);
 
   const handleGraphClick = useCallback((graph: Graph) => {
     setSelectedGraphId(graph.id);
@@ -168,7 +168,7 @@ export const GraphMap: React.FC = () => {
     if (!selectedGraphId) return null;
     
     try {
-      const graph = graphs.find(g => g.id === selectedGraphId);
+      const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
       if (!graph) return null;
       
       const result = await api.autoGraph.init({
@@ -358,11 +358,11 @@ export const GraphMap: React.FC = () => {
         {selectedGraphId && (
           <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 max-w-xs">
             {(() => {
-              const graph = graphs.find(g => g.id === selectedGraphId);
+              const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
               if (!graph) return null;
               
               const graphRelations = relations.filter(
-                r => r.source_graph_id === selectedGraphId || r.target_graph_id === selectedGraphId
+                (r: GraphRelation) => r.source_graph_id === selectedGraphId || r.target_graph_id === selectedGraphId
               );
               
               return (
@@ -440,10 +440,10 @@ export const GraphMap: React.FC = () => {
                         相关图谱
                       </h4>
                       <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {graphRelations.slice(0, 5).map(relation => {
+                        {graphRelations.slice(0, 5).map((relation: GraphRelation) => {
                           const isSource = relation.source_graph_id === selectedGraphId;
                           const otherGraphId = isSource ? relation.target_graph_id : relation.source_graph_id;
-                          const otherGraph = graphs.find(g => g.id === otherGraphId);
+                          const otherGraph = graphs.find((g: Graph) => g.id === otherGraphId);
                           
                           if (!otherGraph) return null;
                           

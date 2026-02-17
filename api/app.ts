@@ -13,8 +13,7 @@ import path from 'path'
 import dotenv from 'dotenv'
 import helmet from 'helmet'
 import compression from 'compression'
-import rateLimit from 'express-rate-limit'
-import { RedisStore } from 'rate-limit-redis'
+import cookieParser from 'cookie-parser'
 import { fileURLToPath } from 'url'
 import redisClient from './utils/redis.js'
 import authRoutes from './routes/auth.js'
@@ -37,20 +36,28 @@ import autoGraphRoutes from './routes/autoGraph.js'
 import learningPathRoutes from './routes/learningPath.js'
 import graphRelationsRoutes from './routes/graphRelations.js'
 import healthRoutes from './routes/health.js'
+import analyticsRoutes from './routes/analytics.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 
 // for esm mode
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const _filename = fileURLToPath(import.meta.url)
+const _dirname = path.dirname(_filename)
 
 // load env
 dotenv.config()
 
 import { errorHandler } from './middleware/errorHandler.js'
+import { csrfProtection, getCsrfToken } from './middleware/csrf.js'
+import { rateLimiters } from './middleware/rateLimiter.js'
+import { requestLogger, slowRequestLogger } from './middleware/requestLogger.js'
 import { logger } from './utils/logger.js'
 
 const app: express.Application = express()
+
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+app.use(cookieParser())
 
 // Security Headers
 app.use(helmet())
@@ -72,34 +79,6 @@ app.use(compression({
 // Trust Proxy (Required for correct IP rate limiting behind proxies like Vercel/Nginx)
 app.set('trust proxy', 1);
 
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs (approx 1 req/sec)
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  store: redisClient ? new RedisStore({
-    // @ts-expect-error - Known issue with types compatibility
-    sendCommand: (...args: string[]) => redisClient!.call(...args),
-  }) : undefined,
-  message: { success: false, error: 'Too many requests, please try again later.' }
-})
-app.use('/api', limiter)
-
-// AI Rate Limiting (Stricter)
-const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // limit each IP to 50 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: redisClient ? new RedisStore({
-    // @ts-expect-error
-    sendCommand: (...args: string[]) => redisClient!.call(...args),
-    prefix: 'rl:ai:'
-  }) : undefined,
-  message: { success: false, error: 'AI request quota exceeded, please try again later.' }
-})
-
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
@@ -119,19 +98,26 @@ app.use(cors({
   },
   credentials: true
 }))
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+app.use(csrfProtection)
+
+app.use(requestLogger)
+app.use(slowRequestLogger(2000))
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.get('/api/csrf-token', getCsrfToken)
+
+app.use('/api/auth', rateLimiters.auth, authRoutes)
+app.use('/api/ai', rateLimiters.ai, aiRoutes)
 
 /**
  * API Routes
  */
-app.use('/api/auth', authRoutes)
+app.use('/api/auth', rateLimiters.auth, authRoutes)
 app.use('/api/graphs', graphRelationsRoutes)
 app.use('/api/graphs', graphRoutes)
-app.use('/api', nodeRoutes) // /api/nodes, /api/edges
-app.use('/api/ai', aiLimiter, aiRoutes)
+app.use('/api', nodeRoutes)
+app.use('/api/ai', rateLimiters.ai, aiRoutes)
 app.use('/api/study', studyRoutes)
 app.use('/api/data', dataRoutes)
 app.use('/api/dashboard', dashboardRoutes)
@@ -144,9 +130,10 @@ app.use('/api/ai-actions', aiActionRoutes)
 app.use('/api/focus', focusRoutes)
 app.use('/api/achievements', achievementRoutes)
 app.use('/api/rag', ragRoutes)
-app.use('/api/auto-graph', aiLimiter, autoGraphRoutes)
+app.use('/api/auto-graph', rateLimiters.aiHeavy, autoGraphRoutes)
 app.use('/api/learning-path', learningPathRoutes)
 app.use('/api/health', healthRoutes)
+app.use('/api/analytics', analyticsRoutes)
 
 /**
  * health

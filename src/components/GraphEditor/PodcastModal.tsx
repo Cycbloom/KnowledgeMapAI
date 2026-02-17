@@ -74,8 +74,8 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
       });
       
       const contextNodes = priorityNodes.slice(0, 15); // Top 15 nodes
-      const contextText = `Graph Title: ${graphTitle}\n\nNodes:\n` + 
-        contextNodes.map(n => `- ${n.title}: ${n.content || ''}`).join('\n');
+      const contextText = `Graph Title: ${graphTitle}\n\nNodes:\n${  
+        contextNodes.map(n => `- ${n.title}: ${n.content || ''}`).join('\n')}`;
 
       const response = await api.ai.generatePodcastScript(contextText, 'zh', graphId);
       // Clean up potential code blocks from AI response
@@ -85,7 +85,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
         .replace(/\s*```$/, '');
       setScript(cleanedScript);
     } catch (error: any) {
-      addMessage({ type: 'error', content: '脚本生成失败: ' + error.message });
+      addMessage({ type: 'error', content: `脚本生成失败: ${  error.message}` });
     } finally {
       setIsGenerating(false);
     }

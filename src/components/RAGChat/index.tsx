@@ -120,6 +120,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+    return undefined;
   }, [chatState.isResizing, handleMouseMove, handleMouseUp]);
 
   const scrollToBottom = useCallback(() => {

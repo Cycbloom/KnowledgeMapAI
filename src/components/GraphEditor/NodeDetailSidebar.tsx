@@ -82,7 +82,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   const colors = getStatusColors(status, isDark);
 
   const isAccepted = node.is_accepted !== false;
-  const tags = node.tags || node.properties?.tags || [];
+  const tags: string[] = node.tags || node.properties?.tags || [];
 
   // Navigation Logic
   const parentNode = React.useMemo(() => {

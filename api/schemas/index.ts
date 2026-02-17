@@ -307,3 +307,112 @@ export const ttsSchema = z.object({
 });
 
 export const ttsVoicesSchema = z.object({});
+
+// --- Additional AI Schemas ---
+export const annotateTermsSchema = z.object({
+  content: z.string().min(1, '内容不能为空'),
+  graph_id: z.string().uuid('无效的图谱ID').optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
+export const podcastScriptSchema = z.object({
+  topic: z.string().min(1, '主题不能为空'),
+  content: z.string().optional(),
+  style: z.enum(['conversational', 'lecture', 'interview']).optional(),
+  duration_minutes: z.number().min(1).max(60).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
+export const batchExpandGraphSchema = z.object({
+  graph_id: z.string().uuid('无效的图谱ID'),
+  node_ids: z.array(z.string().uuid()).min(1, '至少需要一个节点'),
+  max_depth: z.number().min(1).max(5).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+  model: z.string().optional(),
+});
+
+export const urlToTextSchema = z.object({
+  url: z.string().url('无效的URL格式'),
+});
+
+// --- Auto Graph Schemas ---
+export const saveNodesSchema = z.object({
+  graph_id: z.string().uuid('无效的图谱ID'),
+  nodes: z.array(z.object({
+    id: z.string().optional(),
+    title: z.string().min(1, '节点标题不能为空'),
+    content: z.string().optional(),
+    level: z.enum(['root', 'core', 'sub', 'normal', 'leaf']).optional(),
+    parentId: z.string().optional(),
+  })).min(1, '至少需要一个节点'),
+});
+
+// --- Node Batch Operations ---
+export const batchUpdatePositionsSchema = z.object({
+  positions: z.array(z.object({
+    id: z.string().uuid('无效的节点ID'),
+    x_position: z.number(),
+    y_position: z.number(),
+  })).min(1, '至少需要一个节点位置'),
+});
+
+// --- Data Import Schemas ---
+export const importMarkdownSchema = z.object({
+  graph_id: z.string().uuid('无效的图谱ID').optional(),
+  title: z.string().min(1, '标题不能为空').optional(),
+});
+
+// --- Achievement Schemas ---
+export const checkAchievementsSchema = z.object({
+  type: z.enum(['study', 'focus', 'graph', 'streak']).optional(),
+});
+
+export const dailyCheckInSchema = z.object({});
+
+// --- AI Actions Schemas ---
+export const createAIActionSchema = z.object({
+  name: z.string().min(1, '名称不能为空'),
+  description: z.string().optional(),
+  trigger: z.enum(['manual', 'auto', 'scheduled']),
+  config: z.record(z.any()).optional(),
+});
+
+export const updateAIActionSchema = z.object({
+  name: z.string().min(1, '名称不能为空').optional(),
+  description: z.string().optional(),
+  config: z.record(z.any()).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export const executeAIActionSchema = z.object({
+  action_id: z.string().uuid('无效的操作ID'),
+  params: z.record(z.any()).optional(),
+});
+
+// --- Prompt Schemas ---
+export const createPromptSchema = z.object({
+  name: z.string().min(1, '名称不能为空'),
+  content: z.string().min(1, '内容不能为空'),
+  category: z.enum(['graph', 'study', 'chat', 'custom']).optional(),
+  variables: z.array(z.string()).optional(),
+});
+
+export const optimizePromptSchema = z.object({
+  prompt: z.string().min(1, '提示词不能为空'),
+  goal: z.enum(['clarity', 'specificity', 'creativity', 'structure']).optional(),
+  provider: z.enum(['deepseek', 'volcengine', 'aliyun']).optional(),
+});
+
+// --- Task Schemas ---
+export const createTaskSchema = z.object({
+  type: z.enum(['graph_expansion', 'card_generation', 'content_analysis', 'custom']),
+  payload: z.record(z.any()),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+});
+
+// --- Relation Delete Schemas ---
+export const deleteRelationSchema = z.object({
+  relationId: z.string().uuid('无效的关系ID'),
+});

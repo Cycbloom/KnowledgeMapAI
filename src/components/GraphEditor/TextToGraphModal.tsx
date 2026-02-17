@@ -194,7 +194,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         try {
           const result = await documentToGraphMutation.mutateAsync({
             graph_id: graphId,
-            file: file
+            file
           });
           
           if (!result.nodes || result.nodes.length === 0) {
@@ -249,7 +249,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
            addMessage({ type: 'success', content: '文件解析成功' });
          } catch (err: any) {
            console.error(err);
-           addMessage({ type: 'error', content: '解析失败: ' + err.message });
+           addMessage({ type: 'error', content: `解析失败: ${  err.message}` });
          }
        };
        reader.readAsText(file);

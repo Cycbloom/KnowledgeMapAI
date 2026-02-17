@@ -9,7 +9,7 @@
 export class TemplateEngine {
   static render(template: string, context: Record<string, any>): string {
     if (!template) return '';
-    let result = template;
+    const result = template;
 
     // 1. Handle Conditionals (Recursively)
     // Match {{#if key}} content {{/if}} or {{#if key}} content {{else}} content {{/if}}
@@ -25,7 +25,7 @@ export class TemplateEngine {
     // To handle nesting correctly without a full parser, we can process from the "innermost" but that's hard to identify.
     // Given the project constraints, I'll implement a simple parser.
 
-    let tokens = result.split(/(\{\{#if\s+\w+\}\}|\{\{else\}\}|\{\{\/if\}\})/);
+    const tokens = result.split(/(\{\{#if\s+\w+\}\}|\{\{else\}\}|\{\{\/if\}\})/);
     // This split isn't quite right for capturing content.
     
     // Let's go with a simpler regex replacement loop that handles non-nested or simple nested.

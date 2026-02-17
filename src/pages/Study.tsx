@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
@@ -7,7 +7,7 @@ import { StudyCardPreview } from '../components/Study/StudyCardPreview';
 import { StudyCardDetailModal } from '../components/Study/StudyCardDetailModal';
 import { FocusStats } from '../components/Study/FocusStats';
 import { StatsOverview } from '../components/StatsOverview';
-import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info, Activity, Flame, Target, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Search, ArrowLeft, Play, LayoutGrid, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Activity, Flame, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -278,7 +278,7 @@ export const Study = () => {
   const currentCard = quizCards[currentCardIndex];
 
   // Safely parse options if they are stored as a JSON string
-  const currentOptions = useMemo(() => {
+  const currentOptions: string[] = useMemo(() => {
     if (!currentCard?.options) return [];
     if (Array.isArray(currentCard.options)) return currentCard.options;
     try {
@@ -937,7 +937,7 @@ export const Study = () => {
                       
                       {isStackChoice && stackCardOptions.length > 0 && (
                         <div className="flex flex-col gap-1.5">
-                          {stackCardOptions.slice(0, 4).map((option, idx) => (
+                          {stackCardOptions.slice(0, 4).map((option: string, idx: number) => (
                             <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg text-sm ${
                               isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-gray-50 text-gray-600'
                             }`}>
@@ -954,7 +954,7 @@ export const Study = () => {
                       
                       {isStackMultiChoice && stackCardOptions.length > 0 && (
                         <div className="flex flex-col gap-1.5">
-                          {stackCardOptions.slice(0, 4).map((option, idx) => (
+                          {stackCardOptions.slice(0, 4).map((option: string, idx: number) => (
                             <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg text-sm ${
                               isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-gray-50 text-gray-600'
                             }`}>
@@ -1113,7 +1113,7 @@ export const Study = () => {
                   {/* Options Section */}
                   {isChoice && currentOptions.length > 0 && (
                     <div className="flex flex-col gap-2 mt-4">
-                      {currentOptions.map((option, idx) => {
+                      {currentOptions.map((option: string, idx: number) => {
                         const isSelected = selectedOption === option;
                         const isCorrect = option === currentCard.answer;
                         
@@ -1153,7 +1153,7 @@ export const Study = () => {
 
                   {isMultiChoice && currentOptions.length > 0 && (
                     <div className="flex flex-col gap-2 mt-4">
-                      {currentOptions.map((option, idx) => {
+                      {currentOptions.map((option: string, idx: number) => {
                         const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
                         const isSelected = selectedList.includes(option);
                         let correctList: string[] = [];

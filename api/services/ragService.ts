@@ -155,14 +155,14 @@ export class RAGService {
 
     let context = '';
     if (currentNodeContext) {
-      context += currentNodeContext + '\n';
+      context += `${currentNodeContext  }\n`;
     }
     if (sourcesContext) {
-      context += '[相关知识节点]\n' + sourcesContext;
+      context += `[相关知识节点]\n${  sourcesContext}`;
     }
 
     if (context.length > maxContextLength) {
-      context = context.substring(0, maxContextLength) + '...(内容已截断)';
+      context = `${context.substring(0, maxContextLength)  }...(内容已截断)`;
     }
 
     return { context, sources: searchResults };

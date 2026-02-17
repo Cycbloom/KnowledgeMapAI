@@ -154,7 +154,7 @@ export const Dashboard = () => {
         addMessage({ content: '导入成功!', type: 'success' });
       } catch (err: any) {
         console.error(err);
-        addMessage({ content: '导入失败: ' + (err.message || '格式错误'), type: 'error' });
+        addMessage({ content: `导入失败: ${  err.message || '格式错误'}`, type: 'error' });
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = '';
       }

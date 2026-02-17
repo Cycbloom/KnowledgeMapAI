@@ -30,6 +30,10 @@ router.post('/sessions', requireAuth, validate(createSessionSchema), async (req:
   const { duration, mode, start_time, end_time, completed = true } = req.body;
   const supabase = req.supabase;
 
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database connection not available' });
+  }
+
   const { data, error } = await supabase
     .from('focus_sessions')
     .insert({
@@ -67,6 +71,10 @@ router.post('/sessions', requireAuth, validate(createSessionSchema), async (req:
 router.get('/stats', requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   const userId = req.user?.id;
+
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database connection not available' });
+  }
 
   // Get all sessions for the user
   const { data: sessions, error } = await supabase

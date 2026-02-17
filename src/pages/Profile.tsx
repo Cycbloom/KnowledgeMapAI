@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogoutMutation, useUser } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';

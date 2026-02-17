@@ -48,7 +48,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
     const actionData = {
         ...editingAction,
         prompt_template: content,
-        scope: scope,
+        scope,
         graph_id: scope === 'graph' ? graphId : undefined
     };
 
@@ -79,7 +79,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
           name: '新动作',
           description: '',
           target_mode: 'show_result',
-          scope: scope,
+          scope,
           prompt_template: '{{nodeContent}}'
       });
       setIsCreating(true);
@@ -90,7 +90,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
           ...action,
           id: undefined, // Clear ID to create new
           name: `${action.name} (副本)`,
-          scope: scope, // Set to current scope
+          scope, // Set to current scope
           graph_id: scope === 'graph' ? graphId : undefined,
           user_id: undefined // Let backend handle user_id
       });

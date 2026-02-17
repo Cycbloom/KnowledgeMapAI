@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAIStatus, useUpdateProfileMutation, useUser } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
-import { Cpu, KeyRound, Brain, Save, Palette, Sun, Moon, Monitor, Plus, Trash2, ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
+import { Cpu, KeyRound, Brain, Save, Palette, Sun, Moon, Monitor, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { AvailableModels } from '../types';
 
 export const Settings = () => {

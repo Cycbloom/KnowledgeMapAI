@@ -88,7 +88,7 @@ export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose })
       
       {ttsEngine === 'browser' && (
         <div className="space-y-1 max-h-24 overflow-y-auto">
-          {voices.map((voice, index) => (
+          {(voices as SpeechSynthesisVoice[]).map((voice: SpeechSynthesisVoice, index: number) => (
             <button
               key={index}
               onClick={() => handleVoiceChange(voice)}

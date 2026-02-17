@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Template, TemplateCategory } from '../types';
 import { TemplateCard } from './TemplateCard';
 import { TemplatePreview } from './TemplatePreview';
@@ -18,6 +18,8 @@ const categoryLabels: Record<TemplateCategory, string> = {
   custom: '自定义',
 };
 
+const CATEGORIES = ['all', 'learning', 'story', 'project', 'analysis', 'custom'] as const;
+
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onSelectTemplate,
   onCancel,
@@ -29,32 +31,56 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 6;
 
-  const filteredTemplates = templates.filter(t => {
-    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredTemplates = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return templates.filter((t: Template) => {
+      const matchesSearch = t.name.toLowerCase().includes(query) ||
+        (t.description && t.description.toLowerCase().includes(query));
+      const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [templates, searchQuery, selectedCategory]);
 
   const totalPages = Math.ceil(filteredTemplates.length / itemsPerPage);
-  const displayedTemplates = filteredTemplates.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
+  
+  const displayedTemplates = useMemo(() => {
+    return filteredTemplates.slice(
+      currentPage * itemsPerPage,
+      (currentPage + 1) * itemsPerPage
+    );
+  }, [filteredTemplates, currentPage, itemsPerPage]);
 
-  const handleSelectTemplate = (template: Template) => {
+  const handleSelectTemplate = useCallback((template: Template) => {
     setSelectedTemplate(template);
-  };
+  }, []);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     if (selectedTemplate) {
       onSelectTemplate(selectedTemplate);
     }
-  };
+  }, [selectedTemplate, onSelectTemplate]);
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     onSelectTemplate(null);
-  };
+  }, [onSelectTemplate]);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(0);
+  }, []);
+
+  const handleCategoryChange = useCallback((cat: TemplateCategory | 'all') => {
+    setSelectedCategory(cat);
+    setCurrentPage(0);
+  }, []);
+
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage(p => Math.max(0, p - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(p => Math.min(totalPages - 1, p + 1));
+  }, [totalPages]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -77,22 +103,16 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 type="text"
                 placeholder="搜索模板..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(0);
-                }}
+                onChange={handleSearchChange}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
               />
             </div>
 
             <div className="flex gap-2">
-              {(['all', 'learning', 'story', 'project', 'analysis', 'custom'] as const).map((cat) => (
+              {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    setCurrentPage(0);
-                  }}
+                  onClick={() => handleCategoryChange(cat)}
                   className={`px-4 py-2.5 rounded-xl font-medium transition-all ${
                     selectedCategory === cat
                       ? 'bg-blue-600 text-white'
@@ -123,7 +143,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  {displayedTemplates.map((template) => (
+                  {displayedTemplates.map((template: Template) => (
                     <TemplateCard
                       key={template.id}
                       template={template}
@@ -136,7 +156,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2">
                     <button
-                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                      onClick={handlePrevPage}
                       disabled={currentPage === 0}
                       className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -146,7 +166,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                       第 {currentPage + 1} / {totalPages} 页
                     </span>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                      onClick={handleNextPage}
                       disabled={currentPage === totalPages - 1}
                       className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >

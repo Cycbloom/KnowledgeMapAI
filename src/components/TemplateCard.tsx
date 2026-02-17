@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Template, TemplateCategory } from '../types';
 import { BookOpen, FileText, Briefcase, PieChart, Sparkles } from 'lucide-react';
 
@@ -32,7 +32,7 @@ const categoryLabels: Record<TemplateCategory, string> = {
   custom: '自定义',
 };
 
-export const TemplateCard: React.FC<TemplateCardProps> = ({
+const TemplateCardComponent: React.FC<TemplateCardProps> = ({
   template,
   isSelected = false,
   onClick,
@@ -79,3 +79,5 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
     </div>
   );
 };
+
+export const TemplateCard = memo(TemplateCardComponent);

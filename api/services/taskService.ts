@@ -39,8 +39,8 @@ export class TaskService {
       .from('tasks')
       .insert({
         user_id: userId,
-        type: type,
-        name: name,
+        type,
+        name,
         status: 'pending',
         payload: payload || {}
       })
@@ -427,7 +427,7 @@ export class TaskService {
 
           try {
             const expandPrompt = await this.getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
-              nodeTitle: nodeTitle,
+              nodeTitle,
               nodeContent: '',
               nodeLevel: 'core',
               isAcademic: style === 'academic',
@@ -499,7 +499,7 @@ export class TaskService {
 
           try {
             const expandPrompt = await this.getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
-              nodeTitle: nodeTitle,
+              nodeTitle,
               nodeContent: '',
               nodeLevel: 'sub',
               isAcademic: style === 'academic',
@@ -673,7 +673,7 @@ export class TaskService {
               .is('deleted_at', null)
               .maybeSingle();
 
-            let targetGraphId: string;
+            let targetGraphId: string | undefined;
             let isNew = false;
 
             if (existingGraph) {
@@ -694,7 +694,7 @@ export class TaskService {
                 isNew = true;
                 totalGraphsCreated++;
 
-                if (auto_generate_nodes) {
+                if (auto_generate_nodes && targetGraphId) {
                   await this.updateTaskStatus(supabase, taskId, 'processing', { 
                     stage: 'generating_nodes',
                     progress: Math.min(95, progress + 2),
@@ -724,7 +724,7 @@ export class TaskService {
                     depth: current.depth + 1,
                     node_count: nodeCount
                   });
-                } else {
+                } else if (targetGraphId) {
                   createdGraphs.push({
                     id: targetGraphId,
                     title: suggestion.title,
@@ -734,15 +734,17 @@ export class TaskService {
                   });
                 }
 
-                queue.push({
-                  graphId: targetGraphId,
-                  graphTitle: suggestion.title,
-                  depth: current.depth + 1
-                });
+                if (targetGraphId) {
+                  queue.push({
+                    graphId: targetGraphId,
+                    graphTitle: suggestion.title,
+                    depth: current.depth + 1
+                  });
+                }
               }
             }
 
-            if (isNew || existingGraph) {
+            if ((isNew || existingGraph) && targetGraphId) {
               let sourceId = current.graphId;
               let targetId = targetGraphId;
               
@@ -781,8 +783,8 @@ export class TaskService {
         total_graphs_created: totalGraphsCreated,
         total_nodes_created: totalNodesCreated,
         created_graphs: createdGraphs,
-        source_graph_id: source_graph_id,
-        source_graph_title: source_graph_title
+        source_graph_id,
+        source_graph_title
       }, undefined, userId);
 
     } catch (error: any) {

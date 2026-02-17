@@ -426,7 +426,7 @@ export class GraphService {
     // 4. If neighbor becomes 0, add to candidates.
     // 5. From candidates, pick the one that is a CHILD of the last visited node (to maintain continuity) OR closest in hierarchy.
     
-    let candidates = [...queue];
+    const candidates = [...queue];
     let lastVisitedId: string | null = null;
 
     while (candidates.length > 0) {
@@ -805,7 +805,7 @@ export class GraphService {
     
     nodes.forEach(node => {
       const level = node.level || 'normal';
-      if (levelDistribution.hasOwnProperty(level)) {
+      if (level in levelDistribution) {
         levelDistribution[level]++;
       }
     });

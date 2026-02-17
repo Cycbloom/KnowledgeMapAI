@@ -41,7 +41,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   const adjustHeight = (el: HTMLTextAreaElement | null) => {
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
+    el.style.height = `${el.scrollHeight  }px`;
   };
 
   useEffect(() => {

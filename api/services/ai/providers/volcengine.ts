@@ -21,7 +21,6 @@ export class VolcengineProvider extends BaseAIProvider {
         model: this.embeddingModel,
         input: text,
         encoding_format: 'float',
-        // @ts-ignore - Some SDK versions might not have dimensions in types
         dimensions: 1024, 
       });
       return response.data[0].embedding;
@@ -43,7 +42,7 @@ export class VolcengineProvider extends BaseAIProvider {
       input: [
         {
           type: "text",
-          text: text
+          text
         }
       ],
       dimensions: 1024,

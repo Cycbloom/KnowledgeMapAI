@@ -374,7 +374,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     setIsSaving(true);
 
     try {
-      let targetGraphId = graphId;
+      let targetGraphId: string | undefined = graphId;
       
       if (!targetGraphId) {
         const createResult = await api.graphs.create({
@@ -382,7 +382,14 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           description: rootNode.content
         });
         targetGraphId = createResult.id;
-        setCreatedGraphId(targetGraphId);
+        if (targetGraphId) {
+          setCreatedGraphId(targetGraphId);
+        }
+      }
+
+      if (!targetGraphId) {
+        handleError(new Error('Failed to create graph'), { context: 'SaveGraph', fallbackMessage: '创建图谱失败' });
+        return;
       }
 
       const allNodes = collectAllNodes(rootNode);

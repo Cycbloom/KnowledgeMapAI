@@ -113,7 +113,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
               nodes={nodes} 
               edges={edges}
               onNodeClick={interactionOps.handleNodeClick} 
-              selectedNodeId={selectedNode?.id}
+              selectedNodeId={selectedNode?.id ?? null}
               selectedNodeIds={selectedNodeIds}
               onSelectionChange={setSelectedNodeIds}
               onBatchAction={(action: string, data?: any) => {

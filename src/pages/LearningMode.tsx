@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { TermTooltip } from '../components/TermTooltip';
@@ -19,7 +19,7 @@ import { preprocessMarkdown } from '../utils/markdownUtils';
 import { GraphOutline } from '../components/GraphEditor/GraphOutline';
 import { GenerateCardsModal } from '../components/LearningMode/GenerateCardsModal';
 import { LearningPathPanel } from '../components/LearningPath/LearningPathPanel';
-import { Node, NodeLevel } from '../types';
+import { NodeLevel } from '../types';
 
 type Message = {
   id: string;
@@ -295,7 +295,7 @@ export const LearningMode = () => {
         {
           message: userMessage.content,
           graph_id: graphId || '', // Might be empty if not passed, handled by backend gracefully?
-          history: history,
+          history,
           context_node_ids: nodeId ? [nodeId] : undefined
         },
         (chunk) => {

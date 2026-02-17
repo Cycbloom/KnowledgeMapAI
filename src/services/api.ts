@@ -811,21 +811,4 @@ export const api = {
     getWeeklyActivity: (days?: number) => request(`/health/weekly-activity${days ? `?days=${days}` : ''}`),
     getPredictions: () => request('/health/predictions'),
   },
-  collaboration: {
-    shareGraph: (data: {
-      graph_id: string;
-      permission?: 'view' | 'edit' | 'admin';
-      expires_at?: string;
-      max_users?: number;
-    }) => request('/collaboration/share', { method: 'POST', body: JSON.stringify(data) }),
-    joinGraph: (shareCode: string) => request(`/collaboration/join/${shareCode}`),
-    getCollaborators: (graphId: string) => request(`/collaboration/collaborators/${graphId}`),
-    addCollaborator: (data: { graph_id: string; user_id: string; permission: 'view' | 'edit' | 'admin' }) =>
-      request('/collaboration/add-collaborator', { method: 'POST', body: JSON.stringify(data) }),
-    removeCollaborator: (data: { graph_id: string; user_id: string }) =>
-      request('/collaboration/remove-collaborator', { method: 'DELETE', body: JSON.stringify(data) }),
-    updatePermission: (data: { graph_id: string; user_id: string; permission: 'view' | 'edit' | 'admin' }) =>
-      request('/collaboration/update-permission', { method: 'PUT', body: JSON.stringify(data) }),
-    getMyCollaborations: () => request('/collaboration/my-collaborations'),
-  },
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
@@ -7,10 +7,29 @@ import { StudyCardPreview } from '../components/Study/StudyCardPreview';
 import { StudyCardDetailModal } from '../components/Study/StudyCardDetailModal';
 import { FocusStats } from '../components/Study/FocusStats';
 import { StatsOverview } from '../components/StatsOverview';
-import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info } from 'lucide-react';
+import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Trash2, Search, ArrowLeft, Play, LayoutGrid, GraduationCap, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Calendar, Tag, Eye, Info, Activity, Flame, Target, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../services/api';
+
+interface WeakPoint {
+  nodeId: string;
+  nodeTitle: string;
+  graphTitle: string;
+  mastery: number;
+  reviewCount: number;
+  nextReview: string | null;
+  priority: 'high' | 'medium' | 'low';
+  suggestion: string;
+}
+
+interface Prediction {
+  date: string;
+  reviewCount: number;
+  newCards: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
 
 export const Study = () => {
   const { isDark } = useTheme();
@@ -51,6 +70,12 @@ export const Study = () => {
   const pageSize = 8;
   const [previewCard, setPreviewCard] = useState<StudyCard | null>(null);
 
+  // Health data
+  const [weakPoints, setWeakPoints] = useState<WeakPoint[]>([]);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [streakDays, setStreakDays] = useState(0);
+  const [weeklyStudyTime, setWeeklyStudyTime] = useState(0);
+
   // Swipe state - use regular state for better control
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [dragDirection, setDragDirection] = useState<'left' | 'right' | null>(null);
@@ -73,6 +98,28 @@ export const Study = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [tableMode, searchQuery]);
+
+  // Fetch health data
+  useEffect(() => {
+    const fetchHealthData = async () => {
+      try {
+        const [overviewRes, weakRes, predRes] = await Promise.all([
+          api.health.getOverview(),
+          api.health.getWeakPoints(),
+          api.health.getPredictions()
+        ]);
+        
+        setStreakDays(overviewRes?.streakDays || 0);
+        setWeeklyStudyTime(overviewRes?.weeklyStudyTime || 0);
+        setWeakPoints(weakRes?.weakPoints || []);
+        setPredictions(predRes?.predictions || []);
+      } catch (error) {
+        console.error('Failed to fetch health data:', error);
+      }
+    };
+    
+    fetchHealthData();
+  }, []);
 
   // Stats
   const stats = useMemo(() => {
@@ -331,38 +378,72 @@ export const Study = () => {
           {/* Stats Cards & Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-4 rounded-2xl ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-                    <LayoutGrid size={24} />
+                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                    <LayoutGrid size={18} />
                   </div>
-                  <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片数</p>
-                    <p className="text-3xl font-black">{stats.total}</p>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片</p>
+                    <p className="text-xl font-black">{stats.total}</p>
                   </div>
                 </motion.div>
                 
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                  transition={{ delay: 0.15 }}
+                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-4 rounded-2xl ${isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-                    <Trophy size={24} />
+                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                    <Trophy size={18} />
                   </div>
-                  <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
-                    <p className="text-3xl font-black">{stats.mastered}</p>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
+                    <p className="text-xl font-black">{stats.mastered}</p>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
+                    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+                    <Clock size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
+                    <p className="text-xl font-black text-amber-500">{stats.due}</p>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 }}
+                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
+                    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-orange-900/40 text-orange-400' : 'bg-orange-50 text-orange-600'}`}>
+                    <Flame size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>连续学习</p>
+                    <p className="text-xl font-black">{streakDays}天</p>
                   </div>
                 </motion.div>
 
@@ -370,16 +451,16 @@ export const Study = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className={`p-6 rounded-3xl shadow-sm border flex items-center space-x-4 ${
+                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-4 rounded-2xl ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
-                    <Clock size={24} />
+                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                    <Activity size={18} />
                   </div>
-                  <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
-                    <p className="text-3xl font-black text-amber-500">{stats.due}</p>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>本周学习</p>
+                    <p className="text-xl font-black">{Math.round(weeklyStudyTime / 60)}h</p>
                   </div>
                 </motion.div>
                </div>
@@ -454,6 +535,93 @@ export const Study = () => {
             <div className="lg:col-span-1">
               <StatsOverview data={pieData} />
             </div>
+          </div>
+
+          {/* Health Insights */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Weak Points */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`p-6 rounded-2xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}
+            >
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <AlertTriangle className="text-amber-500" size={20} />
+                薄弱知识点
+              </h3>
+              {weakPoints.length === 0 ? (
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>暂无薄弱知识点，继续保持！</p>
+              ) : (
+                <div className="space-y-3">
+                  {weakPoints.slice(0, 5).map((point, idx) => (
+                    <div key={idx} className={`p-3 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm truncate flex-1">{point.nodeTitle}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          point.priority === 'high' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+                          point.priority === 'medium' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                        }`}>
+                          {point.priority === 'high' ? '高优先' : point.priority === 'medium' ? '中优先' : '低优先'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full"
+                            style={{ width: `${point.mastery}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">{point.mastery}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+
+            {/* Predictions */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`p-6 rounded-2xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}
+            >
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <TrendingUp className="text-blue-500" size={20} />
+                未来7天预测
+              </h3>
+              {predictions.length === 0 ? (
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>暂无预测数据</p>
+              ) : (
+                <div className="grid grid-cols-7 gap-2">
+                  {predictions.slice(0, 7).map((pred, idx) => {
+                    const date = new Date(pred.date);
+                    const dayName = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
+                    const isToday = new Date().toDateString() === date.toDateString();
+                    
+                    return (
+                      <div key={idx} className={`text-center p-2 rounded-xl ${
+                        isToday 
+                          ? (isDark ? 'bg-indigo-900/30 ring-2 ring-indigo-500' : 'bg-indigo-50 ring-2 ring-indigo-300')
+                          : (isDark ? 'bg-slate-700/50' : 'bg-gray-50')
+                      }`}>
+                        <p className={`text-xs font-medium ${isToday ? 'text-indigo-500' : (isDark ? 'text-slate-400' : 'text-gray-500')}`}>
+                          {dayName}
+                        </p>
+                        <p className={`text-lg font-bold ${isToday ? 'text-indigo-500' : ''}`}>
+                          {pred.reviewCount}
+                        </p>
+                        <div className={`w-2 h-2 rounded-full mx-auto mt-1 ${
+                          pred.difficulty === 'easy' ? 'bg-green-500' :
+                          pred.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-red-500'
+                        }`} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
           </div>
 
           {/* Cards List Section */}

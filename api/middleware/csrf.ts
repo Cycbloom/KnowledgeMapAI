@@ -14,6 +14,7 @@ const SKIP_CSRF_ROUTES = [
   '/api/health',
   '/api/health/system',
   '/api/analytics',
+  '/api/system-monitor',
 ];
 
 const generateToken = (): string => {

@@ -37,6 +37,8 @@ import learningPathRoutes from './routes/learningPath.js'
 import graphRelationsRoutes from './routes/graphRelations.js'
 import healthRoutes from './routes/health.js'
 import analyticsRoutes from './routes/analytics.js'
+import alertsRoutes from './routes/alerts.js'
+import systemMonitorRoutes from './routes/systemMonitor.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 
@@ -134,6 +136,8 @@ app.use('/api/auto-graph', rateLimiters.aiHeavy, autoGraphRoutes)
 app.use('/api/learning-path', learningPathRoutes)
 app.use('/api/health', healthRoutes)
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/alerts', alertsRoutes)
+app.use('/api/system-monitor', systemMonitorRoutes)
 
 /**
  * health

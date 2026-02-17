@@ -215,7 +215,7 @@ router.post('/:graphId/prerequisite-graph', requireAuth, validate(createPrerequi
         .insert({
           user_id: req.user.id,
           title: topic,
-          description: description || `${sourceGraph.title} 的前置知识`,
+          description: description || '',
           parent_graph_id: graphId
         })
         .select()
@@ -358,7 +358,7 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
           .insert({
             user_id: req.user.id,
             title: item.topic,
-            description: item.description || `${sourceGraph.title} 的前置知识`,
+            description: item.description || '',
             parent_graph_id: graphId
           })
           .select()
@@ -539,6 +539,58 @@ router.delete('/relations/:relationId', requireAuth, async (req: AuthRequest, re
     logger.error('Delete Graph Relation Error:', error);
     if (error instanceof AppError) throw error;
     throw new AppError(error.message || '删除关系失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+const infiniteExpansionSchema = z.object({
+  max_depth: z.number().min(1).max(5).optional().default(2),
+  max_graphs_per_level: z.number().min(1).max(5).optional().default(3),
+  relation_types: z.array(z.enum(['prerequisite', 'extension', 'related'])).optional().default(['prerequisite', 'extension', 'related']),
+  auto_generate_nodes: z.boolean().optional().default(true),
+  node_depth: z.number().min(1).max(3).optional().default(2),
+});
+
+router.post('/:graphId/infinite-expand', requireAuth, validate(infiniteExpansionSchema), async (req: AuthRequest, res: Response) => {
+  const { graphId } = req.params;
+  const { max_depth = 2, max_graphs_per_level = 3, relation_types = ['prerequisite', 'extension', 'related'], auto_generate_nodes = true, node_depth = 2 } = req.body;
+  const supabase = req.supabase!;
+
+  try {
+    const { data: sourceGraph } = await supabase
+      .from('knowledge_graphs')
+      .select('id, user_id, title, description')
+      .eq('id', graphId)
+      .single();
+
+    if (!sourceGraph) {
+      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+    }
+
+    if (sourceGraph.user_id !== req.user.id) {
+      throw new AppError('无权操作此图谱', 403, ErrorCodes.FORBIDDEN);
+    }
+
+    const task = await taskService.createTask(req.user.id, 'infinite_graph_expansion', {
+      source_graph_id: graphId,
+      source_graph_title: sourceGraph.title,
+      source_graph_description: sourceGraph.description,
+      max_depth,
+      max_graphs_per_level,
+      relation_types,
+      auto_generate_nodes,
+      node_depth,
+    });
+
+    res.json({
+      task_id: task.id,
+      status: 'pending',
+      message: '无限扩展任务已创建',
+    });
+
+  } catch (error: any) {
+    logger.error('Infinite Expansion Error:', error);
+    if (error instanceof AppError) throw error;
+    throw new AppError(error.message || '创建无限扩展任务失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

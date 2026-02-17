@@ -411,3 +411,79 @@ export const GRAPH_RELATION_LABELS: Record<GraphRelationType, string> = {
   extension: '扩展知识',
   related: '相关知识',
 };
+
+export interface GraphRecommendation {
+  graph_id: string;
+  graph_title: string;
+  recommendation_type: GraphRelationType;
+  confidence: number;
+  reason: string;
+}
+
+export interface MapAnalysisResult {
+  isolated_graphs: Array<{ id: string; title: string }>;
+  missing_prerequisites: Array<{
+    graph_id: string;
+    graph_title: string;
+    suggested_topics: string[];
+  }>;
+  suggested_paths: Array<{
+    from: string;
+    from_title: string;
+    to: string;
+    to_title: string;
+    via: string[];
+  }>;
+  merge_suggestions: Array<{
+    graph_ids: string[];
+    graph_titles: string[];
+    reason: string;
+  }>;
+}
+
+export interface QuickCreateGraphRequest {
+  title: string;
+  description?: string;
+  relation_to?: {
+    graph_id: string;
+    type: GraphRelationType;
+  };
+  auto_generate_content?: boolean;
+}
+
+export interface InfiniteExpansionRequest {
+  max_depth?: number;
+  max_graphs_per_level?: number;
+  relation_types?: GraphRelationType[];
+  auto_generate_nodes?: boolean;
+  node_depth?: number;
+}
+
+export interface InfiniteExpansionProgress {
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  current_depth: number;
+  total_graphs_created: number;
+  total_nodes_created: number;
+  current_graph_title?: string;
+  created_graphs: Array<{
+    id: string;
+    title: string;
+    relation_type: GraphRelationType;
+    depth: number;
+  }>;
+  errors: Array<{ message: string }>;
+}
+
+export interface InfiniteExpansionResult {
+  task_id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  total_graphs_created: number;
+  total_nodes_created: number;
+  created_graphs: Array<{
+    id: string;
+    title: string;
+    relation_type: GraphRelationType;
+    depth: number;
+    node_count: number;
+  }>;
+}

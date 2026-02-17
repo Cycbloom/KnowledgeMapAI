@@ -63,6 +63,98 @@ router.get('/map', requireAuth, async (req: AuthRequest, res: Response) => {
   });
 });
 
+router.get('/map/analyze', requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase!;
+  const userId = req.user.id;
+
+  const { data: graphs } = await supabase
+    .from('knowledge_graphs')
+    .select('id, title, description')
+    .eq('user_id', userId)
+    .is('deleted_at', null);
+
+  const graphIds = (graphs || []).map(g => g.id);
+
+  const { data: relations } = await supabase
+    .from('graph_relations')
+    .select('source_graph_id, target_graph_id, relation_type')
+    .or(`source_graph_id.in.(${graphIds.join(',')}),target_graph_id.in.(${graphIds.join(',')})`);
+
+  const connectedGraphIds = new Set<string>();
+  (relations || []).forEach(r => {
+    connectedGraphIds.add(r.source_graph_id);
+    connectedGraphIds.add(r.target_graph_id);
+  });
+
+  const isolatedGraphs = (graphs || [])
+    .filter(g => !connectedGraphIds.has(g.id))
+    .map(g => ({ id: g.id, title: g.title }));
+
+  const graphRelationCount = new Map<string, number>();
+  (relations || []).forEach(r => {
+    graphRelationCount.set(r.source_graph_id, (graphRelationCount.get(r.source_graph_id) || 0) + 1);
+    graphRelationCount.set(r.target_graph_id, (graphRelationCount.get(r.target_graph_id) || 0) + 1);
+  });
+
+  const missingPrerequisites = (graphs || [])
+    .filter(g => {
+      const asTarget = (relations || []).filter(r => r.target_graph_id === g.id && r.relation_type === 'prerequisite');
+      return asTarget.length === 0 && (graphRelationCount.get(g.id) || 0) > 0;
+    })
+    .slice(0, 5)
+    .map(g => ({
+      graph_id: g.id,
+      graph_title: g.title,
+      suggested_topics: ['基础概念', '入门知识', '前置理论'].slice(0, 2),
+    }));
+
+  const suggestedPaths: Array<{ from: string; from_title: string; to: string; to_title: string; via: string[] }> = [];
+  
+  const graphMap = new Map((graphs || []).map(g => [g.id, g.title]));
+  
+  (relations || []).forEach(r => {
+    if (r.relation_type === 'prerequisite' && suggestedPaths.length < 5) {
+      const fromGraph = graphMap.get(r.target_graph_id);
+      const toGraph = graphMap.get(r.source_graph_id);
+      if (fromGraph && toGraph) {
+        suggestedPaths.push({
+          from: r.target_graph_id,
+          from_title: fromGraph,
+          to: r.source_graph_id,
+          to_title: toGraph,
+          via: [],
+        });
+      }
+    }
+  });
+
+  const mergeSuggestions: Array<{ graph_ids: string[]; graph_titles: string[]; reason: string }> = [];
+  
+  const titleGroups = new Map<string, string[]>();
+  (graphs || []).forEach(g => {
+    const key = g.title.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '');
+    if (!titleGroups.has(key)) titleGroups.set(key, []);
+    titleGroups.get(key)!.push(g.id);
+  });
+  
+  titleGroups.forEach((ids, key) => {
+    if (ids.length > 1) {
+      mergeSuggestions.push({
+        graph_ids: ids,
+        graph_titles: ids.map(id => graphMap.get(id) || ''),
+        reason: '图谱名称相似，可能存在重复',
+      });
+    }
+  });
+
+  res.json({
+    isolated_graphs: isolatedGraphs,
+    missing_prerequisites: missingPrerequisites,
+    suggested_paths: suggestedPaths,
+    merge_suggestions: mergeSuggestions.slice(0, 3),
+  });
+});
+
 // Create a new graph (Auth Required)
 router.post('/', requireAuth, validate({ body: createGraphSchema }), async (req: AuthRequest, res: Response) => {
   const { title, description } = req.body;

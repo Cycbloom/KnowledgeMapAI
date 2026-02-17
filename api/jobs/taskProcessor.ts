@@ -29,6 +29,9 @@ class TaskProcessor {
         case 'recursive_graph_generation':
           await taskService.processRecursiveGraphGeneration(task.id, task.user_id, task.payload);
           break;
+        case 'infinite_graph_expansion':
+          await taskService.processInfiniteGraphExpansion(task.id, task.user_id, task.payload);
+          break;
         default:
           throw new Error(`Unknown task type: ${task.type}`);
       }

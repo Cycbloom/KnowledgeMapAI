@@ -49,6 +49,10 @@ const getTypeLabel = (type: string) => {
       return '批量生成题目';
     case 'expand_graph':
       return '自动扩展图谱';
+    case 'recursive_graph_generation':
+      return '递归生成图谱';
+    case 'infinite_graph_expansion':
+      return '无限扩展知识网络';
     default:
       return type;
   }
@@ -290,6 +294,26 @@ export const Tasks = () => {
                                 <span className="font-medium">批量生成完成：</span> 共生成 {t.result.totalCards} 张卡片
                               </div>
                             )}
+
+                            {showResult && t.type === 'infinite_graph_expansion' && t.result?.total_graphs_created !== undefined && (
+                              <div className="text-purple-700 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-900/10 p-2 rounded text-xs border border-purple-100/50 dark:border-purple-900/20">
+                                <span className="font-medium">扩展完成：</span> 
+                                创建 {t.result.total_graphs_created} 个图谱，{t.result.total_nodes_created} 个知识点
+                              </div>
+                            )}
+
+                            {t.status === 'processing' && t.type === 'infinite_graph_expansion' && t.result?.current_depth !== undefined && (
+                              <div className="text-purple-600 dark:text-purple-400 text-xs flex items-center gap-2">
+                                <span className="font-medium">深度：</span>
+                                <span>{t.result.current_depth} / {t.result.max_depth || 2}</span>
+                                {t.result.total_graphs_created !== undefined && (
+                                  <>
+                                    <span className="text-gray-300 dark:text-gray-600">|</span>
+                                    <span>已创建 {t.result.total_graphs_created} 个图谱</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -355,6 +379,18 @@ export const Tasks = () => {
                               className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                             >
                               开始学习
+                            </button>
+                          )}
+
+                          {t.status === 'completed' && t.type === 'infinite_graph_expansion' && t.result?.source_graph_id && (
+                            <button
+                              onClick={() => {
+                                navigate(`/graph-map?from=${t.result.source_graph_id}`);
+                                addMessage({ type: 'success', content: '已打开图谱地图，可查看扩展的知识网络' });
+                              }}
+                              className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 shadow-sm shadow-purple-200 dark:shadow-none transition-colors"
+                            >
+                              查看知识网络
                             </button>
                           )}
                         </div>

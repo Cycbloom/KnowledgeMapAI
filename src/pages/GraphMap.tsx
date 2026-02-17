@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { GraphMapCanvas } from '../components/GraphMap/GraphMapCanvas';
 import { GraphMapToolbar } from '../components/GraphMap/GraphMapToolbar';
 import { CreateRelationPanel } from '../components/GraphMap/CreateRelationPanel';
-import type { Graph, GraphRelation, GraphMapFilterMode, GraphRelationType } from '../types';
+import { QuickCreateGraphPanel } from '../components/GraphMap/QuickCreateGraphPanel';
+import { MapAnalysisPanel } from '../components/GraphMap/MapAnalysisPanel';
+import { InfiniteExpansionPanel } from '../components/GraphMap/InfiniteExpansionPanel';
+import type { Graph, GraphRelation, GraphMapFilterMode, GraphRelationType, QuickCreateGraphRequest, MapAnalysisResult, InfiniteExpansionProgress } from '../types';
 
 export const GraphMap: React.FC = () => {
   const navigate = useNavigate();
@@ -19,10 +22,27 @@ export const GraphMap: React.FC = () => {
   const [filterMode, setFilterMode] = useState<GraphMapFilterMode>('all');
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(fromGraphId);
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
+  const [isCreateGraphPanelOpen, setIsCreateGraphPanelOpen] = useState(false);
+  const [createGraphRelationType, setCreateGraphRelationType] = useState<GraphRelationType | undefined>(undefined);
+  const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<MapAnalysisResult | null>(null);
+  const [isInfiniteExpansionOpen, setIsInfiniteExpansionOpen] = useState(false);
+  const [expansionProgress, setExpansionProgress] = useState<InfiniteExpansionProgress | null>(null);
+  const [isExpansionRunning, setIsExpansionRunning] = useState(false);
 
   const { data: mapData, isLoading, refetch } = useQuery({
     queryKey: ['graphMap'],
     queryFn: () => api.graphs.getMap(),
+  });
+
+  const analyzeMutation = useMutation({
+    mutationFn: () => api.graphs.analyzeMap(),
+    onSuccess: (data: MapAnalysisResult) => {
+      setAnalysisResult(data);
+    },
+    onError: (error: any) => {
+      addMessage({ type: 'error', content: error.message || '分析失败' });
+    },
   });
 
   const graphs = mapData?.graphs || [];
@@ -64,6 +84,74 @@ export const GraphMap: React.FC = () => {
     }
   }, [addMessage, queryClient]);
 
+  const handleQuickCreateGraph = useCallback(async (data: QuickCreateGraphRequest) => {
+    try {
+      const newGraph = await api.graphs.create({
+        title: data.title,
+        description: data.description,
+      });
+      
+      if (data.relation_to) {
+        const sourceId = data.relation_to.type === 'prerequisite' 
+          ? newGraph.id 
+          : data.relation_to.graph_id;
+        const targetId = data.relation_to.type === 'prerequisite' 
+          ? data.relation_to.graph_id 
+          : newGraph.id;
+        
+        await api.graphs.createRelation({
+          source_graph_id: sourceId,
+          target_graph_id: targetId,
+          relation_type: data.relation_to.type,
+        });
+      }
+      
+      addMessage({ type: 'success', content: '图谱创建成功' });
+      queryClient.invalidateQueries({ queryKey: ['graphMap'] });
+      
+      if (data.auto_generate_content) {
+        addMessage({ type: 'info', content: '正在生成初始内容...' });
+      }
+    } catch (error: any) {
+      addMessage({ type: 'error', content: error.message || '创建图谱失败' });
+      throw error;
+    }
+  }, [addMessage, queryClient]);
+
+  const handleCreateRelatedGraph = useCallback((relationType: GraphRelationType) => {
+    setCreateGraphRelationType(relationType);
+    setIsCreateGraphPanelOpen(true);
+  }, []);
+
+  const handleInfiniteExpand = useCallback(async (config: {
+    max_depth: number;
+    max_graphs_per_level: number;
+    relation_types: GraphRelationType[];
+    auto_generate_nodes: boolean;
+    node_depth: number;
+  }) => {
+    if (!selectedGraphId) return;
+    
+    try {
+      const result = await api.graphs.infiniteExpand(selectedGraphId, config);
+      addMessage({ type: 'success', content: '无限扩展任务已启动' });
+      setIsExpansionRunning(true);
+      setExpansionProgress({
+        status: 'running',
+        current_depth: 0,
+        total_graphs_created: 0,
+        total_nodes_created: 0,
+        created_graphs: [],
+        errors: [],
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['graphMap'] });
+    } catch (error: any) {
+      addMessage({ type: 'error', content: error.message || '启动扩展失败' });
+      throw error;
+    }
+  }, [selectedGraphId, addMessage, queryClient]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -81,6 +169,14 @@ export const GraphMap: React.FC = () => {
         onBack={() => navigate('/dashboard')}
         onRefresh={() => refetch()}
         onCreateRelation={() => setIsCreatePanelOpen(true)}
+        onCreateGraph={() => {
+          setCreateGraphRelationType(undefined);
+          setIsCreateGraphPanelOpen(true);
+        }}
+        onAnalyze={() => {
+          setIsAnalysisPanelOpen(true);
+          analyzeMutation.mutate();
+        }}
         filterMode={filterMode}
         onFilterChange={setFilterMode}
         graphCount={graphs.length}
@@ -141,6 +237,49 @@ export const GraphMap: React.FC = () => {
                     >
                       添加关系
                     </button>
+                  </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      快速创建关联图谱
+                    </h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCreateRelatedGraph('prerequisite')}
+                        className="flex-1 px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                      >
+                        + 前置知识
+                      </button>
+                      <button
+                        onClick={() => handleCreateRelatedGraph('extension')}
+                        className="flex-1 px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
+                      >
+                        + 扩展知识
+                      </button>
+                      <button
+                        onClick={() => handleCreateRelatedGraph('related')}
+                        className="flex-1 px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+                      >
+                        + 相关知识
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setIsInfiniteExpansionOpen(true)}
+                      className="w-full px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                      </svg>
+                      AI 无限扩展
+                    </button>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                      自动生成相关知识网络
+                    </p>
                   </div>
                   
                   {graphRelations.length > 0 && (
@@ -218,6 +357,43 @@ export const GraphMap: React.FC = () => {
         onClose={() => setIsCreatePanelOpen(false)}
         onSubmit={handleCreateRelation}
         initialSourceId={selectedGraphId || undefined}
+      />
+
+      <QuickCreateGraphPanel
+        isOpen={isCreateGraphPanelOpen}
+        onClose={() => setIsCreateGraphPanelOpen(false)}
+        onSubmit={handleQuickCreateGraph}
+        relatedGraphId={selectedGraphId || undefined}
+        relatedGraphTitle={graphs.find(g => g.id === selectedGraphId)?.title}
+        defaultRelationType={createGraphRelationType}
+      />
+
+      <MapAnalysisPanel
+        isOpen={isAnalysisPanelOpen}
+        onClose={() => setIsAnalysisPanelOpen(false)}
+        analysis={analysisResult}
+        isLoading={analyzeMutation.isPending}
+        onGraphClick={(graphId) => {
+          setSelectedGraphId(graphId);
+          setIsAnalysisPanelOpen(false);
+        }}
+        onCreateRelation={(sourceId, targetId, type) => {
+          handleCreateRelation({
+            source_graph_id: sourceId,
+            target_graph_id: targetId,
+            relation_type: type,
+          });
+        }}
+      />
+
+      <InfiniteExpansionPanel
+        isOpen={isInfiniteExpansionOpen}
+        onClose={() => setIsInfiniteExpansionOpen(false)}
+        sourceGraphId={selectedGraphId || ''}
+        sourceGraphTitle={graphs.find(g => g.id === selectedGraphId)?.title || ''}
+        onSubmit={handleInfiniteExpand}
+        progress={expansionProgress}
+        isRunning={isExpansionRunning}
       />
     </div>
   );

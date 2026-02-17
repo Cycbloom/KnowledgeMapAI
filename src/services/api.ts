@@ -202,6 +202,14 @@ export const api = {
     }) => request('/graph-relations/relations', { method: 'POST', body: JSON.stringify(data) }),
     deleteRelationById: (relationId: string) => 
       request(`/graph-relations/relations/${relationId}`, { method: 'DELETE' }),
+    analyzeMap: () => request('/graphs/map/analyze'),
+    infiniteExpand: (graphId: string, data: {
+      max_depth?: number;
+      max_graphs_per_level?: number;
+      relation_types?: string[];
+      auto_generate_nodes?: boolean;
+      node_depth?: number;
+    }) => request(`/graphs/${graphId}/infinite-expand`, { method: 'POST', body: JSON.stringify(data) }),
   },
   nodes: {
     create: (data: any) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),

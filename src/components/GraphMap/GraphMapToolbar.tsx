@@ -8,6 +8,8 @@ import {
   BookOpen,
   Layers,
   ArrowRightLeft,
+  Sparkles,
+  Lightbulb,
 } from 'lucide-react';
 import type { GraphMapFilterMode, GraphRelationType } from '../../types';
 import { GRAPH_RELATION_LABELS } from '../../types';
@@ -16,6 +18,8 @@ interface GraphMapToolbarProps {
   onBack: () => void;
   onRefresh: () => void;
   onCreateRelation: () => void;
+  onCreateGraph: () => void;
+  onAnalyze: () => void;
   filterMode: GraphMapFilterMode;
   onFilterChange: (mode: GraphMapFilterMode) => void;
   graphCount: number;
@@ -37,6 +41,8 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
   onBack,
   onRefresh,
   onCreateRelation,
+  onCreateGraph,
+  onAnalyze,
   filterMode,
   onFilterChange,
   graphCount,
@@ -115,11 +121,29 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
         </button>
 
         <button
+          onClick={onAnalyze}
+          className="flex items-center gap-2 px-3 py-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+          title="AI 分析图谱地图"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="text-sm font-medium hidden sm:inline">AI 分析</span>
+        </button>
+
+        <button
+          onClick={onCreateGraph}
+          className="flex items-center gap-2 px-3 py-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+          title="创建新图谱"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="text-sm font-medium hidden sm:inline">创建图谱</span>
+        </button>
+
+        <button
           onClick={onCreateRelation}
           className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
-          <Plus className="w-4 h-4" />
-          创建关系
+          <Network className="w-4 h-4" />
+          <span className="text-sm font-medium">创建关系</span>
         </button>
       </div>
     </div>

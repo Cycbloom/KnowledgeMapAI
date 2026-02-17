@@ -571,6 +571,365 @@ export class TaskService {
     const templateCode = type === 'init' ? 'auto_graph_init' : 'auto_graph_expand';
     return promptService.getRenderedPrompt(supabase, templateCode, data, userId, graphId);
   }
+
+  async processInfiniteGraphExpansion(taskId: string, userId: string, payload: any) {
+    const supabase = defaultClient;
+    
+    try {
+      await this.updateTaskStatus(supabase, taskId, 'processing', { 
+        stage: 'init', 
+        progress: 0,
+        current_node: '初始化无限扩展任务...',
+        current_depth: 0,
+        total_graphs_created: 0,
+        total_nodes_created: 0,
+        created_graphs: []
+      }, undefined, userId);
+
+      const { 
+        source_graph_id, 
+        source_graph_title,
+        source_graph_description,
+        max_depth = 2, 
+        max_graphs_per_level = 3,
+        relation_types = ['prerequisite', 'extension', 'related'],
+        auto_generate_nodes = true,
+        node_depth = 2
+      } = payload;
+
+      const provider = await getAIProviderForTask('text');
+      if (!provider.hasKey) {
+        throw new Error('AI provider not configured');
+      }
+
+      let totalGraphsCreated = 0;
+      let totalNodesCreated = 0;
+      const createdGraphs: Array<{ id: string; title: string; relation_type: string; depth: number; node_count: number }> = [];
+
+      const processedGraphs = new Set<string>();
+      const queue: Array<{ graphId: string; graphTitle: string; depth: number }> = [
+        { graphId: source_graph_id, graphTitle: source_graph_title, depth: 0 }
+      ];
+
+      const estimatedTotal = Math.pow(max_graphs_per_level * relation_types.length, max_depth);
+      let processedCount = 0;
+
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        
+        if (processedGraphs.has(current.graphId) || current.depth >= max_depth) {
+          continue;
+        }
+        processedGraphs.add(current.graphId);
+        processedCount++;
+
+        const progress = Math.min(95, Math.round((processedCount / Math.max(1, estimatedTotal)) * 100));
+
+        await this.updateTaskStatus(supabase, taskId, 'processing', { 
+          stage: 'expanding',
+          progress,
+          current_node: `正在分析「${current.graphTitle}」`,
+          current_depth: current.depth + 1,
+          max_depth,
+          current_graph_title: current.graphTitle,
+          total_graphs_created: totalGraphsCreated,
+          total_nodes_created: totalNodesCreated,
+          created_graphs: createdGraphs
+        }, undefined, userId);
+
+        const systemPrompt = `你是一个知识图谱专家。你的任务是根据给定的知识领域，分析并生成**其他独立的知识领域**。
+
+## 重要概念区分
+
+**知识领域（Knowledge Domain）**：一个独立的学科或技术领域，可以作为一个完整的知识图谱存在。
+- 例如：量子密码学、密码学、量子计算、信息安全、线性代数、机器学习
+
+**知识点（Knowledge Point）**：知识领域内部的子主题或概念，不应该作为独立的知识领域。
+- 例如：量子密钥分发是量子密码学内部的知识点，不是独立领域
+- 例如：后量子密码是量子密码学的分支，不是独立领域
+- 例如：CNN是深度学习的知识点，不是独立领域
+
+## 你的任务
+
+分析给定的知识领域，找出与之相关的**其他独立知识领域**，而不是该领域内部的子主题。
+
+## 关系类型说明
+
+1. **前置知识（prerequisite）**：学习当前领域之前需要掌握的独立领域
+   - 例如：学习"量子密码学"前需要掌握"密码学"、"量子力学"、"线性代数"
+   
+2. **扩展知识（extension）**：当前领域学习后可以深入探索的独立领域
+   - 例如：学完"量子密码学"后可以学习"量子通信"、"量子计算应用"
+   
+3. **相关知识（related）**：与当前领域有交叉或关联的独立领域
+   - 例如："量子密码学"的相关领域有"信息安全"、"网络安全"
+
+## 输出格式
+
+JSON 格式：
+{
+  "prerequisite": [
+    { "title": "领域名称", "description": "该领域的简要描述", "reason": "为什么是前置知识" }
+  ],
+  "extension": [
+    { "title": "领域名称", "description": "该领域的简要描述", "reason": "为什么是扩展知识" }
+  ],
+  "related": [
+    { "title": "领域名称", "description": "该领域的简要描述", "reason": "为什么是相关知识" }
+  ]
+}
+
+## 注意事项
+
+1. 每种类型最多生成 ${max_graphs_per_level} 个领域
+2. **必须生成独立的知识领域**，不要生成当前领域的子主题或知识点
+3. 生成的领域应该足够"大"，可以独立成为一个知识图谱
+4. 如果某个方向没有合适的独立领域，可以返回空数组
+5. 描述应该说明该领域包含什么内容，而不是它与当前领域的关系`;
+
+        const completion = await provider.client.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `当前知识领域：「${current.graphTitle}」
+${source_graph_description ? `领域描述：${source_graph_description}` : ''}
+
+请分析这个知识领域，找出与之相关的其他独立知识领域。
+注意：不要生成该领域内部的子主题或知识点，而是生成其他独立的学科/技术领域。` }
+          ],
+          model: provider.model,
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
+        });
+
+        const parsed = JSON.parse(completion.choices[0].message.content || '{"prerequisite":[],"extension":[],"related":[]}');
+
+        for (const relationType of relation_types) {
+          const suggestions = parsed[relationType] || [];
+          
+          for (const suggestion of suggestions.slice(0, max_graphs_per_level)) {
+            const { data: existingGraph } = await supabase
+              .from('knowledge_graphs')
+              .select('id, title')
+              .eq('user_id', userId)
+              .eq('title', suggestion.title)
+              .is('deleted_at', null)
+              .maybeSingle();
+
+            let targetGraphId: string;
+            let isNew = false;
+
+            if (existingGraph) {
+              targetGraphId = existingGraph.id;
+            } else {
+              const { data: newGraph } = await supabase
+                .from('knowledge_graphs')
+                .insert({
+                  user_id: userId,
+                  title: suggestion.title,
+                  description: suggestion.description || '',
+                })
+                .select('id')
+                .single();
+
+              if (newGraph) {
+                targetGraphId = newGraph.id;
+                isNew = true;
+                totalGraphsCreated++;
+
+                if (auto_generate_nodes) {
+                  await this.updateTaskStatus(supabase, taskId, 'processing', { 
+                    stage: 'generating_nodes',
+                    progress: Math.min(95, progress + 2),
+                    current_node: `为「${suggestion.title}」生成知识点...`,
+                    current_depth: current.depth + 1,
+                    max_depth,
+                    total_graphs_created: totalGraphsCreated,
+                    total_nodes_created: totalNodesCreated,
+                    created_graphs: createdGraphs
+                  }, undefined, userId);
+
+                  const nodeCount = await this.generateNodesForGraph(
+                    supabase, 
+                    targetGraphId, 
+                    suggestion.title, 
+                    suggestion.description,
+                    node_depth,
+                    provider
+                  );
+                  totalNodesCreated += nodeCount;
+
+                  createdGraphs.push({
+                    id: targetGraphId,
+                    title: suggestion.title,
+                    relation_type: relationType,
+                    depth: current.depth + 1,
+                    node_count: nodeCount
+                  });
+                } else {
+                  createdGraphs.push({
+                    id: targetGraphId,
+                    title: suggestion.title,
+                    relation_type: relationType,
+                    depth: current.depth + 1,
+                    node_count: 0
+                  });
+                }
+
+                queue.push({
+                  graphId: targetGraphId,
+                  graphTitle: suggestion.title,
+                  depth: current.depth + 1
+                });
+              }
+            }
+
+            if (isNew || existingGraph) {
+              let sourceId = current.graphId;
+              let targetId = targetGraphId;
+              
+              if (relationType === 'prerequisite') {
+                sourceId = targetGraphId;
+                targetId = current.graphId;
+              }
+
+              const { data: existingRelation } = await supabase
+                .from('graph_relations')
+                .select('id')
+                .eq('source_graph_id', sourceId)
+                .eq('target_graph_id', targetId)
+                .eq('relation_type', relationType)
+                .maybeSingle();
+
+              if (!existingRelation) {
+                await supabase
+                  .from('graph_relations')
+                  .insert({
+                    source_graph_id: sourceId,
+                    target_graph_id: targetId,
+                    relation_type: relationType,
+                    context: suggestion.reason,
+                  });
+              }
+            }
+          }
+        }
+      }
+
+      await this.updateTaskStatus(supabase, taskId, 'completed', { 
+        success: true,
+        progress: 100,
+        current_node: '扩展完成',
+        total_graphs_created: totalGraphsCreated,
+        total_nodes_created: totalNodesCreated,
+        created_graphs: createdGraphs,
+        source_graph_id: source_graph_id,
+        source_graph_title: source_graph_title
+      }, undefined, userId);
+
+    } catch (error: any) {
+      logger.error('Infinite graph expansion failed:', error);
+      await this.updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
+    }
+  }
+
+  private async generateNodesForGraph(
+    supabase: any, 
+    graphId: string, 
+    topic: string, 
+    description: string | undefined,
+    depth: number,
+    provider: any
+  ): Promise<number> {
+    try {
+      let totalNodes = 0;
+
+      const systemPrompt = `你是一个知识图谱专家。为给定的知识领域生成核心知识点。
+
+输入：知识领域名称和描述
+输出 JSON 格式：
+{
+  "root": { "title": "根节点标题", "content": "根节点内容" },
+  "coreNodes": [
+    { "title": "核心知识点标题", "content": "知识点内容描述" }
+  ]
+}
+
+注意：
+1. 根节点应该是该领域的核心概念
+2. 核心节点应该是该领域的主要分支或子主题
+3. 生成 3-5 个核心节点
+4. 内容应该简洁明了`;
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `知识领域：${topic}\n\n描述：${description || '无描述'}\n\n请生成知识点。` }
+        ],
+        model: provider.model,
+        response_format: { type: "json_object" },
+        max_tokens: 3000,
+      });
+
+      const parsed = JSON.parse(completion.choices[0].message.content || '{"root":null,"coreNodes":[]}');
+
+      if (parsed.root) {
+        const { data: rootNode } = await supabase
+          .from('nodes')
+          .insert({
+            graph_id: graphId,
+            title: parsed.root.title || topic,
+            content: parsed.root.content || '',
+            level: 'root',
+            x_position: 400,
+            y_position: 300
+          })
+          .select('id')
+          .single();
+
+        if (rootNode) {
+          totalNodes++;
+
+          const coreNodes = parsed.coreNodes || [];
+          for (let i = 0; i < coreNodes.length; i++) {
+            const coreNode = coreNodes[i];
+            const angle = (2 * Math.PI * i) / coreNodes.length;
+            const radius = 200;
+
+            const { data: childNode } = await supabase
+              .from('nodes')
+              .insert({
+                graph_id: graphId,
+                title: coreNode.title,
+                content: coreNode.content || '',
+                level: 'core',
+                x_position: 400 + radius * Math.cos(angle),
+                y_position: 300 + radius * Math.sin(angle)
+              })
+              .select('id')
+              .single();
+
+            if (childNode) {
+              totalNodes++;
+
+              await supabase
+                .from('edges')
+                .insert({
+                  graph_id: graphId,
+                  source_node_id: rootNode.id,
+                  target_node_id: childNode.id,
+                  relationship_type: 'contains'
+                });
+            }
+          }
+        }
+      }
+
+      return totalNodes;
+    } catch (error) {
+      logger.warn(`Failed to generate nodes for ${topic}:`, error);
+      return 0;
+    }
+  }
 }
 
 export const taskService = new TaskService();

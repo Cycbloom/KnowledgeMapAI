@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2 } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
 import { GRAPH_RELATION_LABELS } from '../../types';
 
@@ -18,6 +18,7 @@ interface InfiniteExpansionPanelProps {
   }) => Promise<void>;
   progress?: InfiniteExpansionProgress | null;
   isRunning?: boolean;
+  onEditPrompt?: () => void;
 }
 
 export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
@@ -28,6 +29,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
   onSubmit,
   progress,
   isRunning = false,
+  onEditPrompt,
 }) => {
   const [maxDepth, setMaxDepth] = useState(2);
   const [maxGraphsPerLevel, setMaxGraphsPerLevel] = useState(3);
@@ -99,12 +101,23 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
               <Sparkles className="w-5 h-5 text-purple-500" />
               AI 无限扩展知识网络
             </h2>
-            <button
-              onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {onEditPrompt && (
+                <button
+                  onClick={onEditPrompt}
+                  className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded transition-colors"
+                  title="编辑提示词"
+                >
+                  <Settings2 className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="p-4 space-y-4">
@@ -271,7 +284,7 @@ export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
                             g.relation_type === 'extension' ? 'bg-green-500' : 'bg-amber-500'
                           }`} />
                           <span className="text-gray-700 dark:text-gray-300 truncate">{g.title}</span>
-                          <span className="text-gray-400">({g.node_count} 节点)</span>
+                          <span className="text-gray-400">({g.node_count ?? 0} 节点)</span>
                         </div>
                       ))}
                     </div>

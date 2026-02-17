@@ -24,7 +24,8 @@ const PROMPT_NAME_MAP: Record<string, string> = {
   recommend_connections: '推荐连线 (Recommend Connections)',
   tutor_chat: 'AI 助教 (Tutor Chat)',
   document_to_graph: '文档转图谱 (Document to Graph)',
-  term_annotation: '术语标注 (Term Annotation)'
+  term_annotation: '术语标注 (Term Annotation)',
+  infinite_graph_expansion: '无限扩展知识网络 (Infinite Graph Expansion)'
 };
 
 const SOURCE_NAME_MAP: Record<string, string> = {
@@ -39,7 +40,7 @@ const PROMPT_CATEGORIES = [
     name: '知识图谱构建',
     icon: Network,
     color: 'emerald',
-    codes: ['expand_knowledge', 'branch_suggestions', 'recommend_connections', 'text_to_graph', 'document_to_graph']
+    codes: ['expand_knowledge', 'branch_suggestions', 'recommend_connections', 'text_to_graph', 'document_to_graph', 'infinite_graph_expansion']
   },
   {
     id: 'card_generation',
@@ -176,7 +177,8 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
     recommend_connections: ['node_title', 'node_content', 'existing_nodes_json'],
     tutor_chat: ['isGuided', 'currentNodeId', 'currentNodeTitle', 'currentNodeContent', 'existingNodes'],
     document_to_graph: [],
-    term_annotation: []
+    term_annotation: [],
+    infinite_graph_expansion: ['domainTitle', 'domainDescription', 'maxGraphsPerLevel']
   };
 
   if (editingCode) {

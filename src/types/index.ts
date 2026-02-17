@@ -470,6 +470,7 @@ export interface InfiniteExpansionProgress {
     title: string;
     relation_type: GraphRelationType;
     depth: number;
+    node_count?: number;
   }>;
   errors: Array<{ message: string }>;
 }

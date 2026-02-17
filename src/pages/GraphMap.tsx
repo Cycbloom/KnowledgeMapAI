@@ -9,6 +9,7 @@ import { CreateRelationPanel } from '../components/GraphMap/CreateRelationPanel'
 import { QuickCreateGraphPanel } from '../components/GraphMap/QuickCreateGraphPanel';
 import { MapAnalysisPanel } from '../components/GraphMap/MapAnalysisPanel';
 import { InfiniteExpansionPanel } from '../components/GraphMap/InfiniteExpansionPanel';
+import { PromptEditor } from '../components/PromptEditor';
 import type { Graph, GraphRelation, GraphMapFilterMode, GraphRelationType, QuickCreateGraphRequest, MapAnalysisResult, InfiniteExpansionProgress } from '../types';
 
 export const GraphMap: React.FC = () => {
@@ -29,6 +30,8 @@ export const GraphMap: React.FC = () => {
   const [isInfiniteExpansionOpen, setIsInfiniteExpansionOpen] = useState(false);
   const [expansionProgress, setExpansionProgress] = useState<InfiniteExpansionProgress | null>(null);
   const [isExpansionRunning, setIsExpansionRunning] = useState(false);
+  const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
+  const [promptContent, setPromptContent] = useState('');
 
   const { data: mapData, isLoading, refetch } = useQuery({
     queryKey: ['graphMap'],
@@ -151,6 +154,34 @@ export const GraphMap: React.FC = () => {
       throw error;
     }
   }, [selectedGraphId, addMessage, queryClient]);
+
+  const handleOpenPromptEditor = useCallback(async () => {
+    try {
+      const templates = await api.prompts.list();
+      const systemTemplate = templates.system?.find((t: any) => t.code === 'infinite_graph_expansion');
+      const userTemplate = templates.user?.find((t: any) => t.code === 'infinite_graph_expansion');
+      const effectiveTemplate = userTemplate || systemTemplate;
+      setPromptContent(effectiveTemplate?.template_content || '');
+      setIsPromptEditorOpen(true);
+    } catch (error: any) {
+      addMessage({ type: 'error', content: error.message || '获取提示词失败' });
+    }
+  }, [addMessage]);
+
+  const handleSavePrompt = useCallback(async (content: string) => {
+    try {
+      await api.prompts.save({
+        code: 'infinite_graph_expansion',
+        scope: 'user',
+        template_content: content,
+      });
+      addMessage({ type: 'success', content: '提示词已保存' });
+      setIsPromptEditorOpen(false);
+    } catch (error: any) {
+      addMessage({ type: 'error', content: error.message || '保存提示词失败' });
+      throw error;
+    }
+  }, [addMessage]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -394,7 +425,22 @@ export const GraphMap: React.FC = () => {
         onSubmit={handleInfiniteExpand}
         progress={expansionProgress}
         isRunning={isExpansionRunning}
+        onEditPrompt={handleOpenPromptEditor}
       />
+
+      {isPromptEditorOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl mx-4 h-[70vh] overflow-hidden flex flex-col">
+            <PromptEditor
+              initialContent={promptContent}
+              variables={['domainTitle', 'domainDescription', 'maxGraphsPerLevel']}
+              onSave={handleSavePrompt}
+              onCancel={() => setIsPromptEditorOpen(false)}
+              title="编辑无限扩展提示词 (用户级别)"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -116,6 +116,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           onChange={(e) => setContent(e.target.value)}
           className="w-full h-full p-4 font-mono text-sm resize-none focus:outline-none dark:bg-gray-800 dark:text-gray-200"
           placeholder="在此输入提示词模板... 支持 Handlebars 语法，如 {{variable}} 和 {{#if condition}}...{{/if}}"
+          spellCheck={false}
         />
         
         {/* Optimize Overlay/Panel */}

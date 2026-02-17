@@ -83,11 +83,11 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     if (!hasFocusMode) {
       opacity = isTargetAccepted ? 0.4 : 0.3;
     } else if (focused) {
-      strokeColor = colors.linkHighlight;
+      strokeColor = customColor || colors.linkHighlight;
       strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else if (highlighted) {
-      strokeColor = colors.linkHighlight;
+      strokeColor = customColor || colors.linkHighlight;
       strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else {

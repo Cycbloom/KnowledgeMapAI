@@ -78,6 +78,9 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
     height: typeof window !== 'undefined' ? window.innerHeight : height 
   });
   const [showMiniMap, setShowMiniMap] = useState(false);
+  const [focusedGraphId, setFocusedGraphId] = useState<string | null>(null);
+  const [hasMoved, setHasMoved] = useState(false);
+  const mouseDownPos = useRef({ x: 0, y: 0 });
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
 
@@ -95,6 +98,38 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
     convertRelationsToEdges(filteredRelations), 
     [filteredRelations]
   );
+
+  const neighborGraphIds = useMemo(() => {
+    if (!focusedGraphId) return new Set<string>();
+    
+    const neighbors = new Set<string>();
+    neighbors.add(focusedGraphId);
+    
+    filteredRelations.forEach(relation => {
+      if (relation.source_graph_id === focusedGraphId) {
+        neighbors.add(relation.target_graph_id);
+      }
+      if (relation.target_graph_id === focusedGraphId) {
+        neighbors.add(relation.source_graph_id);
+      }
+    });
+    
+    return neighbors;
+  }, [focusedGraphId, filteredRelations]);
+
+  const neighborLinkIds = useMemo(() => {
+    if (!focusedGraphId) return new Set<string>();
+    
+    const links = new Set<string>();
+    
+    filteredRelations.forEach(relation => {
+      if (relation.source_graph_id === focusedGraphId || relation.target_graph_id === focusedGraphId) {
+        links.add(relation.id);
+      }
+    });
+    
+    return links;
+  }, [focusedGraphId, filteredRelations]);
 
   const layout = useMemo(() => {
     if (nodes.length === 0) return null;
@@ -234,6 +269,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
       setIsDragging(true);
+      setHasMoved(false);
+      mouseDownPos.current = { x: e.clientX, y: e.clientY };
       setDragStart({ 
         x: e.clientX - transformRef.current.x, 
         y: e.clientY - transformRef.current.y 
@@ -243,6 +280,14 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
 
   const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isDragging) {
+      const dx = e.clientX - mouseDownPos.current.x;
+      const dy = e.clientY - mouseDownPos.current.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 5) {
+        setHasMoved(true);
+      }
+      
       const newTransform = {
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
@@ -258,6 +303,13 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
+
+  const handleCanvasClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (e.target === svgRef.current && !hasMoved) {
+      setFocusedGraphId(null);
+    }
+    setHasMoved(false);
+  }, [hasMoved]);
 
   const handleResetView = useCallback(() => {
     if (layout && layout.nodes.length > 0) {
@@ -337,6 +389,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onClick={handleCanvasClick}
         onContextMenu={(e) => e.preventDefault()}
       >
         <g ref={contentRef}>
@@ -348,6 +401,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
           {layout.links.map(link => {
             const edge = edges.find(e => e.id === link.id);
             const edgeColor = edge ? getEdgeColor(edge) : '#6B7280';
+            const isFocused = focusedGraphId ? neighborLinkIds.has(link.id) : false;
+            const hasFocus = focusedGraphId !== null;
             
             return (
               <MindMapLink
@@ -356,8 +411,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
                 nodes={nodeMap}
                 isDark={isDark}
                 highlighted={false}
-                focused={false}
-                hasFocusMode={false}
+                focused={isFocused}
+                hasFocusMode={hasFocus}
                 linkStyle={linkStyle}
                 linkAnimation={linkAnimation}
                 customColor={edgeColor}
@@ -367,6 +422,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
           {layout.nodes.map(node => {
             const graph = graphs.find(g => g.id === node.id);
             const nodeCount = graph?.node_count || 0;
+            const isFocused = focusedGraphId ? neighborGraphIds.has(node.id) : false;
+            const hasFocus = focusedGraphId !== null;
             
             return (
               <MindMapNode
@@ -379,13 +436,21 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
                 onClick={() => {
                   if (graph && onGraphClick) {
                     onGraphClick(graph);
+                    setFocusedGraphId(node.id);
+                    
+                    const visualCenterX = containerSize.width / 2;
+                    const visualCenterY = containerSize.height / 2;
+                    const targetK = transformRef.current.k;
+                    const targetX = visualCenterX - node.x * targetK;
+                    const targetY = visualCenterY - node.y * targetK;
+                    animateCamera(targetX, targetY, targetK, 400);
                   }
                 }}
                 onMouseEnter={() => setHoveredNodeId(node.id)}
                 onMouseLeave={() => setHoveredNodeId(null)}
-                focused={false}
+                focused={isFocused}
                 forceShowText={true}
-                hasFocusMode={false}
+                hasFocusMode={hasFocus}
                 colorScheme={colorScheme}
                 nodeSizeMode="fixed"
                 allNodes={nodes}

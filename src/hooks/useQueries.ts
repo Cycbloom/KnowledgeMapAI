@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { Node, Edge, Task, Template } from '../types';
+import { Node, Edge, Task, Template, NodeLevel } from '../types';
 
 // Query Keys
 export const queryKeys = {
@@ -262,7 +262,10 @@ export const useCreateNodeMutation = () => {
         // Create a temporary node
         const tempNode: Node = {
           id: `temp-${  Date.now()}`,
+          x_position: newNodeVariables.x_position ?? 0,
+          y_position: newNodeVariables.y_position ?? 0,
           ...newNodeVariables,
+          level: newNodeVariables.level as NodeLevel | undefined,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -400,8 +403,8 @@ export const useCreateEdgeMutation = () => {
 
   return useMutation({
     mutationFn: (data: { source_node_id: string; target_node_id: string; relationship_type: string; graphId?: string }) => {
-       const { graphId, ...edgeData } = data;
-       return api.edges.create(edgeData);
+       const { graphId, relationship_type, ...edgeData } = data;
+       return api.edges.create({ ...edgeData, graph_id: graphId || '', relationship_type });
     },
     onMutate: async (newEdgeVariables) => {
        const { graphId, ...edgeData } = newEdgeVariables;

@@ -347,6 +347,7 @@ export const LearningMode = () => {
         await api.edges.create({
           source_node_id: selectedParentNodeId,
           target_node_id: newNode.id,
+          graph_id: graphId,
           relationship_type: 'related'
         });
       }

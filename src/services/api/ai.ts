@@ -1,0 +1,237 @@
+import { request, getAIConfig, getApiUrl, getHeaders, handleResponse } from './client';
+import { useStore } from '../../store/useStore';
+import type { AIAction } from './types';
+
+export const aiActionsApi = {
+  list: (graphId?: string) => request(`/ai-actions${graphId ? `?graph_id=${graphId}` : ''}`),
+  
+  create: (data: Partial<AIAction>) => 
+    request('/ai-actions', { method: 'POST', body: JSON.stringify(data) }),
+  
+  update: (id: string, data: Partial<AIAction>) => 
+    request(`/ai-actions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  
+  delete: (id: string) => request(`/ai-actions/${id}`, { method: 'DELETE' }),
+  
+  execute: (data: { action_id: string; node_id: string; graph_id?: string }) => 
+    request('/ai-actions/execute', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+const createStreamHandler = async (
+  url: string,
+  payload: unknown,
+  onChunk: (content: string) => void
+) => {
+  const token = useStore.getState().token;
+  const response = await fetch(`${getApiUrl()}${url}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      useStore.getState().setUser(null, null);
+    }
+    const errorText = await response.text();
+    throw new Error(errorText || 'Stream failed');
+  }
+
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+  if (!reader) return;
+
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n\n');
+    buffer = lines.pop() || '';
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const dataStr = line.replace('data: ', '');
+        if (dataStr === '[DONE]') return;
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.content) onChunk(parsed.content);
+          if (parsed.error) throw new Error(parsed.error);
+        } catch (e) {
+          console.error('Stream parse error:', e);
+        }
+      }
+    }
+  }
+};
+
+export const aiApi = {
+  status: () => request('/ai/status'),
+  
+  generateContent: (data: { topic: string; context?: string; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/generate-content', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  generateContentStream: async (
+    data: { topic: string; context?: string; level?: string; provider?: string; model?: string },
+    onChunk: (content: string) => void
+  ) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    await createStreamHandler('/ai/generate-content-stream', payload, onChunk);
+  },
+  
+  annotateTerms: (data: { node_id: string; node_content: string; graph_id: string; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    return request('/ai/annotate-terms', { 
+      method: 'POST', 
+      body: JSON.stringify({
+        ...data,
+        provider: data.provider || config.provider,
+        model: data.model || config.model
+      }) 
+    });
+  },
+  
+  generateLearningMaterial: (data: { topic: string; context?: string; level?: string; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/learning-material', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  expand: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  getBranchSuggestions: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/branch-suggestions', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  generateCards: (data: { node_title: string; node_content: string; count?: number; types?: string[]; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string; provider?: string; model?: string }) => {
+    const aiConfig = getAIConfig('text');
+    const payloadConfig = { ...config };
+    if (!payloadConfig.provider && aiConfig.provider) payloadConfig.provider = aiConfig.provider;
+    if (!payloadConfig.model && aiConfig.model) payloadConfig.model = aiConfig.model;
+    return request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config: payloadConfig }) });
+  },
+  
+  batchExpandGraph: (node_ids: string[]) => {
+    return request('/ai/batch-expand-graph', { method: 'POST', body: JSON.stringify({ node_ids }) });
+  },
+  
+  getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
+  
+  textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: unknown[]; edges?: unknown[]; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  documentToGraph: async (data: { graph_id: string; file: File }) => {
+    const token = useStore.getState().token;
+    const config = getAIConfig('text');
+    const formData = new FormData();
+    formData.append('graph_id', data.graph_id);
+    formData.append('file', data.file);
+    if (config.provider) formData.append('provider', config.provider);
+    if (config.model) formData.append('model', config.model);
+    
+    const response = await fetch(`${getApiUrl()}/ai/document-to-graph`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData
+    });
+    return handleResponse(response);
+  },
+  
+  imageToGraph: (formData: FormData) => request('/ai/image-to-graph', { method: 'POST', body: formData }),
+  
+  urlToText: (url: string) => request('/ai/url-to-text', { method: 'POST', body: JSON.stringify({ url }) }),
+  
+  recommendConnections: (data: { graph_id: string; node_title: string; node_content?: string }) => 
+    request('/ai/recommend-connections', { method: 'POST', body: JSON.stringify(data) }),
+  
+  chatStream: async (
+    data: { message: string; graph_id: string; history?: unknown[]; context_node_ids?: string[]; provider?: string; model?: string },
+    onChunk: (content: string) => void
+  ) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    await createStreamHandler('/ai/chat', payload, onChunk);
+  },
+  
+  tutorChatStream: async (
+    data: { message: string; graph_id?: string; history?: unknown[]; context_node_ids?: string[]; mode?: 'free' | 'guided' | 'learning-path'; provider?: string; model?: string },
+    onChunk: (content: string) => void
+  ) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    await createStreamHandler('/ai/tutor-chat', payload, onChunk);
+  },
+  
+  extractConcepts: (data: { text: string; existing_nodes?: string[]; max_concepts?: number; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/extract-concepts', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  suggestNextTopic: (data: { node_title: string; node_content?: string; existing_nodes?: string[]; user_progress?: { mastered_count?: number; due_count?: number; current_level?: string }; provider?: string; model?: string }) => {
+    const config = getAIConfig('text');
+    const payload = { ...data };
+    if (!payload.provider && config.provider) payload.provider = config.provider;
+    if (!payload.model && config.model) payload.model = config.model;
+    return request('/ai/suggest-next-topic', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  
+  generatePodcastScript: (context: string, language: string = 'zh', graph_id?: string) => {
+    const config = getAIConfig('text');
+    return request('/ai/podcast/script', { 
+      method: 'POST', 
+      body: JSON.stringify({ 
+        context, 
+        language,
+        graph_id,
+        provider: config.provider,
+        model: config.model 
+      }) 
+    });
+  },
+};

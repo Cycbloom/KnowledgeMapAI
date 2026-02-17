@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
 import { GraphMapCanvas } from '../components/GraphMap/GraphMapCanvas';
@@ -8,7 +9,7 @@ import { GraphMapToolbar } from '../components/GraphMap/GraphMapToolbar';
 import { CreateRelationPanel } from '../components/GraphMap/CreateRelationPanel';
 import { QuickCreateGraphPanel } from '../components/GraphMap/QuickCreateGraphPanel';
 import { MapAnalysisPanel } from '../components/GraphMap/MapAnalysisPanel';
-import { InfiniteExpansionPanel } from '../components/GraphMap/InfiniteExpansionPanel';
+import { AIExpansionPanel } from '../components/GraphMap/AIExpansionPanel';
 import { PromptEditor } from '../components/PromptEditor';
 import type { Graph, GraphRelation, GraphMapFilterMode, GraphRelationType, QuickCreateGraphRequest, MapAnalysisResult, InfiniteExpansionProgress } from '../types';
 
@@ -27,11 +28,12 @@ export const GraphMap: React.FC = () => {
   const [createGraphRelationType, setCreateGraphRelationType] = useState<GraphRelationType | undefined>(undefined);
   const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<MapAnalysisResult | null>(null);
-  const [isInfiniteExpansionOpen, setIsInfiniteExpansionOpen] = useState(false);
+  const [isAIExpansionOpen, setIsAIExpansionOpen] = useState(false);
   const [expansionProgress, setExpansionProgress] = useState<InfiniteExpansionProgress | null>(null);
   const [isExpansionRunning, setIsExpansionRunning] = useState(false);
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
   const [promptContent, setPromptContent] = useState('');
+  const [promptEditMode, setPromptEditMode] = useState<'depth' | 'width'>('width');
 
   const { data: mapData, isLoading, refetch } = useQuery({
     queryKey: ['graphMap'],
@@ -155,13 +157,104 @@ export const GraphMap: React.FC = () => {
     }
   }, [selectedGraphId, addMessage, queryClient]);
 
-  const handleOpenPromptEditor = useCallback(async () => {
+  const handleDepthExpand = useCallback(async (config: {
+    style: 'academic' | 'practical' | 'beginner' | 'custom';
+    customPrompt?: string;
+    sources?: string[];
+    depth: number;
+  }): Promise<{ root: any; coreNodes: any[] } | null> => {
+    if (!selectedGraphId) return null;
+    
+    try {
+      const graph = graphs.find(g => g.id === selectedGraphId);
+      if (!graph) return null;
+      
+      const result = await api.autoGraph.init({
+        topic: graph.title,
+        style: config.style,
+        customPrompt: config.customPrompt,
+        sources: config.sources,
+        graph_id: selectedGraphId,
+      });
+      
+      if (result.root && result.coreNodes) {
+        const nodes = [
+          { title: result.root.title, content: result.root.content, level: 'root' },
+          ...result.coreNodes.map((n: any) => ({ title: n.title, content: n.content, level: n.level || 'core' }))
+        ];
+        
+        await api.autoGraph.saveNodes({
+          graph_id: selectedGraphId,
+          nodes,
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ['graphMap'] });
+        
+        return { root: result.root, coreNodes: result.coreNodes };
+      }
+      return null;
+    } catch (error: any) {
+      addMessage({ type: 'error', content: error.message || '深度拓展失败' });
+      throw error;
+    }
+  }, [selectedGraphId, graphs, addMessage, queryClient]);
+
+  const handleDepthExpandNode = useCallback(async (config: {
+    nodeId: string;
+    nodeTitle: string;
+    nodeContent?: string;
+    nodeLevel?: string;
+    style: 'academic' | 'practical' | 'beginner' | 'custom';
+    customPrompt?: string;
+    existingChildren?: { title: string }[];
+  }): Promise<any[] | null> => {
+    if (!selectedGraphId) return null;
+    
+    try {
+      const result = await api.autoGraph.expand({
+        node_id: config.nodeId,
+        node_title: config.nodeTitle,
+        node_content: config.nodeContent,
+        node_level: config.nodeLevel,
+        graph_id: selectedGraphId,
+        style: config.style,
+        customPrompt: config.customPrompt,
+        existing_children: config.existingChildren,
+      });
+      
+      if (result.children && result.children.length > 0) {
+        const nodes = result.children.map((n: any) => ({
+          title: n.title,
+          content: n.content,
+          level: n.level || 'sub',
+          parentId: config.nodeId,
+        }));
+        
+        await api.autoGraph.saveNodes({
+          graph_id: selectedGraphId,
+          nodes,
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ['graphMap'] });
+        
+        return result.children;
+      }
+      return null;
+    } catch (error: any) {
+      addMessage({ type: 'error', content: error.message || '展开节点失败' });
+      throw error;
+    }
+  }, [selectedGraphId, addMessage, queryClient]);
+
+  const handleOpenPromptEditor = useCallback(async (mode: 'depth' | 'width') => {
     try {
       const templates = await api.prompts.list();
-      const systemTemplate = templates.system?.find((t: any) => t.code === 'infinite_graph_expansion');
-      const userTemplate = templates.user?.find((t: any) => t.code === 'infinite_graph_expansion');
+      const templateCode = mode === 'depth' ? 'auto_graph_init' : 'infinite_graph_expansion';
+      const systemTemplate = templates.system?.find((t: any) => t.code === templateCode);
+      const userTemplate = templates.user?.find((t: any) => t.code === templateCode);
       const effectiveTemplate = userTemplate || systemTemplate;
       setPromptContent(effectiveTemplate?.template_content || '');
+      setPromptEditMode(mode);
       setIsPromptEditorOpen(true);
     } catch (error: any) {
       addMessage({ type: 'error', content: error.message || '获取提示词失败' });
@@ -170,8 +263,9 @@ export const GraphMap: React.FC = () => {
 
   const handleSavePrompt = useCallback(async (content: string) => {
     try {
+      const templateCode = promptEditMode === 'depth' ? 'auto_graph_init' : 'infinite_graph_expansion';
       await api.prompts.save({
-        code: 'infinite_graph_expansion',
+        code: templateCode,
         scope: 'user',
         template_content: content,
       });
@@ -181,7 +275,7 @@ export const GraphMap: React.FC = () => {
       addMessage({ type: 'error', content: error.message || '保存提示词失败' });
       throw error;
     }
-  }, [addMessage]);
+  }, [promptEditMode, addMessage]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -298,18 +392,14 @@ export const GraphMap: React.FC = () => {
                   
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <button
-                      onClick={() => setIsInfiniteExpansionOpen(true)}
+                      onClick={() => setIsAIExpansionOpen(true)}
                       className="w-full px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
                     >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                        <path d="M2 17l10 5 10-5" />
-                        <path d="M2 12l10 5 10-5" />
-                      </svg>
-                      AI 无限扩展
+                      <Sparkles className="w-4 h-4" />
+                      AI 智能拓展
                     </button>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                      自动生成相关知识网络
+                      生成知识点或相关知识网络
                     </p>
                   </div>
                   
@@ -417,15 +507,19 @@ export const GraphMap: React.FC = () => {
         }}
       />
 
-      <InfiniteExpansionPanel
-        isOpen={isInfiniteExpansionOpen}
-        onClose={() => setIsInfiniteExpansionOpen(false)}
+      <AIExpansionPanel
+        isOpen={isAIExpansionOpen}
+        onClose={() => setIsAIExpansionOpen(false)}
         sourceGraphId={selectedGraphId || ''}
         sourceGraphTitle={graphs.find(g => g.id === selectedGraphId)?.title || ''}
-        onSubmit={handleInfiniteExpand}
+        sourceGraphDescription={graphs.find(g => g.id === selectedGraphId)?.description}
+        onDepthExpand={handleDepthExpand}
+        onDepthExpandNode={handleDepthExpandNode}
+        onWidthExpand={handleInfiniteExpand}
         progress={expansionProgress}
         isRunning={isExpansionRunning}
         onEditPrompt={handleOpenPromptEditor}
+        hasNodes={(graphs.find(g => g.id === selectedGraphId) as any)?.node_count > 0}
       />
 
       {isPromptEditorOpen && (
@@ -433,10 +527,13 @@ export const GraphMap: React.FC = () => {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl mx-4 h-[70vh] overflow-hidden flex flex-col">
             <PromptEditor
               initialContent={promptContent}
-              variables={['domainTitle', 'domainDescription', 'maxGraphsPerLevel']}
+              variables={promptEditMode === 'depth' 
+                ? ['topic', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'hasSources', 'sources']
+                : ['domainTitle', 'domainDescription', 'maxGraphsPerLevel']
+              }
               onSave={handleSavePrompt}
               onCancel={() => setIsPromptEditorOpen(false)}
-              title="编辑无限扩展提示词 (用户级别)"
+              title={promptEditMode === 'depth' ? '编辑深度拓展提示词 (用户级别)' : '编辑宽度拓展提示词 (用户级别)'}
             />
           </div>
         </div>

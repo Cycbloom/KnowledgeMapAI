@@ -462,20 +462,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
       </svg>
 
       <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-        {showMiniMap && layout && (
-          <MiniMap 
-            nodes={layout.nodes}
-            transform={transform}
-            containerWidth={containerSize.width}
-            containerHeight={containerSize.height}
-            onTransformChange={handleMiniMapTransformChange}
-            width={200}
-            height={140}
-            viewCenterX={containerSize.width / 2}
-            viewCenterY={containerSize.height / 2}
-          />
-        )}
-        
         <div className="flex flex-col gap-2">
           {fromGraphId && onReturnToGraph && (
             <button
@@ -537,6 +523,22 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
           </button>
         </div>
       </div>
+
+      {showMiniMap && layout && (
+        <div className="absolute bottom-4 right-14 mr-1">
+          <MiniMap 
+            nodes={layout.nodes}
+            transform={transform}
+            containerWidth={containerSize.width}
+            containerHeight={containerSize.height}
+            onTransformChange={handleMiniMapTransformChange}
+            width={200}
+            height={140}
+            viewCenterX={containerSize.width / 2}
+            viewCenterY={containerSize.height / 2}
+          />
+        </div>
+      )}
 
       <div className="absolute bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
         缩放: {Math.round(transform.k * 100)}% | 图谱: {graphs.length} | 关系: {relations.length}

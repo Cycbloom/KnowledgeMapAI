@@ -25,7 +25,9 @@ const PROMPT_NAME_MAP: Record<string, string> = {
   tutor_chat: 'AI 助教 (Tutor Chat)',
   document_to_graph: '文档转图谱 (Document to Graph)',
   term_annotation: '术语标注 (Term Annotation)',
-  infinite_graph_expansion: '无限扩展知识网络 (Infinite Graph Expansion)'
+  infinite_graph_expansion: '无限扩展知识网络 (Infinite Graph Expansion)',
+  auto_graph_init: '图谱初始化 (Auto Graph Init)',
+  auto_graph_expand: '节点展开 (Auto Graph Expand)'
 };
 
 const SOURCE_NAME_MAP: Record<string, string> = {
@@ -40,7 +42,7 @@ const PROMPT_CATEGORIES = [
     name: '知识图谱构建',
     icon: Network,
     color: 'emerald',
-    codes: ['expand_knowledge', 'branch_suggestions', 'recommend_connections', 'text_to_graph', 'document_to_graph', 'infinite_graph_expansion']
+    codes: ['expand_knowledge', 'branch_suggestions', 'recommend_connections', 'text_to_graph', 'document_to_graph', 'infinite_graph_expansion', 'auto_graph_init', 'auto_graph_expand']
   },
   {
     id: 'card_generation',
@@ -178,7 +180,9 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
     tutor_chat: ['isGuided', 'currentNodeId', 'currentNodeTitle', 'currentNodeContent', 'existingNodes'],
     document_to_graph: [],
     term_annotation: [],
-    infinite_graph_expansion: ['domainTitle', 'domainDescription', 'maxGraphsPerLevel']
+    infinite_graph_expansion: ['domainTitle', 'domainDescription', 'maxGraphsPerLevel'],
+    auto_graph_init: ['topic', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'hasSources', 'sources'],
+    auto_graph_expand: ['nodeTitle', 'nodeContent', 'nodeLevel', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'existingChildren']
   };
 
   if (editingCode) {

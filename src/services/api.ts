@@ -65,11 +65,33 @@ const handleResponse = async (res: Response) => {
   
   if (!res.ok) {
     if (res.status === 401) {
-      // Throw 401 to be caught by request interceptor
-      throw new Error('Unauthorized');
+      const error = new Error('Unauthorized');
+      (error as any).status = 401;
+      (error as any).code = 'UNAUTHORIZED';
+      throw error;
     }
-    const error = (data && data.message) || (data && data.error) || res.statusText;
-    throw new Error(error);
+    if (res.status === 403) {
+      const error = new Error(data?.message || 'Forbidden');
+      (error as any).status = 403;
+      (error as any).code = 'FORBIDDEN';
+      throw error;
+    }
+    if (res.status === 404) {
+      const error = new Error(data?.message || 'Not Found');
+      (error as any).status = 404;
+      (error as any).code = 'NOT_FOUND';
+      throw error;
+    }
+    if (res.status >= 500) {
+      const error = new Error(data?.message || 'Server Error');
+      (error as any).status = res.status;
+      (error as any).code = 'SERVER_ERROR';
+      throw error;
+    }
+    const error = new Error((data && data.message) || (data && data.error) || res.statusText);
+    (error as any).status = res.status;
+    (error as any).code = data?.code || 'API_ERROR';
+    throw error;
   }
   
   return data;

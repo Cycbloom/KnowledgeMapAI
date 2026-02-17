@@ -7,6 +7,7 @@ import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { queryKeys } from './useQueries';
 import { useQueryClient } from '@tanstack/react-query';
+import { handleError, isNetworkError } from '../services/errorService';
 
 interface UseGraphAIOperationsProps {
   id: string;
@@ -109,8 +110,9 @@ export const useGraphAIOperations = ({
       setAiPrompt('');
       addMessage({ content: 'AI 内容生成完成', type: 'success' });
     } catch (err) {
-      console.error(err);
-      addMessage({ content: 'AI 生成失败', type: 'error' });
+      const errorMsg = isNetworkError(err) ? '网络连接失败，请检查网络' : 'AI 生成失败';
+      handleError(err, 'handleAIGenerate');
+      addMessage({ content: errorMsg, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -211,8 +213,9 @@ export const useGraphAIOperations = ({
         addMessage({ type: 'info', content: '未发现新的关联' });
       }
     } catch (err) {
-      console.error(err);
-      addMessage({ type: 'error', content: '拓展失败' });
+      const errorMsg = isNetworkError(err) ? '网络连接失败，请检查网络' : '拓展失败';
+      handleError(err, 'handleAIExpand');
+      addMessage({ type: 'error', content: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -245,11 +248,11 @@ export const useGraphAIOperations = ({
       await createCardsBatchMutation.mutateAsync(cards);
       addMessage({ type: 'success', content: `成功生成并保存了 ${cards.length} 张复习卡片！` });
       
-      // Invalidate status to update mastery
       queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(id) });
     } catch (err) {
-      console.error(err);
-      addMessage({ type: 'error', content: '生成卡片失败' });
+      const errorMsg = isNetworkError(err) ? '网络连接失败，请检查网络' : '生成卡片失败';
+      handleError(err, 'handleAIGenerateCards');
+      addMessage({ type: 'error', content: errorMsg });
     } finally {
       setLoading(false);
     }

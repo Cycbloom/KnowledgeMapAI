@@ -270,12 +270,12 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   disabled={isRunning}
                   className={`p-3 rounded-lg border-2 transition-all text-left ${
                     mode === 'depth'
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <Layers className="w-4 h-4 text-purple-500" />
+                    <Layers className="w-4 h-4 text-blue-500" />
                     <span className="font-medium text-gray-900 dark:text-white">深度拓展</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -287,12 +287,12 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   disabled={isRunning}
                   className={`p-3 rounded-lg border-2 transition-all text-left ${
                     mode === 'width'
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <GitBranch className="w-4 h-4 text-green-500" />
+                    <GitBranch className="w-4 h-4 text-emerald-600" />
                     <span className="font-medium text-gray-900 dark:text-white">宽度拓展</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -321,7 +321,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         disabled={isRunning}
                         className={`p-2 rounded-lg border-2 transition-all text-left ${
                           depthStyle === option.value
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
@@ -400,21 +400,24 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                   <input
                     type="range"
                     min="1"
-                    max="3"
+                    max="4"
                     value={depthLevel}
                     onChange={e => setDepthLevel(Number(e.target.value))}
                     disabled={isRunning}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                    className="w-full h-2 bg-blue-200 dark:bg-blue-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    <span>1 层（核心节点）</span>
-                    <span>3 层（详细展开）</span>
+                    <span>1 层</span>
+                    <span>4 层</span>
                   </div>
                 </div>
 
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-xs text-blue-600 dark:text-blue-400">
-                    深度拓展将在当前图谱内生成知识点，包括根节点、核心节点和子节点。
+                    {depthLevel === 1 && '生成根节点和核心节点，适合快速构建知识框架。'}
+                    {depthLevel === 2 && '生成根节点、核心节点和一级子节点，适合中等详细程度的知识图谱。'}
+                    {depthLevel === 3 && '生成根节点、核心节点和两级子节点，适合详细的知识图谱。'}
+                    {depthLevel === 4 && '生成根节点、核心节点和三级子节点，适合非常详细的知识图谱，内容最丰富。'}
                   </p>
                 </div>
 
@@ -460,7 +463,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         disabled={isRunning}
                         className={`flex-1 p-2 rounded-lg border-2 transition-all text-center ${
                           selectedRelationTypes.includes(option.value)
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                            ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                         } ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
@@ -486,7 +489,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                     value={maxDepth}
                     onChange={e => setMaxDepth(Number(e.target.value))}
                     disabled={isRunning}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                    className="w-full h-2 bg-emerald-200 dark:bg-emerald-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <span>1 层</span>
@@ -524,17 +527,17 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                       />
                     </div>
 
-                    <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                       <input
                         type="checkbox"
                         id="autoGenerateNodes"
                         checked={autoGenerateNodes}
                         onChange={e => setAutoGenerateNodes(e.target.checked)}
                         disabled={isRunning}
-                        className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                       />
                       <label htmlFor="autoGenerateNodes" className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                        <Sparkles className="w-4 h-4 text-green-500" />
+                        <Sparkles className="w-4 h-4 text-emerald-500" />
                         <span>自动生成图谱内的知识点</span>
                       </label>
                     </div>
@@ -547,21 +550,30 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                         <input
                           type="range"
                           min="1"
-                          max="3"
+                          max="4"
                           value={nodeDepth}
                           onChange={e => setNodeDepth(Number(e.target.value))}
                           disabled={isRunning}
-                          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                          className="w-full h-2 bg-blue-200 dark:bg-blue-800 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
                         />
                       </div>
                     )}
                   </motion.div>
                 )}
 
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-xs text-green-600 dark:text-green-400">
-                    宽度拓展将创建与当前图谱相关的其他知识图谱，形成知识网络。
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                    {maxDepth === 1 && '创建与当前图谱直接相关的知识图谱，适合快速扩展知识网络。'}
+                    {maxDepth === 2 && '创建两层相关知识图谱，适合中等规模的知识网络扩展。'}
+                    {maxDepth === 3 && '创建三层相关知识图谱，适合较大规模的知识网络扩展。'}
+                    {maxDepth === 4 && '创建四层相关知识图谱，适合大规模的知识网络扩展。'}
+                    {maxDepth === 5 && '创建五层相关知识图谱，适合最大规模的知识网络扩展，覆盖面最广。'}
                   </p>
+                  {autoGenerateNodes && (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
+                      同时为每个新图谱生成 {nodeDepth} 层深度的知识点。
+                    </p>
+                  )}
                 </div>
               </motion.div>
             )}

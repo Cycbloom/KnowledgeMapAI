@@ -451,4 +451,22 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   );
 };
 
-export const MindMapNode = React.memo(MindMapNodeComponent);
+export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.node.id === nextProps.node.id &&
+    prevProps.selected === nextProps.selected &&
+    prevProps.focused === nextProps.focused &&
+    prevProps.zoomLevel === nextProps.zoomLevel &&
+    prevProps.forceShowText === nextProps.forceShowText &&
+    prevProps.isDark === nextProps.isDark &&
+    prevProps.isNew === nextProps.isNew &&
+    prevProps.isSelectableAsParent === nextProps.isSelectableAsParent &&
+    prevProps.isExcludedAsParent === nextProps.isExcludedAsParent &&
+    prevProps.isSelectedAsParent === nextProps.isSelectedAsParent &&
+    prevProps.node.x === nextProps.node.x &&
+    prevProps.node.y === nextProps.node.y &&
+    prevProps.node.title === nextProps.node.title &&
+    prevProps.node.level === nextProps.node.level &&
+    prevProps.node.is_accepted === nextProps.node.is_accepted
+  );
+});

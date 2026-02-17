@@ -158,7 +158,28 @@ Respond in Chinese.`,
   term_annotation: `
 Return a JSON array where each object has "term" (the exact text found in the source) and "explanation" (a concise definition under 20 words).
 Example format: [{"term": "RAG", "explanation": "检索增强生成，一种结合检索系统和生成模型的技术。"}]
-Please respond in Chinese.`
+Please respond in Chinese.`,
+
+  infinite_graph_expansion: `
+Return a JSON object with the following structure:
+{
+  "prerequisite": [
+    { "title": "领域名称", "description": "该领域的简要描述（说明包含什么内容）", "reason": "为什么是前置知识" }
+  ],
+  "extension": [
+    { "title": "领域名称", "description": "该领域的简要描述（说明包含什么内容）", "reason": "为什么是扩展知识" }
+  ],
+  "related": [
+    { "title": "领域名称", "description": "该领域的简要描述（说明包含什么内容）", "reason": "为什么是相关知识" }
+  ]
+}
+
+Important:
+- Each array can be empty if no suitable domains exist
+- title should be a concise domain name (2-10 characters preferred)
+- description should explain what the domain contains, NOT its relationship to the current domain
+- reason should explain why this domain has this relationship type
+- Respond in Chinese`
 };
 
 export class PromptService {

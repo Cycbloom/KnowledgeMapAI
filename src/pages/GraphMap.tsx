@@ -34,6 +34,8 @@ export const GraphMap: React.FC = () => {
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
   const [promptContent, setPromptContent] = useState('');
   const [promptEditMode, setPromptEditMode] = useState<'depth' | 'width'>('width');
+  const [depthPromptType, setDepthPromptType] = useState<'init' | 'expand'>('init');
+  const [showPromptSelector, setShowPromptSelector] = useState(false);
 
   const { data: mapData, isLoading, refetch } = useQuery({
     queryKey: ['graphMap'],
@@ -249,13 +251,38 @@ export const GraphMap: React.FC = () => {
   const handleOpenPromptEditor = useCallback(async (mode: 'depth' | 'width') => {
     try {
       const templates = await api.prompts.list();
-      const templateCode = mode === 'depth' ? 'auto_graph_init' : 'infinite_graph_expansion';
+      
+      if (mode === 'depth') {
+        setShowPromptSelector(true);
+        setPromptEditMode(mode);
+        setDepthPromptType('init');
+        const systemTemplate = templates.system?.find((t: any) => t.code === 'auto_graph_init');
+        const userTemplate = templates.user?.find((t: any) => t.code === 'auto_graph_init');
+        const effectiveTemplate = userTemplate || systemTemplate;
+        setPromptContent(effectiveTemplate?.template_content || '');
+      } else {
+        setShowPromptSelector(false);
+        const systemTemplate = templates.system?.find((t: any) => t.code === 'infinite_graph_expansion');
+        const userTemplate = templates.user?.find((t: any) => t.code === 'infinite_graph_expansion');
+        const effectiveTemplate = userTemplate || systemTemplate;
+        setPromptContent(effectiveTemplate?.template_content || '');
+        setPromptEditMode(mode);
+      }
+      setIsPromptEditorOpen(true);
+    } catch (error: any) {
+      addMessage({ type: 'error', content: error.message || '获取提示词失败' });
+    }
+  }, [addMessage]);
+
+  const handleSwitchDepthPrompt = useCallback(async (type: 'init' | 'expand') => {
+    try {
+      const templates = await api.prompts.list();
+      const templateCode = type === 'init' ? 'auto_graph_init' : 'auto_graph_expand';
       const systemTemplate = templates.system?.find((t: any) => t.code === templateCode);
       const userTemplate = templates.user?.find((t: any) => t.code === templateCode);
       const effectiveTemplate = userTemplate || systemTemplate;
       setPromptContent(effectiveTemplate?.template_content || '');
-      setPromptEditMode(mode);
-      setIsPromptEditorOpen(true);
+      setDepthPromptType(type);
     } catch (error: any) {
       addMessage({ type: 'error', content: error.message || '获取提示词失败' });
     }
@@ -263,19 +290,23 @@ export const GraphMap: React.FC = () => {
 
   const handleSavePrompt = useCallback(async (content: string) => {
     try {
-      const templateCode = promptEditMode === 'depth' ? 'auto_graph_init' : 'infinite_graph_expansion';
+      let templateCode: string;
+      if (promptEditMode === 'depth') {
+        templateCode = depthPromptType === 'init' ? 'auto_graph_init' : 'auto_graph_expand';
+      } else {
+        templateCode = 'infinite_graph_expansion';
+      }
       await api.prompts.save({
         code: templateCode,
         scope: 'user',
         template_content: content,
       });
       addMessage({ type: 'success', content: '提示词已保存' });
-      setIsPromptEditorOpen(false);
     } catch (error: any) {
       addMessage({ type: 'error', content: error.message || '保存提示词失败' });
       throw error;
     }
-  }, [promptEditMode, addMessage]);
+  }, [promptEditMode, depthPromptType, addMessage]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -525,15 +556,45 @@ export const GraphMap: React.FC = () => {
       {isPromptEditorOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl mx-4 h-[70vh] overflow-hidden flex flex-col">
+            {showPromptSelector && promptEditMode === 'depth' && (
+              <div className="flex border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => handleSwitchDepthPrompt('init')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                    depthPromptType === 'init'
+                      ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-500 bg-purple-50/50 dark:bg-purple-900/20'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  图谱初始化 (auto_graph_init)
+                </button>
+                <button
+                  onClick={() => handleSwitchDepthPrompt('expand')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                    depthPromptType === 'expand'
+                      ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-500 bg-purple-50/50 dark:bg-purple-900/20'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                >
+                  节点展开 (auto_graph_expand)
+                </button>
+              </div>
+            )}
             <PromptEditor
+              key={`${promptEditMode}-${depthPromptType}`}
               initialContent={promptContent}
               variables={promptEditMode === 'depth' 
-                ? ['topic', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'hasSources', 'sources']
+                ? (depthPromptType === 'init' 
+                  ? ['topic', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'hasSources', 'sources']
+                  : ['nodeTitle', 'nodeContent', 'nodeLevel', 'isCustom', 'customPrompt', 'isAcademic', 'isPractical', 'isBeginner', 'existingChildren'])
                 : ['domainTitle', 'domainDescription', 'maxGraphsPerLevel']
               }
               onSave={handleSavePrompt}
               onCancel={() => setIsPromptEditorOpen(false)}
-              title={promptEditMode === 'depth' ? '编辑深度拓展提示词 (用户级别)' : '编辑宽度拓展提示词 (用户级别)'}
+              title={promptEditMode === 'depth' 
+                ? (depthPromptType === 'init' ? '编辑图谱初始化提示词' : '编辑节点展开提示词')
+                : '编辑宽度拓展提示词'
+              }
             />
           </div>
         </div>

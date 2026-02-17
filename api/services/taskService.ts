@@ -712,7 +712,8 @@ export class TaskService {
                     suggestion.title, 
                     suggestion.description,
                     node_depth,
-                    provider
+                    provider,
+                    userId
                   );
                   totalNodesCreated += nodeCount;
 
@@ -796,36 +797,35 @@ export class TaskService {
     topic: string, 
     description: string | undefined,
     depth: number,
-    provider: any
+    provider: any,
+    userId?: string
   ): Promise<number> {
     try {
       let totalNodes = 0;
 
-      const systemPrompt = `你是一个知识图谱专家。为给定的知识领域生成核心知识点。
-
-输入：知识领域名称和描述
-输出 JSON 格式：
-{
-  "root": { "title": "根节点标题", "content": "根节点内容" },
-  "coreNodes": [
-    { "title": "核心知识点标题", "content": "知识点内容描述" }
-  ]
-}
-
-注意：
-1. 根节点应该是该领域的核心概念
-2. 核心节点应该是该领域的主要分支或子主题
-3. 生成 3-5 个核心节点
-4. 内容应该简洁明了`;
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        'auto_graph_init',
+        {
+          topic,
+          isCustom: false,
+          isAcademic: true,
+          isPractical: false,
+          isBeginner: false,
+          hasSources: false,
+          sources: ''
+        },
+        userId
+      );
 
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `知识领域：${topic}\n\n描述：${description || '无描述'}\n\n请生成知识点。` }
+          { role: "user", content: `请为「${topic}」生成知识点。${description ? `\n\n领域描述：${description}` : ''}` }
         ],
         model: provider.model,
         response_format: { type: "json_object" },
-        max_tokens: 3000,
+        max_tokens: 4000,
       });
 
       const parsed = JSON.parse(completion.choices[0].message.content || '{"root":null,"coreNodes":[]}');
@@ -848,6 +848,8 @@ export class TaskService {
           totalNodes++;
 
           const coreNodes = parsed.coreNodes || [];
+          const coreNodeIds: string[] = [];
+          
           for (let i = 0; i < coreNodes.length; i++) {
             const coreNode = coreNodes[i];
             const angle = (2 * Math.PI * i) / coreNodes.length;
@@ -868,6 +870,7 @@ export class TaskService {
 
             if (childNode) {
               totalNodes++;
+              coreNodeIds.push(childNode.id);
 
               await supabase
                 .from('edges')
@@ -879,6 +882,28 @@ export class TaskService {
                 });
             }
           }
+
+          if (depth > 1 && coreNodeIds.length > 0) {
+            for (let i = 0; i < coreNodes.length; i++) {
+              const coreNode = coreNodes[i];
+              const coreNodeId = coreNodeIds[i];
+              
+              if (coreNodeId) {
+                const expandCount = await this.expandNodeForGraph(
+                  supabase,
+                  graphId,
+                  coreNodeId,
+                  coreNode.title,
+                  coreNode.content,
+                  'core',
+                  depth - 1,
+                  provider,
+                  userId
+                );
+                totalNodes += expandCount;
+              }
+            }
+          }
         }
       }
 
@@ -886,6 +911,125 @@ export class TaskService {
     } catch (error) {
       logger.warn(`Failed to generate nodes for ${topic}:`, error);
       return 0;
+    }
+  }
+
+  private async expandNodeForGraph(
+    supabase: any,
+    graphId: string,
+    parentNodeId: string,
+    parentNodeTitle: string,
+    parentNodeContent: string | undefined,
+    parentLevel: string,
+    remainingDepth: number,
+    provider: any,
+    userId?: string
+  ): Promise<number> {
+    try {
+      let totalNodes = 0;
+
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        'auto_graph_expand',
+        {
+          nodeTitle: parentNodeTitle,
+          nodeContent: parentNodeContent || '',
+          nodeLevel: parentLevel,
+          isCustom: false,
+          isAcademic: true,
+          isPractical: false,
+          isBeginner: false,
+          existingChildren: []
+        },
+        userId
+      );
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `请为「${parentNodeTitle}」生成子知识点。` }
+        ],
+        model: provider.model,
+        response_format: { type: "json_object" },
+        max_tokens: 3000,
+      });
+
+      const parsed = JSON.parse(completion.choices[0].message.content || '{"children":[]}');
+      const children = parsed.children || [];
+
+      if (children.length > 0) {
+        const childNodeIds: string[] = [];
+        
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          const angle = (2 * Math.PI * i) / children.length;
+          const radius = 150;
+
+          const { data: childNode } = await supabase
+            .from('nodes')
+            .insert({
+              graph_id: graphId,
+              title: child.title,
+              content: child.content || '',
+              level: this.getNextLevel(parentLevel),
+              x_position: 400 + radius * Math.cos(angle),
+              y_position: 300 + radius * Math.sin(angle)
+            })
+            .select('id')
+            .single();
+
+          if (childNode) {
+            totalNodes++;
+            childNodeIds.push(childNode.id);
+
+            await supabase
+              .from('edges')
+              .insert({
+                graph_id: graphId,
+                source_node_id: parentNodeId,
+                target_node_id: childNode.id,
+                relationship_type: 'contains'
+              });
+          }
+        }
+
+        if (remainingDepth > 1) {
+          for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childNodeId = childNodeIds[i];
+            
+            if (childNodeId) {
+              const expandCount = await this.expandNodeForGraph(
+                supabase,
+                graphId,
+                childNodeId,
+                child.title,
+                child.content,
+                this.getNextLevel(parentLevel),
+                remainingDepth - 1,
+                provider,
+                userId
+              );
+              totalNodes += expandCount;
+            }
+          }
+        }
+      }
+
+      return totalNodes;
+    } catch (error) {
+      logger.warn(`Failed to expand node ${parentNodeTitle}:`, error);
+      return 0;
+    }
+  }
+
+  private getNextLevel(currentLevel: string): string {
+    switch (currentLevel) {
+      case 'root': return 'core';
+      case 'core': return 'sub';
+      case 'sub': return 'normal';
+      case 'normal': return 'leaf';
+      default: return 'leaf';
     }
   }
 }

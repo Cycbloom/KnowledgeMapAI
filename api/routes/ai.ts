@@ -46,10 +46,34 @@ dotenv.config();
 
 const router = Router();
 
-// Multer setup for PDF uploads
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'text/plain',
+  'text/markdown',
+  'text/csv',
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp',
+  'image/gif',
+];
+
+const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.md', '.csv', '.png', '.jpg', '.jpeg', '.webp', '.gif'];
+
+const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const ext = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+  
+  if (!ALLOWED_MIME_TYPES.includes(file.mimetype) && !ALLOWED_EXTENSIONS.includes(ext)) {
+    return cb(new Error(`Invalid file type: ${file.mimetype}. Allowed types: PDF, TXT, MD, CSV, PNG, JPG, WEBP, GIF`));
+  }
+  
+  cb(null, true);
+};
+
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter
 });
 
 router.get('/status', requireAuth, async (req: AuthRequest, res: Response) => {

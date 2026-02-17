@@ -9,6 +9,46 @@ export interface AuthRequest extends Request {
   supabase?: SupabaseClient;
 }
 
+interface TokenError {
+  message: string;
+  status: number;
+  code: string;
+}
+
+const parseTokenError = (error: { message?: string }): TokenError => {
+  const message = error.message?.toLowerCase() || '';
+
+  if (message.includes('expired')) {
+    return {
+      message: 'Token has expired',
+      status: 401,
+      code: ErrorCodes.TOKEN_EXPIRED,
+    };
+  }
+
+  if (message.includes('invalid') || message.includes('malformed')) {
+    return {
+      message: 'Invalid token format',
+      status: 401,
+      code: ErrorCodes.INVALID_TOKEN,
+    };
+  }
+
+  if (message.includes('revoked') || message.includes('banned')) {
+    return {
+      message: 'Token has been revoked',
+      status: 401,
+      code: ErrorCodes.TOKEN_REVOKED,
+    };
+  }
+
+  return {
+    message: 'Token verification failed',
+    status: 401,
+    code: ErrorCodes.INVALID_TOKEN,
+  };
+};
+
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
@@ -16,21 +56,29 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     throw new AppError('Authorization header missing', 401, ErrorCodes.AUTH_HEADER_MISSING);
   }
 
-  const token = authHeader.split(' ')[1];
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
+    throw new AppError('Invalid authorization header format', 401, ErrorCodes.AUTH_HEADER_MISSING);
+  }
+
+  const token = parts[1];
 
   if (!token) {
     throw new AppError('Token missing', 401, ErrorCodes.TOKEN_MISSING);
   }
 
-  // Use the admin client to verify the token first (stateless check or call auth api)
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
-  if (error || !user) {
-    throw new AppError('Invalid token', 401, ErrorCodes.INVALID_TOKEN);
+  if (error) {
+    const tokenError = parseTokenError(error);
+    throw new AppError(tokenError.message, tokenError.status, tokenError.code);
+  }
+
+  if (!user) {
+    throw new AppError('User not found', 401, ErrorCodes.INVALID_TOKEN);
   }
 
   req.user = user;
-  // Create a scoped client for this user to respect RLS policies
   req.supabase = createClientWithToken(token);
   
   next();
@@ -40,11 +88,17 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    req.supabase = supabaseAdmin; // Use admin or anon client
+    req.supabase = supabaseAdmin;
     return next();
   }
 
-  const token = authHeader.split(' ')[1];
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
+    req.supabase = supabaseAdmin;
+    return next();
+  }
+
+  const token = parts[1];
 
   if (!token) {
     req.supabase = supabaseAdmin;
@@ -60,9 +114,21 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
     } else {
       req.supabase = supabaseAdmin;
     }
-  } catch (err) {
+  } catch {
     req.supabase = supabaseAdmin;
   }
   
   next();
+};
+
+export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  await requireAuth(req, res, async () => {
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
+    
+    if (!req.user?.email || !adminEmails.includes(req.user.email)) {
+      throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
+    }
+    
+    next();
+  });
 };

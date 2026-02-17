@@ -2,6 +2,77 @@ import { type Request, type Response, type NextFunction } from 'express';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { logger } from '../utils/logger.js';
 
+const SENSITIVE_FIELDS = [
+  'password',
+  'password_confirmation',
+  'current_password',
+  'new_password',
+  'token',
+  'refreshToken',
+  'refresh_token',
+  'access_token',
+  'accessToken',
+  'apiKey',
+  'api_key',
+  'secret',
+  'secretKey',
+  'secret_key',
+  'authorization',
+  'credential',
+  'credentials',
+  'privateKey',
+  'private_key',
+];
+
+const sanitizeValue = (value: unknown, depth: number = 0): unknown => {
+  if (depth > 5) return '[MAX_DEPTH]';
+  
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    if (value.length > 1000) {
+      return value.substring(0, 100) + '...[TRUNCATED]';
+    }
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(item => sanitizeValue(item, depth + 1));
+  }
+
+  if (typeof value === 'object') {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      const lowerKey = key.toLowerCase();
+      const isSensitive = SENSITIVE_FIELDS.some(field => 
+        lowerKey.includes(field.toLowerCase())
+      );
+
+      if (isSensitive) {
+        sanitized[key] = '[REDACTED]';
+      } else {
+        sanitized[key] = sanitizeValue(val, depth + 1);
+      }
+    }
+    return sanitized;
+  }
+
+  return '[UNKNOWN_TYPE]';
+};
+
+const sanitizeBody = (body: unknown): unknown => {
+  if (!body || typeof body !== 'object') {
+    return body;
+  }
+  return sanitizeValue(body);
+};
+
 export class AppError extends Error {
   statusCode: number;
   isOperational: boolean;
@@ -18,19 +89,19 @@ export class AppError extends Error {
 }
 
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  // Log the error for debugging
+  const sanitizedBody = sanitizeBody(req.body);
+  
   logger.error('Error:', {
     message: err.message,
     code: err.code,
     stack: err.stack,
     url: req.originalUrl,
     method: req.method,
-    body: req.body,
+    body: sanitizedBody,
     user: (req as any).user?.id
   });
 
-  // Handle specific Supabase/Postgres errors
-  if (err.code === '23505') { // Unique violation
+  if (err.code === '23505') {
     return res.status(409).json({
       success: false,
       code: ErrorCodes.DUPLICATE_ENTRY,
@@ -38,7 +109,7 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     });
   }
 
-  if (err.code === '23503') { // Foreign key violation
+  if (err.code === '23503') {
     return res.status(400).json({
       success: false,
       code: ErrorCodes.FOREIGN_KEY_VIOLATION,
@@ -46,7 +117,6 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     });
   }
 
-  // Handle AppError (operational errors)
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -55,7 +125,6 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     });
   }
 
-  // Handle SyntaxError (e.g., bad JSON)
   if (err instanceof SyntaxError && 'body' in err) {
     return res.status(400).json({
       success: false,
@@ -64,7 +133,6 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     });
   }
 
-  // Default error format
   const status = err.status || err.statusCode || 500;
   const message = process.env.NODE_ENV === 'production' && status === 500
     ? 'Internal Server Error'

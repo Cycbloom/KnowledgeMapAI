@@ -1,0 +1,201 @@
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, ArrowRight, Link as LinkIcon, Loader2 } from 'lucide-react';
+import type { Graph, GraphRelationType } from '../../types';
+import { GRAPH_RELATION_LABELS } from '../../types';
+
+interface CreateRelationPanelProps {
+  graphs: Graph[];
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: {
+    source_graph_id: string;
+    target_graph_id: string;
+    relation_type: GraphRelationType;
+    context?: string;
+  }) => Promise<void>;
+  initialSourceId?: string;
+}
+
+export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
+  graphs,
+  isOpen,
+  onClose,
+  onSubmit,
+  initialSourceId,
+}) => {
+  const [sourceId, setSourceId] = useState(initialSourceId || '');
+  const [targetId, setTargetId] = useState('');
+  const [relationType, setRelationType] = useState<GraphRelationType>('related');
+  const [context, setContext] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const availableTargets = useMemo(() => {
+    return graphs.filter(g => g.id !== sourceId);
+  }, [graphs, sourceId]);
+
+  const handleSubmit = async () => {
+    if (!sourceId || !targetId) return;
+    
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        source_graph_id: sourceId,
+        target_graph_id: targetId,
+        relation_type: relationType,
+        context: context || undefined,
+      });
+      onClose();
+      setSourceId('');
+      setTargetId('');
+      setRelationType('related');
+      setContext('');
+    } catch (error) {
+      console.error('Failed to create relation:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const relationTypeOptions: Array<{ value: GraphRelationType; label: string; description: string; color: string }> = [
+    { value: 'prerequisite', label: '前置知识', description: '学习目标图谱前需要先掌握', color: 'bg-blue-500' },
+    { value: 'extension', label: '扩展知识', description: '掌握目标图谱后可深入学习', color: 'bg-green-500' },
+    { value: 'related', label: '相关知识', description: '两个图谱有相关性', color: 'bg-amber-500' },
+  ];
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <LinkIcon className="w-5 h-5" />
+              创建图谱关系
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                源图谱
+              </label>
+              <select
+                value={sourceId}
+                onChange={e => setSourceId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">选择图谱...</option>
+                {graphs.map(graph => (
+                  <option key={graph.id} value={graph.id}>
+                    {graph.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-center">
+              <ArrowRight className="w-6 h-6 text-gray-400 rotate-90" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                目标图谱
+              </label>
+              <select
+                value={targetId}
+                onChange={e => setTargetId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">选择图谱...</option>
+                {availableTargets.map(graph => (
+                  <option key={graph.id} value={graph.id}>
+                    {graph.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                关系类型
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {relationTypeOptions.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => setRelationType(option.value)}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      relationType === option.value
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-2 h-2 rounded-full ${option.color}`} />
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {option.label}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {option.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                关系描述（可选）
+              </label>
+              <textarea
+                value={context}
+                onChange={e => setContext(e.target.value)}
+                placeholder="描述这个关系的原因或背景..."
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900/50">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!sourceId || !targetId || isSubmitting}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              创建关系
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};

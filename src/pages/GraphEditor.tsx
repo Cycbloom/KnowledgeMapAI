@@ -662,6 +662,7 @@ export const GraphEditor = () => {
               currentNodeId={selectedNode?.id}
               selectedParentIds={state.nodeForm.parentNodeIds}
               leftPanelWidth={isRAGChatOpen ? ragChatWidth : 0}
+              onNavigateToGraphMap={() => navigate(`/graph-map?from=${id}`)}
             />
           )}
           {viewMode === 'timeline' && (

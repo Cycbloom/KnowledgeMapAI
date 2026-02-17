@@ -16,6 +16,7 @@ interface MindMapLinkProps {
   edgeStrength?: number;
   allNodes?: Node[];
   allEdges?: Edge[];
+  customColor?: string;
 }
 
 const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
@@ -30,7 +31,8 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   edgeWidthMode = 'fixed',
   edgeStrength,
   allNodes = [],
-  allEdges = []
+  allEdges = [],
+  customColor,
 }) => {
   // Normalize IDs for matching
   const normalizeId = (id: any) => String(id).trim();
@@ -65,7 +67,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   }, [edgeWidthMode, edgeStrength, allNodes, allEdges, link]);
   
   const linkStyleConfig = useMemo(() => {
-    let strokeColor = colors.link;
+    let strokeColor = customColor || colors.link;
     let strokeWidth = dynamicWidth;
     let opacity = 0.4;
     let strokeDasharray = 'none';
@@ -93,7 +95,7 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     }
 
     return { strokeColor, strokeWidth, opacity, strokeDasharray };
-  }, [colors, hasFocusMode, focused, highlighted, target, dynamicWidth]);
+  }, [colors, hasFocusMode, focused, highlighted, target, dynamicWidth, customColor]);
 
   const pathData = useMemo(() => {
     const dx = target.x - source.x;

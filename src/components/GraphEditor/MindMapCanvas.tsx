@@ -62,6 +62,7 @@ interface MindMapCanvasProps {
   currentNodeId?: string;
   selectedParentIds?: string[];
   leftPanelWidth?: number;
+  onNavigateToGraphMap?: () => void;
 }
 
 interface Transform {
@@ -106,7 +107,8 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   onSelectParent,
   currentNodeId,
   selectedParentIds = [],
-  leftPanelWidth = 0
+  leftPanelWidth = 0,
+  onNavigateToGraphMap
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -649,6 +651,19 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         )}
         
         <div className="flex flex-col gap-2 pointer-events-auto">
+          {onNavigateToGraphMap && (
+            <button
+              onClick={onNavigateToGraphMap}
+              className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+              title="查看图谱地图"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+            </button>
+          )}
           {graphId && onLayoutUpdate && (
             <LayoutOrganizer
               graphId={graphId}

@@ -380,3 +380,34 @@ export interface TTSVoice {
   name: string;
   lang: string;
 }
+
+export type GraphRelationType = 'prerequisite' | 'extension' | 'related';
+
+export interface GraphRelation {
+  id: string;
+  source_graph_id: string;
+  target_graph_id: string;
+  relation_type: GraphRelationType;
+  context?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface GraphMapData {
+  graphs: Array<Graph & { node_count?: number }>;
+  relations: GraphRelation[];
+}
+
+export type GraphMapFilterMode = 'all' | 'prerequisite' | 'extension' | 'related';
+
+export const GRAPH_RELATION_COLORS: Record<GraphRelationType, string> = {
+  prerequisite: '#3B82F6',
+  extension: '#10B981',
+  related: '#F59E0B',
+};
+
+export const GRAPH_RELATION_LABELS: Record<GraphRelationType, string> = {
+  prerequisite: '前置知识',
+  extension: '扩展知识',
+  related: '相关知识',
+};

@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy } from 'lucide-react';
+import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 import { GlobalSearch } from './GlobalSearch';
@@ -25,7 +25,7 @@ export const Layout = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { addMessage } = useMessageStore();
   
-  const isFullScreenPage = location.pathname.startsWith('/graph/') || location.pathname.startsWith('/learning');
+  const isFullScreenPage = location.pathname.startsWith('/graph/') || location.pathname.startsWith('/learning') || location.pathname === '/graph-map';
   
   // Use TanStack Query for user fetching
   // Only fetch if we have a token but no user (e.g. refresh)
@@ -181,6 +181,7 @@ export const Layout = () => {
             {/* Navigation Links */}
             <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
               <SidebarLink to="/" icon={BookOpen} label="我的图谱" />
+              <SidebarLink to="/graph-map" icon={Network} label="图谱地图" />
               <SidebarLink to="/study" icon={GraduationCap} label="学习中心" />
               <SidebarLink to="/achievements" icon={Trophy} label="成就系统" />
               <SidebarLink to="/templates" icon={Sparkles} label="模板管理" />

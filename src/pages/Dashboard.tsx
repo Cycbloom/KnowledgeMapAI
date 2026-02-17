@@ -269,6 +269,18 @@ export const Dashboard = () => {
                 查看详细分析
                 <Network size={18} />
               </Link>
+              
+              <Link 
+                to="/graph-map" 
+                className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
+                  isDark 
+                    ? 'bg-slate-700 text-white hover:bg-slate-600 shadow-lg' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                图谱地图
+                <Network size={18} />
+              </Link>
             </div>
             
             {/* Blind Spots Preview */}

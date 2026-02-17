@@ -19,6 +19,7 @@ const Settings = lazy(() => import('./pages/Settings').then(module => ({ default
 const RecycleBin = lazy(() => import('./pages/RecycleBin').then(module => ({ default: module.RecycleBin })));
 const Templates = lazy(() => import('./pages/Templates').then(module => ({ default: module.Templates })));
 const Achievements = lazy(() => import('./pages/Achievements').then(module => ({ default: module.Achievements })));
+const GraphMap = lazy(() => import('./pages/GraphMap').then(module => ({ default: module.GraphMap })));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -56,6 +57,7 @@ function App() {
             <Route path="trash" element={<RecycleBin />} />
             <Route path="templates" element={<Templates />} />
             <Route path="achievements" element={<Achievements />} />
+            <Route path="graph-map" element={<GraphMap />} />
           </Route>
         </Routes>
       </Suspense>

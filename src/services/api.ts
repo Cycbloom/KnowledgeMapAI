@@ -193,6 +193,15 @@ export const api = {
       request(`/graphs/${id}/prerequisite-graphs/batch`, { method: 'POST', body: JSON.stringify(data) }),
     deleteRelation: (graphId: string, relationId: string) => 
       request(`/graphs/${graphId}/relations/${relationId}`, { method: 'DELETE' }),
+    getMap: () => request('/graphs/map'),
+    createRelation: (data: { 
+      source_graph_id: string; 
+      target_graph_id: string; 
+      relation_type: 'prerequisite' | 'extension' | 'related'; 
+      context?: string;
+    }) => request('/graph-relations/relations', { method: 'POST', body: JSON.stringify(data) }),
+    deleteRelationById: (relationId: string) => 
+      request(`/graph-relations/relations/${relationId}`, { method: 'DELETE' }),
   },
   nodes: {
     create: (data: any) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),

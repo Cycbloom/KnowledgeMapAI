@@ -23,6 +23,46 @@ router.get('/trash', requireAuth, async (req: AuthRequest, res: Response) => {
   res.json(data);
 });
 
+router.get('/map', requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase!;
+  const userId = req.user.id;
+
+  const { data: graphs } = await supabase
+    .from('knowledge_graphs')
+    .select('id, title, description, created_at, is_public')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  const { data: nodeCounts } = await supabase
+    .from('nodes')
+    .select('graph_id')
+    .in('graph_id', (graphs || []).map(g => g.id))
+    .is('deleted_at', null);
+
+  const nodeCountMap = new Map<string, number>();
+  (nodeCounts || []).forEach(n => {
+    nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
+  });
+
+  const graphIds = (graphs || []).map(g => g.id);
+
+  const { data: relations } = await supabase
+    .from('graph_relations')
+    .select('id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at')
+    .or(`source_graph_id.in.(${graphIds.join(',')}),target_graph_id.in.(${graphIds.join(',')})`);
+
+  const graphsWithCounts = (graphs || []).map(g => ({
+    ...g,
+    node_count: nodeCountMap.get(g.id) || 0,
+  }));
+
+  res.json({
+    graphs: graphsWithCounts,
+    relations: relations || [],
+  });
+});
+
 // Create a new graph (Auth Required)
 router.post('/', requireAuth, validate({ body: createGraphSchema }), async (req: AuthRequest, res: Response) => {
   const { title, description } = req.body;

@@ -27,6 +27,13 @@ const batchCreateSchema = z.object({
   style: z.enum(['academic', 'practical', 'beginner']).default('academic'),
 });
 
+const createRelationSchema = z.object({
+  source_graph_id: z.string().uuid(),
+  target_graph_id: z.string().uuid(),
+  relation_type: z.enum(['prerequisite', 'extension', 'related']),
+  context: z.string().max(500).optional(),
+});
+
 interface GraphRelation {
   id: string;
   sourceGraphId: string;
@@ -424,6 +431,114 @@ router.delete('/:graphId/relations/:relationId', requireAuth, async (req: AuthRe
     logger.error('Delete Graph Relation Error:', error);
     if (error instanceof AppError) throw error;
     throw new AppError(error.message || '删除关联失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+router.post('/relations', requireAuth, validate(createRelationSchema), async (req: AuthRequest, res: Response) => {
+  const { source_graph_id, target_graph_id, relation_type, context } = req.body;
+  const supabase = req.supabase!;
+
+  try {
+    if (source_graph_id === target_graph_id) {
+      throw new AppError('不能创建自引用关系', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    const { data: sourceGraph } = await supabase
+      .from('knowledge_graphs')
+      .select('id, user_id, title')
+      .eq('id', source_graph_id)
+      .single();
+
+    const { data: targetGraph } = await supabase
+      .from('knowledge_graphs')
+      .select('id, user_id, title')
+      .eq('id', target_graph_id)
+      .single();
+
+    if (!sourceGraph || !targetGraph) {
+      throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
+    }
+
+    if (sourceGraph.user_id !== req.user.id) {
+      throw new AppError('无权操作此图谱', 403, ErrorCodes.FORBIDDEN);
+    }
+
+    const { data: existingRelation } = await supabase
+      .from('graph_relations')
+      .select('id')
+      .eq('source_graph_id', source_graph_id)
+      .eq('target_graph_id', target_graph_id)
+      .eq('relation_type', relation_type)
+      .maybeSingle();
+
+    if (existingRelation) {
+      throw new AppError('该关系已存在', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    const { data: newRelation, error } = await supabase
+      .from('graph_relations')
+      .insert({
+        source_graph_id,
+        target_graph_id,
+        relation_type,
+        context: context || `${sourceGraph.title} → ${targetGraph.title}`,
+      })
+      .select()
+      .single();
+
+    if (error || !newRelation) {
+      throw new AppError('创建关系失败', 500, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    res.status(201).json(newRelation);
+
+  } catch (error: any) {
+    logger.error('Create Graph Relation Error:', error);
+    if (error instanceof AppError) throw error;
+    throw new AppError(error.message || '创建关系失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+router.delete('/relations/:relationId', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { relationId } = req.params;
+  const supabase = req.supabase!;
+
+  try {
+    const { data: relation } = await supabase
+      .from('graph_relations')
+      .select('id, source_graph_id')
+      .eq('id', relationId)
+      .single();
+
+    if (!relation) {
+      throw new AppError('关系不存在', 404, ErrorCodes.NOT_FOUND);
+    }
+
+    const { data: sourceGraph } = await supabase
+      .from('knowledge_graphs')
+      .select('user_id')
+      .eq('id', relation.source_graph_id)
+      .single();
+
+    if (!sourceGraph || sourceGraph.user_id !== req.user.id) {
+      throw new AppError('无权删除此关系', 403, ErrorCodes.FORBIDDEN);
+    }
+
+    const { error } = await supabase
+      .from('graph_relations')
+      .delete()
+      .eq('id', relationId);
+
+    if (error) {
+      throw new AppError('删除关系失败', 500, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    res.json({ success: true });
+
+  } catch (error: any) {
+    logger.error('Delete Graph Relation Error:', error);
+    if (error instanceof AppError) throw error;
+    throw new AppError(error.message || '删除关系失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

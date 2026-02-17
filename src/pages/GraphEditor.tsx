@@ -10,7 +10,6 @@ import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
 import { ExplorationTimeline } from '../components/GraphEditor/ExplorationTimeline';
 import { GraphStyleSettings } from '../components/GraphEditor/GraphStyleSettings';
 
-// New Managers and Hooks
 import { GraphModalManager } from '../components/GraphEditor/GraphModalManager';
 import { GraphSidebarManager } from '../components/GraphEditor/GraphSidebarManager';
 import { GraphAnalysisPanel } from '../components/GraphEditor/GraphAnalysisPanel';
@@ -24,7 +23,6 @@ import { useGraph,
   useAIStatus, 
 } from '../hooks/useQueries';
 
-// Custom Hooks
 import { useGraphEditorState } from '../hooks/useGraphEditorState';
 import { useGraphMutations } from '../hooks/useGraphMutations';
 import { useGraphHistoryHandlers } from '../hooks/useGraphHistoryHandlers';
@@ -49,12 +47,9 @@ import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
 import { CommandPalette, CommandItem } from '../components/GraphEditor/CommandPalette';
 import { ShortcutHelpPanel } from '../components/ShortcutHelpPanel';
 import { RAGChatButton } from '../components/GraphEditor/RAGChatPanel';
-import { 
-  Home, ListChecks, Network, GitBranch, Clock, 
-  Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
-} from 'lucide-react';
 import { api, AIAction } from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCommandPalette } from './GraphEditor/useCommandPalette';
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -454,108 +449,18 @@ export const GraphEditor = () => {
     }
   };
 
-  const commands: CommandItem[] = useMemo(() => [
-    // Navigation
-    {
-      id: 'nav-home',
-      label: '返回首页',
-      icon: <Home size={18} />,
-      category: 'navigation',
-      action: () => navigate('/'),
-      keywords: ['home', 'index', 'back']
-    },
-    {
-      id: 'nav-graphs',
-      label: '图谱列表',
-      icon: <LayoutList size={18} />,
-      category: 'navigation',
-      action: () => navigate('/graphs'),
-      keywords: ['list', 'graphs', 'all']
-    },
-    // View Modes
-    {
-      id: 'view-mindmap',
-      label: '思维导图视图',
-      icon: <Network size={18} />,
-      category: 'view',
-      action: () => setViewMode('mindmap'),
-      keywords: ['mindmap', 'graph', 'canvas']
-    },
-    {
-      id: 'view-timeline',
-      label: '时间轴视图',
-      icon: <Clock size={18} />,
-      category: 'view',
-      action: () => setViewMode('timeline'),
-      keywords: ['timeline', 'chronology', 'history']
-    },
-    {
-      id: 'view-tree',
-      label: '树形视图',
-      icon: <GitBranch size={18} />,
-      category: 'view',
-      action: () => setViewMode('tree'),
-      keywords: ['tree', 'structure']
-    },
-    // Toggles
-    {
-      id: 'toggle-sidebar',
-      label: sidebarMode === 'none' ? '打开侧边栏' : '关闭侧边栏',
-      icon: <Layout size={18} />,
-      category: 'view',
-      shortcut: 'Space',
-      action: () => {
-         if (sidebarMode === 'none') setSidebarMode('outline');
-         else setSidebarMode('none');
-      },
-      keywords: ['sidebar', 'panel', 'drawer']
-    },
-    {
-      id: 'toggle-theme',
-      label: isDark ? '切换亮色模式' : '切换暗色模式',
-      icon: isDark ? <Sun size={18} /> : <Moon size={18} />,
-      category: 'view',
-      action: toggleTheme,
-      keywords: ['theme', 'dark', 'light', 'mode']
-    },
-    {
-      id: 'toggle-focus',
-      label: isFocusMode ? '退出专注模式' : '进入专注模式',
-      icon: <Focus size={18} />,
-      category: 'view',
-      action: () => setIsFocusMode(prev => !prev),
-      keywords: ['focus', 'zen', 'mode']
-    },
-    // Actions
-    {
-        id: 'create-node',
-        label: '新建子节点',
-        icon: <Plus size={18} />,
-        category: 'action',
-        shortcut: 'Tab',
-        action: () => {
-            if (selectedNode) {
-                 addMessage({ type: 'info', content: '请使用 Tab 键创建子节点' });
-            } else {
-                addMessage({ type: 'warning', content: '请先选择一个节点' });
-            }
-        }
-    },
-    {
-        id: 'delete-node',
-        label: '删除节点',
-        icon: <Trash2 size={18} />,
-        category: 'action',
-        shortcut: 'Del',
-        action: () => {
-             if (selectedNode) {
-                 nodeOps.handleDeleteNode(selectedNode);
-             } else {
-                addMessage({ type: 'warning', content: '请先选择一个节点' });
-             }
-        }
-    }
-  ], [navigate, setViewMode, sidebarMode, setSidebarMode, isDark, toggleTheme, isFocusMode, setIsFocusMode, selectedNode, nodeOps, addMessage]);
+  const commands: CommandItem[] = useCommandPalette({
+    sidebarMode,
+    isDark,
+    isFocusMode,
+    selectedNode,
+    toggleTheme,
+    setSidebarMode,
+    setViewMode,
+    setIsFocusMode,
+    handleDeleteNode: nodeOps.handleDeleteNode,
+    addMessage
+  });
 
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>

@@ -26,7 +26,7 @@ export const Layout = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { addMessage } = useMessageStore();
   
-  const isFullScreenPage = location.pathname.startsWith('/graph/') || location.pathname === '/learning' || location.pathname === '/graph-map';
+  const isFullScreenPage = location.pathname.startsWith('/graph/') || location.pathname === '/learning';
   
   // Use TanStack Query for user fetching
   // Only fetch if we have a token but no user (e.g. refresh)

@@ -320,7 +320,7 @@ export const GraphMap = () => {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
+    <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
       <GraphMapToolbar
         onBack={() => navigate('/dashboard')}
         onRefresh={() => refetch()}

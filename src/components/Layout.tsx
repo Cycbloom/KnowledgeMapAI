@@ -11,6 +11,8 @@ import { HelpModal } from './HelpModal';
 import { SSEStatusIndicator } from './SSEStatusIndicator';
 import { OfflineIndicator } from './OfflineIndicator';
 import { FocusTimer } from './FocusTimer';
+import { Breadcrumb } from './Breadcrumb';
+import { HeaderGreeting } from './HeaderGreeting';
 import { useTheme } from '../hooks/useTheme';
 import { api } from '../services/api';
 
@@ -209,10 +211,21 @@ export const Layout = () => {
           
           {/* Top Header */}
           {!isFullScreenPage && (
-            <header className={`h-12 px-6 flex items-center justify-end shrink-0 z-10 shadow-sm transition-colors border-b ${
+            <header className={`h-12 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b ${
               isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
             }`}>
-              <div className="flex items-center gap-4">
+              {/* Left: Breadcrumb */}
+              <div className="flex-shrink-0">
+                <Breadcrumb />
+              </div>
+              
+              {/* Center: Greeting & Stats */}
+              <div className="flex-1 flex justify-center">
+                <HeaderGreeting />
+              </div>
+              
+              {/* Right: Status & User */}
+              <div className="flex items-center gap-4 flex-shrink-0">
                  <SSEStatusIndicator />
                  <button 
                    onClick={() => setIsHelpOpen(true)}

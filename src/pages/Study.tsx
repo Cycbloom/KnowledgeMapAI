@@ -837,17 +837,6 @@ export const Study = () => {
     setSelectedOption(JSON.stringify(newSelected));
   };
 
-  const checkMultiChoiceCorrect = () => {
-    if (!selectedOption) return false;
-    try {
-      const selected = JSON.parse(selectedOption) as string[];
-      const correct = JSON.parse(currentCard.answer) as string[];
-      return selected.length === correct.length && selected.every(s => correct.includes(s));
-    } catch (e) {
-      return false;
-    }
-  };
-
   return (
     <div className={`min-h-full flex flex-col items-center justify-center p-4 md:p-8 transition-colors ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
       <div className="w-full max-w-2xl">
@@ -877,7 +866,9 @@ export const Study = () => {
               if (Array.isArray(stackCard.options)) return stackCard.options;
               try {
                 if (typeof stackCard.options === 'string') return JSON.parse(stackCard.options);
-              } catch { }
+              } catch {
+                return [];
+              }
               return [];
             })();
             const isStackQA = !stackCard.card_type || stackCard.card_type === 'qa';
@@ -1157,7 +1148,7 @@ export const Study = () => {
                         const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
                         const isSelected = selectedList.includes(option);
                         let correctList: string[] = [];
-                        try { correctList = JSON.parse(currentCard.answer); } catch { }
+                        try { correctList = JSON.parse(currentCard.answer); } catch { correctList = []; }
                         const isCorrect = correctList.includes(option);
                         
                         let btnClass = "group p-3 rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm ";
@@ -1335,27 +1326,3 @@ export const Study = () => {
     </div>
   );
 };
-
-function ListIcon({ className, size }: { className?: string; size?: number }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <line x1="8" y1="6" x2="21" y2="6"></line>
-      <line x1="8" y1="12" x2="21" y2="12"></line>
-      <line x1="8" y1="18" x2="21" y2="18"></line>
-      <line x1="3" y1="6" x2="3.01" y2="6"></line>
-      <line x1="3" y1="12" x2="3.01" y2="12"></line>
-      <line x1="3" y1="18" x2="3.01" y2="18"></line>
-    </svg>
-  );
-}

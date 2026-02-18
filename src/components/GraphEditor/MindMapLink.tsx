@@ -106,24 +106,27 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
       case 'straight':
         return `M ${source.x} ${source.y} L ${target.x} ${target.y}`;
       
-      case 'step':
+      case 'step': {
         const midX = (source.x + target.x) / 2;
         return `M ${source.x} ${source.y} L ${midX} ${source.y} L ${midX} ${target.y} L ${target.x} ${target.y}`;
+      }
       
-      case 'bezier':
+      case 'bezier': {
         const midX2 = (source.x + target.x) / 2;
         const midY2 = (source.y + target.y) / 2;
         const controlOffset = distance * 0.3;
         const perpX = (dy / distance) * controlOffset;
         const perpY = -(dx / distance) * controlOffset;
         return `M ${source.x} ${source.y} Q ${midX2 + perpX} ${midY2 + perpY} ${target.x} ${target.y}`;
+      }
       
       case 'curved':
-      default:
+      default: {
         const midX3 = (source.x + target.x) / 2;
         const midY3 = (source.y + target.y) / 2;
         const controlOffset2 = distance * 0.2;
         return `M ${source.x} ${source.y} Q ${midX3} ${midY3} ${target.x} ${target.y}`;
+      }
     }
   }, [source.x, source.y, target.x, target.y, linkStyle]);
 

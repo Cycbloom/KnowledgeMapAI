@@ -1,4 +1,4 @@
-import { request, getAIConfig, getApiUrl, getHeaders, handleResponse } from './client';
+import { request, getAIConfig, getApiUrl, handleResponse } from './client';
 import { useStore } from '../../store/useStore';
 import type { AIAction } from './types';
 

@@ -4,7 +4,8 @@ import {
   DEFAULT_SHORTCUTS, 
   ShortcutDefinition, 
   ShortcutKey, 
-  ShortcutBinding
+  ShortcutBinding,
+  formatShortcutKey
 } from '../config/shortcuts';
 
 interface ShortcutState {
@@ -144,6 +145,5 @@ export function useFormattedShortcut(id: string): string {
     return '';
   }
   
-  const { formatShortcutKey } = require('../config/shortcuts');
   return formatShortcutKey(binding.keys);
 }

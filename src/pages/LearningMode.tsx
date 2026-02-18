@@ -6,7 +6,7 @@ import { CodeBlock } from '../components/CodeBlock';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, List, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Settings2, Home, X, Plus, Target, Route, MessageCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, Send, Bot, User, Loader2, Sparkles, GraduationCap, RefreshCw, PanelLeftClose, PanelLeftOpen, Network, Sun, Moon, Mic, MicOff, BrainCircuit, Home, X, Plus, Route, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';

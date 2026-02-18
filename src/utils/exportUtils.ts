@@ -163,7 +163,9 @@ export const generateAnkiDeck = (cards: StudyCard[], deckName: string): string =
        } else if (typeof card.options === 'string') {
          try {
             options = JSON.parse(card.options);
-         } catch (e) {}
+         } catch {
+           options = [];
+         }
        }
 
        if (options.length > 0) {

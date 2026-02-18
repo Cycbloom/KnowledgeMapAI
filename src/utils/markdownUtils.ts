@@ -13,7 +13,7 @@ export const preprocessMarkdown = (content: string): string => {
   // 1. 修复 AI 可能在 JSON 中输出的双反斜杠 (\\mathbf -> \mathbf)
   // 但要注意不要破坏 LaTeX 中的换行符 \\
   // 只有当 \\ 后面跟着字母或符号时才认为是转义
-  processed = processed.replace(/\\\\([a-zA-Z\(\)\[\]\{\}])/g, '\\$1');
+  processed = processed.replace(/\\\\([a-zA-Z()[\]{}])/g, '$1');
 
   // 2. 将一些非标准的定界符标准化，避免插件识别失败
   // \[ ... \] -> $$ ... $$

@@ -3,8 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Stars, Line, Billboard } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
-import { Node, Edge, ColorScheme, GraphColorMode } from '../types';
-import type { Node as GraphNode } from '../types';
+import { Node, Edge, ColorScheme, GraphColorMode, type Node as GraphNode } from '../types';
 import { create3DForceLayout, LayoutNode3D, LayoutLink3D } from './layout/forceLayout3D';
 import { useTheme } from '../hooks/useTheme';
 

@@ -114,10 +114,27 @@ export const TreeView: React.FC<TreeViewProps> = ({
   const visibleLinks = useMemo(() => {
     if (!layout) return [];
     const visibleNodeIds = new Set(visibleNodes.map(n => String(n.id).trim()));
+    const nodesMap = new Map(layout.nodes.map(n => [String(n.id).trim(), n]));
+    
     return layout.links.filter(link => {
       const sourceId = typeof link.source === 'string' ? String(link.source).trim() : String(link.source.id).trim();
       const targetId = typeof link.target === 'string' ? String(link.target).trim() : String(link.target.id).trim();
-      return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
+      
+      if (!visibleNodeIds.has(sourceId) || !visibleNodeIds.has(targetId)) {
+        return false;
+      }
+      
+      const sourceNode = nodesMap.get(sourceId);
+      const targetNode = nodesMap.get(targetId);
+      if (sourceNode && targetNode) {
+        const SAME_LEVEL_THRESHOLD = 10;
+        const isSameLevel = Math.abs(sourceNode.y - targetNode.y) < SAME_LEVEL_THRESHOLD;
+        if (isSameLevel) {
+          return false;
+        }
+      }
+      
+      return true;
     });
   }, [layout, visibleNodes]);
 

@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogoutMutation, useUser } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X } from 'lucide-react';
+import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X, Database, Download, Upload, AlertTriangle } from 'lucide-react';
 import { PromptSettingsPanel } from '../components/PromptSettingsPanel';
 import { AIActionSettingsPanel } from '../components/AIActionSettingsPanel';
+import { backupApi } from '../services/api/backup';
 
 export const Profile = () => {
   const navigate = useNavigate();
@@ -14,6 +15,9 @@ export const Profile = () => {
   const logoutMutation = useLogoutMutation();
   const [isPromptSettingsOpen, setIsPromptSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'prompts' | 'actions'>('prompts');
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: userData, isLoading } = useUser(!!token);
 
@@ -30,6 +34,56 @@ export const Profile = () => {
     setUser(null, null);
     addMessage({ type: 'success', content: '已退出登录' });
     navigate('/login');
+  };
+
+  const handleExportBackup = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await backupApi.export();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `knowledgemap-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addMessage({ type: 'success', content: '备份导出成功' });
+    } catch (e) {
+      console.error(e);
+      addMessage({ type: 'error', content: '导出备份失败' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      if (!data.version || !data.data) {
+        throw new Error('无效的备份文件格式');
+      }
+
+      const result = await backupApi.import(data);
+      addMessage({ 
+        type: 'success', 
+        content: `备份导入成功：${result.stats.graphs} 个图谱，${result.stats.nodes} 个节点，${result.stats.study_cards} 张学习卡片` 
+      });
+    } catch (e: any) {
+      console.error(e);
+      addMessage({ type: 'error', content: e.message || '导入备份失败' });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   return (
@@ -110,19 +164,53 @@ export const Profile = () => {
             </div>
         </div>
 
+        {/* Data Backup Section */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-lg font-bold text-gray-900 dark:text-gray-100">快捷入口</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">常用功能快速跳转</div>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">数据备份</h2>
+          </div>
+          
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            导出所有知识图谱、节点、学习卡片和进度数据。建议定期备份以防数据丢失。
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4">
             <button
-              onClick={() => navigate('/tasks')}
-              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+              onClick={handleExportBackup}
+              disabled={isExporting}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
-              <ExternalLink className="w-4 h-4" />
-              <span>打开任务中心</span>
+              <Download className="w-5 h-5" />
+              <span>{isExporting ? '导出中...' : '导出备份'}</span>
             </button>
+
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImportBackup}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 disabled:opacity-50 transition-colors"
+              >
+                <Upload className="w-5 h-5" />
+                <span>{isImporting ? '导入中...' : '导入备份'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-amber-800 dark:text-amber-300">
+                <strong>注意：</strong>导入备份会创建新的图谱和节点（不会覆盖现有数据）。如果重复导入同一备份，会产生重复内容。
+              </div>
+            </div>
           </div>
         </div>
       </div>

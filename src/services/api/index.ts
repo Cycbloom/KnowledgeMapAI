@@ -13,6 +13,7 @@ export { learningPathsApi, learningPathApi } from './learningPaths';
 export { ragApi } from './rag';
 export { autoGraphApi } from './autoGraph';
 export { healthApi } from './health';
+export { backupApi } from './backup';
 
 import { authApi } from './auth';
 import { graphsApi } from './graphs';
@@ -26,6 +27,7 @@ import { learningPathsApi, learningPathApi } from './learningPaths';
 import { ragApi } from './rag';
 import { autoGraphApi } from './autoGraph';
 import { healthApi } from './health';
+import { backupApi } from './backup';
 
 export const api = {
   aiActions: aiActionsApi,
@@ -50,4 +52,5 @@ export const api = {
   autoGraph: autoGraphApi,
   learningPath: learningPathApi,
   health: healthApi,
+  backup: backupApi,
 };

@@ -39,6 +39,7 @@ import healthRoutes from './routes/health.js'
 import analyticsRoutes from './routes/analytics.js'
 import alertsRoutes from './routes/alerts.js'
 import systemMonitorRoutes from './routes/systemMonitor.js'
+import backupRoutes from './routes/backup.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 
@@ -135,6 +136,7 @@ app.use('/api/health', healthRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/alerts', alertsRoutes)
 app.use('/api/system-monitor', systemMonitorRoutes)
+app.use('/api/backup', backupRoutes)
 
 /**
  * health

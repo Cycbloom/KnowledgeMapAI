@@ -581,6 +581,14 @@ export const GraphEditor = () => {
               selectedParentIds={state.nodeForm.parentNodeIds}
               leftPanelWidth={isRAGChatOpen ? ragChatWidth : 0}
               onNavigateToGraphMap={() => navigate(`/graph-map?from=${id}`)}
+              onMarkNodeMastered={async (nodeId: string) => {
+                try {
+                  await queryClient.invalidateQueries({ queryKey: ['graphNodeStatus', id] });
+                  addMessage({ type: 'success', content: '节点状态已更新' });
+                } catch (err) {
+                  console.error('Failed to update node status:', err);
+                }
+              }}
             />
           )}
           {viewMode === 'timeline' && (

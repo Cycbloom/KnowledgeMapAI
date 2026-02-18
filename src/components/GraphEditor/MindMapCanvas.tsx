@@ -20,6 +20,7 @@ import { AlternativeBranches } from './AlternativeBranches';
 import { CanvasLayout } from './CanvasLayout';
 import { MiniMap } from './MiniMap';
 import { LayoutOrganizer } from './LayoutOrganizer';
+import { NodePreviewCard } from './NodePreviewCard';
 import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
@@ -63,6 +64,8 @@ interface MindMapCanvasProps {
   selectedParentIds?: string[];
   leftPanelWidth?: number;
   onNavigateToGraphMap?: () => void;
+  onMarkNodeMastered?: (nodeId: string) => void;
+  previewDelay?: number;
 }
 
 interface Transform {
@@ -108,7 +111,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   currentNodeId,
   selectedParentIds = [],
   leftPanelWidth = 0,
-  onNavigateToGraphMap
+  onNavigateToGraphMap,
+  onMarkNodeMastered,
+  previewDelay = 500
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -245,6 +250,10 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [previewNode, setPreviewNode] = useState<{ node: Node; position: { x: number; y: number } } | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previewPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   
   // Initialize with window size to minimize layout thrashing on load
   const [containerSize, setContainerSize] = useState({ 
@@ -283,6 +292,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     }
 
     return () => resizeObserver.disconnect();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
   }, []);
 
   const layout = useMemo(() => {
@@ -601,9 +618,28 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
                   } else {
                     onNodeClick(node);
                   }
+                  setShowPreview(false);
+                  setPreviewNode(null);
                 }}
-                onMouseEnter={() => setHoveredNodeId(node.id)}
-                onMouseLeave={() => setHoveredNodeId(null)}
+                onMouseEnter={(e) => {
+                  setHoveredNodeId(node.id);
+                  previewPositionRef.current = { x: e.clientX, y: e.clientY };
+                  if (hoverTimeoutRef.current) {
+                    clearTimeout(hoverTimeoutRef.current);
+                  }
+                  hoverTimeoutRef.current = setTimeout(() => {
+                    setPreviewNode({ node: node as Node, position: previewPositionRef.current });
+                    setShowPreview(true);
+                  }, previewDelay);
+                }}
+                onMouseLeave={() => {
+                  setHoveredNodeId(null);
+                  if (hoverTimeoutRef.current) {
+                    clearTimeout(hoverTimeoutRef.current);
+                    hoverTimeoutRef.current = null;
+                  }
+                  setShowPreview(false);
+                }}
                 focused={focusedNodeIds.has(node.id)}
                 forceShowText={forceShowTextIds.has(node.id)}
                 hasFocusMode={hasFocusMode}
@@ -745,6 +781,22 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       <div className="absolute bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm pointer-events-none">
         缩放: {Math.round(transform.k * 100)}%
       </div>
+
+      {showPreview && previewNode && (
+        <NodePreviewCard
+          node={previewNode.node}
+          nodes={nodes}
+          edges={edges}
+          nodeStatus={nodeStatus}
+          position={previewNode.position}
+          onNavigateToNode={(node) => {
+            onNodeClick(node);
+            setShowPreview(false);
+            setPreviewNode(null);
+          }}
+          onMarkMastered={onMarkNodeMastered}
+        />
+      )}
     </div>
   );
 });

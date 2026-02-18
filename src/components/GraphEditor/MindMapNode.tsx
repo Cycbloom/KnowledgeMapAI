@@ -22,7 +22,7 @@ interface MindMapNodeProps {
   isDark: boolean;
   zoomLevel: number;
   onClick: () => void;
-  onMouseEnter?: () => void;
+  onMouseEnter?: (e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
   focused?: boolean;
   forceShowText?: boolean;
@@ -268,9 +268,9 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     e.stopPropagation();
   }, []);
 
-  const handleMouseEnter = useCallback(() => {
+  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
     setIsHovered(true);
-    onMouseEnter?.();
+    onMouseEnter?.(e);
   }, [onMouseEnter]);
 
   const handleMouseLeave = useCallback(() => {

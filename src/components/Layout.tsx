@@ -7,7 +7,6 @@ import { useMessageStore } from '../store/useMessageStore';
 import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network, BarChart3 } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
-import { GlobalSearch } from './GlobalSearch';
 import { HelpModal } from './HelpModal';
 import { SSEStatusIndicator } from './SSEStatusIndicator';
 import { OfflineIndicator } from './OfflineIndicator';
@@ -210,13 +209,10 @@ export const Layout = () => {
           
           {/* Top Header */}
           {!isFullScreenPage && (
-            <header className={`h-12 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b ${
+            <header className={`h-12 px-6 flex items-center justify-end shrink-0 z-10 shadow-sm transition-colors border-b ${
               isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
             }`}>
-              <div className="flex-1 max-w-xl">
-                 <GlobalSearch />
-              </div>
-              <div className="flex items-center gap-4 ml-4">
+              <div className="flex items-center gap-4">
                  <SSEStatusIndicator />
                  <button 
                    onClick={() => setIsHelpOpen(true)}

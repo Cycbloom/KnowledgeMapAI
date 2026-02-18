@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, queryKeys } from '../hooks/useQueries';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network, ArrowRight, Sparkles, Tag, X } from 'lucide-react';
+import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Network, ArrowRight, Sparkles, Tag, X } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
@@ -190,25 +190,57 @@ export const Dashboard = () => {
       <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-10">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              我的知识图谱
-            </h1>
-            <p className={`${isDark ? 'text-slate-400' : 'text-gray-500'} text-lg max-w-xl`}>
-              构建、可视化并探索您的个性化知识网络。
-            </p>
+        <div className="space-y-6">
+          {/* Row 1: Title + Stats Overview */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="space-y-1 flex-shrink-0">
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                我的知识图谱
+              </h1>
+              <p className={`${isDark ? 'text-slate-400' : 'text-gray-500'} text-sm md:text-base`}>
+                构建、可视化并探索您的个性化知识网络。
+              </p>
+            </div>
+            
+            {/* Stats Overview - Compact */}
+            {statsData && (
+              <div className={`flex-1 flex items-center gap-4 px-5 py-3 rounded-xl border ${
+                isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+              }`}>
+                <div className={`p-2.5 rounded-lg ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                  <BarChart size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    您已创建 <span className="font-semibold">{graphs.length}</span> 个知识图谱，包含 <span className="font-semibold">{graphs.reduce((acc, g) => acc + (g.nodes_count || 0), 0)}</span> 个节点。继续保持，完善您的知识体系！
+                  </p>
+                </div>
+                <Link 
+                  to="/learning-stats" 
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                    isDark 
+                      ? 'bg-blue-600 text-white hover:bg-blue-500' 
+                      : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                  }`}
+                >
+                  统计
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            )}
           </div>
           
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative group">
+          {/* Row 2: Search + Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search Box */}
+            <div className="relative flex-1">
               <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} size={18} />
               <input 
                 type="text" 
                 placeholder="搜索图谱..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all w-full md:w-64 ${
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
                   isDark 
                     ? 'bg-slate-800 border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white' 
                     : 'bg-white border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm'
@@ -216,94 +248,59 @@ export const Dashboard = () => {
               />
             </div>
             
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept=".json,.md,.opml"
-            />
-            
-            <button
-              onClick={handleImportClick}
-              disabled={importGraphMutation.isPending}
-              className={`px-4 py-2.5 rounded-xl flex items-center space-x-2 border transition-all font-medium ${
-                isDark 
-                  ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white' 
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
-              } disabled:opacity-50`}
-            >
-              <Upload size={18} />
-              <span className="hidden sm:inline">{importGraphMutation.isPending ? '导入中...' : '导入'}</span>
-            </button>
-            
-            <button
-              onClick={handleOpenTemplateSelector}
-              className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium active:scale-95"
-            >
-              <Plus size={20} />
-              <span>新建图谱</span>
-            </button>
-            
-            <button
-              onClick={() => setIsAIGeneratorOpen(true)}
-              className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md hover:shadow-lg transition-all font-medium active:scale-95"
-            >
-              <Sparkles size={20} />
-              <span>AI 生成</span>
-            </button>
-            
-            <Link
-              to="/graph-map"
-              className={`px-4 py-2.5 rounded-xl flex items-center space-x-2 border transition-all font-medium ${
-                isDark 
-                  ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white' 
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
-              }`}
-            >
-              <Network size={18} />
-              <span className="hidden sm:inline">图谱地图</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Statistics Banner */}
-        {statsData && (
-          <div className={`relative overflow-hidden rounded-3xl border transition-all ${
-            isDark ? 'bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
-          }`}>
-            <div className="absolute top-0 right-0 p-8 opacity-5">
-              <Activity size={200} />
-            </div>
-            
-            <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="flex items-start space-x-5">
-                <div className={`p-4 rounded-2xl ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
-                  <BarChart size={32} />
-                </div>
-                <div className="space-y-1">
-                  <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>学习概览</h3>
-                  <p className={`${isDark ? 'text-slate-400' : 'text-gray-500'} max-w-lg`}>
-                    您已创建 {graphs.length} 个知识图谱，包含 {graphs.reduce((acc, g) => acc + (g.nodes_count || 0), 0)} 个节点。
-                    继续保持，完善您的知识体系！
-                  </p>
-                </div>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".json,.md,.opml"
+              />
               
-              <Link 
-                to="/learning-stats" 
-                className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
+              <button
+                onClick={handleImportClick}
+                disabled={importGraphMutation.isPending}
+                className={`px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
                   isDark 
-                    ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/20' 
-                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' 
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm'
+                } disabled:opacity-50`}
+              >
+                <Upload size={16} />
+                <span>{importGraphMutation.isPending ? '导入中...' : '导入'}</span>
+              </button>
+              
+              <Link
+                to="/graph-map"
+                className={`px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                  isDark 
+                    ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' 
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm'
                 }`}
               >
-                学习统计
-                <BarChart size={18} />
+                <Network size={16} />
+                <span>图谱地图</span>
               </Link>
+              
+              <button
+                onClick={handleOpenTemplateSelector}
+                className="px-4 py-2.5 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium"
+              >
+                <Plus size={16} />
+                <span>新建图谱</span>
+              </button>
+              
+              <button
+                onClick={() => setIsAIGeneratorOpen(true)}
+                className="px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium"
+              >
+                <Sparkles size={16} />
+                <span>AI 生成</span>
+              </button>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Tag Cloud Section */}
         <TagCloudSection 

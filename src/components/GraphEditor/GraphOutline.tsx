@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser, Plus } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser, Plus, Network, X, Link2, RefreshCw } from 'lucide-react';
 import { Node, Edge, NodeLevel } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
 import { GraphStatsSummary } from './GraphStatsSummary';
@@ -15,8 +15,8 @@ interface GraphOutlineProps {
   onSelectionChange?: (ids: Set<string>) => void;
   onBatchAction?: (action: 'expand_graph' | 'delete' | 'batch_generate_questions', data?: any) => void;
   onAddNode?: () => void;
+  onConnectNodes?: (sourceId: string, targetId: string) => void;
   className?: string;
-  // Optional stats for the summary dashboard
   stats?: {
     masteredCount: number;
     dueTodayCount: number;
@@ -33,6 +33,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   onSelectionChange,
   onBatchAction,
   onAddNode,
+  onConnectNodes,
   className = '',
   stats
 }) => {
@@ -40,8 +41,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [isBatchGenerateOpen, setIsBatchGenerateOpen] = useState(false);
+  const [showConnectionDiscovery, setShowConnectionDiscovery] = useState(false);
   
-  // View Control State
   const [viewMode, setViewMode] = useState<'tree' | 'list'>('tree');
   const [sortMode, setSortMode] = useState<'default' | 'title' | 'level'>('default');
   const [filterLevel, setFilterLevel] = useState<string>('all');
@@ -262,6 +263,94 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     onBatchAction?.('batch_generate_questions', config); 
   }, [onSelectionChange, onBatchAction]);
 
+  const existingConnections = useMemo(() => {
+    const connections = new Set<string>();
+    edges.forEach(edge => {
+      connections.add(`${edge.source_node_id}-${edge.target_node_id}`);
+      connections.add(`${edge.target_node_id}-${edge.source_node_id}`);
+    });
+    return connections;
+  }, [edges]);
+
+  const connectionSuggestions = useMemo(() => {
+    const suggestions: { sourceId: string; sourceTitle: string; targetId: string; targetTitle: string; reason: string; score: number }[] = [];
+    
+    nodes.forEach(node => {
+      const nodeTags = new Set(node.tags || node.properties?.tags || []);
+      const nodeContent = (node.content || '').toLowerCase();
+      const connectedIds = new Set(
+        edges
+          .filter(e => e.source_node_id === node.id || e.target_node_id === node.id)
+          .map(e => e.source_node_id === node.id ? e.target_node_id : e.source_node_id)
+      );
+      
+      nodes.forEach(otherNode => {
+        if (node.id === otherNode.id) return;
+        if (connectedIds.has(otherNode.id)) return;
+        if (existingConnections.has(`${node.id}-${otherNode.id}`)) return;
+        
+        const connectionKey = [node.id, otherNode.id].sort().join('-');
+        
+        let score = 0;
+        const reasons: string[] = [];
+        
+        const otherTags = new Set(otherNode.tags || otherNode.properties?.tags || []);
+        const commonTags = [...nodeTags].filter(t => otherTags.has(t));
+        if (commonTags.length > 0) {
+          score += commonTags.length * 10;
+          reasons.push(`共同标签: ${commonTags.slice(0, 2).join(', ')}`);
+        }
+        
+        const otherContent = (otherNode.content || '').toLowerCase();
+        if (nodeContent.includes(otherNode.title.toLowerCase()) || otherContent.includes(node.title.toLowerCase())) {
+          score += 15;
+          reasons.push('内容中提及对方');
+        }
+        
+        if (score >= 10) {
+          suggestions.push({
+            sourceId: node.id,
+            sourceTitle: node.title,
+            targetId: otherNode.id,
+            targetTitle: otherNode.title,
+            reason: reasons[0] || '可能相关',
+            score
+          });
+        }
+      });
+    });
+    
+    const uniqueSuggestions = suggestions
+      .filter((s, i, arr) => 
+        arr.findIndex(other => 
+          (other.sourceId === s.sourceId && other.targetId === s.targetId) ||
+          (other.sourceId === s.targetId && other.targetId === s.sourceId)
+        ) === i
+      )
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+    
+    return uniqueSuggestions;
+  }, [nodes, edges, existingConnections]);
+
+  const [dismissedConnections, setDismissedConnections] = useState<Set<string>>(new Set());
+  
+  const filteredSuggestions = useMemo(() => {
+    return connectionSuggestions.filter(s => {
+      const key = [s.sourceId, s.targetId].sort().join('-');
+      return !dismissedConnections.has(key);
+    });
+  }, [connectionSuggestions, dismissedConnections]);
+
+  const handleConnect = useCallback((suggestion: { sourceId: string; targetId: string }) => {
+    onConnectNodes?.(suggestion.sourceId, suggestion.targetId);
+  }, [onConnectNodes]);
+
+  const handleDismissConnection = useCallback((sourceId: string, targetId: string) => {
+    const key = [sourceId, targetId].sort().join('-');
+    setDismissedConnections(prev => new Set([...prev, key]));
+  }, []);
+
   // List Mode: Flat List (Used for Search, Filter, or explicit List View)
   const renderList = () => {
     // processedNodes is already sorted and filtered
@@ -470,6 +559,15 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             >
               <Eraser size={16} />
             </button>
+            {filteredSuggestions.length > 0 && (
+              <button
+                onClick={() => setShowConnectionDiscovery(!showConnectionDiscovery)}
+                className={`p-1.5 rounded transition-colors ${showConnectionDiscovery ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-purple-500'}`}
+                title={`关联发现 (${filteredSuggestions.length} 条建议)`}
+              >
+                <Network size={16} />
+              </button>
+            )}
             <button 
               onClick={() => {
                 setIsMultiSelectMode(!isMultiSelectMode);
@@ -589,6 +687,65 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           </div>
         )}
       </div>
+
+      {/* Connection Discovery Panel */}
+      {showConnectionDiscovery && filteredSuggestions.length > 0 && (
+        <div className="border-b border-slate-200 dark:border-slate-800 p-3 bg-purple-50/50 dark:bg-purple-900/10">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Network size={14} className="text-purple-500" />
+              <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+                关联发现 ({filteredSuggestions.length})
+              </span>
+            </div>
+            <button
+              onClick={() => setShowConnectionDiscovery(false)}
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
+            >
+              <X size={14} className="text-slate-400" />
+            </button>
+          </div>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {filteredSuggestions.map((suggestion, idx) => (
+              <div
+                key={`${suggestion.sourceId}-${suggestion.targetId}-${idx}`}
+                className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1 text-xs">
+                    <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px]">
+                      {suggestion.sourceTitle}
+                    </span>
+                    <Link2 size={10} className="text-purple-400" />
+                    <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[80px]">
+                      {suggestion.targetTitle}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {suggestion.reason}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 ml-2">
+                  <button
+                    onClick={() => handleConnect(suggestion)}
+                    className="p-1 text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded"
+                    title="建立连接"
+                  >
+                    <Link2 size={12} />
+                  </button>
+                  <button
+                    onClick={() => handleDismissConnection(suggestion.sourceId, suggestion.targetId)}
+                    className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                    title="忽略"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto py-2">
         {(viewMode === 'list' || searchQuery.trim() || filterLevel !== 'all') ? (

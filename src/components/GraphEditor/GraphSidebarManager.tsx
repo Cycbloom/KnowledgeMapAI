@@ -22,6 +22,7 @@ interface GraphSidebarManagerProps {
   onStartSelectingParent?: () => void;
   onCancelSelectingParent?: () => void;
   onSelectParentFromGraph?: (nodeId: string) => void;
+  onConnectNodes?: (sourceId: string, targetId: string) => void;
 }
 
 export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
@@ -38,7 +39,8 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   isSelectingParent = false,
   onStartSelectingParent,
   onCancelSelectingParent,
-  onSelectParentFromGraph
+  onSelectParentFromGraph,
+  onConnectNodes
 }) => {
   const {
     sidebarMode, setSidebarMode,
@@ -121,6 +123,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
                 else if (action === 'delete') nodeOps.handleBatchDelete();
                 else if (action === 'batch_generate_questions') aiOps.handleBackgroundTask('batch_generate_questions', data);
               }}
+              onConnectNodes={onConnectNodes}
               className="h-full"
               stats={graphStats}
             />

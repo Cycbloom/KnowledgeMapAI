@@ -390,6 +390,20 @@ export const GraphEditor = () => {
     setSelectedNodeIds(new Set());
   }, [prevSidebarMode, setSidebarMode, setPrevSidebarMode, setSelectedNode, setSelectedNodeIds]);
 
+  const handleConnectNodes = useCallback(async (sourceId: string, targetId: string) => {
+    try {
+      await mutations.createEdgeMutation.mutateAsync({
+        source_node_id: sourceId,
+        target_node_id: targetId,
+        graphId: id || '',
+        relationship_type: 'related'
+      });
+      addMessage({ content: '连接已创建', type: 'success' });
+    } catch (error: any) {
+      addMessage({ content: `创建连接失败: ${error.message || '未知错误'}`, type: 'error' });
+    }
+  }, [mutations.createEdgeMutation, id, addMessage]);
+
   const handleNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node);
     setSelectedNodeIds(new Set([node.id]));
@@ -1002,6 +1016,7 @@ export const GraphEditor = () => {
         onStartSelectingParent={handleStartSelectingParent}
         onCancelSelectingParent={handleCancelSelectingParent}
         onSelectParentFromGraph={handleSelectParentFromGraph}
+        onConnectNodes={handleConnectNodes}
       />
       
       <GraphAnalysisPanel

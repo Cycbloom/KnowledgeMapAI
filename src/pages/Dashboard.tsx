@@ -42,14 +42,26 @@ export const Dashboard = () => {
   
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([]);
   const graphsPerPage = 9;
 
   const graphs = Array.isArray(graphsData) ? graphsData : [];
   
-  const filteredGraphs = graphs.filter(g => 
-    g.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (g.description && g.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredGraphs = useMemo(() => {
+    let result = graphs.filter(g => 
+      g.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (g.description && g.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+    
+    if (selectedFilterTags.length > 0) {
+      result = result.filter(g => {
+        const graphTags = g.tags || [];
+        return selectedFilterTags.some(tag => graphTags.includes(tag));
+      });
+    }
+    
+    return result;
+  }, [graphs, searchQuery, selectedFilterTags]);
 
   const totalPages = Math.ceil(filteredGraphs.length / graphsPerPage);
   const paginatedGraphs = useMemo(() => {
@@ -294,7 +306,14 @@ export const Dashboard = () => {
         )}
 
         {/* Tag Cloud Section */}
-        <TagCloudSection isDark={isDark} />
+        <TagCloudSection 
+          isDark={isDark} 
+          selectedTags={selectedFilterTags}
+          onTagsChange={(tags) => {
+            setSelectedFilterTags(tags);
+            setCurrentPage(1);
+          }}
+        />
 
         {/* Create Graph Modal/Form */}
         {isCreating && (
@@ -631,8 +650,15 @@ const getTagColor = (tagName: string): string => {
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
 };
 
-const TagCloudSection = ({ isDark }: { isDark: boolean }) => {
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+const TagCloudSection = ({ 
+  isDark, 
+  selectedTags, 
+  onTagsChange 
+}: { 
+  isDark: boolean;
+  selectedTags: string[];
+  onTagsChange: (tags: string[]) => void;
+}) => {
   const [showAll, setShowAll] = useState(false);
 
   const { data: tagsData } = useQuery({
@@ -657,14 +683,14 @@ const TagCloudSection = ({ isDark }: { isDark: boolean }) => {
 
   const handleTagClick = (tag: string) => {
     if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter(t => t !== tag));
+      onTagsChange(selectedTags.filter(t => t !== tag));
     } else {
-      setSelectedTags([...selectedTags, tag]);
+      onTagsChange([...selectedTags, tag]);
     }
   };
 
   const clearSelection = () => {
-    setSelectedTags([]);
+    onTagsChange([]);
   };
 
   if (!allTags || allTags.length === 0) return null;

@@ -57,9 +57,25 @@ export class GraphService {
       countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
     });
     
+    const { data: nodesData } = await supabase
+      .from('nodes')
+      .select('graph_id, properties')
+      .in('graph_id', graphIds)
+      .is('deleted_at', null);
+    
+    const tagsMap = new Map<string, Set<string>>();
+    nodesData?.forEach((n: { graph_id: string; properties: any }) => {
+      const tags = n.properties?.tags || [];
+      if (!tagsMap.has(n.graph_id)) {
+        tagsMap.set(n.graph_id, new Set());
+      }
+      tags.forEach((tag: string) => tagsMap.get(n.graph_id)!.add(tag));
+    });
+    
     return graphs?.map((g: Record<string, unknown>) => ({
       ...g,
-      nodes_count: countMap.get(g.id as string) || 0
+      nodes_count: countMap.get(g.id as string) || 0,
+      tags: Array.from(tagsMap.get(g.id as string) || [])
     })) || [];
   }
 

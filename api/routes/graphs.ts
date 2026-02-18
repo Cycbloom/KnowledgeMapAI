@@ -32,7 +32,7 @@ router.get('/map', requireAuth, async (req: AuthRequest, res: Response) => {
     .select('id, title, description, created_at, is_public')
     .eq('user_id', userId)
     .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+    .order('last_used_at', { ascending: false });
 
   const { data: nodeCounts } = await supabase
     .from('nodes')
@@ -278,6 +278,12 @@ router.get('/:id/nodes', optionalAuth, validate({ params: uuidParamsSchema }), a
   const { id } = req.params;
   const userId = req.user?.id || null;
   const data = await graphService.getGraphNodes(req.supabase!, userId, id);
+  
+  // Update last_used_at when user opens their own graph
+  if (userId) {
+    graphService.updateLastUsedAt(req.supabase!, id, userId).catch(console.error);
+  }
+  
   res.json(data);
 });
 

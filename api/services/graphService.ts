@@ -36,7 +36,7 @@ export class GraphService {
       .select('*')
       .eq('user_id', userId)
       .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .order('last_used_at', { ascending: false });
 
     if (error) throw error;
     
@@ -139,6 +139,14 @@ export class GraphService {
 
     if (error) throw error;
     return data;
+  }
+
+  async updateLastUsedAt(supabase: SupabaseClient, graphId: string, userId: string) {
+    await supabase
+      .from('knowledge_graphs')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', graphId)
+      .eq('user_id', userId);
   }
 
   async createGraph(supabase: SupabaseClient, userId: string, title: string, description?: string) {

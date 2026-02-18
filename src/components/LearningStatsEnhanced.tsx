@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, RadialBarChart, RadialBar, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useTheme } from '../hooks/useTheme';
-import { CheckCircle, BookOpen, AlertTriangle, Target, TrendingUp, Brain, Clock } from 'lucide-react';
+import { CheckCircle, BookOpen, AlertTriangle, Target, TrendingUp, Brain, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface KnowledgeHeatmapProps {
   graphData: Array<{
@@ -48,6 +48,8 @@ const STATUS_LABELS = {
 
 export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData }) => {
   const { isDark } = useTheme();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const heatmapData = useMemo(() => {
     return graphData.map(graph => {
@@ -68,6 +70,12 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
     }).sort((a, b) => b.masteryRate - a.masteryRate);
   }, [graphData]);
 
+  const totalPages = Math.ceil(heatmapData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return heatmapData.slice(start, start + itemsPerPage);
+  }, [heatmapData, currentPage]);
+
   const getMasteryColor = (rate: number) => {
     if (rate >= 80) return 'bg-green-500';
     if (rate >= 60) return 'bg-green-400';
@@ -78,12 +86,43 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
 
   return (
     <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-      <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-        知识掌握热力图
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+          知识掌握热力图
+        </h3>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={`p-1 rounded-lg transition-colors ${
+                currentPage === 1
+                  ? 'opacity-50 cursor-not-allowed'
+                  : isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
+              }`}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className={`p-1 rounded-lg transition-colors ${
+                currentPage === totalPages
+                  ? 'opacity-50 cursor-not-allowed'
+                  : isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
+              }`}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {heatmapData.map(item => (
+        {paginatedData.map(item => (
           <div
             key={item.id}
             className={`relative p-3 rounded-lg border transition-all hover:scale-105 cursor-pointer ${

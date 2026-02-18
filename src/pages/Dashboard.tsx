@@ -7,7 +7,6 @@ import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { BlindSpotList } from '../components/BlindSpotList';
 import { TemplateSelector } from '../components/TemplateSelector';
 import { AutoGraphGenerator } from '../components/AutoGraph/AutoGraphGenerator';
 import { Template } from '../types';
@@ -232,6 +231,18 @@ export const Dashboard = () => {
               <Sparkles size={20} />
               <span>AI 生成</span>
             </button>
+            
+            <Link
+              to="/graph-map"
+              className={`px-4 py-2.5 rounded-xl flex items-center space-x-2 border transition-all font-medium ${
+                isDark 
+                  ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white' 
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+              }`}
+            >
+              <Network size={18} />
+              <span className="hidden sm:inline">图谱地图</span>
+            </Link>
           </div>
         </div>
 
@@ -259,36 +270,17 @@ export const Dashboard = () => {
               </div>
               
               <Link 
-                to="/statistics" 
+                to="/learning-stats" 
                 className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
                   isDark 
                     ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/20' 
                     : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                 }`}
               >
-                查看详细分析
-                <Network size={18} />
-              </Link>
-              
-              <Link 
-                to="/graph-map" 
-                className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
-                  isDark 
-                    ? 'bg-slate-700 text-white hover:bg-slate-600 shadow-lg' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                }`}
-              >
-                图谱地图
-                <Network size={18} />
+                学习统计
+                <BarChart size={18} />
               </Link>
             </div>
-            
-            {/* Blind Spots Preview */}
-            {statsData.blindSpots && statsData.blindSpots.length > 0 && (
-              <div className={`border-t px-6 py-4 md:px-8 ${isDark ? 'border-slate-700/50 bg-slate-800/50' : 'border-gray-50 bg-gray-50/50'}`}>
-                <BlindSpotList data={statsData.blindSpots.slice(0, 3)} />
-              </div>
-            )}
           </div>
         )}
 

@@ -13,6 +13,7 @@ const GraphEditor = lazy(() => import('./pages/GraphEditor').then(module => ({ d
 const Study = lazy(() => import('./pages/Study').then(module => ({ default: module.Study })));
 const LearningMode = lazy(() => import('./pages/LearningMode').then(module => ({ default: module.LearningMode })));
 const Statistics = lazy(() => import('./pages/Statistics').then(module => ({ default: module.Statistics })));
+const LearningStatsCenter = lazy(() => import('./pages/LearningStatsCenter').then(module => ({ default: module.LearningStatsCenter })));
 const Tasks = lazy(() => import('./pages/Tasks').then(module => ({ default: module.Tasks })));
 const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
 const Settings = lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
@@ -51,6 +52,7 @@ function App() {
             <Route path="study" element={<Study />} />
             <Route path="learning" element={<LearningMode />} />
             <Route path="statistics" element={<Statistics />} />
+            <Route path="learning-stats" element={<LearningStatsCenter />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />

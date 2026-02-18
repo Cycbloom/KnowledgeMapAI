@@ -5,6 +5,8 @@ export const graphsApi = {
   
   listTrash: () => request('/graphs/trash'),
   
+  getTags: () => request('/graphs/tags'),
+  
   create: (data: { title: string; description?: string }) => 
     request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
   

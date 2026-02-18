@@ -63,6 +63,45 @@ router.get('/map', requireAuth, async (req: AuthRequest, res: Response) => {
   });
 });
 
+// Get all tags from user's graphs
+router.get('/tags', requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase!;
+  const userId = req.user.id;
+
+  const { data: graphs } = await supabase
+    .from('knowledge_graphs')
+    .select('id')
+    .eq('user_id', userId)
+    .is('deleted_at', null);
+
+  const graphIds = (graphs || []).map(g => g.id);
+  
+  if (graphIds.length === 0) {
+    res.json({ tags: [] });
+    return;
+  }
+
+  const { data: nodes } = await supabase
+    .from('nodes')
+    .select('properties')
+    .in('graph_id', graphIds);
+
+  const tagMap = new Map<string, number>();
+  
+  (nodes || []).forEach(node => {
+    const tags = node.properties?.tags || [];
+    tags.forEach((tag: string) => {
+      tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+    });
+  });
+
+  const tags = Array.from(tagMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  res.json({ tags });
+});
+
 router.get('/map/analyze', requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase!;
   const userId = req.user.id;

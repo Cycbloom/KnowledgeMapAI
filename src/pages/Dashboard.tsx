@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, queryKeys } from '../hooks/useQueries';
-import { useQueryClient } from '@tanstack/react-query';
-import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network, ArrowRight, Sparkles } from 'lucide-react';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Activity, Network, ArrowRight, Sparkles, Tag, X } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
@@ -11,6 +11,7 @@ import { TemplateSelector } from '../components/TemplateSelector';
 import { AutoGraphGenerator } from '../components/AutoGraph/AutoGraphGenerator';
 import { Template } from '../types';
 import { useTheme } from '../hooks/useTheme';
+import { api } from '../services/api';
 
 export const Dashboard = () => {
   const { isDark } = useTheme();
@@ -40,6 +41,8 @@ export const Dashboard = () => {
   });
   
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const graphsPerPage = 9;
 
   const graphs = Array.isArray(graphsData) ? graphsData : [];
   
@@ -47,6 +50,12 @@ export const Dashboard = () => {
     g.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (g.description && g.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const totalPages = Math.ceil(filteredGraphs.length / graphsPerPage);
+  const paginatedGraphs = useMemo(() => {
+    const start = (currentPage - 1) * graphsPerPage;
+    return filteredGraphs.slice(start, start + graphsPerPage);
+  }, [filteredGraphs, currentPage]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,6 +293,9 @@ export const Dashboard = () => {
           </div>
         )}
 
+        {/* Tag Cloud Section */}
+        <TagCloudSection isDark={isDark} />
+
         {/* Create Graph Modal/Form */}
         {isCreating && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -434,7 +446,7 @@ export const Dashboard = () => {
               )}
             </div>
           ) : (
-            filteredGraphs.map((graph, index) => (
+            paginatedGraphs.map((graph, index) => (
               <div 
                 key={graph.id || index} 
                 className={`group relative rounded-2xl transition-all duration-300 hover:-translate-y-1 ${
@@ -523,6 +535,69 @@ export const Dashboard = () => {
           )}
         </div>
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-xl transition-all ${
+                currentPage === 1 
+                  ? 'opacity-30 cursor-not-allowed' 
+                  : isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (
+                  page === 1 || 
+                  page === totalPages || 
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                          : isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (
+                  (page === currentPage - 2 && page > 1) ||
+                  (page === currentPage + 2 && page < totalPages)
+                ) {
+                  return <span key={page} className="px-1 text-slate-400">...</span>;
+                }
+                return null;
+              })}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-xl transition-all ${
+                currentPage === totalPages 
+                  ? 'opacity-30 cursor-not-allowed' 
+                  : isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'
+              }`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         <ConfirmationModal
           isOpen={deleteConfirm.isOpen}
           title="删除图谱"
@@ -531,6 +606,144 @@ export const Dashboard = () => {
           onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
         />
       </div>
+    </div>
+  );
+};
+
+const TAG_COLORS = [
+  'bg-blue-500',
+  'bg-green-500',
+  'bg-purple-500',
+  'bg-amber-500',
+  'bg-pink-500',
+  'bg-cyan-500',
+  'bg-indigo-500',
+  'bg-rose-500',
+  'bg-teal-500',
+  'bg-orange-500'
+];
+
+const getTagColor = (tagName: string): string => {
+  let hash = 0;
+  for (let i = 0; i < tagName.length; i++) {
+    hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+};
+
+const TagCloudSection = ({ isDark }: { isDark: boolean }) => {
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showAll, setShowAll] = useState(false);
+
+  const { data: tagsData } = useQuery({
+    queryKey: ['graphTags'],
+    queryFn: async () => {
+      const res = await api.graphs.getTags();
+      return res.tags || [];
+    }
+  });
+
+  const allTags = useMemo(() => {
+    return tagsData || [];
+  }, [tagsData]);
+
+  const maxCount = useMemo(() => {
+    return Math.max(...allTags.map((t: { name: string; count: number }) => t.count), 1);
+  }, [allTags]);
+
+  const displayedTags = useMemo(() => {
+    return showAll ? allTags : allTags.slice(0, 20);
+  }, [allTags, showAll]);
+
+  const handleTagClick = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedTags([]);
+  };
+
+  if (!allTags || allTags.length === 0) return null;
+
+  return (
+    <div className={`rounded-2xl border p-6 ${
+      isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
+    }`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-xl ${isDark ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
+            <Tag size={20} />
+          </div>
+          <div>
+            <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+              标签云
+            </h3>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              共 {allTags.length} 个标签
+            </p>
+          </div>
+        </div>
+        
+        {selectedTags.length > 0 && (
+          <button
+            onClick={clearSelection}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              isDark 
+                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <X size={14} />
+            清除筛选 ({selectedTags.length})
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {displayedTags.map((tag: { name: string; count: number }) => {
+          const isSelected = selectedTags.includes(tag.name);
+          const size = 0.75 + (tag.count / maxCount) * 0.5;
+          
+          return (
+            <button
+              key={tag.name}
+              onClick={() => handleTagClick(tag.name)}
+              className={`
+                inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                transition-all hover:scale-105
+                ${isSelected 
+                  ? `${getTagColor(tag.name)} text-white shadow-lg` 
+                  : isDark 
+                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
+              `}
+              style={{ fontSize: `${size}rem` }}
+            >
+              <span className="font-medium">{tag.name}</span>
+              <span className={`text-xs ${isSelected ? 'text-white/80' : isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                {tag.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {allTags.length > 20 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className={`mt-4 w-full py-2 rounded-xl text-sm font-medium transition-colors ${
+            isDark 
+              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {showAll ? '收起' : `查看全部 ${allTags.length} 个标签`}
+        </button>
+      )}
     </div>
   );
 };

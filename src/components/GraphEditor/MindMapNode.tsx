@@ -452,7 +452,12 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 };
 
 export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProps) => {
-  return (
+  const nodeStatusEqual = 
+    (!prevProps.nodeStatus && !nextProps.nodeStatus) ||
+    (prevProps.nodeStatus && nextProps.nodeStatus && 
+     prevProps.nodeStatus[prevProps.node.id] === nextProps.nodeStatus[nextProps.node.id]);
+  
+  return Boolean(
     prevProps.node.id === nextProps.node.id &&
     prevProps.selected === nextProps.selected &&
     prevProps.focused === nextProps.focused &&
@@ -467,6 +472,11 @@ export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProp
     prevProps.node.y === nextProps.node.y &&
     prevProps.node.title === nextProps.node.title &&
     prevProps.node.level === nextProps.node.level &&
-    prevProps.node.is_accepted === nextProps.node.is_accepted
+    prevProps.node.is_accepted === nextProps.node.is_accepted &&
+    prevProps.colorScheme === nextProps.colorScheme &&
+    prevProps.coloringMode === nextProps.coloringMode &&
+    prevProps.nodeSizeMode === nextProps.nodeSizeMode &&
+    prevProps.nodeImportance === nextProps.nodeImportance &&
+    nodeStatusEqual
   );
 });

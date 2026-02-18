@@ -109,9 +109,6 @@ app.use(slowRequestLogger(2000))
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 app.get('/api/csrf-token', getCsrfToken)
 
-app.use('/api/auth', rateLimiters.auth, authRoutes)
-app.use('/api/ai', rateLimiters.ai, aiRoutes)
-
 /**
  * API Routes
  */

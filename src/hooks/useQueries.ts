@@ -3,6 +3,29 @@ import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Node, Edge, Task, Template, NodeLevel } from '../types';
 
+const DEFAULT_STALE_TIME = 1000 * 60 * 5;
+const LONG_STALE_TIME = 1000 * 60 * 30;
+const GC_TIME = 1000 * 60 * 60;
+
+const defaultQueryConfig = {
+  staleTime: DEFAULT_STALE_TIME,
+  gcTime: GC_TIME,
+  retry: 2,
+  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+};
+
+const staticQueryConfig = {
+  staleTime: LONG_STALE_TIME,
+  gcTime: GC_TIME,
+  retry: 1,
+};
+
+const realtimeQueryConfig = {
+  staleTime: 0,
+  gcTime: GC_TIME,
+  retry: 1,
+};
+
 // Query Keys
 export const queryKeys = {
   graphs: ['graphs'] as const,
@@ -26,6 +49,7 @@ export const useDashboardStats = () => {
   return useQuery({
     queryKey: queryKeys.dashboardStats,
     queryFn: api.dashboard.getStats,
+    ...defaultQueryConfig,
   });
 };
 
@@ -33,6 +57,7 @@ export const useStatistics = () => {
   return useQuery({
     queryKey: queryKeys.statistics,
     queryFn: api.statistics.getStats,
+    ...defaultQueryConfig,
   });
 };
 
@@ -41,7 +66,7 @@ export const useUser = (enabled: boolean = true) => {
     queryKey: queryKeys.user,
     queryFn: api.auth.getUser,
     enabled,
-    staleTime: 1000 * 60 * 30, // 30 mins
+    ...staticQueryConfig,
     retry: false,
   });
 };
@@ -50,6 +75,7 @@ export const useGraphs = () => {
   return useQuery({
     queryKey: queryKeys.graphs,
     queryFn: api.graphs.list,
+    ...defaultQueryConfig,
   });
 };
 
@@ -57,6 +83,7 @@ export const useTrashGraphs = () => {
   return useQuery({
     queryKey: ['graphs', 'trash'],
     queryFn: api.graphs.listTrash,
+    ...defaultQueryConfig,
   });
 };
 
@@ -65,6 +92,7 @@ export const useGraph = (id: string) => {
     queryKey: queryKeys.graph(id),
     queryFn: () => api.graphs.get(id),
     enabled: !!id,
+    ...defaultQueryConfig,
   });
 };
 
@@ -73,7 +101,7 @@ export const useGraphLearningPath = (id: string) => {
     queryKey: ['graphLearningPath', id],
     queryFn: () => api.graphs.getLearningPath(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 30, // 30 mins, path structure doesn't change often
+    ...staticQueryConfig,
   });
 };
 
@@ -88,7 +116,7 @@ export const useGraphData = (id: string) => {
       };
     },
     enabled: !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...defaultQueryConfig,
   });
 };
 
@@ -97,7 +125,7 @@ export const useGraphNodeStatus = (id: string) => {
     queryKey: queryKeys.graphNodeStatus(id),
     queryFn: () => api.graphs.getNodeStatus(id),
     enabled: !!id,
-    staleTime: 0, // Always fetch fresh status
+    ...realtimeQueryConfig,
   });
 };
 
@@ -106,7 +134,7 @@ export const useStudyCards = (params?: { graph_id?: string; node_id?: string; no
     queryKey: queryKeys.studyCards(params),
     queryFn: () => api.study.getCards(params),
     enabled,
-    staleTime: 0,
+    ...realtimeQueryConfig,
   });
 };
 
@@ -115,7 +143,7 @@ export const useTasks = (enabled: boolean = true, status?: string, limit: number
     queryKey: queryKeys.tasks(status, limit, offset),
     queryFn: async () => (await api.tasks.list(status, limit, offset)) as { tasks: Task[], total: number },
     enabled,
-    staleTime: 0,
+    ...realtimeQueryConfig,
   });
 };
 
@@ -124,7 +152,7 @@ export const useRetryTaskMutation = () => {
   return useMutation({
     mutationFn: api.tasks.retry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidate all task lists
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
 };
@@ -134,7 +162,7 @@ export const useDeleteTaskMutation = () => {
   return useMutation({
     mutationFn: api.tasks.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidate all task lists
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
 };
@@ -146,6 +174,7 @@ export const useAIStatus = (enabled: boolean = true) => {
     enabled,
     retry: false,
     staleTime: 0,
+    gcTime: GC_TIME,
     refetchInterval: enabled ? 60_000 : false,
     meta: { silent: true }
   });

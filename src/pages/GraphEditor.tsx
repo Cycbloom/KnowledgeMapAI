@@ -36,9 +36,6 @@ import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { useExplorationPath } from '../hooks/useExplorationPath';
 import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
 import type { Node as GraphNode, ColorScheme, GraphColorMode, LinkStyle, LinkAnimation, GraphViewMode, NodeSizeMode, EdgeWidthMode, BranchSuggestion } from '../types';
-import { TimelineView } from '../components/GraphEditor/views/TimelineView';
-import { TreeView } from '../components/GraphEditor/views/TreeView';
-import { PlanetView } from '../three/PlanetView';
 import { ViewModeSelector } from '../components/GraphEditor/ViewModeSelector';
 import { useFocusStore } from '../store/useFocusStore';
 import { PresentationControls } from '../components/GraphEditor/PresentationControls';
@@ -50,6 +47,22 @@ import { RAGChatButton } from '../components/GraphEditor/RAGChatPanel';
 import { api, AIAction } from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCommandPalette } from './GraphEditor/useCommandPalette';
+
+const TimelineView = lazy(() => 
+  import('../components/GraphEditor/views/TimelineView').then(module => ({ default: module.TimelineView }))
+);
+const TreeView = lazy(() => 
+  import('../components/GraphEditor/views/TreeView').then(module => ({ default: module.TreeView }))
+);
+const PlanetView = lazy(() => 
+  import('../three/PlanetView').then(module => ({ default: module.PlanetView }))
+);
+
+const ViewLoader = () => (
+  <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+  </div>
+);
 
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -571,135 +584,141 @@ export const GraphEditor = () => {
             />
           )}
           {viewMode === 'timeline' && (
-            <TimelineView
-              nodes={nodes}
-              edges={edges}
-              nodeStatus={nodeStatus}
-              selectedNodeId={selectedNode?.id || null}
-              onNodeClick={handleNodeClick}
-              colorScheme={colorScheme}
-              linkStyle={linkStyle}
-              linkAnimation={linkAnimation}
-              nodeSizeMode={nodeSizeMode}
-              edgeWidthMode={edgeWidthMode}
-              coloringMode={coloringMode}
-              isRightPanelOpen={sidebarMode !== 'none'}
-              rightPanelWidth={sidebarMode !== 'none' ? state.sidebarWidth : 0}
-            />
+            <Suspense fallback={<ViewLoader />}>
+              <TimelineView
+                nodes={nodes}
+                edges={edges}
+                nodeStatus={nodeStatus}
+                selectedNodeId={selectedNode?.id || null}
+                onNodeClick={handleNodeClick}
+                colorScheme={colorScheme}
+                linkStyle={linkStyle}
+                linkAnimation={linkAnimation}
+                nodeSizeMode={nodeSizeMode}
+                edgeWidthMode={edgeWidthMode}
+                coloringMode={coloringMode}
+                isRightPanelOpen={sidebarMode !== 'none'}
+                rightPanelWidth={sidebarMode !== 'none' ? state.sidebarWidth : 0}
+              />
+            </Suspense>
           )}
           {viewMode === 'tree' && (
-            <TreeView
-              nodes={nodes}
-              edges={edges}
-              nodeStatus={nodeStatus}
-              selectedNodeId={selectedNode?.id || null}
-              onNodeClick={handleNodeClick}
-              colorScheme={colorScheme}
-              linkStyle={linkStyle}
-              linkAnimation={linkAnimation}
-              nodeSizeMode={nodeSizeMode}
-              edgeWidthMode={edgeWidthMode}
-              coloringMode={coloringMode}
-              focusedNodeIds={focusedNodeIds}
-              focusedLinkIds={focusedLinkIds}
-              isExplorationMode={isExplorationMode}
-              branchSuggestions={branchSuggestions}
-              selectedNodeForBranch={selectedNode}
-              onSelectBranch={async (selectedSuggestion) => {
-                if (!selectedNode || !id) return;
-                
-                const suggestionsToCreate = [...branchSuggestions];
-                setBranchSuggestions([]);
-                
-                const createdNodes: any[] = [];
-                
-                for (const suggestion of suggestionsToCreate) {
-                  const isAccepted = suggestion.id === selectedSuggestion.id;
-                  const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
-                  if (newNode) {
-                    createdNodes.push({ node: newNode, suggestion, isAccepted });
+            <Suspense fallback={<ViewLoader />}>
+              <TreeView
+                nodes={nodes}
+                edges={edges}
+                nodeStatus={nodeStatus}
+                selectedNodeId={selectedNode?.id || null}
+                onNodeClick={handleNodeClick}
+                colorScheme={colorScheme}
+                linkStyle={linkStyle}
+                linkAnimation={linkAnimation}
+                nodeSizeMode={nodeSizeMode}
+                edgeWidthMode={edgeWidthMode}
+                coloringMode={coloringMode}
+                focusedNodeIds={focusedNodeIds}
+                focusedLinkIds={focusedLinkIds}
+                isExplorationMode={isExplorationMode}
+                branchSuggestions={branchSuggestions}
+                selectedNodeForBranch={selectedNode}
+                onSelectBranch={async (selectedSuggestion) => {
+                  if (!selectedNode || !id) return;
+                  
+                  const suggestionsToCreate = [...branchSuggestions];
+                  setBranchSuggestions([]);
+                  
+                  const createdNodes: any[] = [];
+                  
+                  for (const suggestion of suggestionsToCreate) {
+                    const isAccepted = suggestion.id === selectedSuggestion.id;
+                    const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
+                    if (newNode) {
+                      createdNodes.push({ node: newNode, suggestion, isAccepted });
+                    }
                   }
-                }
-                
-                if (createdNodes.length > 0) {
-                  const selectedNodeData = createdNodes.find(n => n.isAccepted);
-                  if (selectedNodeData) {
-                    explorationPathOps.addToPath({
-                      nodeId: selectedNodeData.node.id,
-                      nodeTitle: selectedNodeData.node.title,
-                      branchChoice: selectedNodeData.suggestion.title,
-                      parentNodeId: selectedNode?.id,
-                      branchSuggestionId: selectedNodeData.suggestion.id,
-                      alternativeBranches: suggestionsToCreate
-                    });
-                    setSelectedNode(selectedNodeData.node);
-                    setFocusedNodeId(selectedNodeData.node.id);
-                    const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
-                    const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                    setFocusedNodeIds(focusedNodes);
-                    setFocusedLinkIds(focusedLinks);
-                    const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
-                    setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
+                  
+                  if (createdNodes.length > 0) {
+                    const selectedNodeData = createdNodes.find(n => n.isAccepted);
+                    if (selectedNodeData) {
+                      explorationPathOps.addToPath({
+                        nodeId: selectedNodeData.node.id,
+                        nodeTitle: selectedNodeData.node.title,
+                        branchChoice: selectedNodeData.suggestion.title,
+                        parentNodeId: selectedNode?.id,
+                        branchSuggestionId: selectedNodeData.suggestion.id,
+                        alternativeBranches: suggestionsToCreate
+                      });
+                      setSelectedNode(selectedNodeData.node);
+                      setFocusedNodeId(selectedNodeData.node.id);
+                      const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
+                      const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                      setFocusedNodeIds(focusedNodes);
+                      setFocusedLinkIds(focusedLinks);
+                      const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
+                      setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
+                    }
                   }
-                }
-              }}
-              onSwitchBranch={async (pathItem, selectedSuggestion) => {
-                const parentNode = nodes.find(n => n.id === pathItem.parentNodeId);
-                if (!parentNode) return;
-                
-                const branches = pathItem.alternativeBranches || [];
-                const createdNodes: any[] = [];
-                
-                for (const suggestion of branches) {
-                  const isAccepted = suggestion.id === selectedSuggestion.id;
-                  const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
-                  if (newNode) {
-                    createdNodes.push({ node: newNode, suggestion, isAccepted });
+                }}
+                onSwitchBranch={async (pathItem, selectedSuggestion) => {
+                  const parentNode = nodes.find(n => n.id === pathItem.parentNodeId);
+                  if (!parentNode) return;
+                  
+                  const branches = pathItem.alternativeBranches || [];
+                  const createdNodes: any[] = [];
+                  
+                  for (const suggestion of branches) {
+                    const isAccepted = suggestion.id === selectedSuggestion.id;
+                    const newNode = await aiOps.handleCreateBranch(suggestion, isAccepted);
+                    if (newNode) {
+                      createdNodes.push({ node: newNode, suggestion, isAccepted });
+                    }
                   }
-                }
-                
-                if (createdNodes.length > 0) {
-                  const selectedNodeData = createdNodes.find(n => n.isAccepted);
-                  if (selectedNodeData) {
-                    explorationPathOps.addToPath({
-                      nodeId: selectedNodeData.node.id,
-                      nodeTitle: selectedNodeData.node.title,
-                      branchChoice: selectedNodeData.suggestion.title,
-                      parentNodeId: parentNode.id,
-                      branchSuggestionId: selectedNodeData.suggestion.id,
-                      alternativeBranches: branches
-                    });
-                    setHistoricalAlternativeBranches(prev => [
-                      ...prev.filter(item => item.nodeId !== parentNode.id),
-                      {
-                        nodeId: parentNode.id,
-                        branches,
-                        selectedBranchId: selectedSuggestion.id
-                      }
-                    ]);
-                    setSelectedNode(selectedNodeData.node);
-                    setFocusedNodeId(selectedNodeData.node.id);
-                    const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
-                    const focusedLinks = getFocusedLinks(focusedNodes, edges);
-                    setFocusedNodeIds(focusedNodes);
-                    setFocusedLinkIds(focusedLinks);
-                    const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
-                    state.setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
+                  
+                  if (createdNodes.length > 0) {
+                    const selectedNodeData = createdNodes.find(n => n.isAccepted);
+                    if (selectedNodeData) {
+                      explorationPathOps.addToPath({
+                        nodeId: selectedNodeData.node.id,
+                        nodeTitle: selectedNodeData.node.title,
+                        branchChoice: selectedNodeData.suggestion.title,
+                        parentNodeId: parentNode.id,
+                        branchSuggestionId: selectedNodeData.suggestion.id,
+                        alternativeBranches: branches
+                      });
+                      setHistoricalAlternativeBranches(prev => [
+                        ...prev.filter(item => item.nodeId !== parentNode.id),
+                        {
+                          nodeId: parentNode.id,
+                          branches,
+                          selectedBranchId: selectedSuggestion.id
+                        }
+                      ]);
+                      setSelectedNode(selectedNodeData.node);
+                      setFocusedNodeId(selectedNodeData.node.id);
+                      const focusedNodes = getFocusedNodes(selectedNodeData.node.id, nodes, edges);
+                      const focusedLinks = getFocusedLinks(focusedNodes, edges);
+                      setFocusedNodeIds(focusedNodes);
+                      setFocusedLinkIds(focusedLinks);
+                      const directChildren = getDirectChildren(selectedNodeData.node.id, nodes, edges);
+                      state.setForceShowTextIds(new Set([selectedNodeData.node.id, ...directChildren]));
+                    }
                   }
-                }
-              }}
-              historicalAlternativeBranches={historicalAlternativeBranches}
-            />
+                }}
+                historicalAlternativeBranches={historicalAlternativeBranches}
+              />
+            </Suspense>
           )}
           {viewMode === 'planet' && (
-            <PlanetView
-              nodes={nodes}
-              edges={edges}
-              selectedNodeId={selectedNode?.id || null}
-              onNodeClick={handleNodeClick}
-              colorScheme={colorScheme}
-              coloringMode={coloringMode}
-            />
+            <Suspense fallback={<ViewLoader />}>
+              <PlanetView
+                nodes={nodes}
+                edges={edges}
+                selectedNodeId={selectedNode?.id || null}
+                onNodeClick={handleNodeClick}
+                colorScheme={colorScheme}
+                coloringMode={coloringMode}
+              />
+            </Suspense>
           )}
         </div>
       </div>

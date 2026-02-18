@@ -18,14 +18,14 @@ interface PlanetViewProps {
   coloringMode?: GraphColorMode;
 }
 
-const NODE_COLORS = {
+const NODE_COLORS = Object.freeze({
   root: new THREE.Color('#FFD700'),
   core: new THREE.Color('#FF8C00'),
   normal: new THREE.Color('#4A90D9'),
   leaf: new THREE.Color('#00CED1'),
   selected: new THREE.Color('#FF69B4'),
   hover: new THREE.Color('#98FB98')
-};
+});
 
 function getNodeType(node: LayoutNode3D, layoutLinks: LayoutLink3D[]): 'root' | 'core' | 'normal' | 'leaf' {
   const hasChildren = layoutLinks.some(link => link.source === node.id);
@@ -62,7 +62,8 @@ function PlanetNode({
 }: PlanetNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
-  const [scale, setScale] = useState(1);
+  const scaleRef = useRef(1);
+  const [, forceUpdate] = useState(0);
   const type = getNodeType(node, layoutLinks);
   
   const baseSize = useMemo(() => {
@@ -90,9 +91,14 @@ function PlanetNode({
     const distance = camera.position.distanceTo(nodePos);
     const baseDistance = 200;
     const newScale = Math.max(0.3, Math.min(2, distance / baseDistance));
-    setScale(newScale);
+    
+    if (Math.abs(scaleRef.current - newScale) > 0.05) {
+      scaleRef.current = newScale;
+      forceUpdate(n => n + 1);
+    }
   });
 
+  const scale = scaleRef.current;
   const titleFontSize = 5 * scale;
   const tagFontSize = 3 * scale;
   const labelOffset = baseSize + 3;

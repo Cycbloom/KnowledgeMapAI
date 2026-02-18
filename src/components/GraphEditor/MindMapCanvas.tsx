@@ -296,12 +296,32 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const visibleNodes = useMemo(() => {
     if (!layout) return [];
     
+    let nodes = layout.nodes;
+    
     if (!isExplorationMode) {
-      return layout.nodes.filter(node => node.is_accepted !== false);
+      nodes = nodes.filter(node => node.is_accepted !== false);
+    }
+
+    if (nodes.length > 100) {
+      const { x, y, k } = transformRef.current;
+      const padding = 150;
+      const viewportBounds = {
+        minX: (-x - padding) / k,
+        maxX: (-x + containerSize.width + padding) / k,
+        minY: (-y - padding) / k,
+        maxY: (-y + containerSize.height + padding) / k,
+      };
+      
+      nodes = nodes.filter(node => 
+        node.x >= viewportBounds.minX &&
+        node.x <= viewportBounds.maxX &&
+        node.y >= viewportBounds.minY &&
+        node.y <= viewportBounds.maxY
+      );
     }
     
-    return layout.nodes;
-  }, [layout, isExplorationMode]);
+    return nodes;
+  }, [layout, isExplorationMode, transform, containerSize]);
 
   const visibleLinks = useMemo(() => {
     if (!layout) return [];

@@ -14,6 +14,38 @@ import {
   getMockImageGraph 
 } from './mock.js';
 
+const DEFAULT_TIMEOUT = 60000;
+const pendingRequests = new Map<string, Promise<unknown>>();
+
+function withTimeout<T>(promise: Promise<T>, ms: number = DEFAULT_TIMEOUT): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(`AI request timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
+async function dedupedRequest<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const pending = pendingRequests.get(key) as Promise<T> | undefined;
+  if (pending) {
+    logger.debug(`Reusing pending request for key: ${key}`);
+    return pending;
+  }
+  
+  const promise = fn().finally(() => pendingRequests.delete(key));
+  pendingRequests.set(key, promise);
+  return promise;
+}
+
+function generateRequestKey(operation: string, params: Record<string, unknown>): string {
+  const sortedParams = Object.keys(params)
+    .sort()
+    .map(k => `${k}=${JSON.stringify(params[k])}`)
+    .join('&');
+  return `${operation}:${sortedParams}`;
+}
+
 export interface GenerateCardsOptions {
   type?: string;
   types?: string[];
@@ -46,7 +78,7 @@ export class AIService {
     }
   }
 
-  async chat(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>, options: { provider?: AIProviderType; model?: string } = {}): Promise<string> {
+  async chat(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>, options: { provider?: AIProviderType; model?: string; timeout?: number } = {}): Promise<string> {
     const provider = options.provider
       ? await getAIProvider(options.provider)
       : await getAIProviderForTask('text');
@@ -56,13 +88,23 @@ export class AIService {
       return typeof response === 'string' ? response : JSON.stringify(response);
     }
 
-    try {
-      const completion = await provider.client.chat.completions.create({
-        messages,
-        model: options.model || provider.model,
-      });
+    const requestKey = generateRequestKey('chat', { 
+      model: options.model || provider.model, 
+      lastMessage: messages[messages.length - 1].content.slice(0, 100) 
+    });
 
-      return completion.choices[0].message.content || '';
+    try {
+      return await dedupedRequest(requestKey, async () => {
+        const completion = await withTimeout(
+          provider.client.chat.completions.create({
+            messages,
+            model: options.model || provider.model,
+          }),
+          options.timeout || DEFAULT_TIMEOUT
+        );
+
+        return completion.choices[0].message.content || '';
+      });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error('AI Chat Error:', error);
@@ -97,13 +139,16 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
     }
 
     try {
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: 'system', content: 'You are an expert podcast script writer.' },
-          { role: 'user', content: prompt }
-        ],
-        model: provider.model,
-      });
+      const completion = await withTimeout(
+        provider.client.chat.completions.create({
+          messages: [
+            { role: 'system', content: 'You are an expert podcast script writer.' },
+            { role: 'user', content: prompt }
+          ],
+          model: provider.model,
+        }),
+        DEFAULT_TIMEOUT
+      );
 
       return completion.choices[0].message.content || '';
     } catch (error: unknown) {
@@ -171,14 +216,17 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
         systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.\n\nContext: ${context || 'None'}\n\n${systemPrompt}`;
       }
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Topic: ${topic}\nContent: ${content || 'No detailed content provided.'}` }
-        ],
-        model: options.model || provider.model,
-        response_format: { type: "json_object" },
-      });
+      const completion = await withTimeout(
+        provider.client.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Topic: ${topic}\nContent: ${content || 'No detailed content provided.'}` }
+          ],
+          model: options.model || provider.model,
+          response_format: { type: "json_object" },
+        }),
+        DEFAULT_TIMEOUT
+      );
 
       const result = completion.choices[0].message.content || '';
       const parsed = parseAIResponse<{ cards: unknown[] }>(result, 'Generate Cards');

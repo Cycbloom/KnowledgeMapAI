@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Node, Edge, Task, Template, NodeLevel } from '../types';
@@ -687,4 +688,51 @@ export const useDeleteTemplateMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
     },
   });
+};
+
+export const usePrefetchGraph = () => {
+  const queryClient = useQueryClient();
+  
+  return useCallback((graphId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.graph(graphId),
+      queryFn: () => api.graphs.get(graphId),
+      ...defaultQueryConfig,
+    });
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.graphData(graphId),
+      queryFn: async () => {
+        const data = await api.graphs.getNodes(graphId);
+        return {
+          nodes: (data.nodes || []) as Node[],
+          edges: (data.edges || []) as Edge[],
+        };
+      },
+      ...defaultQueryConfig,
+    });
+  }, [queryClient]);
+};
+
+export const usePrefetchStudyCards = () => {
+  const queryClient = useQueryClient();
+  
+  return useCallback((graphId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.studyCards({ graph_id: graphId }),
+      queryFn: () => api.study.getCards({ graph_id: graphId }),
+      ...realtimeQueryConfig,
+    });
+  }, [queryClient]);
+};
+
+export const usePrefetchTemplates = () => {
+  const queryClient = useQueryClient();
+  
+  return useCallback((category?: string) => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.templates(category),
+      queryFn: () => api.templates.list(category),
+      staleTime: 1000 * 60 * 30,
+    });
+  }, [queryClient]);
 };

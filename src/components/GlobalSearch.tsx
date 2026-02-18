@@ -1,10 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutGrid, FileText, Loader2, X, Sparkles } from 'lucide-react';
+import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, Tag, CheckCircle, Lock, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useTheme } from '../hooks/useTheme';
 
-// Manual debounce hook
+const SEARCH_HISTORY_KEY = 'knowledgeMap_searchHistory';
+const MAX_HISTORY_ITEMS = 10;
+
+interface SearchHistoryItem {
+  query: string;
+  type: 'keyword' | 'semantic';
+  timestamp: number;
+}
+
+interface FilterState {
+  timeRange: 'all' | 'today' | 'week' | 'month';
+  status: 'all' | 'mastered' | 'learning' | 'new';
+  tags: string[];
+}
+
 function useDebounceValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -12,6 +26,23 @@ function useDebounceValue<T>(value: T, delay: number): T {
     return () => clearTimeout(handler);
   }, [value, delay]);
   return debouncedValue;
+}
+
+function loadSearchHistory(): SearchHistoryItem[] {
+  try {
+    const stored = localStorage.getItem(SEARCH_HISTORY_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSearchHistory(history: SearchHistoryItem[]) {
+  try {
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY_ITEMS)));
+  } catch {
+    console.error('Failed to save search history');
+  }
 }
 
 export const GlobalSearch = () => {
@@ -22,8 +53,50 @@ export const GlobalSearch = () => {
   const [searchType, setSearchType] = useState<'keyword' | 'semantic'>('keyword');
   const [results, setResults] = useState<{ graphs: any[], nodes: any[], answer?: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    timeRange: 'all',
+    status: 'all',
+    tags: []
+  });
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const debouncedQuery = useDebounceValue(query, 300);
+
+  useEffect(() => {
+    setSearchHistory(loadSearchHistory());
+  }, []);
+
+  const addToHistory = useCallback((searchQuery: string, type: 'keyword' | 'semantic') => {
+    if (!searchQuery.trim()) return;
+    
+    const newItem: SearchHistoryItem = {
+      query: searchQuery.trim(),
+      type,
+      timestamp: Date.now()
+    };
+    
+    setSearchHistory(prev => {
+      const filtered = prev.filter(h => h.query !== searchQuery.trim());
+      const updated = [newItem, ...filtered].slice(0, MAX_HISTORY_ITEMS);
+      saveSearchHistory(updated);
+      return updated;
+    });
+  }, []);
+
+  const clearHistory = useCallback(() => {
+    setSearchHistory([]);
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+  }, []);
+
+  const removeFromHistory = useCallback((queryToRemove: string) => {
+    setSearchHistory(prev => {
+      const updated = prev.filter(h => h.query !== queryToRemove);
+      saveSearchHistory(updated);
+      return updated;
+    });
+  }, []);
 
   useEffect(() => {
     const search = async () => {
@@ -34,7 +107,36 @@ export const GlobalSearch = () => {
       setLoading(true);
       try {
         const data = await api.search.query(debouncedQuery, searchType);
-        setResults(data);
+        
+        let filteredNodes = data.nodes || [];
+        
+        if (filters.status !== 'all') {
+          filteredNodes = filteredNodes.filter((node: any) => {
+            const status = node.status || 'new';
+            return status === filters.status;
+          });
+        }
+        
+        if (filters.timeRange !== 'all') {
+          const now = new Date();
+          const ranges: Record<string, number> = {
+            today: 1,
+            week: 7,
+            month: 30
+          };
+          const daysAgo = ranges[filters.timeRange];
+          const cutoff = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+          
+          filteredNodes = filteredNodes.filter((node: any) => {
+            const updatedAt = node.updated_at || node.created_at;
+            return updatedAt && new Date(updatedAt) >= cutoff;
+          });
+        }
+        
+        setResults({
+          ...data,
+          nodes: filteredNodes
+        });
       } catch (err) {
         console.error(err);
       } finally {
@@ -42,7 +144,7 @@ export const GlobalSearch = () => {
       }
     };
     search();
-  }, [debouncedQuery, searchType]);
+  }, [debouncedQuery, searchType, filters.status, filters.timeRange]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,10 +156,55 @@ export const GlobalSearch = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsOpen(prev => !prev);
+        if (!isOpen) {
+          setTimeout(() => inputRef.current?.focus(), 100);
+        }
+      }
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   const handleSelect = (path: string) => {
+    if (query.trim()) {
+      addToHistory(query.trim(), searchType);
+    }
     navigate(path);
     setIsOpen(false);
     setQuery('');
+    setResults(null);
+  };
+
+  const handleHistoryClick = (item: SearchHistoryItem) => {
+    setQuery(item.query);
+    setSearchType(item.type);
+  };
+
+  const handleSearch = () => {
+    if (query.trim()) {
+      addToHistory(query.trim(), searchType);
+    }
+  };
+
+  const formatDate = (timestamp: number) => {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return '刚刚';
+    if (minutes < 60) return `${minutes}分钟前`;
+    if (hours < 24) return `${hours}小时前`;
+    if (days < 7) return `${days}天前`;
+    return new Date(timestamp).toLocaleDateString();
   };
 
   return (
@@ -65,6 +212,7 @@ export const GlobalSearch = () => {
       <div className="relative">
         <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} size={18} />
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => {
@@ -72,53 +220,169 @@ export const GlobalSearch = () => {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
           placeholder={searchType === 'semantic' ? "AI 语义搜索..." : "搜索图谱或节点..."}
-          className={`w-full pl-10 pr-20 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full pl-10 pr-24 py-2 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
             isDark 
               ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
               : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'
           }`}
         />
         
-        <button
+        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+          <button
+            onClick={() => setShowFilters(prev => !prev)}
+            className={`p-1 rounded-md transition-colors ${
+              showFilters 
+                ? 'bg-blue-500 text-white' 
+                : isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
+            }`}
+            title="筛选"
+          >
+            <Filter size={14} />
+          </button>
+          
+          <button
             onClick={() => setSearchType(prev => prev === 'keyword' ? 'semantic' : 'keyword')}
-            className={`absolute right-${query ? '9' : '3'} top-1/2 transform -translate-y-1/2 transition-colors p-1 rounded-md hover:bg-black/5 ${
+            className={`p-1 rounded-md transition-colors ${
               searchType === 'semantic' 
                 ? 'text-purple-500' 
                 : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
             }`}
             title={searchType === 'semantic' ? "切换回关键词搜索" : "开启AI语义搜索"}
-        >
-            <Sparkles size={16} fill={searchType === 'semantic' ? "currentColor" : "none"} />
-        </button>
-
-        {query && (
-          <button
-            onClick={() => {
-              setQuery('');
-              setResults(null);
-            }}
-            className={`absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors ${
-              isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
-            }`}
           >
-            <X size={14} />
+            <Sparkles size={14} fill={searchType === 'semantic' ? "currentColor" : "none"} />
           </button>
-        )}
+
+          {query && (
+            <button
+              onClick={() => {
+                setQuery('');
+                setResults(null);
+              }}
+              className={`p-1 rounded-md transition-colors ${
+                isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {isOpen && (query.trim() !== '') && (
+      {isOpen && (
         <div className={`absolute top-full left-0 right-0 mt-2 rounded-xl shadow-2xl border overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 ${
           isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
         }`}>
-          {loading ? (
+          {showFilters && (
+            <div className={`p-3 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-gray-50'}`}>
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>时间:</span>
+                  <div className="flex gap-1">
+                    {(['all', 'today', 'week', 'month'] as const).map(range => (
+                      <button
+                        key={range}
+                        onClick={() => setFilters(prev => ({ ...prev, timeRange: range }))}
+                        className={`px-2 py-1 rounded-md transition-colors ${
+                          filters.timeRange === range
+                            ? 'bg-blue-500 text-white'
+                            : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        }`}
+                      >
+                        {range === 'all' ? '全部' : range === 'today' ? '今天' : range === 'week' ? '本周' : '本月'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>状态:</span>
+                  <div className="flex gap-1">
+                    {([
+                      { key: 'all', label: '全部', icon: null },
+                      { key: 'mastered', label: '已掌握', icon: CheckCircle },
+                      { key: 'learning', label: '学习中', icon: null },
+                      { key: 'new', label: '未开始', icon: Lock }
+                    ] as const).map(({ key, label, icon: Icon }) => (
+                      <button
+                        key={key}
+                        onClick={() => setFilters(prev => ({ ...prev, status: key }))}
+                        className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${
+                          filters.status === key
+                            ? 'bg-blue-500 text-white'
+                            : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        }`}
+                      >
+                        {Icon && <Icon size={10} />}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!query.trim() && searchHistory.length > 0 ? (
+            <div className="max-h-[60vh] overflow-y-auto">
+              <div className={`px-4 py-2 flex items-center justify-between ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                  搜索历史
+                </span>
+                <button
+                  onClick={clearHistory}
+                  className={`text-xs flex items-center gap-1 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  <Trash2 size={12} />
+                  清空
+                </button>
+              </div>
+              {searchHistory.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleHistoryClick(item)}
+                  className={`w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors group ${
+                    isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Clock size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
+                    <span className={`truncate ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{item.query}</span>
+                    {item.type === 'semantic' && (
+                      <Sparkles size={12} className="text-purple-500" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                      {formatDate(item.timestamp)}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromHistory(item.query);
+                      }}
+                      className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-all ${
+                        isDark ? 'hover:bg-slate-600 text-slate-400' : 'hover:bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : loading ? (
             <div className={`p-4 text-center flex items-center justify-center gap-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               <Loader2 size={16} className="animate-spin" />
               <span className="text-sm">搜索中...</span>
             </div>
           ) : results ? (
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-              {/* AI Answer Section */}
               {results.answer && (
                 <div className={`p-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-purple-50/50'}`}>
                   <div className="flex items-center gap-2 mb-2">
@@ -131,10 +395,11 @@ export const GlobalSearch = () => {
                 </div>
               )}
 
-              {/* Graphs Section */}
               {results.graphs.length > 0 && (
                 <div className="py-2">
-                  <div className={`px-4 py-1 text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>图谱</div>
+                  <div className={`px-4 py-1 text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                    图谱 ({results.graphs.length})
+                  </div>
                   {results.graphs.map((g) => (
                     <button
                       key={g.id}
@@ -148,19 +413,20 @@ export const GlobalSearch = () => {
                       }`}>
                         <LayoutGrid size={18} />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className={`font-medium truncate ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{g.title}</div>
-                        {g.description && <div className={`text-xs truncate max-w-[200px] ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>{g.description}</div>}
+                        {g.description && <div className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>{g.description}</div>}
                       </div>
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Nodes Section */}
               {results.nodes.length > 0 && (
-                <div className={`py-2 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-                  <div className={`px-4 py-1 text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>节点</div>
+                <div className={`py-2 ${results.graphs.length > 0 ? 'border-t' : ''} ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                  <div className={`px-4 py-1 text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                    节点 ({results.nodes.length})
+                  </div>
                   {results.nodes.map((n) => (
                     <button
                       key={n.id}
@@ -175,15 +441,25 @@ export const GlobalSearch = () => {
                         <FileText size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className={`font-medium truncate flex items-center justify-between ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-                            <span className="truncate">{n.title}</span>
-                            <span className={`ml-2 text-[10px] font-normal px-1.5 py-0.5 rounded-full shrink-0 ${
-                              isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-400'
-                            }`}>
-                                {n.knowledge_graphs?.title || '未知图谱'}
-                            </span>
+                        <div className={`font-medium truncate flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                          <span className="truncate">{n.title}</span>
+                          {n.status === 'mastered' && <CheckCircle size={12} className="text-green-500" />}
+                          {n.status === 'locked' && <Lock size={12} className="text-gray-400" />}
                         </div>
-                        {n.content && <div className={`text-xs truncate max-w-[260px] ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>{n.content.slice(0, 50)}</div>}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                            {n.knowledge_graphs?.title || '未知图谱'}
+                          </span>
+                          {n.tags && n.tags.length > 0 && (
+                            <div className="flex gap-1">
+                              {n.tags.slice(0, 2).map((tag: string, i: number) => (
+                                <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-100 text-gray-500'}`}>
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -196,7 +472,16 @@ export const GlobalSearch = () => {
                 </div>
               )}
             </div>
-          ) : null}
+          ) : query.trim() ? null : (
+            <div className={`p-8 text-center text-sm ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+              输入关键词开始搜索
+            </div>
+          )}
+          
+          <div className={`px-4 py-2 border-t flex items-center justify-between text-xs ${isDark ? 'border-slate-700 text-slate-500' : 'border-gray-100 text-gray-400'}`}>
+            <span>按 Enter 搜索 · Ctrl+K 快捷键</span>
+            <span>{searchType === 'semantic' ? '语义搜索' : '关键词搜索'}</span>
+          </div>
         </div>
       )}
     </div>

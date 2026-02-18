@@ -1,6 +1,12 @@
-import { useMemo } from 'react';
-import { useStatistics, useUser } from '../hooks/useQueries';
+import { useMemo, useState } from 'react';
+import { useStatistics, useUser, useGraphs } from '../hooks/useQueries';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
+import { 
+  KnowledgeHeatmap, 
+  MasteryDistributionChart, 
+  WeakPointsAnalysis,
+  QuickStatsCards 
+} from '../components/LearningStatsEnhanced';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, ReferenceLine
@@ -165,69 +171,158 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionT
 export const Statistics = () => {
   const { data: stats, isLoading, error } = useStatistics();
   const { data: userData } = useUser();
+  const { data: graphsData } = useGraphs();
+  const [activeTab, setActiveTab] = useState<'overview' | 'graphs'>('overview');
   const retention = userData?.user?.profile?.settings?.request_retention || 0.9;
+
+  const graphHeatmapData = useMemo(() => {
+    if (!graphsData) return [];
+    return graphsData.map((graph: any) => ({
+      id: graph.id,
+      title: graph.title,
+      nodes: (graph.nodes || []).map((n: any) => ({
+        id: n.id,
+        title: n.title,
+        status: n.status || 'new',
+        level: n.level
+      }))
+    }));
+  }, [graphsData]);
+
+  const allNodes = useMemo(() => {
+    if (!graphsData) return [];
+    return graphsData.flatMap((g: any) => 
+      (g.nodes || []).map((n: any) => ({ ...n, graphTitle: g.title }))
+    );
+  }, [graphsData]);
+
+  const nodeStatus = useMemo(() => {
+    const status: Record<string, any> = {};
+    allNodes.forEach((n: any) => {
+      status[n.id] = {
+        mastered: n.status === 'mastered',
+        locked: n.status === 'locked',
+        due: n.status === 'due',
+        review_count: n.review_count || 0,
+        stability: n.stability || 0
+      };
+    });
+    return status;
+  }, [allNodes]);
 
   if (isLoading) return <div className="p-8 text-center text-gray-500">加载统计数据中...</div>;
   if (error) return <div className="p-8 text-center text-red-500">无法加载统计数据</div>;
   if (!stats) return null;
 
   return (
-    <div className="h-full overflow-y-auto p-8 bg-slate-50">
+    <div className="h-full overflow-y-auto p-8 bg-slate-50 dark:bg-slate-900">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">学习统计分析</h1>
-        <p className="text-gray-500 mt-2">全面掌握您的学习进度和知识库状态</p>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">学习统计分析</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">全面掌握您的学习进度和知识库状态</p>
       </div>
 
-      {/* 1. Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard 
-          title="总卡片数" 
-          value={stats.metrics.totalCards} 
-          subtext="累计创建的知识点"
-          icon={BookOpen} 
-          color="bg-blue-500" 
-        />
-        <MetricCard 
-          title="今日待复习" 
-          value={stats.metrics.dueToday} 
-          subtext="保持记忆的关键"
-          icon={Clock} 
-          color="bg-amber-500" 
-        />
-        <MetricCard 
-          title="已掌握/学习中" 
-          value={stats.metrics.learning} 
-          subtext="正在内化的知识"
-          icon={Brain} 
-          color="bg-green-500" 
-        />
-        <MetricCard 
-          title="平均记忆稳定性" 
-          value={stats.metrics.avgStability} 
-          subtext="天 (FSRS算法估算)"
-          icon={TrendingUp} 
-          color="bg-indigo-500" 
-        />
+      {/* Tab Navigation */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeTab === 'overview'
+              ? 'bg-blue-500 text-white'
+              : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          总览
+        </button>
+        <button
+          onClick={() => setActiveTab('graphs')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeTab === 'graphs'
+              ? 'bg-blue-500 text-white'
+              : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          图谱分析
+        </button>
       </div>
 
-      {/* 2. Activity Heatmap */}
-      <div className="mb-8">
-        <ActivityHeatmap data={stats.heatmap || []} />
-      </div>
+      {activeTab === 'overview' ? (
+        <>
+          {/* 1. Key Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <MetricCard 
+              title="总卡片数" 
+              value={stats.metrics.totalCards} 
+              subtext="累计创建的知识点"
+              icon={BookOpen} 
+              color="bg-blue-500" 
+            />
+            <MetricCard 
+              title="今日待复习" 
+              value={stats.metrics.dueToday} 
+              subtext="保持记忆的关键"
+              icon={Clock} 
+              color="bg-amber-500" 
+            />
+            <MetricCard 
+              title="已掌握/学习中" 
+              value={stats.metrics.learning} 
+              subtext="正在内化的知识"
+              icon={Brain} 
+              color="bg-green-500" 
+            />
+            <MetricCard 
+              title="平均记忆稳定性" 
+              value={stats.metrics.avgStability} 
+              subtext="天 (FSRS算法估算)"
+              icon={TrendingUp} 
+              color="bg-indigo-500" 
+            />
+          </div>
 
-      {/* 3. Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <ForecastChart data={stats.forecast || []} />
-        <ForgettingCurveChart 
-          retentionThreshold={retention} 
-          avgStability={stats.metrics.avgStability}
-        />
-      </div>
+          {/* 2. Activity Heatmap */}
+          <div className="mb-8">
+            <ActivityHeatmap data={stats.heatmap || []} />
+          </div>
 
-      {/* 4. Growth Chart (Full Width) */}
-      <div className="mb-8">
-        <GrowthChart data={stats.growth || []} />
-      </div>
+          {/* 3. Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <ForecastChart data={stats.forecast || []} />
+            <ForgettingCurveChart 
+              retentionThreshold={retention} 
+              avgStability={stats.metrics.avgStability}
+            />
+          </div>
+
+          {/* 4. Growth Chart (Full Width) */}
+          <div className="mb-8">
+            <GrowthChart data={stats.growth || []} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Graph Analysis Tab */}
+          <div className="mb-8">
+            <QuickStatsCards 
+              totalNodes={allNodes.length}
+              masteredNodes={allNodes.filter((n: any) => n.status === 'mastered').length}
+              dueToday={allNodes.filter((n: any) => n.status === 'due').length}
+              streak={userData?.user?.profile?.study_streak || 0}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <KnowledgeHeatmap graphData={graphHeatmapData} />
+            <MasteryDistributionChart nodeStatus={nodeStatus} />
+          </div>
+
+          <div className="mb-8">
+            <WeakPointsAnalysis 
+              nodes={allNodes}
+              nodeStatus={nodeStatus}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };

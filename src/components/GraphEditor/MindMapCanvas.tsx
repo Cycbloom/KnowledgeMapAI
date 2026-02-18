@@ -252,7 +252,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [previewNode, setPreviewNode] = useState<{ node: Node; position: { x: number; y: number } } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [isPreviewHovered, setIsPreviewHovered] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previewPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   
   // Initialize with window size to minimize layout thrashing on load
@@ -298,6 +300,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     return () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
+      }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
       }
     };
   }, []);
@@ -638,7 +643,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
                     clearTimeout(hoverTimeoutRef.current);
                     hoverTimeoutRef.current = null;
                   }
-                  setShowPreview(false);
+                  if (hideTimeoutRef.current) {
+                    clearTimeout(hideTimeoutRef.current);
+                  }
+                  hideTimeoutRef.current = setTimeout(() => {
+                    if (!isPreviewHovered) {
+                      setShowPreview(false);
+                    }
+                  }, 100);
                 }}
                 focused={focusedNodeIds.has(node.id)}
                 forceShowText={forceShowTextIds.has(node.id)}
@@ -795,6 +807,18 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
             setPreviewNode(null);
           }}
           onMarkMastered={onMarkNodeMastered}
+          onMouseEnter={() => {
+            setIsPreviewHovered(true);
+            if (hideTimeoutRef.current) {
+              clearTimeout(hideTimeoutRef.current);
+              hideTimeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={() => {
+            setIsPreviewHovered(false);
+            setShowPreview(false);
+            setPreviewNode(null);
+          }}
         />
       )}
     </div>

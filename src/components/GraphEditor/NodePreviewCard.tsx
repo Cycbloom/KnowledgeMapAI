@@ -21,6 +21,8 @@ interface NodePreviewCardProps {
   position: { x: number; y: number };
   onNavigateToNode?: (node: Node) => void;
   onMarkMastered?: (nodeId: string) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
@@ -30,7 +32,9 @@ export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
   nodeStatus,
   position,
   onNavigateToNode,
-  onMarkMastered
+  onMarkMastered,
+  onMouseEnter,
+  onMouseLeave
 }) => {
   const { isDark } = useTheme();
   
@@ -78,6 +82,8 @@ export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
   return (
     <div 
       style={cardStyle}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={`
         rounded-xl shadow-2xl border overflow-hidden
         animate-in fade-in zoom-in-95 duration-150

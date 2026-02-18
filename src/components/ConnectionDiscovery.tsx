@@ -1,0 +1,375 @@
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { Link2, Sparkles, Loader2, Check, X, RefreshCw, Network } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
+import { Node, Edge } from '../types';
+import { api } from '../services/api';
+
+interface SuggestedConnection {
+  sourceId: string;
+  sourceTitle: string;
+  targetId: string;
+  targetTitle: string;
+  reason: string;
+  score: number;
+}
+
+interface ConnectionDiscoveryProps {
+  nodes: Node[];
+  edges: Edge[];
+  graphId: string;
+  onConnect: (sourceId: string, targetId: string) => void;
+  selectedNodeId?: string;
+}
+
+export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
+  nodes,
+  edges,
+  graphId,
+  onConnect,
+  selectedNodeId
+}) => {
+  const { isDark } = useTheme();
+  const [suggestions, setSuggestions] = useState<SuggestedConnection[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set());
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  const existingConnections = useMemo(() => {
+    const connections = new Set<string>();
+    edges.forEach(edge => {
+      connections.add(`${edge.source_node_id}-${edge.target_node_id}`);
+      connections.add(`${edge.target_node_id}-${edge.source_node_id}`);
+    });
+    return connections;
+  }, [edges]);
+
+  const findSuggestions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const suggestions: SuggestedConnection[] = [];
+      
+      const nodeMap = new Map(nodes.map(n => [n.id, n]));
+      
+      nodes.forEach(node => {
+        const nodeTags = new Set(node.tags || node.properties?.tags || []);
+        const nodeContent = (node.content || '').toLowerCase();
+        const connectedIds = new Set(
+          edges
+            .filter(e => e.source_node_id === node.id || e.target_node_id === node.id)
+            .map(e => e.source_node_id === node.id ? e.target_node_id : e.source_node_id)
+        );
+        
+        nodes.forEach(otherNode => {
+          if (node.id === otherNode.id) return;
+          if (connectedIds.has(otherNode.id)) return;
+          if (existingConnections.has(`${node.id}-${otherNode.id}`)) return;
+          
+          const connectionKey = [node.id, otherNode.id].sort().join('-');
+          if (dismissedIds.has(connectionKey)) return;
+          
+          let score = 0;
+          const reasons: string[] = [];
+          
+          const otherTags = new Set(otherNode.tags || otherNode.properties?.tags || []);
+          const commonTags = [...nodeTags].filter(t => otherTags.has(t));
+          if (commonTags.length > 0) {
+            score += commonTags.length * 10;
+            reasons.push(`共同标签: ${commonTags.slice(0, 3).join(', ')}`);
+          }
+          
+          const otherContent = (otherNode.content || '').toLowerCase();
+          const titleInContent = nodeContent.includes(otherNode.title.toLowerCase()) || 
+                                  otherContent.includes(node.title.toLowerCase());
+          if (titleInContent) {
+            score += 15;
+            reasons.push('内容中提及对方标题');
+          }
+          
+          const commonWords = nodeContent.split(/\s+/).filter(word => 
+            word.length > 3 && otherContent.includes(word)
+          );
+          if (commonWords.length > 3) {
+            score += 5;
+            reasons.push('内容相似度较高');
+          }
+          
+          if (node.level === 'root' && otherNode.level === 'core') {
+            score += 3;
+          } else if (node.level === 'core' && otherNode.level === 'sub') {
+            score += 3;
+          }
+          
+          if (score >= 10) {
+            suggestions.push({
+              sourceId: node.id,
+              sourceTitle: node.title,
+              targetId: otherNode.id,
+              targetTitle: otherNode.title,
+              reason: reasons[0] || '可能相关',
+              score
+            });
+          }
+        });
+      });
+      
+      const uniqueSuggestions = suggestions
+        .filter((s, i, arr) => 
+          arr.findIndex(other => 
+            (other.sourceId === s.sourceId && other.targetId === s.targetId) ||
+            (other.sourceId === s.targetId && other.targetId === s.sourceId)
+          ) === i
+        )
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      
+      setSuggestions(uniqueSuggestions);
+    } catch (err) {
+      console.error('Failed to find suggestions:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [nodes, edges, existingConnections, dismissedIds]);
+
+  useEffect(() => {
+    if (nodes.length > 1) {
+      findSuggestions();
+    }
+  }, [nodes.length, edges.length]);
+
+  const handleConnect = useCallback(async (suggestion: SuggestedConnection) => {
+    const connectionKey = [suggestion.sourceId, suggestion.targetId].sort().join('-');
+    setConnectingIds(prev => new Set([...prev, connectionKey]));
+    
+    try {
+      await onConnect(suggestion.sourceId, suggestion.targetId);
+      setSuggestions(prev => prev.filter(s => 
+        !(s.sourceId === suggestion.sourceId && s.targetId === suggestion.targetId)
+      ));
+    } catch (err) {
+      console.error('Failed to connect:', err);
+    } finally {
+      setConnectingIds(prev => {
+        const next = new Set(prev);
+        next.delete(connectionKey);
+        return next;
+      });
+    }
+  }, [onConnect]);
+
+  const handleDismiss = useCallback((suggestion: SuggestedConnection) => {
+    const connectionKey = [suggestion.sourceId, suggestion.targetId].sort().join('-');
+    setDismissedIds(prev => new Set([...prev, connectionKey]));
+    setSuggestions(prev => prev.filter(s => 
+      !(s.sourceId === suggestion.sourceId && s.targetId === suggestion.targetId)
+    ));
+  }, []);
+
+  const filteredSuggestions = useMemo(() => {
+    if (!selectedNodeId) return suggestions;
+    return suggestions.filter(s => 
+      s.sourceId === selectedNodeId || s.targetId === selectedNodeId
+    );
+  }, [suggestions, selectedNodeId]);
+
+  return (
+    <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Network size={18} className="text-purple-500" />
+          <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+            关联发现
+          </h3>
+        </div>
+        <button
+          onClick={findSuggestions}
+          disabled={loading}
+          className={`
+            flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm
+            transition-colors
+            ${isDark 
+              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
+          `}
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          刷新
+        </button>
+      </div>
+
+      <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+        基于标签、内容相似度分析，发现可能遗漏的节点关联
+      </p>
+
+      {loading ? (
+        <div className={`flex items-center justify-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+          <Loader2 size={24} className="animate-spin mr-2" />
+          分析中...
+        </div>
+      ) : filteredSuggestions.length > 0 ? (
+        <div className="space-y-3">
+          {filteredSuggestions.map((suggestion, idx) => {
+            const connectionKey = [suggestion.sourceId, suggestion.targetId].sort().join('-');
+            const isConnecting = connectingIds.has(connectionKey);
+            
+            return (
+              <div
+                key={`${suggestion.sourceId}-${suggestion.targetId}-${idx}`}
+                className={`
+                  p-4 rounded-xl border transition-all
+                  ${isDark ? 'border-slate-700 bg-slate-700/30' : 'border-gray-100 bg-gray-50'}
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium truncate ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                        {suggestion.sourceTitle}
+                      </span>
+                      <Link2 size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
+                      <span className={`font-medium truncate ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                        {suggestion.targetTitle}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                        {suggestion.reason}
+                      </span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                        isDark ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-600'
+                      }`}>
+                        相关度 {suggestion.score}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => handleConnect(suggestion)}
+                      disabled={isConnecting}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm
+                        transition-all
+                        ${isConnecting
+                          ? isDark ? 'bg-slate-600 text-slate-400' : 'bg-gray-200 text-gray-400'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'}
+                      `}
+                    >
+                      {isConnecting ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Link2 size={14} />
+                      )}
+                      连接
+                    </button>
+                    <button
+                      onClick={() => handleDismiss(suggestion)}
+                      className={`
+                        p-1.5 rounded-lg transition-colors
+                        ${isDark 
+                          ? 'text-slate-400 hover:bg-slate-600' 
+                          : 'text-gray-400 hover:bg-gray-200'}
+                      `}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+          <Check size={32} className="mx-auto mb-2 text-green-500" />
+          <p>暂无新的关联建议</p>
+          <p className="text-xs mt-1">所有可能的关联都已建立或已忽略</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const NodeConnectionSuggestions: React.FC<{
+  node: Node;
+  allNodes: Node[];
+  edges: Edge[];
+  onConnect: (targetId: string) => void;
+}> = ({ node, allNodes, edges, onConnect }) => {
+  const { isDark } = useTheme();
+  
+  const suggestions = useMemo(() => {
+    const connectedIds = new Set(
+      edges
+        .filter(e => e.source_node_id === node.id || e.target_node_id === node.id)
+        .map(e => e.source_node_id === node.id ? e.target_node_id : e.source_node_id)
+    );
+    
+    const nodeTags = new Set(node.tags || node.properties?.tags || []);
+    const nodeContent = (node.content || '').toLowerCase();
+    
+    return allNodes
+      .filter(n => n.id !== node.id && !connectedIds.has(n.id))
+      .map(other => {
+        let score = 0;
+        
+        const otherTags = new Set(other.tags || other.properties?.tags || []);
+        const commonTags = [...nodeTags].filter((t): t is string => otherTags.has(t));
+        score += commonTags.length * 10;
+        
+        const otherContent = (other.content || '').toLowerCase();
+        if (nodeContent.includes(other.title.toLowerCase()) || otherContent.includes(node.title.toLowerCase())) {
+          score += 15;
+        }
+        
+        return { node: other, score, commonTags };
+      })
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  }, [node, allNodes, edges]);
+
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div className={`mt-4 p-4 rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-gray-50'}`}>
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles size={14} className="text-purple-500" />
+        <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+          建议关联
+        </span>
+      </div>
+      
+      <div className="space-y-2">
+        {suggestions.map(({ node: other, score, commonTags }) => (
+          <button
+            key={other.id}
+            onClick={() => onConnect(other.id)}
+            className={`
+              w-full text-left p-2 rounded-lg flex items-center justify-between
+              transition-colors
+              ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}
+            `}
+          >
+            <div>
+              <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                {other.title}
+              </span>
+              {commonTags.length > 0 && (
+                <div className="flex gap-1 mt-1">
+                  {commonTags.slice(0, 2).map(tag => (
+                    <span key={tag} className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      isDark ? 'bg-slate-600 text-slate-300' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Link2 size={14} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};

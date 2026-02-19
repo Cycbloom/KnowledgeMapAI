@@ -82,7 +82,7 @@ export class Logger {
     const time = `${COLORS.dim}${timestamp}${COLORS.reset}`;
     const metaStr = this.formatMeta(meta);
     
-    return `\n${time} ${header}\n${COLORS.bright}${message}${COLORS.reset}${metaStr}`;
+    return `${time} ${header}\n${COLORS.bright}${message}${COLORS.reset}${metaStr}`;
   }
 
   private formatSimple(level: LogLevel, message: string, meta?: unknown): string {

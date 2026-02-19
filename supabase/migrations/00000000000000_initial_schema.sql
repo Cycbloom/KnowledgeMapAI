@@ -1,6 +1,7 @@
 -- =====================================================
 -- Knowledge Map - Unified Database Schema
 -- Generated: 2026-02-13
+-- Updated: 2026-02-19 (consolidated migrations)
 -- =====================================================
 
 -- Enable required extensions
@@ -37,6 +38,8 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   settings JSONB DEFAULT '{}',
   is_public BOOLEAN DEFAULT false,
   podcast_script TEXT,
+  parent_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
+  last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -88,7 +91,6 @@ CREATE TABLE IF NOT EXISTS study_cards (
   last_reviewed TIMESTAMP WITH TIME ZONE,
   next_review TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   review_count INTEGER DEFAULT 0,
-  -- FSRS fields
   fsrs_state INTEGER DEFAULT 0,
   fsrs_stability DOUBLE PRECISION DEFAULT 0,
   fsrs_difficulty DOUBLE PRECISION DEFAULT 0,
@@ -237,6 +239,39 @@ CREATE TABLE IF NOT EXISTS daily_tasks (
   UNIQUE(user_id, task_date, task_type)
 );
 
+-- Graph relations table
+CREATE TABLE IF NOT EXISTS graph_relations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  target_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  relation_type VARCHAR(50) NOT NULL CHECK (relation_type IN ('prerequisite', 'extension', 'related')),
+  context TEXT,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  UNIQUE(source_graph_id, target_graph_id, relation_type)
+);
+
+-- Backup snapshots table
+CREATE TABLE IF NOT EXISTS backup_snapshots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT DEFAULT 0,
+  graphs_count INTEGER DEFAULT 0,
+  nodes_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add comments
+COMMENT ON TABLE graph_relations IS 'Stores relationships between knowledge graphs (prerequisite, extension, related)';
+COMMENT ON COLUMN graph_relations.source_graph_id IS 'The graph that has the dependency';
+COMMENT ON COLUMN graph_relations.target_graph_id IS 'The graph that is depended upon';
+COMMENT ON COLUMN graph_relations.relation_type IS 'Type: prerequisite (must learn first), extension (advanced topic), related (connected topic)';
+COMMENT ON COLUMN graph_relations.context IS 'Context or reason for the relationship';
+COMMENT ON TABLE prompt_templates IS 'Prompt templates with priority: graph > user > system';
+
 -- =====================================================
 -- INDEXES
 -- =====================================================
@@ -246,6 +281,10 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_id ON knowledge_graphs(user
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_is_public ON knowledge_graphs(is_public);
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_title_trgm ON knowledge_graphs USING gin (title gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_graphs_deleted_at ON knowledge_graphs(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_last_used_at ON knowledge_graphs(last_used_at DESC);
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_deleted ON knowledge_graphs(user_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_created ON knowledge_graphs(user_id, created_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_public ON knowledge_graphs(id) WHERE is_public = true AND deleted_at IS NULL;
 
 -- Nodes
 CREATE INDEX IF NOT EXISTS idx_nodes_graph_id ON nodes(graph_id);
@@ -255,12 +294,19 @@ CREATE INDEX IF NOT EXISTS idx_nodes_title_trgm ON nodes USING gin (title gin_tr
 CREATE INDEX IF NOT EXISTS idx_nodes_content_trgm ON nodes USING gin (content gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_nodes_deleted_at ON nodes(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_nodes_embedding ON nodes USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_nodes_graph_deleted ON nodes(graph_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_nodes_graph_level ON nodes(graph_id, level) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_nodes_content_search ON nodes USING gin(to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(content, '')));
 
 -- Edges
 CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_node_id);
 CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_node_id);
 CREATE INDEX IF NOT EXISTS idx_edges_graph_id ON edges(graph_id);
 CREATE INDEX IF NOT EXISTS idx_edges_deleted_at ON edges(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_edges_source_graph ON edges(source_node_id, graph_id);
+CREATE INDEX IF NOT EXISTS idx_edges_target_graph ON edges(target_node_id, graph_id);
+CREATE INDEX IF NOT EXISTS idx_edges_graph ON edges(graph_id);
 
 -- Study cards
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_next_review ON study_cards(user_id, next_review);
@@ -273,35 +319,63 @@ CREATE INDEX IF NOT EXISTS idx_study_cards_user_state ON study_cards(user_id, fs
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_last_reviewed ON study_cards(user_id, last_reviewed);
 CREATE INDEX IF NOT EXISTS idx_study_cards_graph_id ON study_cards(graph_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_id ON study_cards(user_id);
+CREATE INDEX IF NOT EXISTS idx_study_cards_node ON study_cards(node_id);
+CREATE INDEX IF NOT EXISTS idx_study_cards_next_review_filtered ON study_cards(next_review) WHERE next_review IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_study_cards_user_review ON study_cards(user_id, next_review) WHERE next_review IS NOT NULL;
 
 -- Study progress
 CREATE INDEX IF NOT EXISTS idx_study_progress_user ON study_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_progress_graph_id ON study_progress(graph_id);
+CREATE INDEX IF NOT EXISTS idx_study_progress_user_graph ON study_progress(user_id, graph_id);
 
 -- Tasks
 CREATE INDEX IF NOT EXISTS tasks_user_id_idx ON tasks(user_id);
 CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks(status);
 CREATE INDEX IF NOT EXISTS tasks_created_at_idx ON tasks(created_at);
 CREATE INDEX IF NOT EXISTS tasks_user_status_idx ON tasks(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_tasks_user_status ON tasks(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_tasks_user_created ON tasks(user_id, created_at DESC);
 
 -- Templates
 CREATE INDEX IF NOT EXISTS idx_templates_user_id ON templates(user_id);
 CREATE INDEX IF NOT EXISTS idx_templates_category ON templates(category);
 CREATE INDEX IF NOT EXISTS idx_templates_is_system ON templates(is_system);
+CREATE INDEX IF NOT EXISTS idx_templates_user_category ON templates(user_id, category);
+
+-- Prompt templates
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_code ON prompt_templates(code);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_user ON prompt_templates(user_id);
 
 -- AI actions
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_actions_unique_name_scope 
   ON ai_actions (name, scope, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'), COALESCE(graph_id, '00000000-0000-0000-0000-000000000000'));
+CREATE INDEX IF NOT EXISTS idx_ai_actions_user ON ai_actions(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_actions_graph ON ai_actions(graph_id);
 
 -- Focus sessions
 CREATE INDEX IF NOT EXISTS focus_sessions_user_id_idx ON focus_sessions(user_id);
 CREATE INDEX IF NOT EXISTS focus_sessions_created_at_idx ON focus_sessions(created_at);
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_date ON focus_sessions(user_id, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_completed ON focus_sessions(user_id, completed) WHERE completed = true;
+
+-- Achievements
+CREATE INDEX IF NOT EXISTS idx_achievements_code ON achievements(code);
 
 -- User achievements
 CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON user_achievements(achievement_id);
 
 -- Daily tasks
 CREATE INDEX IF NOT EXISTS idx_daily_tasks_user_date ON daily_tasks(user_id, task_date);
+
+-- Graph relations
+CREATE INDEX IF NOT EXISTS idx_graph_relations_source ON graph_relations(source_graph_id);
+CREATE INDEX IF NOT EXISTS idx_graph_relations_target ON graph_relations(target_graph_id);
+CREATE INDEX IF NOT EXISTS idx_graph_relations_type ON graph_relations(relation_type);
+
+-- Backup snapshots
+CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_id ON backup_snapshots(user_id);
+CREATE INDEX IF NOT EXISTS idx_backup_snapshots_type ON backup_snapshots(type);
 
 -- =====================================================
 -- ROW LEVEL SECURITY
@@ -422,6 +496,25 @@ CREATE POLICY "Users can insert their own achievements" ON user_achievements FOR
 -- Daily Tasks
 ALTER TABLE daily_tasks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own daily tasks" ON daily_tasks FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Graph Relations
+ALTER TABLE graph_relations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view relations for graphs they own or are public"
+  ON graph_relations FOR SELECT
+  USING (
+    EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = source_graph_id AND (user_id = auth.uid() OR is_public = true))
+    OR EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = target_graph_id AND (user_id = auth.uid() OR is_public = true))
+  );
+CREATE POLICY "Users can insert relations for graphs they own"
+  ON graph_relations FOR INSERT
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = source_graph_id AND user_id = auth.uid())
+  );
+CREATE POLICY "Users can delete relations for graphs they own"
+  ON graph_relations FOR DELETE
+  USING (
+    EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = source_graph_id AND user_id = auth.uid())
+  );
 
 -- =====================================================
 -- FUNCTIONS
@@ -550,6 +643,103 @@ BEGIN
 END;
 $$;
 
+-- Get user graphs with node counts in a single query (with last_used_at)
+CREATE OR REPLACE FUNCTION get_user_graphs_with_counts(p_user_id UUID)
+RETURNS TABLE (
+  id UUID,
+  user_id UUID,
+  title TEXT,
+  description TEXT,
+  is_public BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  deleted_at TIMESTAMPTZ,
+  last_used_at TIMESTAMPTZ,
+  nodes_count BIGINT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    g.id,
+    g.user_id,
+    g.title,
+    g.description,
+    g.is_public,
+    g.created_at,
+    g.updated_at,
+    g.deleted_at,
+    g.last_used_at,
+    COALESCE(n.count, 0) as nodes_count
+  FROM knowledge_graphs g
+  LEFT JOIN (
+    SELECT graph_id, COUNT(*) as count
+    FROM nodes
+    WHERE deleted_at IS NULL
+    GROUP BY graph_id
+  ) n ON n.graph_id = g.id
+  WHERE g.user_id = p_user_id
+    AND g.deleted_at IS NULL
+  ORDER BY g.last_used_at DESC NULLS LAST;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Get user trashed graphs with node counts
+CREATE OR REPLACE FUNCTION get_user_trashed_graphs(p_user_id UUID)
+RETURNS TABLE (
+  id UUID,
+  user_id UUID,
+  title TEXT,
+  description TEXT,
+  is_public BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  deleted_at TIMESTAMPTZ,
+  nodes_count BIGINT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    g.id,
+    g.user_id,
+    g.title,
+    g.description,
+    g.is_public,
+    g.created_at,
+    g.updated_at,
+    g.deleted_at,
+    COALESCE(n.count, 0) as nodes_count
+  FROM knowledge_graphs g
+  LEFT JOIN (
+    SELECT graph_id, COUNT(*) as count
+    FROM nodes
+    WHERE deleted_at IS NULL
+    GROUP BY graph_id
+  ) n ON n.graph_id = g.id
+  WHERE g.user_id = p_user_id
+    AND g.deleted_at IS NOT NULL
+  ORDER BY g.deleted_at DESC;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Batch update node positions
+CREATE OR REPLACE FUNCTION batch_update_positions(
+  p_positions JSONB
+) RETURNS void AS $$
+DECLARE
+  pos JSONB;
+BEGIN
+  FOR pos IN SELECT * FROM jsonb_array_elements(p_positions)
+  LOOP
+    UPDATE nodes
+    SET 
+      x_position = (pos->>'x')::INTEGER,
+      y_position = (pos->>'y')::INTEGER,
+      updated_at = NOW()
+    WHERE id = (pos->>'id')::UUID;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =====================================================
 -- GRANTS
 -- =====================================================
@@ -568,287 +758,9 @@ GRANT SELECT ON study_progress TO anon;
 GRANT ALL PRIVILEGES ON study_progress TO authenticated;
 GRANT SELECT ON templates TO anon;
 GRANT ALL PRIVILEGES ON templates TO authenticated;
+GRANT ALL ON backup_snapshots TO authenticated;
 
--- =====================================================
--- SEED DATA
--- =====================================================
-
--- App settings
-INSERT INTO app_settings (key, value, description) VALUES 
-    ('ai_provider_config', '{
-        "deepseek": { "enabled": true, "apiKey": "", "baseURL": "https://api.deepseek.com", "model": "deepseek-chat" },
-        "volcengine": { "enabled": true, "apiKey": "", "baseURL": "https://ark.cn-beijing.volces.com/api/v3", "model": "doubao-seed-1-8-251228", "embeddingModel": "doubao-embedding-vision-251215" },
-        "aliyun": { "enabled": true, "apiKey": "", "baseURL": "https://dashscope.aliyuncs.com/compatible-mode/v1", "model": "qwen-long-latest" }
-    }'::jsonb, 'Configuration for AI Providers'),
-    ('system_config', '{
-        "default_provider": "deepseek",
-        "task_mapping": { "text": "deepseek", "embedding": "volcengine", "reasoning": "aliyun" }
-    }'::jsonb, 'Global system settings and defaults')
-ON CONFLICT (key) DO NOTHING;
-
--- Achievements
-INSERT INTO achievements (code, name, description, category, icon, xp_reward, condition_type, condition_value) VALUES
-  ('streak_3', '初出茅庐', '保持3天连续学习', 'study', 'Flame', 100, 'streak_days', 3),
-  ('streak_7', '坚持不懈', '保持7天连续学习', 'study', 'Zap', 300, 'streak_days', 7),
-  ('streak_14', '持之以恒', '保持14天连续学习', 'study', 'Zap', 500, 'streak_days', 14),
-  ('streak_30', '月度大师', '保持30天连续学习', 'study', 'Crown', 1000, 'streak_days', 30),
-  ('streak_100', '百日筑基', '保持100天连续学习', 'study', 'Crown', 5000, 'streak_days', 100),
-  ('focus_10', '专注时刻', '完成10分钟专注时间', 'focus', 'Timer', 50, 'focus_minutes', 10),
-  ('focus_60', '深度潜入', '完成60分钟专注时间', 'focus', 'Timer', 150, 'focus_minutes', 60),
-  ('focus_300', '专注大师', '完成300分钟(5小时)专注时间', 'focus', 'Brain', 500, 'focus_minutes', 300),
-  ('focus_1000', '心流境界', '完成1000分钟专注时间', 'focus', 'Brain', 1500, 'focus_minutes', 1000),
-  ('mastery_1', '初试牛刀', '掌握1张知识卡片', 'study', 'GraduationCap', 50, 'cards_mastered', 1),
-  ('mastery_10', '跬步千里', '掌握10张知识卡片', 'study', 'GraduationCap', 100, 'cards_mastered', 10),
-  ('mastery_50', '求知若渴', '掌握50张知识卡片', 'study', 'BookOpen', 300, 'cards_mastered', 50),
-  ('mastery_100', '领域专家', '掌握100张知识卡片', 'study', 'Trophy', 600, 'cards_mastered', 100),
-  ('mastery_500', '博闻强识', '掌握500张知识卡片', 'study', 'Trophy', 2500, 'cards_mastered', 500),
-  ('creation_graph_1', '创世之初', '创建第1个知识图谱', 'creation', 'BookOpen', 200, 'graphs_created', 1),
-  ('creation_graph_5', '知识架构师', '创建5个知识图谱', 'creation', 'BookOpen', 800, 'graphs_created', 5),
-  ('creation_node_10', '萌芽', '创建10个知识节点', 'creation', 'Target', 100, 'nodes_created', 10),
-  ('creation_node_100', '枝繁叶茂', '创建100个知识节点', 'creation', 'Target', 500, 'nodes_created', 100),
-  ('creation_node_1000', '知识森林', '创建1000个知识节点', 'creation', 'Target', 2000, 'nodes_created', 1000)
-ON CONFLICT (code) DO NOTHING;
-
--- Templates (simplified - key ones only)
-INSERT INTO templates (id, user_id, name, description, category, is_system, nodes, edges, layout) VALUES
-  (gen_random_uuid(), NULL, '概念学习', '适用于学习新概念，从定义到应用的完整学习路径', 'learning', true, 
-   '[{"id":"node-1","title":"主题","level":"root"},{"id":"node-2","title":"定义","level":"core"},{"id":"node-3","title":"特点","level":"core"}]'::jsonb,
-   '[{"source":"node-1","target":"node-2"},{"source":"node-1","target":"node-3"}]'::jsonb,
-   NULL)
-ON CONFLICT DO NOTHING;
-
--- AI Actions
-INSERT INTO ai_actions (name, description, icon, target_mode, scope, prompt_template) VALUES
-  ('精炼内容', '将节点内容精炼为简洁的几句话', 'Minimize2', 'update_node', 'system', '请将以下内容精炼为3-5句话，保留核心观点和关键事实。直接返回精炼后的内容，不要有开场白。\n\n内容：\n{{nodeContent}}'),
-  ('反向辩驳', '提出该观点的反面论证或潜在缺陷', 'MessageSquareWarning', 'show_result', 'system', '请扮演一个批判性思维者，针对以下观点提出反面论证、潜在缺陷或被忽视的视角。\n\n观点：{{nodeTitle}}\n详细内容：{{nodeContent}}')
-ON CONFLICT DO NOTHING;
-
--- Prompt Templates (complete)
-INSERT INTO "public"."prompt_templates" ("id", "code", "scope", "user_id", "graph_id", "template_content", "created_at", "updated_at") VALUES 
-('a33b9b47-db64-421f-b40d-ae073cf49250', 'expand_knowledge', 'system', null, null, 'You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply.
-
-Goal: Prioritize generating NEW, specific concepts to broaden the graph''s coverage.
-Quantity: Generate up to 8 nodes. Focus on representativeness and hierarchy.
-
-Linking Strategy:
-{{#if isRootOrCore}}
-Linking Strategy (HIERARCHICAL):
-1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins).
-2. **Vertical Links OK**: You MAY link to nodes that would be considered a ''parent'' (higher level) or ''child'' (lower level) contextually.
-3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.
-{{else}}
-{{#if isLeaf}}
-Linking Strategy (NETWORK): You are expanding a leaf node. You are encouraged to link to ''Existing Nodes'' if they are highly relevant, especially other leaf nodes, to form knowledge connections.
-{{else}}
-Linking Strategy (HIERARCHICAL):
-1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level (siblings/cousins).
-2. **Vertical Links OK**: You MAY link to nodes that would be considered a ''parent'' (higher level) or ''child'' (lower level) contextually.
-3. **Focus**: Primary goal is to generate NEW specific child nodes for the current node.
-{{/if}}
-{{/if}}
-
-Content Strategy:
-{{#if isRootOrCore}}
-Content Strategy (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES. The ''content'' should be a high-level summary or definition.
-{{else}}
-{{#if isLeaf}}
-Content Strategy (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES. The ''content'' should be very specific, technical, and detailed.
-{{else}}
-Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS. The ''content'' should be descriptive and explain ''how'' or ''why''.
-{{/if}}
-{{/if}}
-
-Do not suggest topics that are already listed in ''Current Direct Children''.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('94b56290-5a18-432e-91e4-50a5f9c0c6b7', 'generate_cards', 'system', null, null, 'You are an educational expert. Generate {{count}} flashcards based on the provided topic and content.
-
-Context: The current node is part of a larger knowledge structure.
-{{#if context}}Parent/Context Info: {{context}}{{/if}}
-
-Requirements:
-1. Generate exactly {{count}} cards.
-2. Allowed Types: {{allowedTypes}}.
-3. Mix the types if multiple are selected.
-
-{{#if includesQA}}
-For ''qa'' type: Create thought-provoking open-ended questions that test deep understanding. Provide a detailed ''explanation'' analyzing the answer.
-{{/if}}
-
-{{#if includesChoice}}
-For ''choice'' type: Create multiple-choice questions with 4 plausible options. Provide the correct answer and a detailed ''explanation'' of why it is correct and others are wrong.
-{{/if}}
-
-{{#if includesTrueFalse}}
-For ''true_false'' type: Create statements focusing on common misconceptions or key details. Provide a detailed ''explanation''.
-{{/if}}
-
-{{#if includesMultiChoice}}
-For ''multi_choice'' type: Create multiple-choice questions where ONE OR MORE options can be correct. Provide 4 options, the ''answer'' as a JSON array of correct strings, and a detailed ''explanation''.
-{{/if}}
-
-{{#if includesFillBlank}}
-For ''fill_in_the_blank'' type: Create a sentence with one or more ''___'' (3 underscores) as blanks. The ''answer'' should be the missing text. Provide a detailed ''explanation''.
-{{/if}}
-
-{{#if includesEssay}}
-For ''essay'' type: Create complex questions requiring a long-form structured answer. The ''answer'' should be a model response with key points. Provide a detailed ''explanation'' with scoring criteria.
-{{/if}}', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('b3108f00-fca2-4f9d-8f39-627775545920', 'chat', 'system', null, null, 'You are an intelligent assistant for a Knowledge Graph.
-Answer the user''s question based on the provided Graph Context.
-
-Graph Context:
-{{contextText}}
-
-Instructions:
-1. Use the information in the Graph Context to answer.
-2. If the answer is not in the context, use your general knowledge but mention that it''s not explicitly in the graph.
-3. Be concise and helpful.
-4. Respond in the same language as the user''s question (default to Chinese).', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('7a17cba5-5d56-424c-8097-6c327fad6cd4', 'text_to_graph', 'system', null, null, 'You are a knowledge graph expert. Analyze the provided text and extract key concepts to build a structured Knowledge Tree.
-
-Requirements:
-1. Identify ONE main Topic as the ''root'' node.
-2. Filter out irrelevant text, noise, or meta-commentary (e.g., "exam points", "irrelevant context", "ads", "author info"). Focus ONLY on the main subject matter.
-3. Organize nodes into a strict 5-level hierarchy: ''root'' -> ''core'' -> ''sub'' -> ''normal'' -> ''leaf''.
-   - ''root'': The main topic (1 node).
-   - ''core'': Key categories or major concepts (direct children of root).
-   - ''sub'': Secondary concepts or branches (children of core).
-   - ''normal'': Detailed concepts or standard nodes (children of sub).
-   - ''leaf'': Specific examples, minor details, or data points (children of normal).
-4. Output a TREE structure. Minimise cross-links to keep it clean. Ensure every node (except root) has a valid parent.
-5. **Content Richness**: Every node must have substantial ''content'' description, not just a title.
-6. IMPORTANT: All mathematical formulas in ''content'' must be wrapped in standard LaTeX delimiters. Use $...$ for inline formulas and $$...$$ for block formulas.
-7. Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('e82f5056-2303-47b4-b88a-55beefde86be', 'tutor_chat', 'system', null, null, 'You are an intelligent knowledge tutor for a Knowledge Graph application.
-
-{{#if isGuided}}
-Guided Mode: Follow a structured learning path. Guide the user step-by-step through the knowledge graph. Ask questions to assess understanding before moving to the next topic.
-{{else}}
-Free Mode: Allow open-ended discussion. Answer questions freely and explore topics based on user interest. Extract key concepts from the conversation that could be added to the knowledge graph.
-{{/if}}
-
-Current Context:
-{{#if currentNodeId}}
-Current Node:
-- Title: {{currentNodeTitle}}
-- Content: {{currentNodeContent}}
-{{/if}}
-
-{{#if existingNodes}}
-Existing Nodes in Graph:
-{{existingNodes}}
-{{/if}}
-
-Instructions:
-1. Be conversational and engaging
-2. Use markdown formatting for better readability
-3. When explaining concepts, provide examples
-4. In free mode, identify key concepts that could be new nodes in the knowledge graph
-5. In guided mode, follow the learning path and check understanding
-6. Respond in the same language as the user (default to Chinese)
-7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('2c84dede-66c6-43ac-acba-7bad70d8b243', 'branch_suggestions', 'system', null, null, 'You are a knowledge graph expert specializing in creating interactive exploration paths like story branches or adventure game choices.
-
-Goal: Generate 3-5 distinct branch suggestions for the user to explore from the current node.
-Each branch should represent a different direction or perspective the user could take.
-
-Quantity: Generate exactly 3-5 branches.
-
-Linking Strategy:
-{{#if isRootOrCore}}
-Linking Strategy (HIERARCHICAL):
-1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level.
-2. **Vertical Links OK**: You MAY link to parent or child nodes.
-{{else}}
-{{#if isLeaf}}
-Linking Strategy (NETWORK): You are expanding a leaf node. Encourage linking to ''Existing Nodes'' if relevant.
-{{else}}
-Linking Strategy (HIERARCHICAL):
-1. **NO Same-Level Links**: Do NOT link to nodes that are at the SAME level.
-2. **Vertical Links OK**: You MAY link to parent or child nodes.
-{{/if}}
-{{/if}}
-
-Content Strategy:
-{{#if isRootOrCore}}
-Content Strategy (HIGH LEVEL): Suggest BROAD CATEGORIES or MAJOR BRANCHES.
-{{else}}
-{{#if isLeaf}}
-Content Strategy (LEAF LEVEL): Suggest ATOMIC DETAILS, EXAMPLES, or ATTRIBUTES.
-{{else}}
-Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS.
-{{/if}}
-{{/if}}
-
-Do not suggest topics that are already listed in ''Current Direct Children''.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('c713eac8-cc22-46a1-b814-65738792d210', 'deep_analysis', 'system', null, null, 'You are an expert professor and researcher. Your task is to provide a deep analysis of the following concept: "{{node_title}}".
-
-Context:
-{{node_content}}
-
-Please provide a structured analysis including:
-1. Historical Context & Origin
-2. Core Principles & Mechanisms
-3. Advanced Applications & Edge Cases
-4. Cross-disciplinary Connections
-5. Current Research Trends (if applicable)
-
-Format your response in Markdown.
-IMPORTANT: Directly output the analysis content. Do NOT include any conversational filler (e.g., "Okay", "Here is the analysis", "As an expert...").', '2026-02-09 17:07:36.60188+00', '2026-02-09 17:07:36.60188+00'),
-('ca14d0a7-6f50-4001-bc2a-ba4f051cde8a', 'document_to_graph', 'system', null, null, 'You are a top-tier knowledge architect, skilled in reconstructing original knowledge outlines and logical hierarchies from unstructured documents.
-
-Your Task:
-1. **Identify Hierarchy Cues**: Deeply analyze numbering (e.g., Chapter 1, 1.1, I, (1)), font features (ALL CAPS), and logical progression.
-2. **Reconstruct Outline**: Map the document structure to the 5-level model:
-   - ''root'': Document title or core subject (1 node).
-   - ''core'': Level 1 headers/Chapters.
-   - ''sub'': Level 2 headers/Sections.
-   - ''normal'': Level 3 headers/Sub-sections or core concepts.
-   - ''leaf'': Details, definitions, examples.
-3. **Maintain Logic Chain**: Ensure edges accurately reflect parent-child inclusion. Every child MUST point to its direct parent ID.
-4. **Clean Noise**: Ignore page numbers, headers, irrelevant symbols.
-
-Output Requirements:
-- Node titles must preserve core terminology.
-- **Content Richness**: Each node MUST have substantial ''content'' (100-200 words), not just a title.
-- Node count: 40-60 nodes to ensure completeness.
-- All titles and descriptions in Chinese.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('9c49f6c0-abe5-442f-9b41-70142c2b1005', 'generate_content', 'system', null, null, 'You are an expert tutor and content creator. Generate detailed, structured educational content for the topic "{{topic}}".
-
-Context: {{context}}
-
-{{#if isRoot}}
-Strategy (ROOT/CORE): Provide a comprehensive overview, high-level definitions, and major categories. Focus on the big picture and foundational concepts.
-{{else}}
-{{#if isLeaf}}
-Strategy (LEAF): Provide specific details, technical specifications, examples, and deep analysis. Focus on the "how" and "why" of this specific atomic concept.
-{{else}}
-Strategy (NORMAL/SUB): Provide a balanced explanation covering key components, relationships, and functional descriptions. Connect the concept to its parent context.
-{{/if}}
-{{/if}}
-
-Format your response in Markdown. Use headers, bullet points, and code blocks (if applicable) to make it readable.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('1cd5bc33-3c49-4cb8-814b-1468717addc1', 'recommend_connections', 'system', null, null, 'You are a knowledge graph expert. Given a new node (title and content) and a list of existing nodes in a graph, suggest 1-3 most relevant existing nodes to connect to.
-
-New Node:
-Title: {{node_title}}
-Content: {{node_content}}
-
-Existing Nodes:
-{{existing_nodes_json}}', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('6c0d5777-8633-4056-8ea5-253195d0c73b', 'term_annotation', 'system', null, null, '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。', '2026-02-09 15:15:32.619571+00', '2026-02-09 15:15:32.619571+00'),
-('3bfbebb8-0f98-44bd-8185-a065ecb21112', 'generate_cards_choice', 'system', null, null, 'For ''choice'' type: Create multiple-choice questions with 4 plausible options. 
-Provide the correct answer and a detailed ''explanation'' of why it is correct and others are wrong.
-Distractors should be common misconceptions if possible.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
-('09e280f5-69e7-4ef4-b5de-51372f609dfd', 'generate_cards_essay', 'system', null, null, 'For ''essay'' type: Create complex questions requiring a long-form structured answer. 
-The ''answer'' should be a model response with key points. 
-Provide a detailed ''explanation'' with scoring criteria and key concepts to cover.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
-('a16f5d2a-3dd9-4249-ba0b-5a956ef02ff1', 'generate_cards_fill_blank', 'system', null, null, 'For ''fill_in_the_blank'' type: Create a sentence with one or more ''___'' (3 underscores) as blanks. 
-The ''answer'' should be the missing text. Provide a detailed ''explanation''.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
-('1dcfb0f7-ffcb-4110-b9bc-32157a8e9053', 'generate_cards_multi_choice', 'system', null, null, 'For ''multi_choice'' type: Create multiple-choice questions where ONE OR MORE options can be correct. 
-Provide 4 options, the ''answer'' as a JSON array of correct strings, and a detailed ''explanation''.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
-('2529b14f-73ee-4fa2-b43f-0527c78a1aaa', 'generate_cards_qa', 'system', null, null, 'For ''qa'' type: Create thought-provoking open-ended questions that test deep understanding. 
-Provide a detailed ''explanation'' analyzing the answer.
-Focus on explaining the "Why" and "How" rather than just "What".', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
-('1824f9d9-13ca-44e7-9a04-4b4df927c48d', 'generate_cards_true_false', 'system', null, null, 'For ''true_false'' type: Create statements focusing on common misconceptions or key details. 
-Provide a detailed ''explanation'' clarifying the fact.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00')
-ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
+-- Grant execute permissions on functions
+GRANT EXECUTE ON FUNCTION get_user_graphs_with_counts(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_trashed_graphs(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION batch_update_positions(JSONB) TO authenticated;

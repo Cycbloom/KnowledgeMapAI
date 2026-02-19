@@ -25,6 +25,9 @@ export const graphsApi = {
   togglePublic: (id: string, is_public: boolean) => 
     request(`/graphs/${id}/share`, { method: 'PUT', body: JSON.stringify({ is_public }) }),
   
+  toggleFavorite: (id: string, is_favorite: boolean) => 
+    request(`/graphs/${id}/favorite`, { method: 'PUT', body: JSON.stringify({ is_favorite }) }),
+  
   delete: (id: string) => request(`/graphs/${id}`, { method: 'DELETE' }),
   
   restore: (id: string) => request(`/graphs/${id}/restore`, { method: 'POST' }),

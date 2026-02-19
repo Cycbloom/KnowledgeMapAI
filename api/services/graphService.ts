@@ -7,6 +7,7 @@ interface GraphWithCount {
   title: string;
   description: string | null;
   is_public: boolean;
+  is_favorite: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -36,6 +37,7 @@ export class GraphService {
       .select('*')
       .eq('user_id', userId)
       .is('deleted_at', null)
+      .order('is_favorite', { ascending: false })
       .order('last_used_at', { ascending: false });
 
     if (error) throw error;
@@ -188,6 +190,30 @@ export class GraphService {
     
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     await cacheService.del(CacheKeys.GRAPH(graphId));
+    
+    return data;
+  }
+
+  async toggleFavorite(
+    supabase: SupabaseClient,
+    graphId: string,
+    userId: string,
+    isFavorite: boolean
+  ) {
+    const { data, error } = await supabase
+      .from('knowledge_graphs')
+      .update({
+        is_favorite: isFavorite,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', graphId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     
     return data;
   }

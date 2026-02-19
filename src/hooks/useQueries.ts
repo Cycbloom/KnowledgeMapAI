@@ -265,6 +265,36 @@ export const useUpdateGraphMutation = () => {
   });
 };
 
+export const useToggleFavoriteMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, is_favorite }: { id: string; is_favorite: boolean }) => 
+      api.graphs.toggleFavorite(id, is_favorite),
+    onMutate: async ({ id, is_favorite }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.graphs });
+      const previousGraphs = queryClient.getQueryData(queryKeys.graphs);
+
+      queryClient.setQueryData(queryKeys.graphs, (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(graph => 
+          graph.id === id ? { ...graph, is_favorite } : graph
+        );
+      });
+
+      return { previousGraphs };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousGraphs) {
+        queryClient.setQueryData(queryKeys.graphs, context.previousGraphs);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    },
+  });
+};
+
 export const useExportGraphMutation = () => {
   return useMutation({
     mutationFn: ({ id, format }: { id: string; format: 'json' | 'pdf' }) => api.data.export(id, format),

@@ -116,8 +116,8 @@ app.get('/api/csrf-token', getCsrfToken)
  * API Routes
  */
 app.use('/api/auth', rateLimiters.auth, authRoutes)
-app.use('/api/graphs', graphRelationsRoutes)
 app.use('/api/graphs', graphRoutes)
+app.use('/api/graphs', graphRelationsRoutes)
 app.use('/api', nodeRoutes)
 app.use('/api/ai', rateLimiters.ai, aiRoutes)
 app.use('/api/study', studyRoutes)

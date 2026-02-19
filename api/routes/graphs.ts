@@ -245,6 +245,19 @@ router.put('/:id/share', requireAuth, validate({ params: uuidParamsSchema, body:
   res.json(data);
 });
 
+// Toggle Favorite Status
+router.put('/:id/favorite', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { is_favorite } = req.body;
+  
+  if (typeof is_favorite !== 'boolean') {
+    throw new AppError('is_favorite 必须是布尔值', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+  
+  const data = await graphService.toggleFavorite(req.supabase!, id, req.user.id, is_favorite);
+  res.json(data);
+});
+
 // Delete a graph (Soft Delete)
 router.delete('/:id', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;

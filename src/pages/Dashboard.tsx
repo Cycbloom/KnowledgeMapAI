@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, queryKeys } from '../hooks/useQueries';
+import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, useToggleFavoriteMutation, queryKeys } from '../hooks/useQueries';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Network, ArrowRight, Sparkles, Tag, X } from 'lucide-react';
+import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Network, ArrowRight, Sparkles, Tag, X, Star } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
@@ -23,6 +23,7 @@ export const Dashboard = () => {
   const createGraphFromTemplateMutation = useCreateGraphFromTemplateMutation();
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
+  const toggleFavoriteMutation = useToggleFavoriteMutation();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addMessage } = useMessageStore();
 
@@ -130,6 +131,21 @@ export const Dashboard = () => {
         setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
       }
     });
+  };
+
+  const handleToggleFavorite = (id: string, currentFavorite: boolean) => {
+    toggleFavoriteMutation.mutate(
+      { id, is_favorite: !currentFavorite },
+      {
+        onSuccess: () => {
+          addMessage({ type: 'success', content: currentFavorite ? '已取消收藏' : '收藏成功' });
+        },
+        onError: (err: any) => {
+          console.error(err);
+          addMessage({ type: 'error', content: err.message || '操作失败' });
+        },
+      }
+    );
   };
 
   const handleImportClick = () => {
@@ -482,35 +498,69 @@ export const Dashboard = () => {
                       <BookOpen size={24} />
                     </div>
                     
-                    {/* Hover Actions */}
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
-                      <Link
-                        to={`/graph/${graph.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDark 
-                            ? 'text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400' 
-                            : 'text-gray-400 hover:bg-indigo-50 hover:text-indigo-600'
-                        }`}
-                        title="打开思维导图"
-                      >
-                        <Network size={18} />
-                      </Link>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteGraph(graph.id, graph.title);
-                        }}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDark 
-                            ? 'text-slate-400 hover:bg-red-900/30 hover:text-red-400' 
-                            : 'text-gray-400 hover:bg-red-50 hover:text-red-500'
-                        }`}
-                        title="删除图谱"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                    <div className="flex items-center gap-2">
+                      {/* Hover Actions */}
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                        <Link
+                          to={`/graph/${graph.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isDark 
+                              ? 'text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400' 
+                              : 'text-gray-400 hover:bg-indigo-50 hover:text-indigo-600'
+                          }`}
+                          title="打开思维导图"
+                        >
+                          <Network size={18} />
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteGraph(graph.id, graph.title);
+                          }}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isDark 
+                              ? 'text-slate-400 hover:bg-red-900/30 hover:text-red-400' 
+                              : 'text-gray-400 hover:bg-red-50 hover:text-red-500'
+                          }`}
+                          title="删除图谱"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                        {!graph.is_favorite && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleFavorite(graph.id, false);
+                            }}
+                            className={`p-2 rounded-lg transition-colors ${
+                              isDark 
+                                ? 'text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400' 
+                                : 'text-gray-400 hover:bg-yellow-50 hover:text-yellow-500'
+                            }`}
+                            title="收藏图谱"
+                          >
+                            <Star size={18} />
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Favorite Star - Always visible when favorited, positioned at rightmost */}
+                      {graph.is_favorite && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleToggleFavorite(graph.id, true);
+                          }}
+                          className="p-2 rounded-lg text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                          title="取消收藏"
+                        >
+                          <Star size={18} fill="currentColor" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   

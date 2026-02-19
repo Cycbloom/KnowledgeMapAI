@@ -42,6 +42,8 @@ import systemMonitorRoutes from './routes/systemMonitor.js'
 import backupRoutes from './routes/backup.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
+import { startAutoBackupScheduler } from './jobs/autoBackupScheduler.js'
+import { syncExistingBackups } from './services/backupSync.js'
 
 // for esm mode
 const _filename = fileURLToPath(import.meta.url)
@@ -150,6 +152,9 @@ app.use(
     })
   },
 )
+
+startAutoBackupScheduler()
+syncExistingBackups()
 
 /**
  * error handler middleware

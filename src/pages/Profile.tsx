@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogoutMutation, useUser } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X, Database, Download, Upload, AlertTriangle } from 'lucide-react';
+import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X, Database, Download, Upload, AlertTriangle, Trash2, RotateCcw, Clock, Plus, RefreshCw } from 'lucide-react';
 import { PromptSettingsPanel } from '../components/PromptSettingsPanel';
 import { AIActionSettingsPanel } from '../components/AIActionSettingsPanel';
-import { backupApi } from '../services/api/backup';
+import { backupApi, BackupSnapshot } from '../services/api/backup';
 
 export const Profile = () => {
   const navigate = useNavigate();
@@ -17,9 +17,33 @@ export const Profile = () => {
   const [activeTab, setActiveTab] = useState<'prompts' | 'actions'>('prompts');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('replace');
+  const [snapshots, setSnapshots] = useState<BackupSnapshot[]>([]);
+  const [isLoadingSnapshots, setIsLoadingSnapshots] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: userData, isLoading } = useUser(!!token);
+
+  const loadSnapshots = async () => {
+    setIsLoadingSnapshots(true);
+    try {
+      const data = await backupApi.getSnapshots();
+      setSnapshots(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingSnapshots(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      loadSnapshots();
+    }
+  }, [token]);
 
   const profile = (userData as any)?.user?.profile;
   const displayName = profile?.name || (userData as any)?.user?.user_metadata?.name || user?.name || '未命名用户';
@@ -70,11 +94,12 @@ export const Profile = () => {
         throw new Error('无效的备份文件格式');
       }
 
-      const result = await backupApi.import(data);
+      const result = await backupApi.import(data, importMode);
       addMessage({ 
         type: 'success', 
-        content: `备份导入成功：${result.stats.graphs} 个图谱，${result.stats.nodes} 个节点，${result.stats.study_cards} 张学习卡片` 
+        content: `${result.message}：${result.stats.graphs} 个图谱，${result.stats.nodes} 个节点，${result.stats.study_cards} 张学习卡片` 
       });
+      loadSnapshots();
     } catch (e: any) {
       console.error(e);
       addMessage({ type: 'error', content: e.message || '导入备份失败' });
@@ -83,6 +108,67 @@ export const Profile = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleCreateSnapshot = async () => {
+    setIsCreatingSnapshot(true);
+    try {
+      await backupApi.createSnapshot('manual');
+      addMessage({ type: 'success', content: '快照创建成功' });
+      loadSnapshots();
+    } catch (e: any) {
+      addMessage({ type: 'error', content: e.message || '创建快照失败' });
+    } finally {
+      setIsCreatingSnapshot(false);
+    }
+  };
+
+  const handleRestoreSnapshot = async (id: string) => {
+    if (!confirm('确定要恢复此快照吗？这将覆盖当前所有数据。')) return;
+    
+    setRestoringId(id);
+    try {
+      const result = await backupApi.restoreSnapshot(id);
+      addMessage({ 
+        type: 'success', 
+        content: `${result.message}：${result.stats.graphs} 个图谱，${result.stats.nodes} 个节点` 
+      });
+    } catch (e: any) {
+      addMessage({ type: 'error', content: e.message || '恢复快照失败' });
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
+  const handleDeleteSnapshot = async (id: string) => {
+    if (!confirm('确定要删除此快照吗？')) return;
+    
+    setDeletingId(id);
+    try {
+      await backupApi.deleteSnapshot(id);
+      addMessage({ type: 'success', content: '快照已删除' });
+      setSnapshots(prev => prev.filter(s => s.id !== id));
+    } catch (e: any) {
+      addMessage({ type: 'error', content: e.message || '删除快照失败' });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'auto_30min': return '30分钟自动';
+      case 'auto_5hour': return '5小时自动';
+      case 'auto_1day': return '每日自动';
+      case 'manual': return '手动创建';
+      default: return type;
     }
   };
 
@@ -204,13 +290,127 @@ export const Profile = () => {
             </div>
           </div>
 
+          <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">导入模式</div>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="importMode"
+                  value="replace"
+                  checked={importMode === 'replace'}
+                  onChange={() => setImportMode('replace')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium">快照恢复</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">（清空现有数据后导入）</span>
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="importMode"
+                  value="merge"
+                  checked={importMode === 'merge'}
+                  onChange={() => setImportMode('merge')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium">合并导入</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">（保留现有数据）</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
           <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <div className="text-xs text-amber-800 dark:text-amber-300">
-                <strong>注意：</strong>导入备份会创建新的图谱和节点（不会覆盖现有数据）。如果重复导入同一备份，会产生重复内容。
+                <strong>提示：</strong>快照恢复会先删除所有现有数据再导入备份，适合恢复到某个历史状态；合并导入会保留现有数据并添加新数据。
               </div>
             </div>
+          </div>
+
+          {/* Snapshots List */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">快照列表</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={loadSnapshots}
+                  disabled={isLoadingSnapshots}
+                  className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingSnapshots ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={handleCreateSnapshot}
+                  disabled={isCreatingSnapshot}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{isCreatingSnapshot ? '创建中...' : '创建快照'}</span>
+                </button>
+              </div>
+            </div>
+
+            {isLoadingSnapshots ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">加载中...</div>
+            ) : snapshots.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
+                暂无快照，系统会自动创建或点击上方按钮手动创建
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {snapshots.map((snapshot) => (
+                  <div
+                    key={snapshot.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          snapshot.type === 'manual' 
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
+                        }`}>
+                          {getTypeLabel(snapshot.type)}
+                        </span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">
+                          {snapshot.graphs_count} 个图谱，{snapshot.nodes_count} 个节点
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(snapshot.created_at).toLocaleString('zh-CN')} · {formatFileSize(snapshot.file_size)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 ml-2">
+                      <button
+                        onClick={() => handleRestoreSnapshot(snapshot.id)}
+                        disabled={restoringId === snapshot.id}
+                        className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 transition-colors"
+                        title="恢复此快照"
+                      >
+                        <RotateCcw className={`w-4 h-4 ${restoringId === snapshot.id ? 'animate-spin' : ''}`} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSnapshot(snapshot.id)}
+                        disabled={deletingId === snapshot.id}
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+                        title="删除此快照"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -40,6 +40,7 @@ import analyticsRoutes from './routes/analytics.js'
 import alertsRoutes from './routes/alerts.js'
 import systemMonitorRoutes from './routes/systemMonitor.js'
 import backupRoutes from './routes/backup.js'
+import knowledgePointRoutes from './routes/knowledgePoints.js'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './docs/swagger.js'
 import { startAutoBackupScheduler } from './jobs/autoBackupScheduler.js'
@@ -139,6 +140,9 @@ app.use('/api/analytics', analyticsRoutes)
 app.use('/api/alerts', alertsRoutes)
 app.use('/api/system-monitor', systemMonitorRoutes)
 app.use('/api/backup', backupRoutes)
+app.use('/api/knowledge-points', knowledgePointRoutes)
+app.use('/api/graph-nodes', knowledgePointRoutes)
+app.use('/api/combined-view', knowledgePointRoutes)
 
 /**
  * health

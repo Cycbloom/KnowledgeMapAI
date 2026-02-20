@@ -53,6 +53,38 @@ export interface Graph {
 
 export type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
 
+export type KnowledgePointVisibility = 'private' | 'public' | 'pending';
+
+export interface KnowledgePoint {
+  id: string;
+  title: string;
+  content?: string;
+  learning_material?: string;
+  properties?: Record<string, any>;
+  visibility: KnowledgePointVisibility;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GraphNode {
+  id: string;
+  graph_id: string;
+  knowledge_point_id: string;
+  x_position: number;
+  y_position: number;
+  level: NodeLevel;
+  is_accepted: boolean;
+  deleted_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KnowledgePointWithGraphs extends KnowledgePoint {
+  graph_nodes?: GraphNode[];
+  graphs_count?: number;
+}
+
 export interface Node {
   id: string;
   graph_id: string;
@@ -67,6 +99,13 @@ export interface Node {
   is_accepted?: boolean;
   updated_at?: string;
   created_at?: string;
+  knowledge_point_id?: string;
+  visibility?: KnowledgePointVisibility;
+  owner_id?: string;
+}
+
+export interface GraphNodeWithKnowledgePoint extends GraphNode {
+  knowledge_point: KnowledgePoint;
 }
 
 export interface Edge {
@@ -74,11 +113,16 @@ export interface Edge {
   source_node_id: string;
   target_node_id: string;
   relationship_type?: string;
+  source_graph_node_id?: string;
+  target_graph_node_id?: string;
+  graph_id?: string;
 }
 
 export interface StudyCard {
   id: string;
   node_id: string;
+  knowledge_point_id?: string;
+  source_graph_id?: string;
   question: string;
   answer: string;
   card_type: 'qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay';
@@ -488,4 +532,41 @@ export interface InfiniteExpansionResult {
     depth: number;
     node_count: number;
   }>;
+}
+
+export type CombinedViewLayoutMode = 'grouped' | 'merged' | 'network';
+
+export interface CombinedViewGraph {
+  graph_id: string;
+  graph_title: string;
+  color: string;
+  nodes: GraphNodeWithKnowledgePoint[];
+  edges: Edge[];
+}
+
+export interface CombinedViewData {
+  graphs: CombinedViewGraph[];
+  shared_knowledge_points: Array<{
+    knowledge_point_id: string;
+    knowledge_point: KnowledgePoint;
+    graph_nodes: GraphNode[];
+  }>;
+}
+
+export interface SimilarKnowledgePoint {
+  id: string;
+  title: string;
+  content?: string;
+  similarity: number;
+  visibility: KnowledgePointVisibility;
+  graphs_count?: number;
+}
+
+export interface DeleteKnowledgePointResult {
+  success: boolean;
+  affected_graphs: number;
+  deleted_graph_nodes: number;
+  deleted_edges: number;
+  deleted_cards: number;
+  error?: string;
 }

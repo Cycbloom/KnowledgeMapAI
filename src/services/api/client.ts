@@ -54,7 +54,7 @@ export const getHeaders = () => {
   };
 };
 
-export const handleResponse = async (res: Response) => {
+export const handleResponse = async <T = any>(res: Response): Promise<T> => {
   const text = await res.text();
   let data;
   try {
@@ -94,11 +94,11 @@ export const handleResponse = async (res: Response) => {
     throw error;
   }
   
-  return data;
+  return data as T;
 };
 
-export const request = async (url: string, options: RequestInit = {}) => {
-  const doRequest = async (tokenOverride?: string) => {
+export const request = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
+  const doRequest = async (tokenOverride?: string): Promise<T> => {
     const headers: Record<string, string> = {
       ...getHeaders(),
       ...(options.headers as Record<string, string>),
@@ -112,7 +112,7 @@ export const request = async (url: string, options: RequestInit = {}) => {
       ...options,
       headers,
       credentials: 'include',
-    }).then(handleResponse);
+    }).then(res => handleResponse<T>(res));
   };
 
   try {

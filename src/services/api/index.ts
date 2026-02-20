@@ -4,6 +4,7 @@ export type { AIAction, AIActionVariables } from './types';
 export { authApi } from './auth';
 export { graphsApi } from './graphs';
 export { nodesApi, edgesApi } from './nodes';
+export { knowledgePointsApi, graphNodesApi, combinedViewApi, publicKnowledgePointsApi } from './knowledgePoints';
 export { aiApi, aiActionsApi } from './ai';
 export { ttsApi } from './tts';
 export { studyApi, dashboardApi, statisticsApi } from './study';
@@ -18,6 +19,7 @@ export { backupApi } from './backup';
 import { authApi } from './auth';
 import { graphsApi } from './graphs';
 import { nodesApi, edgesApi } from './nodes';
+import { knowledgePointsApi, graphNodesApi, combinedViewApi } from './knowledgePoints';
 import { aiApi, aiActionsApi } from './ai';
 import { ttsApi } from './tts';
 import { studyApi, dashboardApi, statisticsApi } from './study';
@@ -35,6 +37,9 @@ export const api = {
   graphs: graphsApi,
   nodes: nodesApi,
   edges: edgesApi,
+  knowledgePoints: knowledgePointsApi,
+  graphNodes: graphNodesApi,
+  combinedView: combinedViewApi,
   ai: aiApi,
   tts: ttsApi,
   study: studyApi,

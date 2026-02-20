@@ -1,4 +1,5 @@
 import { request } from './client';
+import type { Node, Edge } from '../../types';
 
 export const nodesApi = {
   create: (data: { 
@@ -11,9 +12,11 @@ export const nodesApi = {
     parent_node_ids?: string[];
     learning_material?: string;
     properties?: Record<string, unknown>;
-  }) => request('/nodes', { method: 'POST', body: JSON.stringify(data) }),
+    knowledge_point_id?: string;
+    reuse_existing?: boolean;
+  }) => request<Node>('/nodes', { method: 'POST', body: JSON.stringify(data) }),
   
-  get: (id: string) => request(`/nodes/${id}`),
+  get: (id: string) => request<Node>(`/nodes/${id}`),
   
   update: (id: string, data: { 
     title?: string; 
@@ -23,22 +26,60 @@ export const nodesApi = {
     y_position?: number;
     learning_material?: string;
     properties?: Record<string, unknown>;
-  }) => request(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
-  delete: (id: string) => request(`/nodes/${id}`, { method: 'DELETE' }),
+  delete: (id: string, options?: { hard_delete?: boolean }) => 
+    request<{ success: boolean; affected_graphs?: number }>(`/nodes/${id}`, { 
+      method: 'DELETE',
+      body: JSON.stringify(options)
+    }),
   
-  batchDelete: (node_ids: string[]) => 
-    request('/nodes/batch-delete', { method: 'POST', body: JSON.stringify({ node_ids }) }),
+  batchDelete: (node_ids: string[], options?: { hard_delete?: boolean }) => 
+    request('/nodes/batch-delete', { 
+      method: 'POST', 
+      body: JSON.stringify({ node_ids, ...options }) 
+    }),
   
   batchUpdatePositions: (positions: Array<{ id: string; x_position: number; y_position: number }>) => 
     request('/nodes/batch-update-positions', { method: 'POST', body: JSON.stringify({ positions }) }),
   
   getRelated: (id: string) => request(`/nodes/${id}/related`),
+  
+  searchSimilar: (params: {
+    title: string;
+    content?: string;
+    threshold?: number;
+    limit?: number;
+  }) => request<Array<{
+    id: string;
+    title: string;
+    content?: string;
+    similarity: number;
+    graphs_count: number;
+  }>>('/nodes/search-similar', { 
+    method: 'POST', 
+    body: JSON.stringify(params) 
+  }),
+  
+  getKnowledgePointGraphs: (nodeId: string) => 
+    request<Array<{
+      graph_id: string;
+      graph_title: string;
+      x_position: number;
+      y_position: number;
+      level: string;
+    }>>(`/nodes/${nodeId}/knowledge-point-graphs`, { method: 'GET' }),
 };
 
 export const edgesApi = {
-  create: (data: { source_node_id: string; target_node_id: string; graph_id: string; relationship_type?: string }) => 
-    request('/edges', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: { 
+    source_node_id: string; 
+    target_node_id: string; 
+    graph_id: string; 
+    relationship_type?: string;
+    source_graph_node_id?: string;
+    target_graph_node_id?: string;
+  }) => request<Edge>('/edges', { method: 'POST', body: JSON.stringify(data) }),
   
   delete: (id: string) => request(`/edges/${id}`, { method: 'DELETE' }),
 };

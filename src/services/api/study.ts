@@ -1,14 +1,34 @@
 import { request } from './client';
 
 export const studyApi = {
-  getCards: (params?: { graph_id?: string; node_id?: string; node_ids?: string; due?: boolean }) => {
+  getCards: (params?: { 
+    graph_id?: string; 
+    node_id?: string; 
+    node_ids?: string; 
+    knowledge_point_id?: string;
+    source_graph_id?: string;
+    due?: boolean 
+  }) => {
     const search = new URLSearchParams();
     if (params?.graph_id) search.set('graph_id', params.graph_id);
     else if (params?.node_id) search.set('node_id', params.node_id);
     else if (params?.node_ids) search.set('node_ids', params.node_ids);
+    if (params?.knowledge_point_id) search.set('knowledge_point_id', params.knowledge_point_id);
+    if (params?.source_graph_id) search.set('source_graph_id', params.source_graph_id);
     if (params?.due) search.set('due', 'true');
     const query = search.toString();
     return request(`/study/cards${query ? `?${query}` : ''}`);
+  },
+  
+  getCardsByKnowledgePoint: (knowledgePointId: string, params?: {
+    source_graph_id?: string;
+    due?: boolean;
+  }) => {
+    const search = new URLSearchParams();
+    search.set('knowledge_point_id', knowledgePointId);
+    if (params?.source_graph_id) search.set('source_graph_id', params.source_graph_id);
+    if (params?.due) search.set('due', 'true');
+    return request(`/study/cards?${search.toString()}`);
   },
   
   createCardsBatch: (cards: unknown[]) => 
@@ -25,6 +45,11 @@ export const studyApi = {
   
   updateProgress: (id: string, quality: number) => 
     request(`/study/cards/${id}/progress`, { method: 'PUT', body: JSON.stringify({ quality }) }),
+  
+  getCardGroups: (knowledgePointId: string) => 
+    request<Array<{ source_graph_id: string; graph_title: string; card_count: number }>>(
+      `/study/cards/groups/${knowledgePointId}`
+    ),
 };
 
 export const dashboardApi = {

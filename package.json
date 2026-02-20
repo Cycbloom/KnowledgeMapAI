@@ -11,7 +11,8 @@
     "test": "vitest",
     "check": "tsc --noEmit",
     "server:dev": "nodemon",
-    "db:backfill": "tsx Scripts/backfill_embeddings.ts",
+    "db:backfill": "tsx scripts/backfill_embeddings.ts",
+    "db:seed": "tsx scripts/seed_test_data.ts",
     "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\""
   },
   "dependencies": {

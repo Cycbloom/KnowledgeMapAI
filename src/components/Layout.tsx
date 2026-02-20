@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network, BarChart3 } from 'lucide-react';
+import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network, BarChart3, Sun, Moon } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 import { HelpModal } from './HelpModal';
@@ -20,7 +20,7 @@ export const Layout = () => {
   const { user, setUser, token } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isDark } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -227,6 +227,15 @@ export const Layout = () => {
               {/* Right: Status & User */}
               <div className="flex items-center gap-4 flex-shrink-0">
                  <SSEStatusIndicator />
+                 <button 
+                   onClick={toggleTheme}
+                   className={`p-1.5 rounded-full transition-colors ${
+                     isDark ? 'text-slate-400 hover:text-yellow-400 hover:bg-slate-800' : 'text-gray-500 hover:text-yellow-600 hover:bg-yellow-50'
+                   }`}
+                   title={isDark ? '切换到浅色模式' : '切换到深色模式'}
+                 >
+                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                 </button>
                  <button 
                    onClick={() => setIsHelpOpen(true)}
                    className={`p-1.5 rounded-full transition-colors ${

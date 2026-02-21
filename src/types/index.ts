@@ -85,52 +85,46 @@ export interface KnowledgePointWithGraphs extends KnowledgePoint {
   graphs_count?: number;
 }
 
-export interface Node {
-  id: string;
-  graph_id: string;
-  title: string;
-  content?: string;
-  x_position: number;
-  y_position: number;
-  level?: NodeLevel;
-  properties?: Record<string, any>;
-  tags?: string[];
-  learning_material?: string;
-  is_accepted?: boolean;
-  updated_at?: string;
-  created_at?: string;
-  knowledge_point_id?: string;
-  visibility?: KnowledgePointVisibility;
-  owner_id?: string;
-}
-
 export interface GraphNodeWithKnowledgePoint extends GraphNode {
   knowledge_point: KnowledgePoint;
 }
 
+export type Node = GraphNodeWithKnowledgePoint;
+
 export interface Edge {
   id: string;
-  source_node_id: string;
-  target_node_id: string;
+  graph_id: string;
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
   relationship_type?: string;
-  source_graph_node_id?: string;
-  target_graph_node_id?: string;
-  graph_id?: string;
+  weight?: number;
+  deleted_at?: string;
+  created_at?: string;
 }
 
 export interface StudyCard {
   id: string;
-  node_id: string;
-  knowledge_point_id?: string;
+  knowledge_point_id: string;
+  user_id: string;
+  graph_id: string;
   source_graph_id?: string;
   question: string;
   answer: string;
   card_type: 'qa' | 'choice' | 'true_false' | 'multi_choice' | 'fill_in_the_blank' | 'essay';
   options?: string[];
   explanation?: string;
+  difficulty?: number;
+  last_reviewed?: string;
   next_review: string;
   review_count?: number;
   fsrs_state?: number;
+  fsrs_stability?: number;
+  fsrs_difficulty?: number;
+  fsrs_elapsed_days?: number;
+  fsrs_scheduled_days?: number;
+  fsrs_retrievability?: number;
+  fsrs_last_review?: string;
+  created_at?: string;
 }
 
 export interface Task {
@@ -569,4 +563,136 @@ export interface DeleteKnowledgePointResult {
   deleted_edges: number;
   deleted_cards: number;
   error?: string;
+}
+
+export type LearningPathGoalType = 'natural_language' | 'graph_node' | 'template';
+export type LearningPathStatus = 'active' | 'completed' | 'paused' | 'archived';
+export type LearningPathNodeStatus = 'pending' | 'in_progress' | 'completed' | 'skipped';
+export type LearningResourceType = 'article' | 'video' | 'book' | 'course' | 'exercise' | 'user_upload';
+export type LearningResourceSource = 'ai_recommended' | 'user_added';
+
+export interface LearningPath {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  goal_type: LearningPathGoalType;
+  goal_content?: string;
+  target_node_id?: string;
+  template_id?: string;
+  status: LearningPathStatus;
+  total_nodes: number;
+  completed_nodes: number;
+  progress_percentage: number;
+  estimated_hours?: number;
+  daily_minutes_target?: number;
+  target_completion_date?: string;
+  settings?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningPathNodeRef {
+  id: string;
+  path_id: string;
+  node_id: string;
+  node?: Node;
+  status: LearningPathNodeStatus;
+  user_notes?: string;
+  estimated_minutes: number;
+  difficulty_level: number;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningResource {
+  id: string;
+  node_ref_id: string;
+  resource_type: LearningResourceType;
+  title?: string;
+  url?: string;
+  description?: string;
+  source: LearningResourceSource;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface LearningPathProgressLog {
+  id: string;
+  user_id: string;
+  path_id: string;
+  node_ref_id?: string;
+  action: 'started' | 'completed' | 'skipped' | 'reviewed' | 'adjusted';
+  duration_minutes?: number;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface CreateLearningPathData {
+  title: string;
+  description?: string;
+  goal_type: LearningPathGoalType;
+  goal_content?: string;
+  target_node_id?: string;
+  template_id?: string;
+  daily_minutes_target?: number;
+  target_completion_date?: string;
+}
+
+export interface GenerateLearningPathData {
+  goal: string;
+  context?: string;
+  goal_type?: LearningPathGoalType;
+  target_node_id?: string;
+  template_id?: string;
+  daily_minutes_target?: number;
+  target_completion_date?: string;
+  conversation_history?: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+  }>;
+}
+
+export interface AdjustLearningPathData {
+  reason: string;
+  node_ref_id?: string;
+  adjustment_type: 'insert' | 'remove' | 'reorder' | 'difficulty';
+}
+
+export interface LearningPathWithNodes extends LearningPath {
+  nodes: LearningPathNodeRef[];
+}
+
+export interface LearningPathNodeRefWithResources extends LearningPathNodeRef {
+  resources: LearningResource[];
+}
+
+export interface LearningPathNodeCard {
+  id: string;
+  node_ref_id: string;
+  card_id: string;
+  card_type: 'qa' | 'choice' | 'judge' | 'essay';
+  auto_generated: boolean;
+  created_at: string;
+}
+
+export interface GenerateCardsForNodeRefData {
+  node_ref_id: string;
+  card_types?: ('qa' | 'choice' | 'judge' | 'essay')[];
+  regenerate?: boolean;
+}
+
+export interface LearningPathNodeRefWithCards extends LearningPathNodeRef {
+  resources: LearningResource[];
+  cards: LearningPathNodeCard[];
+}
+
+export interface LearningPathNodeDependency {
+  id: string;
+  path_id: string;
+  node_ref_id: string;
+  depends_on_node_ref_id: string;
+  dependency_type: 'prerequisite' | 'sequence';
+  created_at: string;
 }

@@ -181,20 +181,24 @@ export const useGraphNodeOperations = ({
     });
   };
 
-  const handleDeleteNode = (nodeToDelete: Node | null = selectedNode) => {
+  const handleDeleteNode = (nodeToDelete: Node | null = selectedNode, hardDelete: boolean = false) => {
     if (!nodeToDelete || !id) return;
     
     const connectedEdges = edges.filter(e => 
       e.source_node_id === nodeToDelete.id || e.target_node_id === nodeToDelete.id
     );
     
+    const message = hardDelete 
+      ? `确定要彻底删除知识点 "${nodeToDelete.title}" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！`
+      : `确定要从当前图谱移除节点 "${nodeToDelete.title}" 吗？`;
+    
     setConfirmModal({
       isOpen: true,
-      title: '删除节点',
-      message: `确定要删除节点 "${nodeToDelete.title}" 吗?`,
+      title: hardDelete ? '彻底删除知识点' : '移除节点',
+      message,
       onConfirm: () => {
-        deleteNodeMutation.mutate({ id: nodeToDelete.id, graphId: id }, {
-          onSuccess: () => {
+        deleteNodeMutation.mutate({ id: nodeToDelete.id, graphId: id, hardDelete }, {
+          onSuccess: (data) => {
             record({ 
               type: 'DELETE_NODE', 
               payload: { node: nodeToDelete, edges: connectedEdges } 
@@ -202,7 +206,14 @@ export const useGraphNodeOperations = ({
             if (selectedNode?.id === nodeToDelete.id) {
               handleCloseSidebar();
             }
-            addMessage({ type: 'success', content: '节点已删除' });
+            if (hardDelete && data?.affected_graphs?.length) {
+              addMessage({ 
+                type: 'success', 
+                content: `知识点已从 ${data.affected_graphs.length} 个图谱中彻底删除` 
+              });
+            } else {
+              addMessage({ type: 'success', content: '节点已删除' });
+            }
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           },
           onError: (err: any) => {
@@ -365,6 +376,7 @@ export const useGraphNodeOperations = ({
         tags: []
       });
       setSidebarMode('create');
-    }
+    },
+    handleHardDelete: (nodeToDelete: Node | null = selectedNode) => handleDeleteNode(nodeToDelete, true)
   };
 };

@@ -9,10 +9,13 @@ import { cacheService, CacheKeys } from '../services/cache.js';
 import { supabaseAdmin } from '../supabase.js';
 import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
+import { aiService } from '../services/aiService.js';
 import { z } from 'zod';
 import { saveNodesSchema } from '../schemas/index.js';
 
 const router = Router();
+
+const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
 const URL_PATTERN = /^https?:\/\/.+/;
 
@@ -296,15 +299,16 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : '用�
 });
 
 router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: AuthRequest, res: Response) => {
-  const { graph_id, nodes } = req.body;
+  const { graph_id, nodes, auto_reuse = true, reuse_threshold = REUSE_SIMILARITY_THRESHOLD } = req.body;
 
   try {
-    const { data: existingNodes } = await req.supabase!
-      .from('nodes')
+    const { data: existingGraphNodes } = await req.supabase!
+      .from('graph_nodes')
       .select('id')
-      .eq('graph_id', graph_id);
+      .eq('graph_id', graph_id)
+      .is('deleted_at', null);
 
-    const existingCount = existingNodes?.length || 0;
+    const existingCount = existingGraphNodes?.length || 0;
 
     const nodesWithTempId = nodes
       .filter((node: any) => node.title && node.title.trim() !== "")
@@ -312,22 +316,16 @@ router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: A
         const angle = ((existingCount + index) / (existingCount + nodes.length)) * Math.PI * 2;
         const radius = 15 + (existingCount + index) * 2;
         
-        // Use frontend's id directly as tempId to maintain parent-child relationships
         const tempId = node.id || `temp-${index}`;
         
         return {
           tempId,
           parentId: node.parentId || null,
-          graph_id,
           title: node.title,
           content: node.content || '',
+          level: node.level || 'normal',
           x_position: Math.round(Math.cos(angle) * radius),
           y_position: Math.round(Math.sin(angle) * radius),
-          level: node.level || 'normal',
-          properties: { 
-            source: 'ai-generated',
-            generated_at: new Date().toISOString()
-          }
         };
       });
 
@@ -335,42 +333,144 @@ router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: A
       return res.json({ success: true, nodeCount: 0, edgeCount: 0 });
     }
 
-    const nodesToInsert = nodesWithTempId.map(({ tempId, parentId, ...node }: { tempId: string; parentId: string | null; [key: string]: any }) => node);
-    
-    const { data: insertedNodes, error: nodeError } = await req.supabase!
-      .from('nodes')
-      .insert(nodesToInsert)
-      .select('id, title');
+    const knowledgePointMap = new Map<string, { kpId: string; reused: boolean }>();
+    const createdKnowledgePoints: Array<{ tempId: string; kpId: string; title: string }> = [];
 
-    if (nodeError) throw new AppError(nodeError.message, 500, ErrorCodes.INTERNAL_ERROR);
+    for (const nodeData of nodesWithTempId) {
+      let knowledgePointId: string | null = null;
+      let reused = false;
 
-    const titleToDbId = new Map<string, string>();
-    insertedNodes?.forEach((node: { id: string; title: string }) => {
-      titleToDbId.set(node.title, node.id);
+      if (auto_reuse) {
+        try {
+          const textToEmbed = [nodeData.title, nodeData.content].filter(Boolean).join('\n');
+          
+          if (textToEmbed) {
+            const embedding = await aiService.generateEmbedding(textToEmbed);
+            
+            if (embedding) {
+              const { data: similarKps } = await req.supabase!.rpc('search_similar_knowledge_points', {
+                p_query_embedding: embedding,
+                p_user_id: req.user.id,
+                p_match_threshold: reuse_threshold,
+                p_match_count: 1
+              });
+              
+              if (similarKps && similarKps.length > 0) {
+                knowledgePointId = similarKps[0].id;
+                reused = true;
+                logger.info(`Auto-reusing knowledge point: ${knowledgePointId} for: ${nodeData.title}`);
+              }
+            }
+          }
+        } catch (error) {
+          logger.warn('Failed to search for similar knowledge points during auto-graph:', error);
+        }
+      }
+
+      if (!knowledgePointId) {
+        const kpData: any = {
+          title: nodeData.title,
+          content: nodeData.content,
+          properties: { 
+            source: 'ai-generated',
+            generated_at: new Date().toISOString()
+          },
+          visibility: 'private',
+          owner_id: req.user.id,
+        };
+
+        try {
+          const textToEmbed = [nodeData.title, nodeData.content].filter(Boolean).join('\n');
+          if (textToEmbed) {
+            const embedding = await aiService.generateEmbedding(textToEmbed);
+            if (embedding) {
+              kpData.embedding = embedding;
+            }
+          }
+        } catch (error) {
+          logger.warn('Failed to generate embedding for AI-generated knowledge point:', error);
+        }
+
+        const { data: newKp, error: kpError } = await req.supabase!
+          .from('knowledge_points')
+          .insert([kpData])
+          .select('id')
+          .single();
+
+        if (kpError) {
+          logger.error('Failed to create knowledge point:', kpError);
+          continue;
+        }
+
+        knowledgePointId = newKp.id;
+      }
+
+      if (knowledgePointId) {
+        knowledgePointMap.set(nodeData.tempId, { kpId: knowledgePointId, reused });
+        createdKnowledgePoints.push({ tempId: nodeData.tempId, kpId: knowledgePointId, title: nodeData.title });
+      }
+    }
+
+    const graphNodesToInsert = nodesWithTempId
+      .filter(nodeData => knowledgePointMap.has(nodeData.tempId))
+      .map(nodeData => {
+        const kpInfo = knowledgePointMap.get(nodeData.tempId)!;
+        return {
+          graph_id,
+          knowledge_point_id: kpInfo.kpId,
+          x_position: nodeData.x_position,
+          y_position: nodeData.y_position,
+          level: nodeData.level,
+          is_accepted: true,
+        };
+      });
+
+    if (graphNodesToInsert.length === 0) {
+      return res.json({ success: true, nodeCount: 0, edgeCount: 0 });
+    }
+
+    const { data: insertedGraphNodes, error: gnError } = await req.supabase!
+      .from('graph_nodes')
+      .insert(graphNodesToInsert)
+      .select('id, knowledge_point_id');
+
+    if (gnError) {
+      logger.error('Failed to create graph nodes:', gnError);
+      throw new AppError(gnError.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    const kpIdToGnId = new Map<string, string>();
+    insertedGraphNodes?.forEach((gn: { id: string; knowledge_point_id: string }) => {
+      kpIdToGnId.set(gn.knowledge_point_id, gn.id);
     });
 
-    logger.info('Title to DB ID mapping:', Object.fromEntries(titleToDbId));
-    logger.info('Nodes with temp ID:', nodesWithTempId.map((n: { tempId: string; parentId: string | null; title: string }) => ({ tempId: n.tempId, parentId: n.parentId, title: n.title })));
+    const tempIdToGnId = new Map<string, string>();
+    createdKnowledgePoints.forEach(({ tempId, kpId }) => {
+      const gnId = kpIdToGnId.get(kpId);
+      if (gnId) {
+        tempIdToGnId.set(tempId, gnId);
+      }
+    });
 
     const edgesToInsert: any[] = [];
     
     nodesWithTempId.forEach((nodeData: { tempId: string; parentId: string | null; title: string }) => {
       if (nodeData.parentId) {
-        const parentNode = nodesWithTempId.find((n: { tempId: string }) => n.tempId === nodeData.parentId);
-        if (parentNode) {
-          const parentDbId = titleToDbId.get(parentNode.title);
-          const childDbId = titleToDbId.get(nodeData.title);
+        const parentGnId = tempIdToGnId.get(nodeData.parentId);
+        const childGnId = tempIdToGnId.get(nodeData.tempId);
+        
+        if (parentGnId && childGnId) {
+          const parentKpInfo = knowledgePointMap.get(nodeData.parentId);
+          const childKpInfo = knowledgePointMap.get(nodeData.tempId);
           
-          logger.info(`Creating edge: ${parentNode.title}(${parentDbId}) -> ${nodeData.title}(${childDbId})`);
-          
-          if (parentDbId && childDbId) {
-            edgesToInsert.push({
-              source_node_id: parentDbId,
-              target_node_id: childDbId,
-              relationship_type: 'contains',
-              graph_id
-            });
-          }
+          edgesToInsert.push({
+            source_node_id: parentKpInfo?.kpId,
+            target_node_id: childKpInfo?.kpId,
+            source_graph_node_id: parentGnId,
+            target_graph_node_id: childGnId,
+            relationship_type: 'contains',
+            graph_id
+          });
         }
       }
     });
@@ -387,14 +487,17 @@ router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: A
       }
     }
 
+    const reusedCount = Array.from(knowledgePointMap.values()).filter(kp => kp.reused).length;
+
     await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
     await cacheService.del(CacheKeys.GRAPH_NODES('public', graph_id));
 
     res.json({ 
       success: true, 
-      nodeCount: nodesWithTempId.length, 
+      nodeCount: graphNodesToInsert.length, 
       edgeCount: edgesToInsert.length,
-      nodes: insertedNodes
+      reusedCount,
+      nodes: insertedGraphNodes
     });
 
   } catch (error: any) {

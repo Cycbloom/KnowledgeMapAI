@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { aiService } from '../services/aiService.js';
+import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -54,6 +55,26 @@ const searchSimilarSchema = z.object({
 const combinedViewSchema = z.object({
   body: z.object({
     graph_ids: z.array(z.string().uuid()).min(2),
+  })
+});
+
+const submitPublicSchema = z.object({
+  body: z.object({
+    knowledge_point_id: z.string().uuid(),
+    suggested_changes: z.object({
+      title: z.string().min(1).max(255).optional(),
+      content: z.string().optional(),
+      learning_material: z.string().optional(),
+    }).optional(),
+  })
+});
+
+const rejectSuggestionSchema = z.object({
+  body: z.object({
+    reason: z.string().min(1),
+  }),
+  params: z.object({
+    id: z.string().uuid(),
   })
 });
 
@@ -436,6 +457,274 @@ router.post('/combined-view', requireAuth, validate(combinedViewSchema), async (
   });
   
   res.json(result);
+});
+
+router.get('/knowledge-points/public', async (req: AuthRequest, res: Response) => {
+  const { search, limit = 20, offset = 0 } = req.query;
+  
+  let query = req.supabase!
+    .from('knowledge_points')
+    .select('id, title, content, learning_material, properties, visibility, owner_id, created_at, updated_at', { count: 'exact' })
+    .eq('visibility', 'public');
+  
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+  }
+  
+  const { data, error, count } = await query
+    .order('updated_at', { ascending: false })
+    .range(Number(offset), Number(offset) + Number(limit) - 1);
+  
+  if (error) {
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  }
+  
+  res.json({
+    items: data || [],
+    total: count || 0
+  });
+});
+
+router.post('/knowledge-points/submit-public', requireAuth, validate(submitPublicSchema), async (req: AuthRequest, res: Response) => {
+  const { knowledge_point_id, suggested_changes } = req.body;
+  
+  const { data: kp, error: kpError } = await req.supabase!
+    .from('knowledge_points')
+    .select('id, title, content, owner_id, visibility')
+    .eq('id', knowledge_point_id)
+    .single();
+  
+  if (kpError || !kp) {
+    throw new AppError('Knowledge point not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+  }
+  
+  if (kp.owner_id !== req.user.id) {
+    throw new AppError('Permission denied', 403, ErrorCodes.FORBIDDEN);
+  }
+  
+  const autoReviewResult = {
+    passed: true,
+    issues: [] as string[]
+  };
+  
+  const titleToCheck = suggested_changes?.title || kp.title;
+  const contentToCheck = suggested_changes?.content || kp.content;
+  
+  if (!titleToCheck || titleToCheck.trim().length < 2) {
+    autoReviewResult.passed = false;
+    autoReviewResult.issues.push('标题太短，至少需要2个字符');
+  }
+  
+  if (titleToCheck && titleToCheck.length > 200) {
+    autoReviewResult.passed = false;
+    autoReviewResult.issues.push('标题过长，最多200个字符');
+  }
+  
+  if (!contentToCheck || contentToCheck.trim().length < 10) {
+    autoReviewResult.passed = false;
+    autoReviewResult.issues.push('内容太短，至少需要10个字符');
+  }
+  
+  try {
+    const textToEmbed = [titleToCheck, contentToCheck].filter(Boolean).join('\n');
+    if (textToEmbed) {
+      const embedding = await aiService.generateEmbedding(textToEmbed);
+      
+      if (embedding) {
+        const { data: similarKps } = await req.supabase!.rpc('search_similar_knowledge_points', {
+          p_query_embedding: embedding,
+          p_user_id: req.user.id,
+          p_match_threshold: 0.9,
+          p_match_count: 5
+        });
+        
+        const publicDuplicates = (similarKps || []).filter(
+          (skp: any) => skp.id !== knowledge_point_id && skp.visibility === 'public'
+        );
+        
+        if (publicDuplicates.length > 0) {
+          autoReviewResult.passed = false;
+          autoReviewResult.issues.push(`发现${publicDuplicates.length}个相似的公共知识点，可能存在重复`);
+        }
+      }
+    }
+  } catch (error) {
+    logger.warn('Auto-review similarity check failed:', error);
+  }
+  
+  const { error: updateError } = await req.supabase!
+    .from('knowledge_points')
+    .update({ 
+      visibility: 'pending',
+      properties: {
+        ...kp,
+        suggested_changes: suggested_changes || null,
+        auto_review_result: autoReviewResult,
+        submitted_for_public_at: new Date().toISOString()
+      }
+    })
+    .eq('id', knowledge_point_id);
+  
+  if (updateError) {
+    throw new AppError(updateError.message, 500, ErrorCodes.INTERNAL_ERROR);
+  }
+  
+  res.json({
+    success: true,
+    message: autoReviewResult.passed 
+      ? '知识点已提交审核，等待管理员批准' 
+      : '知识点已提交，但自动审核发现问题',
+    auto_review_result: autoReviewResult
+  });
+});
+
+router.get('/admin/knowledge-points/pending', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { limit = 20, offset = 0 } = req.query;
+  
+  const { data: userProfile } = await req.supabase!
+    .from('users')
+    .select('role')
+    .eq('id', req.user.id)
+    .single();
+  
+  if (!userProfile || userProfile.role !== 'admin') {
+    throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
+  }
+  
+  const { data, error, count } = await req.supabase!
+    .from('knowledge_points')
+    .select('id, title, content, learning_material, properties, owner_id, created_at, updated_at', { count: 'exact' })
+    .eq('visibility', 'pending')
+    .order('updated_at', { ascending: true })
+    .range(Number(offset), Number(offset) + Number(limit) - 1);
+  
+  if (error) {
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  }
+  
+  const items = (data || []).map(kp => ({
+    id: kp.id,
+    knowledge_point_id: kp.id,
+    knowledge_point: kp,
+    suggested_changes: kp.properties?.suggested_changes || null,
+    submitted_by: kp.owner_id,
+    submitted_at: kp.properties?.submitted_for_public_at || kp.updated_at,
+    auto_review_result: kp.properties?.auto_review_result || { passed: true, issues: [] }
+  }));
+  
+  res.json({
+    items,
+    total: count || 0
+  });
+});
+
+router.post('/admin/knowledge-points/suggestions/:id/approve', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  
+  const { data: userProfile } = await req.supabase!
+    .from('users')
+    .select('role')
+    .eq('id', req.user.id)
+    .single();
+  
+  if (!userProfile || userProfile.role !== 'admin') {
+    throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
+  }
+  
+  const { data: kp, error: kpError } = await req.supabase!
+    .from('knowledge_points')
+    .select('*')
+    .eq('id', id)
+    .eq('visibility', 'pending')
+    .single();
+  
+  if (kpError || !kp) {
+    throw new AppError('Knowledge point not found or not pending', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+  }
+  
+  const suggestedChanges = kp.properties?.suggested_changes;
+  const updates: any = {
+    visibility: 'public',
+  };
+  
+  if (suggestedChanges) {
+    if (suggestedChanges.title) updates.title = suggestedChanges.title;
+    if (suggestedChanges.content) updates.content = suggestedChanges.content;
+    if (suggestedChanges.learning_material) updates.learning_material = suggestedChanges.learning_material;
+  }
+  
+  updates.properties = {
+    ...kp.properties,
+    approved_at: new Date().toISOString(),
+    approved_by: req.user.id,
+    suggested_changes: null
+  };
+  
+  const { data, error } = await req.supabase!
+    .from('knowledge_points')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  }
+  
+  res.json({
+    success: true,
+    knowledge_point: data
+  });
+});
+
+router.post('/admin/knowledge-points/suggestions/:id/reject', requireAuth, validate(rejectSuggestionSchema), async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  
+  const { data: userProfile } = await req.supabase!
+    .from('users')
+    .select('role')
+    .eq('id', req.user.id)
+    .single();
+  
+  if (!userProfile || userProfile.role !== 'admin') {
+    throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
+  }
+  
+  const { data: kp, error: kpError } = await req.supabase!
+    .from('knowledge_points')
+    .select('*')
+    .eq('id', id)
+    .eq('visibility', 'pending')
+    .single();
+  
+  if (kpError || !kp) {
+    throw new AppError('Knowledge point not found or not pending', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+  }
+  
+  const { data, error } = await req.supabase!
+    .from('knowledge_points')
+    .update({
+      visibility: 'private',
+      properties: {
+        ...kp.properties,
+        rejected_at: new Date().toISOString(),
+        rejected_by: req.user.id,
+        rejection_reason: reason,
+        suggested_changes: null
+      }
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  }
+  
+  res.json({
+    success: true
+  });
 });
 
 export default router;

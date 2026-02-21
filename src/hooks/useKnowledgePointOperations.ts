@@ -137,16 +137,16 @@ export const useKnowledgePointOperations = ({
   ) => {
     try {
       if (options.hardDelete) {
-        const result = await api.nodes.delete(nodeId, { hard_delete: true });
+        const result = await api.nodes.delete(nodeId, true);
         
-        if (result.affected_graphs && result.affected_graphs > 1) {
+        if (result.affected_graphs && result.affected_graphs.length > 1) {
           addMessage({ 
             type: 'warning', 
-            content: `此知识点已在 ${result.affected_graphs} 个图谱中删除` 
+            content: `此知识点已在 ${result.affected_graphs.length} 个图谱中删除` 
           });
         }
       } else {
-        await api.nodes.delete(nodeId, { hard_delete: false });
+        await api.nodes.delete(nodeId, false);
       }
       
       onNodeDeleted?.(nodeId);

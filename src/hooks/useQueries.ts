@@ -305,21 +305,17 @@ export const useCreateNodeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: api.nodes.create,
+    mutationFn: (variables: any) => api.nodes.create(variables),
     onMutate: async (newNodeVariables) => {
       const graphId = newNodeVariables.graph_id;
       
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: queryKeys.graphData(graphId) });
 
-      // Snapshot the previous value
       const previousData = queryClient.getQueryData(queryKeys.graphData(graphId));
 
-      // Optimistically update to the new value
       queryClient.setQueryData(queryKeys.graphData(graphId), (old: { nodes: Node[], edges: Edge[] } | undefined) => {
         if (!old) return { nodes: [], edges: [] };
         
-        // Create a temporary node
         const tempNode: Node = {
           id: `temp-${  Date.now()}`,
           x_position: newNodeVariables.x_position ?? 0,
@@ -336,17 +332,19 @@ export const useCreateNodeMutation = () => {
         };
       });
 
-      // Return a context object with the snapshotted value
       return { previousData };
     },
+    onSuccess: (data, variables) => {
+      if (data && (data as any)._reused) {
+        console.log('Node reused existing knowledge point:', (data as any).knowledge_point_id);
+      }
+    },
     onError: (err, newNode, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.graphData(newNode.graph_id), context.previousData);
       }
     },
     onSettled: (data, error, variables) => {
-      // Always refetch after error or success:
       queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graph_id) });
     },
   });
@@ -400,7 +398,8 @@ export const useDeleteNodeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, graphId }: { id: string; graphId: string }) => api.nodes.delete(id),
+    mutationFn: ({ id, graphId, hardDelete }: { id: string; graphId: string; hardDelete?: boolean }) => 
+      api.nodes.delete(id, hardDelete),
     onMutate: async ({ id, graphId }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.graphData(graphId) });
       const previousData = queryClient.getQueryData(queryKeys.graphData(graphId));
@@ -415,6 +414,13 @@ export const useDeleteNodeMutation = () => {
       });
 
       return { previousData };
+    },
+    onSuccess: (data, variables) => {
+      if (data?.affected_graphs) {
+        data.affected_graphs.forEach((graphId: string) => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.graphData(graphId) });
+        });
+      }
     },
     onError: (err, variables, context) => {
       if (context?.previousData) {

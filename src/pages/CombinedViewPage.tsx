@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useCombinedView } from '../hooks/useCombinedView';
+import { CombinedViewCanvas } from '../components/CombinedView/CombinedViewCanvas';
 import { api } from '../services/api';
-import type { Graph, CombinedViewLayoutMode } from '../types';
+import type { Graph, CombinedViewLayoutMode, KnowledgePoint, GraphNodeWithKnowledgePoint, Edge } from '../types';
 
 interface GraphSelectorProps {
   selectedIds: string[];
@@ -70,6 +71,21 @@ const GraphSelector: React.FC<GraphSelectorProps> = ({ selectedIds, onToggle, on
   );
 };
 
+interface MergedNode {
+  id: string;
+  knowledgePoint: KnowledgePoint;
+  graphIds: string[];
+  graphNodes: GraphNodeWithKnowledgePoint[];
+  isShared: boolean;
+  primaryColor: string;
+  colors: string[];
+}
+
+interface MergedEdge extends Edge {
+  graphId: string;
+  color: string;
+}
+
 interface CombinedViewPageProps {
   initialGraphIds?: string[];
 }
@@ -77,11 +93,12 @@ interface CombinedViewPageProps {
 export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraphIds }) => {
   const [showSelector, setShowSelector] = useState(!initialGraphIds || initialGraphIds.length === 0);
   const [tempSelectedIds, setTempSelectedIds] = useState<string[]>(initialGraphIds || []);
+  const [selectedNode, setSelectedNode] = useState<MergedNode | null>(null);
   
   const {
     graphIds,
-    mergedNodes,
-    mergedEdges,
+    mergedNodes: hookMergedNodes,
+    mergedEdges: hookMergedEdges,
     isLoading,
     error,
     layoutMode,
@@ -95,7 +112,6 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
     removeGraph,
     toggleGraphVisibility,
     getGraphColor,
-    getNodeColors
   } = useCombinedView({ initialGraphIds });
 
   useEffect(() => {
@@ -123,6 +139,49 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
     });
     setShowSelector(false);
   };
+
+  const mergedNodes: MergedNode[] = useMemo(() => {
+    return hookMergedNodes.map(node => ({
+      id: node.id,
+      knowledgePoint: {
+        id: node.id,
+        title: node.title,
+        content: node.content,
+        learning_material: node.learning_material,
+        properties: node.properties,
+        visibility: node.visibility,
+        owner_id: node.owner_id,
+        created_at: node.created_at,
+        updated_at: node.updated_at,
+      },
+      graphIds: node.graphIds,
+      graphNodes: node.graphNodes,
+      isShared: node.isShared,
+      primaryColor: node.colors[0] || '#6B7280',
+      colors: node.colors,
+    }));
+  }, [hookMergedNodes]);
+
+  const mergedEdges: MergedEdge[] = useMemo(() => {
+    return hookMergedEdges.map(edge => ({
+      ...edge,
+      graphId: (edge as any).graphId || '',
+      color: getGraphColor((edge as any).graphId || ''),
+    }));
+  }, [hookMergedEdges, getGraphColor]);
+
+  const handleNodeClick = (node: MergedNode) => {
+    setSelectedNode(node);
+  };
+
+  const stats = useMemo(() => {
+    const totalNodes = mergedNodes.length;
+    const sharedNodes = mergedNodes.filter(n => n.isShared).length;
+    const totalEdges = mergedEdges.length;
+    const visibleNodes = mergedNodes.filter(n => !n.graphIds.every(gid => hiddenGraphIds.has(gid))).length;
+    
+    return { totalNodes, sharedNodes, totalEdges, visibleNodes };
+  }, [mergedNodes, mergedEdges, hiddenGraphIds]);
 
   if (showSelector) {
     return (
@@ -166,13 +225,13 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+    <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="bg-gray-800 border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">联立视图</h1>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {graphIds.length} 个图谱
+            <h1 className="text-xl font-semibold text-white">联立视图</h1>
+            <span className="text-sm text-gray-400">
+              {graphIds.length} 个图谱 | {stats.visibleNodes} / {stats.totalNodes} 个知识点
             </span>
           </div>
           
@@ -180,7 +239,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
             <select
               value={layoutMode}
               onChange={(e) => setLayoutMode(e.target.value as CombinedViewLayoutMode)}
-              className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-3 py-1.5 text-sm border border-gray-600 rounded-md bg-gray-700 text-white"
             >
               <option value="grouped">分组布局</option>
               <option value="merged">融合布局</option>
@@ -189,7 +248,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
             
             <button
               onClick={() => setShowSelector(true)}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+              className="px-3 py-1.5 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-md hover:bg-gray-600"
             >
               添加/移除图谱
             </button>
@@ -210,7 +269,7 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
                 onMouseLeave={() => setHighlightedGraphId(null)}
                 className={`px-3 py-1 text-sm rounded-full border-2 transition-all ${
                   isHidden 
-                    ? 'opacity-50 border-gray-300 dark:border-gray-600' 
+                    ? 'opacity-50 border-gray-600' 
                     : isHighlighted
                       ? 'border-opacity-100 scale-105'
                       : 'border-opacity-60'
@@ -234,20 +293,72 @@ export const CombinedViewPage: React.FC<CombinedViewPageProps> = ({ initialGraph
         </div>
       </div>
       
-      <div className="flex-1 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow h-full min-h-[600px] relative">
-          <div className="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400">
-            <div className="text-center">
-              <p className="mb-2">联立视图渲染区域</p>
-              <p className="text-sm">
-                {mergedNodes.length} 个知识点，{mergedEdges.length} 条边
-              </p>
-              <p className="text-sm mt-1">
-                其中 {mergedNodes.filter(n => n.isShared).length} 个知识点在多个图谱中共享
-              </p>
-            </div>
+      <div className="flex-1 relative">
+        <CombinedViewCanvas
+          nodes={mergedNodes}
+          edges={mergedEdges}
+          graphColors={graphColors}
+          layoutMode={layoutMode}
+          highlightedGraphId={highlightedGraphId}
+          hiddenGraphIds={hiddenGraphIds}
+          onNodeClick={handleNodeClick}
+        />
+        
+        <div className="absolute top-4 left-4 bg-gray-800/80 backdrop-blur-sm rounded-lg p-3 text-sm">
+          <div className="text-gray-300 space-y-1">
+            <p>总知识点: <span className="text-white font-medium">{stats.totalNodes}</span></p>
+            <p>共享知识点: <span className="text-blue-400 font-medium">{stats.sharedNodes}</span></p>
+            <p>边数量: <span className="text-white font-medium">{stats.totalEdges}</span></p>
           </div>
         </div>
+        
+        {selectedNode && (
+          <div className="absolute top-4 right-4 w-72 bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 text-sm">
+            <div className="flex items-start justify-between">
+              <h3 className="font-semibold text-white">{selectedNode.knowledgePoint.title}</h3>
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {selectedNode.knowledgePoint.content && (
+              <p className="mt-2 text-gray-300 text-xs line-clamp-3">
+                {selectedNode.knowledgePoint.content}
+              </p>
+            )}
+            
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <p className="text-gray-400 text-xs mb-2">所属图谱:</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedNode.graphIds.map(gid => (
+                  <span
+                    key={gid}
+                    className="px-2 py-0.5 rounded text-xs"
+                    style={{ 
+                      backgroundColor: `${graphColors[gid]}30`,
+                      color: graphColors[gid]
+                    }}
+                  >
+                    {gid.slice(0, 4)}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mt-2">
+              <span className={`text-xs px-2 py-0.5 rounded ${
+                selectedNode.isShared 
+                  ? 'bg-blue-900/50 text-blue-300' 
+                  : 'bg-gray-700 text-gray-300'
+              }`}>
+                {selectedNode.isShared ? '共享知识点' : '独立知识点'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

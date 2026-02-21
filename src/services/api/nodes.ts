@@ -28,11 +28,16 @@ export const nodesApi = {
     properties?: Record<string, unknown>;
   }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
-  delete: (id: string, options?: { hard_delete?: boolean }) => 
-    request<{ success: boolean; affected_graphs?: number }>(`/nodes/${id}`, { 
-      method: 'DELETE',
-      body: JSON.stringify(options)
-    }),
+  delete: (id: string, hardDelete?: boolean) => {
+    const url = hardDelete ? `/nodes/${id}?hard_delete=true` : `/nodes/${id}`;
+    return request<{ 
+      message: string;
+      affected_graphs?: string[];
+      deleted_graph_nodes?: number;
+      deleted_edges?: number;
+      deleted_cards?: number;
+    }>(url, { method: 'DELETE' });
+  },
   
   batchDelete: (node_ids: string[], options?: { hard_delete?: boolean }) => 
     request('/nodes/batch-delete', { 

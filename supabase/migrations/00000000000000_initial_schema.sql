@@ -553,6 +553,12 @@ CREATE POLICY "Users can delete relations for graphs they own"
     EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = source_graph_id AND user_id = auth.uid())
   );
 
+-- Backup Snapshots
+ALTER TABLE backup_snapshots ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own backup snapshots" ON backup_snapshots FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own backup snapshots" ON backup_snapshots FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own backup snapshots" ON backup_snapshots FOR DELETE USING (auth.uid() = user_id);
+
 -- =====================================================
 -- FUNCTIONS
 -- =====================================================

@@ -156,8 +156,8 @@ async function createKnowledgeGraphs(userId: string) {
   }
 }
 
-async function createNodesAndEdges(userId: string) {
-  console.log('🔧 Creating nodes and edges...');
+async function createKnowledgePointsAndGraphNodes(userId: string) {
+  console.log('🔧 Creating knowledge points and graph nodes...');
   
   const { data: graph } = await supabase
     .from('knowledge_graphs')
@@ -171,26 +171,79 @@ async function createNodesAndEdges(userId: string) {
     return;
   }
   
-  const { data: existingNodes } = await supabase
-    .from('nodes')
+  const { data: existingGraphNodes } = await supabase
+    .from('graph_nodes')
     .select('id')
     .eq('graph_id', graph.id)
     .limit(1);
   
-  if (existingNodes && existingNodes.length > 0) {
-    console.log('  ⏭️  Nodes already exist');
-    return;
+  if (existingGraphNodes && existingGraphNodes.length > 0) {
+    console.log('  ⏭️  Graph nodes already exist');
+    
+    const { data: existingKnowledgePoints } = await supabase
+      .from('graph_nodes')
+      .select('knowledge_point_id, knowledge_points(title)')
+      .eq('graph_id', graph.id);
+    
+    const nodeMap: Record<string, string> = {};
+    for (const gn of existingKnowledgePoints || []) {
+      const kp = gn.knowledge_points as unknown as { title: string }[] | null;
+      if (kp && kp.length > 0) {
+        nodeMap[kp[0].title] = gn.knowledge_point_id;
+      }
+    }
+    
+    return { graphId: graph.id, nodeMap };
   }
   
-  const nodeMap: Record<string, string> = {};
+  const knowledgePointMap: Record<string, string> = {};
   
   for (const node of GRAPH_DATA.nodes) {
+    const { data: existingKP } = await supabase
+      .from('knowledge_points')
+      .select('id')
+      .eq('owner_id', userId)
+      .eq('title', node.title)
+      .single();
+    
+    if (existingKP) {
+      knowledgePointMap[node.title] = existingKP.id;
+      console.log(`  ⏭️  Knowledge point "${node.title}" already exists`);
+      continue;
+    }
+    
     const { data, error } = await supabase
-      .from('nodes')
+      .from('knowledge_points')
       .insert({
-        graph_id: graph.id,
         title: node.title,
         content: node.content,
+        owner_id: userId,
+        visibility: 'private',
+      })
+      .select('id')
+      .single();
+    
+    if (error) {
+      console.error(`  ❌ Error creating knowledge point "${node.title}":`, error);
+    } else {
+      knowledgePointMap[node.title] = data.id;
+      console.log(`  ✅ Knowledge point "${node.title}" created`);
+    }
+  }
+  
+  console.log('🔧 Creating graph nodes...');
+  
+  const graphNodeMap: Record<string, string> = {};
+  
+  for (const node of GRAPH_DATA.nodes) {
+    const kpId = knowledgePointMap[node.title];
+    if (!kpId) continue;
+    
+    const { data, error } = await supabase
+      .from('graph_nodes')
+      .insert({
+        graph_id: graph.id,
+        knowledge_point_id: kpId,
         level: node.level,
         x_position: node.x,
         y_position: node.y,
@@ -200,21 +253,21 @@ async function createNodesAndEdges(userId: string) {
       .single();
     
     if (error) {
-      console.error(`  ❌ Error creating node "${node.title}":`, error);
+      console.error(`  ❌ Error creating graph node "${node.title}":`, error);
     } else {
-      nodeMap[node.title] = data.id;
-      console.log(`  ✅ Node "${node.title}" created`);
+      graphNodeMap[node.title] = data.id;
+      console.log(`  ✅ Graph node "${node.title}" created`);
     }
   }
   
   console.log('🔧 Creating edges...');
   
   for (const edge of GRAPH_DATA.edges) {
-    const sourceId = nodeMap[edge.source];
-    const targetId = nodeMap[edge.target];
+    const sourceKPId = knowledgePointMap[edge.source];
+    const targetKPId = knowledgePointMap[edge.target];
     
-    if (!sourceId || !targetId) {
-      console.error(`  ❌ Edge nodes not found: ${edge.source} -> ${edge.target}`);
+    if (!sourceKPId || !targetKPId) {
+      console.error(`  ❌ Edge knowledge points not found: ${edge.source} -> ${edge.target}`);
       continue;
     }
     
@@ -222,8 +275,8 @@ async function createNodesAndEdges(userId: string) {
       .from('edges')
       .insert({
         graph_id: graph.id,
-        source_node_id: sourceId,
-        target_node_id: targetId,
+        source_knowledge_point_id: sourceKPId,
+        target_knowledge_point_id: targetKPId,
         relationship_type: edge.type || 'contains',
         weight: edge.type === 'related' ? 2 : 1,
       });
@@ -235,7 +288,7 @@ async function createNodesAndEdges(userId: string) {
     }
   }
   
-  return { graphId: graph.id, nodeMap };
+  return { graphId: graph.id, nodeMap: knowledgePointMap };
 }
 
 async function createStudyCards(userId: string, graphId: string, nodeMap: Record<string, string>) {
@@ -254,19 +307,20 @@ async function createStudyCards(userId: string, graphId: string, nodeMap: Record
   }
   
   for (const card of GRAPH_DATA.cards) {
-    const nodeId = nodeMap[card.nodeTitle];
+    const knowledgePointId = nodeMap[card.nodeTitle];
     
-    if (!nodeId) {
-      console.error(`  ❌ Node not found for card: ${card.nodeTitle}`);
+    if (!knowledgePointId) {
+      console.error(`  ❌ Knowledge point not found for card: ${card.nodeTitle}`);
       continue;
     }
     
     const { error } = await supabase
       .from('study_cards')
       .insert({
-        node_id: nodeId,
+        knowledge_point_id: knowledgePointId,
         user_id: userId,
         graph_id: graphId,
+        source_graph_id: graphId,
         question: card.question,
         answer: card.answer,
         explanation: card.explanation,
@@ -426,7 +480,7 @@ async function main() {
     const user = await createTestUser();
     await updateUserProfile(user.id);
     await createKnowledgeGraphs(user.id);
-    const result = await createNodesAndEdges(user.id);
+    const result = await createKnowledgePointsAndGraphNodes(user.id);
     
     if (result) {
       await createStudyCards(user.id, result.graphId, result.nodeMap);

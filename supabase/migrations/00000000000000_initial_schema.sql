@@ -1,7 +1,7 @@
 -- =====================================================
 -- Knowledge Map - Unified Database Schema
 -- Generated: 2026-02-13
--- Updated: 2026-02-19 (consolidated migrations)
+-- Updated: 2026-02-21 (知识点与图谱解耦架构)
 -- =====================================================
 
 -- Enable required extensions
@@ -10,6 +10,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Create enum types
 CREATE TYPE prompt_scope AS ENUM ('system', 'user', 'graph');
+CREATE TYPE knowledge_point_visibility AS ENUM ('private', 'public', 'pending');
 
 -- =====================================================
 -- TABLES
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   description TEXT,
   settings JSONB DEFAULT '{}',
   is_public BOOLEAN DEFAULT false,
+  is_favorite BOOLEAN DEFAULT false,
   podcast_script TEXT,
   parent_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
   last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -45,43 +47,65 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Nodes table
-CREATE TABLE IF NOT EXISTS nodes (
+-- Knowledge points table (独立的知识点实体)
+CREATE TABLE IF NOT EXISTS knowledge_points (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
   content TEXT,
   learning_material TEXT,
   properties JSONB DEFAULT '{}',
+  embedding vector(1024),
+  visibility knowledge_point_visibility DEFAULT 'private',
+  owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE knowledge_points IS '独立的知识点实体，支持跨图谱复用';
+COMMENT ON COLUMN knowledge_points.visibility IS '知识点可见性：private(私有), public(公共), pending(待审核)';
+COMMENT ON COLUMN knowledge_points.owner_id IS '知识点所有者，私有知识点仅所有者可见';
+
+-- Graph nodes table (图谱-知识点关联)
+CREATE TABLE IF NOT EXISTS graph_nodes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  graph_id UUID NOT NULL REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
   x_position FLOAT DEFAULT 0,
   y_position FLOAT DEFAULT 0,
-  level TEXT DEFAULT 'normal' CHECK (level IN ('root', 'core', 'sub', 'normal', 'leaf')),
+  level VARCHAR(20) DEFAULT 'normal' CHECK (level IN ('root', 'core', 'sub', 'normal', 'leaf')),
   is_accepted BOOLEAN DEFAULT TRUE,
-  embedding vector(1024),
-  deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  deleted_at TIMESTAMPTZ DEFAULT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(graph_id, knowledge_point_id)
 );
+
+COMMENT ON TABLE graph_nodes IS '图谱与知识点的关联表，存储图谱特定的属性';
+COMMENT ON COLUMN graph_nodes.x_position IS '知识点在图谱中的X坐标';
+COMMENT ON COLUMN graph_nodes.y_position IS '知识点在图谱中的Y坐标';
+COMMENT ON COLUMN graph_nodes.level IS '知识点在图谱中的层级';
 
 -- Edges table
 CREATE TABLE IF NOT EXISTS edges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
-  source_node_id UUID REFERENCES nodes(id) ON DELETE CASCADE,
-  target_node_id UUID REFERENCES nodes(id) ON DELETE CASCADE,
+  source_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
+  target_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
   relationship_type VARCHAR(50) DEFAULT 'related',
   weight INTEGER DEFAULT 1,
   deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(source_node_id, target_node_id, relationship_type)
+  UNIQUE(source_knowledge_point_id, target_knowledge_point_id, relationship_type)
 );
 
 -- Study cards table
 CREATE TABLE IF NOT EXISTS study_cards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  node_id UUID REFERENCES nodes(id) ON DELETE CASCADE,
+  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  source_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
   explanation TEXT,
@@ -285,41 +309,46 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_last_used_at ON knowledge_graphs
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_deleted ON knowledge_graphs(user_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_created ON knowledge_graphs(user_id, created_at DESC) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_public ON knowledge_graphs(id) WHERE is_public = true AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_favorite ON knowledge_graphs(user_id, is_favorite DESC) WHERE deleted_at IS NULL;
 
--- Nodes
-CREATE INDEX IF NOT EXISTS idx_nodes_graph_id ON nodes(graph_id);
-CREATE INDEX IF NOT EXISTS idx_nodes_level ON nodes(level);
-CREATE INDEX IF NOT EXISTS idx_nodes_is_accepted ON nodes(is_accepted);
-CREATE INDEX IF NOT EXISTS idx_nodes_title_trgm ON nodes USING gin (title gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_nodes_content_trgm ON nodes USING gin (content gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_nodes_deleted_at ON nodes(deleted_at);
-CREATE INDEX IF NOT EXISTS idx_nodes_embedding ON nodes USING hnsw (embedding vector_cosine_ops);
-CREATE INDEX IF NOT EXISTS idx_nodes_graph_deleted ON nodes(graph_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at DESC) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_nodes_graph_level ON nodes(graph_id, level) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_nodes_content_search ON nodes USING gin(to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(content, '')));
+-- Knowledge points
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_id ON knowledge_points(owner_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_visibility ON knowledge_points(visibility);
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_title_trgm ON knowledge_points USING gin (title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_content_trgm ON knowledge_points USING gin (content gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_embedding ON knowledge_points USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_public ON knowledge_points(id) WHERE visibility = 'public';
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_visibility ON knowledge_points(owner_id, visibility);
+
+-- Graph nodes
+CREATE INDEX IF NOT EXISTS idx_graph_nodes_graph_id ON graph_nodes(graph_id);
+CREATE INDEX IF NOT EXISTS idx_graph_nodes_knowledge_point_id ON graph_nodes(knowledge_point_id);
+CREATE INDEX IF NOT EXISTS idx_graph_nodes_level ON graph_nodes(level);
+CREATE INDEX IF NOT EXISTS idx_graph_nodes_deleted_at ON graph_nodes(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_graph_nodes_graph_deleted ON graph_nodes(graph_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_graph_nodes_kp_graph ON graph_nodes(knowledge_point_id, graph_id);
 
 -- Edges
-CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_node_id);
-CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_node_id);
+CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_knowledge_point_id);
+CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_knowledge_point_id);
 CREATE INDEX IF NOT EXISTS idx_edges_graph_id ON edges(graph_id);
 CREATE INDEX IF NOT EXISTS idx_edges_deleted_at ON edges(deleted_at);
-CREATE INDEX IF NOT EXISTS idx_edges_source_graph ON edges(source_node_id, graph_id);
-CREATE INDEX IF NOT EXISTS idx_edges_target_graph ON edges(target_node_id, graph_id);
+CREATE INDEX IF NOT EXISTS idx_edges_source_graph ON edges(source_knowledge_point_id, graph_id);
+CREATE INDEX IF NOT EXISTS idx_edges_target_graph ON edges(target_knowledge_point_id, graph_id);
 CREATE INDEX IF NOT EXISTS idx_edges_graph ON edges(graph_id);
 
 -- Study cards
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_next_review ON study_cards(user_id, next_review);
-CREATE INDEX IF NOT EXISTS idx_study_cards_node_id ON study_cards(node_id);
+CREATE INDEX IF NOT EXISTS idx_study_cards_knowledge_point_id ON study_cards(knowledge_point_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_next_review ON study_cards(next_review);
 CREATE INDEX IF NOT EXISTS idx_study_cards_fsrs_state ON study_cards(fsrs_state);
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_graph ON study_cards(user_id, graph_id);
-CREATE INDEX IF NOT EXISTS idx_study_cards_user_node ON study_cards(user_id, node_id);
+CREATE INDEX IF NOT EXISTS idx_study_cards_user_kp ON study_cards(user_id, knowledge_point_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_state ON study_cards(user_id, fsrs_state);
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_last_reviewed ON study_cards(user_id, last_reviewed);
 CREATE INDEX IF NOT EXISTS idx_study_cards_graph_id ON study_cards(graph_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_id ON study_cards(user_id);
-CREATE INDEX IF NOT EXISTS idx_study_cards_node ON study_cards(node_id);
+CREATE INDEX IF NOT EXISTS idx_study_cards_source_graph_id ON study_cards(source_graph_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_next_review_filtered ON study_cards(next_review) WHERE next_review IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_review ON study_cards(user_id, next_review) WHERE next_review IS NOT NULL;
 
@@ -394,19 +423,27 @@ CREATE POLICY "Users can insert own graphs" ON knowledge_graphs FOR INSERT WITH 
 CREATE POLICY "Users can update own graphs" ON knowledge_graphs FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own graphs" ON knowledge_graphs FOR DELETE USING (auth.uid() = user_id);
 
--- Nodes
-ALTER TABLE nodes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view nodes of own graphs" ON nodes FOR SELECT USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
+-- Knowledge Points
+ALTER TABLE knowledge_points ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view public knowledge points" ON knowledge_points FOR SELECT USING (visibility = 'public');
+CREATE POLICY "Users can view own knowledge points" ON knowledge_points FOR SELECT USING (auth.uid() = owner_id);
+CREATE POLICY "Users can insert own knowledge points" ON knowledge_points FOR INSERT WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY "Users can update own knowledge points" ON knowledge_points FOR UPDATE USING (auth.uid() = owner_id);
+CREATE POLICY "Users can delete own knowledge points" ON knowledge_points FOR DELETE USING (auth.uid() = owner_id);
+
+-- Graph Nodes
+ALTER TABLE graph_nodes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view graph_nodes of own graphs" ON graph_nodes FOR SELECT USING (EXISTS (
+  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
 ));
-CREATE POLICY "Users can insert nodes to own graphs" ON nodes FOR INSERT WITH CHECK (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
+CREATE POLICY "Users can insert graph_nodes to own graphs" ON graph_nodes FOR INSERT WITH CHECK (EXISTS (
+  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
 ));
-CREATE POLICY "Users can update nodes of own graphs" ON nodes FOR UPDATE USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
+CREATE POLICY "Users can update graph_nodes of own graphs" ON graph_nodes FOR UPDATE USING (EXISTS (
+  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
 ));
-CREATE POLICY "Users can delete nodes of own graphs" ON nodes FOR DELETE USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
+CREATE POLICY "Users can delete graph_nodes of own graphs" ON graph_nodes FOR DELETE USING (EXISTS (
+  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
 ));
 
 -- Edges
@@ -541,9 +578,9 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Match nodes function for semantic search
-CREATE OR REPLACE FUNCTION match_nodes (
-  query_embedding vector(2048),
+-- Match knowledge points function for semantic search
+CREATE OR REPLACE FUNCTION match_knowledge_points (
+  query_embedding vector(1024),
   match_threshold float,
   match_count int,
   p_user_id uuid
@@ -552,7 +589,6 @@ RETURNS TABLE (
   id uuid,
   title text,
   content text,
-  graph_id uuid,
   similarity float
 )
 LANGUAGE plpgsql
@@ -560,16 +596,14 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    nodes.id,
-    nodes.title,
-    nodes.content,
-    nodes.graph_id,
-    1 - (nodes.embedding <=> query_embedding) as similarity
-  FROM nodes
-  JOIN knowledge_graphs ON nodes.graph_id = knowledge_graphs.id
-  WHERE knowledge_graphs.user_id = p_user_id
-  AND 1 - (nodes.embedding <=> query_embedding) > match_threshold
-  ORDER BY nodes.embedding <=> query_embedding
+    kp.id,
+    kp.title,
+    kp.content,
+    1 - (kp.embedding <=> query_embedding) as similarity
+  FROM knowledge_points kp
+  WHERE (kp.visibility = 'public' OR kp.owner_id = p_user_id)
+  AND 1 - (kp.embedding <=> query_embedding) > match_threshold
+  ORDER BY kp.embedding <=> query_embedding
   LIMIT match_count;
 END;
 $$;
@@ -643,7 +677,7 @@ BEGIN
 END;
 $$;
 
--- Get user graphs with node counts in a single query (with last_used_at)
+-- Get user graphs with node counts in a single query
 CREATE OR REPLACE FUNCTION get_user_graphs_with_counts(p_user_id UUID)
 RETURNS TABLE (
   id UUID,
@@ -651,6 +685,7 @@ RETURNS TABLE (
   title TEXT,
   description TEXT,
   is_public BOOLEAN,
+  is_favorite BOOLEAN,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ,
   deleted_at TIMESTAMPTZ,
@@ -665,6 +700,7 @@ BEGIN
     g.title,
     g.description,
     g.is_public,
+    COALESCE(g.is_favorite, false) as is_favorite,
     g.created_at,
     g.updated_at,
     g.deleted_at,
@@ -673,13 +709,13 @@ BEGIN
   FROM knowledge_graphs g
   LEFT JOIN (
     SELECT graph_id, COUNT(*) as count
-    FROM nodes
+    FROM graph_nodes
     WHERE deleted_at IS NULL
     GROUP BY graph_id
   ) n ON n.graph_id = g.id
   WHERE g.user_id = p_user_id
     AND g.deleted_at IS NULL
-  ORDER BY g.last_used_at DESC NULLS LAST;
+  ORDER BY COALESCE(g.is_favorite, false) DESC, g.last_used_at DESC NULLS LAST;
 END;
 $$ LANGUAGE plpgsql STABLE;
 
@@ -711,7 +747,7 @@ BEGIN
   FROM knowledge_graphs g
   LEFT JOIN (
     SELECT graph_id, COUNT(*) as count
-    FROM nodes
+    FROM graph_nodes
     WHERE deleted_at IS NULL
     GROUP BY graph_id
   ) n ON n.graph_id = g.id
@@ -730,7 +766,7 @@ DECLARE
 BEGIN
   FOR pos IN SELECT * FROM jsonb_array_elements(p_positions)
   LOOP
-    UPDATE nodes
+    UPDATE graph_nodes
     SET 
       x_position = (pos->>'x')::INTEGER,
       y_position = (pos->>'y')::INTEGER,
@@ -740,6 +776,173 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Get accessible knowledge points (public + own private)
+CREATE OR REPLACE FUNCTION get_accessible_knowledge_points(p_user_id UUID)
+RETURNS TABLE (
+  id UUID,
+  title VARCHAR(255),
+  content TEXT,
+  learning_material TEXT,
+  properties JSONB,
+  visibility knowledge_point_visibility,
+  owner_id UUID,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    kp.id,
+    kp.title,
+    kp.content,
+    kp.learning_material,
+    kp.properties,
+    kp.visibility,
+    kp.owner_id,
+    kp.created_at,
+    kp.updated_at
+  FROM knowledge_points kp
+  WHERE kp.visibility = 'public' OR kp.owner_id = p_user_id
+  ORDER BY kp.updated_at DESC;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Search similar knowledge points (for AI reuse)
+CREATE OR REPLACE FUNCTION search_similar_knowledge_points(
+  p_query_embedding vector(1024),
+  p_user_id UUID,
+  p_match_threshold FLOAT DEFAULT 0.8,
+  p_match_count INT DEFAULT 10
+)
+RETURNS TABLE (
+  id UUID,
+  title VARCHAR(255),
+  content TEXT,
+  similarity FLOAT,
+  visibility knowledge_point_visibility
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    kp.id,
+    kp.title,
+    kp.content,
+    1 - (kp.embedding <=> p_query_embedding) as similarity,
+    kp.visibility
+  FROM knowledge_points kp
+  WHERE (kp.visibility = 'public' OR kp.owner_id = p_user_id)
+    AND (1 - (kp.embedding <=> p_query_embedding)) > p_match_threshold
+  ORDER BY kp.embedding <=> p_query_embedding
+  LIMIT p_match_count;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Get knowledge point graphs
+CREATE OR REPLACE FUNCTION get_knowledge_point_graphs(p_knowledge_point_id UUID, p_user_id UUID)
+RETURNS TABLE (
+  graph_id UUID,
+  graph_title VARCHAR(255),
+  x_position FLOAT,
+  y_position FLOAT,
+  level VARCHAR(20)
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    kg.id,
+    kg.title,
+    gn.x_position,
+    gn.y_position,
+    gn.level
+  FROM graph_nodes gn
+  JOIN knowledge_graphs kg ON gn.graph_id = kg.id
+  WHERE gn.knowledge_point_id = p_knowledge_point_id
+    AND gn.deleted_at IS NULL
+    AND kg.user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Soft delete graph node (remove from graph)
+CREATE OR REPLACE FUNCTION soft_delete_graph_node(
+  p_graph_node_id UUID,
+  p_user_id UUID
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_graph_id UUID;
+BEGIN
+  SELECT gn.graph_id INTO v_graph_id
+  FROM graph_nodes gn
+  JOIN knowledge_graphs kg ON gn.graph_id = kg.id
+  WHERE gn.id = p_graph_node_id AND kg.user_id = p_user_id;
+  
+  IF v_graph_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  
+  DELETE FROM edges 
+  WHERE (source_knowledge_point_id IN (
+      SELECT knowledge_point_id FROM graph_nodes WHERE id = p_graph_node_id
+    ) OR target_knowledge_point_id IN (
+      SELECT knowledge_point_id FROM graph_nodes WHERE id = p_graph_node_id
+    ))
+    AND graph_id = v_graph_id;
+  
+  UPDATE graph_nodes 
+  SET deleted_at = NOW(), updated_at = NOW()
+  WHERE id = p_graph_node_id;
+  
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Hard delete knowledge point (complete deletion)
+CREATE OR REPLACE FUNCTION hard_delete_knowledge_point(
+  p_knowledge_point_id UUID,
+  p_user_id UUID
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_graph_count INT;
+  v_deleted_graph_nodes INT;
+  v_deleted_edges INT;
+  v_deleted_cards INT;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM knowledge_points WHERE id = p_knowledge_point_id AND owner_id = p_user_id) THEN
+    RETURN jsonb_build_object('success', FALSE, 'error', 'Permission denied');
+  END IF;
+  
+  SELECT COUNT(*) INTO v_graph_count
+  FROM graph_nodes 
+  WHERE knowledge_point_id = p_knowledge_point_id AND deleted_at IS NULL;
+  
+  DELETE FROM edges e
+  WHERE EXISTS (
+    SELECT 1 FROM graph_nodes gn
+    WHERE gn.knowledge_point_id = p_knowledge_point_id
+      AND (e.source_knowledge_point_id = gn.knowledge_point_id OR e.target_knowledge_point_id = gn.knowledge_point_id)
+  );
+  
+  GET DIAGNOSTICS v_deleted_edges = ROW_COUNT;
+  
+  DELETE FROM graph_nodes WHERE knowledge_point_id = p_knowledge_point_id;
+  GET DIAGNOSTICS v_deleted_graph_nodes = ROW_COUNT;
+  
+  DELETE FROM study_cards WHERE knowledge_point_id = p_knowledge_point_id;
+  GET DIAGNOSTICS v_deleted_cards = ROW_COUNT;
+  
+  DELETE FROM knowledge_points WHERE id = p_knowledge_point_id;
+  
+  RETURN jsonb_build_object(
+    'success', TRUE,
+    'affected_graphs', v_graph_count,
+    'deleted_graph_nodes', v_deleted_graph_nodes,
+    'deleted_edges', v_deleted_edges,
+    'deleted_cards', v_deleted_cards
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- =====================================================
 -- GRANTS
 -- =====================================================
@@ -748,8 +951,10 @@ GRANT SELECT ON users TO anon;
 GRANT ALL PRIVILEGES ON users TO authenticated;
 GRANT SELECT ON knowledge_graphs TO anon;
 GRANT ALL PRIVILEGES ON knowledge_graphs TO authenticated;
-GRANT SELECT ON nodes TO anon;
-GRANT ALL PRIVILEGES ON nodes TO authenticated;
+GRANT SELECT ON knowledge_points TO anon;
+GRANT ALL PRIVILEGES ON knowledge_points TO authenticated;
+GRANT SELECT ON graph_nodes TO anon;
+GRANT ALL PRIVILEGES ON graph_nodes TO authenticated;
 GRANT SELECT ON edges TO anon;
 GRANT ALL PRIVILEGES ON edges TO authenticated;
 GRANT SELECT ON study_cards TO anon;
@@ -764,3 +969,9 @@ GRANT ALL ON backup_snapshots TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_graphs_with_counts(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_trashed_graphs(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION batch_update_positions(JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION match_knowledge_points(vector(1024), float, int, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_accessible_knowledge_points(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION search_similar_knowledge_points(vector(1024), UUID, FLOAT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_knowledge_point_graphs(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION soft_delete_graph_node(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION hard_delete_knowledge_point(UUID, UUID) TO authenticated;

@@ -1,0 +1,12 @@
+- [x] 节点数据转换工具函数已完善并在多处使用
+- [x] 软删除工具函数已创建并正确实现
+- [x] 缓存失效封装方法已添加到 cache.ts
+- [x] 所有服务层文件已统一使用 logger 替代 console
+- [x] 路由层 nodes.ts 已重构使用工具函数
+- [x] 路由层 graphs.ts 已重构使用缓存失效封装
+- [x] graphNodeService.ts 已重构使用工具函数
+- [x] graphService.ts 已重构使用工具函数
+- [x] edgeService.ts 已重构使用软删除工具
+- [x] taskService.ts 已拆分为处理器模式
+- [x] TypeScript 类型检查通过（后端 API 部分）
+- [x] 节点创建/查询/删除功能验证通过

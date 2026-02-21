@@ -181,8 +181,8 @@ export const GraphEditor = () => {
       path.push(nodeId);
       
       const children = edges
-        .filter(e => e.source_node_id === nodeId)
-        .map(e => e.target_node_id);
+        .filter(e => e.source_knowledge_point_id === nodeId)
+        .map(e => e.target_knowledge_point_id);
       
       children.forEach(childId => dfs(childId));
     };
@@ -393,8 +393,8 @@ export const GraphEditor = () => {
   const handleConnectNodes = useCallback(async (sourceId: string, targetId: string) => {
     try {
       await mutations.createEdgeMutation.mutateAsync({
-        source_node_id: sourceId,
-        target_node_id: targetId,
+        source_knowledge_point_id: sourceId,
+        target_knowledge_point_id: targetId,
         graphId: id || '',
         relationship_type: 'related'
       });
@@ -1031,8 +1031,8 @@ export const GraphEditor = () => {
         onCreateConnection={async (sourceId, targetId) => {
           try {
             await mutations.createEdgeMutation.mutateAsync({
-              source_node_id: sourceId,
-              target_node_id: targetId,
+              source_knowledge_point_id: sourceId,
+              target_knowledge_point_id: targetId,
               graphId: id || '',
               relationship_type: 'related'
             });

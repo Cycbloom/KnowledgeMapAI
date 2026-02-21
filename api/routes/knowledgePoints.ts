@@ -5,7 +5,11 @@ import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { aiService } from '../services/aiService.js';
-import { logger } from '../utils/logger.js';
+import { knowledgePointService } from '../services/knowledgePointService.js';
+import { graphNodeService } from '../services/graphNodeService.js';
+import { edgeService } from '../services/edgeService.js';
+import { graphService } from '../services/graphService.js';
+import { authService } from '../services/authService.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -81,144 +85,80 @@ const rejectSuggestionSchema = z.object({
 router.get('/knowledge-points', requireAuth, async (req: AuthRequest, res: Response) => {
   const { visibility } = req.query;
   
-  let query = req.supabase!
-    .from('knowledge_points')
-    .select('*');
-  
-  if (visibility === 'public') {
-    query = query.eq('visibility', 'public');
-  } else {
-    query = query.or(`visibility.eq.public,owner_id.eq.${req.user.id}`);
-  }
-  
-  const { data, error } = await query.order('updated_at', { ascending: false });
-  
-  if (error) {
+  try {
+    const data = await knowledgePointService.list(req.supabase!, req.user.id, {
+      visibility: visibility as 'public' | undefined,
+    });
+    res.json(data);
+  } catch (error: any) {
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json(data);
 });
 
 router.get('/knowledge-points/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   
-  const { data, error } = await req.supabase!
-    .from('knowledge_points')
-    .select('*')
-    .eq('id', id)
-    .or(`visibility.eq.public,owner_id.eq.${req.user.id}`)
-    .single();
-  
-  if (error || !data) {
-    throw new AppError('Knowledge point not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+  try {
+    const data = await knowledgePointService.getAccessible(req.supabase!, id, req.user.id);
+    
+    if (!data) {
+      throw new AppError('Knowledge point not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+    }
+    
+    res.json(data);
+  } catch (error: any) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json(data);
 });
 
 router.get('/knowledge-points/:id/graphs', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   
-  const { data, error } = await req.supabase!.rpc('get_knowledge_point_graphs', {
-    p_knowledge_point_id: id,
-    p_user_id: req.user.id
-  });
-  
-  if (error) {
+  try {
+    const data = await knowledgePointService.getGraphs(req.supabase!, id, req.user.id);
+    res.json(data);
+  } catch (error: any) {
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json(data);
 });
 
 router.post('/knowledge-points', requireAuth, validate(createKnowledgePointSchema), async (req: AuthRequest, res: Response) => {
   const { title, content, learning_material, properties, visibility } = req.body;
   
-  const kpData: any = {
-    title,
-    content,
-    learning_material,
-    properties: properties || {},
-    visibility: visibility || 'private',
-    owner_id: req.user.id,
-  };
-  
   try {
-    const textToEmbed = [title, content].filter(Boolean).join('\n');
-    if (textToEmbed) {
-      const embedding = await aiService.generateEmbedding(textToEmbed);
-      if (embedding) {
-        kpData.embedding = embedding;
-      }
-    }
-  } catch (error) {
-    console.error('Failed to generate embedding:', error);
-  }
-  
-  const { data, error } = await req.supabase!
-    .from('knowledge_points')
-    .insert([kpData])
-    .select()
-    .single();
-  
-  if (error) {
+    const data = await knowledgePointService.create(req.supabase!, {
+      title,
+      content,
+      learning_material,
+      properties,
+      visibility,
+      owner_id: req.user.id,
+    });
+    
+    res.status(201).json(data);
+  } catch (error: any) {
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.status(201).json(data);
 });
 
 router.put('/knowledge-points/:id', requireAuth, validate(updateKnowledgePointSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
   
-  const { data: existing } = await req.supabase!
-    .from('knowledge_points')
-    .select('owner_id')
-    .eq('id', id)
-    .single();
-  
-  if (!existing || existing.owner_id !== req.user.id) {
-    throw new AppError('Permission denied', 403, ErrorCodes.FORBIDDEN);
-  }
-  
-  if (updates.title || updates.content) {
-    try {
-      const { data: current } = await req.supabase!
-        .from('knowledge_points')
-        .select('title, content')
-        .eq('id', id)
-        .single();
-      
-      const textToEmbed = [
-        updates.title || current?.title,
-        updates.content || current?.content
-      ].filter(Boolean).join('\n');
-      
-      if (textToEmbed) {
-        const embedding = await aiService.generateEmbedding(textToEmbed);
-        if (embedding) {
-          updates.embedding = embedding;
-        }
-      }
-    } catch (error) {
-      console.error('Failed to generate embedding:', error);
+  try {
+    const isOwner = await knowledgePointService.checkOwnership(req.supabase!, id, req.user.id);
+    
+    if (!isOwner) {
+      throw new AppError('Permission denied', 403, ErrorCodes.FORBIDDEN);
     }
-  }
-  
-  const { data, error } = await req.supabase!
-    .from('knowledge_points')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) {
+    
+    const data = await knowledgePointService.update(req.supabase!, id, updates);
+    res.json(data);
+  } catch (error: any) {
+    if (error instanceof AppError) throw error;
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json(data);
 });
 
 router.post('/knowledge-points/search-similar', requireAuth, validate(searchSimilarSchema), async (req: AuthRequest, res: Response) => {
@@ -231,16 +171,13 @@ router.post('/knowledge-points/search-similar', requireAuth, validate(searchSimi
       return res.json([]);
     }
     
-    const { data, error } = await req.supabase!.rpc('search_similar_knowledge_points', {
-      p_query_embedding: embedding,
-      p_user_id: req.user.id,
-      p_match_threshold: threshold,
-      p_match_count: limit
-    });
-    
-    if (error) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
-    }
+    const data = await knowledgePointService.searchSimilar(
+      req.supabase!,
+      embedding,
+      req.user.id,
+      threshold,
+      limit
+    );
     
     res.json(data || []);
   } catch (error: any) {
@@ -252,104 +189,77 @@ router.post('/knowledge-points/search-similar', requireAuth, validate(searchSimi
 router.delete('/knowledge-points/:id/hard-delete', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   
-  const { data, error } = await req.supabase!.rpc('hard_delete_knowledge_point', {
-    p_knowledge_point_id: id,
-    p_user_id: req.user.id
-  });
-  
-  if (error) {
+  try {
+    const data = await knowledgePointService.delete(req.supabase!, id, req.user.id);
+    res.json(data);
+  } catch (error: any) {
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json(data);
 });
 
 router.post('/graph-nodes', requireAuth, validate(createGraphNodeSchema), async (req: AuthRequest, res: Response) => {
   const { graph_id, knowledge_point_id, x_position, y_position, level, is_accepted } = req.body;
   
-  const { data: graph } = await req.supabase!
-    .from('knowledge_graphs')
-    .select('id')
-    .eq('id', graph_id)
-    .eq('user_id', req.user.id)
-    .single();
+  const graph = await graphService.getGraph(req.supabase!, graph_id, req.user.id);
   
   if (!graph) {
     throw new AppError('Graph not found or unauthorized', 403, ErrorCodes.FORBIDDEN);
   }
   
-  const { data, error } = await req.supabase!
-    .from('graph_nodes')
-    .insert([{
+  try {
+    const data = await graphNodeService.addToGraph(req.supabase!, {
       graph_id,
       knowledge_point_id,
       x_position,
       y_position,
       level,
       is_accepted
-    }])
-    .select()
-    .single();
-  
-  if (error) {
-    if (error.code === '23505') {
+    });
+    
+    cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
+    
+    res.status(201).json(data);
+  } catch (error: any) {
+    if (error.message?.includes('已存在')) {
       throw new AppError('Knowledge point already exists in this graph', 400, ErrorCodes.VALIDATION_ERROR);
     }
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
-  
-  res.status(201).json(data);
 });
 
 router.post('/graph-nodes/add-existing', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_id, knowledge_point_id, x_position, y_position, level } = req.body;
   
-  const { data: graph } = await req.supabase!
-    .from('knowledge_graphs')
-    .select('id')
-    .eq('id', graph_id)
-    .eq('user_id', req.user.id)
-    .single();
+  const graph = await graphService.getGraph(req.supabase!, graph_id, req.user.id);
   
   if (!graph) {
     throw new AppError('Graph not found or unauthorized', 403, ErrorCodes.FORBIDDEN);
   }
   
-  const { data: kp } = await req.supabase!
-    .from('knowledge_points')
-    .select('id')
-    .eq('id', knowledge_point_id)
-    .or(`visibility.eq.public,owner_id.eq.${req.user.id}`)
-    .single();
+  const kp = await knowledgePointService.getAccessible(req.supabase!, knowledge_point_id, req.user.id);
   
   if (!kp) {
     throw new AppError('Knowledge point not found or inaccessible', 404, ErrorCodes.RESOURCE_NOT_FOUND);
   }
   
-  const { data, error } = await req.supabase!
-    .from('graph_nodes')
-    .insert([{
+  try {
+    const data = await graphNodeService.addToGraph(req.supabase!, {
       graph_id,
       knowledge_point_id,
       x_position: x_position || 0,
       y_position: y_position || 0,
       level: level || 'normal'
-    }])
-    .select()
-    .single();
-  
-  if (error) {
-    if (error.code === '23505') {
+    });
+    
+    cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
+    
+    res.status(201).json(data);
+  } catch (error: any) {
+    if (error.message?.includes('已存在')) {
       throw new AppError('Knowledge point already exists in this graph', 400, ErrorCodes.VALIDATION_ERROR);
     }
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
-  
-  res.status(201).json(data);
 });
 
 router.delete('/graph-nodes/:id/soft-delete', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -374,357 +284,122 @@ router.delete('/graph-nodes/:id/soft-delete', requireAuth, async (req: AuthReque
 router.post('/combined-view', requireAuth, validate(combinedViewSchema), async (req: AuthRequest, res: Response) => {
   const { graph_ids } = req.body;
   
-  const { data: graphs, error: graphsError } = await req.supabase!
-    .from('knowledge_graphs')
-    .select('id, title')
-    .in('id', graph_ids)
-    .eq('user_id', req.user.id);
-  
-  if (graphsError) {
-    throw new AppError(graphsError.message, 500, ErrorCodes.INTERNAL_ERROR);
-  }
-  
-  if (!graphs || graphs.length !== graph_ids.length) {
-    throw new AppError('Some graphs not found or unauthorized', 403, ErrorCodes.FORBIDDEN);
-  }
-  
-  const { data: graphNodes, error: nodesError } = await req.supabase!
-    .from('graph_nodes')
-    .select(`
-      id,
-      graph_id,
-      knowledge_point_id,
-      x_position,
-      y_position,
-      level,
-      is_accepted,
-      knowledge_points (
-        id,
-        title,
-        content,
-        learning_material,
-        properties,
-        visibility,
-        owner_id
-      )
-    `)
-    .in('graph_id', graph_ids)
-    .is('deleted_at', null);
-  
-  if (nodesError) {
-    throw new AppError(nodesError.message, 500, ErrorCodes.INTERNAL_ERROR);
-  }
-  
-  const { data: edges, error: edgesError } = await req.supabase!
-    .from('edges')
-    .select('id, graph_id, source_node_id, target_node_id, relationship_type, weight')
-    .in('graph_id', graph_ids)
-    .is('deleted_at', null);
-  
-  if (edgesError) {
-    throw new AppError(edgesError.message, 500, ErrorCodes.INTERNAL_ERROR);
-  }
-  
-  const graphMap = new Map(graphs.map(g => [g.id, g]));
-  const result = {
-    graphs: graph_ids.map((gid: string) => ({
-      graph_id: gid,
-      graph_title: graphMap.get(gid)?.title || '',
-      color: '',
-      nodes: (graphNodes || []).filter((gn: any) => gn.graph_id === gid),
-      edges: (edges || []).filter((e: any) => e.graph_id === gid)
-    })),
-    shared_knowledge_points: [] as any[]
-  };
-  
-  const kpGraphMap = new Map<string, any[]>();
-  (graphNodes || []).forEach((gn: any) => {
-    const kpId = gn.knowledge_point_id;
-    if (!kpGraphMap.has(kpId)) {
-      kpGraphMap.set(kpId, []);
+  try {
+    const result = await graphService.getCombinedView(req.supabase!, req.user.id, graph_ids);
+    res.json(result);
+  } catch (error: any) {
+    if (error.message?.includes('not found or unauthorized')) {
+      throw new AppError('Some graphs not found or unauthorized', 403, ErrorCodes.FORBIDDEN);
     }
-    kpGraphMap.get(kpId)!.push(gn);
-  });
-  
-  kpGraphMap.forEach((nodes, kpId) => {
-    if (nodes.length > 1) {
-      result.shared_knowledge_points.push({
-        knowledge_point_id: kpId,
-        knowledge_point: nodes[0].knowledge_points,
-        graph_nodes: nodes
-      });
-    }
-  });
-  
-  res.json(result);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+  }
 });
 
 router.get('/knowledge-points/public', async (req: AuthRequest, res: Response) => {
   const { search, limit = 20, offset = 0 } = req.query;
   
-  let query = req.supabase!
-    .from('knowledge_points')
-    .select('id, title, content, learning_material, properties, visibility, owner_id, created_at, updated_at', { count: 'exact' })
-    .eq('visibility', 'public');
-  
-  if (search) {
-    query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
-  }
-  
-  const { data, error, count } = await query
-    .order('updated_at', { ascending: false })
-    .range(Number(offset), Number(offset) + Number(limit) - 1);
-  
-  if (error) {
+  try {
+    const result = await knowledgePointService.listPublic(req.supabase!, {
+      search: search as string,
+      limit: Number(limit),
+      offset: Number(offset),
+    });
+    
+    res.json(result);
+  } catch (error: any) {
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json({
-    items: data || [],
-    total: count || 0
-  });
 });
 
 router.post('/knowledge-points/submit-public', requireAuth, validate(submitPublicSchema), async (req: AuthRequest, res: Response) => {
   const { knowledge_point_id, suggested_changes } = req.body;
   
-  const { data: kp, error: kpError } = await req.supabase!
-    .from('knowledge_points')
-    .select('id, title, content, owner_id, visibility')
-    .eq('id', knowledge_point_id)
-    .single();
-  
-  if (kpError || !kp) {
-    throw new AppError('Knowledge point not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
-  }
-  
-  if (kp.owner_id !== req.user.id) {
-    throw new AppError('Permission denied', 403, ErrorCodes.FORBIDDEN);
-  }
-  
-  const autoReviewResult = {
-    passed: true,
-    issues: [] as string[]
-  };
-  
-  const titleToCheck = suggested_changes?.title || kp.title;
-  const contentToCheck = suggested_changes?.content || kp.content;
-  
-  if (!titleToCheck || titleToCheck.trim().length < 2) {
-    autoReviewResult.passed = false;
-    autoReviewResult.issues.push('标题太短，至少需要2个字符');
-  }
-  
-  if (titleToCheck && titleToCheck.length > 200) {
-    autoReviewResult.passed = false;
-    autoReviewResult.issues.push('标题过长，最多200个字符');
-  }
-  
-  if (!contentToCheck || contentToCheck.trim().length < 10) {
-    autoReviewResult.passed = false;
-    autoReviewResult.issues.push('内容太短，至少需要10个字符');
-  }
-  
   try {
-    const textToEmbed = [titleToCheck, contentToCheck].filter(Boolean).join('\n');
-    if (textToEmbed) {
-      const embedding = await aiService.generateEmbedding(textToEmbed);
-      
-      if (embedding) {
-        const { data: similarKps } = await req.supabase!.rpc('search_similar_knowledge_points', {
-          p_query_embedding: embedding,
-          p_user_id: req.user.id,
-          p_match_threshold: 0.9,
-          p_match_count: 5
-        });
-        
-        const publicDuplicates = (similarKps || []).filter(
-          (skp: any) => skp.id !== knowledge_point_id && skp.visibility === 'public'
-        );
-        
-        if (publicDuplicates.length > 0) {
-          autoReviewResult.passed = false;
-          autoReviewResult.issues.push(`发现${publicDuplicates.length}个相似的公共知识点，可能存在重复`);
-        }
-      }
+    const result = await knowledgePointService.submitForPublic(
+      req.supabase!,
+      { knowledge_point_id, suggested_changes },
+      req.user.id
+    );
+    
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === 'Knowledge point not found') {
+      throw new AppError('Knowledge point not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
-  } catch (error) {
-    logger.warn('Auto-review similarity check failed:', error);
+    if (error.message === 'Permission denied') {
+      throw new AppError('Permission denied', 403, ErrorCodes.FORBIDDEN);
+    }
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  const { error: updateError } = await req.supabase!
-    .from('knowledge_points')
-    .update({ 
-      visibility: 'pending',
-      properties: {
-        ...kp,
-        suggested_changes: suggested_changes || null,
-        auto_review_result: autoReviewResult,
-        submitted_for_public_at: new Date().toISOString()
-      }
-    })
-    .eq('id', knowledge_point_id);
-  
-  if (updateError) {
-    throw new AppError(updateError.message, 500, ErrorCodes.INTERNAL_ERROR);
-  }
-  
-  res.json({
-    success: true,
-    message: autoReviewResult.passed 
-      ? '知识点已提交审核，等待管理员批准' 
-      : '知识点已提交，但自动审核发现问题',
-    auto_review_result: autoReviewResult
-  });
 });
 
 router.get('/admin/knowledge-points/pending', requireAuth, async (req: AuthRequest, res: Response) => {
   const { limit = 20, offset = 0 } = req.query;
   
-  const { data: userProfile } = await req.supabase!
-    .from('users')
-    .select('role')
-    .eq('id', req.user.id)
-    .single();
+  const userProfile = await authService.getProfile(req.user.id);
   
   if (!userProfile || userProfile.role !== 'admin') {
     throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
   }
   
-  const { data, error, count } = await req.supabase!
-    .from('knowledge_points')
-    .select('id, title, content, learning_material, properties, owner_id, created_at, updated_at', { count: 'exact' })
-    .eq('visibility', 'pending')
-    .order('updated_at', { ascending: true })
-    .range(Number(offset), Number(offset) + Number(limit) - 1);
-  
-  if (error) {
+  try {
+    const result = await knowledgePointService.listPending(req.supabase!, {
+      limit: Number(limit),
+      offset: Number(offset),
+    });
+    
+    res.json(result);
+  } catch (error: any) {
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  const items = (data || []).map(kp => ({
-    id: kp.id,
-    knowledge_point_id: kp.id,
-    knowledge_point: kp,
-    suggested_changes: kp.properties?.suggested_changes || null,
-    submitted_by: kp.owner_id,
-    submitted_at: kp.properties?.submitted_for_public_at || kp.updated_at,
-    auto_review_result: kp.properties?.auto_review_result || { passed: true, issues: [] }
-  }));
-  
-  res.json({
-    items,
-    total: count || 0
-  });
 });
 
 router.post('/admin/knowledge-points/suggestions/:id/approve', requireAuth, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   
-  const { data: userProfile } = await req.supabase!
-    .from('users')
-    .select('role')
-    .eq('id', req.user.id)
-    .single();
+  const userProfile = await authService.getProfile(req.user.id);
   
   if (!userProfile || userProfile.role !== 'admin') {
     throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
   }
   
-  const { data: kp, error: kpError } = await req.supabase!
-    .from('knowledge_points')
-    .select('*')
-    .eq('id', id)
-    .eq('visibility', 'pending')
-    .single();
-  
-  if (kpError || !kp) {
-    throw new AppError('Knowledge point not found or not pending', 404, ErrorCodes.RESOURCE_NOT_FOUND);
-  }
-  
-  const suggestedChanges = kp.properties?.suggested_changes;
-  const updates: any = {
-    visibility: 'public',
-  };
-  
-  if (suggestedChanges) {
-    if (suggestedChanges.title) updates.title = suggestedChanges.title;
-    if (suggestedChanges.content) updates.content = suggestedChanges.content;
-    if (suggestedChanges.learning_material) updates.learning_material = suggestedChanges.learning_material;
-  }
-  
-  updates.properties = {
-    ...kp.properties,
-    approved_at: new Date().toISOString(),
-    approved_by: req.user.id,
-    suggested_changes: null
-  };
-  
-  const { data, error } = await req.supabase!
-    .from('knowledge_points')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) {
+  try {
+    const data = await knowledgePointService.approvePublic(req.supabase!, id, req.user.id);
+    
+    res.json({
+      success: true,
+      knowledge_point: data
+    });
+  } catch (error: any) {
+    if (error.message === 'Knowledge point not found or not pending') {
+      throw new AppError('Knowledge point not found or not pending', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+    }
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json({
-    success: true,
-    knowledge_point: data
-  });
 });
 
 router.post('/admin/knowledge-points/suggestions/:id/reject', requireAuth, validate(rejectSuggestionSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { reason } = req.body;
   
-  const { data: userProfile } = await req.supabase!
-    .from('users')
-    .select('role')
-    .eq('id', req.user.id)
-    .single();
+  const userProfile = await authService.getProfile(req.user.id);
   
   if (!userProfile || userProfile.role !== 'admin') {
     throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
   }
   
-  const { data: kp, error: kpError } = await req.supabase!
-    .from('knowledge_points')
-    .select('*')
-    .eq('id', id)
-    .eq('visibility', 'pending')
-    .single();
-  
-  if (kpError || !kp) {
-    throw new AppError('Knowledge point not found or not pending', 404, ErrorCodes.RESOURCE_NOT_FOUND);
-  }
-  
-  const { data, error } = await req.supabase!
-    .from('knowledge_points')
-    .update({
-      visibility: 'private',
-      properties: {
-        ...kp.properties,
-        rejected_at: new Date().toISOString(),
-        rejected_by: req.user.id,
-        rejection_reason: reason,
-        suggested_changes: null
-      }
-    })
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) {
+  try {
+    await knowledgePointService.rejectPublic(req.supabase!, id, req.user.id, reason);
+    
+    res.json({
+      success: true
+    });
+  } catch (error: any) {
+    if (error.message === 'Knowledge point not found or not pending') {
+      throw new AppError('Knowledge point not found or not pending', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+    }
     throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json({
-    success: true
-  });
 });
 
 export default router;

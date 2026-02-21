@@ -421,14 +421,11 @@ export class AchievementService {
     // 2. Check nodes count
     // Note: We need to join with graphs to check ownership if nodes don't have user_id (which they don't seem to have directly on nodes table usually, let's check schema or assume ownership via graph)
     // Actually nodes usually belong to a graph, and graph belongs to user.
-    // Let's check nodes table structure if needed. 
-    // Wait, earlier read of types/index.ts didn't show user_id on Node interface.
-    // Let's assume we count nodes via graphs owned by user.
-    
     const { count: nodeCount, error: nodeError } = await supabaseAdmin
-      .from('nodes')
-      .select('id, graphs!inner(user_id)', { count: 'exact', head: true })
-      .eq('graphs.user_id', userId);
+      .from('graph_nodes')
+      .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
+      .eq('knowledge_graphs.user_id', userId)
+      .is('deleted_at', null);
 
     if (!nodeError) {
       await this.checkAndUnlock(userId, 'nodes_created', nodeCount || 0);

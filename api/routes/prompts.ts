@@ -1,13 +1,12 @@
 import { Router, Response } from 'express';
 import { AuthRequest, requireAuth } from '../middleware/auth.js';
 import { getAIProviderForTask } from '../services/ai/factory.js';
-import { PromptService } from '../services/promptService.js';
+import { promptService } from '../services/promptService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();
-const promptService = new PromptService();
 
 // Get all templates for the current user and optional graph
 // Returns all raw rows, frontend can organize them by code
@@ -17,41 +16,12 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase!;
 
   try {
-    // 1. Get System Templates
-    const { data: systemTemplates, error: sysError } = await supabase
-      .from('prompt_templates')
-      .select('*')
-      .eq('scope', 'system');
-
-    if (sysError) throw sysError;
-
-    // 2. Get User Templates
-    const { data: userTemplates, error: userError } = await supabase
-      .from('prompt_templates')
-      .select('*')
-      .eq('scope', 'user')
-      .eq('user_id', userId);
-
-    if (userError) throw userError;
-
-    // 3. Get Graph Templates (if graph_id provided)
-    let graphTemplates: any[] = [];
-    if (graph_id) {
-      const { data: gTemplates, error: gError } = await supabase
-        .from('prompt_templates')
-        .select('*')
-        .eq('scope', 'graph')
-        .eq('graph_id', graph_id);
-      
-      if (gError) throw gError;
-      graphTemplates = gTemplates;
-    }
-
-    res.json({
-      system: systemTemplates || [],
-      user: userTemplates || [],
-      graph: graphTemplates || []
+    const result = await promptService.list(supabase, {
+      userId,
+      graphId: graph_id as string | undefined
     });
+
+    res.json(result);
 
   } catch (error: any) {
     logger.error('Get Prompts Error:', error);
@@ -78,41 +48,13 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    const dataToUpsert: any = {
+    const data = await promptService.saveTemplate(supabase, {
       code,
       scope,
-      user_id: userId, // Both user and graph scopes belong to a user owner
-      template_content,
-      updated_at: new Date().toISOString()
-    };
-
-    if (scope === 'graph') {
-      dataToUpsert.graph_id = graph_id;
-    } else {
-      dataToUpsert.graph_id = null;
-    }
-
-    // Check if exists to update or insert
-    // We use unique constraint (code, scope, user_id, graph_id) for upsert
-    const { data, error } = await supabase
-      .from('prompt_templates')
-      .upsert(dataToUpsert, { onConflict: 'code, scope, user_id, graph_id' })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Invalidate cache
-    const cacheKey = scope === 'graph' 
-      ? `prompt:${code}:${userId}:${graph_id}`
-      : `prompt:${code}:${userId}:undefined`;
-    
-    // We can't easily access the internal cache map of promptService if it's private/protected 
-    // or if we don't have a clear method. 
-    // But PromptService uses `cacheService`, so we can try to clear it if we knew the key format.
-    // The key in PromptService is `PROMPT_TEMPLATE:${code}:${userId}:${graphId || 'undefined'}`
-    // Let's assume standard TTL expiry is fine, or we can expose a clear method.
-    // For now, we rely on the TTL (5 mins) or maybe we can implement a clear method later.
+      user_id: userId,
+      graph_id: scope === 'graph' ? graph_id : null,
+      template_content
+    });
 
     res.json(data);
 
@@ -128,13 +70,7 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase!;
 
   try {
-    const { error } = await supabase
-      .from('prompt_templates')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', req.user.id); // Security check
-
-    if (error) throw error;
+    await promptService.deleteTemplate(supabase, id);
 
     res.json({ success: true });
   } catch (error: any) {

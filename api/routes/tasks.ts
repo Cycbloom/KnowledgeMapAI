@@ -60,7 +60,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = parseInt(req.query.offset as string) || 0;
     
-    const { tasks, total } = await taskService.getTasks(supabaseAdmin, req.user.id, status, limit, offset);
+    const { tasks, total } = await taskService.getTasks(supabaseAdmin, req.user.id, status, { limit, offset });
     res.json({ tasks, total });
   } catch (error: any) {
     console.error('Get Tasks Error:', error);

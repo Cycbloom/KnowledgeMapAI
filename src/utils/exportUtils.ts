@@ -13,8 +13,8 @@ export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): st
   // Helper to find children
   const getChildren = (parentId: string): Node[] => {
     return edges
-      .filter(e => e.source_node_id === parentId)
-      .map(e => nodes.find(n => n.id === e.target_node_id))
+      .filter(e => e.source_knowledge_point_id === parentId)
+      .map(e => nodes.find(n => n.id === e.target_knowledge_point_id))
       .filter((n): n is Node => !!n);
   };
 
@@ -41,20 +41,20 @@ export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): st
     
     // Title
     if (node.level === 'leaf') {
-       md += `${indent}- **${node.title}**\n`;
+       md += `${indent}- **${node.knowledge_point?.title || ''}**\n`;
     } else {
        // Map node levels to markdown headers
        // root -> ## (since H1 is graph title)
        // core -> ###
        // ...
        const prefix = getHeaderPrefix(node.level || 'normal');
-       md += `${prefix}${node.title}\n`;
+       md += `${prefix}${node.knowledge_point?.title || ''}\n`;
     }
 
     // Content
-    if (node.content) {
-      const contentLines = node.content.split('\n');
-      const contentIndent = node.level === 'leaf' ? `${indent  }  ` : '';
+    if (node.knowledge_point?.content) {
+      const contentLines = node.knowledge_point.content.split('\n');
+      const contentIndent = node.level === 'leaf' ? `${indent}  ` : '';
       contentLines.forEach(line => {
         if (line.trim()) {
            md += `${contentIndent}${line}\n`;
@@ -73,7 +73,7 @@ export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): st
   
   // If no explicit roots, find nodes with no incoming edges
   if (rootNodes.length === 0) {
-    const targets = new Set(edges.map(e => e.target_node_id));
+    const targets = new Set(edges.map(e => e.target_knowledge_point_id));
     const potentialRoots = nodes.filter(n => !targets.has(n.id));
     rootNodes.push(...potentialRoots);
   }
@@ -202,4 +202,3 @@ export const generateAnkiDeck = (cards: StudyCard[], deckName: string): string =
 
   return content;
 };
-

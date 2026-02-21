@@ -15,8 +15,8 @@ describe('Graph Utils', () => {
     it('should calculate level based on degree', () => {
       const node: Node = { id: '1', title: 'test', x: 0, y: 0, z: 0 } as any;
       const edges: Edge[] = [
-        { id: 'e1', source_node_id: '1', target_node_id: '2' },
-        { id: 'e2', source_node_id: '3', target_node_id: '1' },
+        { id: 'e1', source_knowledge_point_id: '1', target_knowledge_point_id: '2' },
+        { id: 'e2', source_knowledge_point_id: '3', target_knowledge_point_id: '1' },
       ] as any;
       
       // Degree 2 -> normal
@@ -47,9 +47,9 @@ describe('Graph Utils', () => {
     ] as any;
 
     const edges: Edge[] = [
-      { id: 'e1', source_node_id: '1', target_node_id: '2' },
-      { id: 'e2', source_node_id: '2', target_node_id: '3' },
-      { id: 'e3', source_node_id: '1', target_node_id: '4' },
+      { id: 'e1', source_knowledge_point_id: '1', target_knowledge_point_id: '2' },
+      { id: 'e2', source_knowledge_point_id: '2', target_knowledge_point_id: '3' },
+      { id: 'e3', source_knowledge_point_id: '1', target_knowledge_point_id: '4' },
     ] as any;
 
     it('should find shortest path between connected nodes', () => {

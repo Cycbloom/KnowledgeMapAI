@@ -1,7 +1,37 @@
 import type { NodeLevel } from '../../types';
 
+export const LEVEL_ORDER: NodeLevel[] = ['root', 'core', 'sub', 'normal', 'leaf'];
+
+export function getNextLevel(currentLevel: string): NodeLevel {
+  const index = LEVEL_ORDER.indexOf(currentLevel as NodeLevel);
+  if (index === -1 || index >= LEVEL_ORDER.length - 1) {
+    return 'leaf';
+  }
+  return LEVEL_ORDER[index + 1];
+}
+
+export function getPreviousLevel(currentLevel: string): NodeLevel {
+  const index = LEVEL_ORDER.indexOf(currentLevel as NodeLevel);
+  if (index <= 0) {
+    return 'root';
+  }
+  return LEVEL_ORDER[index - 1];
+}
+
+export function getLevelIndex(level: string): number {
+  return LEVEL_ORDER.indexOf(level as NodeLevel);
+}
+
+export const LEVEL_WEIGHTS: Record<NodeLevel, number> = {
+  root: 1.0,
+  core: 0.8,
+  sub: 0.6,
+  normal: 0.4,
+  leaf: 0.2
+};
+
 export const getLevelColor = (level: NodeLevel): string => {
-  const colors = {
+  const colors: Record<NodeLevel, string> = {
     root: 'bg-purple-500',
     core: 'bg-red-500',
     sub: 'bg-orange-500',
@@ -12,7 +42,7 @@ export const getLevelColor = (level: NodeLevel): string => {
 };
 
 export const getLevelColorHex = (level: NodeLevel): string => {
-  const colors = {
+  const colors: Record<NodeLevel, string> = {
     root: '#8B5CF6',
     core: '#EF4444',
     sub: '#F59E0B',
@@ -23,7 +53,7 @@ export const getLevelColorHex = (level: NodeLevel): string => {
 };
 
 export const getLevelLabel = (level: NodeLevel): string => {
-  const labels = {
+  const labels: Record<NodeLevel, string> = {
     root: '根节点',
     core: '核心节点',
     sub: '次级节点',
@@ -31,20 +61,4 @@ export const getLevelLabel = (level: NodeLevel): string => {
     leaf: '叶子节点'
   };
   return labels[level] || labels.normal;
-};
-
-export const getNextLevel = (parentLevel: string): NodeLevel => {
-  if (parentLevel === 'root') return 'core';
-  if (parentLevel === 'core') return 'sub';
-  if (parentLevel === 'sub') return 'normal';
-  if (parentLevel === 'normal') return 'leaf';
-  return 'leaf';
-};
-
-export const LEVEL_WEIGHTS: Record<NodeLevel, number> = {
-  root: 1.0,
-  core: 0.8,
-  sub: 0.6,
-  normal: 0.4,
-  leaf: 0.2
 };

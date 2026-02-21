@@ -38,8 +38,8 @@ function getLevelNumber(level?: NodeLevel): number {
 }
 
 function calculateNodeImportance(node: Node, nodes: Node[], edges: Edge[]): number {
-  const connections = edges.filter(e => e.source_node_id === node.id || e.target_node_id === node.id).length;
-  const childCount = edges.filter(e => e.source_node_id === node.id).length;
+  const connections = edges.filter(e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id).length;
+  const childCount = edges.filter(e => e.source_knowledge_point_id === node.id).length;
   const levelFactor = Math.max(1, 5 - getLevelNumber(node.level));
   return connections * 0.3 + childCount * 0.5 + levelFactor * 0.5;
 }
@@ -77,8 +77,8 @@ export function create3DForceLayout(
   layoutNodes.forEach(n => nodeMap.set(n.id, n));
 
   const layoutLinks: LayoutLink3D[] = edges.map(edge => ({
-    source: edge.source_node_id,
-    target: edge.target_node_id,
+    source: edge.source_knowledge_point_id,
+    target: edge.target_knowledge_point_id,
     strength: 1
   }));
 

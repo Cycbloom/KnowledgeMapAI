@@ -19,7 +19,7 @@ export const createTreeLayout = (
   // Find root nodes (nodes with no incoming edges)
   const incomingEdges = new Set<string>();
   edges.forEach(edge => {
-    incomingEdges.add(normalizeId(edge.target_node_id));
+    incomingEdges.add(normalizeId(edge.target_knowledge_point_id));
   });
   
   const rootNodes = nodes.filter(node => 
@@ -42,8 +42,8 @@ export const createTreeLayout = (
   });
   
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     if (childrenMap.has(src)) {
       const targetNode = nodes.find(n => normalizeId(n.id) === tgt);
       if (targetNode) {
@@ -136,14 +136,14 @@ export const createTreeLayout = (
   
   const layoutLinks: LayoutLink[] = edges
     .filter(edge => {
-      const src = normalizeId(edge.source_node_id);
-      const tgt = normalizeId(edge.target_node_id);
+      const src = normalizeId(edge.source_knowledge_point_id);
+      const tgt = normalizeId(edge.target_knowledge_point_id);
       return treeNodeIds.has(src) && treeNodeIds.has(tgt);
     })
     .map(edge => ({
       ...edge,
-      source: normalizeId(edge.source_node_id),
-      target: normalizeId(edge.target_node_id)
+      source: normalizeId(edge.source_knowledge_point_id),
+      target: normalizeId(edge.target_knowledge_point_id)
     }));
   
   return { nodes: layoutNodes, links: layoutLinks };

@@ -67,8 +67,12 @@ export class AIService {
     }
 
     try {
+      if (provider.createEmbedding) {
+        return await provider.createEmbedding(text);
+      }
+      
       const response = await provider.client.embeddings.create({
-        model: provider.model,
+        model: provider.embeddingModel || provider.model,
         input: text,
       });
       return response.data[0].embedding;
@@ -245,7 +249,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       : await getAIProviderForTask('text');
 
     if (!provider.hasKey) {
-      return { suggestions: getMockResponse('expand', nodeTitle) };
+      return getMockResponse('expand', nodeTitle) as { suggestions: unknown[] };
     }
 
     const cacheKey = CacheKeys.AI_EXPAND(nodeTitle, options.contextLevel || 'normal');
@@ -293,6 +297,12 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       });
 
       const content = completion.choices[0].message.content || '';
+      
+      if (!content || content.trim() === '') {
+        logger.error('[AI] Empty response from AI provider for expandKnowledge');
+        return getMockResponse('expand', nodeTitle) as { suggestions: unknown[] };
+      }
+      
       const parsed = parseAIResponse<{ suggestions: unknown[] }>(content, 'Expand Knowledge');
       const result = { suggestions: parsed.suggestions || parsed };
       
@@ -302,6 +312,12 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
     } catch (error: unknown) {
       const err = error as Error;
       logger.error('AI Error:', error);
+      
+      if (err.message?.includes('parse') || err.message?.includes('JSON')) {
+        logger.warn('[AI] Returning mock response due to parse error');
+        return getMockResponse('expand', nodeTitle) as { suggestions: unknown[] };
+      }
+      
       throw new Error(err.message || 'AI expansion failed');
     }
   }

@@ -168,12 +168,31 @@ export const request = async <T = any>(url: string, options: RequestInit = {}): 
   }
 };
 
-export const getAIConfig = (taskType: 'text' | 'embedding' | 'reasoning' = 'text') => {
+export type AITaskType = 'text' | 'embedding' | 'reasoning';
+
+export interface AIConfig {
+  provider?: string;
+  model?: string;
+}
+
+export const getAIConfig = (taskType: AITaskType = 'text') => {
   const { user } = useStore.getState();
   const config = user?.profile?.settings?.ai_config?.[taskType];
   return {
     provider: config?.provider,
     model: config?.model
+  };
+};
+
+export const injectAIConfig = <T extends Record<string, any>>(
+  payload: T,
+  taskType: AITaskType = 'text'
+): T & AIConfig => {
+  const config = getAIConfig(taskType);
+  return {
+    ...payload,
+    ...(config.provider && !payload.provider ? { provider: config.provider } : {}),
+    ...(config.model && !payload.model ? { model: config.model } : {}),
   };
 };
 

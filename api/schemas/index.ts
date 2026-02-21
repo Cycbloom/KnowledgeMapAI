@@ -64,8 +64,9 @@ export const relatedNodesQuerySchema = z.object({
 
 // --- Edge Schemas ---
 export const createEdgeSchema = z.object({
-  source_node_id: z.string().uuid('无效的源节点ID'),
-  target_node_id: z.string().uuid('无效的目标节点ID'),
+  graph_id: z.string().uuid('无效的图谱ID'),
+  source_knowledge_point_id: z.string().uuid('无效的源知识点ID'),
+  target_knowledge_point_id: z.string().uuid('无效的目标知识点ID'),
   relationship_type: z.string().optional(),
 });
 
@@ -75,14 +76,16 @@ export const updateEdgeSchema = z.object({
 
 // --- Study Schemas ---
 export const createCardSchema = z.object({
-  node_id: z.string().uuid('无效的节点ID'),
+  knowledge_point_id: z.string().uuid('无效的知识点ID'),
+  graph_id: z.string().uuid('无效的图谱ID'),
   question: z.string().min(1, '问题不能为空'),
   answer: z.string().min(1, '答案不能为空'),
 });
 
 export const createCardsBatchSchema = z.object({
   cards: z.array(z.object({
-    node_id: z.string().uuid('无效的节点ID'),
+    knowledge_point_id: z.string().uuid('无效的知识点ID'),
+    graph_id: z.string().uuid('无效的图谱ID'),
     question: z.string().min(1, '问题不能为空'),
     answer: z.string().min(1, '答案不能为空'),
     type: z.enum(['qa', 'choice', 'true_false']).optional(),

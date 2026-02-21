@@ -1,0 +1,23 @@
+- [x] AI 配置注入工具函数已创建并在 ai.ts 中使用
+- [x] 重复的 AI 配置注入代码已移除
+- [x] 统一错误处理封装已创建
+- [x] useAsyncOperation Hook 已创建
+- [x] useGraphNodeOperations.ts 已重构使用新封装
+- [x] useGraphAIOperations.ts 已重构使用新封装
+- [x] useKnowledgePointOperations.ts 已重构使用新封装
+- [x] 相似知识点搜索工具已创建
+- [x] autoGraphService.ts 已重构使用新工具
+- [x] knowledgePointService.ts 已重构使用新工具
+- [x] 层级计算函数已统一
+- [x] 前后端层级定义一致
+- [x] 分页查询工具函数已创建
+- [x] 相关 service 文件已重构使用分页工具
+- [x] RPC 回退模式封装已创建
+- [x] graphService.ts 已重构使用 RPC 回退封装
+- [x] 上下文构建工具已完善
+- [x] ragService.ts 已重构使用上下文构建工具
+- [x] TypeScript 类型检查通过（新增代码无错误）
+- [x] AI 功能验证通过
+- [x] 错误处理和消息提示验证通过
+- [x] 相似知识点搜索功能验证通过
+- [x] 分页功能验证通过

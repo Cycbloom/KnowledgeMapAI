@@ -2,6 +2,7 @@ import { supabaseAdmin } from '../supabase.js';
 import { AIService } from './aiService.js';
 import { getAIProviderForTask } from './ai/factory.js';
 import { logger } from '../utils/logger.js';
+import { buildNodeContext, buildNodesContext, NodeData } from './ai/utils.js';
 
 export interface RAGContext {
   graphId: string;
@@ -51,13 +52,23 @@ export class RAGService {
 
     try {
       let query_builder = supabaseAdmin
-        .from('nodes')
-        .select('id, title, content, graph_id, embedding')
-        .not('embedding', 'is', null)
-        .is('deleted_at', null);
+        .from('knowledge_points')
+        .select('id, title, content, embedding')
+        .not('embedding', 'is', null);
 
       if (graphId) {
-        query_builder = query_builder.eq('graph_id', graphId);
+        const { data: graphNodes } = await supabaseAdmin
+          .from('graph_nodes')
+          .select('knowledge_point_id')
+          .eq('graph_id', graphId)
+          .is('deleted_at', null);
+        
+        if (graphNodes && graphNodes.length > 0) {
+          const kpIds = graphNodes.map(gn => gn.knowledge_point_id);
+          query_builder = query_builder.in('id', kpIds);
+        } else {
+          return [];
+        }
       } else {
         const { data: userGraphs } = await supabaseAdmin
           .from('knowledge_graphs')
@@ -67,28 +78,39 @@ export class RAGService {
         
         if (userGraphs && userGraphs.length > 0) {
           const graphIds = userGraphs.map(g => g.id);
-          query_builder = query_builder.in('graph_id', graphIds);
+          const { data: graphNodes } = await supabaseAdmin
+            .from('graph_nodes')
+            .select('knowledge_point_id')
+            .in('graph_id', graphIds)
+            .is('deleted_at', null);
+          
+          if (graphNodes && graphNodes.length > 0) {
+            const kpIds = graphNodes.map(gn => gn.knowledge_point_id);
+            query_builder = query_builder.in('id', kpIds);
+          } else {
+            return [];
+          }
         } else {
           return [];
         }
       }
 
-      const { data: nodes, error } = await query_builder.limit(100);
+      const { data: knowledgePoints, error } = await query_builder.limit(100);
 
-      if (error || !nodes) {
-        logger.error('Failed to fetch nodes for RAG search', { error });
+      if (error || !knowledgePoints) {
+        logger.error('Failed to fetch knowledge points for RAG search', { error });
         return [];
       }
 
-      const results: RAGSearchResult[] = nodes
-        .map(node => {
-          const similarity = this.cosineSimilarity(queryEmbedding, node.embedding);
+      const results: RAGSearchResult[] = knowledgePoints
+        .map(kp => {
+          const similarity = this.cosineSimilarity(queryEmbedding, kp.embedding);
           return {
-            id: node.id,
-            title: node.title,
-            content: node.content || '',
+            id: kp.id,
+            title: kp.title,
+            content: kp.content || '',
             similarity,
-            graphId: node.graph_id
+            graphId: graphId || ''
           };
         })
         .filter(r => r.similarity >= matchThreshold)
@@ -138,31 +160,49 @@ export class RAGService {
 
     let currentNodeContext = '';
     if (currentNodeId) {
-      const { data: currentNode } = await supabaseAdmin
-        .from('nodes')
-        .select('id, title, content')
-        .eq('id', currentNodeId)
+      const { data: currentGraphNode } = await supabaseAdmin
+        .from('graph_nodes')
+        .select(`
+          knowledge_point_id,
+          knowledge_points (
+            id,
+            title,
+            content
+          )
+        `)
+        .eq('knowledge_point_id', currentNodeId)
+        .is('deleted_at', null)
         .single();
       
-      if (currentNode) {
-        currentNodeContext = `\n[当前节点]\n标题: ${currentNode.title}\n内容: ${currentNode.content || '(无内容)'}\n`;
+      if (currentGraphNode) {
+        const kp = Array.isArray(currentGraphNode.knowledge_points) 
+          ? currentGraphNode.knowledge_points[0] 
+          : currentGraphNode.knowledge_points;
+        const nodeData: NodeData = {
+          title: kp?.title || '',
+          content: kp?.content || ''
+        };
+        const nodeContext = buildNodeContext(nodeData, { maxContentLength: 1000 });
+        currentNodeContext = `\n[当前节点]\n${nodeContext}\n`;
       }
     }
 
-    const sourcesContext = searchResults
-      .map((r, i) => `[${i + 1}] ${r.title}\n${r.content || '(无详细内容)'}`)
-      .join('\n\n');
+    const nodesData: NodeData[] = searchResults.map(r => ({
+      title: r.title,
+      content: r.content || ''
+    }));
+    const sourcesContext = buildNodesContext(nodesData, { maxContentLength: 500 });
 
     let context = '';
     if (currentNodeContext) {
-      context += `${currentNodeContext  }\n`;
+      context += `${currentNodeContext}\n`;
     }
     if (sourcesContext) {
-      context += `[相关知识节点]\n${  sourcesContext}`;
+      context += `[相关知识节点]\n${sourcesContext}`;
     }
 
     if (context.length > maxContextLength) {
-      context = `${context.substring(0, maxContextLength)  }...(内容已截断)`;
+      context = `${context.substring(0, maxContextLength)}...(内容已截断)`;
     }
 
     return { context, sources: searchResults };
@@ -389,19 +429,37 @@ ${context || '(暂无相关上下文)'}`;
     gaps: Array<{ topic: string; reason: string; priority: 'high' | 'medium' | 'low' }>;
     suggestions: string[];
   }> {
-    const { data: nodes } = await supabaseAdmin
-      .from('nodes')
-      .select('id, title, content, level')
+    const { data: graphNodes } = await supabaseAdmin
+      .from('graph_nodes')
+      .select(`
+        knowledge_point_id,
+        level,
+        knowledge_points (
+          id,
+          title,
+          content
+        )
+      `)
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
-    if (!nodes || nodes.length === 0) {
+    if (!graphNodes || graphNodes.length === 0) {
       return { gaps: [], suggestions: [] };
     }
 
+    const nodes = graphNodes.map((gn: any) => {
+      const kp = Array.isArray(gn.knowledge_points) ? gn.knowledge_points[0] : gn.knowledge_points;
+      return {
+        id: kp?.id || gn.knowledge_point_id,
+        title: kp?.title || '',
+        content: kp?.content || '',
+        level: gn.level
+      };
+    });
+
     const { data: edges } = await supabaseAdmin
       .from('edges')
-      .select('source_node_id, target_node_id')
+      .select('source_knowledge_point_id, target_knowledge_point_id')
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
@@ -410,8 +468,8 @@ ${context || '(暂无相关上下文)'}`;
     
     if (edges) {
       edges.forEach(e => {
-        connectedNodes.add(e.source_node_id);
-        connectedNodes.add(e.target_node_id);
+        connectedNodes.add(e.source_knowledge_point_id);
+        connectedNodes.add(e.target_knowledge_point_id);
       });
     }
 

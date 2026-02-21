@@ -4,6 +4,7 @@ import { TemplateEngine } from '../utils/templateEngine.js';
 import { getAIProviderForTask } from './ai/factory.js';
 import { logger } from '../utils/logger.js';
 import { supabaseAdmin } from '../supabase.js';
+import { createKnowledgePointWithGraphNode, GRAPH_NODES_SELECT } from '../utils/nodeHelpers.js';
 
 export interface AIActionVariables {
   includeParent?: boolean;
@@ -104,13 +105,26 @@ export class AIActionService {
     if (!action) throw new Error('Action not found');
 
     // 2. Fetch Node Context
-    const { data: node, error: nodeError } = await supabaseAdmin
-      .from('nodes')
-      .select('*')
-      .eq('id', nodeId)
-      .single();
+    const { data: graphNode, error: nodeError } = await supabaseAdmin
+      .from('graph_nodes')
+      .select(GRAPH_NODES_SELECT)
+      .eq('knowledge_point_id', nodeId)
+      .is('deleted_at', null)
+      .maybeSingle();
     
-    if (nodeError || !node) throw new Error('Node not found');
+    if (nodeError || !graphNode) throw new Error('Node not found');
+
+    const kp = Array.isArray(graphNode.knowledge_points) 
+      ? graphNode.knowledge_points[0] 
+      : graphNode.knowledge_points;
+    
+    const node: any = {
+      id: kp?.id || graphNode.knowledge_point_id,
+      graph_id: graphNode.graph_id,
+      title: kp?.title || '',
+      content: kp?.content || '',
+      properties: kp?.properties || {},
+    };
 
     // 3. Prepare Context
     const context: any = {
@@ -124,18 +138,23 @@ export class AIActionService {
         if (action.variables.includeParent) {
             const { data: edges } = await supabaseAdmin
                 .from('edges')
-                .select('source_node_id')
-                .eq('target_node_id', nodeId);
+                .select('source_knowledge_point_id')
+                .eq('target_knowledge_point_id', nodeId)
+                .is('deleted_at', null);
             
             if (edges && edges.length > 0) {
-                const parentIds = edges.map(e => e.source_node_id);
-                const { data: parents } = await supabaseAdmin
-                    .from('nodes')
-                    .select('title, content')
-                    .in('id', parentIds);
+                const parentIds = edges.map(e => e.source_knowledge_point_id);
+                const { data: parentGraphNodes } = await supabaseAdmin
+                    .from('graph_nodes')
+                    .select(GRAPH_NODES_SELECT)
+                    .in('knowledge_point_id', parentIds)
+                    .is('deleted_at', null);
                 
-                if (parents && parents.length > 0) {
-                    context.parents = parents.map(p => `Title: ${p.title}\nContent: ${p.content}`).join('\n---\n');
+                if (parentGraphNodes && parentGraphNodes.length > 0) {
+                    context.parents = parentGraphNodes.map((pgn: any) => {
+                      const k = Array.isArray(pgn.knowledge_points) ? pgn.knowledge_points[0] : pgn.knowledge_points;
+                      return `Title: ${k?.title || ''}\nContent: ${k?.content || ''}`;
+                    }).join('\n---\n');
                 }
             }
         }
@@ -144,56 +163,64 @@ export class AIActionService {
         if (action.variables.includeChildren) {
              const { data: edges } = await supabaseAdmin
                 .from('edges')
-                .select('target_node_id')
-                .eq('source_node_id', nodeId);
+                .select('target_knowledge_point_id')
+                .eq('source_knowledge_point_id', nodeId)
+                .is('deleted_at', null);
             
             if (edges && edges.length > 0) {
-                const childIds = edges.map(e => e.target_node_id);
-                const { data: children } = await supabaseAdmin
-                    .from('nodes')
-                    .select('title, content')
-                    .in('id', childIds);
+                const childIds = edges.map(e => e.target_knowledge_point_id);
+                const { data: childGraphNodes } = await supabaseAdmin
+                    .from('graph_nodes')
+                    .select(GRAPH_NODES_SELECT)
+                    .in('knowledge_point_id', childIds)
+                    .is('deleted_at', null);
                 
-                if (children && children.length > 0) {
-                    context.children = children.map(c => `Title: ${c.title}\nContent: ${c.content}`).join('\n---\n');
+                if (childGraphNodes && childGraphNodes.length > 0) {
+                    context.children = childGraphNodes.map((cgn: any) => {
+                      const k = Array.isArray(cgn.knowledge_points) ? cgn.knowledge_points[0] : cgn.knowledge_points;
+                      return `Title: ${k?.title || ''}\nContent: ${k?.content || ''}`;
+                    }).join('\n---\n');
                 }
             }
         }
 
         // Siblings Context
         if (action.variables.includeSiblings) {
-            // 1. Find parents
             const { data: parentEdges } = await supabaseAdmin
                 .from('edges')
-                .select('source_node_id')
-                .eq('target_node_id', nodeId);
+                .select('source_knowledge_point_id')
+                .eq('target_knowledge_point_id', nodeId)
+                .is('deleted_at', null);
             
             if (parentEdges && parentEdges.length > 0) {
-                const parentIds = parentEdges.map(e => e.source_node_id);
+                const parentIds = parentEdges.map(e => e.source_knowledge_point_id);
                 
-                // 2. Find children of parents (siblings)
                 const { data: siblingEdges } = await supabaseAdmin
                     .from('edges')
-                    .select('target_node_id')
-                    .in('source_node_id', parentIds);
+                    .select('target_knowledge_point_id')
+                    .in('source_knowledge_point_id', parentIds)
+                    .is('deleted_at', null);
                 
                 if (siblingEdges && siblingEdges.length > 0) {
-                    // Filter out current node and duplicates
                     const siblingIds = [...new Set(
                         siblingEdges
-                            .map(e => e.target_node_id)
+                            .map(e => e.target_knowledge_point_id)
                             .filter(id => id !== nodeId)
                     )];
 
                     if (siblingIds.length > 0) {
-                        const { data: siblings } = await supabaseAdmin
-                            .from('nodes')
-                            .select('title, content')
-                            .in('id', siblingIds)
-                            .limit(10); // Limit to 10 siblings to avoid context explosion
+                        const { data: siblingGraphNodes } = await supabaseAdmin
+                            .from('graph_nodes')
+                            .select(GRAPH_NODES_SELECT)
+                            .in('knowledge_point_id', siblingIds)
+                            .is('deleted_at', null)
+                            .limit(10);
                         
-                        if (siblings && siblings.length > 0) {
-                            context.siblings = siblings.map(s => `Title: ${s.title}\nContent: ${s.content}`).join('\n---\n');
+                        if (siblingGraphNodes && siblingGraphNodes.length > 0) {
+                            context.siblings = siblingGraphNodes.map((sgn: any) => {
+                              const k = Array.isArray(sgn.knowledge_points) ? sgn.knowledge_points[0] : sgn.knowledge_points;
+                              return `Title: ${k?.title || ''}\nContent: ${k?.content || ''}`;
+                            }).join('\n---\n');
                         }
                     }
                 }
@@ -262,52 +289,64 @@ export class AIActionService {
     }
 
     if (action.target_mode === 'update_node') {
-        const updates: any = {};
-        if (parsed.content) updates.content = parsed.content;
-        if (parsed.title) updates.title = parsed.title;
+        const kpUpdates: any = {};
+        if (parsed.content) kpUpdates.content = parsed.content;
+        if (parsed.title) kpUpdates.title = parsed.title;
         
-        // Handle tags (merge into properties)
         if (parsed.tags && Array.isArray(parsed.tags)) {
-             // We need to fetch current properties again or assume we have them?
-             // Best to do a localized update or fetch-modify-save.
-             const { data: node } = await supabaseAdmin.from('nodes').select('properties').eq('id', nodeId).single();
-             const currentProps = node?.properties || {};
-             updates.properties = { ...currentProps, tags: parsed.tags };
+             const { data: kp } = await supabaseAdmin
+               .from('knowledge_points')
+               .select('properties')
+               .eq('id', nodeId)
+               .single();
+             const currentProps = kp?.properties || {};
+             kpUpdates.properties = { ...currentProps, tags: parsed.tags };
         }
 
-        if (Object.keys(updates).length > 0) {
-            await supabaseAdmin.from('nodes').update(updates).eq('id', nodeId);
-            return { success: true, data: { updatedFields: Object.keys(updates) } };
+        if (Object.keys(kpUpdates).length > 0) {
+            await supabaseAdmin
+              .from('knowledge_points')
+              .update(kpUpdates)
+              .eq('id', nodeId);
+            return { success: true, data: { updatedFields: Object.keys(kpUpdates) } };
         }
         return { success: true, message: 'No changes needed' };
     }
 
     if (action.target_mode === 'spawn_children') {
         if (parsed.children && Array.isArray(parsed.children)) {
-            const newNodes = parsed.children.map((child: any) => ({
-                graph_id: graphId,
-                title: child.title,
-                content: child.content,
-                properties: {},
-                x_position: 0, // Should calculate position, but let's default to 0 for now
-                y_position: 0
-            }));
-
-            // Create nodes
-            const { data: createdNodes, error } = await supabaseAdmin.from('nodes').insert(newNodes).select();
-            if (error) throw error;
-
-            // Create edges
-            const edges = createdNodes.map((child: any) => ({
-                source_node_id: nodeId,
-                target_node_id: child.id,
-                relationship_type: 'generated'
-            }));
-
-            await supabaseAdmin.from('edges').insert(edges);
+            const createdNodeIds: string[] = [];
             
-            return { success: true, data: { createdCount: createdNodes.length } };
+            for (const child of parsed.children) {
+              const result = await createKnowledgePointWithGraphNode(
+                supabaseAdmin,
+                userId,
+                {
+                  graph_id: graphId,
+                  title: child.title,
+                  content: child.content || '',
+                  x_position: 0,
+                  y_position: 0
+                }
+              );
+              
+              if (result) {
+                createdNodeIds.push(result.id);
+                
+                await supabaseAdmin
+                  .from('edges')
+                  .insert({
+                    graph_id: graphId,
+                    source_knowledge_point_id: nodeId,
+                    target_knowledge_point_id: result.id,
+                    relationship_type: 'generated'
+                  });
+              }
+            }
+
+            return { success: true, data: { createdCount: createdNodeIds.length } };
         }
+        return { success: false, message: 'No children to spawn' };
     }
 
     return { success: false, message: 'Unknown target mode or invalid response format' };

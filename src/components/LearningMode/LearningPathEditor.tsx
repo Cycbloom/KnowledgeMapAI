@@ -328,7 +328,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
           title: `学习路径 - ${result.graphTitle}`,
           description: result.targetGoal || 'AI 生成的学习路径',
           goal_type: 'graph_node',
-          target_node_id: result.stages[0]?.nodeId,
+          target_knowledge_point_id: result.stages[0]?.nodeId,
           daily_minutes_target: 30
         });
         

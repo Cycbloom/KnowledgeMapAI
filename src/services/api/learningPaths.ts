@@ -10,7 +10,7 @@ export const learningPathsApi = {
     description?: string;
     goal_type: 'natural_language' | 'graph_node' | 'template';
     goal_content?: string;
-    target_node_id?: string;
+    target_knowledge_point_id?: string;
     template_id?: string;
     daily_minutes_target?: number;
     target_completion_date?: string;
@@ -20,7 +20,7 @@ export const learningPathsApi = {
     goal: string;
     context?: string;
     goal_type?: 'natural_language' | 'graph_node' | 'template';
-    target_node_id?: string;
+    target_knowledge_point_id?: string;
     template_id?: string;
     daily_minutes_target?: number;
     target_completion_date?: string;
@@ -67,7 +67,7 @@ export const learningPathApi = {
   generate: (data: {
     graph_id: string;
     target_goal?: string;
-    target_node_id?: string;
+    target_knowledge_point_id?: string;
     learning_style?: 'sequential' | 'exploratory' | 'focused' | 'custom';
     daily_time_minutes?: number;
     current_knowledge?: string;

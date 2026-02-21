@@ -78,12 +78,10 @@ export const nodesApi = {
 
 export const edgesApi = {
   create: (data: { 
-    source_node_id: string; 
-    target_node_id: string; 
+    source_knowledge_point_id: string; 
+    target_knowledge_point_id: string; 
     graph_id: string; 
     relationship_type?: string;
-    source_graph_node_id?: string;
-    target_graph_node_id?: string;
   }) => request<Edge>('/edges', { method: 'POST', body: JSON.stringify(data) }),
   
   delete: (id: string) => request(`/edges/${id}`, { method: 'DELETE' }),

@@ -33,18 +33,18 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
     try {
       const parentLevel = getLevel(selectedNode, edges);
       
-      const existingTitles = nodes.map(n => n.title);
+      const existingTitles = nodes.map(n => n.knowledge_point?.title);
       
       const currentChildrenIds = edges
-        .filter(e => e.source_node_id === selectedNode.id)
-        .map(e => e.target_node_id);
+        .filter(e => e.source_knowledge_point_id === selectedNode.id)
+        .map(e => e.target_knowledge_point_id);
       const currentChildrenTitles = nodes
         .filter(n => currentChildrenIds.includes(n.id))
-        .map(n => n.title);
+        .map(n => n.knowledge_point?.title);
 
       const res = await api.ai.getBranchSuggestions({
-        node_title: selectedNode.title,
-        node_content: selectedNode.content,
+        node_title: selectedNode.knowledge_point?.title,
+        node_content: selectedNode.knowledge_point?.content,
         existing_nodes: existingTitles,
         child_nodes: currentChildrenTitles,
         context_level: parentLevel
@@ -91,8 +91,8 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
 
       record({ type: 'CREATE_NODE', payload: newNode });
       const newEdge = await mutations.createEdgeMutation.mutateAsync({
-        source_node_id: selectedNode.id,
-        target_node_id: newNode.id,
+        source_knowledge_point_id: selectedNode.id,
+        target_knowledge_point_id: newNode.id,
         relationship_type: 'branch',
         graphId: id
       });
@@ -139,8 +139,8 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
 
         record({ type: 'CREATE_NODE', payload: newNode });
         const newEdge = await mutations.createEdgeMutation.mutateAsync({
-          source_node_id: parentNode.id,
-          target_node_id: newNode.id,
+          source_knowledge_point_id: parentNode.id,
+          target_knowledge_point_id: newNode.id,
           relationship_type: 'branch',
           graphId: id
         });
@@ -156,7 +156,7 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
           if (currentIndex !== -1) {
             newPath[currentIndex] = {
               nodeId: selectedNodeData.node.id,
-              nodeTitle: selectedNodeData.node.title,
+              nodeTitle: selectedNodeData.node.knowledge_point?.title,
               timestamp: new Date(),
               branchChoice: selectedNodeData.suggestion.title,
               parentNodeId: parentNode.id,

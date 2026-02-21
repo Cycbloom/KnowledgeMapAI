@@ -43,7 +43,7 @@ export const useTutorOperations = ({
     try {
       const contextNodeIds = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedNode ? [selectedNode.id] : []);
       
-      const existingNodes = nodes.map(n => n.title);
+      const existingNodes = nodes.map(n => n.knowledge_point?.title);
 
       await api.ai.tutorChatStream(
         {
@@ -65,7 +65,7 @@ export const useTutorOperations = ({
   const handleExtractConcepts = async (text: string) => {
     setLoading(true);
     try {
-      const existingNodes = nodes.map(n => n.title);
+      const existingNodes = nodes.map(n => n.knowledge_point?.title);
       
       const result = await api.ai.extractConcepts({
         text,
@@ -131,8 +131,8 @@ export const useTutorOperations = ({
       record({ type: 'CREATE_NODE', payload: newNode });
 
       const newEdge = await createEdgeMutation.mutateAsync({
-        source_node_id: parentNode.id,
-        target_node_id: newNode.id,
+        source_knowledge_point_id: parentNode.id,
+        target_knowledge_point_id: newNode.id,
         relationship_type: 'related',
         graphId: id
       });
@@ -196,8 +196,8 @@ export const useTutorOperations = ({
         record({ type: 'CREATE_NODE', payload: newNode });
 
         const newEdge = await createEdgeMutation.mutateAsync({
-          source_node_id: parentNode.id,
-          target_node_id: newNode.id,
+          source_knowledge_point_id: parentNode.id,
+          target_knowledge_point_id: newNode.id,
           relationship_type: 'related',
           graphId: id
         });
@@ -226,7 +226,7 @@ export const useTutorOperations = ({
     setLoading(true);
     
     try {
-      const existingNodes = nodes.map(n => n.title);
+      const existingNodes = nodes.map(n => n.knowledge_point?.title);
       
       const result = await api.ai.suggestNextTopic({
         node_title: selectedNode.title,

@@ -5,6 +5,7 @@ import { aiService } from '../services/aiService.js';
 import { graphService } from '../services/graphService.js';
 import { getNextLevel } from '../utils/graphUtils.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
+import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
 
 class TaskProcessor {
   
@@ -21,16 +22,12 @@ class TaskProcessor {
           result = await this.handleGenerateQuestions(task);
           break;
         case 'batch_generate_questions':
-          await taskService.processBatchGenerateCards(task.id, task.user_id, task.payload);
-          break;
+        case 'recursive_graph_generation':
+        case 'infinite_graph_expansion':
+          await taskService.processTask(task.id, task.user_id, task.type, task.payload);
+          return;
         case 'expand_graph':
           result = await this.handleExpandGraph(task);
-          break;
-        case 'recursive_graph_generation':
-          await taskService.processRecursiveGraphGeneration(task.id, task.user_id, task.payload);
-          break;
-        case 'infinite_graph_expansion':
-          await taskService.processInfiniteGraphExpansion(task.id, task.user_id, task.payload);
           break;
         default:
           throw new Error(`Unknown task type: ${task.type}`);
@@ -63,13 +60,13 @@ class TaskProcessor {
     let totalCount = 0;
     const errors: string[] = [];
     
-    // Fetch graph_id for the node (needed for optimized schema)
-    const { data: nodeData } = await supabaseAdmin
-        .from('nodes')
-        .select('graph_id')
-        .eq('id', node_id)
+    const { data: graphNodeData } = await supabaseAdmin
+        .from('graph_nodes')
+        .select('graph_id, knowledge_point_id')
+        .eq('knowledge_point_id', node_id)
+        .is('deleted_at', null)
         .single();
-    const graph_id = nodeData?.graph_id;
+    const graph_id = graphNodeData?.graph_id;
 
     // Truncate content to avoid context overflow
     const MAX_CONTENT_LENGTH = 15000;
@@ -196,43 +193,50 @@ class TaskProcessor {
   private async handleExpandGraph(task: Task) {
     const { graph_id, node_id, node_title, node_content, existing_nodes, child_nodes, provider, model } = task.payload;
 
-    // Fetch latest existing nodes in the graph to avoid duplicates/conflicts in batch processing
-    const { data: allNodes } = await supabaseAdmin
-      .from('nodes')
-      .select('title')
-      .eq('graph_id', graph_id);
+    const { data: allGraphNodes } = await supabaseAdmin
+      .from('graph_nodes')
+      .select(`
+        knowledge_points (
+          title
+        )
+      `)
+      .eq('graph_id', graph_id)
+      .is('deleted_at', null);
       
-    const latestExistingNodes = allNodes?.map(n => n.title) || existing_nodes || [];
+    const latestExistingNodes = allGraphNodes?.map((gn: any) => gn.knowledge_points?.title).filter(Boolean) || existing_nodes || [];
 
-    // Fetch latest children of the current node
     const { data: currentEdges } = await supabaseAdmin
       .from('edges')
-      .select('target_node_id')
-      .eq('source_node_id', node_id);
+      .select('target_knowledge_point_id')
+      .eq('source_knowledge_point_id', node_id)
+      .is('deleted_at', null);
       
     let latestChildNodes: string[] = [];
     if (currentEdges && currentEdges.length > 0) {
-      const targetIds = currentEdges.map(e => e.target_node_id);
-      const { data: childNodeData } = await supabaseAdmin
-        .from('nodes')
-        .select('title')
-        .in('id', targetIds);
-      latestChildNodes = childNodeData?.map(n => n.title) || [];
+      const targetIds = currentEdges.map(e => e.target_knowledge_point_id);
+      const { data: childGraphNodeData } = await supabaseAdmin
+        .from('graph_nodes')
+        .select(`
+          knowledge_points (
+            title
+          )
+        `)
+        .in('knowledge_point_id', targetIds)
+        .is('deleted_at', null);
+      latestChildNodes = childGraphNodeData?.map((gn: any) => gn.knowledge_points?.title).filter(Boolean) || [];
     } else {
       latestChildNodes = child_nodes || [];
     }
 
-    // 0. Fetch current node to get position and level
-    const { data: currentNode } = await supabaseAdmin
-      .from('nodes')
-      .select('x_position, y_position, level')
-      .eq('id', node_id)
+    const { data: currentGraphNode } = await supabaseAdmin
+      .from('graph_nodes')
+      .select('id, x_position, y_position, level')
+      .eq('knowledge_point_id', node_id)
+      .is('deleted_at', null)
       .single();
       
-    if (!currentNode) throw new Error('Source node not found');
+    if (!currentGraphNode) throw new Error('Source node not found');
 
-    // 1. Get suggestions from AI
-    // Pass userId and graphId for prompt customization
     const aiResult = await aiService.expandKnowledge(
       node_title, 
       node_content, 
@@ -241,36 +245,38 @@ class TaskProcessor {
       { 
         provider, 
         model, 
-        contextLevel: currentNode.level,
+        contextLevel: currentGraphNode.level,
         userId: task.user_id,
         graphId: graph_id
       }
     );
     const suggestions = aiResult.suggestions;
 
-    // 2. Insert new nodes and edges
     const newNodes: any[] = [];
     const newEdges: any[] = [];
       
-    const newLevel = getNextLevel(currentNode.level);
+    const newLevel = getNextLevel(currentGraphNode.level);
 
     if (Array.isArray(suggestions) && suggestions.length > 0) {
       for (const item of suggestions) {
-        // Check if node already exists (by title in this graph)
-        const { data: existingNode } = await supabaseAdmin
-          .from('nodes')
-          .select('id')
+        const suggestion = item as { title: string; content?: string };
+        const { data: existingGraphNode } = await supabaseAdmin
+          .from('graph_nodes')
+          .select('id, knowledge_point_id, knowledge_points (id, title)')
           .eq('graph_id', graph_id)
-          .eq('title', item.title)
+          .eq('knowledge_points.title', suggestion.title)
+          .is('deleted_at', null)
           .single();
 
-        if (existingNode) {
-          // Check if edge already exists
-          if (existingNode.id !== node_id) {
+        if (existingGraphNode) {
+          const existingKpId = (existingGraphNode as any).knowledge_points?.id || existingGraphNode.knowledge_point_id;
+          const existingGnId = existingGraphNode.id;
+          if (existingKpId && existingKpId !== node_id) {
             const { data: existingEdge } = await supabaseAdmin
               .from('edges')
               .select('id')
-              .or(`and(source_node_id.eq.${node_id},target_node_id.eq.${existingNode.id}),and(source_node_id.eq.${existingNode.id},target_node_id.eq.${node_id})`)
+              .or(`and(source_knowledge_point_id.eq.${node_id},target_knowledge_point_id.eq.${existingKpId}),and(source_knowledge_point_id.eq.${existingKpId},target_knowledge_point_id.eq.${node_id})`)
+              .is('deleted_at', null)
               .single();
 
             if (!existingEdge) {
@@ -278,8 +284,8 @@ class TaskProcessor {
                 .from('edges')
                 .insert({
                   graph_id,
-                  source_node_id: node_id,
-                  target_node_id: existingNode.id,
+                  source_knowledge_point_id: node_id,
+                  target_knowledge_point_id: existingKpId,
                   relationship_type: 'related'
                 })
                 .select()
@@ -289,36 +295,29 @@ class TaskProcessor {
             }
           }
         } else {
-          // Create new node
           const angle = Math.random() * Math.PI * 2;
           const radius = 4 + Math.random() * 4;
-          const x = Math.round(currentNode.x_position + Math.cos(angle) * radius);
-          const y = Math.round(currentNode.y_position + Math.sin(angle) * radius);
+          const x = Math.round(currentGraphNode.x_position + Math.cos(angle) * radius);
+          const y = Math.round(currentGraphNode.y_position + Math.sin(angle) * radius);
 
-          const { data: newNode, error: nodeError } = await supabaseAdmin
-            .from('nodes')
-            .insert({
-              graph_id,
-              title: item.title,
-              content: item.content || '',
-              x_position: x,
-              y_position: y,
-              level: newLevel
-            })
-            .select()
-            .single();
+          const newNodeResult = await createKnowledgePointWithGraphNode(supabaseAdmin, task.user_id, {
+            graph_id,
+            title: suggestion.title,
+            content: suggestion.content || '',
+            x_position: x,
+            y_position: y,
+            level: newLevel
+          });
 
-          if (nodeError) throw nodeError;
-          if (newNode) {
-            newNodes.push(newNode);
+          if (newNodeResult) {
+            newNodes.push({ id: newNodeResult.id, title: suggestion.title });
 
-            // Create edge from parent to new node
             const { data: edge, error: edgeError } = await supabaseAdmin
               .from('edges')
               .insert({
                 graph_id,
-                source_node_id: node_id,
-                target_node_id: newNode.id,
+                source_knowledge_point_id: node_id,
+                target_knowledge_point_id: newNodeResult.id,
                 relationship_type: 'related'
               })
               .select()

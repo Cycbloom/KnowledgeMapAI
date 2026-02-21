@@ -15,7 +15,7 @@ const router = Router();
 const generatePathSchema = z.object({
   graph_id: z.string().uuid(),
   target_goal: z.string().min(5).max(500).optional(),
-  target_node_id: z.string().uuid().optional(),
+  target_knowledge_point_id: z.string().uuid().optional(),
   learning_style: z.enum(['sequential', 'exploratory', 'focused', 'custom']).default('sequential'),
   daily_time_minutes: z.number().min(5).max(240).default(30),
   current_knowledge: z.string().max(1000).optional(),
@@ -71,7 +71,7 @@ router.post('/generate', requireAuth, validate(generatePathSchema), async (req: 
   const { 
     graph_id, 
     target_goal, 
-    target_node_id, 
+    target_knowledge_point_id, 
     learning_style, 
     daily_time_minutes,
     current_knowledge,
@@ -93,25 +93,24 @@ router.post('/generate', requireAuth, validate(generatePathSchema), async (req: 
       .eq('id', graph_id)
       .single();
 
-    const { data: cardProgress } = await supabase
-      .from('card_progress')
+    const { data: studyCards } = await supabase
+      .from('study_cards')
       .select(`
-        card_id,
-        stability,
-        difficulty,
-        elapsed_days,
-        scheduled_days,
-        last_review,
+        knowledge_point_id,
+        fsrs_stability,
+        fsrs_difficulty,
+        fsrs_elapsed_days,
+        fsrs_scheduled_days,
+        fsrs_last_review,
         next_review,
-        review_count,
-        cards!inner(node_id)
+        review_count
       `)
       .eq('user_id', req.user.id);
 
     const progressMap = new Map<string, LearningProgress>();
-    if (cardProgress) {
-      cardProgress.forEach((p: any) => {
-        const nodeId = p.cards?.node_id;
+    if (studyCards) {
+      studyCards.forEach((p: any) => {
+        const nodeId = p.knowledge_point_id;
         if (nodeId) {
           const existing = progressMap.get(nodeId) || {
             nodeId,
@@ -125,10 +124,10 @@ router.post('/generate', requireAuth, validate(generatePathSchema), async (req: 
           };
           
           existing.reviewCount = Math.max(existing.reviewCount, p.review_count || 0);
-          existing.stability = Math.max(existing.stability, p.stability || 0);
-          existing.difficulty = p.difficulty || 0;
+          existing.stability = Math.max(existing.stability, p.fsrs_stability || 0);
+          existing.difficulty = p.fsrs_difficulty || 0;
           
-          if (p.last_review) existing.lastReviewDate = new Date(p.last_review);
+          if (p.fsrs_last_review) existing.lastReviewDate = new Date(p.fsrs_last_review);
           if (p.next_review) existing.nextReviewDate = new Date(p.next_review);
           
           existing.masteryLevel = Math.min(1, (existing.stability / 30) * (1 - existing.difficulty / 10));
@@ -164,13 +163,13 @@ router.post('/generate', requireAuth, validate(generatePathSchema), async (req: 
     });
     
     edges.forEach((edge: any) => {
-      const parents = parentMap.get(edge.target_node_id) || [];
-      parents.push(edge.source_node_id);
-      parentMap.set(edge.target_node_id, parents);
+      const parents = parentMap.get(edge.target_knowledge_point_id) || [];
+      parents.push(edge.source_knowledge_point_id);
+      parentMap.set(edge.target_knowledge_point_id, parents);
       
-      const children = childMap.get(edge.source_node_id) || [];
-      children.push(edge.target_node_id);
-      childMap.set(edge.source_node_id, children);
+      const children = childMap.get(edge.source_knowledge_point_id) || [];
+      children.push(edge.target_knowledge_point_id);
+      childMap.set(edge.source_knowledge_point_id, children);
     });
 
     let stages: LearningPathStage[];
@@ -204,7 +203,7 @@ router.post('/generate', requireAuth, validate(generatePathSchema), async (req: 
         progressMap,
         parentMap,
         childMap,
-        target_node_id,
+        target_knowledge_point_id,
         daily_time_minutes
       );
       stages = ruleResult.stages;
@@ -297,8 +296,8 @@ async function generateAIPath(
   });
 
   const edgesInfo = edges.map(e => ({
-    source: e.source_node_id,
-    target: e.target_node_id,
+    source: e.source_knowledge_point_id,
+    target: e.target_knowledge_point_id,
     relationship: e.relationship_type
   }));
 
@@ -526,12 +525,20 @@ router.get('/progress/:graphId', requireAuth, async (req: AuthRequest, res: Resp
   const supabase = req.supabase!;
 
   try {
-    const { data: nodes } = await supabase
-      .from('nodes')
-      .select('id, title, level')
-      .eq('graph_id', graphId);
+    const { data: graphNodes } = await supabase
+      .from('graph_nodes')
+      .select(`
+        knowledge_point_id,
+        level,
+        knowledge_points (
+          id,
+          title
+        )
+      `)
+      .eq('graph_id', graphId)
+      .is('deleted_at', null);
 
-    if (!nodes || nodes.length === 0) {
+    if (!graphNodes || graphNodes.length === 0) {
       return res.json({ 
         totalNodes: 0, 
         masteredNodes: 0, 
@@ -541,31 +548,31 @@ router.get('/progress/:graphId', requireAuth, async (req: AuthRequest, res: Resp
       });
     }
 
-    const nodeIds = nodes.map(n => n.id);
-    const { data: cards } = await supabase
-      .from('cards')
-      .select('id, node_id')
-      .in('node_id', nodeIds);
+    const nodes = graphNodes.map((gn: any) => {
+      const kp = Array.isArray(gn.knowledge_points) ? gn.knowledge_points[0] : gn.knowledge_points;
+      return {
+        id: kp?.id || gn.knowledge_point_id,
+        title: kp?.title || '',
+        level: gn.level
+      };
+    });
 
-    const cardIds = cards?.map(c => c.id) || [];
-    const { data: progress } = await supabase
-      .from('card_progress')
-      .select('card_id, stability, difficulty, review_count')
+    const nodeIds = nodes.map((n: any) => n.id);
+    const { data: studyCards } = await supabase
+      .from('study_cards')
+      .select('id, knowledge_point_id, fsrs_stability, fsrs_difficulty')
       .eq('user_id', req.user.id)
-      .in('card_id', cardIds);
+      .in('knowledge_point_id', nodeIds);
 
     const nodeProgress = new Map<string, { mastered: boolean; learning: boolean }>();
     
-    if (cards && progress) {
-      cards.forEach(card => {
-        const cardProgress = progress.find(p => p.card_id === card.id);
-        if (cardProgress) {
-          const mastery = Math.min(1, ((cardProgress.stability || 0) / 30) * (1 - (cardProgress.difficulty || 5) / 10));
-          nodeProgress.set(card.node_id, {
-            mastered: mastery > 0.8,
-            learning: mastery > 0.3 && mastery <= 0.8
-          });
-        }
+    if (studyCards) {
+      studyCards.forEach(card => {
+        const mastery = Math.min(1, ((card.fsrs_stability || 0) / 30) * (1 - (card.fsrs_difficulty || 5) / 10));
+        nodeProgress.set(card.knowledge_point_id, {
+          mastered: mastery > 0.8,
+          learning: mastery > 0.3 && mastery <= 0.8
+        });
       });
     }
 

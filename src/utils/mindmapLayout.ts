@@ -75,11 +75,11 @@ export const createMindMapLayout = (
   }));
 
   const layoutLinks: LayoutLink[] = edges
-    .filter(edge => nodeIds.has(edge.source_node_id) && nodeIds.has(edge.target_node_id))
+    .filter(edge => nodeIds.has(edge.source_knowledge_point_id) && nodeIds.has(edge.target_knowledge_point_id))
     .map(edge => ({
       ...edge,
-      source: edge.source_node_id,
-      target: edge.target_node_id
+      source: edge.source_knowledge_point_id,
+      target: edge.target_knowledge_point_id
     }));
 
   const simulation = d3.forceSimulation(layoutNodes)

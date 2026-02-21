@@ -82,3 +82,13 @@
 - [x] 迁移后数据无丢失
 - [x] 现有功能正常运行
 - [x] 学习进度数据保留
+
+## 迁移文件整理（2026-02-21）
+
+- [x] initial_schema.sql 重写完成，移除 nodes 表
+- [x] 冗余迁移文件已删除（4个）
+- [x] 最终迁移文件结构：2个文件（initial_schema.sql + initial_seed.sql）
+- [x] edges 表直接引用 knowledge_points（source_knowledge_point_id, target_knowledge_point_id）
+- [x] study_cards 表直接引用 knowledge_points（knowledge_point_id）
+- [x] 所有函数更新为使用新表结构
+- [x] specs 文档已更新

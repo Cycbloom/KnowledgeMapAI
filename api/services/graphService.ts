@@ -1,5 +1,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { cacheService, CacheKeys } from './cache.js';
+import { buildNodeFromGraphNode, GRAPH_NODES_SELECT } from '../utils/nodeHelpers.js';
+import { softDelete } from '../utils/softDelete.js';
+import { logger } from '../utils/logger.js';
+import { LEVEL_WEIGHTS, getLevelIndex } from '../utils/levelUtils.js';
+import { withRpcFallback } from '../utils/rpcFallback.js';
 
 interface GraphWithCount {
   id: string;
@@ -19,15 +24,11 @@ export class GraphService {
     const cacheKey = CacheKeys.USER_GRAPHS(userId);
     
     return cacheService.getOrSet(cacheKey, async () => {
-      const { data, error } = await supabase
-        .rpc('get_user_graphs_with_counts', { p_user_id: userId });
-
-      if (error) {
-        console.error('RPC error, falling back to manual query:', error);
-        return this.listGraphsFallback(supabase, userId);
-      }
-
-      return (data as GraphWithCount[]) || [];
+      return withRpcFallback<GraphWithCount[]>(supabase, {
+        rpcName: 'get_user_graphs_with_counts',
+        rpcParams: { p_user_id: userId },
+        fallbackFn: () => this.listGraphsFallback(supabase, userId)
+      });
     });
   }
 
@@ -49,7 +50,7 @@ export class GraphService {
     }
     
     const { data: nodeCounts } = await supabase
-      .from('nodes')
+      .from('graph_nodes')
       .select('graph_id')
       .in('graph_id', graphIds)
       .is('deleted_at', null);
@@ -59,38 +60,47 @@ export class GraphService {
       countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
     });
     
-    const { data: nodesData } = await supabase
-      .from('nodes')
-      .select('graph_id, properties')
+    const { data: graphNodesData } = await supabase
+      .from('graph_nodes')
+      .select(`
+        graph_id,
+        knowledge_points (
+          properties
+        )
+      `)
       .in('graph_id', graphIds)
       .is('deleted_at', null);
     
     const tagsMap = new Map<string, Set<string>>();
-    nodesData?.forEach((n: { graph_id: string; properties: any }) => {
-      const tags = n.properties?.tags || [];
-      if (!tagsMap.has(n.graph_id)) {
-        tagsMap.set(n.graph_id, new Set());
+    graphNodesData?.forEach((gn: { graph_id: string; knowledge_points: any }) => {
+      const tags = gn.knowledge_points?.properties?.tags || [];
+      if (!tagsMap.has(gn.graph_id)) {
+        tagsMap.set(gn.graph_id, new Set());
       }
-      tags.forEach((tag: string) => tagsMap.get(n.graph_id)!.add(tag));
+      tags.forEach((tag: string) => tagsMap.get(gn.graph_id)!.add(tag));
     });
     
-    return graphs?.map((g: Record<string, unknown>) => ({
-      ...g,
+    return (graphs?.map((g: Record<string, unknown>) => ({
+      id: g.id as string,
+      user_id: g.user_id as string,
+      title: g.title as string,
+      description: g.description as string | null,
+      is_public: g.is_public as boolean,
+      is_favorite: g.is_favorite as boolean,
+      created_at: g.created_at as string,
+      updated_at: g.updated_at as string,
+      deleted_at: g.deleted_at as string | null,
       nodes_count: countMap.get(g.id as string) || 0,
       tags: Array.from(tagsMap.get(g.id as string) || [])
-    })) || [];
+    })) || []) as GraphWithCount[];
   }
 
   async listTrash(supabase: SupabaseClient, userId: string) {
-    const { data, error } = await supabase
-      .rpc('get_user_trashed_graphs', { p_user_id: userId });
-
-    if (error) {
-      console.error('RPC error, falling back to manual query:', error);
-      return this.listTrashFallback(supabase, userId);
-    }
-
-    return (data as GraphWithCount[]) || [];
+    return withRpcFallback<GraphWithCount[]>(supabase, {
+      rpcName: 'get_user_trashed_graphs',
+      rpcParams: { p_user_id: userId },
+      fallbackFn: () => this.listTrashFallback(supabase, userId)
+    });
   }
 
   private async listTrashFallback(supabase: SupabaseClient, userId: string) {
@@ -110,7 +120,7 @@ export class GraphService {
     }
     
     const { data: nodeCounts } = await supabase
-      .from('nodes')
+      .from('graph_nodes')
       .select('graph_id')
       .in('graph_id', graphIds)
       .is('deleted_at', null);
@@ -120,10 +130,18 @@ export class GraphService {
       countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
     });
     
-    return graphs?.map((g: Record<string, unknown>) => ({
-      ...g,
+    return (graphs?.map((g: Record<string, unknown>) => ({
+      id: g.id as string,
+      user_id: g.user_id as string,
+      title: g.title as string,
+      description: g.description as string | null,
+      is_public: g.is_public as boolean,
+      is_favorite: g.is_favorite as boolean,
+      created_at: g.created_at as string,
+      updated_at: g.updated_at as string,
+      deleted_at: g.deleted_at as string | null,
       nodes_count: countMap.get(g.id as string) || 0
-    })) || [];
+    })) || []) as GraphWithCount[];
   }
 
   async getGraph(supabase: SupabaseClient, graphId: string, userId: string | null) {
@@ -137,9 +155,30 @@ export class GraphService {
       query = query.eq('user_id', userId);
     }
 
-    const { data, error } = await query.single();
+    const { data, error } = await query.maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      logger.error('getGraph error:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      const { data: publicGraph, error: publicError } = await supabase
+        .from('knowledge_graphs')
+        .select('*')
+        .eq('id', graphId)
+        .eq('is_public', true)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (publicError) {
+        logger.error('getGraph public fallback error:', publicError);
+        throw publicError;
+      }
+      
+      return publicGraph;
+    }
+    
     return data;
   }
 
@@ -219,13 +258,10 @@ export class GraphService {
   }
 
   async deleteGraph(supabase: SupabaseClient, graphId: string, userId: string) {
-    const { error } = await supabase
-      .from('knowledge_graphs')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', graphId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
+    const result = await softDelete(supabase, 'knowledge_graphs', graphId);
+    if (!result.success) {
+      throw new Error(result.error || '删除图谱失败');
+    }
     
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     await cacheService.del(CacheKeys.GRAPH(graphId));
@@ -256,33 +292,85 @@ export class GraphService {
   }
 
   async getGraphNodes(supabase: SupabaseClient, userId: string | null, graphId: string) {
-    const { data: nodes, error: nodesError } = await supabase
-      .from('nodes')
-      .select('*')
+    const { data: graphNodes, error: gnError } = await supabase
+      .from('graph_nodes')
+      .select(GRAPH_NODES_SELECT)
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
-    if (nodesError) throw nodesError;
+    if (gnError) {
+      logger.error('getGraphNodes error:', gnError);
+      throw gnError;
+    }
+
+    const nodes = (graphNodes || []).map(gn => {
+      const node = buildNodeFromGraphNode(gn);
+      if (!node) return null;
+      return {
+        id: node.knowledge_point.id,
+        graph_id: node.graph_id,
+        graph_node_id: node.id,
+        title: node.knowledge_point.title,
+        content: node.knowledge_point.content,
+        x_position: node.x_position,
+        y_position: node.y_position,
+        level: node.level,
+        properties: node.knowledge_point.properties,
+        learning_material: node.knowledge_point.learning_material,
+        is_accepted: node.is_accepted,
+        knowledge_point_id: node.knowledge_point_id,
+        visibility: node.knowledge_point.visibility,
+        owner_id: node.knowledge_point.owner_id,
+        created_at: node.knowledge_point.created_at,
+        updated_at: node.knowledge_point.updated_at,
+      };
+    }).filter(Boolean);
 
     const { data: edges, error: edgesError } = await supabase
       .from('edges')
       .select('*')
-      .eq('graph_id', graphId);
+      .eq('graph_id', graphId)
+      .is('deleted_at', null);
 
     if (edgesError) throw edgesError;
 
-    return { nodes: nodes || [], edges: edges || [] };
+    return { nodes, edges: edges || [] };
   }
 
   async getGraphNodeStatus(supabase: SupabaseClient, userId: string, graphId: string) {
-    const { data, error } = await supabase
-      .from('node_status')
-      .select('*')
+    const { data: cards, error } = await supabase
+      .from('study_cards')
+      .select('knowledge_point_id, next_review, fsrs_stability, fsrs_difficulty, review_count')
       .eq('user_id', userId)
       .eq('graph_id', graphId);
 
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      logger.error('getGraphNodeStatus error:', error);
+      return {};
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const statusMap: Record<string, any> = {};
+    
+    (cards || []).forEach((card: any) => {
+      const nextReview = card.next_review ? new Date(card.next_review) : null;
+      const isDue = nextReview && nextReview <= now;
+      const isDueToday = nextReview && nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
+      const isMastered = card.fsrs_stability && card.fsrs_stability > 21;
+      
+      statusMap[card.knowledge_point_id] = {
+        mastered: isMastered,
+        locked: false,
+        review_count: card.review_count || 0,
+        next_review: card.next_review,
+        due: isDue,
+        due_today: isDueToday,
+      };
+    });
+
+    return statusMap;
   }
 
   async getLearningPath(supabase: SupabaseClient, userId: string | null, graphId: string) {
@@ -323,8 +411,8 @@ export class GraphService {
 
     const connectedPairs = new Set<string>();
     edges.forEach((edge: Record<string, unknown>) => {
-      connectedPairs.add(`${edge.source_node_id}-${edge.target_node_id}`);
-      connectedPairs.add(`${edge.target_node_id}-${edge.source_node_id}`);
+      connectedPairs.add(`${edge.source_knowledge_point_id}-${edge.target_knowledge_point_id}`);
+      connectedPairs.add(`${edge.target_knowledge_point_id}-${edge.source_knowledge_point_id}`);
     });
 
     const suggestions: Array<{ source: string; target: string; score: number }> = [];
@@ -336,8 +424,8 @@ export class GraphService {
         const key = `${sourceId}-${targetId}`;
 
         if (!connectedPairs.has(key)) {
-          const sourceLevel = (nodes[i].level as number) || 0;
-          const targetLevel = (nodes[j].level as number) || 0;
+          const sourceLevel = getLevelIndex(nodes[i].level as string) || 0;
+          const targetLevel = getLevelIndex(nodes[j].level as string) || 0;
           const score = Math.abs(sourceLevel - targetLevel);
 
           suggestions.push({
@@ -350,6 +438,92 @@ export class GraphService {
     }
 
     return suggestions.sort((a, b) => a.score - b.score).slice(0, maxSuggestions);
+  }
+
+  async getCombinedView(supabase: SupabaseClient, userId: string, graphIds: string[]) {
+    const { data: graphs, error: graphsError } = await supabase
+      .from('knowledge_graphs')
+      .select('id, title')
+      .in('id', graphIds)
+      .eq('user_id', userId);
+
+    if (graphsError) {
+      throw graphsError;
+    }
+
+    if (!graphs || graphs.length !== graphIds.length) {
+      throw new Error('Some graphs not found or unauthorized');
+    }
+
+    const { data: graphNodes, error: nodesError } = await supabase
+      .from('graph_nodes')
+      .select(`
+        id,
+        graph_id,
+        knowledge_point_id,
+        x_position,
+        y_position,
+        level,
+        is_accepted,
+        knowledge_points (
+          id,
+          title,
+          content,
+          learning_material,
+          properties,
+          visibility,
+          owner_id
+        )
+      `)
+      .in('graph_id', graphIds)
+      .is('deleted_at', null);
+
+    if (nodesError) {
+      throw nodesError;
+    }
+
+    const { data: edges, error: edgesError } = await supabase
+      .from('edges')
+      .select('id, graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight')
+      .in('graph_id', graphIds)
+      .is('deleted_at', null);
+
+    if (edgesError) {
+      throw edgesError;
+    }
+
+    const graphMap = new Map(graphs.map(g => [g.id, g]));
+    const result = {
+      graphs: graphIds.map((gid: string) => ({
+        graph_id: gid,
+        graph_title: graphMap.get(gid)?.title || '',
+        color: '',
+        nodes: (graphNodes || []).filter((gn: any) => gn.graph_id === gid),
+        edges: (edges || []).filter((e: any) => e.graph_id === gid)
+      })),
+      shared_knowledge_points: [] as any[]
+    };
+
+    const kpGraphMap = new Map<string, any[]>();
+    (graphNodes || []).forEach((gn: any) => {
+      const kpId = gn.knowledge_point_id;
+      if (!kpGraphMap.has(kpId)) {
+        kpGraphMap.set(kpId, []);
+      }
+      kpGraphMap.get(kpId)!.push(gn);
+    });
+
+    kpGraphMap.forEach((nodes, kpId) => {
+      if (nodes.length > 1) {
+        result.shared_knowledge_points.push({
+          knowledge_point_id: kpId,
+          knowledge_point: nodes[0].knowledge_points,
+          graph_nodes: nodes
+        });
+      }
+    });
+
+    return result;
   }
 }
 

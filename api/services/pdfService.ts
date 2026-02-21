@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { logger } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,7 +141,7 @@ export class PDFService {
         });
         doc.moveDown(2);
       } catch (e) {
-        console.error('Failed to embed screenshot:', e);
+        logger.error('Failed to embed screenshot:', e);
         doc.fontSize(10).fillColor('#EF4444').text('[Screenshot rendering failed]', { align: 'center' });
       }
     }
@@ -216,9 +217,9 @@ export class PDFService {
     // Map for edge lookup
     const edgesBySource = new Map<string, any[]>();
     edges.forEach(e => {
-        const list = edgesBySource.get(e.source_node_id) || [];
+        const list = edgesBySource.get(e.source_knowledge_point_id) || [];
         list.push(e);
-        edgesBySource.set(e.source_node_id, list);
+        edgesBySource.set(e.source_knowledge_point_id, list);
     });
     const nodeById = new Map(nodes.map(n => [n.id, n]));
 
@@ -246,7 +247,7 @@ export class PDFService {
       if (outgoing && outgoing.length > 0) {
         doc.fontSize(10).fillColor('#4B5563').text('关联 (Related):');
         outgoing.forEach(e => {
-          const target = nodeById.get(e.target_node_id);
+          const target = nodeById.get(e.target_knowledge_point_id);
           if (target) {
              doc.fontSize(9).fillColor('#6B7280')
                .text(`  -> ${target.title} [${e.relationship_type || 'related'}]`, { indent: 10 });

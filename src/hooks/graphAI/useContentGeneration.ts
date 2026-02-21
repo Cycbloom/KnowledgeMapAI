@@ -36,24 +36,24 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
       let prompt = state.aiPrompt;
       
       if (!prompt && selectedNode) {
-        const nodeAiPrompt = selectedNode.properties?.ai_prompt;
+        const nodeAiPrompt = selectedNode.knowledge_point?.properties?.ai_prompt;
         if (nodeAiPrompt) {
-          prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.title);
+          prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.knowledge_point?.title || '');
           
-          const parentNode = nodes.find(n => n.id === edges.find(e => e.target_node_id === selectedNode.id)?.source_node_id);
+          const parentNode = nodes.find(n => n.id === edges.find(e => e.target_knowledge_point_id === selectedNode.id)?.source_knowledge_point_id);
           if (parentNode) {
-            prompt = prompt.replace(/{父节点内容}/g, parentNode.content || parentNode.title);
+            prompt = prompt.replace(/{父节点内容}/g, parentNode.knowledge_point?.content || parentNode.knowledge_point?.title || '');
           }
           
           const siblingNodes = nodes.filter(n => 
             n.id !== selectedNode.id && 
             edges.some(e => 
-              e.source_node_id === parentNode?.id && 
-              e.target_node_id === n.id
+              e.source_knowledge_point_id === parentNode?.id && 
+              e.target_knowledge_point_id === n.id
             )
           );
           if (siblingNodes.length > 0) {
-            const siblingContent = siblingNodes.map(n => `- ${n.title}: ${n.content || ''}`).join('\n');
+            const siblingContent = siblingNodes.map(n => `- ${n.knowledge_point?.title}: ${n.knowledge_point?.content || ''}`).join('\n');
             prompt = prompt.replace(/{兄弟节点内容}/g, siblingContent);
           }
         }
@@ -95,13 +95,13 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
     addMessage({ content: 'AI 内容生成任务已开始...', type: 'info' });
     
     try {
-      const prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
+      const prompt = `请详细解释 ${selectedNode.knowledge_point?.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
       
       let generatedContent = '';
       
       await api.ai.generateContentStream(
         { 
-          topic: selectedNode.title, 
+          topic: selectedNode.title || '', 
           context: prompt,
           level: selectedNode.level
         },

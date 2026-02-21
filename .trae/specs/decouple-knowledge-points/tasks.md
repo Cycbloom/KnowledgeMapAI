@@ -68,6 +68,11 @@
   - [x] SubTask 10.1: 编写迁移验证脚本
   - [x] SubTask 10.2: 测试数据完整性
 
+- [x] Task 11: 迁移文件整理（2026-02-21）
+  - [x] SubTask 11.1: 重写 initial_schema.sql，移除 nodes 表
+  - [x] SubTask 11.2: 删除冗余迁移文件（4个）
+  - [x] SubTask 11.3: 更新 specs 文档
+
 # Task Dependencies
 
 - [Task 2] depends on [Task 1]
@@ -79,3 +84,4 @@
 - [Task 8] depends on [Task 1, Task 3]
 - [Task 9] depends on [Task 3, Task 4]
 - [Task 10] depends on [Task 1, Task 4, Task 5, Task 6, Task 7, Task 8, Task 9]
+- [Task 11] depends on [Task 10]

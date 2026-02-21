@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { supabaseAdmin } from '../supabase.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { authService } from '../services/authService.js';
 import { validate } from '../middleware/validate.js';
 import { registerSchema, loginSchema, updateProfileSchema } from '../schemas/index.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -140,50 +141,27 @@ router.post('/logout', async (req: Request, res: Response): Promise<void> => {
  * Get Current User
  * GET /api/auth/user
  */
-router.get('/user', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
-  // Fetch detailed profile from public.users
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .select('*')
-    .eq('id', req.user.id)
-    .single();
-
-  if (error) {
-    res.status(500).json({ error: error.message });
-    return;
+router.get('/user', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
+  try {
+    const profile = await authService.getProfile(req.user.id);
+    res.json({ user: { ...req.user, profile } });
+  } catch (error) {
+    next(error);
   }
-
-  res.json({ user: { ...req.user, profile: data } });
 });
 
 /**
  * Update Profile (Settings)
  * PUT /api/auth/profile
  */
-router.put('/profile', requireAuth, validate(updateProfileSchema), async (req: AuthRequest, res: Response): Promise<void> => {
-  const { name, settings } = req.body;
-  const updates: any = {};
-  
-  if (name !== undefined) updates.name = name;
-  if (settings !== undefined) updates.settings = settings;
-
-  if (Object.keys(updates).length === 0) {
-    res.json({ message: 'No updates provided' });
-    return;
+router.put('/profile', requireAuth, validate(updateProfileSchema), async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
+  try {
+    const { name, settings } = req.body;
+    const profile = await authService.updateProfile(req.user.id, { name, settings });
+    res.json({ user: { ...req.user, profile } });
+  } catch (error) {
+    next(error);
   }
-
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .update(updates)
-    .eq('id', req.user.id)
-    .select()
-    .single();
-
-  if (error) {
-    throw new AppError(error.message || '更新个人资料失败', 500, ErrorCodes.INTERNAL_ERROR);
-  }
-
-  res.json({ user: { ...req.user, profile: data } });
 });
 
 export default router;

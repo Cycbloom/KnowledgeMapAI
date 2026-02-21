@@ -4,8 +4,8 @@ import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { graphService } from '../services/graphService.js';
+import { graphRelationService } from '../services/graphRelationService.js';
 import { taskService } from '../services/taskService.js';
-import { supabaseAdmin } from '../supabase.js';
 import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
@@ -34,22 +34,6 @@ const createRelationSchema = z.object({
   context: z.string().max(500).optional(),
 });
 
-interface GraphRelation {
-  id: string;
-  sourceGraphId: string;
-  targetGraphId: string;
-  relationType: 'prerequisite' | 'extension' | 'related';
-  context: string | null;
-  metadata: Record<string, any>;
-  createdAt: string;
-  targetGraph?: {
-    id: string;
-    title: string;
-    description: string | null;
-    nodeCount?: number;
-  };
-}
-
 router.get('/:graphId/relations', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graphId } = req.params;
   const supabase = req.supabase!;
@@ -65,62 +49,38 @@ router.get('/:graphId/relations', requireAuth, async (req: AuthRequest, res: Res
       throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
     }
 
-    const { data: outgoingRelations } = await supabase
-      .from('graph_relations')
-      .select(`
-        id,
-        source_graph_id,
-        target_graph_id,
-        relation_type,
-        context,
-        metadata,
-        created_at
-      `)
-      .eq('source_graph_id', graphId);
+    const relations = await graphRelationService.getRelations(supabase, graphId);
 
-    const { data: incomingRelations } = await supabase
-      .from('graph_relations')
-      .select(`
-        id,
-        source_graph_id,
-        target_graph_id,
-        relation_type,
-        context,
-        metadata,
-        created_at
-      `)
-      .eq('target_graph_id', graphId);
-
-    const targetGraphIds = [
-      ...(outgoingRelations || []).map(r => r.target_graph_id),
-      ...(incomingRelations || []).map(r => r.source_graph_id)
+    const allGraphIds = [
+      ...relations.outgoing.map(r => r.target_graph_id),
+      ...relations.incoming.map(r => r.source_graph_id)
     ].filter(Boolean);
 
     const { data: relatedGraphs } = await supabase
       .from('knowledge_graphs')
       .select('id, title, description')
-      .in('id', targetGraphIds);
+      .in('id', allGraphIds);
 
     const { data: nodeCounts } = await supabase
-      .from('nodes')
+      .from('graph_nodes')
       .select('graph_id')
-      .in('graph_id', targetGraphIds)
+      .in('graph_id', allGraphIds)
       .is('deleted_at', null);
 
     const nodeCountMap = new Map<string, number>();
-    (nodeCounts || []).forEach(n => {
+    (nodeCounts || []).forEach((n: { graph_id: string }) => {
       nodeCountMap.set(n.graph_id, (nodeCountMap.get(n.graph_id) || 0) + 1);
     });
 
     const graphMap = new Map(relatedGraphs?.map(g => [g.id, g]) || []);
 
-    const prerequisites: GraphRelation[] = [];
-    const extensions: GraphRelation[] = [];
-    const related: GraphRelation[] = [];
+    const prerequisites: any[] = [];
+    const extensions: any[] = [];
+    const related: any[] = [];
 
-    (outgoingRelations || []).forEach(r => {
+    relations.outgoing.forEach(r => {
       const targetGraph = graphMap.get(r.target_graph_id);
-      const relation: GraphRelation = {
+      const relation = {
         id: r.id,
         sourceGraphId: r.source_graph_id,
         targetGraphId: r.target_graph_id,
@@ -141,9 +101,9 @@ router.get('/:graphId/relations', requireAuth, async (req: AuthRequest, res: Res
       else related.push(relation);
     });
 
-    (incomingRelations || []).forEach(r => {
+    relations.incoming.forEach(r => {
       const sourceGraph = graphMap.get(r.source_graph_id);
-      const relation: GraphRelation = {
+      const relation = {
         id: r.id,
         sourceGraphId: r.source_graph_id,
         targetGraphId: r.target_graph_id,
@@ -244,30 +204,16 @@ router.post('/:graphId/prerequisite-graph', requireAuth, validate(createPrerequi
       }
     }
 
-    const { data: existingRelation } = await supabase
-      .from('graph_relations')
-      .select('id')
-      .eq('source_graph_id', graphId)
-      .eq('target_graph_id', targetGraphId)
-      .eq('relation_type', 'prerequisite')
-      .maybeSingle();
+    const exists = await graphRelationService.checkRelationExists(supabase, graphId, targetGraphId, 'prerequisite');
 
     let relation;
-    if (!existingRelation) {
-      const { data: newRelation } = await supabase
-        .from('graph_relations')
-        .insert({
-          source_graph_id: graphId,
-          target_graph_id: targetGraphId,
-          relation_type: 'prerequisite',
-          context: `学习「${sourceGraph.title}」前建议先掌握「${topic}」`
-        })
-        .select()
-        .single();
-
-      relation = newRelation;
-    } else {
-      relation = existingRelation;
+    if (!exists) {
+      relation = await graphRelationService.createRelation(supabase, {
+        source_graph_id: graphId,
+        target_graph_id: targetGraphId,
+        relation_type: 'prerequisite',
+        context: `学习「${sourceGraph.title}」前建议先掌握「${topic}」`
+      });
     }
 
     res.json({
@@ -289,8 +235,6 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
   const { topics, depth, style } = req.body;
   const supabase = req.supabase!;
 
-  logger.info('Batch create prerequisite graphs:', { graphId, topics, depth, style, userId: req.user.id });
-
   try {
     const { data: sourceGraph } = await supabase
       .from('knowledge_graphs')
@@ -311,9 +255,7 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
     }> = [];
 
     for (const item of topics) {
-      logger.info('Processing topic:', item.topic);
-
-      const { data: existingGraph, error: existingError } = await supabase
+      const { data: existingGraph } = await supabase
         .from('knowledge_graphs')
         .select('id, title')
         .eq('user_id', req.user.id)
@@ -322,26 +264,15 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
         .limit(1)
         .maybeSingle();
 
-      logger.info('Existing graph check:', { topic: item.topic, existingGraph, existingError });
-
       if (existingGraph) {
-        const { data: existingRelation } = await supabase
-          .from('graph_relations')
-          .select('id')
-          .eq('source_graph_id', graphId)
-          .eq('target_graph_id', existingGraph.id)
-          .eq('relation_type', 'prerequisite')
-          .maybeSingle();
-
-        if (!existingRelation) {
-          await supabase
-            .from('graph_relations')
-            .insert({
-              source_graph_id: graphId,
-              target_graph_id: existingGraph.id,
-              relation_type: 'prerequisite',
-              context: `学习「${sourceGraph.title}」前建议先掌握「${item.topic}」`
-            });
+        const exists = await graphRelationService.checkRelationExists(supabase, graphId, existingGraph.id, 'prerequisite');
+        if (!exists) {
+          await graphRelationService.createRelation(supabase, {
+            source_graph_id: graphId,
+            target_graph_id: existingGraph.id,
+            relation_type: 'prerequisite',
+            context: `学习「${sourceGraph.title}」前建议先掌握「${item.topic}」`
+          });
         }
 
         results.push({
@@ -351,9 +282,7 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
           isNew: false
         });
       } else {
-        logger.info('Creating new graph for topic:', item.topic);
-        
-        const { data: newGraph, error: createError } = await supabase
+        const { data: newGraph } = await supabase
           .from('knowledge_graphs')
           .insert({
             user_id: req.user.id,
@@ -364,17 +293,13 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
           .select()
           .single();
 
-        logger.info('New graph created:', { newGraph, createError });
-
         if (newGraph) {
-          await supabase
-            .from('graph_relations')
-            .insert({
-              source_graph_id: graphId,
-              target_graph_id: newGraph.id,
-              relation_type: 'prerequisite',
-              context: `学习「${sourceGraph.title}」前建议先掌握「${item.topic}」`
-            });
+          await graphRelationService.createRelation(supabase, {
+            source_graph_id: graphId,
+            target_graph_id: newGraph.id,
+            relation_type: 'prerequisite',
+            context: `学习「${sourceGraph.title}」前建议先掌握「${item.topic}」`
+          });
 
           const task = await taskService.createTask(
             req.user.id,
@@ -399,8 +324,6 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
       }
     }
 
-    logger.info('Batch create results:', { count: results.length, results: results.map(r => ({ topic: r.topic, graphId: r.graphId, isNew: r.isNew, taskId: r.taskId })) });
-
     res.json({ created: results });
 
   } catch (error: any) {
@@ -411,20 +334,11 @@ router.post('/:graphId/prerequisite-graphs/batch', requireAuth, validate(batchCr
 });
 
 router.delete('/:graphId/relations/:relationId', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { graphId, relationId } = req.params;
+  const { relationId } = req.params;
   const supabase = req.supabase!;
 
   try {
-    const { error } = await supabase
-      .from('graph_relations')
-      .delete()
-      .eq('id', relationId)
-      .eq('source_graph_id', graphId);
-
-    if (error) {
-      throw new AppError('删除关联失败', 500, ErrorCodes.INTERNAL_ERROR);
-    }
-
+    await graphRelationService.deleteRelation(supabase, relationId);
     res.json({ success: true });
 
   } catch (error: any) {
@@ -463,32 +377,17 @@ router.post('/relations', requireAuth, validate(createRelationSchema), async (re
       throw new AppError('无权操作此图谱', 403, ErrorCodes.FORBIDDEN);
     }
 
-    const { data: existingRelation } = await supabase
-      .from('graph_relations')
-      .select('id')
-      .eq('source_graph_id', source_graph_id)
-      .eq('target_graph_id', target_graph_id)
-      .eq('relation_type', relation_type)
-      .maybeSingle();
-
-    if (existingRelation) {
+    const exists = await graphRelationService.checkRelationExists(supabase, source_graph_id, target_graph_id, relation_type);
+    if (exists) {
       throw new AppError('该关系已存在', 400, ErrorCodes.VALIDATION_ERROR);
     }
 
-    const { data: newRelation, error } = await supabase
-      .from('graph_relations')
-      .insert({
-        source_graph_id,
-        target_graph_id,
-        relation_type,
-        context: context || `${sourceGraph.title} → ${targetGraph.title}`,
-      })
-      .select()
-      .single();
-
-    if (error || !newRelation) {
-      throw new AppError('创建关系失败', 500, ErrorCodes.INTERNAL_ERROR);
-    }
+    const newRelation = await graphRelationService.createRelation(supabase, {
+      source_graph_id,
+      target_graph_id,
+      relation_type,
+      context: context || `${sourceGraph.title} → ${targetGraph.title}`,
+    });
 
     res.status(201).json(newRelation);
 
@@ -524,15 +423,7 @@ router.delete('/relations/:relationId', requireAuth, async (req: AuthRequest, re
       throw new AppError('无权删除此关系', 403, ErrorCodes.FORBIDDEN);
     }
 
-    const { error } = await supabase
-      .from('graph_relations')
-      .delete()
-      .eq('id', relationId);
-
-    if (error) {
-      throw new AppError('删除关系失败', 500, ErrorCodes.INTERNAL_ERROR);
-    }
-
+    await graphRelationService.deleteRelation(supabase, relationId);
     res.json({ success: true });
 
   } catch (error: any) {

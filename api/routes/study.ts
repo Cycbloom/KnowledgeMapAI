@@ -5,58 +5,10 @@ import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } fr
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { fsrs, Card, Rating, State, createEmptyCard } from 'ts-fsrs';
+import { studyService } from '../services/studyService.js';
 import { achievementService } from '../services/achievementService.js';
 
 const router = Router();
-
-// Helper: Get FSRS instance with user settings
-const getFSRS = async (userId: string, supabase: any) => {
-  try {
-    const { data } = await supabase
-      .from('users')
-      .select('settings')
-      .eq('id', userId)
-      .single();
-      
-    const params: any = {};
-    if (data?.settings?.request_retention) {
-      params.request_retention = Number(data.settings.request_retention);
-    }
-    if (data?.settings?.maximum_interval) {
-      params.maximum_interval = Number(data.settings.maximum_interval);
-    }
-    
-    return fsrs(params);
-  } catch (e) {
-    console.warn('Failed to fetch user settings for FSRS, using defaults', e);
-    return fsrs();
-  }
-};
-
-// Helper: Convert DB card to FSRS Card
-const dbCardToFSRS = (dbCard: any): Card => {
-  const empty = createEmptyCard();
-  return {
-    ...empty,
-    due: new Date(dbCard.next_review || new Date()),
-    stability: dbCard.fsrs_stability || 0,
-    difficulty: dbCard.fsrs_difficulty || 0,
-    elapsed_days: dbCard.fsrs_elapsed_days || 0,
-    scheduled_days: dbCard.fsrs_scheduled_days || 0,
-    reps: dbCard.review_count || 0,
-    state: dbCard.fsrs_state || State.New,
-    last_review: dbCard.fsrs_last_review ? new Date(dbCard.fsrs_last_review) : undefined
-  };
-};
-
-// Helper: Map 0-5 quality to FSRS Rating
-const mapQualityToRating = (quality: number): Rating => {
-  if (quality <= 1) return Rating.Again;
-  if (quality === 2) return Rating.Hard;
-  if (quality === 3) return Rating.Good;
-  return Rating.Easy;
-};
 
 /**
  * @openapi
@@ -72,10 +24,15 @@ const mapQualityToRating = (quality: number): Rating => {
  *           type: string
  *         description: ID of the knowledge graph
  *       - in: query
- *         name: node_id
+ *         name: knowledge_point_id
  *         schema:
  *           type: string
- *         description: ID of a specific node
+ *         description: ID of a specific knowledge point
+ *       - in: query
+ *         name: knowledge_point_ids
+ *         schema:
+ *           type: string
+ *         description: Comma-separated IDs of knowledge points
  *       - in: query
  *         name: due
  *         schema:
@@ -90,235 +47,250 @@ const mapQualityToRating = (quality: number): Rating => {
  *       200:
  *         description: List of study cards
  */
-// Get cards due for review (or all cards for a graph)
 router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { graph_id, node_id, node_ids, due } = req.query;
+  const { graph_id, knowledge_point_id, knowledge_point_ids, due, refresh } = req.query;
   const dueOnly = due === 'true' || due === '1';
 
-  // Optimization: If querying all cards for a graph (no specific nodes), use cache
-  if (graph_id && !node_id && !node_ids) {
-    const cacheKey = CacheKeys.STUDY_CARDS(graph_id as string);
-    
-    // Support force refresh
-    if (req.query.refresh === 'true') {
-        await cacheService.del(cacheKey);
-    }
+  if (graph_id && refresh === 'true') {
+    await cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
+  }
 
-    const cards = await cacheService.getOrSet(cacheKey, async () => {
-        const { data, error } = await req.supabase!
-            .from('study_cards')
-            .select('*, nodes!inner(id, title, graph_id)')
-            .eq('user_id', req.user.id)
-            .eq('graph_id', graph_id);
-            
-        if (error) {
-            console.error('Supabase error fetching cards:', error);
-            throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
-        }
-        return data || [];
+  let knowledgePointIdList: string[] | undefined;
+  if (knowledge_point_ids) {
+    knowledgePointIdList = (knowledge_point_ids as string).split(',');
+  }
+
+  try {
+    const cards = await studyService.getCards(req.supabase!, {
+      userId: req.user.id,
+      graphId: graph_id as string,
+      knowledgePointId: knowledge_point_id as string,
+      knowledgePointIds: knowledgePointIdList,
+      dueOnly
     });
 
-    if (dueOnly && Array.isArray(cards)) {
-        const now = new Date();
-        const dueCards = cards.filter((c: any) => new Date(c.next_review) <= now);
-        return res.json(dueCards);
-    }
-    
-    return res.json(cards);
-  }
-
-  console.log('Fetching cards (DB) for graph_id:', graph_id, 'node_id:', node_id, 'node_ids:', node_ids, 'user_id:', req.user.id);
-
-  let query = req.supabase!
-    .from('study_cards')
-    .select('*, nodes!inner(id, title, graph_id)')
-    .eq('user_id', req.user.id);
-
-  if (node_id) {
-    query = query.eq('node_id', node_id);
-  } else if (node_ids) {
-    // Support comma-separated node_ids
-    const ids = (node_ids as string).split(',');
-    query = query.in('node_id', ids);
-  } else if (graph_id) {
-    // Now we can query graph_id directly on study_cards for better performance
-    query = query.eq('graph_id', graph_id);
-  }
-
-  if (dueOnly) {
-    query = query.lte('next_review', new Date().toISOString());
-  }
-  
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Supabase error fetching cards:', error);
+    res.json(cards);
+  } catch (error: any) {
+    console.error('Error fetching cards:', error);
     throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
-  
-  res.json(data || []);
 });
 
-// Create a flashcard manually
+/**
+ * @openapi
+ * /study/cards:
+ *   post:
+ *     summary: Create a flashcard
+ *     description: Create a new flashcard for a knowledge point
+ *     tags: [Study]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - knowledge_point_id
+ *               - question
+ *               - answer
+ *             properties:
+ *               knowledge_point_id:
+ *                 type: string
+ *               question:
+ *                 type: string
+ *               answer:
+ *                 type: string
+ *               explanation:
+ *                 type: string
+ *               card_type:
+ *                 type: string
+ *               options:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Created card
+ */
 router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthRequest, res: Response) => {
-  const { node_id, question, answer } = req.body;
+  const { knowledge_point_id, question, answer, explanation, card_type, options } = req.body;
 
-  // Fetch node to get graph_id
-  const { data: node } = await req.supabase!
-    .from('nodes')
+  const { data: graphNode } = await req.supabase!
+    .from('graph_nodes')
     .select('graph_id')
-    .eq('id', node_id)
+    .eq('knowledge_point_id', knowledge_point_id)
+    .is('deleted_at', null)
     .single();
 
-  if (!node) {
+  if (!graphNode) {
     throw new AppError('未找到所属节点', 404, ErrorCodes.NODE_NOT_FOUND);
   }
 
-  const { data, error } = await req.supabase!
-    .from('study_cards')
-    .insert([
-      {
-        user_id: req.user.id,
-        node_id,
-        graph_id: node.graph_id,
-        question,
-        answer,
-        next_review: new Date().toISOString(), // Due immediately
-        difficulty: 1,
-        // FSRS initial values
-        fsrs_state: 0,
-        fsrs_stability: 0,
-        fsrs_difficulty: 0,
-        fsrs_elapsed_days: 0,
-        fsrs_scheduled_days: 0,
-        fsrs_retrievability: 0
-      }
-    ])
-    .select('*, nodes(graph_id)')
-    .single();
+  try {
+    const card = await studyService.createCard(req.supabase!, {
+      userId: req.user.id,
+      knowledgePointId: knowledge_point_id,
+      sourceGraphId: graphNode.graph_id,
+      question,
+      answer,
+      explanation,
+      cardType: card_type,
+      options
+    });
 
-  if (error) throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
-
-  if (data?.nodes?.graph_id) {
-    await cacheService.del(CacheKeys.STUDY_CARDS(data.nodes.graph_id));
+    res.status(201).json(card);
+  } catch (error: any) {
+    console.error('Error creating card:', error);
+    throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
-
-  res.status(201).json(data);
 });
 
-// Create multiple flashcards (Batch)
+/**
+ * @openapi
+ * /study/cards/batch:
+ *   post:
+ *     summary: Create multiple flashcards
+ *     description: Create multiple flashcards in a batch
+ *     tags: [Study]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cards
+ *             properties:
+ *               cards:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - knowledge_point_id
+ *                     - question
+ *                     - answer
+ *                   properties:
+ *                     knowledge_point_id:
+ *                       type: string
+ *                     question:
+ *                       type: string
+ *                     answer:
+ *                       type: string
+ *                     explanation:
+ *                       type: string
+ *                     card_type:
+ *                       type: string
+ *                     options:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *     responses:
+ *       201:
+ *         description: Created cards
+ */
 router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async (req: AuthRequest, res: Response) => {
-  const { cards } = req.body; // Expects array of { node_id, question, answer }
-  
-  // Get all unique node_ids
-  const nodeIds = [...new Set(cards.map((c: any) => c.node_id))];
-  
-  // Fetch graph_id for all nodes
-  const { data: nodes } = await req.supabase!
-    .from('nodes')
-    .select('id, graph_id')
-    .in('id', nodeIds);
-    
-  const nodeGraphMap = new Map(nodes?.map(n => [n.id, n.graph_id]));
+  const { cards } = req.body;
 
-  const cardsToInsert = cards.map((card: any) => ({
-    user_id: req.user.id,
-    node_id: card.node_id,
-    graph_id: nodeGraphMap.get(card.node_id),
+  const knowledgePointIds = [...new Set(cards.map((c: any) => c.knowledge_point_id))];
+
+  const { data: graphNodes } = await req.supabase!
+    .from('graph_nodes')
+    .select('knowledge_point_id, graph_id')
+    .in('knowledge_point_id', knowledgePointIds)
+    .is('deleted_at', null);
+
+  const nodeGraphMap = new Map(graphNodes?.map(gn => [gn.knowledge_point_id, gn.graph_id]));
+
+  const cardsData = cards.map((card: any) => ({
+    knowledgePointId: card.knowledge_point_id,
+    sourceGraphId: nodeGraphMap.get(card.knowledge_point_id),
     question: card.question,
     answer: card.answer,
-    explanation: card.explanation || null, // Add explanation
-    card_type: card.type || 'qa',
-    options: card.options || null,
-    next_review: new Date().toISOString(),
-    difficulty: 1,
-    // FSRS initial values
-    fsrs_state: 0, // New
-    fsrs_stability: 0,
-    fsrs_difficulty: 0,
-    fsrs_elapsed_days: 0,
-    fsrs_scheduled_days: 0,
-    fsrs_retrievability: 0
+    explanation: card.explanation,
+    cardType: card.card_type || card.type,
+    options: card.options
   }));
 
-  const { data, error } = await req.supabase!
-    .from('study_cards')
-    .insert(cardsToInsert)
-    .select('*, nodes(graph_id)');
-
-  if (error) throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
-
-  if (data) {
-    const graphIds = new Set(data.map((card: any) => card.nodes?.graph_id).filter(Boolean));
-    graphIds.forEach(gid => cacheService.del(CacheKeys.STUDY_CARDS(gid as string)));
+  try {
+    const createdCards = await studyService.createCardsBatch(req.supabase!, cardsData, req.user.id);
+    res.status(201).json(createdCards);
+  } catch (error: any) {
+    console.error('Error creating cards batch:', error);
+    throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
-
-  res.status(201).json(data);
 });
 
-// Update card progress (Review)
+/**
+ * @openapi
+ * /study/cards/{id}/progress:
+ *   put:
+ *     summary: Update card progress
+ *     description: Update learning progress for a card using FSRS algorithm
+ *     tags: [Study]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Card ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quality
+ *             properties:
+ *               quality:
+ *                 type: integer
+ *                 minimum: 0
+ *                 maximum: 5
+ *                 description: Quality rating (0-5)
+ *     responses:
+ *       200:
+ *         description: Updated card
+ */
 router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { quality } = req.body; // 0-5 rating
+  const { quality } = req.body;
 
-  // Fetch current card
-  const { data: card } = await req.supabase!
-    .from('study_cards')
-    .select('*, nodes(graph_id)')
-    .eq('id', id)
-    .single();
+  try {
+    const result = await studyService.updateProgress(req.supabase!, id, quality, req.user.id);
 
-  if (!card) {
-    throw new AppError('未找到卡片', 404, ErrorCodes.CARD_NOT_FOUND);
+    Promise.all([
+      achievementService.addXp(req.user.id, 10),
+      achievementService.updateMasteredStats(req.user.id)
+    ]).catch(err => console.error('Achievement update failed:', err));
+
+    res.json(result.card);
+  } catch (error: any) {
+    console.error('Error updating card progress:', error);
+    if (error.message === 'Card not found') {
+      throw new AppError('未找到卡片', 404, ErrorCodes.CARD_NOT_FOUND);
+    }
+    throw new AppError(error.message || '更新卡片进度失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
-
-  // FSRS Logic
-  const fsrsCard = dbCardToFSRS(card);
-  const now = new Date();
-  const rating = mapQualityToRating(quality);
-  
-  const f = await getFSRS(req.user.id, req.supabase);
-  const scheduling_cards = f.repeat(fsrsCard, now);
-  const scheduledCard = (scheduling_cards as unknown as Record<Rating, { card: Card }>)[rating].card;
-
-  const { data, error } = await req.supabase!
-    .from('study_cards')
-    .update({
-      last_reviewed: now.toISOString(),
-      next_review: scheduledCard.due.toISOString(),
-      review_count: scheduledCard.reps,
-      // FSRS specific fields
-      fsrs_state: scheduledCard.state,
-      fsrs_stability: scheduledCard.stability,
-      fsrs_difficulty: scheduledCard.difficulty,
-      fsrs_elapsed_days: scheduledCard.elapsed_days,
-      fsrs_scheduled_days: scheduledCard.scheduled_days,
-      fsrs_last_review: now.toISOString(),
-      // Use stability/retrievability for analytics? 
-      // Retrievability is not directly in 'card' output of ts-fsrs v3 (it's calculated), 
-      // but we can calculate R if needed: R = (1 + elapsed / (9 * stability)) ^ -1
-      // For now, let's just store the core params.
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw new AppError(error.message || '更新卡片进度失败', 500, ErrorCodes.INTERNAL_ERROR);
-
-  if (card?.nodes?.graph_id) {
-    await cacheService.del(CacheKeys.STUDY_CARDS(card.nodes.graph_id));
-  }
-
-  // Award XP and check achievements asynchronously
-  Promise.all([
-    achievementService.addXp(req.user.id, 10),
-    achievementService.updateMasteredStats(req.user.id)
-  ]).catch(err => console.error('Achievement update failed:', err));
-
-  res.json(data);
 });
 
-// Get study progress
+/**
+ * @openapi
+ * /study/progress:
+ *   get:
+ *     summary: Get study progress
+ *     description: Get learning progress for a graph
+ *     tags: [Study]
+ *     parameters:
+ *       - in: query
+ *         name: graph_id
+ *         schema:
+ *           type: string
+ *         description: ID of the knowledge graph
+ *     responses:
+ *       200:
+ *         description: Study progress data
+ */
 router.get('/progress', requireAuth, async (req: AuthRequest, res: Response) => {
   const { graph_id } = req.query;
 
@@ -326,10 +298,10 @@ router.get('/progress', requireAuth, async (req: AuthRequest, res: Response) => 
     .from('study_progress')
     .select('*')
     .eq('user_id', req.user.id)
-    .eq('graph_id', graph_id) // Optional filter
-    .single(); // Might return null if no progress record yet
+    .eq('graph_id', graph_id)
+    .single();
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 is no rows returned
+  if (error && error.code !== 'PGRST116') {
     throw new AppError(error.message || '获取学习进度失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 

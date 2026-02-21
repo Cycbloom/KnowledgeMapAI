@@ -4,7 +4,7 @@ import { validate } from '../middleware/validate.js';
 import { createGraphSchema, updateGraphSchema, uuidParamsSchema, shareGraphSchema, createGraphFromTemplateSchema } from '../schemas/index.js';
 import { graphService, GraphService } from '../services/graphService.js';
 import { templateService } from '../services/templateService.js';
-import { cacheService, CacheKeys } from '../services/cache.js';
+import { cacheService } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { achievementService } from '../services/achievementService.js';
@@ -35,7 +35,7 @@ router.get('/map', requireAuth, async (req: AuthRequest, res: Response) => {
     .order('last_used_at', { ascending: false });
 
   const { data: nodeCounts } = await supabase
-    .from('nodes')
+    .from('graph_nodes')
     .select('graph_id')
     .in('graph_id', (graphs || []).map(g => g.id))
     .is('deleted_at', null);
@@ -81,15 +81,21 @@ router.get('/tags', requireAuth, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const { data: nodes } = await supabase
-    .from('nodes')
-    .select('properties')
-    .in('graph_id', graphIds);
+  const { data: graphNodes } = await supabase
+    .from('graph_nodes')
+    .select(`
+      graph_id,
+      knowledge_points (
+        properties
+      )
+    `)
+    .in('graph_id', graphIds)
+    .is('deleted_at', null);
 
   const tagMap = new Map<string, number>();
   
-  (nodes || []).forEach(node => {
-    const tags = node.properties?.tags || [];
+  (graphNodes || []).forEach((gn: any) => {
+    const tags = gn.knowledge_points?.properties?.tags || [];
     tags.forEach((tag: string) => {
       tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
     });
@@ -221,7 +227,7 @@ router.get('/:id', optionalAuth, validate({ params: uuidParamsSchema }), async (
   // Assuming middleware attaches a client regardless, or we use a service/anon client?
   // req.supabase should be available. If optionalAuth works correctly, it should attach anon client if no auth.
   
-  const data = await graphService.getGraph(req.supabase!, userId, id);
+  const data = await graphService.getGraph(req.supabase!, id, userId);
   if (!data) {
     throw new AppError('未找到该图谱', 404, ErrorCodes.GRAPH_NOT_FOUND);
   }
@@ -232,7 +238,7 @@ router.get('/:id', optionalAuth, validate({ params: uuidParamsSchema }), async (
 router.put('/:id', requireAuth, validate({ params: uuidParamsSchema, body: updateGraphSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const updates = req.body;
-  const data = await graphService.updateGraph(req.supabase!, req.user.id, id, updates);
+  const data = await graphService.updateGraph(req.supabase!, id, req.user.id, updates);
   res.json(data);
 });
 
@@ -241,7 +247,7 @@ router.put('/:id/share', requireAuth, validate({ params: uuidParamsSchema, body:
   const { id } = req.params;
   const { is_public } = req.body;
   
-  const data = await graphService.updateGraph(req.supabase!, req.user.id, id, { is_public });
+  const data = await graphService.updateGraph(req.supabase!, id, req.user.id, { is_public });
   res.json(data);
 });
 
@@ -261,13 +267,10 @@ router.put('/:id/favorite', requireAuth, validate({ params: uuidParamsSchema }),
 // Delete a graph (Soft Delete)
 router.delete('/:id', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  await graphService.deleteGraph(req.supabase!, req.user.id, id);
+  await graphService.deleteGraph(req.supabase!, id, req.user.id);
 
-  // Invalidate user graphs list and graph nodes
-  await cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
-  await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, id));
-  // Also invalidate public cache if it was public
-  await cacheService.del(CacheKeys.GRAPH_NODES('public', id));
+  await cacheService.invalidateUserGraphsCache(req.user.id);
+  await cacheService.invalidateGraphCache(req.user.id, id);
   
   res.json({ message: '图谱已移至回收站' });
 });
@@ -275,14 +278,14 @@ router.delete('/:id', requireAuth, validate({ params: uuidParamsSchema }), async
 // Restore a graph
 router.post('/:id/restore', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  await graphService.restoreGraph(req.supabase!, req.user.id, id);
+  await graphService.restoreGraph(req.supabase!, id, req.user.id);
   res.json({ message: '图谱已恢复' });
 });
 
 // Permanently Delete a graph
 router.delete('/:id/permanent', requireAuth, validate({ params: uuidParamsSchema }), async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  await graphService.permanentDeleteGraph(req.supabase!, req.user.id, id);
+  await graphService.permanentDeleteGraph(req.supabase!, id, req.user.id);
   res.json({ message: '图谱已永久删除' });
 });
 

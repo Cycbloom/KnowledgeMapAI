@@ -1,4 +1,4 @@
-import { request, getAIConfig, getApiUrl, handleResponse } from './client';
+import { request, getAIConfig, getApiUrl, handleResponse, injectAIConfig } from './client';
 import { useStore } from '../../store/useStore';
 import type { AIAction } from './types';
 
@@ -73,10 +73,7 @@ export const aiApi = {
   status: () => request('/ai/status'),
   
   generateContent: (data: { topic: string; context?: string; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/generate-content', { method: 'POST', body: JSON.stringify(payload) });
   },
   
@@ -84,62 +81,40 @@ export const aiApi = {
     data: { topic: string; context?: string; level?: string; provider?: string; model?: string },
     onChunk: (content: string) => void
   ) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     await createStreamHandler('/ai/generate-content-stream', payload, onChunk);
   },
   
   annotateTerms: (data: { node_id: string; node_content: string; graph_id: string; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/annotate-terms', { 
       method: 'POST', 
-      body: JSON.stringify({
-        ...data,
-        provider: data.provider || config.provider,
-        model: data.model || config.model
-      }) 
+      body: JSON.stringify(payload) 
     });
   },
   
   generateLearningMaterial: (data: { topic: string; context?: string; level?: string; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/learning-material', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   expand: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   getBranchSuggestions: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/branch-suggestions', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   generateCards: (data: { node_title: string; node_content: string; count?: number; types?: string[]; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/generate-cards', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   batchGenerateCards: (node_ids: string[], config: { types?: string[]; count?: number; pack_template?: string; provider?: string; model?: string }) => {
-    const aiConfig = getAIConfig('text');
-    const payloadConfig = { ...config };
-    if (!payloadConfig.provider && aiConfig.provider) payloadConfig.provider = aiConfig.provider;
-    if (!payloadConfig.model && aiConfig.model) payloadConfig.model = aiConfig.model;
+    const payloadConfig = injectAIConfig(config, 'text');
     return request('/ai/batch-generate-cards', { method: 'POST', body: JSON.stringify({ node_ids, config: payloadConfig }) });
   },
   
@@ -150,10 +125,7 @@ export const aiApi = {
   getTaskStatus: (id: string) => request(`/ai/tasks/${id}`),
   
   textToGraph: (data: { text?: string; graph_id: string; action?: 'analyze' | 'save'; nodes?: unknown[]; edges?: unknown[]; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/text-to-graph', { method: 'POST', body: JSON.stringify(payload) });
   },
   
@@ -187,10 +159,7 @@ export const aiApi = {
     data: { message: string; graph_id: string; history?: unknown[]; context_node_ids?: string[]; provider?: string; model?: string },
     onChunk: (content: string) => void
   ) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     await createStreamHandler('/ai/chat', payload, onChunk);
   },
   
@@ -198,40 +167,25 @@ export const aiApi = {
     data: { message: string; graph_id?: string; history?: unknown[]; context_node_ids?: string[]; mode?: 'free' | 'guided' | 'learning-path'; provider?: string; model?: string },
     onChunk: (content: string) => void
   ) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     await createStreamHandler('/ai/tutor-chat', payload, onChunk);
   },
   
   extractConcepts: (data: { text: string; existing_nodes?: string[]; max_concepts?: number; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/extract-concepts', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   suggestNextTopic: (data: { node_title: string; node_content?: string; existing_nodes?: string[]; user_progress?: { mastered_count?: number; due_count?: number; current_level?: string }; provider?: string; model?: string }) => {
-    const config = getAIConfig('text');
-    const payload = { ...data };
-    if (!payload.provider && config.provider) payload.provider = config.provider;
-    if (!payload.model && config.model) payload.model = config.model;
+    const payload = injectAIConfig(data, 'text');
     return request('/ai/suggest-next-topic', { method: 'POST', body: JSON.stringify(payload) });
   },
   
   generatePodcastScript: (context: string, language: string = 'zh', graph_id?: string) => {
-    const config = getAIConfig('text');
+    const payload = injectAIConfig({ context, language, graph_id }, 'text');
     return request('/ai/podcast/script', { 
       method: 'POST', 
-      body: JSON.stringify({ 
-        context, 
-        language,
-        graph_id,
-        provider: config.provider,
-        model: config.model 
-      }) 
+      body: JSON.stringify(payload) 
     });
   },
 };

@@ -7,11 +7,13 @@ export const getMockResponse = (type: string, input: string): string | object =>
       return `我理解你想了解关于 "${input}" 的内容。这是一个模拟回复，因为后端没有配置 API Key。`;
     
     case 'expand':
-      return [
-        { title: `${input} 的基础概念`, description: '基础概念描述' },
-        { title: `${input} 的应用场景`, description: '应用场景描述' },
-        { title: `${input} 的相关技术`, description: '相关技术描述' }
-      ];
+      return {
+        suggestions: [
+          { title: `${input} 的基础概念`, content: `${input}的基础概念和定义，包括其核心特征和基本原理。` },
+          { title: `${input} 的应用场景`, content: `${input}在实际中的应用场景和实践案例。` },
+          { title: `${input} 的相关技术`, content: `与${input}相关的技术和扩展知识。` }
+        ]
+      };
     
     default:
       return `Mock response for: ${input}`;

@@ -2,7 +2,10 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { logger } from '../utils/logger.js';
-import { createBackup, deleteBackupFile, readBackupFile, cleanupOldSnapshots } from '../services/backupService.js';
+import { createBackup, readBackupFile, backupService } from '../services/backupService.js';
+import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
+import { edgeService } from '../services/edgeService.js';
+import { studyService } from '../services/studyService.js';
 import fs from 'fs/promises';
 
 const router = Router();
@@ -13,8 +16,7 @@ router.get('/export', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const result = await createBackup(req.supabase!, userId, 'manual');
     
-    await req.supabase!.from('backup_snapshots').insert({
-      user_id: userId,
+    await backupService.createSnapshotRecord(req.supabase!, userId, {
       type: 'manual',
       file_path: result.filePath,
       file_size: result.fileSize,
@@ -38,13 +40,8 @@ router.get('/snapshots', requireAuth, async (req: AuthRequest, res: Response) =>
   const userId = req.user.id;
 
   try {
-    const { data: snapshots } = await req.supabase!
-      .from('backup_snapshots')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    res.json({ snapshots: snapshots || [] });
+    const snapshots = await backupService.getSnapshots(req.supabase!, userId);
+    res.json({ snapshots });
   } catch (error: any) {
     logger.error('Get snapshots error:', error);
     res.status(500).json({ error: error.message || '获取快照列表失败' });
@@ -58,8 +55,7 @@ router.post('/snapshots', requireAuth, async (req: AuthRequest, res: Response) =
   try {
     const result = await createBackup(req.supabase!, userId, type);
     
-    await req.supabase!.from('backup_snapshots').insert({
-      user_id: userId,
+    await backupService.createSnapshotRecord(req.supabase!, userId, {
       type,
       file_path: result.filePath,
       file_size: result.fileSize,
@@ -87,27 +83,13 @@ router.delete('/snapshots/:id', requireAuth, async (req: AuthRequest, res: Respo
   const { id } = req.params;
 
   try {
-    const { data: snapshot } = await req.supabase!
-      .from('backup_snapshots')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', userId)
-      .single();
-
-    if (!snapshot) {
-      return res.status(404).json({ error: '快照不存在' });
-    }
-
-    await deleteBackupFile(snapshot.file_path);
-    
-    await req.supabase!
-      .from('backup_snapshots')
-      .delete()
-      .eq('id', id);
-
+    await backupService.deleteSnapshot(req.supabase!, id, userId);
     res.json({ success: true, message: '快照已删除' });
   } catch (error: any) {
     logger.error('Delete snapshot error:', error);
+    if (error.message === 'Snapshot not found') {
+      return res.status(404).json({ error: '快照不存在' });
+    }
     res.status(500).json({ error: error.message || '删除快照失败' });
   }
 });
@@ -117,13 +99,7 @@ router.post('/restore/:id', requireAuth, async (req: AuthRequest, res: Response)
   const { id } = req.params;
 
   try {
-    const { data: snapshot } = await req.supabase!
-      .from('backup_snapshots')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', userId)
-      .single();
-
+    const snapshot = await backupService.getSnapshot(req.supabase!, id, userId);
     if (!snapshot) {
       return res.status(404).json({ error: '快照不存在' });
     }
@@ -142,111 +118,11 @@ router.post('/restore/:id', requireAuth, async (req: AuthRequest, res: Response)
       await req.supabase!.from('study_cards').delete().eq('user_id', userId);
       await req.supabase!.from('study_progress').delete().eq('user_id', userId);
       await req.supabase!.from('edges').delete().in('graph_id', graphIds);
-      await req.supabase!.from('nodes').delete().in('graph_id', graphIds);
+      await req.supabase!.from('graph_nodes').delete().in('graph_id', graphIds);
       await req.supabase!.from('knowledge_graphs').delete().eq('user_id', userId);
     }
 
-    const stats = {
-      graphs: 0,
-      nodes: 0,
-      edges: 0,
-      study_cards: 0,
-    };
-
-    const oldToNewGraphIds = new Map<string, string>();
-    const oldToNewNodeIds = new Map<string, string>();
-
-    if (data.graphs && data.graphs.length > 0) {
-      const graphsToInsert = data.graphs.map((g: any) => ({
-        user_id: userId,
-        title: g.title,
-        description: g.description,
-        settings: g.settings || {},
-        is_public: g.is_public || false,
-      }));
-
-      const { data: insertedGraphs, error: graphsError } = await req.supabase!
-        .from('knowledge_graphs')
-        .insert(graphsToInsert)
-        .select();
-
-      if (graphsError) throw new Error(`导入图谱失败: ${graphsError.message}`);
-      
-      insertedGraphs?.forEach((g: any, i: number) => {
-        oldToNewGraphIds.set(data.graphs[i].id, g.id);
-      });
-      stats.graphs = insertedGraphs?.length || 0;
-    }
-
-    if (data.nodes && data.nodes.length > 0) {
-      const nodesToInsert = data.nodes.map((n: any) => ({
-        graph_id: oldToNewGraphIds.get(n.graph_id),
-        title: n.title,
-        content: n.content,
-        learning_material: n.learning_material,
-        properties: n.properties || {},
-        x_position: n.x_position || 0,
-        y_position: n.y_position || 0,
-        level: n.level || 'normal',
-        is_accepted: n.is_accepted !== false,
-      })).filter((n: any) => n.graph_id);
-
-      const { data: insertedNodes, error: nodesError } = await req.supabase!
-        .from('nodes')
-        .insert(nodesToInsert)
-        .select();
-
-      if (nodesError) throw new Error(`导入节点失败: ${nodesError.message}`);
-      
-      insertedNodes?.forEach((n: any, i: number) => {
-        oldToNewNodeIds.set(data.nodes[i].id, n.id);
-      });
-      stats.nodes = insertedNodes?.length || 0;
-    }
-
-    if (data.edges && data.edges.length > 0) {
-      const edgesToInsert = data.edges.map((e: any) => ({
-        graph_id: oldToNewGraphIds.get(e.graph_id),
-        source_node_id: oldToNewNodeIds.get(e.source_node_id),
-        target_node_id: oldToNewNodeIds.get(e.target_node_id),
-        relationship_type: e.relationship_type || 'related',
-        weight: e.weight || 1,
-      })).filter((e: any) => e.graph_id && e.source_node_id && e.target_node_id);
-
-      if (edgesToInsert.length > 0) {
-        await req.supabase!.from('edges').insert(edgesToInsert);
-        stats.edges = edgesToInsert.length;
-      }
-    }
-
-    if (data.study_cards && data.study_cards.length > 0) {
-      const cardsToInsert = data.study_cards.map((c: any) => ({
-        user_id: userId,
-        graph_id: oldToNewGraphIds.get(c.graph_id),
-        node_id: oldToNewNodeIds.get(c.node_id),
-        question: c.question,
-        answer: c.answer,
-        explanation: c.explanation,
-        card_type: c.card_type || 'qa',
-        options: c.options,
-        difficulty: c.difficulty || 1,
-        last_reviewed: c.last_reviewed,
-        next_review: c.next_review,
-        review_count: c.review_count || 0,
-        fsrs_state: c.fsrs_state || 0,
-        fsrs_stability: c.fsrs_stability || 0,
-        fsrs_difficulty: c.fsrs_difficulty || 0,
-        fsrs_elapsed_days: c.fsrs_elapsed_days || 0,
-        fsrs_scheduled_days: c.fsrs_scheduled_days || 0,
-        fsrs_retrievability: c.fsrs_retrievability || 0,
-        fsrs_last_review: c.fsrs_last_review,
-      })).filter((c: any) => c.graph_id);
-
-      if (cardsToInsert.length > 0) {
-        await req.supabase!.from('study_cards').insert(cardsToInsert);
-        stats.study_cards = cardsToInsert.length;
-      }
-    }
+    const stats = await restoreBackupData(req.supabase!, userId, data);
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
@@ -272,12 +148,6 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
   }
 
   const { data } = backupData;
-  const stats = {
-    graphs: 0,
-    nodes: 0,
-    edges: 0,
-    study_cards: 0,
-  };
 
   try {
     if (mode === 'replace') {
@@ -292,105 +162,12 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
         await req.supabase!.from('study_cards').delete().eq('user_id', userId);
         await req.supabase!.from('study_progress').delete().eq('user_id', userId);
         await req.supabase!.from('edges').delete().in('graph_id', graphIds);
-        await req.supabase!.from('nodes').delete().in('graph_id', graphIds);
+        await req.supabase!.from('graph_nodes').delete().in('graph_id', graphIds);
         await req.supabase!.from('knowledge_graphs').delete().eq('user_id', userId);
       }
     }
 
-    const oldToNewGraphIds = new Map<string, string>();
-    const oldToNewNodeIds = new Map<string, string>();
-
-    if (data.graphs && data.graphs.length > 0) {
-      const graphsToInsert = data.graphs.map((g: any) => ({
-        user_id: userId,
-        title: g.title,
-        description: g.description,
-        settings: g.settings || {},
-        is_public: g.is_public || false,
-      }));
-
-      const { data: insertedGraphs, error: graphsError } = await req.supabase!
-        .from('knowledge_graphs')
-        .insert(graphsToInsert)
-        .select();
-
-      if (graphsError) throw new Error(`导入图谱失败: ${graphsError.message}`);
-      
-      insertedGraphs?.forEach((g: any, i: number) => {
-        oldToNewGraphIds.set(data.graphs[i].id, g.id);
-      });
-      stats.graphs = insertedGraphs?.length || 0;
-    }
-
-    if (data.nodes && data.nodes.length > 0) {
-      const nodesToInsert = data.nodes.map((n: any) => ({
-        graph_id: oldToNewGraphIds.get(n.graph_id),
-        title: n.title,
-        content: n.content,
-        learning_material: n.learning_material,
-        properties: n.properties || {},
-        x_position: n.x_position || 0,
-        y_position: n.y_position || 0,
-        level: n.level || 'normal',
-        is_accepted: n.is_accepted !== false,
-      })).filter((n: any) => n.graph_id);
-
-      const { data: insertedNodes, error: nodesError } = await req.supabase!
-        .from('nodes')
-        .insert(nodesToInsert)
-        .select();
-
-      if (nodesError) throw new Error(`导入节点失败: ${nodesError.message}`);
-      
-      insertedNodes?.forEach((n: any, i: number) => {
-        oldToNewNodeIds.set(data.nodes[i].id, n.id);
-      });
-      stats.nodes = insertedNodes?.length || 0;
-    }
-
-    if (data.edges && data.edges.length > 0) {
-      const edgesToInsert = data.edges.map((e: any) => ({
-        graph_id: oldToNewGraphIds.get(e.graph_id),
-        source_node_id: oldToNewNodeIds.get(e.source_node_id),
-        target_node_id: oldToNewNodeIds.get(e.target_node_id),
-        relationship_type: e.relationship_type || 'related',
-        weight: e.weight || 1,
-      })).filter((e: any) => e.graph_id && e.source_node_id && e.target_node_id);
-
-      if (edgesToInsert.length > 0) {
-        await req.supabase!.from('edges').insert(edgesToInsert);
-        stats.edges = edgesToInsert.length;
-      }
-    }
-
-    if (data.study_cards && data.study_cards.length > 0) {
-      const cardsToInsert = data.study_cards.map((c: any) => ({
-        user_id: userId,
-        graph_id: oldToNewGraphIds.get(c.graph_id),
-        node_id: oldToNewNodeIds.get(c.node_id),
-        question: c.question,
-        answer: c.answer,
-        explanation: c.explanation,
-        card_type: c.card_type || 'qa',
-        options: c.options,
-        difficulty: c.difficulty || 1,
-        last_reviewed: c.last_reviewed,
-        next_review: c.next_review,
-        review_count: c.review_count || 0,
-        fsrs_state: c.fsrs_state || 0,
-        fsrs_stability: c.fsrs_stability || 0,
-        fsrs_difficulty: c.fsrs_difficulty || 0,
-        fsrs_elapsed_days: c.fsrs_elapsed_days || 0,
-        fsrs_scheduled_days: c.fsrs_scheduled_days || 0,
-        fsrs_retrievability: c.fsrs_retrievability || 0,
-        fsrs_last_review: c.fsrs_last_review,
-      })).filter((c: any) => c.graph_id);
-
-      if (cardsToInsert.length > 0) {
-        await req.supabase!.from('study_cards').insert(cardsToInsert);
-        stats.study_cards = cardsToInsert.length;
-      }
-    }
+    const stats = await restoreBackupData(req.supabase!, userId, data);
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
@@ -406,5 +183,118 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: error.message || '导入备份失败' });
   }
 });
+
+async function restoreBackupData(
+  supabase: any,
+  userId: string,
+  data: any
+): Promise<{ graphs: number; nodes: number; edges: number; study_cards: number }> {
+  const stats = {
+    graphs: 0,
+    nodes: 0,
+    edges: 0,
+    study_cards: 0,
+  };
+
+  const oldToNewGraphIds = new Map<string, string>();
+  const oldToNewKnowledgePointIds = new Map<string, string>();
+
+  if (data.graphs && data.graphs.length > 0) {
+    const graphsToInsert = data.graphs.map((g: any) => ({
+      user_id: userId,
+      title: g.title,
+      description: g.description,
+      settings: g.settings || {},
+      is_public: g.is_public || false,
+    }));
+
+    const { data: insertedGraphs, error: graphsError } = await supabase
+      .from('knowledge_graphs')
+      .insert(graphsToInsert)
+      .select();
+
+    if (graphsError) throw new Error(`导入图谱失败: ${graphsError.message}`);
+    
+    insertedGraphs?.forEach((g: any, i: number) => {
+      oldToNewGraphIds.set(data.graphs[i].id, g.id);
+    });
+    stats.graphs = insertedGraphs?.length || 0;
+  }
+
+  if (data.nodes && data.nodes.length > 0) {
+    for (const n of data.nodes) {
+      const graphId = oldToNewGraphIds.get(n.graph_id);
+      if (!graphId) continue;
+      
+      const result = await createKnowledgePointWithGraphNode(
+        supabase,
+        userId,
+        {
+          graph_id: graphId,
+          title: n.title,
+          content: n.content || '',
+          properties: n.properties || {},
+          x_position: n.x_position || 0,
+          y_position: n.y_position || 0,
+          level: n.level || 'normal',
+        }
+      );
+      
+      if (result) {
+        oldToNewKnowledgePointIds.set(n.id, result.knowledge_point_id || result.id);
+        stats.nodes++;
+      }
+    }
+  }
+
+  if (data.edges && data.edges.length > 0) {
+    for (const e of data.edges) {
+      const graphId = oldToNewGraphIds.get(e.graph_id);
+      const sourceKPId = oldToNewKnowledgePointIds.get(e.source_knowledge_point_id);
+      const targetKPId = oldToNewKnowledgePointIds.get(e.target_knowledge_point_id);
+      
+      if (graphId && sourceKPId && targetKPId) {
+        try {
+          await edgeService.create(supabase, {
+            graph_id: graphId,
+            source_knowledge_point_id: sourceKPId,
+            target_knowledge_point_id: targetKPId,
+            relationship_type: e.relationship_type || 'related',
+          });
+          stats.edges++;
+        } catch (err) {
+          logger.warn('Failed to restore edge:', err);
+        }
+      }
+    }
+  }
+
+  if (data.study_cards && data.study_cards.length > 0) {
+    for (const c of data.study_cards) {
+      const graphId = oldToNewGraphIds.get(c.graph_id);
+      const kpId = oldToNewKnowledgePointIds.get(c.knowledge_point_id);
+      
+      if (graphId && kpId) {
+        try {
+          await studyService.createCard(supabase, {
+            userId,
+            knowledgePointId: kpId,
+            sourceGraphId: graphId,
+            question: c.question,
+            answer: c.answer,
+            explanation: c.explanation,
+            cardType: c.card_type || 'qa',
+            options: c.options,
+          });
+          stats.study_cards++;
+        } catch (err) {
+          logger.warn('Failed to restore study card:', err);
+        }
+      }
+    }
+  }
+
+  return stats;
+}
 
 export default router;

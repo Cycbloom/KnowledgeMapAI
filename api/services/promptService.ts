@@ -182,8 +182,156 @@ Important:
 - Respond in Chinese`
 };
 
+export interface PromptListOptions {
+  scope?: PromptScope;
+  userId?: string;
+  graphId?: string;
+}
+
+export interface PromptCreateData {
+  code: string;
+  scope: PromptScope;
+  template_content: string;
+  user_id?: string;
+  graph_id?: string;
+}
+
+export interface PromptUpdateData {
+  template_content?: string;
+  code?: string;
+}
+
 export class PromptService {
   
+  async list(
+    supabase: SupabaseClient, 
+    options: PromptListOptions = {}
+  ): Promise<{ system: PromptTemplate[]; user: PromptTemplate[]; graph: PromptTemplate[] }> {
+    const { userId, graphId } = options;
+    
+    const { data: systemTemplates, error: sysError } = await supabase
+      .from('prompt_templates')
+      .select('*')
+      .eq('scope', 'system');
+
+    if (sysError) throw sysError;
+
+    let userQuery = supabase
+      .from('prompt_templates')
+      .select('*')
+      .eq('scope', 'user');
+    
+    if (userId) {
+      userQuery = userQuery.eq('user_id', userId);
+    }
+    
+    const { data: userTemplates, error: userError } = await userQuery;
+
+    if (userError) throw userError;
+
+    let graphTemplates: PromptTemplate[] = [];
+    if (graphId) {
+      const { data: gTemplates, error: gError } = await supabase
+        .from('prompt_templates')
+        .select('*')
+        .eq('scope', 'graph')
+        .eq('graph_id', graphId);
+      
+      if (gError) throw gError;
+      graphTemplates = gTemplates || [];
+    }
+
+    return {
+      system: systemTemplates || [],
+      user: userTemplates || [],
+      graph: graphTemplates
+    };
+  }
+
+  async get(supabase: SupabaseClient, id: string): Promise<PromptTemplate | null> {
+    const { data, error } = await supabase
+      .from('prompt_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+
+    return data;
+  }
+
+  async create(supabase: SupabaseClient, data: PromptCreateData): Promise<PromptTemplate> {
+    const { code, scope, template_content, user_id, graph_id } = data;
+
+    const insertData: Record<string, any> = {
+      code,
+      scope,
+      template_content,
+      user_id: scope === 'system' ? null : user_id,
+      graph_id: scope === 'graph' ? graph_id : null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: result, error } = await supabase
+      .from('prompt_templates')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return result;
+  }
+
+  async update(supabase: SupabaseClient, id: string, data: PromptUpdateData): Promise<PromptTemplate> {
+    const updateData: Record<string, any> = {
+      ...data,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: result, error } = await supabase
+      .from('prompt_templates')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    if (result) {
+      const cacheUserId = result.user_id || 'system';
+      const cacheGraphId = result.graph_id || 'none';
+      await cacheService.del(CacheKeys.PROMPT_TEMPLATE(result.code, cacheUserId, cacheGraphId));
+    }
+
+    return result;
+  }
+
+  async delete(supabase: SupabaseClient, id: string): Promise<void> {
+    const { data: temp } = await supabase
+      .from('prompt_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    const { error } = await supabase
+      .from('prompt_templates')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    if (temp) {
+      const cacheUserId = temp.user_id || 'system';
+      const cacheGraphId = temp.graph_id || 'none';
+      await cacheService.del(CacheKeys.PROMPT_TEMPLATE(temp.code, cacheUserId, cacheGraphId));
+    }
+  }
+
   /**
    * Get the final rendered prompt string
    * Includes priority logic (Graph > User > System) and Schema appending

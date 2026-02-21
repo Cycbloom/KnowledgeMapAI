@@ -17,19 +17,29 @@ export const cleanJsonString = (str: string): string => {
 };
 
 export const parseAIResponse = <T>(content: string, context: string): T => {
+  if (!content || content.trim() === '') {
+    logger.error(`[AI] Empty response for ${context}`);
+    throw new Error(`Empty AI response for ${context}`);
+  }
+  
   const cleaned = cleanJsonString(content);
   try {
     return JSON.parse(cleaned);
-  } catch {
+  } catch (e) {
     logger.warn(`[AI] JSON Parse Error (${context}). Attempting regex fallback.`);
+    logger.debug(`[AI] Raw content length: ${content.length}, first 200 chars: ${content.substring(0, 200)}`);
+    
     const match = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
     if (match) {
       try {
         return JSON.parse(match[0]);
-      } catch {
+      } catch (e2) {
+        logger.error(`[AI] Regex fallback also failed for ${context}`);
+        logger.debug(`[AI] Matched content: ${match[0].substring(0, 500)}`);
         throw new Error(`Failed to parse AI response for ${context}`);
       }
     }
+    logger.error(`[AI] No JSON found in response for ${context}`);
     throw new Error(`Failed to parse AI response for ${context}`);
   }
 };
@@ -62,3 +72,62 @@ export const buildTutorContext = (context: {
   
   return contextStr || 'No specific context provided.';
 };
+
+export interface NodeContextOptions {
+  includeContent?: boolean;
+  includeProperties?: boolean;
+  includeLearningMaterial?: boolean;
+  maxContentLength?: number;
+}
+
+export interface NodeData {
+  title?: string;
+  content?: string;
+  learning_material?: string;
+  properties?: Record<string, unknown>;
+}
+
+export function buildNodeContext(
+  node: NodeData,
+  options: NodeContextOptions = {}
+): string {
+  const { 
+    includeContent = true, 
+    includeProperties = false, 
+    includeLearningMaterial = false, 
+    maxContentLength = 500 
+  } = options;
+  
+  const parts: string[] = [];
+  
+  if (node.title) {
+    parts.push(`标题: ${node.title}`);
+  }
+  
+  if (includeContent && node.content) {
+    const content = node.content.length > maxContentLength 
+      ? node.content.substring(0, maxContentLength) + '...'
+      : node.content;
+    parts.push(`内容: ${content}`);
+  }
+  
+  if (includeLearningMaterial && node.learning_material) {
+    parts.push(`学习材料: ${node.learning_material}`);
+  }
+  
+  if (includeProperties && node.properties) {
+    const tags = node.properties.tags as string[];
+    if (tags && tags.length > 0) {
+      parts.push(`标签: ${tags.join(', ')}`);
+    }
+  }
+  
+  return parts.join('\n');
+}
+
+export function buildNodesContext(
+  nodes: NodeData[],
+  options: NodeContextOptions = {}
+): string {
+  return nodes.map((n, i) => `[${i + 1}] ${buildNodeContext(n, options)}`).join('\n\n');
+}

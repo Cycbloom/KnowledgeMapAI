@@ -94,8 +94,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const isolatedCount = useMemo(() => {
     const connectedNodeIds = new Set<string>();
     edges.forEach(edge => {
-      connectedNodeIds.add(edge.source_node_id);
-      connectedNodeIds.add(edge.target_node_id);
+      connectedNodeIds.add(edge.source_knowledge_point_id);
+      connectedNodeIds.add(edge.target_knowledge_point_id);
     });
     return nodes.filter(node => !connectedNodeIds.has(node.id)).length;
   }, [nodes, edges]);
@@ -115,10 +115,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     // Sort edges to prioritize better parent-child relationships for the tree view
     // We want to avoid "upward" links becoming the primary parent-child relationship in the outline
     const sortedEdges = [...edges].sort((a, b) => {
-      const sA = nodeMap.get(a.source_node_id);
-      const tA = nodeMap.get(a.target_node_id);
-      const sB = nodeMap.get(b.source_node_id);
-      const tB = nodeMap.get(b.target_node_id);
+      const sA = nodeMap.get(a.source_knowledge_point_id);
+      const tA = nodeMap.get(a.target_knowledge_point_id);
+      const sB = nodeMap.get(b.source_knowledge_point_id);
+      const tB = nodeMap.get(b.target_knowledge_point_id);
 
       if (!sA || !tA) return 0;
       if (!sB || !tB) return 0;
@@ -158,19 +158,16 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     });
 
     sortedEdges.forEach(edge => {
-      const source = nodeMap.get(edge.source_node_id);
-      const target = nodeMap.get(edge.target_node_id);
+      const source = nodeMap.get(edge.source_knowledge_point_id);
+      const target = nodeMap.get(edge.target_knowledge_point_id);
       
       if (source && target) {
-        // STRICT TREE CONSTRUCTION:
-        // Only add as child if the node doesn't have a parent yet in our tree representation.
-        // This prevents cycles and duplicate nodes in the outline view.
-        if (!hasParent.has(edge.target_node_id)) {
-          if (!cMap.has(edge.source_node_id)) cMap.set(edge.source_node_id, []);
-          cMap.get(edge.source_node_id)!.push(target);
+        if (!hasParent.has(edge.target_knowledge_point_id)) {
+          if (!cMap.has(edge.source_knowledge_point_id)) cMap.set(edge.source_knowledge_point_id, []);
+          cMap.get(edge.source_knowledge_point_id)!.push(target);
           
-          hasParent.add(edge.target_node_id);
-          pMap.set(edge.target_node_id, edge.source_node_id);
+          hasParent.add(edge.target_knowledge_point_id);
+          pMap.set(edge.target_knowledge_point_id, edge.source_knowledge_point_id);
         }
       }
     });
@@ -266,8 +263,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const existingConnections = useMemo(() => {
     const connections = new Set<string>();
     edges.forEach(edge => {
-      connections.add(`${edge.source_node_id}-${edge.target_node_id}`);
-      connections.add(`${edge.target_node_id}-${edge.source_node_id}`);
+      connections.add(`${edge.source_knowledge_point_id}-${edge.target_knowledge_point_id}`);
+      connections.add(`${edge.target_knowledge_point_id}-${edge.source_knowledge_point_id}`);
     });
     return connections;
   }, [edges]);
@@ -280,8 +277,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       const nodeContent = (node.content || '').toLowerCase();
       const connectedIds = new Set(
         edges
-          .filter(e => e.source_node_id === node.id || e.target_node_id === node.id)
-          .map(e => e.source_node_id === node.id ? e.target_node_id : e.source_node_id)
+          .filter(e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id)
+          .map(e => e.source_knowledge_point_id === node.id ? e.target_knowledge_point_id : e.source_knowledge_point_id)
       );
       
       nodes.forEach(otherNode => {
@@ -420,8 +417,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
     const connectedNodeIds = new Set<string>();
     edges.forEach(edge => {
-      connectedNodeIds.add(edge.source_node_id);
-      connectedNodeIds.add(edge.target_node_id);
+      connectedNodeIds.add(edge.source_knowledge_point_id);
+      connectedNodeIds.add(edge.target_knowledge_point_id);
     });
 
     const isolatedNodes = nodes.filter(node => !connectedNodeIds.has(node.id));

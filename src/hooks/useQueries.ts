@@ -409,7 +409,7 @@ export const useDeleteNodeMutation = () => {
         return {
           ...old,
           nodes: old.nodes.filter(node => node.id !== id),
-          edges: old.edges.filter(edge => edge.source_node_id !== id && edge.target_node_id !== id),
+          edges: old.edges.filter(edge => edge.source_knowledge_point_id !== id && edge.target_knowledge_point_id !== id),
         };
       });
 
@@ -447,7 +447,7 @@ export const useBatchDeleteNodesMutation = () => {
         return {
           ...old,
           nodes: old.nodes.filter(node => !nodeIds.includes(node.id)),
-          edges: old.edges.filter(edge => !nodeIds.includes(edge.source_node_id) && !nodeIds.includes(edge.target_node_id)),
+          edges: old.edges.filter(edge => !nodeIds.includes(edge.source_knowledge_point_id) && !nodeIds.includes(edge.target_knowledge_point_id)),
         };
       });
 
@@ -468,7 +468,7 @@ export const useCreateEdgeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { source_node_id: string; target_node_id: string; relationship_type: string; graphId?: string }) => {
+    mutationFn: (data: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship_type: string; graphId?: string }) => {
        const { graphId, relationship_type, ...edgeData } = data;
        return api.edges.create({ ...edgeData, graph_id: graphId || '', relationship_type });
     },
@@ -484,6 +484,7 @@ export const useCreateEdgeMutation = () => {
          
          const tempEdge: Edge = {
              id: `temp-edge-${  Date.now()}`,
+             graph_id: graphId,
              ...edgeData,
           };
          

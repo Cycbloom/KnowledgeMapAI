@@ -166,4 +166,26 @@ export const cacheService = {
     
     return { keys: 0, hits: 0, misses: 0, kps: 0 };
   },
+
+  invalidateGraphCache: async (userId: string, graphId: string): Promise<void> => {
+    const keys = [
+      CacheKeys.GRAPH_NODES(userId, graphId),
+      CacheKeys.GRAPH(graphId),
+      CacheKeys.LEARNING_PATH(graphId),
+      CacheKeys.STUDY_CARDS(graphId),
+    ];
+    await cacheService.del(keys);
+  },
+
+  invalidateUserGraphsCache: async (userId: string): Promise<void> => {
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+  },
+
+  invalidateStudyCache: async (graphId: string): Promise<void> => {
+    const keys = [
+      CacheKeys.STUDY_CARDS(graphId),
+      CacheKeys.LEARNING_PATH(graphId),
+    ];
+    await cacheService.del(keys);
+  },
 };

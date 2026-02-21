@@ -1,5 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { cacheService, CacheKeys } from './cache.js';
+import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
+import { logger } from '../utils/logger.js';
 
 export class TemplateService {
   async listTemplates(supabase: SupabaseClient, category?: string) {
@@ -139,25 +141,22 @@ export class TemplateService {
       const newNodeId = crypto.randomUUID();
       nodeIdMap.set(templateNode.id, newNodeId);
 
-      const { error: nodeError } = await supabase
-        .from('nodes')
-        .insert([
-          {
-            id: newNodeId,
-            graph_id: graphId,
-            title: templateNode.title,
-            content: '',
-            x_position: templateNode.x_position || 0,
-            y_position: templateNode.y_position || 0,
-            level: templateNode.level,
-            properties: {
-              ai_prompt: templateNode.aiPrompt,
-              position_zone: templateNode.position_zone,
-            },
-          }
-        ]);
-
-      if (nodeError) throw nodeError;
+      await createKnowledgePointWithGraphNode(
+        supabase,
+        userId,
+        {
+          graph_id: graphId,
+          title: templateNode.title,
+          content: '',
+          x_position: templateNode.x_position || 0,
+          y_position: templateNode.y_position || 0,
+          level: templateNode.level,
+          properties: {
+            ai_prompt: templateNode.aiPrompt,
+            position_zone: templateNode.position_zone,
+          },
+        }
+      );
     }
 
     for (const templateEdge of template.edges) {
@@ -165,7 +164,7 @@ export class TemplateService {
       const targetNodeId = nodeIdMap.get(templateEdge.target);
 
       if (!sourceNodeId || !targetNodeId) {
-        console.warn(`Skipping edge: node mapping not found`, templateEdge);
+        logger.warn(`Skipping edge: node mapping not found`, templateEdge);
         continue;
       }
 
@@ -174,8 +173,8 @@ export class TemplateService {
         .insert([
           {
             graph_id: graphId,
-            source_node_id: sourceNodeId,
-            target_node_id: targetNodeId,
+            source_knowledge_point_id: sourceNodeId,
+            target_knowledge_point_id: targetNodeId,
             relationship_type: templateEdge.relationship_type || 'related',
           }
         ]);

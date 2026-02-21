@@ -8,9 +8,11 @@ import { validate } from '../../middleware/validate.js';
 import { textToGraphSchema, documentToGraphSchema, urlToTextSchema } from '../../schemas/index.js';
 import { ErrorCodes } from '../../constants/errorCodes.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers.js';
 import { CacheKeys, cacheService } from '../../services/cache.js';
 import { aiService } from '../../services/aiService.js';
 import { getAIProviderForTask, getAIProvider } from '../../services/ai/factory.js';
+import { edgeService } from '../../services/edgeService.js';
 import { logger } from '../../utils/logger.js';
 import { promptService } from '../../services/promptService.js';
 import { supabaseAdmin } from '../../supabase.js';
@@ -33,19 +35,19 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
 
     try {
       const nodeMap = new Map<string, string>();
+      const createdNodes: { id: string; title: string; content?: string; knowledge_point_id?: string }[] = [];
       
-      const nodesToInsert = nodes
-        .filter((node: { title?: string }) => node.title && node.title.trim() !== "")
-        .map((node: { id?: string; title: string; content?: string; level?: string; properties?: Record<string, unknown> }) => {
-          const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-          });
-          
-          if (node.id) nodeMap.set(node.id, uuid);
-          
-          return {
-            id: uuid,
+      const validNodes = nodes.filter((node: { title?: string }) => node.title && node.title.trim() !== "");
+      
+      if (validNodes.length === 0) {
+        return res.json({ success: true, nodeCount: 0, edgeCount: 0, message: 'No valid nodes found to save' });
+      }
+
+      for (const node of validNodes) {
+        const result = await createKnowledgePointWithGraphNode(
+          req.supabase!,
+          req.user.id,
+          {
             graph_id,
             title: node.title,
             content: node.content || '',
@@ -53,56 +55,46 @@ router.post('/text-to-graph', requireAuth, validate(textToGraphSchema), async (r
             y_position: Math.round((Math.random() - 0.5) * 50),
             level: node.level || 'leaf',
             properties: { ...node.properties, source: 'ai-text-to-graph' }
-          };
-        });
-
-      if (nodesToInsert.length === 0) {
-        return res.json({ success: true, nodeCount: 0, edgeCount: 0, message: 'No valid nodes found to save' });
+          }
+        );
+        
+        if (result) {
+          if (node.id) nodeMap.set(node.id, result.knowledge_point_id || result.id);
+          createdNodes.push({ 
+            id: result.id, 
+            title: node.title, 
+            content: node.content,
+            knowledge_point_id: result.knowledge_point_id 
+          });
+        }
       }
 
-      try {
-        await Promise.all(nodesToInsert.map(async (node: { content?: string; title: string; embedding?: number[] }) => {
-          const text = node.content || node.title;
-          if (text) {
-            const embedding = await aiService.generateEmbedding(text);
-            if (embedding) {
-              node.embedding = embedding;
+      let edgeCount = 0;
+      if (edges && Array.isArray(edges)) {
+        for (const edge of edges) {
+          const sourceKPId = nodeMap.get(edge.source);
+          const targetKPId = nodeMap.get(edge.target);
+          
+          if (sourceKPId && targetKPId) {
+            try {
+              await edgeService.create(req.supabase!, {
+                graph_id,
+                source_knowledge_point_id: sourceKPId,
+                target_knowledge_point_id: targetKPId,
+                relationship_type: edge.relationship || 'related',
+              });
+              edgeCount++;
+            } catch (err) {
+              logger.warn('Failed to create edge:', err);
             }
           }
-        }));
-      } catch (e) {
-        logger.error('Failed to generate embeddings for batch nodes:', e);
-      }
-
-      const { error: nodeError } = await req.supabase!.from('nodes').insert(nodesToInsert);
-      if (nodeError) throw new AppError(nodeError.message, 500, ErrorCodes.INTERNAL_ERROR);
-
-      const edgesToInsert: { source_node_id: string; target_node_id: string; relationship_type: string; graph_id: string }[] = [];
-      if (edges && Array.isArray(edges)) {
-        edges.forEach((edge: { source: string; target: string; relationship?: string }) => {
-          const sourceUuid = nodeMap.get(edge.source);
-          const targetUuid = nodeMap.get(edge.target);
-          
-          if (sourceUuid && targetUuid) {
-            edgesToInsert.push({
-              source_node_id: sourceUuid,
-              target_node_id: targetUuid,
-              relationship_type: edge.relationship || 'related',
-              graph_id
-            });
-          }
-        });
-      }
-
-      if (edgesToInsert.length > 0) {
-        const { error: edgeError } = await req.supabase!.from('edges').insert(edgesToInsert);
-        if (edgeError) logger.error('Edge insertion error:', edgeError);
+        }
       }
 
       cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
       cacheService.del(CacheKeys.USER_GRAPHS(req.user.id));
 
-      return res.json({ success: true, nodeCount: nodesToInsert.length, edgeCount: edgesToInsert.length });
+      return res.json({ success: true, nodeCount: createdNodes.length, edgeCount });
 
     } catch (error: unknown) {
       const err = error as Error;

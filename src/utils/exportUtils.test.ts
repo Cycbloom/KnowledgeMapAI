@@ -16,8 +16,8 @@ describe('exportUtils', () => {
   ];
 
   const mockEdges: Edge[] = [
-    { id: 'e1', source_node_id: 'n1', target_node_id: 'n2' },
-    { id: 'e2', source_node_id: 'n2', target_node_id: 'n3' },
+    { id: 'e1', source_knowledge_point_id: 'n1', target_knowledge_point_id: 'n2' },
+    { id: 'e2', source_knowledge_point_id: 'n2', target_knowledge_point_id: 'n3' },
   ];
 
   it('generates markdown with correct hierarchy', () => {

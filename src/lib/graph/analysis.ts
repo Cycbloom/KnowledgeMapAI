@@ -39,8 +39,8 @@ export const analyzeGraph = (nodes: Node[], edges: Edge[]): GraphAnalysis => {
   });
   
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     
     outDegree.set(src, (outDegree.get(src) || 0) + 1);
     inDegree.set(tgt, (inDegree.get(tgt) || 0) + 1);
@@ -251,16 +251,16 @@ export const findMissingConnections = (
   
   const existingConnections = new Set<string>();
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     existingConnections.add(`${src}-${tgt}`);
     existingConnections.add(`${tgt}-${src}`);
   });
   
   const parentMap = new Map<string, Set<string>>();
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     if (!parentMap.has(tgt)) {
       parentMap.set(tgt, new Set());
     }
@@ -314,12 +314,12 @@ export const calculateNodeImportance = (
   const nodeId = normalizeId(node.id);
   
   const degree = edges.filter(e => 
-    normalizeId(e.source_node_id) === nodeId || 
-    normalizeId(e.target_node_id) === nodeId
+    normalizeId(e.source_knowledge_point_id) === nodeId || 
+    normalizeId(e.target_knowledge_point_id) === nodeId
   ).length;
   
   const childrenCount = edges.filter(e => 
-    normalizeId(e.source_node_id) === nodeId
+    normalizeId(e.source_knowledge_point_id) === nodeId
   ).length;
   
   const level = getLevel(node, edges);
@@ -331,14 +331,14 @@ export const calculateNodeImportance = (
   
   const maxDegree = Math.max(1, ...nodes.map(n =>
     edges.filter(e => 
-      normalizeId(e.source_node_id) === normalizeId(n.id) || 
-      normalizeId(e.target_node_id) === normalizeId(n.id)
+      normalizeId(e.source_knowledge_point_id) === normalizeId(n.id) || 
+      normalizeId(e.target_knowledge_point_id) === normalizeId(n.id)
     ).length
   ));
   const normalizedDegree = Math.min(degree / maxDegree, 1.0);
   
   const maxChildren = Math.max(1, ...nodes.map(n =>
-    edges.filter(e => normalizeId(e.source_node_id) === normalizeId(n.id)).length
+    edges.filter(e => normalizeId(e.source_knowledge_point_id) === normalizeId(n.id)).length
   ));
   const normalizedChildren = Math.min(childrenCount / maxChildren, 1.0);
   
@@ -366,8 +366,8 @@ export const calculateEdgeStrength = (
   nodes: Node[],
   edges: Edge[]
 ): EdgeStrength => {
-  const sourceId = normalizeId(edge.source_node_id);
-  const targetId = normalizeId(edge.target_node_id);
+  const sourceId = normalizeId(edge.source_knowledge_point_id);
+  const targetId = normalizeId(edge.target_knowledge_point_id);
   
   const relationshipWeights: Record<string, number> = {
     'contains': 1.0,
@@ -383,8 +383,8 @@ export const calculateEdgeStrength = (
   const targetConnections = new Set<string>();
   
   edges.forEach(e => {
-    const src = normalizeId(e.source_node_id);
-    const tgt = normalizeId(e.target_node_id);
+    const src = normalizeId(e.source_knowledge_point_id);
+    const tgt = normalizeId(e.target_knowledge_point_id);
     
     if (src === sourceId || tgt === sourceId) {
       if (src === sourceId) sourceConnections.add(tgt);
@@ -408,19 +408,19 @@ export const calculateEdgeStrength = (
   
   let hierarchyWeight = 0.5;
   const isParentChild = edges.some(e => 
-    normalizeId(e.source_node_id) === sourceId && 
-    normalizeId(e.target_node_id) === targetId
+    normalizeId(e.source_knowledge_point_id) === sourceId && 
+    normalizeId(e.target_knowledge_point_id) === targetId
   );
   
   if (isParentChild) {
     hierarchyWeight = 1.0;
   } else {
     const sourceParents = edges
-      .filter(e => normalizeId(e.target_node_id) === sourceId)
-      .map(e => normalizeId(e.source_node_id));
+      .filter(e => normalizeId(e.target_knowledge_point_id) === sourceId)
+      .map(e => normalizeId(e.source_knowledge_point_id));
     const targetParents = edges
-      .filter(e => normalizeId(e.target_node_id) === targetId)
-      .map(e => normalizeId(e.source_node_id));
+      .filter(e => normalizeId(e.target_knowledge_point_id) === targetId)
+      .map(e => normalizeId(e.source_knowledge_point_id));
     
     const commonParent = sourceParents.find(p => targetParents.includes(p));
     if (commonParent) {
@@ -462,8 +462,8 @@ const countPaths = (
   });
   
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     adj.get(src)?.add(tgt);
     adj.get(tgt)?.add(src);
   });

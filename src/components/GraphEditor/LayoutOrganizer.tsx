@@ -70,11 +70,11 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
     const parentMap = new Map<string, string>();
     nodes.forEach(n => childrenMap.set(n.id, []));
     edges.forEach(e => {
-      const children = childrenMap.get(e.source_node_id);
+      const children = childrenMap.get(e.source_knowledge_point_id);
       if (children) {
-        children.push(e.target_node_id);
+        children.push(e.target_knowledge_point_id);
       }
-      parentMap.set(e.target_node_id, e.source_node_id);
+      parentMap.set(e.target_knowledge_point_id, e.source_knowledge_point_id);
     });
 
     const nodeLevelMap = new Map<string, number>();

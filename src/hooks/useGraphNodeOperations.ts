@@ -5,6 +5,7 @@ import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
 import { levelLabels } from '../config/graphConfig';
+import { createAsyncHandler } from '../utils/asyncHandler';
 
 interface UseGraphNodeOperationsProps {
   id: string;
@@ -32,6 +33,7 @@ export const useGraphNodeOperations = ({
   record
 }: UseGraphNodeOperationsProps) => {
   const { addMessage } = useMessageStore();
+  const asyncHandler = createAsyncHandler(addMessage);
   const { 
     nodeForm, setNodeForm, 
     sidebarMode, setSidebarMode, 
@@ -50,112 +52,116 @@ export const useGraphNodeOperations = ({
 
   const handleSaveNode = async () => {
     if (!id) return;
-    setLoading(true);
-    try {
-      if (sidebarMode === 'create') {
-        const newNode = await createNodeMutation.mutateAsync({
-          graph_id: id,
-          title: nodeForm.title,
-          content: nodeForm.content,
-          x_position: Math.round((Math.random() - 0.5) * 20),
-          y_position: Math.round((Math.random() - 0.5) * 20),
-          level: nodeForm.level,
-          tags: nodeForm.tags,
-          properties: {}
-        });
+    
+    await asyncHandler(
+      async () => {
+        if (sidebarMode === 'create') {
+          const newNode = await createNodeMutation.mutateAsync({
+            graph_id: id,
+            title: nodeForm.title,
+            content: nodeForm.content,
+            x_position: Math.round((Math.random() - 0.5) * 20),
+            y_position: Math.round((Math.random() - 0.5) * 20),
+            level: nodeForm.level,
+            tags: nodeForm.tags,
+            properties: {}
+          });
 
-        for (const parentId of nodeForm.parentNodeIds) {
-          if (parentId !== newNode.id) {
+          for (const parentId of nodeForm.parentNodeIds) {
+            if (parentId !== newNode.id) {
+              const newEdge = await createEdgeMutation.mutateAsync({
+                source_knowledge_point_id: parentId,
+                target_knowledge_point_id: newNode.id,
+                relationship_type: 'related',
+                graphId: id
+              });
+              record({ type: 'CREATE_EDGE', payload: newEdge });
+            }
+          }
+
+          record({ type: 'CREATE_NODE', payload: newNode });
+
+          setSelectedNode(newNode);
+          setSidebarMode('edit');
+          return newNode;
+        } else if (sidebarMode === 'edit' && selectedNode) {
+          const beforeState = {
+            graph_id: selectedNode.graph_id,
+            title: selectedNode.title,
+            content: selectedNode.content,
+            level: selectedNode.level,
+            tags: selectedNode.properties?.tags,
+            properties: selectedNode.properties
+          };
+
+          const updateData = {
+            graph_id: selectedNode.graph_id,
+            title: nodeForm.title,
+            content: nodeForm.content,
+            level: nodeForm.level,
+            properties: { ...selectedNode.properties, tags: nodeForm.tags }
+          };
+
+          const actions: HistoryAction[] = [];
+
+          const updated = await updateNodeMutation.mutateAsync({
+            id: selectedNode.id,
+            data: updateData,
+            graphId: id
+          });
+          
+          actions.push({
+            type: 'UPDATE_NODE',
+            payload: {
+              id: selectedNode.id,
+              before: beforeState,
+              after: updateData
+            }
+          });
+
+          const currentParentEdges = edges.filter(e => e.target_knowledge_point_id === selectedNode.id);
+          const currentParentIds = currentParentEdges.map(e => e.source_knowledge_point_id);
+          const newParentIds = nodeForm.parentNodeIds.filter(id => id !== selectedNode.id);
+          
+          const parentIdsToRemove = currentParentIds.filter(id => !newParentIds.includes(id));
+          const parentIdsToAdd = newParentIds.filter(id => !currentParentIds.includes(id));
+          
+          for (const parentId of parentIdsToRemove) {
+            const edgeToDelete = currentParentEdges.find(e => e.source_knowledge_point_id === parentId);
+            if (edgeToDelete) {
+              await deleteEdgeMutation.mutateAsync({ id: edgeToDelete.id });
+              actions.push({ type: 'DELETE_EDGE', payload: edgeToDelete });
+            }
+          }
+          
+          for (const parentId of parentIdsToAdd) {
             const newEdge = await createEdgeMutation.mutateAsync({
-              source_node_id: parentId,
-              target_node_id: newNode.id,
+              source_knowledge_point_id: parentId,
+              target_knowledge_point_id: selectedNode.id,
               relationship_type: 'related',
               graphId: id
             });
-            record({ type: 'CREATE_EDGE', payload: newEdge });
+            actions.push({ type: 'CREATE_EDGE', payload: newEdge });
           }
-        }
-
-        record({ type: 'CREATE_NODE', payload: newNode });
-
-        setSelectedNode(newNode);
-        setSidebarMode('edit');
-      } else if (sidebarMode === 'edit' && selectedNode) {
-        const beforeState = {
-          graph_id: selectedNode.graph_id,
-          title: selectedNode.title,
-          content: selectedNode.content,
-          level: selectedNode.level,
-          tags: selectedNode.tags,
-          properties: selectedNode.properties
-        };
-
-        const updateData = {
-          graph_id: selectedNode.graph_id,
-          title: nodeForm.title,
-          content: nodeForm.content,
-          level: nodeForm.level,
-          properties: { ...selectedNode.properties, tags: nodeForm.tags }
-        };
-
-        const actions: HistoryAction[] = [];
-
-        const updated = await updateNodeMutation.mutateAsync({
-          id: selectedNode.id,
-          data: updateData,
-          graphId: id
-        });
-        
-        actions.push({
-          type: 'UPDATE_NODE',
-          payload: {
-            id: selectedNode.id,
-            before: beforeState,
-            after: updateData
+          
+          if (actions.length === 1) {
+            record(actions[0]);
+          } else if (actions.length > 1) {
+            record({ type: 'BATCH', payload: actions });
           }
-        });
-
-        const currentParentEdges = edges.filter(e => e.target_node_id === selectedNode.id);
-        const currentParentIds = currentParentEdges.map(e => e.source_node_id);
-        const newParentIds = nodeForm.parentNodeIds.filter(id => id !== selectedNode.id);
-        
-        const parentIdsToRemove = currentParentIds.filter(id => !newParentIds.includes(id));
-        const parentIdsToAdd = newParentIds.filter(id => !currentParentIds.includes(id));
-        
-        for (const parentId of parentIdsToRemove) {
-          const edgeToDelete = currentParentEdges.find(e => e.source_node_id === parentId);
-          if (edgeToDelete) {
-            await deleteEdgeMutation.mutateAsync({ id: edgeToDelete.id });
-            actions.push({ type: 'DELETE_EDGE', payload: edgeToDelete });
-          }
+          
+          setSelectedNode(updated);
+          setSidebarMode('edit');
+          return updated;
         }
-        
-        for (const parentId of parentIdsToAdd) {
-          const newEdge = await createEdgeMutation.mutateAsync({
-            source_node_id: parentId,
-            target_node_id: selectedNode.id,
-            relationship_type: 'related',
-            graphId: id
-          });
-          actions.push({ type: 'CREATE_EDGE', payload: newEdge });
-        }
-        
-        if (actions.length === 1) {
-          record(actions[0]);
-        } else if (actions.length > 1) {
-          record({ type: 'BATCH', payload: actions });
-        }
-        
-        setSelectedNode(updated);
-        setSidebarMode('edit');
+        return null;
+      },
+      {
+        loadingSetter: setLoading,
+        successMessage: sidebarMode === 'create' ? '节点创建成功' : '节点保存成功',
+        errorMessage: '保存失败，请重试'
       }
-      addMessage({ type: 'success', content: sidebarMode === 'create' ? '节点创建成功' : '节点保存成功' });
-    } catch (err) {
-      console.error(err);
-      addMessage({ type: 'error', content: '保存失败，请重试' });
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   const handleCloseSidebar = useCallback(() => {
@@ -185,12 +191,12 @@ export const useGraphNodeOperations = ({
     if (!nodeToDelete || !id) return;
     
     const connectedEdges = edges.filter(e => 
-      e.source_node_id === nodeToDelete.id || e.target_node_id === nodeToDelete.id
+      e.source_knowledge_point_id === nodeToDelete.id || e.target_knowledge_point_id === nodeToDelete.id
     );
     
     const message = hardDelete 
-      ? `确定要彻底删除知识点 "${nodeToDelete.title}" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！`
-      : `确定要从当前图谱移除节点 "${nodeToDelete.title}" 吗？`;
+      ? `确定要彻底删除知识点 "${nodeToDelete.knowledge_point?.title}" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！`
+      : `确定要从当前图谱移除节点 "${nodeToDelete.knowledge_point?.title}" 吗？`;
     
     setConfirmModal({
       isOpen: true,
@@ -237,7 +243,7 @@ export const useGraphNodeOperations = ({
     Array.from(selectedNodeIds).forEach(nodeId => {
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
-        const connectedEdges = edges.filter(e => e.source_node_id === nodeId || e.target_node_id === nodeId);
+        const connectedEdges = edges.filter(e => e.source_knowledge_point_id === nodeId || e.target_knowledge_point_id === nodeId);
         batchAction.payload.push({
           type: 'DELETE_NODE',
           payload: { node, edges: connectedEdges }
@@ -250,25 +256,26 @@ export const useGraphNodeOperations = ({
       title: '批量删除',
       message: `确定要删除选中的 ${selectedNodeIds.size} 个节点吗?`,
       onConfirm: () => {
-        setLoading(true);
         const nodeIds = Array.from(selectedNodeIds);
         
-        batchDeleteNodesMutation.mutateAsync({ nodeIds, graphId: id })
-          .then(() => {
+        asyncHandler(
+          async () => {
+            await batchDeleteNodesMutation.mutateAsync({ nodeIds, graphId: id });
             if (batchAction.payload.length > 0) {
               record(batchAction);
             }
             setSelectedNodeIds(new Set());
             setSelectedNode(null);
             setSidebarMode('none');
-            addMessage({ content: '批量删除成功', type: 'success' });
-          }).catch((err: any) => {
-            console.error(err);
-            addMessage({ content: '批量删除失败', type: 'error' });
-          }).finally(() => {
-            setLoading(false);
-            setConfirmModal({ ...state.confirmModal, isOpen: false });
-          });
+            return true;
+          },
+          {
+            loadingSetter: setLoading,
+            successMessage: '批量删除成功',
+            errorMessage: '批量删除失败',
+            onFinally: () => setConfirmModal({ ...state.confirmModal, isOpen: false })
+          }
+        );
       }
     });
   };
@@ -276,7 +283,6 @@ export const useGraphNodeOperations = ({
   const handleBatchLevelUpdate = async (level: string) => {
     if (!id || selectedNodeIds.size === 0) return;
     
-    setLoading(true);
     const nodeIds = Array.from(selectedNodeIds);
     
     const batchAction: HistoryAction = {
@@ -298,20 +304,22 @@ export const useGraphNodeOperations = ({
       }
     });
     
-    try {
-      await Promise.all(nodeIds.map(nodeId => 
-        updateNodeMutation.mutateAsync({ id: nodeId, graphId: id, data: { level: level as NodeLevel } })
-      ));
-      if (batchAction.payload.length > 0) {
-        record(batchAction);
+    await asyncHandler(
+      async () => {
+        await Promise.all(nodeIds.map(nodeId => 
+          updateNodeMutation.mutateAsync({ id: nodeId, graphId: id, data: { level: level as NodeLevel } })
+        ));
+        if (batchAction.payload.length > 0) {
+          record(batchAction);
+        }
+        return true;
+      },
+      {
+        loadingSetter: setLoading,
+        successMessage: `已将 ${selectedNodeIds.size} 个节点等级修改为 ${levelLabels[level] || level}`,
+        errorMessage: '批量修改等级失败'
       }
-      addMessage({ content: `已将 ${selectedNodeIds.size} 个节点等级修改为 ${levelLabels[level] || level}`, type: 'success' });
-    } catch (err) {
-      console.error(err);
-      addMessage({ content: '批量修改等级失败', type: 'error' });
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   const handleUpdateNode = async (nodeId: string, updates: Partial<Node>) => {
@@ -320,43 +328,44 @@ export const useGraphNodeOperations = ({
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
     
-    setLoading(true);
-    try {
-      const beforeState = {
-        title: node.title,
-        content: node.content,
-        level: node.level,
-        is_accepted: node.is_accepted,
-        properties: node.properties
-      };
-      
-      const afterState = {
-        ...beforeState,
-        ...updates
-      };
-      
-      await updateNodeMutation.mutateAsync({
-        id: nodeId,
-        graphId: id,
-        data: updates
-      });
-      
-      record({
-        type: 'UPDATE_NODE',
-        payload: {
+    await asyncHandler(
+      async () => {
+        const beforeState = {
+          title: node.title,
+          content: node.content,
+          level: node.level,
+          is_accepted: node.is_accepted,
+          properties: node.properties
+        };
+        
+        const afterState = {
+          ...beforeState,
+          ...updates
+        };
+        
+        await updateNodeMutation.mutateAsync({
           id: nodeId,
-          before: beforeState,
-          after: afterState
-        }
-      });
-      
-      addMessage({ type: 'success', content: '节点状态已更新' });
-    } catch (err) {
-      console.error(err);
-      addMessage({ type: 'error', content: '更新节点失败' });
-    } finally {
-      setLoading(false);
-    }
+          graphId: id,
+          data: updates
+        });
+        
+        record({
+          type: 'UPDATE_NODE',
+          payload: {
+            id: nodeId,
+            before: beforeState,
+            after: afterState
+          }
+        });
+        
+        return true;
+      },
+      {
+        loadingSetter: setLoading,
+        successMessage: '节点状态已更新',
+        errorMessage: '更新节点失败'
+      }
+    );
   };
 
   return {

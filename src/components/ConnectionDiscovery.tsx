@@ -37,8 +37,8 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
   const existingConnections = useMemo(() => {
     const connections = new Set<string>();
     edges.forEach(edge => {
-      connections.add(`${edge.source_node_id}-${edge.target_node_id}`);
-      connections.add(`${edge.target_node_id}-${edge.source_node_id}`);
+      connections.add(`${edge.source_knowledge_point_id}-${edge.target_knowledge_point_id}`);
+      connections.add(`${edge.target_knowledge_point_id}-${edge.source_knowledge_point_id}`);
     });
     return connections;
   }, [edges]);
@@ -55,8 +55,8 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
         const nodeContent = (node.content || '').toLowerCase();
         const connectedIds = new Set(
           edges
-            .filter(e => e.source_node_id === node.id || e.target_node_id === node.id)
-            .map(e => e.source_node_id === node.id ? e.target_node_id : e.source_node_id)
+            .filter(e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id)
+            .map(e => e.source_knowledge_point_id === node.id ? e.target_knowledge_point_id : e.source_knowledge_point_id)
         );
         
         nodes.forEach(otherNode => {
@@ -300,8 +300,8 @@ export const NodeConnectionSuggestions: React.FC<{
   const suggestions = useMemo(() => {
     const connectedIds = new Set(
       edges
-        .filter(e => e.source_node_id === node.id || e.target_node_id === node.id)
-        .map(e => e.source_node_id === node.id ? e.target_node_id : e.source_node_id)
+        .filter(e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id)
+        .map(e => e.source_knowledge_point_id === node.id ? e.target_knowledge_point_id : e.source_knowledge_point_id)
     );
     
     const nodeTags = new Set(node.tags || node.properties?.tags || []);

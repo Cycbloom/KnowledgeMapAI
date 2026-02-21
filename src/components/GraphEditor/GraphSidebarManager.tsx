@@ -142,13 +142,13 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             }}
             onEdit={() => {
             if (selectedNode) {
-              const parentEdges = edges.filter(e => e.target_node_id === selectedNode.id);
+              const parentEdges = edges.filter(e => e.target_knowledge_point_id === selectedNode.knowledge_point_id);
               setNodeForm({
-                title: selectedNode.title,
-                content: selectedNode.content || '',
-                parentNodeIds: parentEdges.map(e => e.source_node_id),
+                title: selectedNode.knowledge_point?.title || '',
+                content: selectedNode.knowledge_point?.content || '',
+                parentNodeIds: parentEdges.map(e => e.source_knowledge_point_id),
                 level: selectedNode.level || 'normal',
-                tags: selectedNode.tags || selectedNode.properties?.tags || []
+                tags: selectedNode.knowledge_point?.properties?.tags || []
               });
             }
             setPrevSidebarMode(sidebarMode);

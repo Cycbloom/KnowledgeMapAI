@@ -50,15 +50,15 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
       const selectedNodes = nodes.filter((n: { id: string }) => context_node_ids.includes(n.id));
       const nodesText = selectedNodes.map((n: { title: string; content?: string }) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
       
-      const relatedEdges = edges.filter((e: { source_node_id: string; target_node_id: string }) => 
-        context_node_ids.includes(e.source_node_id) && context_node_ids.includes(e.target_node_id)
+      const relatedEdges = edges.filter((e: { source_knowledge_point_id: string; target_knowledge_point_id: string }) => 
+        context_node_ids.includes(e.source_knowledge_point_id) && context_node_ids.includes(e.target_knowledge_point_id)
       );
       
       const nodeTitleMap = new Map(nodes.map((n: { id: string; title: string }) => [n.id, n.title]));
       
-      const edgesText = relatedEdges.map((e: { source_node_id: string; target_node_id: string; relationship?: string }) => {
-        const source = nodeTitleMap.get(e.source_node_id) || 'Unknown';
-        const target = nodeTitleMap.get(e.target_node_id) || 'Unknown';
+      const edgesText = relatedEdges.map((e: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship?: string }) => {
+        const source = nodeTitleMap.get(e.source_knowledge_point_id) || 'Unknown';
+        const target = nodeTitleMap.get(e.target_knowledge_point_id) || 'Unknown';
         return `[Edge] ${source} -> ${target} (${e.relationship || 'related'})`;
       }).join('\n');
 
@@ -71,9 +71,9 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
         contextText = `Graph Overview (Nodes Only):\n${nodesText}`;
       } else {
         const nodesText = nodes.map((n: { title: string; content?: string }) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
-        const edgesText = edges.map((e: { source_node_id: string; target_node_id: string; relationship?: string }) => {
-          const source = nodeTitleMap.get(e.source_node_id) || 'Unknown';
-          const target = nodeTitleMap.get(e.target_node_id) || 'Unknown';
+        const edgesText = edges.map((e: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship?: string }) => {
+          const source = nodeTitleMap.get(e.source_knowledge_point_id) || 'Unknown';
+          const target = nodeTitleMap.get(e.target_knowledge_point_id) || 'Unknown';
           return `[Edge] ${source} -> ${target} (${e.relationship || 'related'})`;
         }).join('\n');
         

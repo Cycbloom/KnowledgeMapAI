@@ -15,8 +15,8 @@ export const getDescendantNodes = (nodeId: string, nodes: Node[], edges: Edge[])
   });
   
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     if (childrenMap.has(src)) {
       childrenMap.get(src)?.push(tgt);
     }
@@ -43,8 +43,8 @@ export const getDirectChildren = (nodeId: string, _nodes: Node[], edges: Edge[])
   const directChildren = new Set<string>();
   
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     if (src === startId) {
       directChildren.add(tgt);
     }
@@ -66,8 +66,8 @@ export const getAncestorNodes = (nodeId: string, nodes: Node[], edges: Edge[]): 
   });
   
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     if (parentsMap.has(tgt)) {
       parentsMap.get(tgt)?.push(src);
     }
@@ -106,8 +106,8 @@ export const getFocusedLinks = (focusedNodeIds: Set<string>, edges: Edge[]): Set
   const focusedLinks = new Set<string>();
   
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     
     if (focusedNodeIds.has(src) && focusedNodeIds.has(tgt)) {
       focusedLinks.add(String(edge.id));
@@ -132,8 +132,8 @@ export const findShortestPath = (nodes: Node[], edges: Edge[], startId: string, 
   });
 
   edges.forEach(edge => {
-    const src = normalizeId(edge.source_node_id);
-    const tgt = normalizeId(edge.target_node_id);
+    const src = normalizeId(edge.source_knowledge_point_id);
+    const tgt = normalizeId(edge.target_knowledge_point_id);
     const edgeId = String(edge.id);
 
     if (adj.has(src)) {

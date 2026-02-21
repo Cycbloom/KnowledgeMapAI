@@ -8,6 +8,7 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { pdfService } from '../services/pdfService.js';
 import { parseMarkdownToGraph } from '../utils/markdownParser.js';
 import { logger } from '../utils/logger.js';
+import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
 
 const router = Router();
 
@@ -29,13 +30,41 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     
   if (!graph) return res.status(404).json({ error: 'Graph not found' });
 
-  // Parallel fetch for better performance
-  const [nodesResult, edgesResult] = await Promise.all([
-    req.supabase!.from('nodes').select('*').eq('graph_id', graph_id),
-    req.supabase!.from('edges').select('*').eq('graph_id', graph_id)
+  const [graphNodesResult, edgesResult] = await Promise.all([
+    req.supabase!.from('graph_nodes').select(`
+      id,
+      graph_id,
+      knowledge_point_id,
+      x_position,
+      y_position,
+      level,
+      is_accepted,
+      knowledge_points (
+        id,
+        title,
+        content,
+        learning_material,
+        properties
+      )
+    `).eq('graph_id', graph_id).is('deleted_at', null),
+    req.supabase!.from('edges').select('*').eq('graph_id', graph_id).is('deleted_at', null)
   ]);
 
-  const nodes = nodesResult.data || [];
+  const nodes = (graphNodesResult.data || []).map((gn: any) => {
+    const kp = Array.isArray(gn.knowledge_points) ? gn.knowledge_points[0] : gn.knowledge_points;
+    return {
+      id: kp?.id || gn.knowledge_point_id,
+      graph_id: gn.graph_id,
+      title: kp?.title || '',
+      content: kp?.content || '',
+      learning_material: kp?.learning_material || '',
+      properties: kp?.properties || {},
+      x_position: gn.x_position,
+      y_position: gn.y_position,
+      level: gn.level,
+      is_accepted: gn.is_accepted
+    };
+  });
   const edges = edgesResult.data || [];
 
   const exportData = {
@@ -64,15 +93,15 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     
     // Build tree structure
     const childrenMap = new Map<string, any[]>();
-    const incomingEdges = new Set<string>(); // target_node_ids
+    const incomingEdges = new Set<string>(); // target_knowledge_point_ids
     
     edges?.forEach((e: any) => {
-        const list = childrenMap.get(e.source_node_id) || [];
-        const child = nodeById.get(e.target_node_id);
+        const list = childrenMap.get(e.source_knowledge_point_id) || [];
+        const child = nodeById.get(e.target_knowledge_point_id);
         if (child) {
             list.push(child);
-            childrenMap.set(e.source_node_id, list);
-            incomingEdges.add(e.target_node_id);
+            childrenMap.set(e.source_knowledge_point_id, list);
+            incomingEdges.add(e.target_knowledge_point_id);
         }
     });
 
@@ -195,42 +224,32 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
 
     if (graphError) throw new Error(graphError.message);
 
-    // 2. Create Nodes
-    const nodeMap = new Map(); // Old ID to New ID
-    const nodesToInsert = [];
+    const nodeMap = new Map();
     
     if (nodes && Array.isArray(nodes)) {
       for (const n of nodes) {
-        nodesToInsert.push({
-          graph_id: graph.id,
-          title: n.title,
-          content: n.content,
-          x_position: n.x_position || 0,
-          y_position: n.y_position || 0,
-          level: n.level || 'normal',
-          properties: n.properties || {}
-        });
-      }
-      
-      const { data: insertedNodes, error: nodesError } = await req.supabase!
-        .from('nodes')
-        .insert(nodesToInsert)
-        .select();
-
-      if (nodesError) throw new Error(nodesError.message);
-
-      // Build ID map
-      if (insertedNodes && insertedNodes.length === nodes.length) {
-        for (let i = 0; i < nodes.length; i++) {
-          const oldId = nodes[i].id;
-          const newId = insertedNodes[i].id;
+        const result = await createKnowledgePointWithGraphNode(
+          req.supabase!,
+          req.user.id,
+          {
+            graph_id: graph.id,
+            title: n.title,
+            content: n.content || '',
+            x_position: n.x_position || 0,
+            y_position: n.y_position || 0,
+            level: n.level || 'normal',
+            properties: n.properties || {}
+          }
+        );
+        
+        if (result) {
+          const oldId = n.id;
           if (oldId) {
-            nodeMap.set(oldId, newId);
+            nodeMap.set(oldId, result.id);
           }
         }
       }
 
-      // 3. Create Edges
       if (edges && Array.isArray(edges) && edges.length > 0) {
         const edgesToInsert = [];
         
@@ -240,8 +259,8 @@ router.post('/import/markdown', requireAuth, async (req: AuthRequest, res: Respo
           
           if (sourceId && targetId) {
             edgesToInsert.push({
-              source_node_id: sourceId,
-              target_node_id: targetId,
+              source_knowledge_point_id: sourceId,
+              target_knowledge_point_id: targetId,
               relationship_type: e.relationship || 'related',
               graph_id: graph.id
             });
@@ -285,42 +304,32 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
     if (graphError) throw new Error(graphError.message);
     createdGraphId = graph.id;
 
-    // 2. Create Nodes
-    const nodeMap = new Map(); // Old ID to New ID
-    const nodesToInsert = [];
+    const nodeMap = new Map();
     
     if (nodes && Array.isArray(nodes)) {
       for (const n of nodes) {
-        nodesToInsert.push({
-          graph_id: graph.id,
-          title: n.title,
-          content: n.content,
-          x_position: n.x_position || 0,
-          y_position: n.y_position || 0,
-          level: n.level || 'normal',
-          properties: n.properties || {}
-        });
-      }
-      
-      const { data: insertedNodes, error: nodesError } = await req.supabase!
-        .from('nodes')
-        .insert(nodesToInsert)
-        .select();
-
-      if (nodesError) throw new Error(nodesError.message);
-
-      // Build ID map
-      if (insertedNodes && insertedNodes.length === nodes.length) {
-        for (let i = 0; i < nodes.length; i++) {
-          const oldId = nodes[i].id;
-          const newId = insertedNodes[i].id;
+        const result = await createKnowledgePointWithGraphNode(
+          req.supabase!,
+          req.user.id,
+          {
+            graph_id: graph.id,
+            title: n.title,
+            content: n.content || '',
+            x_position: n.x_position || 0,
+            y_position: n.y_position || 0,
+            level: n.level || 'normal',
+            properties: n.properties || {}
+          }
+        );
+        
+        if (result) {
+          const oldId = n.id;
           if (oldId) {
-            nodeMap.set(oldId, newId);
+            nodeMap.set(oldId, result.id);
           }
         }
       }
 
-      // 3. Create Edges
       if (edges && Array.isArray(edges) && edges.length > 0) {
         const edgesToInsert = [];
         
@@ -330,8 +339,8 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
           
           if (sourceId && targetId) {
             edgesToInsert.push({
-              source_node_id: sourceId,
-              target_node_id: targetId,
+              source_knowledge_point_id: sourceId,
+              target_knowledge_point_id: targetId,
               relationship_type: e.relationship || 'related',
               graph_id: graph.id
             });

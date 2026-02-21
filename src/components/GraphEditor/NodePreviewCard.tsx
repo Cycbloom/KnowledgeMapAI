@@ -48,14 +48,14 @@ export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
   }, [node]);
   
   const parentNode = useMemo(() => {
-    const parentEdge = edges.find(e => e.target_node_id === node.id);
+    const parentEdge = edges.find(e => e.target_knowledge_point_id === node.id);
     if (!parentEdge) return null;
-    return nodes.find(n => n.id === parentEdge.source_node_id);
+    return nodes.find(n => n.id === parentEdge.source_knowledge_point_id);
   }, [node, edges, nodes]);
   
   const childNodes = useMemo(() => {
-    const childEdges = edges.filter(e => e.source_node_id === node.id);
-    const childIds = childEdges.map(e => e.target_node_id);
+    const childEdges = edges.filter(e => e.source_knowledge_point_id === node.id);
+    const childIds = childEdges.map(e => e.target_knowledge_point_id);
     return nodes.filter(n => childIds.includes(n.id));
   }, [node, edges, nodes]);
   

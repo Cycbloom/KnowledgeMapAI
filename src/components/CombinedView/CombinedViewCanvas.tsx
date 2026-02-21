@@ -198,8 +198,8 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
   
   const visibleEdges = edges.filter(edge => 
     !hiddenGraphIds.has(edge.graphId) && 
-    visibleNodes.some(n => n.id === edge.source_node_id) &&
-    visibleNodes.some(n => n.id === edge.target_node_id)
+    visibleNodes.some(n => n.id === edge.source_knowledge_point_id) &&
+    visibleNodes.some(n => n.id === edge.target_knowledge_point_id)
   );
   
   const getNodeOpacity = (node: MergedNode): number => {
@@ -253,8 +253,8 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
         
         <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
           {visibleEdges.map((edge) => {
-            const sourcePos = nodePositions.get(edge.source_node_id);
-            const targetPos = nodePositions.get(edge.target_node_id);
+            const sourcePos = nodePositions.get(edge.source_knowledge_point_id);
+            const targetPos = nodePositions.get(edge.target_knowledge_point_id);
             if (!sourcePos || !targetPos) return null;
             
             return (

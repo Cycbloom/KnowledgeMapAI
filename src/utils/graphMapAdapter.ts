@@ -22,11 +22,24 @@ export const convertGraphsToNodes = (
   return graphs.map(graph => ({
     id: graph.id,
     graph_id: 'graph-map',
-    title: graph.title,
-    content: graph.description || '',
+    knowledge_point_id: graph.id,
+    knowledge_point: {
+      id: graph.id,
+      title: graph.title,
+      content: graph.description || '',
+      visibility: 'private' as const,
+      owner_id: graph.user_id,
+      created_at: graph.created_at,
+      updated_at: graph.updated_at,
+    },
     x_position: graph.x_position || 0,
     y_position: graph.y_position || 0,
     level: calculateGraphLevel(graph.id, relations),
+    is_accepted: true,
+    created_at: graph.created_at,
+    updated_at: graph.updated_at,
+    title: graph.title,
+    content: graph.description || '',
     properties: {
       nodeCount: graph.node_count || 0,
       createdAt: graph.created_at,
@@ -38,8 +51,9 @@ export const convertGraphsToNodes = (
 export const convertRelationsToEdges = (relations: GraphRelation[]): Edge[] => {
   return relations.map(relation => ({
     id: relation.id,
-    source_node_id: relation.source_graph_id,
-    target_node_id: relation.target_graph_id,
+    graph_id: 'graph-map',
+    source_knowledge_point_id: relation.source_graph_id,
+    target_knowledge_point_id: relation.target_graph_id,
     relationship_type: relation.relation_type,
   }));
 };

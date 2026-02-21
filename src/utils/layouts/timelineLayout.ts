@@ -59,12 +59,9 @@ export const createTimelineLayout = (
   // Create layout links
   const layoutLinks: LayoutLink[] = edges.map(edge => ({
     ...edge,
-    source: edge.source_node_id,
-    target: edge.target_node_id
+    source: edge.source_knowledge_point_id,
+    target: edge.target_knowledge_point_id
   }));
   
   return { nodes: layoutNodes, links: layoutLinks };
 };
-
-
-

@@ -12,6 +12,7 @@ import { ErrorCodes } from '../../constants/errorCodes.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { aiService } from '../../services/aiService.js';
 import { taskService } from '../../services/taskService.js';
+import { graphNodeService } from '../../services/graphNodeService.js';
 import { logger } from '../../utils/logger.js';
 
 const router = Router();
@@ -43,23 +44,21 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
     const taskIds = [];
     const supabase = req.supabase!;
 
-    const { data: nodes } = await supabase
-      .from('nodes')
-      .select('id, title, content')
-      .in('id', node_ids);
+    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabase, node_ids);
 
-    if (nodes && nodes.length > 0) {
-      for (const node of nodes) {
+    if (graphNodes && graphNodes.length > 0) {
+      for (const gn of graphNodes) {
+        const kp = gn.knowledge_point;
         const task = await taskService.createTask(
           req.user.id, 
           'generate_questions', 
           { 
-            node_id: node.id, 
-            node_title: node.title, 
-            node_content: node.content,
+            knowledge_point_id: kp?.id || gn.knowledge_point_id, 
+            node_title: kp?.title || '', 
+            node_content: kp?.content || '',
             config
           }, 
-          `生成题目: ${node.title}`
+          `生成题目: ${kp?.title || ''}`
         );
         taskIds.push(task.id);
       }
@@ -81,23 +80,21 @@ router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema)
     const taskIds = [];
     const supabase = req.supabase!;
 
-    const { data: nodes } = await supabase
-      .from('nodes')
-      .select('id, title, content, graph_id')
-      .in('id', node_ids);
+    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabase, node_ids);
 
-    if (nodes && nodes.length > 0) {
-      for (const node of nodes) {
+    if (graphNodes && graphNodes.length > 0) {
+      for (const gn of graphNodes) {
+        const kp = gn.knowledge_point;
         const task = await taskService.createTask(
           req.user.id,
           'expand_graph',
           {
-            node_id: node.id,
-            node_title: node.title,
-            node_content: node.content,
-            graph_id: node.graph_id
+            knowledge_point_id: kp?.id || gn.knowledge_point_id,
+            node_title: kp?.title || '',
+            node_content: kp?.content || '',
+            graph_id: gn.graph_id
           },
-          `拓展图谱: ${node.title}`
+          `拓展图谱: ${kp?.title || ''}`
         );
         taskIds.push(task.id);
       }
@@ -155,18 +152,10 @@ router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) =>
   const { id } = req.params;
   
   try {
-    const { data: task, error } = await req.supabase!
-      .from('tasks')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !task) {
-      throw new AppError('Task not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
-    }
+    const task = await taskService.getTask(req.supabase!, id, req.user.id);
     
-    if (task.user_id !== req.user.id) {
-      throw new AppError('Unauthorized', 403, ErrorCodes.FORBIDDEN);
+    if (!task) {
+      throw new AppError('Task not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     res.json(task);

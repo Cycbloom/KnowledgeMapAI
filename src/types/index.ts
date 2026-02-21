@@ -39,6 +39,7 @@ export interface Graph {
   id: string;
   title: string;
   description?: string;
+  user_id?: string;
   settings?: {
     gamification_enabled?: boolean;
     learning_direction?: 'top_down' | 'bottom_up';
@@ -46,6 +47,7 @@ export interface Graph {
     [key: string]: any;
   };
   created_at: string;
+  updated_at?: string;
   nodes_count?: number;
   podcast_script?: string;
   is_favorite?: boolean;
@@ -65,6 +67,8 @@ export interface KnowledgePoint {
   owner_id: string;
   created_at: string;
   updated_at: string;
+  level?: NodeLevel;
+  is_accepted?: boolean;
 }
 
 export interface GraphNode {
@@ -89,7 +93,16 @@ export interface GraphNodeWithKnowledgePoint extends GraphNode {
   knowledge_point: KnowledgePoint;
 }
 
-export type Node = GraphNodeWithKnowledgePoint;
+export interface Node extends GraphNode {
+  knowledge_point: KnowledgePoint;
+  title: string;
+  content?: string;
+  learning_material?: string;
+  properties?: Record<string, any>;
+  tags?: string[];
+  visibility?: KnowledgePointVisibility;
+  owner_id?: string;
+}
 
 export interface Edge {
   id: string;
@@ -156,6 +169,7 @@ export interface Achievement {
 export interface UserProfile extends User {
   xp: number;
   level: number;
+  role?: 'admin' | 'user';
 }
 
 export interface DailyTask {
@@ -430,6 +444,8 @@ export interface GraphRelation {
   context?: string;
   metadata?: Record<string, any>;
   created_at: string;
+  source_graph?: Graph | Graph[];
+  target_graph?: Graph | Graph[];
 }
 
 export interface GraphMapData {
@@ -578,7 +594,7 @@ export interface LearningPath {
   description?: string;
   goal_type: LearningPathGoalType;
   goal_content?: string;
-  target_node_id?: string;
+  target_knowledge_point_id?: string;
   template_id?: string;
   status: LearningPathStatus;
   total_nodes: number;
@@ -634,7 +650,7 @@ export interface CreateLearningPathData {
   description?: string;
   goal_type: LearningPathGoalType;
   goal_content?: string;
-  target_node_id?: string;
+  target_knowledge_point_id?: string;
   template_id?: string;
   daily_minutes_target?: number;
   target_completion_date?: string;
@@ -644,7 +660,7 @@ export interface GenerateLearningPathData {
   goal: string;
   context?: string;
   goal_type?: LearningPathGoalType;
-  target_node_id?: string;
+  target_knowledge_point_id?: string;
   template_id?: string;
   daily_minutes_target?: number;
   target_completion_date?: string;

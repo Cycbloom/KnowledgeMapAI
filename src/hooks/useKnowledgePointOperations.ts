@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { useMessageStore } from '../store/useMessageStore';
+import { createAsyncHandler } from '../utils/asyncHandler';
 import type { 
   SimilarKnowledgePoint, 
   DeleteKnowledgePointResult,
@@ -19,6 +20,7 @@ export const useKnowledgePointOperations = ({
   onNodeDeleted
 }: UseKnowledgePointOperationsProps) => {
   const { addMessage } = useMessageStore();
+  const asyncHandler = createAsyncHandler(addMessage);
   const [similarPoints, setSimilarPoints] = useState<SimilarKnowledgePoint[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showReuseDialog, setShowReuseDialog] = useState(false);
@@ -36,22 +38,24 @@ export const useKnowledgePointOperations = ({
     threshold: number = 0.8,
     limit: number = 5
   ) => {
-    setIsSearching(true);
-    try {
-      const results = await api.knowledgePoints.searchSimilar({
-        query: `${title}${content ? ' ' + content : ''}`,
-        threshold,
-        limit
-      });
-      setSimilarPoints(results);
-      return results;
-    } catch (err) {
-      console.error('Search similar knowledge points failed:', err);
-      return [];
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
+    const result = await asyncHandler(
+      async () => {
+        const results = await api.knowledgePoints.searchSimilar({
+          query: `${title}${content ? ' ' + content : ''}`,
+          threshold,
+          limit
+        });
+        setSimilarPoints(results);
+        return results;
+      },
+      {
+        loadingSetter: setIsSearching,
+        errorMessage: '搜索相似知识点失败'
+      }
+    );
+    
+    return result || [];
+  }, [asyncHandler]);
 
   const createNodeWithReuseCheck = useCallback(async (data: {
     title: string;
@@ -87,108 +91,118 @@ export const useKnowledgePointOperations = ({
   const confirmReuse = useCallback(async (knowledgePointId: string) => {
     if (!pendingNodeData) return null;
     
-    try {
-      const node = await api.graphNodes.addExistingKnowledgePoint({
-        graph_id: graphId,
-        knowledge_point_id: knowledgePointId,
-        x_position: pendingNodeData.x_position,
-        y_position: pendingNodeData.y_position,
-        level: pendingNodeData.level
-      });
-      
-      onNodeCreated?.(node);
-      setShowReuseDialog(false);
-      setPendingNodeData(null);
-      setSimilarPoints([]);
-      addMessage({ type: 'success', content: '已复用现有知识点' });
-      return node;
-    } catch (err) {
-      console.error('Failed to reuse knowledge point:', err);
-      addMessage({ type: 'error', content: '复用知识点失败' });
-      return null;
-    }
-  }, [graphId, pendingNodeData, onNodeCreated, addMessage]);
+    const result = await asyncHandler(
+      async () => {
+        const node = await api.graphNodes.addExistingKnowledgePoint({
+          graph_id: graphId,
+          knowledge_point_id: knowledgePointId,
+          x_position: pendingNodeData.x_position,
+          y_position: pendingNodeData.y_position,
+          level: pendingNodeData.level
+        });
+        
+        onNodeCreated?.(node);
+        setShowReuseDialog(false);
+        setPendingNodeData(null);
+        setSimilarPoints([]);
+        return node;
+      },
+      {
+        successMessage: '已复用现有知识点',
+        errorMessage: '复用知识点失败'
+      }
+    );
+    
+    return result;
+  }, [graphId, pendingNodeData, onNodeCreated, asyncHandler]);
 
   const createNewAnyway = useCallback(async () => {
     if (!pendingNodeData) return null;
     
-    try {
-      const node = await api.nodes.create({
-        graph_id: graphId,
-        ...pendingNodeData,
-        reuse_existing: false
-      });
-      
-      onNodeCreated?.(node);
-      setShowReuseDialog(false);
-      setPendingNodeData(null);
-      setSimilarPoints([]);
-      return node;
-    } catch (err) {
-      console.error('Failed to create node:', err);
-      addMessage({ type: 'error', content: '创建节点失败' });
-      return null;
-    }
-  }, [graphId, pendingNodeData, onNodeCreated, addMessage]);
+    const result = await asyncHandler(
+      async () => {
+        const node = await api.nodes.create({
+          graph_id: graphId,
+          ...pendingNodeData,
+          reuse_existing: false
+        });
+        
+        onNodeCreated?.(node);
+        setShowReuseDialog(false);
+        setPendingNodeData(null);
+        setSimilarPoints([]);
+        return node;
+      },
+      {
+        errorMessage: '创建节点失败'
+      }
+    );
+    
+    return result;
+  }, [graphId, pendingNodeData, onNodeCreated, asyncHandler]);
 
   const deleteNodeWithOption = useCallback(async (
     nodeId: string,
     options: { hardDelete: boolean }
   ) => {
-    try {
-      if (options.hardDelete) {
-        const result = await api.nodes.delete(nodeId, true);
-        
-        if (result.affected_graphs && result.affected_graphs.length > 1) {
-          addMessage({ 
-            type: 'warning', 
-            content: `此知识点已在 ${result.affected_graphs.length} 个图谱中删除` 
-          });
+    const result = await asyncHandler(
+      async () => {
+        if (options.hardDelete) {
+          const result = await api.nodes.delete(nodeId, true);
+          
+          if (result.affected_graphs && result.affected_graphs.length > 1) {
+            addMessage({ 
+              type: 'warning', 
+              content: `此知识点已在 ${result.affected_graphs.length} 个图谱中删除` 
+            });
+          }
+        } else {
+          await api.nodes.delete(nodeId, false);
         }
-      } else {
-        await api.nodes.delete(nodeId, false);
+        
+        onNodeDeleted?.(nodeId);
+        return { success: true };
+      },
+      {
+        successMessage: options.hardDelete ? '知识点已彻底删除' : '已从当前图谱移除',
+        errorMessage: '删除失败'
       }
-      
-      onNodeDeleted?.(nodeId);
-      addMessage({ 
-        type: 'success', 
-        content: options.hardDelete ? '知识点已彻底删除' : '已从当前图谱移除' 
-      });
-      return { success: true };
-    } catch (err) {
-      console.error('Failed to delete node:', err);
-      addMessage({ type: 'error', content: '删除失败' });
-      return { success: false };
-    }
-  }, [onNodeDeleted, addMessage]);
+    );
+    
+    return result || { success: false };
+  }, [onNodeDeleted, addMessage, asyncHandler]);
 
   const getKnowledgePointGraphs = useCallback(async (nodeId: string) => {
-    try {
-      const graphs = await api.nodes.getKnowledgePointGraphs(nodeId);
-      return graphs;
-    } catch (err) {
-      console.error('Failed to get knowledge point graphs:', err);
-      return [];
-    }
-  }, []);
+    const result = await asyncHandler(
+      async () => {
+        const graphs = await api.nodes.getKnowledgePointGraphs(nodeId);
+        return graphs;
+      },
+      {
+        errorMessage: '获取知识点图谱列表失败'
+      }
+    );
+    
+    return result || [];
+  }, [asyncHandler]);
 
   const updateKnowledgePointVisibility = useCallback(async (
     knowledgePointId: string,
     visibility: KnowledgePointVisibility
   ) => {
-    try {
-      await api.knowledgePoints.update(knowledgePointId, { visibility });
-      addMessage({ 
-        type: 'success', 
-        content: visibility === 'public' ? '知识点已设为公开' : '知识点已设为私有' 
-      });
-      return { success: true };
-    } catch (err) {
-      console.error('Failed to update visibility:', err);
-      addMessage({ type: 'error', content: '更新可见性失败' });
-      return { success: false };
-    }
-  }, [addMessage]);
+    const result = await asyncHandler(
+      async () => {
+        await api.knowledgePoints.update(knowledgePointId, { visibility });
+        return { success: true };
+      },
+      {
+        successMessage: visibility === 'public' ? '知识点已设为公开' : '知识点已设为私有',
+        errorMessage: '更新可见性失败'
+      }
+    );
+    
+    return result || { success: false };
+  }, [asyncHandler]);
 
   return {
     similarPoints,

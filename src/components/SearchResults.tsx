@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Network, FileText, Sparkles, ArrowRight, Clock } from 'lucide-react';
+import { Network, FileText, Sparkles, ChevronRight, Clock, Layers } from 'lucide-react';
 import type { SearchResult } from '../services/api/search';
 
 interface SearchResultsProps {
@@ -10,6 +10,27 @@ interface SearchResultsProps {
   query: string;
   onClose?: () => void;
 }
+
+const HighlightText: React.FC<{ text: string; query: string; className?: string }> = ({ 
+  text, 
+  query, 
+  className = '' 
+}) => {
+  const highlighted = useMemo(() => {
+    if (!text || !query.trim()) return text || '';
+    
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, i) => 
+      regex.test(part) 
+        ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-600/40 text-inherit rounded px-0.5">{part}</mark>
+        : part
+    );
+  }, [text, query]);
+
+  return <span className={className}>{highlighted}</span>;
+};
 
 export const SearchResults: React.FC<SearchResultsProps> = ({
   results,
@@ -33,15 +54,15 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (isSearching) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 z-50 p-6">
-        <div className="flex items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
+      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 p-3">
+        <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
           </motion.div>
-          <span>正在搜索...</span>
+          <span>搜索中...</span>
         </div>
       </div>
     );
@@ -53,10 +74,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (!hasResults && query.length >= 2) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 z-50 p-6">
-        <div className="text-center text-gray-500 dark:text-gray-400">
-          <p>未找到与「{query}」相关的结果</p>
-          <p className="text-sm mt-1">尝试使用不同的关键词或切换到语义搜索</p>
+      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 p-3">
+        <div className="text-center text-gray-500 dark:text-gray-400 text-sm">
+          未找到「{query}」相关结果
         </div>
       </div>
     );
@@ -69,60 +89,68 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 z-50 max-h-[70vh] overflow-y-auto"
+        exit={{ opacity: 0, y: -4 }}
+        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50 max-h-[60vh] overflow-y-auto"
       >
         {results?.answer && (
-          <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AI 回答</span>
+          <div className="p-2 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sparkles className="w-3 h-3 text-purple-500" />
+              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">AI 回答</span>
             </div>
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{results.answer}</p>
+            <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">{results.answer}</p>
           </div>
         )}
 
         {results?.graphs && results.graphs.length > 0 && (
-          <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-            <div className="flex items-center gap-2 mb-3">
-              <Network className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                图谱 ({results.graphs.length})
-              </span>
+          <div className="py-1.5 border-b border-gray-200 dark:border-slate-700">
+            <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
+              <Network className="w-3 h-3 text-blue-500" />
+              <span>图谱 {results.graphs.length}</span>
             </div>
-            <div className="space-y-2">
+            <div>
               {results.graphs.map((graph) => (
                 <button
                   key={graph.id}
                   onClick={() => handleGraphClick(graph.id)}
-                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-left group"
+                  className="w-full px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-left flex items-center gap-2 group"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                        {graph.title}
-                      </h4>
-                      {graph.description && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                          {graph.description}
-                        </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <HighlightText 
+                        text={graph.title} 
+                        query={query} 
+                        className="text-sm text-gray-900 dark:text-white truncate font-medium"
+                      />
+                      {graph.similarity !== undefined && (
+                        <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
+                          {(graph.similarity * 100).toFixed(0)}%
+                        </span>
                       )}
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                        {graph.nodes_count !== undefined && (
-                          <span>{graph.nodes_count} 个节点</span>
-                        )}
-                        {graph.updated_at && (
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(graph.updated_at).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0 ml-2" />
+                    {graph.description && (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                        <HighlightText text={graph.description} query={query} />
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                      {graph.nodes_count !== undefined && (
+                        <span className="flex items-center gap-0.5">
+                          <Layers className="w-2.5 h-2.5" />
+                          {graph.nodes_count}
+                        </span>
+                      )}
+                      {graph.updated_at && (
+                        <span className="flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          {new Date(graph.updated_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 flex-shrink-0" />
                 </button>
               ))}
             </div>
@@ -130,43 +158,50 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         )}
 
         {results?.nodes && results.nodes.length > 0 && (
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                节点 ({results.nodes.length})
-              </span>
+          <div className="py-1.5">
+            <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
+              <FileText className="w-3 h-3 text-green-500" />
+              <span>节点 {results.nodes.length}</span>
             </div>
-            <div className="space-y-2">
+            <div>
               {results.nodes.map((node, index) => (
                 <button
                   key={`${node.knowledge_point_id}-${index}`}
                   onClick={() => handleNodeClick(node.graph_id)}
-                  className="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-left group"
+                  className="w-full px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors text-left flex items-center gap-2 group"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                          {node.title}
-                        </h4>
-                        {node.similarity !== undefined && (
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                            {(node.similarity * 100).toFixed(0)}%
-                          </span>
-                        )}
-                      </div>
-                      {node.content && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                          {node.content}
-                        </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <HighlightText 
+                        text={node.title} 
+                        query={query} 
+                        className="text-sm text-gray-900 dark:text-white truncate font-medium"
+                      />
+                      {node.similarity !== undefined && (
+                        <span className="text-[10px] px-1 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300">
+                          {(node.similarity * 100).toFixed(0)}%
+                        </span>
                       )}
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-                        所属图谱：{node.graph_title}
-                      </p>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-green-500 transition-colors flex-shrink-0 ml-2" />
+                    {node.content && (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                        <HighlightText text={node.content} query={query} />
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                      <span className="flex items-center gap-0.5 truncate">
+                        <Network className="w-2.5 h-2.5 flex-shrink-0" />
+                        <HighlightText text={node.graph_title} query={query} />
+                      </span>
+                      {node.updated_at && (
+                        <span className="flex items-center gap-0.5 flex-shrink-0">
+                          <Clock className="w-2.5 h-2.5" />
+                          {new Date(node.updated_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-green-500 flex-shrink-0" />
                 </button>
               ))}
             </div>

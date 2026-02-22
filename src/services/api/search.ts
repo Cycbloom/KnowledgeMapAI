@@ -6,6 +6,7 @@ export interface SearchGraphResult {
   description?: string;
   updated_at: string;
   nodes_count?: number;
+  similarity?: number;
 }
 
 export interface SearchNodeResult {
@@ -15,6 +16,7 @@ export interface SearchNodeResult {
   content?: string;
   graph_title: string;
   similarity?: number;
+  updated_at?: string;
 }
 
 export interface SearchResult {

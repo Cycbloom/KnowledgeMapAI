@@ -15,6 +15,10 @@ const checkTopicSchema = z.object({
   exclude_graph_id: z.string().uuid().optional(),
 });
 
+const batchOperationSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(50),
+});
+
 const router = Router();
 
 // List all graphs for the user (Auth Required)
@@ -296,6 +300,20 @@ router.delete('/:id', requireAuth, validate({ params: uuidParamsSchema }), async
   await cacheService.invalidateGraphCache(req.user.id, id);
   
   res.json({ message: '图谱已移至回收站' });
+});
+
+// Batch restore graphs (must be before /:id/restore)
+router.post('/batch/restore', requireAuth, validate({ body: batchOperationSchema }), async (req: AuthRequest, res: Response) => {
+  const { ids } = req.body;
+  const result = await graphService.restoreGraphs(req.supabase!, ids, req.user.id);
+  res.json({ message: `已恢复 ${result.count} 个图谱`, count: result.count });
+});
+
+// Batch permanently delete graphs (must be before /:id/permanent)
+router.delete('/batch/permanent', requireAuth, validate({ body: batchOperationSchema }), async (req: AuthRequest, res: Response) => {
+  const { ids } = req.body;
+  const result = await graphService.permanentDeleteGraphs(req.supabase!, ids, req.user.id);
+  res.json({ message: `已永久删除 ${result.count} 个图谱`, count: result.count });
 });
 
 // Restore a graph

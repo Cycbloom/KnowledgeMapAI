@@ -50,6 +50,12 @@ export const graphsApi = {
   
   permanentDelete: (id: string) => request(`/graphs/${id}/permanent`, { method: 'DELETE' }),
   
+  batchRestore: (ids: string[]) => 
+    request('/graphs/batch/restore', { method: 'POST', body: JSON.stringify({ ids }) }),
+  
+  batchPermanentDelete: (ids: string[]) => 
+    request('/graphs/batch/permanent', { method: 'DELETE', body: JSON.stringify({ ids }) }),
+  
   getLearningPath: (id: string) => request(`/graphs/${id}/learning-path`),
   
   analyze: (id: string) => request(`/graphs/${id}/analyze`),

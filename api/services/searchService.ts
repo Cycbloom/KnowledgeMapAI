@@ -57,7 +57,7 @@ export class SearchService {
 
     const { data: knowledgePoints, error: kpError } = await supabase
       .from('knowledge_points')
-      .select('id, title, content, owner_id')
+      .select('id, title, content, owner_id, updated_at')
       .or(`title.ilike.${pattern},content.ilike.${pattern}`)
       .limit(20);
 
@@ -95,7 +95,8 @@ export class SearchService {
           title: kp?.title || '',
           content: kp?.content || '',
           graph_id: gn.graph_id,
-          knowledge_graphs: gn.knowledge_graphs
+          knowledge_graphs: gn.knowledge_graphs,
+          updated_at: kp?.updated_at
         };
       });
     }
@@ -112,7 +113,6 @@ export class SearchService {
     userId: string
   ): Promise<SemanticSearchResult> {
     const embedding = await aiService.generateEmbedding(query);
-    let answer = '';
 
     if (!embedding) {
       return {
@@ -122,8 +122,8 @@ export class SearchService {
       };
     }
 
-    const [semanticNodes, semanticGraphs] = await Promise.all([
-      supabase.rpc('match_nodes', {
+    const [semanticKPs, semanticGraphs] = await Promise.all([
+      supabase.rpc('match_knowledge_points', {
         query_embedding: embedding,
         match_threshold: 0.5,
         match_count: 20,
@@ -137,8 +137,8 @@ export class SearchService {
       })
     ]);
 
-    if (semanticNodes.error) {
-      logger.error('Semantic search nodes error:', semanticNodes.error);
+    if (semanticKPs.error) {
+      logger.error('Semantic search knowledge points error:', semanticKPs.error);
     }
 
     if (semanticGraphs.error) {
@@ -148,19 +148,38 @@ export class SearchService {
     let nodes: SearchNodeResult[] = [];
     let graphs: SearchGraphResult[] = [];
 
-    if (semanticNodes.data && semanticNodes.data.length > 0) {
-      const graphIds = Array.from(new Set(semanticNodes.data.map((n: any) => n.graph_id)));
-      const { data: graphInfos } = await supabase
-        .from('knowledge_graphs')
-        .select('id, title')
-        .in('id', graphIds);
+    if (semanticKPs.data && semanticKPs.data.length > 0) {
+      const kpIds = semanticKPs.data.map((kp: any) => kp.id);
+      
+      const { data: graphNodes } = await supabase
+        .from('graph_nodes')
+        .select(`
+          knowledge_point_id,
+          graph_id,
+          knowledge_graphs (
+            title
+          )
+        `)
+        .in('knowledge_point_id', kpIds)
+        .is('deleted_at', null);
 
-      const graphMap = new Map(graphInfos?.map((g: any) => [g.id, g.title]));
+      const kpMap = new Map(semanticKPs.data.map((kp: any) => [kp.id, kp]));
+      const gnMap = new Map((graphNodes || []).map((gn: any) => [gn.knowledge_point_id, gn]));
 
-      nodes = semanticNodes.data.map((n: any) => ({
-        ...n,
-        knowledge_graphs: { title: graphMap.get(n.graph_id) }
-      }));
+      nodes = semanticKPs.data
+        .filter((kp: any) => gnMap.has(kp.id))
+        .map((kp: any) => {
+          const gn = gnMap.get(kp.id);
+          return {
+            id: kp.id,
+            knowledge_point_id: kp.id,
+            title: kp.title,
+            content: kp.content,
+            graph_id: gn.graph_id,
+            graph_title: gn.knowledge_graphs?.title || '',
+            similarity: kp.similarity
+          };
+        });
     }
 
     if (semanticGraphs.data && semanticGraphs.data.length > 0) {
@@ -173,36 +192,10 @@ export class SearchService {
       }));
     }
 
-    if (nodes.length > 0) {
-      const contextNodes = nodes.slice(0, 5);
-      const contextText = contextNodes.map((n, i) =>
-        `[${i + 1}] Title: ${n.title}\nGraph: ${n.knowledge_graphs?.title}\nContent: ${n.content || '(No content)'}\nExplanation: ${n.explanation || '(No explanation)'}`
-      ).join('\n\n---\n\n');
-
-      const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
-        {
-          role: 'system',
-          content: `You are an intelligent Knowledge Graph assistant. 
-Your goal is to answer the user's question accurately using ONLY the provided context information.
-If the provided context does not contain the answer, explicitly state that you cannot find the answer in the knowledge base.
-Do not hallucinate or use outside knowledge unless it is general common sense to interpret the context.
-Format your answer in Markdown.
-Respond in the same language as the user's question (detect from question).`
-        },
-        { role: 'user', content: `Context:\n${contextText}\n\nQuestion: ${query}` }
-      ];
-
-      try {
-        answer = await aiService.chat(messages);
-      } catch (aiError) {
-        logger.error('RAG Generation failed:', aiError);
-      }
-    }
-
     return {
       graphs,
       nodes,
-      answer
+      answer: ''
     };
   }
 }

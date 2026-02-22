@@ -360,6 +360,36 @@ export class GraphService {
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
   }
 
+  async restoreGraphs(supabase: SupabaseClient, graphIds: string[], userId: string) {
+    const { data, error } = await supabase
+      .from('knowledge_graphs')
+      .update({ deleted_at: null })
+      .in('id', graphIds)
+      .eq('user_id', userId)
+      .select('id');
+
+    if (error) throw error;
+    
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    
+    return { count: data?.length || 0 };
+  }
+
+  async permanentDeleteGraphs(supabase: SupabaseClient, graphIds: string[], userId: string) {
+    const { data, error } = await supabase
+      .from('knowledge_graphs')
+      .delete()
+      .in('id', graphIds)
+      .eq('user_id', userId)
+      .select('id');
+
+    if (error) throw error;
+    
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    
+    return { count: data?.length || 0 };
+  }
+
   async getGraphNodes(supabase: SupabaseClient, userId: string | null, graphId: string) {
     const { data: graphNodes, error: gnError } = await supabase
       .from('graph_nodes')

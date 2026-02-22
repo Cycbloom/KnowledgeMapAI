@@ -252,6 +252,29 @@ export const usePermanentDeleteGraphMutation = () => {
   });
 };
 
+export const useBatchRestoreGraphsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.graphs.batchRestore,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      queryClient.invalidateQueries({ queryKey: ['graphs', 'trash'] });
+    },
+  });
+};
+
+export const useBatchPermanentDeleteGraphsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.graphs.batchPermanentDelete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['graphs', 'trash'] });
+    },
+  });
+};
+
 export const useUpdateGraphMutation = () => {
   const queryClient = useQueryClient();
 

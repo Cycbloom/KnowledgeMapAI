@@ -48,11 +48,8 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
 
   if (!knowledgePointId && reuse_existing) {
     try {
-      const tags = properties?.tags?.join(', ') || '';
-      const textToEmbed = [title, content, tags].filter(Boolean).join('\n');
-      
-      if (textToEmbed) {
-        const embedding = await aiService.generateEmbedding(textToEmbed);
+      if (title) {
+        const embedding = await aiService.generateEmbedding(title);
         
         if (embedding) {
           const similarKps = await knowledgePointService.searchSimilar(
@@ -302,9 +299,8 @@ router.get('/nodes/:id/related', requireAuth, async (req: AuthRequest, res: Resp
     const kp = graphNode.knowledge_points as any;
     let embedding = kp?.embedding;
 
-    if (!embedding && (kp?.content || kp?.title)) {
-      const textToEmbed = kp.content || kp.title;
-      embedding = await aiService.generateEmbedding(textToEmbed);
+    if (!embedding && kp?.title) {
+      embedding = await aiService.generateEmbedding(kp.title);
       
       if (embedding) {
         await req.supabase!

@@ -102,11 +102,8 @@ export class KnowledgePointService {
       kpData.embedding = data.embedding;
     } else {
       try {
-        const tags = (data.properties?.tags as string[])?.join(', ') || '';
-        const textToEmbed = [data.title, data.content, tags].filter(Boolean).join('\n');
-
-        if (textToEmbed) {
-          const embedding = await aiService.generateEmbedding(textToEmbed);
+        if (data.title) {
+          const embedding = await aiService.generateEmbedding(data.title);
           if (embedding) {
             kpData.embedding = embedding;
           }
@@ -165,15 +162,8 @@ export class KnowledgePointService {
 
         const title = data.title || currentKp?.title || '';
         const content = data.content || currentKp?.content || '';
-        const tags = (data.properties?.tags as string[]) ||
-          (currentKp?.properties?.tags as string[]) || [];
-
-        const textToEmbed = [title, content, Array.isArray(tags) ? tags.join(', ') : '']
-          .filter(Boolean)
-          .join('\n');
-
-        if (textToEmbed) {
-          const embedding = await aiService.generateEmbedding(textToEmbed);
+        if (title) {
+          const embedding = await aiService.generateEmbedding(title);
           if (embedding) {
             updates.embedding = embedding;
           }

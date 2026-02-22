@@ -49,7 +49,7 @@ export class EmbeddingService {
         }
 
         const batch = knowledgePoints.slice(i, i + BATCH_SIZE);
-        const texts = batch.map(kp => [kp.title, kp.content].filter(Boolean).join('\n'));
+        const texts = batch.map(kp => kp.title);
 
         try {
           const embeddings = await aiService.generateEmbeddingsBatch(texts);
@@ -95,7 +95,7 @@ export class EmbeddingService {
     try {
       const { data: kp, error } = await supabase
         .from('knowledge_points')
-        .select('title, content')
+        .select('title')
         .eq('id', knowledgePointId)
         .single();
 
@@ -104,8 +104,7 @@ export class EmbeddingService {
         return false;
       }
 
-      const text = [kp.title, kp.content].filter(Boolean).join('\n');
-      const embedding = await aiService.generateEmbedding(text);
+      const embedding = await aiService.generateEmbedding(kp.title);
 
       if (!embedding) {
         logger.error(`Failed to generate embedding for ${knowledgePointId}`);

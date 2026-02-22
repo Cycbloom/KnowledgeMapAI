@@ -54,11 +54,10 @@ export async function checkAndReuseKnowledgePoint(
   supabase: SupabaseClient,
   userId: string,
   title: string,
-  content?: string,
+  _content?: string,
   threshold: number = 0.85
 ): Promise<{ shouldReuse: boolean; existingKpId?: string }> {
-  const text = [title, content].filter(Boolean).join('\n');
-  const similar = await searchSimilarKnowledgePoints(supabase, userId, text, { threshold, limit: 1 });
+  const similar = await searchSimilarKnowledgePoints(supabase, userId, title, { threshold, limit: 1 });
 
   if (similar.length > 0 && similar[0].similarity >= threshold) {
     return { shouldReuse: true, existingKpId: similar[0].id };

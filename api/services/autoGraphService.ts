@@ -1,11 +1,11 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { knowledgePointService } from './knowledgePointService.js';
 import { graphNodeService } from './graphNodeService.js';
 import { edgeService } from './edgeService.js';
 import { logger } from '../utils/logger.js';
-import { checkAndReuseKnowledgePoint } from '../utils/similaritySearch.js';
 
-const REUSE_SIMILARITY_THRESHOLD = 0.85;
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 200;
+const BATCH_SIZE = 50;
 
 export interface AINodeData {
   tempId: string;
@@ -17,12 +17,6 @@ export interface AINodeData {
   y_position: number;
 }
 
-export interface CreateGraphNodeResult {
-  graphNodeId: string;
-  knowledgePointId: string;
-  reused: boolean;
-}
-
 export interface CreateEdgeData {
   graph_id: string;
   source_knowledge_point_id: string;
@@ -30,150 +24,98 @@ export interface CreateEdgeData {
   relationship_type?: string;
 }
 
-export interface ProcessAINodesOptions {
-  auto_reuse?: boolean;
-  reuse_threshold?: number;
-}
-
 export interface ProcessAINodesResult {
   nodeCount: number;
   edgeCount: number;
-  reusedCount: number;
   graphNodeIds: string[];
 }
 
 export class AutoGraphService {
-  async createGraphNode(
-    supabase: SupabaseClient,
-    userId: string,
-    graphId: string,
-    nodeData: {
-      title: string;
-      content?: string;
-      level?: string;
-      x_position?: number;
-      y_position?: number;
-    },
-    options: {
-      auto_reuse?: boolean;
-      reuse_threshold?: number;
-    } = {}
-  ): Promise<CreateGraphNodeResult> {
-    const { auto_reuse = true, reuse_threshold = REUSE_SIMILARITY_THRESHOLD } = options;
-    let knowledgePointId: string | null = null;
-    let reused = false;
-
-    if (auto_reuse) {
-      try {
-        const reuseResult = await checkAndReuseKnowledgePoint(
-          supabase,
-          userId,
-          nodeData.title,
-          nodeData.content,
-          reuse_threshold
-        );
-
-        if (reuseResult.shouldReuse && reuseResult.existingKpId) {
-          knowledgePointId = reuseResult.existingKpId;
-          reused = true;
-          logger.info(`Auto-reusing knowledge point: ${knowledgePointId} for: ${nodeData.title}`);
-        }
-      } catch (error) {
-        logger.warn('Failed to search for similar knowledge points during auto-graph:', error);
-      }
-    }
-
-    if (!knowledgePointId) {
-      const newKp = await knowledgePointService.create(supabase, {
-        title: nodeData.title,
-        content: nodeData.content || '',
-        properties: {
-          source: 'ai-generated',
-          generated_at: new Date().toISOString()
-        },
-        visibility: 'private',
-        owner_id: userId,
-      });
-
-      knowledgePointId = newKp.id;
-    }
-
-    const graphNode = await graphNodeService.addToGraph(supabase, {
-      graph_id: graphId,
-      knowledge_point_id: knowledgePointId,
-      x_position: nodeData.x_position ?? Math.round((Math.random() - 0.5) * 20),
-      y_position: nodeData.y_position ?? Math.round((Math.random() - 0.5) * 20),
-      level: nodeData.level as any || 'normal',
-      is_accepted: true,
-    });
-
-    return {
-      graphNodeId: graphNode.id,
-      knowledgePointId: knowledgePointId,
-      reused,
-    };
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async createEdge(
-    supabase: SupabaseClient,
-    data: CreateEdgeData
-  ): Promise<void> {
-    await edgeService.create(supabase, {
-      graph_id: data.graph_id,
-      source_knowledge_point_id: data.source_knowledge_point_id,
-      target_knowledge_point_id: data.target_knowledge_point_id,
-      relationship_type: data.relationship_type || 'contains',
-    });
+  private async retry<T>(
+    fn: () => Promise<T>,
+    retries: number = MAX_RETRIES,
+    delayMs: number = RETRY_DELAY_MS
+  ): Promise<T> {
+    let lastError: Error | null = null;
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error as Error;
+        if (i < retries - 1) {
+          logger.warn(`Retry ${i + 1}/${retries} after error: ${lastError.message}`);
+          await this.sleep(delayMs * (i + 1));
+        }
+      }
+    }
+    throw lastError;
   }
 
   async processAINodes(
     supabase: SupabaseClient,
     userId: string,
     graphId: string,
-    nodes: AINodeData[],
-    options: ProcessAINodesOptions = {}
+    nodes: AINodeData[]
   ): Promise<ProcessAINodesResult> {
-    const { auto_reuse = true, reuse_threshold = REUSE_SIMILARITY_THRESHOLD } = options;
-
     const validNodes = nodes.filter(node => node.title && node.title.trim() !== '');
 
     if (validNodes.length === 0) {
-      return { nodeCount: 0, edgeCount: 0, reusedCount: 0, graphNodeIds: [] };
+      return { nodeCount: 0, edgeCount: 0, graphNodeIds: [] };
     }
 
-    const nodeMap = new Map<string, { graphNodeId: string; knowledgePointId: string; reused: boolean }>();
+    logger.info(`Processing ${validNodes.length} nodes for graph ${graphId}`);
+
+    const nodeMap = new Map<string, { graphNodeId: string; knowledgePointId: string }>();
     const graphNodeIds: string[] = [];
-    let reusedCount = 0;
+    const failedNodes: string[] = [];
 
-    for (const nodeData of validNodes) {
+    logger.info('Creating knowledge points in batches (without embedding)...');
+    const knowledgePoints = await this.createKnowledgePointsBatch(
+      supabase,
+      userId,
+      validNodes
+    );
+
+    logger.info('Creating graph nodes...');
+    for (let i = 0; i < validNodes.length; i++) {
+      const nodeData = validNodes[i];
+      const kp = knowledgePoints[i];
+
+      if (!kp) {
+        failedNodes.push(nodeData.title);
+        continue;
+      }
+
       try {
-        const result = await this.createGraphNode(
-          supabase,
-          userId,
-          graphId,
-          {
-            title: nodeData.title,
-            content: nodeData.content,
-            level: nodeData.level,
-            x_position: nodeData.x_position,
-            y_position: nodeData.y_position,
-          },
-          { auto_reuse, reuse_threshold }
-        );
+        const graphNode = await this.retry(() => graphNodeService.addToGraph(supabase, {
+          graph_id: graphId,
+          knowledge_point_id: kp.id,
+          x_position: nodeData.x_position,
+          y_position: nodeData.y_position,
+          level: nodeData.level as any || 'normal',
+          is_accepted: true,
+        }));
 
-        nodeMap.set(nodeData.tempId, result);
-        graphNodeIds.push(result.graphNodeId);
-
-        if (result.reused) {
-          reusedCount++;
-        }
+        nodeMap.set(nodeData.tempId, {
+          graphNodeId: graphNode.id,
+          knowledgePointId: kp.id,
+        });
+        graphNodeIds.push(graphNode.id);
       } catch (error) {
         logger.error(`Failed to create graph node for: ${nodeData.title}`, error);
+        failedNodes.push(nodeData.title);
       }
     }
 
-    const edgesToCreate: CreateEdgeData[] = [];
+    if (failedNodes.length > 0) {
+      logger.warn(`Failed to create ${failedNodes.length} nodes: ${failedNodes.slice(0, 5).join(', ')}${failedNodes.length > 5 ? '...' : ''}`);
+    }
 
+    const edgesToCreate: CreateEdgeData[] = [];
     for (const nodeData of validNodes) {
       if (nodeData.parentId) {
         const parentInfo = nodeMap.get(nodeData.parentId);
@@ -190,22 +132,128 @@ export class AutoGraphService {
       }
     }
 
-    logger.info(`Total edges to insert: ${edgesToCreate.length}`);
+    logger.info(`Inserting ${edgesToCreate.length} edges in batch...`);
+    const edgeCount = await this.createEdgesBatch(supabase, edgesToCreate);
 
-    for (const edgeData of edgesToCreate) {
-      try {
-        await this.createEdge(supabase, edgeData);
-      } catch (error) {
-        logger.error('Edge insertion error:', error);
-      }
-    }
+    logger.info(`Completed: ${graphNodeIds.length} nodes, ${edgeCount} edges`);
 
     return {
       nodeCount: graphNodeIds.length,
-      edgeCount: edgesToCreate.length,
-      reusedCount,
+      edgeCount,
       graphNodeIds,
     };
+  }
+
+  private async createKnowledgePointsBatch(
+    supabase: SupabaseClient,
+    userId: string,
+    nodes: AINodeData[]
+  ): Promise<Array<{ id: string } | null>> {
+    const results: Array<{ id: string } | null> = new Array(nodes.length).fill(null);
+
+    for (let i = 0; i < nodes.length; i += BATCH_SIZE) {
+      const batchNodes = nodes.slice(i, i + BATCH_SIZE);
+
+      const records = batchNodes.map((node) => ({
+        title: node.title,
+        content: node.content || '',
+        properties: {
+          source: 'ai-generated',
+          generated_at: new Date().toISOString()
+        },
+        embedding: null,
+        visibility: 'private' as const,
+        owner_id: userId,
+      }));
+
+      try {
+        const { data, error } = await supabase
+          .from('knowledge_points')
+          .insert(records)
+          .select('id');
+
+        if (error) {
+          logger.error('Batch knowledge point insertion error:', error);
+          for (let j = 0; j < batchNodes.length; j++) {
+            try {
+              const { data: singleData, error: singleError } = await supabase
+                .from('knowledge_points')
+                .insert([{
+                  title: batchNodes[j].title,
+                  content: batchNodes[j].content || '',
+                  properties: { source: 'ai-generated' },
+                  embedding: null,
+                  visibility: 'private',
+                  owner_id: userId,
+                }])
+                .select('id')
+                .single();
+
+              if (singleError) {
+                logger.error(`Individual KP creation failed for: ${batchNodes[j].title}`, singleError);
+                results[i + j] = null;
+              } else {
+                results[i + j] = singleData;
+              }
+            } catch (e) {
+              logger.error(`Individual KP creation exception for: ${batchNodes[j].title}`, e);
+              results[i + j] = null;
+            }
+          }
+        } else {
+          for (let j = 0; j < (data?.length || 0); j++) {
+            results[i + j] = data![j];
+          }
+        }
+      } catch (error) {
+        logger.error('Knowledge point batch creation failed:', error);
+      }
+    }
+
+    return results;
+  }
+
+  async createEdgesBatch(
+    supabase: SupabaseClient,
+    edges: CreateEdgeData[]
+  ): Promise<number> {
+    if (edges.length === 0) return 0;
+
+    const edgeRecords = edges.map(e => ({
+      graph_id: e.graph_id,
+      source_knowledge_point_id: e.source_knowledge_point_id,
+      target_knowledge_point_id: e.target_knowledge_point_id,
+      relationship_type: e.relationship_type || 'contains',
+    }));
+
+    try {
+      const { error } = await supabase
+        .from('edges')
+        .insert(edgeRecords);
+
+      if (error) {
+        logger.error('Batch edge insertion error:', error);
+        let successCount = 0;
+        for (const edge of edges) {
+          try {
+            await this.retry(() => edgeService.create(supabase, {
+              graph_id: edge.graph_id,
+              source_knowledge_point_id: edge.source_knowledge_point_id,
+              target_knowledge_point_id: edge.target_knowledge_point_id,
+              relationship_type: edge.relationship_type || 'contains',
+            }));
+            successCount++;
+          } catch (e) {
+            logger.error('Individual edge insertion error:', e);
+          }
+        }
+        return successCount;
+      }
+      return edges.length;
+    } catch (error) {
+      logger.error('Batch edge insertion failed:', error);
+      return 0;
+    }
   }
 }
 

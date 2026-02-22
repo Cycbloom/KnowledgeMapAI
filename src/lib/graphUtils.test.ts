@@ -7,7 +7,7 @@ describe('Graph Utils', () => {
     it('should return explicit level if exists', () => {
       const node: Node = { 
         id: '1', title: 'test', x: 0, y: 0, z: 0,
-        properties: { level: 'core' } 
+        level: 'core'
       } as any;
       expect(getLevel(node, [])).toBe('core');
     });
@@ -19,11 +19,23 @@ describe('Graph Utils', () => {
         { id: 'e2', source_knowledge_point_id: '3', target_knowledge_point_id: '1' },
       ] as any;
       
-      // Degree 2 -> normal
-      expect(getLevel(node, edges)).toBe('normal');
+      // Degree 2 (in + out) -> core
+      expect(getLevel(node, edges)).toBe('core');
       
-      // Degree 0 -> leaf
-      expect(getLevel(node, [])).toBe('leaf');
+      // Degree 0 (no edges) -> normal (isolated node)
+      expect(getLevel(node, [])).toBe('normal');
+      
+      // Only incoming edges -> leaf
+      const leafEdges: Edge[] = [
+        { id: 'e3', source_knowledge_point_id: '2', target_knowledge_point_id: '1' },
+      ] as any;
+      expect(getLevel(node, leafEdges)).toBe('leaf');
+      
+      // Only outgoing edges -> root
+      const rootEdges: Edge[] = [
+        { id: 'e4', source_knowledge_point_id: '1', target_knowledge_point_id: '2' },
+      ] as any;
+      expect(getLevel(node, rootEdges)).toBe('root');
     });
   });
 

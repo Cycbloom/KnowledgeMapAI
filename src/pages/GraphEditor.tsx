@@ -388,7 +388,11 @@ export const GraphEditor = () => {
     }
     setSelectedNode(null);
     setSelectedNodeIds(new Set());
-  }, [prevSidebarMode, setSidebarMode, setPrevSidebarMode, setSelectedNode, setSelectedNodeIds]);
+    setFocusedNodeId(null);
+    setFocusedNodeIds(new Set());
+    setFocusedLinkIds(new Set());
+    state.setForceShowTextIds(new Set());
+  }, [prevSidebarMode, setSidebarMode, setPrevSidebarMode, setSelectedNode, setSelectedNodeIds, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
 
   const handleConnectNodes = useCallback(async (sourceId: string, targetId: string) => {
     try {
@@ -430,7 +434,12 @@ export const GraphEditor = () => {
     setFocusedNodeIds(new Set());
     setFocusedLinkIds(new Set());
     state.setForceShowTextIds(new Set());
-  }, [setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
+    setSelectedNode(null);
+    setSelectedNodeIds(new Set());
+    if (sidebarMode !== 'none' && sidebarMode !== 'outline') {
+      setSidebarMode('none');
+    }
+  }, [setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state, setSelectedNode, setSelectedNodeIds, sidebarMode, setSidebarMode]);
 
   const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: any) => {
     event.preventDefault();

@@ -430,7 +430,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         x: e.clientX - transformRef.current.x, 
         y: e.clientY - transformRef.current.y 
       });
-      if (onCanvasClick && e.button === 2) {
+      if (onCanvasClick) {
         onCanvasClick();
       }
     }

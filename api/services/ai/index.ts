@@ -82,6 +82,34 @@ export class AIService {
     }
   }
 
+  async generateEmbeddingsBatch(texts: string[]): Promise<(number[] | null)[]> {
+    const provider = await getAIProviderForTask('embedding');
+
+    if (!provider.hasKey) {
+      return texts.map(() => null);
+    }
+
+    if (texts.length === 0) {
+      return [];
+    }
+
+    try {
+      const response = await provider.client.embeddings.create({
+        model: provider.embeddingModel || provider.model,
+        input: texts,
+      });
+      
+      const results = new Array<(number[] | null)>(texts.length).fill(null);
+      for (const item of response.data) {
+        results[item.index] = item.embedding;
+      }
+      return results;
+    } catch (error) {
+      logger.error('Failed to generate embeddings batch:', error);
+      return texts.map(() => null);
+    }
+  }
+
   async chat(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>, options: { provider?: AIProviderType; model?: string; timeout?: number } = {}): Promise<string> {
     const provider = options.provider
       ? await getAIProvider(options.provider)

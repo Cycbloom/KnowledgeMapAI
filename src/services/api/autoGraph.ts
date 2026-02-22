@@ -51,4 +51,13 @@ export const autoGraphApi = {
     topic: string;
     currentPrompt?: string;
   }) => request('/auto-graph/optimize-prompt', { method: 'POST', body: JSON.stringify(data) }),
+
+  generateEmbeddings: (limit?: number) => 
+    request('/auto-graph/generate-embeddings', { 
+      method: 'POST', 
+      body: JSON.stringify({ limit }) 
+    }),
+
+  getEmbeddingStatus: () => 
+    request('/auto-graph/embedding-status', { method: 'GET' }),
 };

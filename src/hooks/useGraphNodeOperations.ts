@@ -173,6 +173,10 @@ export const useGraphNodeOperations = ({
     }
     state.setSelectedNode(null);
     state.setSelectedNodeIds(new Set());
+    state.setFocusedNodeId(null);
+    state.setFocusedNodeIds(new Set());
+    state.setFocusedLinkIds(new Set());
+    state.setForceShowTextIds(new Set());
   }, [state]);
 
   const handleToggleCollapse = (nodeId: string) => {

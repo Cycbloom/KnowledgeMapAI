@@ -11,6 +11,7 @@ import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
 import { aiService } from '../services/aiService.js';
 import { autoGraphService } from '../services/autoGraphService.js';
+import { embeddingService } from '../services/embeddingService.js';
 import { graphNodeService } from '../services/graphNodeService.js';
 import { z } from 'zod';
 import { saveNodesSchema } from '../schemas/index.js';
@@ -335,8 +336,7 @@ router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: A
       req.supabase!,
       req.user.id,
       graph_id,
-      nodesWithTempId,
-      { auto_reuse, reuse_threshold }
+      nodesWithTempId
     );
 
     await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
@@ -346,11 +346,48 @@ router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: A
       success: true, 
       nodeCount: result.nodeCount, 
       edgeCount: result.edgeCount,
-      reusedCount: result.reusedCount,
     });
   } catch (error: any) {
     logger.error('Save nodes error:', error);
     throw new AppError(error.message || '保存节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+router.post('/generate-embeddings', async (req: AuthRequest, res) => {
+  try {
+    const { limit = 100 } = req.body || {};
+    
+    const result = await embeddingService.generateEmbeddingsBatch(
+      req.supabase!,
+      Math.min(limit, 500)
+    );
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error: any) {
+    logger.error('Generate embeddings error:', error);
+    throw new AppError(error.message || '生成嵌入向量失败', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+router.get('/embedding-status', async (req: AuthRequest, res) => {
+  try {
+    const status = embeddingService.getStatus();
+    
+    const { count } = await req.supabase!
+      .from('knowledge_points')
+      .select('*', { count: 'exact', head: true })
+      .is('embedding', null);
+
+    res.json({
+      ...status,
+      pendingCount: count || 0
+    });
+  } catch (error: any) {
+    logger.error('Get embedding status error:', error);
+    throw new AppError(error.message || '获取嵌入状态失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

@@ -138,7 +138,7 @@ export const rateLimiters = {
 
   aiHeavy: createRateLimiter({
     windowMs: 60 * 60 * 1000,
-    maxRequests: 50,
+    maxRequests: 1000,
     keyPrefix: 'rl:ai:heavy',
     message: 'AI 生成请求达到上限，请1小时后再试',
   }),

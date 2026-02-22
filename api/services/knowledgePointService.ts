@@ -54,6 +54,7 @@ export interface CreateKnowledgePointData {
   properties?: Record<string, unknown>;
   visibility?: KnowledgePointVisibility;
   owner_id: string;
+  embedding?: number[] | null;
 }
 
 export interface UpdateKnowledgePointData {
@@ -97,18 +98,22 @@ export class KnowledgePointService {
       owner_id: data.owner_id,
     };
 
-    try {
-      const tags = (data.properties?.tags as string[])?.join(', ') || '';
-      const textToEmbed = [data.title, data.content, tags].filter(Boolean).join('\n');
+    if (data.embedding !== undefined) {
+      kpData.embedding = data.embedding;
+    } else {
+      try {
+        const tags = (data.properties?.tags as string[])?.join(', ') || '';
+        const textToEmbed = [data.title, data.content, tags].filter(Boolean).join('\n');
 
-      if (textToEmbed) {
-        const embedding = await aiService.generateEmbedding(textToEmbed);
-        if (embedding) {
-          kpData.embedding = embedding;
+        if (textToEmbed) {
+          const embedding = await aiService.generateEmbedding(textToEmbed);
+          if (embedding) {
+            kpData.embedding = embedding;
+          }
         }
+      } catch (error) {
+        logger.warn('Failed to generate embedding for new knowledge point:', error);
       }
-    } catch (error) {
-      logger.warn('Failed to generate embedding for new knowledge point:', error);
     }
 
     const { data: newKp, error } = await supabase

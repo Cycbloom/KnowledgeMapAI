@@ -482,14 +482,17 @@ export const useGraphAIOperations = ({
 
         for (const branch of branches) {
           const isAccepted = branch.id === suggestion.id;
-          const newNode = await createNodeMutation.mutateAsync({
-            graph_id: id,
-            title: branch.title,
-            content: branch.description,
-            x_position: parentNode.x_position + (Math.random() - 0.5) * 8,
-            y_position: parentNode.y_position + (Math.random() - 0.5) * 8,
-            color: getLevelColorHex(getLevel(parentNode, edges)),
-            level: getLevel(parentNode, edges),
+      const parentLevel = getLevel(parentNode, edges);
+      const newLevel = getNextLevel(parentLevel);
+      
+      const newNode = await createNodeMutation.mutateAsync({
+        graph_id: id,
+        title: branch.title,
+        content: branch.description,
+        x_position: parentNode.x_position + (Math.random() - 0.5) * 8,
+        y_position: parentNode.y_position + (Math.random() - 0.5) * 8,
+        color: getLevelColorHex(newLevel),
+        level: newLevel,
             is_accepted: isAccepted,
             properties: {
               branchSuggestionId: branch.id,

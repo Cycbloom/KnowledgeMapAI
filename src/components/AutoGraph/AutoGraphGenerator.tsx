@@ -267,7 +267,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           id: generateNodeId(),
           title: n.title,
           content: n.content,
-          level: n.level || 'core',
+          level: 'core',
           children: [],
           isExpanded: false
         })),
@@ -298,11 +298,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         existing_children: node.children?.map(c => ({ title: c.title }))
       });
 
+      const childLevel = getNextLevel(node.level);
       return result.children.map((n: any) => ({
         id: generateNodeId(),
         title: n.title,
         content: n.content,
-        level: n.level || getNextLevel(node.level),
+        level: childLevel,
         children: [],
         isExpanded: false
       }));
@@ -311,7 +312,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       handleError(error, { context: 'ExpandNode', fallbackMessage: '展开失败' });
       return null;
     }
-  }, [createdGraphId, graphId, style, handleError]);
+  }, [createdGraphId, graphId, style, customPrompt, handleError]);
 
   const updateNodeInTree = useCallback((node: TreeNode, nodeId: string, updates: Partial<TreeNode>): TreeNode => {
     if (node.id === nodeId) {
@@ -332,6 +333,14 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       return updateNodeInTree(prev, nodeId, updates);
     });
   }, [updateNodeInTree]);
+
+  const hasAnyNodeLoading = useCallback((node: TreeNode): boolean => {
+    if (node.isLoading) return true;
+    if (node.children) {
+      return node.children.some(child => hasAnyNodeLoading(child));
+    }
+    return false;
+  }, []);
 
   const handleExpandWrapper = useCallback((nodeId: string): Promise<TreeNode[] | null> => {
     const findNode = (node: TreeNode, id: string): TreeNode | null => {
@@ -666,7 +675,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
             <button
               onClick={handleSaveToGraph}
-              disabled={isSaving}
+              disabled={isSaving || (rootNode && hasAnyNodeLoading(rootNode))}
               className="w-full py-2 px-4 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSaving ? (

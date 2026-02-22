@@ -93,13 +93,35 @@ export class AIService {
       return [];
     }
 
+    if (provider.createEmbedding) {
+      const concurrencyLimit = 5;
+      const results: (number[] | null)[] = new Array(texts.length).fill(null);
+      
+      for (let i = 0; i < texts.length; i += concurrencyLimit) {
+        const batch = texts.slice(i, i + concurrencyLimit);
+        const batchResults = await Promise.all(
+          batch.map(text => provider.createEmbedding!(text).catch(() => null))
+        );
+        
+        for (let j = 0; j < batch.length; j++) {
+          results[i + j] = batchResults[j];
+        }
+        
+        if (i + concurrencyLimit < texts.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      return results;
+    }
+
     try {
       const response = await provider.client.embeddings.create({
         model: provider.embeddingModel || provider.model,
         input: texts,
       });
       
-      const results = new Array<(number[] | null)>(texts.length).fill(null);
+      const results: (number[] | null)[] = new Array(texts.length).fill(null);
       for (const item of response.data) {
         results[item.index] = item.embedding;
       }

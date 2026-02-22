@@ -3,21 +3,9 @@ import { aiService } from './aiService.js';
 import { logger } from '../utils/logger.js';
 import { searchSimilarKnowledgePoints } from '../utils/similaritySearch.js';
 import { PaginationOptions, getPaginationParams } from '../utils/pagination.js';
+import type { KnowledgePoint, KnowledgePointVisibility } from '../../src/types/index.js';
 
-export type KnowledgePointVisibility = 'private' | 'public' | 'pending';
-
-export interface KnowledgePoint {
-  id: string;
-  title: string;
-  content?: string;
-  learning_material?: string;
-  properties?: Record<string, unknown>;
-  visibility: KnowledgePointVisibility;
-  owner_id: string;
-  embedding?: number[];
-  created_at: string;
-  updated_at: string;
-}
+export type { KnowledgePoint, KnowledgePointVisibility };
 
 export interface ListKnowledgePointsOptions {
   visibility?: 'public' | 'private' | 'pending';

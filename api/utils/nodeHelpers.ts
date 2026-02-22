@@ -1,33 +1,12 @@
-import type { Node, NodeLevel, KnowledgePointVisibility } from '../../src/types';
+import type { Node, NodeLevel, KnowledgePointVisibility, KnowledgePoint, GraphNode } from '../../src/types';
 
-export interface KnowledgePointData {
-  id: string;
-  title: string;
-  content?: string;
-  learning_material?: string;
-  properties?: Record<string, any>;
-  visibility: KnowledgePointVisibility;
-  owner_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface GraphNodeRaw {
-  id: string;
-  graph_id: string;
+export type GraphNodeRaw = Omit<GraphNode, 'knowledge_point_id'> & {
   knowledge_point_id: string;
-  x_position: number;
-  y_position: number;
-  level: NodeLevel;
-  is_accepted: boolean;
-  deleted_at?: string;
-  created_at: string;
-  updated_at: string;
-  knowledge_points?: KnowledgePointData | KnowledgePointData[] | null;
-  knowledge_point?: KnowledgePointData | null;
-}
+  knowledge_points?: KnowledgePoint | KnowledgePoint[] | null;
+  knowledge_point?: KnowledgePoint | null;
+};
 
-function getKnowledgePoint(kp: KnowledgePointData | KnowledgePointData[] | null): KnowledgePointData | null {
+function getKnowledgePoint(kp: KnowledgePoint | KnowledgePoint[] | null): KnowledgePoint | null {
   if (!kp) return null;
   if (Array.isArray(kp)) {
     return kp[0] || null;
@@ -35,37 +14,55 @@ function getKnowledgePoint(kp: KnowledgePointData | KnowledgePointData[] | null)
   return kp;
 }
 
+/**
+ * 将数据库原始图节点数据转换为前端 Node 类型
+ * 
+ * 重要说明：
+ * - Node.id 被设置为 knowledge_point_id，而不是 graph_node 的 id
+ * - 这是为了与 Edge 的关联方式兼容（Edge 使用 knowledge_point_id 关联节点）
+ * - 如果需要 graph_node 的 id，可以使用 knowledge_point_id 字段（因为一个 knowledge_point 在一个 graph 中只有一个 graph_node）
+ */
 export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
   if (!gn) return null;
 
   const kp = gn.knowledge_point || getKnowledgePoint(gn.knowledge_points || null);
   return {
-    id: kp?.id || gn.knowledge_point_id,
+    id: gn.knowledge_point_id,
     graph_id: gn.graph_id,
-    graph_node_id: gn.id,
-    title: kp?.title || '',
-    content: kp?.content || '',
+    knowledge_point_id: gn.knowledge_point_id,
     x_position: gn.x_position,
     y_position: gn.y_position,
     level: gn.level,
-    properties: kp?.properties || {},
-    learning_material: kp?.learning_material || '',
     is_accepted: gn.is_accepted,
-    knowledge_point_id: gn.knowledge_point_id,
+    deleted_at: gn.deleted_at,
+    created_at: gn.created_at,
+    updated_at: gn.updated_at,
+    title: kp?.title || '',
+    content: kp?.content || '',
+    learning_material: kp?.learning_material || '',
+    properties: kp?.properties || {},
     visibility: kp?.visibility || 'private',
     owner_id: kp?.owner_id,
-    created_at: kp?.created_at || gn.created_at,
-    updated_at: kp?.updated_at || gn.updated_at,
-    knowledge_point: {
-      id: kp?.id || gn.knowledge_point_id,
-      title: kp?.title || '',
-      content: kp?.content || '',
-      learning_material: kp?.learning_material || '',
-      properties: kp?.properties || {},
-      visibility: kp?.visibility || 'private',
-      owner_id: kp?.owner_id || '',
-      created_at: kp?.created_at || gn.created_at,
-      updated_at: kp?.updated_at || gn.updated_at,
+    knowledge_point: kp ? {
+      id: kp.id,
+      title: kp.title,
+      content: kp.content,
+      learning_material: kp.learning_material,
+      properties: kp.properties,
+      visibility: kp.visibility,
+      owner_id: kp.owner_id,
+      created_at: kp.created_at,
+      updated_at: kp.updated_at,
+    } : {
+      id: gn.knowledge_point_id,
+      title: '',
+      content: '',
+      learning_material: '',
+      properties: {},
+      visibility: 'private' as KnowledgePointVisibility,
+      owner_id: '',
+      created_at: gn.created_at,
+      updated_at: gn.updated_at,
     },
   } as unknown as Node;
 }

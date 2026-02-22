@@ -65,3 +65,79 @@ export async function checkAndReuseKnowledgePoint(
 
   return { shouldReuse: false };
 }
+
+export interface SimilarGraph {
+  id: string;
+  title: string;
+  description?: string;
+  similarity: number;
+}
+
+export interface GraphTopicCheckResult {
+  isDuplicate: boolean;
+  similarGraphs: SimilarGraph[];
+  embedding?: number[];
+}
+
+export interface GraphTopicCheckOptions {
+  threshold?: number;
+  limit?: number;
+  excludeGraphId?: string;
+}
+
+export async function searchSimilarGraphs(
+  supabase: SupabaseClient,
+  userId: string,
+  topic: string,
+  options: GraphTopicCheckOptions = {}
+): Promise<{ similarGraphs: SimilarGraph[]; embedding?: number[] }> {
+  const { threshold = 0.85, limit = 10, excludeGraphId } = options;
+
+  try {
+    const embedding = await aiService.generateEmbedding(topic);
+    if (!embedding) {
+      logger.warn('Failed to generate embedding for graph topic similarity search');
+      return { similarGraphs: [] };
+    }
+
+    const { data, error } = await supabase.rpc('search_similar_graphs', {
+      p_query_embedding: embedding,
+      p_user_id: userId,
+      p_match_threshold: threshold,
+      p_match_count: limit,
+      p_exclude_graph_id: excludeGraphId || null,
+    });
+
+    if (error) {
+      logger.error('Graph similarity search error:', error);
+      return { similarGraphs: [], embedding };
+    }
+
+    return { 
+      similarGraphs: (data || []) as SimilarGraph[], 
+      embedding 
+    };
+  } catch (error) {
+    logger.error('Graph similarity search failed:', error);
+    return { similarGraphs: [] };
+  }
+}
+
+export async function checkDuplicateGraphTopic(
+  supabase: SupabaseClient,
+  userId: string,
+  topic: string,
+  options: GraphTopicCheckOptions = {}
+): Promise<GraphTopicCheckResult> {
+  const { threshold = 0.85 } = options;
+
+  const { similarGraphs, embedding } = await searchSimilarGraphs(supabase, userId, topic, options);
+
+  const isDuplicate = similarGraphs.length > 0 && similarGraphs[0].similarity >= threshold;
+
+  return {
+    isDuplicate,
+    similarGraphs,
+    embedding,
+  };
+}

@@ -4,6 +4,8 @@ import { getAIProviderForTask } from '../ai/factory.js';
 import { promptService } from '../promptService.js';
 import { logger } from '../../utils/logger.js';
 import { generateNodesForGraph } from './utils.js';
+import { checkDuplicateGraphTopic } from '../../utils/similaritySearch.js';
+import { aiService } from '../ai/index.js';
 
 export class InfiniteExpansionProcessor implements TaskProcessor {
   async process(
@@ -102,26 +104,32 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
           const suggestions = parsed[relationType] || [];
           
           for (const suggestion of suggestions.slice(0, max_graphs_per_level)) {
-            const { data: existingGraph } = await supabase
-              .from('knowledge_graphs')
-              .select('id, title')
-              .eq('user_id', userId)
-              .eq('title', suggestion.title)
-              .is('deleted_at', null)
-              .maybeSingle();
-
+            const duplicateCheck = await checkDuplicateGraphTopic(supabase, userId, suggestion.title, { threshold: 0.85 });
+            
             let targetGraphId: string | undefined;
             let isNew = false;
 
-            if (existingGraph) {
-              targetGraphId = existingGraph.id;
+            if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs[0]) {
+              targetGraphId = duplicateCheck.similarGraphs[0].id;
+              logger.info(`Reusing existing graph "${duplicateCheck.similarGraphs[0].title}" (similarity: ${(duplicateCheck.similarGraphs[0].similarity * 100).toFixed(1)}%) for suggested topic "${suggestion.title}"`);
             } else {
+              let embedding: number[] | undefined;
+              try {
+                embedding = duplicateCheck.embedding;
+                if (!embedding) {
+                  embedding = await aiService.generateEmbedding(suggestion.title);
+                }
+              } catch (e) {
+                logger.warn('Failed to generate embedding for new graph:', e);
+              }
+
               const { data: newGraph } = await supabase
                 .from('knowledge_graphs')
                 .insert({
                   user_id: userId,
                   title: suggestion.title,
                   description: suggestion.description || '',
+                  embedding,
                 })
                 .select('id')
                 .single();
@@ -181,7 +189,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
               }
             }
 
-            if ((isNew || existingGraph) && targetGraphId) {
+            if (targetGraphId) {
               let sourceId = current.graphId;
               let targetId = targetGraphId;
               

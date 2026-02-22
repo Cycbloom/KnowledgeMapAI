@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, useToggleFavoriteMutation, queryKeys } from '../hooks/useQueries';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Network, ArrowRight, Sparkles, Tag, X, Star } from 'lucide-react';
+import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Network, ArrowRight, Sparkles, Tag, X, Star, AlertCircle, Loader2 } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
@@ -12,6 +12,7 @@ import { AutoGraphGenerator } from '../components/AutoGraph/AutoGraphGenerator';
 import { Template } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { api } from '../services/api';
+import { useTopicCheck } from '../hooks/useTopicCheck';
 
 export const Dashboard = () => {
   const { isDark } = useTheme();
@@ -45,6 +46,16 @@ export const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([]);
   const graphsPerPage = 9;
+
+  const { isChecking, isDuplicate, similarGraphs, checkTopic, reset: resetTopicCheck } = useTopicCheck({ debounceMs: 500 });
+
+  useEffect(() => {
+    if (newTitle.trim().length >= 2) {
+      checkTopic(newTitle);
+    } else {
+      resetTopicCheck();
+    }
+  }, [newTitle, checkTopic, resetTopicCheck]);
 
   const graphs = Array.isArray(graphsData) ? graphsData : [];
   
@@ -364,18 +375,38 @@ export const Dashboard = () => {
               <form onSubmit={handleCreate} className="space-y-5">
                 <div className="space-y-2">
                   <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>图谱名称</label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="例如：JavaScript 核心概念"
-                    className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
-                      isDark 
-                        ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
-                        : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                    }`}
-                    autoFocus
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="例如：JavaScript 核心概念"
+                      className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
+                        isDuplicate 
+                          ? 'border-amber-500 focus:ring-amber-500' 
+                          : isDark 
+                            ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
+                            : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                      }`}
+                      autoFocus
+                    />
+                    {isChecking && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
+                    )}
+                  </div>
+                  {isDuplicate && similarGraphs.length > 0 && (
+                    <div className={`p-3 rounded-lg flex items-start gap-2 ${
+                      isDark ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700'
+                    }`}>
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm">
+                        <p className="font-medium">主题重复</p>
+                        <p className="mt-1">
+                          与现有图谱「{similarGraphs[0].title}」相似度为 {(similarGraphs[0].similarity * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -406,6 +437,7 @@ export const Dashboard = () => {
                     onClick={() => {
                       setIsCreating(false);
                       setSelectedTemplate(null);
+                      resetTopicCheck();
                     }}
                     className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${
                       isDark 
@@ -418,7 +450,7 @@ export const Dashboard = () => {
                   <button 
                     type="submit" 
                     className="flex-1 px-4 py-3 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                    disabled={createGraphMutation.isPending || createGraphFromTemplateMutation.isPending || !newTitle}
+                    disabled={createGraphMutation.isPending || createGraphFromTemplateMutation.isPending || !newTitle || isChecking || isDuplicate}
                   >
                     {createGraphMutation.isPending || createGraphFromTemplateMutation.isPending ? '创建中...' : '立即创建'}
                   </button>

@@ -7,6 +7,7 @@ import { graphService } from '../services/graphService.js';
 import { graphRelationService } from '../services/graphRelationService.js';
 import { taskService } from '../services/taskService.js';
 import { logger } from '../utils/logger.js';
+import { checkDuplicateGraphTopic } from '../utils/similaritySearch.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -153,22 +154,16 @@ router.post('/:graphId/prerequisite-graph', requireAuth, validate(createPrerequi
       throw new AppError('图谱不存在', 404, ErrorCodes.NOT_FOUND);
     }
 
-    const { data: existingGraph } = await supabase
-      .from('knowledge_graphs')
-      .select('id, title')
-      .eq('user_id', req.user.id)
-      .ilike('title', topic)
-      .is('deleted_at', null)
-      .limit(1)
-      .maybeSingle();
+    const duplicateCheck = await checkDuplicateGraphTopic(supabase, req.user.id, topic, { threshold: 0.85 });
 
     let targetGraphId: string;
     let targetGraph: any;
     let isNew = false;
 
-    if (existingGraph) {
-      targetGraphId = existingGraph.id;
-      targetGraph = existingGraph;
+    if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs[0]) {
+      targetGraphId = duplicateCheck.similarGraphs[0].id;
+      targetGraph = duplicateCheck.similarGraphs[0];
+      logger.info(`Reusing existing graph "${targetGraph.title}" (similarity: ${(duplicateCheck.similarGraphs[0].similarity * 100).toFixed(1)}%) for topic "${topic}"`);
     } else {
       const { data: newGraph, error: createError } = await supabase
         .from('knowledge_graphs')
@@ -176,7 +171,8 @@ router.post('/:graphId/prerequisite-graph', requireAuth, validate(createPrerequi
           user_id: req.user.id,
           title: topic,
           description: description || '',
-          parent_graph_id: graphId
+          parent_graph_id: graphId,
+          embedding: duplicateCheck.embedding
         })
         .select()
         .single();

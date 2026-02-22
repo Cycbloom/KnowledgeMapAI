@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -13,11 +13,13 @@ import {
   Layers,
   ChevronRight,
   X,
-  PenTool
+  PenTool,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { useTopicCheck } from '../../hooks/useTopicCheck';
 
 interface AutoGraphGeneratorProps {
   graphId?: string;
@@ -223,6 +225,19 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
+  const { isChecking, isDuplicate, similarGraphs, checkTopic, reset: resetTopicCheck } = useTopicCheck({ 
+    debounceMs: 500,
+    excludeGraphId: graphId 
+  });
+
+  useEffect(() => {
+    if (topic.trim().length >= 2 && !graphId) {
+      checkTopic(topic);
+    } else {
+      resetTopicCheck();
+    }
+  }, [topic, checkTopic, resetTopicCheck, graphId]);
+
   const handleAddSource = useCallback(() => {
     if (newSource.trim()) {
       setSources(prev => [...prev, newSource.trim()]);
@@ -237,6 +252,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const handleInitialize = useCallback(async () => {
     if (!topic.trim()) {
       addMessage({ type: 'warning', content: '请输入主题' });
+      return;
+    }
+
+    if (!graphId && isDuplicate) {
+      addMessage({ type: 'warning', content: '主题重复，请修改主题名称' });
       return;
     }
 
@@ -283,7 +303,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     } finally {
       setIsInitializing(false);
     }
-  }, [topic, style, sources, graphId, addMessage, handleError]);
+  }, [topic, style, sources, graphId, addMessage, handleError, isDuplicate]);
 
   const handleExpandNode = useCallback(async (nodeId: string, node: TreeNode): Promise<TreeNode[] | null> => {
     try {
@@ -477,14 +497,34 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   主题 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="例如：机器学习基础、量子计算入门"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
-                  disabled={isInitializing}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    placeholder="例如：机器学习基础、量子计算入门"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
+                      isDuplicate 
+                        ? 'border-amber-500 focus:ring-amber-500' 
+                        : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+                    }`}
+                    disabled={isInitializing}
+                  />
+                  {isChecking && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
+                  )}
+                </div>
+                {isDuplicate && similarGraphs.length > 0 && !graphId && (
+                  <div className="mt-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium">主题重复</p>
+                      <p className="mt-0.5">
+                        与现有图谱「{similarGraphs[0].title}」相似度为 {(similarGraphs[0].similarity * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -628,7 +668,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
               <button
                 onClick={handleInitialize}
-                disabled={isInitializing || !topic.trim()}
+                disabled={isInitializing || !topic.trim() || isChecking || isDuplicate}
                 className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isInitializing ? (

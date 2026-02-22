@@ -24,6 +24,9 @@ export const ErrorCodes = {
   DUPLICATE_ENTRY: 'DUPLICATE_ENTRY',
   FOREIGN_KEY_VIOLATION: 'FOREIGN_KEY_VIOLATION',
   
+  // Business Logic
+  DUPLICATE_TOPIC: 'DUPLICATE_TOPIC',
+  
   // Server
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;

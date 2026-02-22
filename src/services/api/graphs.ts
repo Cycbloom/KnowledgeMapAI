@@ -1,11 +1,27 @@
 import { request } from './client';
 
+export interface TopicCheckResult {
+  is_duplicate: boolean;
+  similar_graphs: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    similarity: number;
+  }>;
+}
+
 export const graphsApi = {
   list: () => request('/graphs'),
   
   listTrash: () => request('/graphs/trash'),
   
   getTags: () => request('/graphs/tags'),
+  
+  checkTopic: (topic: string, excludeGraphId?: string): Promise<TopicCheckResult> => 
+    request('/graphs/check-topic', { 
+      method: 'POST', 
+      body: JSON.stringify({ topic, exclude_graph_id: excludeGraphId }) 
+    }),
   
   create: (data: { title: string; description?: string }) => 
     request('/graphs', { method: 'POST', body: JSON.stringify(data) }),

@@ -8,6 +8,12 @@ import { cacheService } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { achievementService } from '../services/achievementService.js';
+import { z } from 'zod';
+
+const checkTopicSchema = z.object({
+  topic: z.string().min(2).max(200),
+  exclude_graph_id: z.string().uuid().optional(),
+});
 
 const router = Router();
 
@@ -197,6 +203,23 @@ router.get('/map/analyze', requireAuth, async (req: AuthRequest, res: Response) 
     missing_prerequisites: missingPrerequisites,
     suggested_paths: suggestedPaths,
     merge_suggestions: mergeSuggestions.slice(0, 3),
+  });
+});
+
+// Check if a topic is duplicate (Auth Required)
+router.post('/check-topic', requireAuth, validate({ body: checkTopicSchema }), async (req: AuthRequest, res: Response) => {
+  const { topic, exclude_graph_id } = req.body;
+  
+  const result = await graphService.checkTopicDuplicate(
+    req.supabase!, 
+    req.user.id, 
+    topic, 
+    exclude_graph_id
+  );
+  
+  res.json({
+    is_duplicate: result.isDuplicate,
+    similar_graphs: result.similarGraphs,
   });
 });
 

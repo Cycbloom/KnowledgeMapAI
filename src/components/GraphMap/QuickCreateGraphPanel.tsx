@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Sparkles, ArrowRight } from 'lucide-react';
+import { X, Loader2, Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
 import type { GraphRelationType, QuickCreateGraphRequest } from '../../types';
 import { GRAPH_RELATION_LABELS } from '../../types';
+import { useTopicCheck } from '../../hooks/useTopicCheck';
 
 interface QuickCreateGraphPanelProps {
   isOpen: boolean;
@@ -27,8 +28,27 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   const [autoGenerate, setAutoGenerate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { isChecking, isDuplicate, similarGraphs, checkTopic, reset: resetTopicCheck } = useTopicCheck({ debounceMs: 500 });
+
+  useEffect(() => {
+    if (title.trim().length >= 2) {
+      checkTopic(title);
+    } else {
+      resetTopicCheck();
+    }
+  }, [title, checkTopic, resetTopicCheck]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setTitle('');
+      setDescription('');
+      setAutoGenerate(false);
+      resetTopicCheck();
+    }
+  }, [isOpen, resetTopicCheck]);
+
   const handleSubmit = async () => {
-    if (!title.trim()) return;
+    if (!title.trim() || isDuplicate) return;
 
     setIsSubmitting(true);
     try {
@@ -45,6 +65,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
       setTitle('');
       setDescription('');
       setAutoGenerate(false);
+      resetTopicCheck();
     } catch (error) {
       console.error('Failed to create graph:', error);
     } finally {
@@ -93,14 +114,34 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 图谱名称 <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="输入图谱名称..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                autoFocus
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="输入图谱名称..."
+                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent ${
+                    isDuplicate 
+                      ? 'border-amber-500 focus:ring-amber-500' 
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+                  }`}
+                  autoFocus
+                />
+                {isChecking && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
+                )}
+              </div>
+              {isDuplicate && similarGraphs.length > 0 && (
+                <div className="mt-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium">主题重复</p>
+                    <p className="mt-0.5">
+                      与现有图谱「{similarGraphs[0].title}」相似度为 {(similarGraphs[0].similarity * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -179,7 +220,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!title.trim() || isSubmitting}
+              disabled={!title.trim() || isSubmitting || isChecking || isDuplicate}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

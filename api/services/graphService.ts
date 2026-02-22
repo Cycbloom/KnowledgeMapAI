@@ -5,6 +5,10 @@ import { softDelete } from '../utils/softDelete.js';
 import { logger } from '../utils/logger.js';
 import { LEVEL_WEIGHTS, getLevelIndex } from '../utils/levelUtils.js';
 import { withRpcFallback } from '../utils/rpcFallback.js';
+import { checkDuplicateGraphTopic, GraphTopicCheckResult } from '../utils/similaritySearch.js';
+import { aiService } from './ai/index.js';
+import { AppError } from '../middleware/errorHandler.js';
+import { ErrorCodes } from '../constants/errorCodes.js';
 
 interface GraphWithCount {
   id: string;
@@ -190,13 +194,33 @@ export class GraphService {
       .eq('user_id', userId);
   }
 
-  async createGraph(supabase: SupabaseClient, userId: string, title: string, description?: string) {
+  async createGraph(supabase: SupabaseClient, userId: string, title: string, description?: string, options?: { skipDuplicateCheck?: boolean }) {
+    if (!options?.skipDuplicateCheck) {
+      const duplicateCheck = await checkDuplicateGraphTopic(supabase, userId, title, { threshold: 0.85 });
+      if (duplicateCheck.isDuplicate) {
+        const similarGraph = duplicateCheck.similarGraphs[0];
+        throw new AppError(
+          `主题重复：与现有图谱「${similarGraph.title}」相似度为 ${(similarGraph.similarity * 100).toFixed(1)}%`,
+          400,
+          ErrorCodes.DUPLICATE_TOPIC
+        );
+      }
+    }
+
+    let embedding: number[] | undefined;
+    try {
+      embedding = await aiService.generateEmbedding(title);
+    } catch (e) {
+      logger.warn('Failed to generate embedding for graph topic:', e);
+    }
+
     const { data, error } = await supabase
       .from('knowledge_graphs')
       .insert({
         user_id: userId,
         title,
         description: description || null,
+        embedding,
       })
       .select()
       .single();
@@ -208,18 +232,63 @@ export class GraphService {
     return data;
   }
 
+  async checkTopicDuplicate(supabase: SupabaseClient, userId: string, topic: string, excludeGraphId?: string): Promise<GraphTopicCheckResult> {
+    return checkDuplicateGraphTopic(supabase, userId, topic, { excludeGraphId });
+  }
+
+  async updateGraphEmbedding(supabase: SupabaseClient, graphId: string, title: string) {
+    try {
+      const embedding = await aiService.generateEmbedding(title);
+      if (embedding) {
+        await supabase
+          .from('knowledge_graphs')
+          .update({ embedding })
+          .eq('id', graphId);
+      }
+    } catch (e) {
+      logger.warn('Failed to update graph embedding:', e);
+    }
+  }
+
   async updateGraph(
     supabase: SupabaseClient,
     graphId: string,
     userId: string,
     updates: { title?: string; description?: string; is_public?: boolean }
   ) {
+    if (updates.title) {
+      const duplicateCheck = await checkDuplicateGraphTopic(supabase, userId, updates.title, { 
+        excludeGraphId: graphId 
+      });
+      if (duplicateCheck.isDuplicate) {
+        const similarGraph = duplicateCheck.similarGraphs[0];
+        throw new AppError(
+          `主题重复：与现有图谱「${similarGraph.title}」相似度为 ${(similarGraph.similarity * 100).toFixed(1)}%`,
+          400,
+          ErrorCodes.DUPLICATE_TOPIC
+        );
+      }
+    }
+
+    const updateData: Record<string, unknown> = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.title) {
+      try {
+        const embedding = await aiService.generateEmbedding(updates.title);
+        if (embedding) {
+          updateData.embedding = embedding;
+        }
+      } catch (e) {
+        logger.warn('Failed to generate embedding for updated graph topic:', e);
+      }
+    }
+
     const { data, error } = await supabase
       .from('knowledge_graphs')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', graphId)
       .eq('user_id', userId)
       .select()

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, useToggleFavoriteMutation, queryKeys } from '../hooks/useQueries';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
@@ -13,6 +13,8 @@ import { Template } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { api } from '../services/api';
 import { useTopicCheck } from '../hooks/useTopicCheck';
+import { useSearch, SearchMode } from '../hooks/useSearch';
+import { SearchResults } from '../components/SearchResults';
 
 export const Dashboard = () => {
   const { isDark } = useTheme();
@@ -34,7 +36,6 @@ export const Dashboard = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; title: string }>({
     isOpen: false,
@@ -45,9 +46,30 @@ export const Dashboard = () => {
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const graphsPerPage = 9;
 
   const { isChecking, isDuplicate, similarGraphs, checkTopic, reset: resetTopicCheck } = useTopicCheck({ debounceMs: 500 });
+  const { 
+    query: searchQuery, 
+    setQuery: setSearchQuery, 
+    mode: searchMode, 
+    setMode: setSearchMode, 
+    isSearching, 
+    results: searchResults, 
+    error: searchError,
+    clear: clearSearch 
+  } = useSearch({ debounceMs: 300 });
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     if (newTitle.trim().length >= 2) {
@@ -60,10 +82,7 @@ export const Dashboard = () => {
   const graphs = Array.isArray(graphsData) ? graphsData : [];
   
   const filteredGraphs = useMemo(() => {
-    let result = graphs.filter(g => 
-      g.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (g.description && g.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    let result = graphs;
     
     if (selectedFilterTags.length > 0) {
       result = result.filter(g => {
@@ -73,7 +92,7 @@ export const Dashboard = () => {
     }
     
     return result;
-  }, [graphs, searchQuery, selectedFilterTags]);
+  }, [graphs, selectedFilterTags]);
 
   const totalPages = Math.ceil(filteredGraphs.length / graphsPerPage);
   const paginatedGraphs = useMemo(() => {
@@ -263,16 +282,56 @@ export const Dashboard = () => {
             <div className="relative flex-1">
               <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} size={18} />
               <input 
+                ref={searchInputRef}
                 type="text" 
-                placeholder="搜索图谱..." 
+                placeholder="搜索图谱和节点..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
+                onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+                className={`w-full pl-10 pr-24 py-2.5 rounded-xl border outline-none transition-all ${
                   isDark 
                     ? 'bg-slate-800 border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white' 
                     : 'bg-white border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm'
                 }`}
               />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button
+                  onClick={() => setSearchMode('keyword')}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    searchMode === 'keyword'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  关键词
+                </button>
+                <button
+                  onClick={() => setSearchMode('semantic')}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 ${
+                    searchMode === 'semantic'
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <Sparkles size={12} />
+                  语义
+                </button>
+              </div>
+              
+              {showSearchResults && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowSearchResults(false)}
+                  />
+                  <SearchResults
+                    results={searchResults}
+                    isSearching={isSearching}
+                    query={searchQuery}
+                    onClose={() => setShowSearchResults(false)}
+                  />
+                </>
+              )}
             </div>
             
             {/* Action Buttons */}

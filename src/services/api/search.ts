@@ -1,0 +1,32 @@
+import { request } from './client';
+
+export interface SearchGraphResult {
+  id: string;
+  title: string;
+  description?: string;
+  updated_at: string;
+  nodes_count?: number;
+}
+
+export interface SearchNodeResult {
+  knowledge_point_id: string;
+  graph_id: string;
+  title: string;
+  content?: string;
+  graph_title: string;
+  similarity?: number;
+}
+
+export interface SearchResult {
+  graphs: SearchGraphResult[];
+  nodes: SearchNodeResult[];
+  answer?: string;
+}
+
+export const searchApi = {
+  search: (query: string): Promise<SearchResult> => 
+    request(`/search?q=${encodeURIComponent(query)}`),
+  
+  semanticSearch: (query: string): Promise<SearchResult> => 
+    request(`/search?q=${encodeURIComponent(query)}&type=semantic`),
+};

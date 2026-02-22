@@ -1,1 +1,2 @@
-export { getNextLevel, NodeLevel } from './levelUtils.js';
+export { getNextLevel } from './levelUtils.js';
+export type { NodeLevel } from './levelUtils.js';

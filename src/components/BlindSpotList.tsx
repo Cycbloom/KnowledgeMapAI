@@ -7,10 +7,10 @@ interface BlindSpot {
   question: string;
   fsrs_stability: number;
   fsrs_retrievability: number;
-  nodes: {
+  graph_id: string;
+  knowledge_points?: {
     title: string;
-    graph_id: string;
-  };
+  } | null;
 }
 
 interface BlindSpotListProps {
@@ -34,11 +34,11 @@ export const BlindSpotList: React.FC<BlindSpotListProps> = ({ data }) => {
                 {card.question}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                所属节点: {card.nodes?.title || 'Unknown'} | 稳定性: {card.fsrs_stability.toFixed(2)}
+                所属节点: {card.knowledge_points?.title || 'Unknown'} | 稳定性: {card.fsrs_stability.toFixed(2)}
               </div>
             </div>
             <Link 
-              to={`/study?graph_id=${card.nodes?.graph_id}`}
+              to={`/study?graph_id=${card.graph_id}`}
               className="text-xs bg-white text-red-600 px-3 py-1 rounded border border-red-200 hover:bg-red-50 whitespace-nowrap"
             >
               去复习

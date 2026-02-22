@@ -122,32 +122,38 @@ export const useGraphAIOperations = ({
   const handleAIExpand = async () => {
     if (!selectedNode || !id) return;
     
+    const nodeTitle = selectedNode.knowledge_point?.title || selectedNode.title;
+    if (!nodeTitle) {
+      addMessage({ type: 'error', content: '节点标题不能为空' });
+      return;
+    }
+    
     await asyncHandler(
       async () => {
         const parentLevel = getLevel(selectedNode, edges);
         const newLevel = getNextLevel(parentLevel);
 
-        const existingTitles = nodes.map(n => n.knowledge_point?.title);
+        const existingTitles = nodes.map(n => n.knowledge_point?.title || n.title);
         
         const currentChildrenIds = edges
           .filter(e => e.source_knowledge_point_id === selectedNode.id)
           .map(e => e.target_knowledge_point_id);
         const currentChildrenTitles = nodes
           .filter(n => currentChildrenIds.includes(n.id))
-          .map(n => n.knowledge_point?.title);
+          .map(n => n.knowledge_point?.title || n.title);
 
         let expandPrompt = aiPrompt;
         
         if (!expandPrompt) {
-          expandPrompt = `请为 ${selectedNode.knowledge_point?.title} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
+          expandPrompt = `请为 ${nodeTitle} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
         }
 
         const res = await aiExpandMutation.mutateAsync({ 
-          node_title: selectedNode.knowledge_point?.title,
-          node_content: selectedNode.knowledge_point?.content,
+          node_title: nodeTitle,
+          node_content: selectedNode.knowledge_point?.content || selectedNode.content,
           node_level: parentLevel,
-          existing_titles: existingTitles,
-          current_children: currentChildrenTitles,
+          existing_titles: existingTitles.filter(Boolean) as string[],
+          current_children: currentChildrenTitles.filter(Boolean) as string[],
           expand_prompt: expandPrompt,
         });
         

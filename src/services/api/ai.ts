@@ -98,7 +98,7 @@ export const aiApi = {
     return request('/ai/learning-material', { method: 'POST', body: JSON.stringify(payload) });
   },
   
-  expand: (data: { node_title: string; node_content?: string; existing_nodes?: unknown[]; child_nodes?: unknown[]; context_level?: string; provider?: string; model?: string }) => {
+  expand: (data: { node_title: string; node_content?: string; existing_titles?: string[]; current_children?: string[]; node_level?: string; expand_prompt?: string; graph_id?: string; provider?: string; model?: string }) => {
     const payload = injectAIConfig(data, 'text');
     return request('/ai/expand-knowledge', { method: 'POST', body: JSON.stringify(payload) });
   },

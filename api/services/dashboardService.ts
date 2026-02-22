@@ -18,9 +18,8 @@ export interface BlindSpot {
   fsrs_difficulty: number;
   fsrs_state: number;
   last_reviewed: string | null;
-  nodes?: {
+  knowledge_points?: {
     title: string;
-    graph_id: string;
   } | null;
 }
 
@@ -75,7 +74,7 @@ export class DashboardService {
   private async getBlindSpots(supabase: SupabaseClient, userId: string): Promise<BlindSpot[]> {
     const { data, error } = await supabase
       .from('study_cards')
-      .select('*, nodes(title, graph_id)')
+      .select('*, knowledge_points(title)')
       .eq('user_id', userId)
       .neq('fsrs_state', State.New)
       .order('fsrs_stability', { ascending: true })

@@ -66,13 +66,13 @@ export const useGraphAIOperations = ({
         let prompt = aiPrompt;
         
         if (!prompt && selectedNode) {
-          const nodeAiPrompt = selectedNode.knowledge_point?.properties?.ai_prompt;
+          const nodeAiPrompt = selectedNode.properties?.ai_prompt;
           if (nodeAiPrompt) {
-            prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.knowledge_point?.title || '');
+            prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.title || '');
             
             const parentNode = nodes.find(n => n.id === edges.find(e => e.target_knowledge_point_id === selectedNode.id)?.source_knowledge_point_id);
             if (parentNode) {
-              prompt = prompt.replace(/{父节点内容}/g, parentNode.knowledge_point?.content || parentNode.knowledge_point?.title || '');
+              prompt = prompt.replace(/{父节点内容}/g, parentNode.content || parentNode.title || '');
             }
             
             const siblingNodes = nodes.filter(n => 
@@ -83,7 +83,7 @@ export const useGraphAIOperations = ({
               )
             );
             if (siblingNodes.length > 0) {
-              const siblingContent = siblingNodes.map(n => `- ${n.knowledge_point?.title}: ${n.knowledge_point?.content || ''}`).join('\n');
+              const siblingContent = siblingNodes.map(n => `- ${n.title}: ${n.content || ''}`).join('\n');
               prompt = prompt.replace(/{兄弟节点内容}/g, siblingContent);
             }
           }
@@ -122,8 +122,7 @@ export const useGraphAIOperations = ({
   const handleAIExpand = async () => {
     if (!selectedNode || !id) return;
     
-    const nodeTitle = selectedNode.knowledge_point?.title || selectedNode.title;
-    if (!nodeTitle) {
+    if (!selectedNode.title) {
       addMessage({ type: 'error', content: '节点标题不能为空' });
       return;
     }
@@ -133,24 +132,24 @@ export const useGraphAIOperations = ({
         const parentLevel = getLevel(selectedNode, edges);
         const newLevel = getNextLevel(parentLevel);
 
-        const existingTitles = nodes.map(n => n.knowledge_point?.title || n.title);
+        const existingTitles = nodes.map(n => n.title);
         
         const currentChildrenIds = edges
           .filter(e => e.source_knowledge_point_id === selectedNode.id)
           .map(e => e.target_knowledge_point_id);
         const currentChildrenTitles = nodes
           .filter(n => currentChildrenIds.includes(n.id))
-          .map(n => n.knowledge_point?.title || n.title);
+          .map(n => n.title);
 
         let expandPrompt = aiPrompt;
         
         if (!expandPrompt) {
-          expandPrompt = `请为 ${nodeTitle} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
+          expandPrompt = `请为 ${selectedNode.title} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
         }
 
         const res = await aiExpandMutation.mutateAsync({ 
-          node_title: nodeTitle,
-          node_content: selectedNode.knowledge_point?.content || selectedNode.content,
+          node_title: selectedNode.title,
+          node_content: selectedNode.content,
           node_level: parentLevel,
           existing_titles: existingTitles.filter(Boolean) as string[],
           current_children: currentChildrenTitles.filter(Boolean) as string[],
@@ -163,7 +162,7 @@ export const useGraphAIOperations = ({
         let newEdgesCount = 0;
 
         for (const s of suggestions) {
-          const existingNode = nodes.find(n => n.knowledge_point?.title === s.title);
+          const existingNode = nodes.find(n => n.title === s.title);
           
           if (existingNode) {
             const edgeExists = edges.some(e => 
@@ -234,8 +233,8 @@ export const useGraphAIOperations = ({
     await asyncHandler(
       async () => {
         const res = await aiGenerateCardsMutation.mutateAsync({ 
-          node_title: selectedNode.knowledge_point?.title, 
-          node_content: selectedNode.knowledge_point?.content
+          node_title: selectedNode.title, 
+          node_content: selectedNode.content
         });
         
         const cards = res.cards.map((c: any) => ({
@@ -315,22 +314,22 @@ export const useGraphAIOperations = ({
           const payload: any = {
             graph_id: id,
             node_id: node.id,
-            node_title: node.knowledge_point?.title,
-            node_content: node.knowledge_point?.content,
+            node_title: node.title,
+            node_content: node.content,
             provider,
             model,
             ...params
           };
 
           if (type === 'expand_graph') {
-            const existingTitles = nodes.map(n => n.knowledge_point?.title);
+            const existingTitles = nodes.map(n => n.title);
             
             const currentChildrenIds = edges
               .filter(e => e.source_knowledge_point_id === node.id)
               .map(e => e.target_knowledge_point_id);
             const currentChildrenTitles = nodes
               .filter(n => currentChildrenIds.includes(n.id))
-              .map(n => n.knowledge_point?.title);
+              .map(n => n.title);
               
             payload.existing_nodes = existingTitles;
             payload.child_nodes = currentChildrenTitles;
@@ -394,18 +393,18 @@ export const useGraphAIOperations = ({
       async () => {
         const parentLevel = getLevel(selectedNode, edges);
         
-        const existingTitles = nodes.map(n => n.knowledge_point?.title);
+        const existingTitles = nodes.map(n => n.title);
         
         const currentChildrenIds = edges
           .filter(e => e.source_knowledge_point_id === selectedNode.id)
           .map(e => e.target_knowledge_point_id);
         const currentChildrenTitles = nodes
           .filter(n => currentChildrenIds.includes(n.id))
-          .map(n => n.knowledge_point?.title);
+          .map(n => n.title);
 
         const res = await api.ai.getBranchSuggestions({
-          node_title: selectedNode.knowledge_point?.title,
-          node_content: selectedNode.knowledge_point?.content,
+          node_title: selectedNode.title,
+          node_content: selectedNode.content,
           existing_nodes: existingTitles,
           child_nodes: currentChildrenTitles,
           context_level: parentLevel
@@ -523,7 +522,7 @@ export const useGraphAIOperations = ({
             if (currentIndex !== -1) {
               newPath[currentIndex] = {
                 nodeId: selectedNodeData.node.id,
-                nodeTitle: selectedNodeData.node.knowledge_point?.title,
+                nodeTitle: selectedNodeData.node.title,
                 timestamp: new Date(),
                 branchChoice: selectedNodeData.suggestion.title,
                 parentNodeId: parentNode.id,
@@ -566,7 +565,7 @@ export const useGraphAIOperations = ({
     
     await asyncHandler(
       async () => {
-        const prompt = `请详细解释 ${selectedNode.knowledge_point?.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
+        const prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
         
         let generatedContent = '';
         

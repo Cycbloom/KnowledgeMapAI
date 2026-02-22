@@ -195,8 +195,8 @@ export const useGraphNodeOperations = ({
     );
     
     const message = hardDelete 
-      ? `确定要彻底删除知识点 "${nodeToDelete.knowledge_point?.title}" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！`
-      : `确定要从当前图谱移除节点 "${nodeToDelete.knowledge_point?.title}" 吗？`;
+      ? `确定要彻底删除知识点 "${nodeToDelete.title}" 吗？此操作将从所有图谱中移除此知识点，且不可恢复！`
+      : `确定要从当前图谱移除节点 "${nodeToDelete.title}" 吗？`;
     
     setConfirmModal({
       isOpen: true,

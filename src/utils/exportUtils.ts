@@ -41,23 +41,23 @@ export const generateMarkdown = (graph: Graph, nodes: Node[], edges: Edge[]): st
     
     // Title
     if (node.level === 'leaf') {
-       md += `${indent}- **${node.knowledge_point?.title || ''}**\n`;
+      md += `${indent}- **${node.title || ''}**\n`;
     } else {
-       // Map node levels to markdown headers
-       // root -> ## (since H1 is graph title)
-       // core -> ###
-       // ...
-       const prefix = getHeaderPrefix(node.level || 'normal');
-       md += `${prefix}${node.knowledge_point?.title || ''}\n`;
+      // Map node levels to markdown headers
+      // root -> ## (since H1 is graph title)
+      // core -> ###
+      // ...
+      const prefix = getHeaderPrefix(node.level || 'normal');
+      md += `${prefix}${node.title || ''}\n`;
     }
 
     // Content
-    if (node.knowledge_point?.content) {
-      const contentLines = node.knowledge_point.content.split('\n');
+    if (node.content) {
+      const contentLines = node.content.split('\n');
       const contentIndent = node.level === 'leaf' ? `${indent}  ` : '';
       contentLines.forEach(line => {
         if (line.trim()) {
-           md += `${contentIndent}${line}\n`;
+          md += `${contentIndent}${line}\n`;
         }
       });
       md += '\n';

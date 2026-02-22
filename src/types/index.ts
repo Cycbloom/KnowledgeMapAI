@@ -90,42 +90,30 @@ export interface KnowledgePointWithGraphs extends KnowledgePoint {
   graphs_count?: number;
 }
 
-export interface GraphNodeWithKnowledgePoint extends GraphNode {
-  knowledge_point: KnowledgePoint;
-}
+export type GraphNodeWithKnowledgePoint = GraphNode & Omit<KnowledgePoint, 'id'>;
 
 /**
  * 前端节点类型，用于图编辑器中的节点展示和操作
+ * 
+ * 扁平化设计：合并 GraphNode 和 KnowledgePoint 的所有字段
  * 
  * ID 字段说明：
  * - id: 设置为 knowledge_point_id，与 Edge 的关联方式兼容
  * - knowledge_point_id: 关联的知识点 ID（继承自 GraphNode）
  * 
- * 注意：这与 GraphNode 的原始定义不同，GraphNode.id 是 graph_node 表的主键，
- * 但在前端 Node 类型中，id 被重新定义为 knowledge_point_id 以便与 Edge 关联。
- * 
- * 便捷字段说明：
- * - title, content, learning_material, properties, visibility, owner_id
- *   这些字段是为了方便前端直接访问，数据来源于 knowledge_point
- * - 在构建 Node 对象时，需要确保这些字段与 knowledge_point 中的值保持同步
+ * 字段来源：
+ * - 来自 GraphNode: id, graph_id, knowledge_point_id, x_position, y_position, level, is_accepted, deleted_at, created_at, updated_at
+ * - 来自 KnowledgePoint: title, content, learning_material, properties, visibility, owner_id, embedding, level?, is_accepted?
  * 
  * @example
- * // 推荐的访问方式（数据源明确）
- * const title = node.knowledge_point.title;
- * 
- * // 便捷访问方式（向后兼容）
+ * // 统一的访问方式
  * const title = node.title;
+ * const content = node.content;
+ * const properties = node.properties;
  */
-export interface Node extends GraphNode {
-  knowledge_point: KnowledgePoint;
-  title: string;
-  content?: string;
-  learning_material?: string;
-  properties?: Record<string, any>;
+export type Node = GraphNode & Omit<KnowledgePoint, 'id'> & {
   tags?: string[];
-  visibility?: KnowledgePointVisibility;
-  owner_id?: string;
-}
+};
 
 export interface Edge {
   id: string;

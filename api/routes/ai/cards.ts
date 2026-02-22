@@ -48,17 +48,16 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
 
     if (graphNodes && graphNodes.length > 0) {
       for (const gn of graphNodes) {
-        const kp = gn.knowledge_point;
         const task = await taskService.createTask(
           req.user.id, 
           'generate_questions', 
           { 
-            knowledge_point_id: kp?.id || gn.knowledge_point_id, 
-            node_title: kp?.title || '', 
-            node_content: kp?.content || '',
+            knowledge_point_id: gn.knowledge_point_id, 
+            node_title: gn.title || '', 
+            node_content: gn.content || '',
             config
           }, 
-          `生成题目: ${kp?.title || ''}`
+          `生成题目: ${gn.title || ''}`
         );
         taskIds.push(task.id);
       }
@@ -84,17 +83,16 @@ router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema)
 
     if (graphNodes && graphNodes.length > 0) {
       for (const gn of graphNodes) {
-        const kp = gn.knowledge_point;
         const task = await taskService.createTask(
           req.user.id,
           'expand_graph',
           {
-            knowledge_point_id: kp?.id || gn.knowledge_point_id,
-            node_title: kp?.title || '',
-            node_content: kp?.content || '',
+            knowledge_point_id: gn.knowledge_point_id,
+            node_title: gn.title || '',
+            node_content: gn.content || '',
             graph_id: gn.graph_id
           },
-          `拓展图谱: ${kp?.title || ''}`
+          `拓展图谱: ${gn.title || ''}`
         );
         taskIds.push(task.id);
       }

@@ -169,19 +169,20 @@ export const LearningMode = () => {
     const loadData = async () => {
       try {
         setIsGenerating(true);
+        
         // 1. Fetch Node Details
         const node = await api.nodes.get(nodeId);
-        setNodeTitle(node.knowledge_point?.title || '');
+        setNodeTitle(node.title || '');
 
         // 2. Check if learning material already exists
-        if (node.knowledge_point?.learning_material) {
-          setArticleContent(node.knowledge_point?.learning_material);
+        if (node.learning_material) {
+          setArticleContent(node.learning_material);
           setMessages(prev => [
             ...prev,
             {
               id: `existing-${Date.now()}`,
               role: 'assistant',
-              content: `欢迎回来！这是为您准备的 "${node.knowledge_point?.title}" 学习教材。如果您有任何疑问，请随时提问。`
+              content: `欢迎回来！这是为您准备的 "${node.title}" 学习教材。如果您有任何疑问，请随时提问。`
             }
           ]);
           setIsGenerating(false);
@@ -190,9 +191,9 @@ export const LearningMode = () => {
 
         // 3. Generate Learning Material
         const response = await api.ai.generateLearningMaterial({
-          topic: node.knowledge_point?.title || '',
-          context: node.knowledge_point?.content,
-          level: node.knowledge_point?.level
+          topic: node.title || '',
+          context: node.content,
+          level: node.level
         });
 
         // 4. Save the generated material back to the node
@@ -1046,7 +1047,7 @@ export const LearningMode = () => {
                   >
                     <option value="">无父节点</option>
                     {graphData?.nodes.map(node => (
-                      <option key={node.id} value={node.id}>{node.knowledge_point?.title}</option>
+                      <option key={node.id} value={node.id}>{node.title}</option>
                     ))}
                   </select>
                 </div>

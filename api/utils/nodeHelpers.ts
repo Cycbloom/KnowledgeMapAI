@@ -17,16 +17,19 @@ function getKnowledgePoint(kp: KnowledgePoint | KnowledgePoint[] | null): Knowle
 /**
  * 将数据库原始图节点数据转换为前端 Node 类型
  * 
- * 重要说明：
- * - Node.id 被设置为 knowledge_point_id，而不是 graph_node 的 id
- * - 这是为了与 Edge 的关联方式兼容（Edge 使用 knowledge_point_id 关联节点）
- * - 如果需要 graph_node 的 id，可以使用 knowledge_point_id 字段（因为一个 knowledge_point 在一个 graph 中只有一个 graph_node）
+ * 扁平化设计：直接合并 GraphNode 和 KnowledgePoint 的所有字段
  */
 export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
   if (!gn) return null;
 
   const kp = gn.knowledge_point || getKnowledgePoint(gn.knowledge_points || null);
+  
+  if (!kp) {
+    return null;
+  }
+
   return {
+    // GraphNode 字段
     id: gn.knowledge_point_id,
     graph_id: gn.graph_id,
     knowledge_point_id: gn.knowledge_point_id,
@@ -37,34 +40,16 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     deleted_at: gn.deleted_at,
     created_at: gn.created_at,
     updated_at: gn.updated_at,
-    title: kp?.title || '',
-    content: kp?.content || '',
-    learning_material: kp?.learning_material || '',
-    properties: kp?.properties || {},
-    visibility: kp?.visibility || 'private',
-    owner_id: kp?.owner_id,
-    knowledge_point: kp ? {
-      id: kp.id,
-      title: kp.title,
-      content: kp.content,
-      learning_material: kp.learning_material,
-      properties: kp.properties,
-      visibility: kp.visibility,
-      owner_id: kp.owner_id,
-      created_at: kp.created_at,
-      updated_at: kp.updated_at,
-    } : {
-      id: gn.knowledge_point_id,
-      title: '',
-      content: '',
-      learning_material: '',
-      properties: {},
-      visibility: 'private' as KnowledgePointVisibility,
-      owner_id: '',
-      created_at: gn.created_at,
-      updated_at: gn.updated_at,
-    },
-  } as unknown as Node;
+    
+    // KnowledgePoint 字段（扁平化）
+    title: kp.title || '',
+    content: kp.content || '',
+    learning_material: kp.learning_material || '',
+    properties: kp.properties || {},
+    visibility: kp.visibility || 'private',
+    owner_id: kp.owner_id || '',
+    embedding: kp.embedding,
+  } as Node;
 }
 
 export function buildNodesFromGraphNodes(graphNodes: GraphNodeRaw[]): Node[] {

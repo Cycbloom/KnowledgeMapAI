@@ -307,22 +307,22 @@ export class GraphService {
       const node = buildNodeFromGraphNode(gn);
       if (!node) return null;
       return {
-        id: node.knowledge_point.id,
+        id: node.id,
         graph_id: node.graph_id,
         graph_node_id: node.id,
-        title: node.knowledge_point.title,
-        content: node.knowledge_point.content,
+        title: node.title,
+        content: node.content,
         x_position: node.x_position,
         y_position: node.y_position,
         level: node.level,
-        properties: node.knowledge_point.properties,
-        learning_material: node.knowledge_point.learning_material,
+        properties: node.properties,
+        learning_material: node.learning_material,
         is_accepted: node.is_accepted,
         knowledge_point_id: node.knowledge_point_id,
-        visibility: node.knowledge_point.visibility,
-        owner_id: node.knowledge_point.owner_id,
-        created_at: node.knowledge_point.created_at,
-        updated_at: node.knowledge_point.updated_at,
+        visibility: node.visibility,
+        owner_id: node.owner_id,
+        created_at: node.created_at,
+        updated_at: node.updated_at,
       };
     }).filter(Boolean);
 

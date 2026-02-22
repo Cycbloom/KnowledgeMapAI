@@ -33,18 +33,18 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
     try {
       const parentLevel = getLevel(selectedNode, edges);
       
-      const existingTitles = nodes.map(n => n.knowledge_point?.title);
+      const existingTitles = nodes.map(n => n.title);
       
       const currentChildrenIds = edges
         .filter(e => e.source_knowledge_point_id === selectedNode.id)
         .map(e => e.target_knowledge_point_id);
       const currentChildrenTitles = nodes
         .filter(n => currentChildrenIds.includes(n.id))
-        .map(n => n.knowledge_point?.title);
+        .map(n => n.title);
 
       const res = await api.ai.getBranchSuggestions({
-        node_title: selectedNode.knowledge_point?.title,
-        node_content: selectedNode.knowledge_point?.content,
+        node_title: selectedNode.title,
+        node_content: selectedNode.content,
         existing_nodes: existingTitles,
         child_nodes: currentChildrenTitles,
         context_level: parentLevel
@@ -156,7 +156,7 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
           if (currentIndex !== -1) {
             newPath[currentIndex] = {
               nodeId: selectedNodeData.node.id,
-              nodeTitle: selectedNodeData.node.knowledge_point?.title,
+              nodeTitle: selectedNodeData.node.title,
               timestamp: new Date(),
               branchChoice: selectedNodeData.suggestion.title,
               parentNodeId: parentNode.id,

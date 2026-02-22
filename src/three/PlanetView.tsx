@@ -79,8 +79,8 @@ function PlanetNode({
   }, [isSelected, isHovered, type]);
 
   const tags = useMemo(() => {
-    return node.data.knowledge_point?.properties?.tags || [];
-  }, [node.data.knowledge_point?.properties?.tags]);
+    return node.data.properties?.tags || [];
+  }, [node.data.properties?.tags]);
 
   useFrame(() => {
     if (meshRef.current) {
@@ -141,7 +141,7 @@ function PlanetNode({
           outlineWidth={0.3}
           outlineColor={isDark ? '#000000' : '#ffffff'}
         >
-          {node.data.knowledge_point?.title}
+          {node.data.title}
         </Text>
         {tags && tags.length > 0 && (
           <Text

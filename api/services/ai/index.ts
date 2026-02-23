@@ -690,6 +690,85 @@ Please respond in Chinese.`
       throw new Error(err.message || 'AI concept extraction failed');
     }
   }
+
+  async analyzeCrossGraphConnections(
+    graph1: { id: string; title?: string; nodes: Array<{ id: string; title: string; content?: string }> },
+    graph2: { id: string; title?: string; nodes: Array<{ id: string; title: string; content?: string }> },
+    options: { provider?: AIProviderType; model?: string; userId?: string } = {}
+  ) {
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask('text');
+
+    if (!provider.hasKey) {
+      return {
+        connections: [],
+        summary: {
+          total_connections: 0,
+          by_type: { same_concept: 0, related_concept: 0, complementary: 0, prerequisite: 0 },
+          overall_relationship: '需要配置 AI API Key 才能分析连接'
+        }
+      };
+    }
+
+    try {
+      const graph1NodesText = graph1.nodes.slice(0, 50).map(n => 
+        `- ID: ${n.id}, Title: ${n.title}${n.content ? `, Content: ${n.content.slice(0, 200)}...` : ''}`
+      ).join('\n');
+      
+      const graph2NodesText = graph2.nodes.slice(0, 50).map(n => 
+        `- ID: ${n.id}, Title: ${n.title}${n.content ? `, Content: ${n.content.slice(0, 200)}...` : ''}`
+      ).join('\n');
+
+      const templateContext = {
+        graph1Title: graph1.title || '图谱 1',
+        graph2Title: graph2.title || '图谱 2',
+        graph1Description: '',
+        graph2Description: '',
+        graph1Nodes: graph1NodesText,
+        graph2Nodes: graph2NodesText
+      };
+
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabaseAdmin,
+        'cross_graph_connection_analysis',
+        templateContext,
+        options.userId
+      );
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `请分析这两个图谱之间的节点连接关系。` }
+        ],
+        model: options.model || provider.model,
+        response_format: { type: "json_object" },
+      });
+
+      const content = completion.choices[0].message.content || '';
+      return parseAIResponse<{
+        connections: Array<{
+          node1_id: string;
+          node1_title: string;
+          node2_id: string;
+          node2_title: string;
+          connection_type: string;
+          similarity: number;
+          reason: string;
+        }>;
+        summary: {
+          total_connections: number;
+          by_type: Record<string, number>;
+          overall_relationship: string;
+        };
+      }>(content, 'Cross Graph Connections');
+
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('AI Cross Graph Connections Error:', error);
+      throw new Error(err.message || 'AI 跨图谱连接分析失败');
+    }
+  }
 }
 
 export const aiService = new AIService();

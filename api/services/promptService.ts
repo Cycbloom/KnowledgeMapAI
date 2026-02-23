@@ -178,6 +178,44 @@ Important:
 - title should be a concise domain name (2-10 characters preferred)
 - description should explain what the domain contains, NOT its relationship to the current domain
 - reason should explain why this domain has this relationship type
+- Respond in Chinese`,
+
+  cross_graph_connection_analysis: `
+Return a JSON object with the following structure:
+{
+  "connections": [
+    {
+      "node1_id": "节点ID或标题",
+      "node1_title": "图谱1中的节点标题",
+      "node2_id": "节点ID或标题",
+      "node2_title": "图谱2中的节点标题",
+      "connection_type": "same_concept|related_concept|complementary|prerequisite",
+      "similarity": 0.85,
+      "reason": "为什么这两个节点应该连接（简短说明）"
+    }
+  ],
+  "summary": {
+    "total_connections": 5,
+    "by_type": {
+      "same_concept": 2,
+      "related_concept": 2,
+      "complementary": 1,
+      "prerequisite": 0
+    },
+    "overall_relationship": "这两个图谱的关系描述"
+  }
+}
+
+Connection Types:
+- same_concept: 两个节点描述的是同一个概念或知识点
+- related_concept: 两个节点描述的是相关但不同的概念
+- complementary: 两个节点互为补充，可以一起学习
+- prerequisite: 一个节点是另一个节点的前置知识
+
+Important:
+- Only suggest connections with similarity >= 0.5
+- Provide clear reasons in Chinese
+- similarity should be between 0 and 1
 - Respond in Chinese`
 };
 

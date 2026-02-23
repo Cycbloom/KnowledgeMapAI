@@ -188,4 +188,18 @@ export const aiApi = {
       body: JSON.stringify(payload) 
     });
   },
+  
+  analyzeCrossGraphConnections: (data: {
+    graph1_id: string;
+    graph1_title?: string;
+    graph1_nodes: Array<{ id: string; title: string; content?: string }>;
+    graph2_id: string;
+    graph2_title?: string;
+    graph2_nodes: Array<{ id: string; title: string; content?: string }>;
+    provider?: string;
+    model?: string;
+  }) => {
+    const payload = injectAIConfig(data, 'text');
+    return request('/ai/cross-graph-connections', { method: 'POST', body: JSON.stringify(payload) });
+  },
 };

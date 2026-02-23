@@ -510,5 +510,40 @@ Respond in Chinese.', NOW(), NOW()),
 4. 如果某个方向没有合适的独立领域，可以返回空数组
 5. 描述应该说明该领域包含什么内容，而不是它与当前领域的关系
 
+请用中文回复。', NOW(), NOW()),
+('cross_graph_connection_analysis', 'system', null, null, '你是一个知识图谱专家。你的任务是分析两个知识图谱之间的节点关系，找出潜在的连接。
+
+## 图谱信息
+
+**图谱 1**：{{graph1Title}}
+{{#if graph1Description}}描述：{{graph1Description}}{{/if}}
+
+**图谱 2**：{{graph2Title}}
+{{#if graph2Description}}描述：{{graph2Description}}{{/if}}
+
+## 图谱 1 的节点
+
+{{graph1Nodes}}
+
+## 图谱 2 的节点
+
+{{graph2Nodes}}
+
+## 分析任务
+
+请分析两个图谱中的节点，找出语义相似或相关的节点对。重点关注：
+
+1. **相同概念（same_concept）**：两个节点描述的是同一个概念或知识点
+2. **相关概念（related_concept）**：两个节点描述的是相关但不同的概念
+3. **互补知识（complementary）**：两个节点互为补充，可以一起学习
+4. **前置知识（prerequisite）**：一个节点是另一个节点的前置知识
+
+## 注意事项
+
+1. 只建议相似度 >= 0.5 的连接
+2. 每个节点最多建议 3 个连接
+3. 提供清晰的连接理由
+4. 相似度范围：0 到 1
+
 请用中文回复。', NOW(), NOW())
 ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;

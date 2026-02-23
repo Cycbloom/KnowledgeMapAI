@@ -1,0 +1,323 @@
+import { Node, Edge } from '../types';
+import { getLevel, getNextLevel, getLevelColorHex } from '../lib/graphUtils';
+import { useMessageStore } from '../store/useMessageStore';
+import { api } from '../services/api';
+import { useStore } from '../store/useStore';
+import { queryKeys, useAIExpandMutation, useAIGenerateCardsMutation, useCreateCardsBatchMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from './useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+import { createAsyncHandler } from '../utils/asyncHandler';
+
+interface UseCombinedGraphAIOperationsProps {
+  graph1Id: string;
+  graph2Id: string;
+  selectedNode: Node | null;
+  nodes1: Node[];
+  nodes2: Node[];
+  edges1: Edge[];
+  edges2: Edge[];
+  onRefresh: () => void;
+}
+
+export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperationsProps) {
+  const { graph1Id, graph2Id, selectedNode, nodes1, nodes2, edges1, edges2, onRefresh } = props;
+  
+  const { addMessage } = useMessageStore();
+  const queryClient = useQueryClient();
+  const asyncHandler = createAsyncHandler(addMessage);
+  
+  const aiExpandMutation = useAIExpandMutation();
+  const aiGenerateCardsMutation = useAIGenerateCardsMutation();
+  const createCardsBatchMutation = useCreateCardsBatchMutation();
+  const createNodeMutation = useCreateNodeMutation();
+  const createEdgeMutation = useCreateEdgeMutation();
+  const updateNodeMutation = useUpdateNodeMutation();
+  
+  const getNodesForGraph = (graphId: string): Node[] => {
+    if (graphId === graph1Id) return nodes1;
+    if (graphId === graph2Id) return nodes2;
+    return [];
+  };
+  
+  const getEdgesForGraph = (graphId: string): Edge[] => {
+    if (graphId === graph1Id) return edges1;
+    if (graphId === graph2Id) return edges2;
+    return [];
+  };
+  
+  const getCurrentGraphId = (): string | null => {
+    if (!selectedNode) return null;
+    return selectedNode.graph_id || null;
+  };
+  
+  const handleExpandNode = async (prompt?: string) => {
+    if (!selectedNode) {
+      addMessage({ type: 'error', content: '请先选择一个节点' });
+      return null;
+    }
+    
+    const currentGraphId = getCurrentGraphId();
+    if (!currentGraphId) {
+      addMessage({ type: 'error', content: '无法确定节点所属图谱' });
+      return null;
+    }
+    
+    if (!selectedNode.title) {
+      addMessage({ type: 'error', content: '节点标题不能为空' });
+      return null;
+    }
+    
+    return await asyncHandler(
+      async () => {
+        const nodes = getNodesForGraph(currentGraphId);
+        const edges = getEdgesForGraph(currentGraphId);
+        
+        const parentLevel = getLevel(selectedNode, edges);
+        const newLevel = getNextLevel(parentLevel);
+        
+        const existingTitles = nodes.map(n => n.title);
+        
+        const currentChildrenIds = edges
+          .filter(e => e.source_knowledge_point_id === selectedNode.id)
+          .map(e => e.target_knowledge_point_id);
+        const currentChildrenTitles = nodes
+          .filter(n => currentChildrenIds.includes(n.id))
+          .map(n => n.title);
+        
+        const expandPrompt = prompt || `请为 ${selectedNode.title} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
+        
+        const res = await aiExpandMutation.mutateAsync({
+          node_title: selectedNode.title,
+          node_content: selectedNode.content,
+          node_level: parentLevel,
+          existing_titles: existingTitles.filter(Boolean) as string[],
+          current_children: currentChildrenTitles.filter(Boolean) as string[],
+          expand_prompt: expandPrompt,
+          graph_id: currentGraphId
+        });
+        
+        const suggestions = res.suggestions;
+        
+        let newNodesCount = 0;
+        let newEdgesCount = 0;
+        
+        for (const s of suggestions) {
+          const existingNode = nodes.find(n => n.title === s.title);
+          
+          if (existingNode) {
+            const edgeExists = edges.some(e =>
+              (e.source_knowledge_point_id === selectedNode.id && e.target_knowledge_point_id === existingNode.id) ||
+              (e.source_knowledge_point_id === existingNode.id && e.target_knowledge_point_id === selectedNode.id)
+            );
+            
+            if (!edgeExists && existingNode.id !== selectedNode.id) {
+              await createEdgeMutation.mutateAsync({
+                source_knowledge_point_id: selectedNode.id,
+                target_knowledge_point_id: existingNode.id,
+                relationship_type: 'related',
+                graphId: currentGraphId
+              });
+              newEdgesCount++;
+            }
+          } else {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 4 + Math.random() * 4;
+            const x = Math.round(selectedNode.x_position + Math.cos(angle) * radius);
+            const y = Math.round(selectedNode.y_position + Math.sin(angle) * radius);
+            
+            const newNode = await createNodeMutation.mutateAsync({
+              graph_id: currentGraphId,
+              title: s.title,
+              content: s.content,
+              x_position: x,
+              y_position: y,
+              color: getLevelColorHex(newLevel),
+              level: newLevel,
+              properties: {}
+            });
+            
+            await createEdgeMutation.mutateAsync({
+              source_knowledge_point_id: selectedNode.id,
+              target_knowledge_point_id: newNode.id,
+              relationship_type: 'related',
+              graphId: currentGraphId
+            });
+            newNodesCount++;
+            newEdgesCount++;
+          }
+        }
+        
+        onRefresh();
+        
+        return { newNodesCount, newEdgesCount };
+      },
+      {
+        onSuccess: (result) => {
+          if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
+            addMessage({ type: 'success', content: `拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线` });
+          } else {
+            addMessage({ type: 'info', content: '未发现新的关联' });
+          }
+        },
+        errorMessage: '拓展失败'
+      }
+    );
+  };
+  
+  const handleGenerateContent = async (prompt?: string) => {
+    if (!selectedNode) {
+      addMessage({ type: 'error', content: '请先选择一个节点' });
+      return null;
+    }
+    
+    const currentGraphId = getCurrentGraphId();
+    if (!currentGraphId) {
+      addMessage({ type: 'error', content: '无法确定节点所属图谱' });
+      return null;
+    }
+    
+    addMessage({ content: 'AI 内容生成任务已开始...', type: 'info' });
+    
+    return await asyncHandler(
+      async () => {
+        const contextPrompt = prompt || `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
+        
+        let generatedContent = '';
+        
+        await api.ai.generateContentStream(
+          {
+            topic: selectedNode.title || '',
+            context: contextPrompt,
+            level: selectedNode.level
+          },
+          (chunk) => {
+            generatedContent += chunk;
+          }
+        );
+        
+        if (generatedContent) {
+          await updateNodeMutation.mutateAsync({
+            id: selectedNode.id,
+            data: { content: generatedContent }
+          });
+          
+          queryClient.invalidateQueries({ queryKey: queryKeys.graphData(currentGraphId) });
+          onRefresh();
+        }
+        
+        return generatedContent;
+      },
+      {
+        successMessage: 'AI 内容生成完成',
+        errorMessage: 'AI 生成失败'
+      }
+    );
+  };
+  
+  const handleGenerateCards = async () => {
+    if (!selectedNode) {
+      addMessage({ type: 'error', content: '请先选择一个节点' });
+      return null;
+    }
+    
+    const currentGraphId = getCurrentGraphId();
+    if (!currentGraphId) {
+      addMessage({ type: 'error', content: '无法确定节点所属图谱' });
+      return null;
+    }
+    
+    return await asyncHandler(
+      async () => {
+        const res = await aiGenerateCardsMutation.mutateAsync({
+          node_title: selectedNode.title,
+          node_content: selectedNode.content
+        });
+        
+        const cards = res.cards.map((c: { question: string; answer: string; type: string; options?: string[] }) => ({
+          node_id: selectedNode.id,
+          question: c.question,
+          answer: c.answer,
+          type: c.type,
+          options: c.options
+        }));
+        
+        if (cards.length === 0) {
+          addMessage({ type: 'error', content: 'AI 未能生成有效的卡片' });
+          return null;
+        }
+        
+        await createCardsBatchMutation.mutateAsync(cards);
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(currentGraphId) });
+        
+        return cards.length;
+      },
+      {
+        successMessage: '成功生成并保存了复习卡片！',
+        errorMessage: '生成卡片失败',
+        onSuccess: (result) => {
+          if (result && typeof result === 'number') {
+            addMessage({ type: 'success', content: `成功生成并保存了 ${result} 张复习卡片！` });
+          }
+        }
+      }
+    );
+  };
+  
+  const handleStartLevelTest = () => {
+    if (!selectedNode) {
+      addMessage({ type: 'error', content: '请先选择一个节点' });
+      return;
+    }
+    
+    const currentGraphId = getCurrentGraphId();
+    window.location.href = `/study?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`;
+  };
+  
+  const handleStartLearningMode = () => {
+    if (!selectedNode) {
+      addMessage({ type: 'error', content: '请先选择一个节点' });
+      return;
+    }
+    
+    const currentGraphId = getCurrentGraphId();
+    window.location.href = `/learning?node_id=${selectedNode.id}&graph_id=${currentGraphId || ''}`;
+  };
+  
+  const handleAnalyzeCrossGraphConnections = async () => {
+    return await asyncHandler(
+      async () => {
+        const { user } = useStore.getState();
+        const aiConfig = user?.profile?.settings?.ai_config?.text;
+        const provider = aiConfig?.provider;
+        const model = aiConfig?.model;
+        
+        const allNodes1 = nodes1.map(n => ({ id: n.id, title: n.title, content: n.content }));
+        const allNodes2 = nodes2.map(n => ({ id: n.id, title: n.title, content: n.content }));
+        
+        const result = await api.ai.analyzeCrossGraphConnections({
+          graph1_id: graph1Id,
+          graph1_nodes: allNodes1,
+          graph2_id: graph2Id,
+          graph2_nodes: allNodes2,
+          provider,
+          model
+        });
+        
+        return result;
+      },
+      {
+        successMessage: '跨图谱连接分析完成',
+        errorMessage: '跨图谱连接分析失败'
+      }
+    );
+  };
+  
+  return {
+    handleExpandNode,
+    handleGenerateContent,
+    handleGenerateCards,
+    handleStartLevelTest,
+    handleStartLearningMode,
+    handleAnalyzeCrossGraphConnections,
+    getCurrentGraphId
+  };
+}

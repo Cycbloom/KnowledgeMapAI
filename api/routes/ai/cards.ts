@@ -164,4 +164,25 @@ router.get('/tasks/:id', requireAuth, async (req: AuthRequest, res: Response) =>
   }
 });
 
+router.post('/cross-graph-connections', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { graph1_id, graph1_title, graph1_nodes, graph2_id, graph2_title, graph2_nodes, provider, model } = req.body;
+
+  if (!graph1_id || !graph2_id || !graph1_nodes || !graph2_nodes) {
+    throw new AppError('Missing required fields: graph1_id, graph2_id, graph1_nodes, graph2_nodes', 400, ErrorCodes.VALIDATION_ERROR);
+  }
+
+  try {
+    const result = await aiService.analyzeCrossGraphConnections(
+      { id: graph1_id, title: graph1_title, nodes: graph1_nodes },
+      { id: graph2_id, title: graph2_title, nodes: graph2_nodes },
+      { provider, model, userId: req.user.id }
+    );
+    res.json(result);
+  } catch (error: unknown) {
+    const err = error as Error;
+    logger.error('AI Cross Graph Connections Error:', error);
+    res.status(500).json({ error: err.message || 'AI 跨图谱连接分析失败' });
+  }
+});
+
 export default router;

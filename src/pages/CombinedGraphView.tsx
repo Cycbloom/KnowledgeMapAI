@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { useCombinedGraphAIOperations } from '../hooks/useCombinedGraphAIOperations';
 import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
 import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
 import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';
-import type { Graph, GraphRelation, Node, Edge, GraphColorMode } from '../types';
+import type { Graph, GraphRelation, Node, Edge, GraphColorMode, CrossGraphNodeConnection, CrossGraphRelationData } from '../types';
 
 const GRAPH_SPACING = 400;
 
@@ -23,11 +24,13 @@ interface GraphDataResponse {
 export const CombinedGraphView: React.FC = () => {
   const { id1, id2 } = useParams<{ id1: string; id2: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(340);
   const [coloringMode, setColoringMode] = useState<GraphColorMode>('level');
+  const [crossGraphConnections, setCrossGraphConnections] = useState<CrossGraphNodeConnection[]>([]);
   
   const { data: graph1Data, isLoading: isLoading1, error: error1 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id1],
@@ -113,6 +116,80 @@ export const CombinedGraphView: React.FC = () => {
   const edges1 = useMemo(() => graph1Data?.edges || [], [graph1Data]);
   const edges2 = useMemo(() => graph2Data?.edges || [], [graph2Data]);
 
+  const aiOps = useCombinedGraphAIOperations({
+    graph1Id: id1 || '',
+    graph2Id: id2 || '',
+    selectedNode,
+    nodes1,
+    nodes2,
+    edges1,
+    edges2,
+    onRefresh: () => {
+      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
+      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+    },
+  });
+
+  const nodeOps = {
+    handleUpdateNode: async (nodeId: string, updates: Partial<Node>) => {
+      await api.nodes.update(nodeId, updates);
+      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
+      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+    },
+    handleDeleteNode: async (nodeId: string) => {
+      await api.nodes.delete(nodeId);
+      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
+      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+    },
+  };
+
+  const detectCrossGraphConnections = useCallback((nodes1: Node[], nodes2: Node[], id1: string, id2: string): CrossGraphNodeConnection[] => {
+    const connections: CrossGraphNodeConnection[] = [];
+    const kpMap1 = new Map<string, Node>();
+    const kpMap2 = new Map<string, Node>();
+    
+    nodes1.forEach(n => {
+      if (n.knowledge_point_id) kpMap1.set(n.knowledge_point_id, n);
+    });
+    nodes2.forEach(n => {
+      if (n.knowledge_point_id) kpMap2.set(n.knowledge_point_id, n);
+    });
+    
+    kpMap1.forEach((node1, kpId) => {
+      const node2 = kpMap2.get(kpId);
+      if (node2) {
+        connections.push({
+          id: `cross-${kpId}`,
+          knowledge_point_id: kpId,
+          node1: {
+            id: node1.id,
+            title: node1.title,
+            graph_id: id1,
+            x_position: node1.x_position || 0,
+            y_position: node1.y_position || 0,
+          },
+          node2: {
+            id: node2.id,
+            title: node2.title,
+            graph_id: id2,
+            x_position: node2.x_position || 0,
+            y_position: node2.y_position || 0,
+          },
+          connection_type: 'same_knowledge_point',
+        });
+      }
+    });
+    
+    return connections;
+  }, []);
+
+  useEffect(() => {
+    if (nodes1.length > 0 && nodes2.length > 0 && id1 && id2) {
+      const connections = detectCrossGraphConnections(nodes1, nodes2, id1, id2);
+      setCrossGraphConnections(connections);
+    }
+  }, [nodes1, nodes2, id1, id2, detectCrossGraphConnections]);
+
   const handleBack = useCallback(() => {
     navigate('/graph-map');
   }, [navigate]);
@@ -131,19 +208,29 @@ export const CombinedGraphView: React.FC = () => {
   }, []);
 
   const handleExportJSON = useCallback(() => {
-    const data = {
-      graph1: { id: id1, title: graph1Meta?.title, nodes: nodes1, edges: edges1 },
-      graph2: { id: id2, title: graph2Meta?.title, nodes: nodes2, edges: edges2 },
-      relations: graphRelations,
+    const data: CrossGraphRelationData = {
+      graph1: { 
+        id: id1 || '', 
+        title: graph1Meta?.title || '图谱 1', 
+        node_count: nodes1.length 
+      },
+      graph2: { 
+        id: id2 || '', 
+        title: graph2Meta?.title || '图谱 2', 
+        node_count: nodes2.length 
+      },
+      graph_relations: graphRelations,
+      cross_graph_connections: crossGraphConnections,
+      exported_at: new Date().toISOString(),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `combined-${graph1Meta?.title || 'graph1'}-${graph2Meta?.title || 'graph2'}.json`;
+    a.download = `cross-graph-relations-${graph1Meta?.title || 'graph1'}-${graph2Meta?.title || 'graph2'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [id1, id2, graph1Meta, graph2Meta, nodes1, nodes2, edges1, edges2, graphRelations]);
+  }, [id1, id2, graph1Meta, graph2Meta, nodes1, nodes2, graphRelations, crossGraphConnections]);
 
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
@@ -222,6 +309,50 @@ export const CombinedGraphView: React.FC = () => {
               rightPanelWidth={sidebarWidth}
             />
             
+            {crossGraphConnections.length > 0 && (
+              <svg 
+                className="absolute inset-0 pointer-events-none" 
+                style={{ zIndex: 6 }}
+              >
+                <defs>
+                  <linearGradient id="crossGraphGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.8" />
+                    <stop offset="50%" stopColor="#EC4899" stopOpacity="1" />
+                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.8" />
+                  </linearGradient>
+                </defs>
+                {crossGraphConnections.map((conn) => {
+                  const x1 = (conn.node1.x_position || 0) - GRAPH_SPACING / 2;
+                  const y1 = conn.node1.y_position || 0;
+                  const x2 = (conn.node2.x_position || 0) + GRAPH_SPACING / 2;
+                  const y2 = conn.node2.y_position || 0;
+                  
+                  return (
+                    <g key={conn.id}>
+                      <line
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke="url(#crossGraphGradient)"
+                        strokeWidth={2}
+                        strokeDasharray="8 4"
+                        className="animate-pulse"
+                        opacity={0.7}
+                      />
+                      <circle
+                        cx={(x1 + x2) / 2}
+                        cy={(y1 + y2) / 2}
+                        r={4}
+                        fill="#8B5CF6"
+                        className="animate-ping"
+                      />
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+            
             <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-800/90 rounded-lg shadow-lg p-3 backdrop-blur-sm">
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-2">
@@ -254,9 +385,21 @@ export const CombinedGraphView: React.FC = () => {
         graph2Title={graph2Meta?.title || '图谱 2'}
         graph1Color={graph1Color}
         graph2Color={graph2Color}
+        graph1Id={id1 || ''}
+        graph2Id={id2 || ''}
         selectedNode={selectedNode}
         onNodeClick={handleNodeClick}
         onWidthChange={setSidebarWidth}
+        crossGraphConnections={crossGraphConnections}
+        aiOps={{
+          handleExpandNode: aiOps.handleExpandNode,
+          handleGenerateContent: aiOps.handleGenerateContent,
+          handleGenerateCards: aiOps.handleGenerateCards,
+          handleStartLevelTest: aiOps.handleStartLevelTest,
+          handleStartLearningMode: aiOps.handleStartLearningMode,
+          handleAnalyzeCrossGraphConnections: aiOps.handleAnalyzeCrossGraphConnections,
+        }}
+        nodeOps={nodeOps}
       />
     </div>
   );

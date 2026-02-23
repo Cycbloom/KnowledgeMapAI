@@ -731,3 +731,40 @@ export interface CombinedGraphViewData {
   graph2: Graph;
   relations: GraphRelation[];
 }
+
+export interface CrossGraphNodeConnection {
+  id: string;
+  knowledge_point_id: string;
+  node1: {
+    id: string;
+    title: string;
+    graph_id: string;
+    x_position: number;
+    y_position: number;
+  };
+  node2: {
+    id: string;
+    title: string;
+    graph_id: string;
+    x_position: number;
+    y_position: number;
+  };
+  connection_type: 'same_knowledge_point' | 'similar_content';
+  similarity?: number;
+}
+
+export interface CrossGraphRelationData {
+  graph1: {
+    id: string;
+    title: string;
+    node_count: number;
+  };
+  graph2: {
+    id: string;
+    title: string;
+    node_count: number;
+  };
+  graph_relations: GraphRelation[];
+  cross_graph_connections: CrossGraphNodeConnection[];
+  exported_at: string;
+}

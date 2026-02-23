@@ -18,6 +18,29 @@ interface QuestionFormProps {
   isSubmitting?: boolean;
 }
 
+const getInitialFormData = (initialData?: StudyCard): QuestionFormData => {
+  if (initialData) {
+    return {
+      question: initialData.question,
+      answer: initialData.answer,
+      card_type: initialData.card_type,
+      explanation: initialData.explanation || '',
+      options: initialData.options || (
+        (initialData.card_type === 'choice' || initialData.card_type === 'multi_choice') 
+          ? ['', '', '', ''] 
+          : []
+      )
+    };
+  }
+  return {
+    question: '',
+    answer: '',
+    card_type: 'qa',
+    explanation: '',
+    options: []
+  };
+};
+
 export const QuestionForm: React.FC<QuestionFormProps> = ({ 
   initialData, 
   onSubmit, 
@@ -25,14 +48,9 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   isSubmitting = false 
 }) => {
   const { isDark } = useTheme();
-  const [formData, setFormData] = useState<QuestionFormData>({
-    question: '',
-    answer: '',
-    card_type: 'qa',
-    explanation: '',
-    options: []
-  });
+  const [formData, setFormData] = useState<QuestionFormData>(() => getInitialFormData(initialData));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const prevInitialDataRef = useRef(initialData);
 
   const questionRef = useRef<HTMLTextAreaElement>(null);
   const answerRef = useRef<HTMLTextAreaElement>(null);
@@ -51,18 +69,9 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   }, [formData.question, formData.answer, formData.explanation, formData.card_type]);
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        question: initialData.question,
-        answer: initialData.answer,
-        card_type: initialData.card_type,
-        explanation: initialData.explanation || '',
-        options: initialData.options || (
-          (initialData.card_type === 'choice' || initialData.card_type === 'multi_choice') 
-            ? ['', '', '', ''] 
-            : []
-        )
-      });
+    if (initialData !== prevInitialDataRef.current) {
+      prevInitialDataRef.current = initialData;
+      setFormData(getInitialFormData(initialData));
     }
   }, [initialData]);
 
@@ -200,7 +209,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                     } else {
                                         // Multi-choice logic
                                         let currentAnswers: string[] = [];
-                                        try { currentAnswers = JSON.parse(formData.answer || '[]'); } catch(e) {}
+                                        try { currentAnswers = JSON.parse(formData.answer || '[]'); } catch { currentAnswers = []; }
                                         if (!Array.isArray(currentAnswers)) currentAnswers = [];
                                         
                                         if (currentAnswers.includes(option)) {

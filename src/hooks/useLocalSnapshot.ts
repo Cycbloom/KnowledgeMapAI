@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Node, Edge } from '../types';
 
 const SNAPSHOT_PREFIX = 'km_snapshot_';
@@ -11,9 +11,8 @@ interface GraphSnapshot {
 }
 
 export const useLocalSnapshot = (graphId: string) => {
-  const getKey = () => `${SNAPSHOT_PREFIX}${graphId}`;
-
   const saveSnapshot = useCallback((nodes: Node[], edges: Edge[]) => {
+    const key = `${SNAPSHOT_PREFIX}${graphId}`;
     try {
       const snapshot: GraphSnapshot = {
         timestamp: Date.now(),
@@ -21,7 +20,7 @@ export const useLocalSnapshot = (graphId: string) => {
         nodes,
         edges
       };
-      localStorage.setItem(getKey(), JSON.stringify(snapshot));
+      localStorage.setItem(key, JSON.stringify(snapshot));
       return true;
     } catch (e) {
       console.error('Failed to save snapshot', e);
@@ -30,21 +29,24 @@ export const useLocalSnapshot = (graphId: string) => {
   }, [graphId]);
 
   const getSnapshot = useCallback((): GraphSnapshot | null => {
+    const key = `${SNAPSHOT_PREFIX}${graphId}`;
     try {
-      const item = localStorage.getItem(getKey());
+      const item = localStorage.getItem(key);
       if (!item) return null;
       return JSON.parse(item);
-    } catch (e) {
+    } catch {
       return null;
     }
   }, [graphId]);
 
   const clearSnapshot = useCallback(() => {
-    localStorage.removeItem(getKey());
+    const key = `${SNAPSHOT_PREFIX}${graphId}`;
+    localStorage.removeItem(key);
   }, [graphId]);
 
   const hasSnapshot = useCallback(() => {
-    return !!localStorage.getItem(getKey());
+    const key = `${SNAPSHOT_PREFIX}${graphId}`;
+    return !!localStorage.getItem(key);
   }, [graphId]);
 
   return {

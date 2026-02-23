@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network, BarChart3, Sun, Moon } from 'lucide-react';
+import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network, BarChart3, Sun, Moon, LucideIcon } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 import { HelpModal } from './HelpModal';
@@ -15,6 +15,28 @@ import { Breadcrumb } from './Breadcrumb';
 import { HeaderGreeting } from './HeaderGreeting';
 import { useTheme } from '../hooks/useTheme';
 import { api } from '../services/api';
+
+interface SidebarLinkProps {
+  to: string;
+  icon: LucideIcon;
+  label: string;
+  isCollapsed: boolean;
+  isMobileMenuOpen: boolean;
+  isDark: boolean;
+  onClick?: () => void;
+}
+
+const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon: Icon, label, isCollapsed, isMobileMenuOpen, onClick }) => (
+  <Link 
+    to={to} 
+    className={`flex items-center ${isCollapsed && !isMobileMenuOpen ? 'justify-center' : 'space-x-2'} p-2 hover:bg-slate-800 rounded transition-colors`} 
+    title={label}
+    onClick={onClick}
+  >
+    <Icon size={20} />
+    {(!isCollapsed || isMobileMenuOpen) && <span>{label}</span>}
+  </Link>
+);
 
 export const Layout = () => {
   const { user, setUser, token } = useStore();
@@ -28,24 +50,30 @@ export const Layout = () => {
   
   const isFullScreenPage = location.pathname.startsWith('/graph/') || location.pathname === '/learning';
   
-  // Use TanStack Query for user fetching
-  // Only fetch if we have a token but no user (e.g. refresh)
   const { data: userData, isLoading: isUserLoading } = useUser(!!token && !user);
   const logoutMutation = useLogoutMutation();
   const { data: tasksData } = useTasks(!!token);
-  useTaskEvents(); // Initialize SSE for task updates
+  useTaskEvents();
   const lastTaskStatusRef = useRef<Map<string, string>>(new Map());
   const hasInitializedTasksRef = useRef(false);
 
-  // Sync Query result to Store
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutMutation.mutateAsync();
+    } catch (e) {
+      console.error(e);
+    }
+    setUser(null, null);
+    navigate('/login');
+  }, [logoutMutation, setUser, navigate]);
+
   useEffect(() => {
     if (userData && userData.user) {
       setUser(userData.user, token);
     } else if (userData && !userData.user && !isUserLoading) {
-        // If fetch completed but no user, logout
         handleLogout();
     }
-  }, [userData, isUserLoading, setUser, token]);
+  }, [userData, isUserLoading, setUser, token, handleLogout]);
 
   // Daily Check-in
   useEffect(() => {
@@ -104,22 +132,10 @@ export const Layout = () => {
     lastTaskStatusRef.current = updated;
   }, [tasksData, addMessage, navigate]);
 
-  // Close mobile menu when route changes
-  useEffect(() => {
+  const handleMobileNavClick = useCallback(() => {
     setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+  }, []);
 
-  const handleLogout = async () => {
-    try {
-      await logoutMutation.mutateAsync();
-    } catch (e) {
-      console.error(e);
-    }
-    setUser(null, null);
-    navigate('/login');
-  };
-
-  // Initial loading state: if we need to fetch user, show loading
   if ((!!token && !user && isUserLoading)) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -127,18 +143,6 @@ export const Layout = () => {
       </div>
     );
   }
-
-  // Sidebar link helper
-  const SidebarLink = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => (
-    <Link 
-      to={to} 
-      className={`flex items-center ${isCollapsed && !isMobileMenuOpen ? 'justify-center' : 'space-x-2'} p-2 hover:bg-slate-800 rounded transition-colors`} 
-      title={label}
-    >
-      <Icon size={20} />
-      {(!isCollapsed || isMobileMenuOpen) && <span>{label}</span>}
-    </Link>
-  );
 
   return (
     <div className={`flex h-screen flex-col ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-gray-900'}`}>
@@ -181,15 +185,15 @@ export const Layout = () => {
 
             {/* Navigation Links */}
             <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-              <SidebarLink to="/" icon={BookOpen} label="我的图谱" />
-              <SidebarLink to="/graph-map" icon={Network} label="图谱地图" />
-              <SidebarLink to="/study" icon={GraduationCap} label="学习中心" />
-              <SidebarLink to="/learning-stats" icon={BarChart3} label="学习统计" />
-              <SidebarLink to="/achievements" icon={Trophy} label="成就系统" />
-              <SidebarLink to="/templates" icon={Sparkles} label="模板管理" />
-              <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" />
-              <SidebarLink to="/profile" icon={User} label="个人设置" />
-              <SidebarLink to="/trash" icon={Trash2} label="回收站" />
+              <SidebarLink to="/" icon={BookOpen} label="我的图谱" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/graph-map" icon={Network} label="图谱地图" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/study" icon={GraduationCap} label="学习中心" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/learning-stats" icon={BarChart3} label="学习统计" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/achievements" icon={Trophy} label="成就系统" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/templates" icon={Sparkles} label="模板管理" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/profile" icon={User} label="个人设置" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/trash" icon={Trash2} label="回收站" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
             </nav>
 
             {/* Sidebar Footer */}

@@ -119,6 +119,13 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { isDark, toggleTheme } = useTheme();
+  const [openDropdown, setOpenDropdown] = useState<'edit' | 'ai' | 'system' | 'view' | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const themeClasses = {
     container: isDark ? 'bg-slate-800/90 border-slate-700 text-gray-100' : 'bg-white/90 border-gray-200 text-gray-800',
@@ -420,15 +427,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     );
   }
 
-  const [openDropdown, setOpenDropdown] = useState<'edit' | 'ai' | 'system' | 'view' | null>(null);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(null);
-    window.addEventListener('click', handleClickOutside);
-    return () => window.removeEventListener('click', handleClickOutside);
-  }, []);
-
   const DropdownButton = ({ id, icon: Icon, label, children, active }: any) => (
     <div className="relative" onClick={(e) => e.stopPropagation()}>
       <button
@@ -453,13 +451,9 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   );
 
   const MenuItem = ({ onClick, icon: Icon, label, active, colorClass, activeClass, disabled, children }: any) => {
-    const [isHovered, setIsHovered] = useState(false);
-    
     return (
       <div 
-        className="relative w-full"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className="relative w-full group"
       >
         <button
           disabled={disabled}
@@ -484,9 +478,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           )}
         </button>
         
-        {/* Submenu */}
-        {children && isHovered && (
-          <div className={`absolute top-0 left-full ml-1 p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in slide-in-from-left-2 duration-150`}>
+        {children && (
+          <div className={`absolute top-0 left-full ml-1 p-2 rounded-xl shadow-2xl border w-48 z-50 flex flex-col gap-1 ${themeClasses.dropdown} animate-in fade-in slide-in-from-left-2 duration-150 hidden group-hover:flex`}>
             {children}
           </div>
         )}

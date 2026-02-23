@@ -86,7 +86,7 @@ export const StudyCardDetailModal: React.FC<StudyCardDetailModalProps> = ({
                       let opts = [];
                       try {
                         opts = typeof card.options === 'string' ? JSON.parse(card.options) : card.options;
-                      } catch (e) {}
+                      } catch { opts = []; }
                       return Array.isArray(opts) ? opts.map((opt, i) => (
                         <div key={i} className={`p-4 rounded-2xl border ${
                           isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-gray-50 border-gray-100 text-slate-600'

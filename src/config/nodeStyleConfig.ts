@@ -264,10 +264,11 @@ export const getCenterDotPath = (radius: number, shape: CenterDotShape): string 
   switch (shape) {
     case 'circle':
       return null;
-    case 'diamond':
+    case 'diamond': {
       const d = radius * 1.2;
       return `M 0 ${-d} L ${d} 0 L 0 ${d} L ${-d} 0 Z`;
-    case 'star':
+    }
+    case 'star': {
       const spikes = 5;
       const outerRadius = radius * 1.3;
       const innerRadius = radius * 0.5;
@@ -293,6 +294,7 @@ export const getCenterDotPath = (radius: number, shape: CenterDotShape): string 
       
       path += 'Z';
       return path;
+    }
     case 'none':
       return null;
     default:

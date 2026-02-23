@@ -61,8 +61,8 @@ export const NodePreviewCard: React.FC<NodePreviewCardProps> = ({
   
   const contentPreview = useMemo(() => {
     if (!node.content) return null;
-    const text = node.content.replace(/[#*`\[\]]/g, '').slice(0, 150);
-    return text.length < node.content.length ? text + '...' : text;
+    const text = node.content.replace(/[#*`[\]]/g, '').slice(0, 150);
+    return text.length < node.content.length ? `${text}...` : text;
   }, [node.content]);
   
   const isMastered = nodeStatus?.[node.id]?.mastered;

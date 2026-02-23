@@ -3,6 +3,20 @@ import { useFocusStore, TimerMode } from '../store/useFocusStore';
 import { Play, Pause, RotateCcw, Coffee, Brain, X, Settings2, Minimize2, Maximize2, Volume2, VolumeX, SkipForward, GripVertical } from 'lucide-react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+const getModeLabel = (m: TimerMode) => {
+  switch (m) {
+    case 'focus': return '专注';
+    case 'shortBreak': return '小憩';
+    case 'longBreak': return '长休';
+  }
+};
+
 export const FocusTimer: React.FC = () => {
   const { 
     isActive, 
@@ -39,7 +53,6 @@ export const FocusTimer: React.FC = () => {
   }, [isActive, tick]);
 
   useEffect(() => {
-    // Title update
     if (isActive) {
       document.title = `${formatTime(timeLeft)} - ${getModeLabel(mode)}`;
     } else {
@@ -49,20 +62,6 @@ export const FocusTimer: React.FC = () => {
       document.title = 'KnowledgeMap';
     };
   }, [isActive, timeLeft, mode]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getModeLabel = (m: TimerMode) => {
-    switch (m) {
-      case 'focus': return '专注';
-      case 'shortBreak': return '小憩';
-      case 'longBreak': return '长休';
-    }
-  };
 
   const getProgress = () => {
     let total = focusDuration * 60;

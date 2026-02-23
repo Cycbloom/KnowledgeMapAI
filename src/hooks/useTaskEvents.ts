@@ -11,6 +11,7 @@ export const useTaskEvents = () => {
   const eventSourceRef = useRef<EventSourcePolyfill | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const connectRef = useRef<(() => void) | null>(null);
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
 
@@ -117,7 +118,9 @@ export const useTaskEvents = () => {
           setSSEStatus('connecting', `Reconnecting... (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
+            if (connectRef.current) {
+              connectRef.current();
+            }
           }, delay);
         } else {
           console.error('[SSE] Max reconnection attempts reached');
@@ -132,6 +135,10 @@ export const useTaskEvents = () => {
       cleanup();
     }
   }, [token, queryClient, setSSEStatus, cleanup]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     if (!token) {

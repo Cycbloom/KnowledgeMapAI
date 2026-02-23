@@ -6,6 +6,60 @@ import {
 import { useTheme } from '../../hooks/useTheme';
 import type { GraphColorMode, Node } from '../../types';
 
+interface DividerProps {
+  className: string;
+}
+
+const Divider: React.FC<DividerProps> = ({ className }) => (
+  <div className={`w-px h-6 mx-1 flex-shrink-0 ${className}`} />
+);
+
+interface ButtonProps { 
+  onClick: () => void; 
+  active?: boolean; 
+  disabled?: boolean; 
+  title: string; 
+  icon: React.ElementType;
+  colorClass?: string;
+  buttonClasses: {
+    default: string;
+    active: string;
+  };
+  isDark: boolean;
+}
+
+const Button: React.FC<ButtonProps> = ({ 
+  onClick, 
+  active, 
+  disabled, 
+  title, 
+  icon: Icon, 
+  colorClass,
+  buttonClasses,
+  isDark
+}) => {
+  let className = 'p-1.5 rounded transition-colors flex-shrink-0 ';
+  
+  if (disabled) {
+    className += isDark ? 'text-slate-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed';
+  } else if (active) {
+    className += buttonClasses.active;
+  } else {
+    className += `${buttonClasses.default} ${colorClass || ''}`;
+  }
+
+  return (
+    <button 
+      onClick={onClick}
+      disabled={disabled}
+      className={className}
+      title={title}
+    >
+      <Icon size={18} />
+    </button>
+  );
+};
+
 interface CombinedGraphToolbarProps {
   graph1Title: string;
   graph2Title: string;
@@ -53,53 +107,12 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
     itemHover: isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-50'
   };
 
-  const Divider = () => (
-    <div className={`w-px h-6 mx-1 flex-shrink-0 ${themeClasses.divider}`} />
-  );
-
-  const Button = ({ 
-    onClick, 
-    active, 
-    disabled, 
-    title, 
-    icon: Icon, 
-    colorClass 
-  }: { 
-    onClick: () => void; 
-    active?: boolean; 
-    disabled?: boolean; 
-    title: string; 
-    icon: React.ElementType;
-    colorClass?: string;
-  }) => {
-    let className = 'p-1.5 rounded transition-colors flex-shrink-0 ';
-    
-    if (disabled) {
-      className += isDark ? 'text-slate-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed';
-    } else if (active) {
-      className += themeClasses.button.active;
-    } else {
-      className += `${themeClasses.button.default} ${colorClass || ''}`;
-    }
-
-    return (
-      <button 
-        onClick={onClick}
-        disabled={disabled}
-        className={className}
-        title={title}
-      >
-        <Icon size={18} />
-      </button>
-    );
-  };
-
   return (
     <div 
       className={`absolute top-4 left-4 p-2 rounded-xl shadow-lg flex items-center space-x-2 z-10 backdrop-blur-md border ${themeClasses.container}`}
     >
-      <Button onClick={onBack} icon={ArrowLeft} title="返回图谱地图" />
-      <Divider />
+      <Button onClick={onBack} icon={ArrowLeft} title="返回图谱地图" buttonClasses={themeClasses.button} isDark={isDark} />
+      <Divider className={themeClasses.divider} />
       
       <div className="flex items-center gap-2 px-2">
         <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -109,7 +122,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
         <span className="text-sm font-medium max-w-[100px] truncate">{graph2Title}</span>
       </div>
       
-      <Divider />
+      <Divider className={themeClasses.divider} />
       
       <div className="flex items-center space-x-1">
         <Button 
@@ -117,27 +130,33 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
           icon={coloringMode === 'level' ? Layers : Activity} 
           title={coloringMode === 'level' ? '着色模式: 结构' : '着色模式: 热力图'}
           colorClass={coloringMode === 'level' ? 'text-blue-500' : 'text-orange-500'}
+          buttonClasses={themeClasses.button}
+          isDark={isDark}
         />
-        <Button onClick={toggleTheme} icon={isDark ? Sun : Moon} title={isDark ? '浅色模式' : '深色模式'} />
+        <Button onClick={toggleTheme} icon={isDark ? Sun : Moon} title={isDark ? '浅色模式' : '深色模式'} buttonClasses={themeClasses.button} isDark={isDark} />
       </div>
       
-      <Divider />
+      <Divider className={themeClasses.divider} />
       
       <Button 
         onClick={onToggleSidebar} 
         active={isSidebarOpen} 
         icon={List} 
-        title={isSidebarOpen ? '关闭侧边栏' : '打开侧边栏'} 
+        title={isSidebarOpen ? '关闭侧边栏' : '打开侧边栏'}
+        buttonClasses={themeClasses.button}
+        isDark={isDark}
       />
       
-      <Divider />
+      <Divider className={themeClasses.divider} />
       
       <div className="relative">
         <Button 
           onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} 
           active={isExportMenuOpen}
           icon={Download} 
-          title="导出" 
+          title="导出"
+          buttonClasses={themeClasses.button}
+          isDark={isDark}
         />
         {isExportMenuOpen && (
           <div className={`absolute top-full right-0 mt-2 shadow-xl rounded-lg border w-40 py-1 z-50 ${themeClasses.dropdown}`}>
@@ -161,7 +180,7 @@ export const CombinedGraphToolbar: React.FC<CombinedGraphToolbarProps> = ({
       
       {selectedNode && (
         <>
-          <Divider />
+          <Divider className={themeClasses.divider} />
           <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
             <span className="text-xs text-blue-600 dark:text-blue-400">
               已选: {selectedNode.title}

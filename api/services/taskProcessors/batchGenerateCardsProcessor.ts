@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor } from './index.js';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index.js';
 import { aiService } from '../aiService.js';
 import { logger } from '../../utils/logger.js';
 
@@ -9,7 +9,7 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
     userId: string, 
     payload: any, 
     supabase: SupabaseClient,
-    updateTaskStatus: Function
+    updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
     try {
       await updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, userId);

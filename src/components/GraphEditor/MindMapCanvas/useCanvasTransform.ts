@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export interface Transform {
   x: number;
@@ -89,7 +89,7 @@ export const useCanvasTransform = (options: UseCanvasTransformOptions) => {
     };
   }, []);
   
-  useMemo(() => {
+  useEffect(() => {
     if (Math.abs(transform.x - transformRef.current.x) > 0.1 ||
         Math.abs(transform.y - transformRef.current.y) > 0.1 ||
         Math.abs(transform.k - transformRef.current.k) > 0.001) {

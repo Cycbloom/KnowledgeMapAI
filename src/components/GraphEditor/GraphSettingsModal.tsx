@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gauge, MessageSquare } from 'lucide-react';
 import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
@@ -22,14 +22,17 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   const [gamificationEnabled, setGamificationEnabled] = useState(true);
   const [learningDirection, setLearningDirection] = useState<'top_down' | 'bottom_up'>('top_down');
   const [textDisplayLevel, setTextDisplayLevel] = useState<'all' | 'important' | 'root_only'>('important');
+  const prevSettingsRef = useRef(graph?.settings);
 
   useEffect(() => {
-    if (graph?.settings) {
-      setGamificationEnabled(graph.settings.gamification_enabled !== false);
-      setLearningDirection(graph.settings.learning_direction || 'top_down');
-      setTextDisplayLevel(graph.settings.text_display_level || 'important');
+    const currentSettings = graph?.settings;
+    if (currentSettings && currentSettings !== prevSettingsRef.current) {
+      prevSettingsRef.current = currentSettings;
+      setGamificationEnabled(currentSettings.gamification_enabled !== false);
+      setLearningDirection(currentSettings.learning_direction || 'top_down');
+      setTextDisplayLevel(currentSettings.text_display_level || 'important');
     }
-  }, [graph]);
+  }, [graph?.settings]);
 
   const handleSave = async () => {
     try {

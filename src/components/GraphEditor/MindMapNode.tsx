@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { LayoutNode, LearningStatus, NodeLevel, CenterDotShape, ColorScheme, GraphColorMode } from '../../types';
 import { NodeRing } from './NodeRing';
 import { 
@@ -89,23 +89,19 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   isSelectedAsParent = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [animationPhase, setAnimationPhase] = useState<'entering' | 'pulsing' | 'none'>('none');
   const level = getLevel(node, edges);
   const tags = useMemo(() => node.tags || node.properties?.tags || [], [node.tags, node.properties]);
   
-  // Calculate dynamic size based on mode
   const dynamicSize = useMemo(() => {
     if (nodeSizeMode === 'fixed') {
       return 1.0;
     }
     
     if (nodeImportance !== undefined) {
-      // Use provided importance score
-      return 0.8 + nodeImportance * 0.7; // Range: 0.8 - 1.5
+      return 0.8 + nodeImportance * 0.7;
     }
     
     if (allNodes.length > 0) {
-      // Calculate importance on the fly
       const importance = calculateNodeImportance(node as Node, allNodes, edges, nodeStatus);
       return 0.8 + importance.score * 0.7;
     }
@@ -138,36 +134,13 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const shadowStyle = getShadowStyle(styleConfig.shadow);
   const transitionDuration = styleConfig.animation.transitionDuration;
 
-  useEffect(() => {
-    if (isNew) {
-      setAnimationPhase('entering');
-      const enterTimer = setTimeout(() => {
-        setAnimationPhase('pulsing');
-        const pulseTimer = setTimeout(() => {
-          setAnimationPhase('none');
-        }, 1500);
-        return () => clearTimeout(pulseTimer);
-      }, 500);
-      return () => clearTimeout(enterTimer);
-    }
-    return undefined;
+  const animationTransform = useMemo(() => {
+    if (!isNew) return { scale: 1, opacity: 1 };
+    return { scale: 0, opacity: 0 };
   }, [isNew]);
 
-  const getAnimationTransform = () => {
-    switch (animationPhase) {
-      case 'entering':
-        return { scale: 0, opacity: 0 };
-      case 'pulsing':
-        return { scale: 1.1, opacity: 1 };
-      case 'none':
-      default:
-        return { scale: 1, opacity: 1 };
-    }
-  };
-
-  const animationTransform = getAnimationTransform();
-  const currentScale = animationPhase === 'none' ? hoverScale : animationTransform.scale;
-  const currentOpacity = animationPhase === 'none' ? (isAccepted ? nodeOpacity : nodeOpacity * 0.5) : animationTransform.opacity;
+  const currentScale = isNew ? hoverScale : animationTransform.scale;
+  const currentOpacity = isNew ? (isAccepted ? nodeOpacity : nodeOpacity * 0.5) : animationTransform.opacity;
 
   const rings = useMemo(() => {
     const result = [];

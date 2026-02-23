@@ -42,15 +42,14 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
               ? 'bg-slate-800 border-slate-700 hover:border-indigo-500/50' 
               : 'bg-white border-gray-100 hover:border-indigo-200 shadow-sm')
       }`}
-      onClick={() => selectionMode && onSelect && onSelect(card)}
+      onClick={() => { if (selectionMode && onSelect) onSelect(card); }}
     >
-      {/* Selection Checkbox */}
       {(selectionMode || onSelect) && (
         <div className="absolute top-4 right-4 z-10">
           <button 
             onClick={(e) => {
               e.stopPropagation();
-              onSelect && onSelect(card);
+              if (onSelect) onSelect(card);
             }}
             className={`transition-colors ${selected ? 'text-indigo-500' : 'text-gray-300 hover:text-gray-400'}`}
           >

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { 
   Search, Command, X, ArrowRight, 
   Layout, Sun, Moon, Maximize, Minimize, 
@@ -17,7 +17,7 @@ export interface CommandItem {
   shortcut?: string;
   category: 'navigation' | 'view' | 'action' | 'node' | 'ai';
   action: () => void;
-  keywords?: string[]; // Extra keywords for search
+  keywords?: string[];
 }
 
 interface CommandPaletteProps {
@@ -40,19 +40,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const prevQueryRef = useRef(query);
   const navigate = useNavigate();
 
-  // Combine static commands with dynamic node commands
+  const handleClose = useCallback(() => {
+    setQuery('');
+    onClose();
+  }, [onClose]);
+
   const filteredCommands = useMemo(() => {
     const lowerQuery = query.toLowerCase();
     
-    // 1. Filter static commands
     const matchedCommands = initialCommands.filter(cmd => 
       cmd.label.toLowerCase().includes(lowerQuery) || 
       cmd.keywords?.some(k => k.toLowerCase().includes(lowerQuery))
     );
 
-    // 2. Filter nodes if query is present
     const matchedNodes: CommandItem[] = [];
     if (query && nodes.length > 0 && onNodeSelect) {
       nodes.forEach(node => {
@@ -63,32 +66,29 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             icon: <FileText size={14} />,
             category: 'node',
             action: () => onNodeSelect(node.id),
-            keywords: [node.content?.slice(0, 50) || ''] // Search in content preview
+            keywords: [node.content?.slice(0, 50) || '']
           });
         }
       });
     }
 
-    // Limit node results to avoid clutter
     return [...matchedCommands, ...matchedNodes.slice(0, 10)];
   }, [query, initialCommands, nodes, onNodeSelect]);
 
-  // Reset selection when query changes
+  const safeSelectedIndex = selectedIndex >= filteredCommands.length ? 0 : selectedIndex;
+
   useEffect(() => {
-    setSelectedIndex(0);
+    if (prevQueryRef.current !== query) {
+      prevQueryRef.current = query;
+    }
   }, [query]);
 
-  // Auto-focus input when opened
   useEffect(() => {
     if (isOpen) {
-      // Small timeout to ensure DOM is ready
       setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      setQuery('');
     }
   }, [isOpen]);
 
-  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
 
@@ -101,29 +101,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (filteredCommands[selectedIndex]) {
-          filteredCommands[selectedIndex].action();
-          onClose();
+        if (filteredCommands[safeSelectedIndex]) {
+          filteredCommands[safeSelectedIndex].action();
+          handleClose();
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        handleClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredCommands, selectedIndex, onClose]);
+  }, [isOpen, filteredCommands, safeSelectedIndex, handleClose]);
 
-  // Scroll selected item into view
   useEffect(() => {
-    if (listRef.current && listRef.current.children[selectedIndex]) {
-      (listRef.current.children[selectedIndex] as HTMLElement).scrollIntoView({
+    if (listRef.current && listRef.current.children[safeSelectedIndex]) {
+      (listRef.current.children[safeSelectedIndex] as HTMLElement).scrollIntoView({
         block: 'nearest',
         behavior: 'smooth'
       });
     }
-  }, [selectedIndex]);
+  }, [safeSelectedIndex]);
 
   if (!isOpen) return null;
 

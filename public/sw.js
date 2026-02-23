@@ -22,29 +22,29 @@ const CACHE_STRATEGIES = {
   staleWhileRevalidate: ['/api/graphs'],
 };
 
-const shouldCacheApi = (url: string): boolean => {
+const shouldCacheApi = (url) => {
   return API_CACHE_PATTERNS.some(pattern => pattern.test(url));
 };
 
-const getCacheStrategy = (url: string): 'networkFirst' | 'cacheFirst' | 'staleWhileRevalidate' => {
+const getCacheStrategy = (url) => {
   for (const [strategy, patterns] of Object.entries(CACHE_STRATEGIES)) {
     if (patterns.some(pattern => url.includes(pattern))) {
-      return strategy as 'networkFirst' | 'cacheFirst' | 'staleWhileRevalidate';
+      return strategy;
     }
   }
   return 'networkFirst';
 };
 
-self.addEventListener('install', (event: ExtendableEvent) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME).then(cache => {
       return cache.addAll(STATIC_ASSETS);
     })
   );
-  (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', (event: ExtendableEvent) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -54,10 +54,10 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
       );
     })
   );
-  (self as unknown as ServiceWorkerGlobalScope).clients.claim();
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event: FetchEvent) => {
+self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = request.url;
 
@@ -92,7 +92,7 @@ self.addEventListener('fetch', (event: FetchEvent) => {
   );
 });
 
-async function handleApiRequest(request: Request): Promise<Response> {
+async function handleApiRequest(request) {
   const url = request.url;
   const strategy = getCacheStrategy(url);
 
@@ -106,7 +106,7 @@ async function handleApiRequest(request: Request): Promise<Response> {
   }
 }
 
-async function networkFirst(request: Request): Promise<Response> {
+async function networkFirst(request) {
   try {
     const response = await fetch(request);
     if (response.ok && shouldCacheApi(request.url)) {
@@ -126,7 +126,7 @@ async function networkFirst(request: Request): Promise<Response> {
   }
 }
 
-async function cacheFirst(request: Request): Promise<Response> {
+async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) {
     return cached;
@@ -147,7 +147,7 @@ async function cacheFirst(request: Request): Promise<Response> {
   }
 }
 
-async function staleWhileRevalidate(request: Request): Promise<Response> {
+async function staleWhileRevalidate(request) {
   const cached = await caches.match(request);
 
   const fetchPromise = fetch(request).then(response => {
@@ -166,9 +166,9 @@ async function staleWhileRevalidate(request: Request): Promise<Response> {
   return cached || fetchPromise;
 }
 
-self.addEventListener('message', (event: MessageEvent) => {
+self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
-    (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+    self.skipWaiting();
   }
 
   if (event.data.type === 'clearCache') {
@@ -184,7 +184,7 @@ self.addEventListener('message', (event: MessageEvent) => {
   }
 
   if (event.data.type === 'prefetch') {
-    const urls: string[] = event.data.urls || [];
+    const urls = event.data.urls || [];
     event.waitUntil(
       caches.open(API_CACHE_NAME).then(cache => {
         return Promise.all(
@@ -202,5 +202,3 @@ self.addEventListener('message', (event: MessageEvent) => {
     );
   }
 });
-
-export {};

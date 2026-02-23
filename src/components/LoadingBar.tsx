@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 
 export const LoadingBar: React.FC = () => {
@@ -10,17 +10,28 @@ export const LoadingBar: React.FC = () => {
   
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prevIsLoadingRef = useRef(isLoading);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    let timeout: NodeJS.Timeout;
+    if (isLoading === prevIsLoadingRef.current) return;
+    prevIsLoadingRef.current = isLoading;
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
 
     if (isLoading) {
       setIsVisible(true);
-      setProgress(old => (old < 10 ? 10 : old)); // Start at 10%
+      setProgress(10);
       
-      // Slowly increase progress up to 90%
-      interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         setProgress(old => {
           if (old >= 90) return old;
           const diff = Math.random() * 10;
@@ -28,19 +39,17 @@ export const LoadingBar: React.FC = () => {
         });
       }, 500);
     } else {
-      // Complete the progress bar
       setProgress(100);
       
-      // Hide after animation finishes
-      timeout = setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setIsVisible(false);
         setProgress(0);
       }, 400);
     }
 
     return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [isLoading]);
 

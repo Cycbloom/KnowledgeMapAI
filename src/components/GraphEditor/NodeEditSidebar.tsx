@@ -67,20 +67,6 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
       });
   }, [nodes, parentSearch, currentNodeId]);
 
-  useEffect(() => {
-    setParentSearch('');
-  }, [nodeForm.parentNodeIds]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as globalThis.Node)) {
-        setShowParentDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const toggleParent = (nodeId: string) => {
     const currentIds = nodeForm.parentNodeIds;
     if (currentIds.includes(nodeId)) {
@@ -88,6 +74,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     } else {
       setNodeForm({ ...nodeForm, parentNodeIds: [...currentIds, nodeId] });
     }
+    setParentSearch('');
+    setShowParentDropdown(true);
   };
 
   const handleParentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,10 +85,12 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
 
   const removeParent = (nodeId: string) => {
     setNodeForm({ ...nodeForm, parentNodeIds: nodeForm.parentNodeIds.filter(id => id !== nodeId) });
+    setParentSearch('');
   };
 
   const clearAllParents = () => {
     setNodeForm({ ...nodeForm, parentNodeIds: [] });
+    setParentSearch('');
     inputRef.current?.focus();
   };
 

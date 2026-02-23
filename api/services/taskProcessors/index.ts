@@ -1,8 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Task } from '../taskService.js';
+
+export type UpdateTaskStatusFunction = (
+  supabase: SupabaseClient,
+  taskId: string,
+  status: string,
+  progress?: { stage?: string; progress?: number; [key: string]: unknown } | null,
+  result?: unknown,
+  userId?: string
+) => Promise<void>;
 
 export interface TaskProcessor {
-  process(taskId: string, userId: string, payload: any, supabase: SupabaseClient, updateTaskStatus: Function): Promise<void>;
+  process(taskId: string, userId: string, payload: any, supabase: SupabaseClient, updateTaskStatus: UpdateTaskStatusFunction): Promise<void>;
 }
 
 export const taskProcessors: Record<string, TaskProcessor> = {};

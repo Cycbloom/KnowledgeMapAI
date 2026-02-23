@@ -24,6 +24,7 @@ class TaskProcessor {
         case 'batch_generate_questions':
         case 'recursive_graph_generation':
         case 'infinite_graph_expansion':
+        case 'embedding_generation':
           await taskService.processTask(task.id, task.user_id, task.type, task.payload);
           return;
         case 'expand_graph':

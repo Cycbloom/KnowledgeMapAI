@@ -53,6 +53,8 @@ const getTypeLabel = (type: string) => {
       return '递归生成图谱';
     case 'infinite_graph_expansion':
       return '无限扩展知识网络';
+    case 'embedding_generation':
+      return '向量嵌入生成';
     default:
       return type;
   }
@@ -230,7 +232,7 @@ export const Tasks = () => {
                   const graphId = t.payload?.graph_id;
                   const nodeId = t.payload?.node_id;
                   const resultTitles = Array.isArray(t.result?.nodeTitles) ? t.result.nodeTitles : [];
-                  const showResult = t.status === 'completed' && (t.type === 'expand_graph' || t.type === 'generate_questions' || t.type === 'batch_generate_questions');
+                  const showResult = t.status === 'completed' && (t.type === 'expand_graph' || t.type === 'generate_questions' || t.type === 'batch_generate_questions' || t.type === 'embedding_generation' || t.type === 'infinite_graph_expansion');
 
                   return (
                     <div key={t.id} className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
@@ -299,6 +301,20 @@ export const Tasks = () => {
                               <div className="text-purple-700 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-900/10 p-2 rounded text-xs border border-purple-100/50 dark:border-purple-900/20">
                                 <span className="font-medium">扩展完成：</span> 
                                 创建 {t.result.total_graphs_created} 个图谱，{t.result.total_nodes_created} 个知识点
+                              </div>
+                            )}
+
+                            {showResult && t.type === 'embedding_generation' && typeof t.result?.processed === 'number' && (
+                              <div className="text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 p-2 rounded text-xs border border-indigo-100/50 dark:border-indigo-900/20">
+                                <span className="font-medium">嵌入生成完成：</span> 
+                                成功 {t.result.processed} 个{t.result.failed > 0 && `，失败 ${t.result.failed} 个`}
+                              </div>
+                            )}
+
+                            {t.status === 'processing' && t.type === 'embedding_generation' && t.result?.progress !== undefined && (
+                              <div className="text-indigo-600 dark:text-indigo-400 text-xs flex items-center gap-2">
+                                <span className="font-medium">进度：</span>
+                                <span>{t.result.processed || 0} / {t.result.total || '?'}</span>
                               </div>
                             )}
 

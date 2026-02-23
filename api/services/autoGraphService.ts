@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { graphNodeService } from './graphNodeService.js';
 import { edgeService } from './edgeService.js';
+import { taskService } from './taskService.js';
 import { logger } from '../utils/logger.js';
 
 const MAX_RETRIES = 3;
@@ -136,6 +137,24 @@ export class AutoGraphService {
     const edgeCount = await this.createEdgesBatch(supabase, edgesToCreate);
 
     logger.info(`Completed: ${graphNodeIds.length} nodes, ${edgeCount} edges`);
+
+    const validKnowledgePointIds = knowledgePoints
+      .filter((kp): kp is { id: string } => kp !== null)
+      .map(kp => kp.id);
+
+    if (validKnowledgePointIds.length > 0) {
+      try {
+        await taskService.createTask(
+          userId,
+          'embedding_generation',
+          { knowledgePointIds: validKnowledgePointIds },
+          `嵌入生成 - ${validKnowledgePointIds.length}个知识点`
+        );
+        logger.info(`Created embedding generation task for ${validKnowledgePointIds.length} knowledge points`);
+      } catch (error) {
+        logger.error('Failed to create embedding generation task:', error);
+      }
+    }
 
     return {
       nodeCount: graphNodeIds.length,

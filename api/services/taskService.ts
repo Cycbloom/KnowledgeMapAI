@@ -7,6 +7,7 @@ import { getPaginationParams, PaginationOptions } from '../utils/pagination.js';
 import './taskProcessors/batchGenerateCardsProcessor.js';
 import './taskProcessors/recursiveGraphProcessor.js';
 import './taskProcessors/infiniteExpansionProcessor.js';
+import './taskProcessors/embeddingGenerationProcessor.js';
 import dotenv from 'dotenv';
 
 dotenv.config();

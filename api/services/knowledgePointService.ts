@@ -1,5 +1,4 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { aiService } from './aiService.js';
 import { logger } from '../utils/logger.js';
 import { searchSimilarKnowledgePoints } from '../utils/similaritySearch.js';
 import { PaginationOptions, getPaginationParams } from '../utils/pagination.js';
@@ -100,17 +99,6 @@ export class KnowledgePointService {
 
     if (data.embedding !== undefined) {
       kpData.embedding = data.embedding;
-    } else {
-      try {
-        if (data.title) {
-          const embedding = await aiService.generateEmbedding(data.title);
-          if (embedding) {
-            kpData.embedding = embedding;
-          }
-        }
-      } catch (error) {
-        logger.warn('Failed to generate embedding for new knowledge point:', error);
-      }
     }
 
     const { data: newKp, error } = await supabase
@@ -151,27 +139,6 @@ export class KnowledgePointService {
       ...data,
       updated_at: new Date().toISOString(),
     };
-
-    if (data.title || data.content || (data.properties?.tags !== undefined)) {
-      try {
-        const { data: currentKp } = await supabase
-          .from('knowledge_points')
-          .select('title, content, properties')
-          .eq('id', id)
-          .single();
-
-        const title = data.title || currentKp?.title || '';
-        const content = data.content || currentKp?.content || '';
-        if (title) {
-          const embedding = await aiService.generateEmbedding(title);
-          if (embedding) {
-            updates.embedding = embedding;
-          }
-        }
-      } catch (error) {
-        logger.warn('Failed to generate embedding for updated knowledge point:', error);
-      }
-    }
 
     const { data: updatedKp, error } = await supabase
       .from('knowledge_points')

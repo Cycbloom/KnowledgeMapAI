@@ -211,7 +211,7 @@ export const Layout = () => {
           
           {/* Top Header */}
           {!isFullScreenPage && (
-            <header className={`h-12 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b ${
+            <header className={`h-12 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${
               isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
             }`}>
               {/* Left: Breadcrumb */}
@@ -219,8 +219,8 @@ export const Layout = () => {
                 <Breadcrumb />
               </div>
               
-              {/* Center: Greeting & Stats */}
-              <div className="flex-1 flex justify-center">
+              {/* Center: Greeting & Stats - 绝对定位居中 */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 <HeaderGreeting />
               </div>
               

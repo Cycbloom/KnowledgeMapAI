@@ -140,7 +140,6 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       if (!layout) return;
       const node = layout.nodes.find(n => n.id === nodeId);
       if (node) {
-        // Use current rightPanelWidth if available, otherwise fallback to 340 if forced
         const effectiveRightWidth = options?.forceRightPanelOpen 
           ? (rightPanelWidth || 340) 
           : rightPanelWidth;
@@ -148,11 +147,73 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         const effectiveVisualCenterX = (containerSize.width - effectiveRightWidth) / 2;
         
         const targetK = 1.2;
-        // Use visualCenterX/Y to center in the visible area
         const targetX = effectiveVisualCenterX - node.x * targetK;
         const targetY = visualCenterY - node.y * targetK;
         animateCamera(targetX, targetY, targetK, 800);
       }
+    },
+    zoomIn: () => {
+      const newK = Math.min(transformRef.current.k * 1.3, 5);
+      const centerX = containerSize.width / 2;
+      const centerY = containerSize.height / 2;
+      const newX = centerX - (centerX - transformRef.current.x) * (newK / transformRef.current.k);
+      const newY = centerY - (centerY - transformRef.current.y) * (newK / transformRef.current.k);
+      animateCamera(newX, newY, newK, 300);
+    },
+    zoomOut: () => {
+      const newK = Math.max(transformRef.current.k / 1.3, 0.1);
+      const centerX = containerSize.width / 2;
+      const centerY = containerSize.height / 2;
+      const newX = centerX - (centerX - transformRef.current.x) * (newK / transformRef.current.k);
+      const newY = centerY - (centerY - transformRef.current.y) * (newK / transformRef.current.k);
+      animateCamera(newX, newY, newK, 300);
+    },
+    fitView: () => {
+      if (!layout || layout.nodes.length === 0) return;
+      
+      const padding = 60;
+      const effectiveRightWidth = rightPanelWidth || 0;
+      const effectiveLeftWidth = leftPanelWidth || 0;
+      const availableWidth = containerSize.width - effectiveRightWidth - effectiveLeftWidth - padding * 2;
+      const availableHeight = containerSize.height - padding * 2;
+      
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      layout.nodes.forEach(node => {
+        minX = Math.min(minX, node.x);
+        maxX = Math.max(maxX, node.x);
+        minY = Math.min(minY, node.y);
+        maxY = Math.max(maxY, node.y);
+      });
+      
+      const contentWidth = maxX - minX + 200;
+      const contentHeight = maxY - minY + 200;
+      
+      const scaleK = Math.min(availableWidth / contentWidth, availableHeight / contentHeight, 1.5);
+      const clampedK = Math.max(0.1, Math.min(scaleK, 2));
+      
+      const centerX = (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
+      const centerY = containerSize.height / 2;
+      const contentCenterX = (minX + maxX) / 2;
+      const contentCenterY = (minY + maxY) / 2;
+      
+      const targetX = centerX - contentCenterX * clampedK;
+      const targetY = centerY - contentCenterY * clampedK;
+      
+      animateCamera(targetX, targetY, clampedK, 500);
+    },
+    resetView: () => {
+      if (!layout || layout.nodes.length === 0) return;
+      
+      const effectiveRightWidth = rightPanelWidth || 0;
+      const effectiveLeftWidth = leftPanelWidth || 0;
+      const visualCenterX = (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
+      const visualCenterY = containerSize.height / 2;
+      
+      const rootNode = layout.nodes.find(n => n.level === 'root') || layout.nodes[0];
+      const targetX = visualCenterX - rootNode.x;
+      const targetY = visualCenterY - rootNode.y;
+      
+      animateCamera(targetX, targetY, 1, 500);
     }
   }));
   const containerRef = useRef<HTMLDivElement>(null);
@@ -794,6 +855,43 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={() => {
+              if (!layout || layout.nodes.length === 0) return;
+              const padding = 60;
+              const effectiveRightWidth = rightPanelWidth || 0;
+              const effectiveLeftWidth = leftPanelWidth || 0;
+              const availableWidth = containerSize.width - effectiveRightWidth - effectiveLeftWidth - padding * 2;
+              const availableHeight = containerSize.height - padding * 2;
+              
+              let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+              layout.nodes.forEach(node => {
+                minX = Math.min(minX, node.x);
+                maxX = Math.max(maxX, node.x);
+                minY = Math.min(minY, node.y);
+                maxY = Math.max(maxY, node.y);
+              });
+              
+              const contentWidth = maxX - minX + 200;
+              const contentHeight = maxY - minY + 200;
+              const scaleK = Math.min(availableWidth / contentWidth, availableHeight / contentHeight, 1.5);
+              const clampedK = Math.max(0.1, Math.min(scaleK, 2));
+              
+              const centerX = (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
+              const centerY = containerSize.height / 2;
+              const contentCenterX = (minX + maxX) / 2;
+              const contentCenterY = (minY + maxY) / 2;
+              
+              animateCamera(centerX - contentCenterX * clampedK, centerY - contentCenterY * clampedK, clampedK, 500);
+            }}
+            className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
+            title="适应屏幕"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>

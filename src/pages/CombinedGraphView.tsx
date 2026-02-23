@@ -1,11 +1,13 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
-import type { Graph, GraphRelation, Node, Edge, LayoutNode } from '../types';
+import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
+import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';
+import type { Graph, GraphRelation, Node, Edge, GraphColorMode } from '../types';
 
-const GRAPH_SPACING = 800;
+const GRAPH_SPACING = 400;
 
 const relationColors: Record<string, { color: string; label: string }> = {
   prerequisite: { color: '#3B82F6', label: '前置知识' },
@@ -18,19 +20,14 @@ interface GraphDataResponse {
   edges: Edge[];
 }
 
-interface CrossGraphEdge {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  relationType: string;
-  sourceGraphId: string;
-  targetGraphId: string;
-}
-
 export const CombinedGraphView: React.FC = () => {
   const { id1, id2 } = useParams<{ id1: string; id2: string }>();
   const navigate = useNavigate();
-  const canvasRef = useRef<any>(null);
+  
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(340);
+  const [coloringMode, setColoringMode] = useState<GraphColorMode>('level');
   
   const { data: graph1Data, isLoading: isLoading1, error: error1 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id1],
@@ -92,15 +89,13 @@ export const CombinedGraphView: React.FC = () => {
     const processedNodes1 = nodes1.map(node => ({
       ...node,
       x_position: (node.x_position || 0) + offsetX1,
-      _graphId: id1,
-      _graphColor: '#3B82F6',
+      graph_id: id1,
     }));
     
     const processedNodes2 = nodes2.map(node => ({
       ...node,
       x_position: (node.x_position || 0) + offsetX2,
-      _graphId: id2,
-      _graphColor: '#10B981',
+      graph_id: id2,
     }));
     
     return [...processedNodes1, ...processedNodes2] as Node[];
@@ -113,44 +108,45 @@ export const CombinedGraphView: React.FC = () => {
     return [...edges1, ...edges2];
   }, [graph1Data, graph2Data]);
 
-  const crossGraphEdges = useMemo((): CrossGraphEdge[] => {
-    if (!graphRelations || !mergedNodes.length) return [];
-    
-    const result: CrossGraphEdge[] = [];
-    
-    graphRelations.forEach((relation: GraphRelation) => {
-      const isGraph1Source = relation.source_graph_id === id1;
-      const sourceNodes = isGraph1Source 
-        ? (graph1Data?.nodes || []) 
-        : (graph2Data?.nodes || []);
-      const targetNodes = isGraph1Source 
-        ? (graph2Data?.nodes || []) 
-        : (graph1Data?.nodes || []);
-      
-      const rootSource = sourceNodes.find(n => n.level === 'root');
-      const rootTarget = targetNodes.find(n => n.level === 'root');
-      
-      if (rootSource && rootTarget) {
-        result.push({
-          id: `cross-${relation.id}`,
-          sourceId: rootSource.id,
-          targetId: rootTarget.id,
-          relationType: relation.relation_type,
-          sourceGraphId: relation.source_graph_id,
-          targetGraphId: relation.target_graph_id,
-        });
-      }
-    });
-    
-    return result;
-  }, [graphRelations, mergedNodes, graph1Data, graph2Data, id1, id2]);
+  const nodes1 = useMemo(() => graph1Data?.nodes || [], [graph1Data]);
+  const nodes2 = useMemo(() => graph2Data?.nodes || [], [graph2Data]);
+  const edges1 = useMemo(() => graph1Data?.edges || [], [graph1Data]);
+  const edges2 = useMemo(() => graph2Data?.edges || [], [graph2Data]);
 
   const handleBack = useCallback(() => {
     navigate('/graph-map');
   }, [navigate]);
 
   const handleNodeClick = useCallback((node: Node) => {
-    console.log('Node clicked:', node.title, 'from graph:', node.graph_id);
+    setSelectedNode(node);
+    setIsSidebarOpen(true);
+  }, []);
+
+  const handleToggleColoringMode = useCallback(() => {
+    setColoringMode(prev => prev === 'level' ? 'status' : 'level');
+  }, []);
+
+  const handleExportImage = useCallback(() => {
+    console.log('Export image');
+  }, []);
+
+  const handleExportJSON = useCallback(() => {
+    const data = {
+      graph1: { id: id1, title: graph1Meta?.title, nodes: nodes1, edges: edges1 },
+      graph2: { id: id2, title: graph2Meta?.title, nodes: nodes2, edges: edges2 },
+      relations: graphRelations,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `combined-${graph1Meta?.title || 'graph1'}-${graph2Meta?.title || 'graph2'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [id1, id2, graph1Meta, graph2Meta, nodes1, nodes2, edges1, edges2, graphRelations]);
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev);
   }, []);
 
   const isLoading = isLoading1 || isLoading2;
@@ -158,7 +154,7 @@ export const CombinedGraphView: React.FC = () => {
   
   if (!id1 || !id2) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">缺少图谱 ID 参数</p>
           <button
@@ -174,7 +170,7 @@ export const CombinedGraphView: React.FC = () => {
   
   if (hasError) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400">加载图谱数据失败</p>
           <button
@@ -192,76 +188,19 @@ export const CombinedGraphView: React.FC = () => {
   const graph2Color = '#10B981';
   
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-50 dark:bg-slate-900">
-      <div className="h-14 flex items-center justify-between px-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 shrink-0">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          返回图谱地图
-        </button>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: graph1Color }}
-            />
-            <span className="px-3 py-1 text-sm font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md">
-              {graph1Meta?.title || '图谱 1'}
-            </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              ({graph1Data?.nodes?.length || 0} 节点)
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-1">
-            {graphRelations.length > 0 ? (
-              graphRelations.map((r: GraphRelation, i: number) => {
-                const config = relationColors[r.relation_type] || relationColors.related;
-                return (
-                  <div key={i} className="flex items-center gap-1">
-                    <svg className="w-4 h-4" style={{ color: config.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                    <span 
-                      className="px-2 py-0.5 text-xs font-medium rounded-full"
-                      style={{ 
-                        backgroundColor: `${config.color}20`,
-                        color: config.color 
-                      }}
-                    >
-                      {config.label}
-                    </span>
-                  </div>
-                );
-              })
-            ) : (
-              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                无直接关系
-              </span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: graph2Color }}
-            />
-            <span className="px-3 py-1 text-sm font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-md">
-              {graph2Meta?.title || '图谱 2'}
-            </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              ({graph2Data?.nodes?.length || 0} 节点)
-            </span>
-          </div>
-        </div>
-        
-        <div className="w-24" />
-      </div>
+    <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-slate-900 relative">
+      <CombinedGraphToolbar
+        graph1Title={graph1Meta?.title || '图谱 1'}
+        graph2Title={graph2Meta?.title || '图谱 2'}
+        onBack={handleBack}
+        coloringMode={coloringMode}
+        onToggleColoringMode={handleToggleColoringMode}
+        onExportImage={handleExportImage}
+        onExportJSON={handleExportJSON}
+        onToggleSidebar={handleToggleSidebar}
+        isSidebarOpen={isSidebarOpen}
+        selectedNode={selectedNode}
+      />
       
       <div className="flex-1 relative overflow-hidden">
         {isLoading ? (
@@ -274,50 +213,14 @@ export const CombinedGraphView: React.FC = () => {
         ) : (
           <>
             <MindMapCanvas
-              ref={canvasRef}
               nodes={mergedNodes}
               edges={mergedEdges}
-              selectedNodeId={null}
+              selectedNodeId={selectedNode?.id || null}
               onNodeClick={handleNodeClick}
-              coloringMode="level"
+              coloringMode={coloringMode}
+              isRightPanelOpen={isSidebarOpen}
+              rightPanelWidth={sidebarWidth}
             />
-            
-            {crossGraphEdges.length > 0 && (
-              <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 5 }}>
-                <defs>
-                  {crossGraphEdges.map(edge => {
-                    const config = relationColors[edge.relationType] || relationColors.related;
-                    return (
-                      <linearGradient 
-                        key={`gradient-${edge.id}`}
-                        id={`gradient-${edge.id}`}
-                        x1="0%" y1="0%" x2="100%" y2="0%"
-                      >
-                        <stop offset="0%" stopColor={graph1Color} stopOpacity="0.8" />
-                        <stop offset="50%" stopColor={config.color} stopOpacity="1" />
-                        <stop offset="100%" stopColor={graph2Color} stopOpacity="0.8" />
-                      </linearGradient>
-                    );
-                  })}
-                  {crossGraphEdges.map(edge => {
-                    const config = relationColors[edge.relationType] || relationColors.related;
-                    return (
-                      <marker
-                        key={`marker-${edge.id}`}
-                        id={`marker-${edge.id}`}
-                        markerWidth="10"
-                        markerHeight="7"
-                        refX="9"
-                        refY="3.5"
-                        orient="auto"
-                      >
-                        <polygon points="0 0, 10 3.5, 0 7" fill={config.color} />
-                      </marker>
-                    );
-                  })}
-                </defs>
-              </svg>
-            )}
             
             <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-slate-800/90 rounded-lg shadow-lg p-3 backdrop-blur-sm">
               <div className="flex items-center gap-4 text-xs">
@@ -330,15 +233,31 @@ export const CombinedGraphView: React.FC = () => {
                   <span className="text-gray-600 dark:text-gray-400">{graph2Meta?.title || '图谱 2'}</span>
                 </div>
               </div>
-              {crossGraphEdges.length > 0 && (
+              {graphRelations.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-                  图谱间关系: {crossGraphEdges.length} 条
+                  图谱间关系: {graphRelations.length} 条
                 </div>
               )}
             </div>
           </>
         )}
       </div>
+      
+      <CombinedGraphSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        nodes1={nodes1}
+        nodes2={nodes2}
+        edges1={edges1}
+        edges2={edges2}
+        graph1Title={graph1Meta?.title || '图谱 1'}
+        graph2Title={graph2Meta?.title || '图谱 2'}
+        graph1Color={graph1Color}
+        graph2Color={graph2Color}
+        selectedNode={selectedNode}
+        onNodeClick={handleNodeClick}
+        onWidthChange={setSidebarWidth}
+      />
     </div>
   );
 };

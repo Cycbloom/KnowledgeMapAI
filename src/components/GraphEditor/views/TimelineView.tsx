@@ -16,6 +16,7 @@ interface TimelineViewProps {
   nodeStatus?: Record<string, any>;
   selectedNodeId: string | null;
   onNodeClick: (node: GraphNode) => void;
+  onCanvasClick?: () => void;
   width?: number;
   height?: number;
   colorScheme?: ColorScheme;
@@ -40,6 +41,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   nodeStatus,
   selectedNodeId,
   onNodeClick,
+  onCanvasClick,
   width = 800,
   height = 600,
   colorScheme = 'default',
@@ -57,6 +59,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [containerSize, setContainerSize] = useState({ width, height });
   const [progress, setProgress] = useState(100);
@@ -216,6 +219,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     if (e.target === svgRef.current) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+      mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
     }
   }, [transform]);
 
@@ -229,9 +233,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     }
   }, [isDragging, dragStart, transform]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (isDragging && mouseDownPosRef.current && onCanvasClick) {
+      const dx = Math.abs(e.clientX - mouseDownPosRef.current.x);
+      const dy = Math.abs(e.clientY - mouseDownPosRef.current.y);
+      const moveThreshold = 5;
+      
+      if (dx < moveThreshold && dy < moveThreshold) {
+        onCanvasClick();
+      }
+    }
     setIsDragging(false);
-  }, []);
+    mouseDownPosRef.current = null;
+  }, [isDragging, onCanvasClick]);
 
   const nodesMap = layout ? new Map(layout.nodes.map(n => [String(n.id).trim(), n])) : new Map();
 

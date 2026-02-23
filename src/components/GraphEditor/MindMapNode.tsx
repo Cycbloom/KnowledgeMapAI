@@ -461,6 +461,7 @@ export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProp
     prevProps.node.id === nextProps.node.id &&
     prevProps.selected === nextProps.selected &&
     prevProps.focused === nextProps.focused &&
+    prevProps.hasFocusMode === nextProps.hasFocusMode &&
     prevProps.zoomLevel === nextProps.zoomLevel &&
     prevProps.forceShowText === nextProps.forceShowText &&
     prevProps.isDark === nextProps.isDark &&

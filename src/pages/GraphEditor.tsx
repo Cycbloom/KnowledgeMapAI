@@ -409,14 +409,13 @@ export const GraphEditor = () => {
   }, [mutations.createEdgeMutation, id, addMessage]);
 
   const handleNodeClick = useCallback((node: GraphNode) => {
-    setSelectedNode(node);
-    setSelectedNodeIds(new Set([node.id]));
-    setSidebarMode('detail');
-    
     const focusedNodes = getFocusedNodes(node.id, nodes, edges);
     const focusedLinks = getFocusedLinks(focusedNodes, edges);
     const directChildren = getDirectChildren(node.id, nodes, edges);
     
+    setSelectedNode(node);
+    setSelectedNodeIds(new Set([node.id]));
+    setSidebarMode('detail');
     setFocusedNodeId(node.id);
     setFocusedNodeIds(focusedNodes);
     setFocusedLinkIds(focusedLinks);
@@ -430,12 +429,12 @@ export const GraphEditor = () => {
   }, [selectedNode, id, aiOps, state]);
 
   const handleCanvasClick = useCallback(() => {
+    setSelectedNode(null);
+    setSelectedNodeIds(new Set());
     setFocusedNodeId(null);
     setFocusedNodeIds(new Set());
     setFocusedLinkIds(new Set());
     state.setForceShowTextIds(new Set());
-    setSelectedNode(null);
-    setSelectedNodeIds(new Set());
     if (sidebarMode !== 'none' && sidebarMode !== 'outline') {
       setSidebarMode('none');
     }
@@ -622,6 +621,7 @@ export const GraphEditor = () => {
                 nodeStatus={nodeStatus}
                 selectedNodeId={selectedNode?.id || null}
                 onNodeClick={handleNodeClick}
+                onCanvasClick={handleCanvasClick}
                 colorScheme={colorScheme}
                 linkStyle={linkStyle}
                 linkAnimation={linkAnimation}
@@ -641,6 +641,7 @@ export const GraphEditor = () => {
                 nodeStatus={nodeStatus}
                 selectedNodeId={selectedNode?.id || null}
                 onNodeClick={handleNodeClick}
+                onCanvasClick={handleCanvasClick}
                 colorScheme={colorScheme}
                 linkStyle={linkStyle}
                 linkAnimation={linkAnimation}

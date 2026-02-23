@@ -131,28 +131,30 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   }, [source.x, source.y, target.x, target.y, linkStyle]);
 
   const animationStyle = useMemo(() => {
+    const baseTransition = 'stroke-width 0.2s, opacity 0.2s';
+    
     switch (linkAnimation) {
       case 'flow':
         return {
           strokeDasharray: '10, 10',
           animation: 'dash 1s linear infinite',
-          transition: 'none'
+          transition: baseTransition
         };
       case 'pulse':
         return {
           animation: 'pulse 2s ease-in-out infinite',
-          transition: 'none'
+          transition: baseTransition
         };
       case 'dash':
         return {
           strokeDasharray: '5, 5',
           animation: 'dash 0.5s linear infinite',
-          transition: 'none'
+          transition: baseTransition
         };
       case 'none':
       default:
         return {
-          transition: 'stroke-width 0.2s, opacity 0.2s'
+          transition: baseTransition
         };
     }
   }, [linkAnimation]);

@@ -249,6 +249,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [previewNode, setPreviewNode] = useState<{ node: Node; position: { x: number; y: number } } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -266,7 +267,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const [showMiniMap, setShowMiniMap] = useState(false);
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
-  const hasFocusMode = focusedNodeId !== null;
+  const hasFocusMode = focusedNodeId !== null && focusedNodeIds.size > 0;
 
   // Handle MiniMap transform updates
   const handleMiniMapTransformChange = useCallback((newTransform: Transform) => {
@@ -430,11 +431,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         x: e.clientX - transformRef.current.x, 
         y: e.clientY - transformRef.current.y 
       });
-      if (onCanvasClick) {
-        onCanvasClick();
-      }
+      mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
     }
-  }, [onCanvasClick]);
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isDragging) {
@@ -450,9 +449,19 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     }
   }, [isDragging, dragStart, updateTransformDOM, updateTransformState]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (isDragging && mouseDownPosRef.current && onCanvasClick) {
+      const dx = Math.abs(e.clientX - mouseDownPosRef.current.x);
+      const dy = Math.abs(e.clientY - mouseDownPosRef.current.y);
+      const moveThreshold = 5;
+      
+      if (dx < moveThreshold && dy < moveThreshold) {
+        onCanvasClick();
+      }
+    }
     setIsDragging(false);
-  }, []);
+    mouseDownPosRef.current = null;
+  }, [isDragging, onCanvasClick]);
 
   const handleZoomIn = useCallback(() => {
     hasUserInteracted.current = true;

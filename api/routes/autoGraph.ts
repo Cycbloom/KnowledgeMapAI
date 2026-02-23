@@ -6,7 +6,6 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { getAIProviderForTask, getAIProvider } from '../services/ai/factory.js';
 import { promptService } from '../services/promptService.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
-import { supabaseAdmin } from '../supabase.js';
 import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
 import { aiService } from '../services/aiService.js';

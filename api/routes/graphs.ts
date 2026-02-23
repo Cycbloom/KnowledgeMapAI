@@ -2,12 +2,12 @@ import { Router, type Response } from 'express';
 import { requireAuth, optionalAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createGraphSchema, updateGraphSchema, uuidParamsSchema, shareGraphSchema, createGraphFromTemplateSchema } from '../schemas/index.js';
-import { graphService, GraphService } from '../services/graphService.js';
+import { graphService } from '../services/graphService.js';
 import { templateService } from '../services/templateService.js';
-import { cacheService } from '../services/cache.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { achievementService } from '../services/achievementService.js';
+import { cacheService } from '../services/cache.js';
 import { z } from 'zod';
 
 const checkTopicSchema = z.object({

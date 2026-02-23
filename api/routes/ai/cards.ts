@@ -73,7 +73,7 @@ router.post('/batch-generate-cards', requireAuth, validate(generateCardsBatchSch
 });
 
 router.post('/batch-expand-graph', requireAuth, validate(batchExpandGraphSchema), async (req: AuthRequest, res: Response) => {
-  const { graph_id, node_ids, max_depth, provider, model } = req.body;
+  const { node_ids } = req.body;
 
   try {
     const taskIds = [];

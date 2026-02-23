@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
-import { Tag, X, Plus, Hash, TrendingUp, Filter, Sparkles, Loader2 } from 'lucide-react';
+import { Tag, X, Plus, Hash, Filter, Sparkles, Loader2 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { Node } from '../types';
 

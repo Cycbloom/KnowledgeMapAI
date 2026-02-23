@@ -3,7 +3,7 @@ import { cacheService, CacheKeys } from './cache.js';
 import { buildNodeFromGraphNode, GRAPH_NODES_SELECT } from '../utils/nodeHelpers.js';
 import { softDelete } from '../utils/softDelete.js';
 import { logger } from '../utils/logger.js';
-import { LEVEL_WEIGHTS, getLevelIndex } from '../utils/levelUtils.js';
+import { getLevelIndex } from '../utils/levelUtils.js';
 import { withRpcFallback } from '../utils/rpcFallback.js';
 import { checkDuplicateGraphTopic, GraphTopicCheckResult } from '../utils/similaritySearch.js';
 import { aiService } from './ai/index.js';

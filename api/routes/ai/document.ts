@@ -5,7 +5,7 @@ const pdfParse = require('pdf-parse');
 
 import { requireAuth, type AuthRequest } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
-import { textToGraphSchema, documentToGraphSchema, urlToTextSchema } from '../../schemas/index.js';
+import { textToGraphSchema, urlToTextSchema } from '../../schemas/index.js';
 import { ErrorCodes } from '../../constants/errorCodes.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers.js';

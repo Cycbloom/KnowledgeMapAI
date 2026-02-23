@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { alertManager, type AlertRule, type Alert } from '../utils/alertManager.js';
+import { alertManager, type AlertRule } from '../utils/alertManager.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();

@@ -116,7 +116,7 @@ ${content}`;
 });
 
 router.post('/podcast/script', requireAuth, validate(podcastScriptSchema), async (req: AuthRequest, res: Response) => {
-  const { topic, content, style, duration_minutes } = req.body;
+  const { topic, content } = req.body;
   
   try {
     const script = await aiService.generatePodcastScript(topic, content);
@@ -226,7 +226,7 @@ router.post('/generate-content-stream', requireAuth, validate(generateContentSch
         { role: "system", content: systemPrompt },
         { role: "user", content: `Topic: ${topic}\nContext: ${context || 'General knowledge'}` }
       ],
-      model: provider.model,
+      model: model || provider.model,
       stream: true,
     });
 

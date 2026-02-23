@@ -5,7 +5,7 @@ import { NodeDetailSidebar } from './NodeDetailSidebar';
 import { NodeEditSidebar } from './NodeEditSidebar';
 import { GraphOutline } from './GraphOutline';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { X, GripVertical } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface GraphSidebarManagerProps {
   state: GraphEditorState;

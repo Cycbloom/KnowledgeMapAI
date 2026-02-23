@@ -1,14 +1,8 @@
-import { Router, type Response } from 'express';
+import { Router } from 'express';
 import { logger } from '../utils/logger.js';
 import redisClient from '../utils/redis.js';
 
 const router = Router();
-
-interface PerformanceMetric {
-  name: string;
-  value: number;
-  rating: 'good' | 'needs-improvement' | 'poor';
-}
 
 interface PerformanceReport {
   metrics: Record<string, number>;

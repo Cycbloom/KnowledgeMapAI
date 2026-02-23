@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Save, RotateCcw, Variable } from 'lucide-react';
+import { X, Sparkles, Save, Variable } from 'lucide-react';
 import { api } from '../services/api';
 
 interface PromptEditorProps {

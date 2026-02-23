@@ -3,7 +3,6 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
-import { graphService } from '../services/graphService.js';
 import { graphRelationService } from '../services/graphRelationService.js';
 import { taskService } from '../services/taskService.js';
 import { logger } from '../utils/logger.js';

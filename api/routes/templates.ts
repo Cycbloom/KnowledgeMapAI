@@ -2,8 +2,8 @@ import { Router, type Response } from 'express';
 import { requireAuth, optionalAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createTemplateSchema, updateTemplateSchema, createGraphFromTemplateSchema, uuidParamsSchema } from '../schemas/index.js';
-import { templateService, TemplateService } from '../services/templateService.js';
-import { cacheService, CacheKeys } from '../services/cache.js';
+import { templateService } from '../services/templateService.js';
+import { cacheService } from '../services/cache.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();

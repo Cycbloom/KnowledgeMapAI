@@ -19,9 +19,10 @@ interface MindMapNodeProps {
   edges: Edge[];
   nodeStatus?: Record<string, any>;
   selected: boolean;
+  multiSelected?: boolean;
   isDark: boolean;
   zoomLevel: number;
-  onClick: () => void;
+  onClick: (e?: React.MouseEvent) => void;
   onMouseEnter?: (e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
   focused?: boolean;
@@ -67,6 +68,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   edges,
   nodeStatus,
   selected,
+  multiSelected = false,
   isDark,
   zoomLevel,
   onClick,
@@ -199,6 +201,13 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 
   const gradientDefinitions = useMemo(() => {
     const defs = [];
+    defs.push(
+      <linearGradient key="multiSelectGradient" id="multiSelectGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#3b82f6" stopOpacity="1" />
+        <stop offset="50%" stopColor="#8b5cf6" stopOpacity="1" />
+        <stop offset="100%" stopColor="#ec4899" stopOpacity="1" />
+      </linearGradient>
+    );
     for (let i = 0; i < styleConfig.rings; i++) {
       const gradientId = getGradientId(node.id, i);
       const gradientColors = styleConfig.gradient.colors.length > 0 
@@ -252,7 +261,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onClick();
+    onClick(e);
   }, [onClick]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -261,7 +270,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 
   const handleCircleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onClick();
+    onClick(e);
   }, [onClick]);
 
   const handleCircleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -366,6 +375,27 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
                 strokeDasharray="4 4"
               />
             )}
+            
+            {multiSelected && !selected && (
+              <>
+                <circle
+                  r={styleConfig.baseRadius + 14}
+                  fill="none"
+                  stroke="url(#multiSelectGradient)"
+                  strokeWidth={3}
+                  opacity={0.9}
+                  className="animate-pulse"
+                />
+                <circle
+                  r={styleConfig.baseRadius + 10}
+                  fill="none"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  strokeDasharray="4 2"
+                  opacity={0.7}
+                />
+              </>
+            )}
           </>
         ) : (
           <>
@@ -460,6 +490,7 @@ export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProp
   return Boolean(
     prevProps.node.id === nextProps.node.id &&
     prevProps.selected === nextProps.selected &&
+    prevProps.multiSelected === nextProps.multiSelected &&
     prevProps.focused === nextProps.focused &&
     prevProps.hasFocusMode === nextProps.hasFocusMode &&
     prevProps.zoomLevel === nextProps.zoomLevel &&

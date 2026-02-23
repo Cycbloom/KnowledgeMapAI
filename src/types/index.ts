@@ -723,3 +723,11 @@ export interface LearningPathNodeDependency {
   dependency_type: 'prerequisite' | 'sequence';
   created_at: string;
 }
+
+export type SplitDirection = 'horizontal' | 'vertical';
+
+export interface CombinedGraphViewData {
+  graph1: Graph;
+  graph2: Graph;
+  relations: GraphRelation[];
+}

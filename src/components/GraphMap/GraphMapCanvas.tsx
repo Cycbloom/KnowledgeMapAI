@@ -40,6 +40,8 @@ interface GraphMapCanvasProps {
   fromGraphId?: string | null;
   fromGraphTitle?: string;
   onReturnToGraph?: () => void;
+  multiSelectedGraphIds?: Set<string>;
+  onMultiSelectGraph?: (graphId: string, isMultiSelect: boolean) => void;
 }
 
 interface Transform {
@@ -62,6 +64,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
   fromGraphId,
   fromGraphTitle,
   onReturnToGraph,
+  multiSelectedGraphIds,
+  onMultiSelectGraph,
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -431,19 +435,25 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
                 node={node}
                 edges={edges}
                 selected={node.id === selectedGraphId}
+                multiSelected={multiSelectedGraphIds?.has(node.id) || false}
                 isDark={isDark}
                 zoomLevel={transform.k}
-                onClick={() => {
-                  if (graph && onGraphClick) {
-                    onGraphClick(graph);
-                    setFocusedGraphId(node.id);
-                    
-                    const visualCenterX = containerSize.width / 2;
-                    const visualCenterY = containerSize.height / 2;
-                    const targetK = transformRef.current.k;
-                    const targetX = visualCenterX - node.x * targetK;
-                    const targetY = visualCenterY - node.y * targetK;
-                    animateCamera(targetX, targetY, targetK, 400);
+                onClick={(e) => {
+                  if (graph) {
+                    const isMultiSelect = e?.ctrlKey || e?.metaKey;
+                    if (isMultiSelect && onMultiSelectGraph) {
+                      onMultiSelectGraph(node.id, true);
+                    } else if (!isMultiSelect && onGraphClick) {
+                      onGraphClick(graph);
+                      setFocusedGraphId(node.id);
+                      
+                      const visualCenterX = containerSize.width / 2;
+                      const visualCenterY = containerSize.height / 2;
+                      const targetK = transformRef.current.k;
+                      const targetX = visualCenterX - node.x * targetK;
+                      const targetY = visualCenterY - node.y * targetK;
+                      animateCamera(targetX, targetY, targetK, 400);
+                    }
                   }
                 }}
                 onMouseEnter={() => setHoveredNodeId(node.id)}

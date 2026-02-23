@@ -23,6 +23,7 @@ export const GraphMap = () => {
   
   const [filterMode, setFilterMode] = useState<GraphMapFilterMode>('all');
   const [selectedGraphId, setSelectedGraphId] = useState<string | null>(fromGraphId);
+  const [multiSelectedGraphIds, setMultiSelectedGraphIds] = useState<Set<string>>(new Set());
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
   const [isCreateGraphPanelOpen, setIsCreateGraphPanelOpen] = useState(false);
   const [createGraphRelationType, setCreateGraphRelationType] = useState<GraphRelationType | undefined>(undefined);
@@ -59,11 +60,38 @@ export const GraphMap = () => {
 
   const handleGraphClick = useCallback((graph: Graph) => {
     setSelectedGraphId(graph.id);
+    setMultiSelectedGraphIds(new Set());
+  }, []);
+
+  const handleMultiSelectGraph = useCallback((graphId: string, isMultiSelect: boolean) => {
+    if (isMultiSelect) {
+      setMultiSelectedGraphIds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(graphId)) {
+          newSet.delete(graphId);
+        } else {
+          if (newSet.size >= 2) {
+            return newSet;
+          }
+          newSet.add(graphId);
+        }
+        return newSet;
+      });
+    } else {
+      setMultiSelectedGraphIds(new Set([graphId]));
+    }
   }, []);
 
   const handleGraphDoubleClick = useCallback((graph: Graph) => {
     navigate(`/graph/${graph.id}`);
   }, [navigate]);
+
+  const handleCombinedOpen = useCallback(() => {
+    const ids = Array.from(multiSelectedGraphIds);
+    if (ids.length === 2) {
+      navigate(`/combined-graphs/${ids[0]}/${ids[1]}`);
+    }
+  }, [multiSelectedGraphIds, navigate]);
 
   const handleCreateRelation = useCallback(async (data: {
     source_graph_id: string;
@@ -312,6 +340,7 @@ export const GraphMap = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedGraphId(null);
+        setMultiSelectedGraphIds(new Set());
       }
     };
 
@@ -353,9 +382,59 @@ export const GraphMap = () => {
           fromGraphId={fromGraphId}
           fromGraphTitle={fromGraph?.title}
           onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
+          multiSelectedGraphIds={multiSelectedGraphIds}
+          onMultiSelectGraph={handleMultiSelectGraph}
         />
 
-        {selectedGraphId && (
+        {multiSelectedGraphIds.size === 2 && (
+          <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl p-5 max-w-sm border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                联立视图模式
+              </h3>
+            </div>
+            <div className="space-y-2 mb-4">
+              {Array.from(multiSelectedGraphIds).map((id, index) => {
+                const graph = graphs.find((g: Graph) => g.id === id);
+                return graph ? (
+                  <div key={id} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold ${index === 0 ? 'bg-blue-500' : 'bg-green-500'}`}>
+                      {index + 1}
+                    </div>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                      {graph.title}
+                    </span>
+                  </div>
+                ) : null;
+              })}
+            </div>
+            <button
+              onClick={handleCombinedOpen}
+              className="w-full px-4 py-2.5 text-sm bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-lg hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transition-all font-medium shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+              </svg>
+              联立打开
+            </button>
+            <button
+              onClick={() => setMultiSelectedGraphIds(new Set())}
+              className="w-full mt-2 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center justify-center gap-1"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              取消选择
+            </button>
+          </div>
+        )}
+
+        {selectedGraphId && multiSelectedGraphIds.size === 0 && (
           <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 max-w-xs">
             {(() => {
               const graph = graphs.find((g: Graph) => g.id === selectedGraphId);

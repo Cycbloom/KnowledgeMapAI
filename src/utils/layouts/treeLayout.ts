@@ -12,7 +12,7 @@ export const createTreeLayout = (
   edges: Edge[],
   options: TreeLayoutOptions
 ): { nodes: LayoutNode[]; links: LayoutLink[] } => {
-  const { width, height, nodeSize = [200, 150] } = options;
+  const { width, height: _height, nodeSize = [200, 150] } = options;
   
   const normalizeId = (id: any) => String(id).trim();
   
@@ -69,7 +69,7 @@ export const createTreeLayout = (
   const addedNodeIds = new Set<string>();
   let currentYOffset = 100;
   
-  rootNodes.forEach((rootNode, rootIndex) => {
+  rootNodes.forEach((rootNode, _rootIndex) => {
     const root = hierarchy(buildHierarchy(rootNode));
     
     const treeLayout = tree<Node>()
@@ -84,7 +84,6 @@ export const createTreeLayout = (
       minX = Math.min(minX, d.x);
       maxX = Math.max(maxX, d.x);
     });
-    const treeWidth = maxX - minX;
     
     // Add nodes from this tree
     root.each((d: any) => {

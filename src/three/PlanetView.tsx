@@ -49,15 +49,15 @@ interface PlanetNodeProps {
   isDark: boolean;
 }
 
-function PlanetNode({ 
-  node, 
-  layoutLinks, 
-  isSelected, 
-  isHovered, 
+function PlanetNode({
+  node,
+  layoutLinks,
+  isSelected,
+  isHovered,
   onClick,
   onPointerEnter,
   onPointerLeave,
-  colorScheme,
+  colorScheme: _colorScheme,
   isDark
 }: PlanetNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -292,7 +292,7 @@ export const PlanetView: React.FC<PlanetViewProps> = ({
   width = 800,
   height = 600,
   colorScheme = 'default',
-  coloringMode = 'level'
+  coloringMode: _coloringMode
 }) => {
   const { isDark } = useTheme();
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);

@@ -82,7 +82,7 @@ export const GraphMap = () => {
     }
   }, []);
 
-  const handleGraphDoubleClick = useCallback((graph: Graph) => {
+  const _handleGraphDoubleClick = useCallback((graph: Graph) => {
     navigate(`/graph/${graph.id}`);
   }, [navigate]);
 
@@ -168,7 +168,7 @@ export const GraphMap = () => {
     if (!selectedGraphId) return;
     
     try {
-      const result = await api.graphs.infiniteExpand(selectedGraphId, config);
+      await api.graphs.infiniteExpand(selectedGraphId, config);
       addMessage({ type: 'success', content: '无限扩展任务已启动' });
       setIsExpansionRunning(true);
       setExpansionProgress({

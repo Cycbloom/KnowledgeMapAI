@@ -1,14 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Home, ListChecks, Network, GitBranch, Clock, 
+  Home, Network, GitBranch, Clock, 
   Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
 } from 'lucide-react';
 import type { CommandItem } from '../../components/GraphEditor/CommandPalette';
 import type { Node, GraphViewMode } from '../../types';
 import type { MessageType } from '../../store/useMessageStore';
 import type { SidebarMode } from '../../hooks/graphEditor/useSidebarState';
-import type { Dispatch, SetStateAction } from 'react';
 
 interface UseCommandPaletteOptions {
   sidebarMode: SidebarMode;

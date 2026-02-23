@@ -13,7 +13,7 @@ export const createTimelineLayout = (
   edges: Edge[],
   options: TimelineLayoutOptions
 ): { nodes: LayoutNode[]; links: LayoutLink[] } => {
-  const { width, height, horizontalSpacing = 200, verticalSpacing = 150, sortBy = 'created_at' } = options;
+  const { width: _width, height, horizontalSpacing = 200, verticalSpacing = 150, sortBy = 'created_at' } = options;
   
   // Sort nodes by time
   const sortedNodes = [...nodes].sort((a, b) => {

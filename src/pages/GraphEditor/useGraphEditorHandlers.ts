@@ -31,7 +31,7 @@ export const useGraphEditorHandlers = (options: UseGraphEditorHandlersOptions) =
     selectedNode,
     setSelectedNode,
     setSelectedNodeIds,
-    setSidebarMode,
+    setSidebarMode: _setSidebarMode,
     setFocusedNodeId,
     setFocusedNodeIds,
     setFocusedLinkIds,

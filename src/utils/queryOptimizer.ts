@@ -7,7 +7,7 @@ interface QueryOptions {
   range?: { from: number; to: number };
 }
 
-interface BatchQueryOptions {
+interface _BatchQueryOptions {
   queries: Array<{
     table: string;
     options: QueryOptions;

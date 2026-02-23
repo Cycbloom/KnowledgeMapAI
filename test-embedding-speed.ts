@@ -42,7 +42,7 @@ async function runSpeedTest() {
   console.log(`总耗时: ${singleTimes.reduce((a, b) => a + b, 0)}ms`);
 
   // 测试 2: 批量生成
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('【测试 2】批量生成嵌入向量');
   console.log('-'.repeat(40));
   
@@ -56,7 +56,7 @@ async function runSpeedTest() {
   console.log(`成功: ${embeddings.filter(e => e !== null).length}/${testTitles.length}`);
 
   // 测试 3: 模拟 AI 生成场景
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('【测试 3】模拟 AI 生成知识点场景');
   console.log('-'.repeat(40));
   
@@ -67,7 +67,7 @@ async function runSpeedTest() {
   
   for (const title of newTitles) {
     const embStart = Date.now();
-    const embedding = await aiService.generateEmbedding(title);
+    await aiService.generateEmbedding(title);
     const embTime = Date.now() - embStart;
     console.log(`生成嵌入 "${title}": ${embTime}ms`);
   }
@@ -77,19 +77,19 @@ async function runSpeedTest() {
   console.log(`平均每个: ${(checkElapsed / newTitles.length).toFixed(0)}ms`);
 
   // 测试 4: 批量检查
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('【测试 4】批量检查相似度');
   console.log('-'.repeat(40));
   
   const batchCheckStart = Date.now();
-  const batchEmbeddings = await aiService.generateEmbeddingsBatch(newTitles);
+  await aiService.generateEmbeddingsBatch(newTitles);
   const batchCheckElapsed = Date.now() - batchCheckStart;
   
   console.log(`批量生成 ${newTitles.length} 个嵌入: ${batchCheckElapsed}ms`);
   console.log(`平均每个: ${(batchCheckElapsed / newTitles.length).toFixed(0)}ms`);
 
   // 总结
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('测试总结');
   console.log('='.repeat(60));
   console.log(`

@@ -7,12 +7,11 @@ import {
   WeakPointsAnalysis,
   QuickStatsCards
 } from '../components/LearningStatsEnhanced';
-import { FocusStats } from '../components/Study/FocusStats';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
-import { BookOpen, Brain, Clock, TrendingUp, Zap, Target, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Brain, Clock, TrendingUp, Zap, Target } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';

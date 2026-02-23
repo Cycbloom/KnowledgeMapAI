@@ -70,7 +70,7 @@ export const LearningMode = () => {
   
   // Fetch Graph Data for Outline
   const { data: graphData } = useGraphData(graphId || '');
-  const { data: nodeStatus } = useGraphNodeStatus(graphId || '');
+  const { data: _nodeStatus } = useGraphNodeStatus(graphId || '');
 
   // Chat State
   const [messages, setMessages] = useState<Message[]>([
@@ -286,12 +286,6 @@ export const LearningMode = () => {
         content: msg.content
       }));
 
-      // Add current article context to the chat
-      const contextMessage = `Current Learning Context (Article):\n${articleContent.substring(0, 5000)}...`;
-      
-      // Inject context into history (hacky but works for stateless chat)
-      // Ideally we pass context_node_ids
-      
       await api.ai.chatStream(
         {
           message: userMessage.content,
@@ -710,12 +704,12 @@ export const LearningMode = () => {
                         remarkPlugins={[remarkGfm, remarkMath]} 
                         rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
                         components={{
-                          code: ({ className, children, node }) => (
-                            <CodeBlock className={className} isDark={isDark} node={node}>
+                          code: ({ className, children, node: _node }) => (
+                            <CodeBlock className={className} isDark={isDark} node={_node}>
                               {children}
                             </CodeBlock>
                           ),
-                          a: ({node, ...props}) => {
+                          a: ({node: _node, ...props}) => {
                             const { href, children } = props;
                             if (href && href.startsWith('term:')) {
                                 const explanation = href.replace('term:', '');
@@ -855,12 +849,12 @@ export const LearningMode = () => {
                                           remarkPlugins={[remarkGfm, remarkMath]}
                                           rehypePlugins={[[rehypeKatex, { output: 'html' }]]}
                                           components={{
-                                            code: ({ className, children, node }) => (
-                                              <CodeBlock className={className} isDark={isDark} node={node}>
+                                            code: ({ className, children, node: _node }) => (
+                                              <CodeBlock className={className} isDark={isDark} node={_node}>
                                                 {children}
                                               </CodeBlock>
                                             ),
-                                            a: ({node, ...props}) => {
+                                            a: ({node: _node, ...props}) => {
                                               const { href, children } = props;
                                               if (href && href.startsWith('term:')) {
                                                   const explanation = href.replace('term:', '');

@@ -156,7 +156,7 @@ export default defineConfig({
           proxy.on('proxyRes', (proxyRes, req, _res) => {
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
-          proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+          proxy.on('proxyReqWs', (_proxyReq, req, _socket, _options, _head) => {
             console.log('WebSocket/SSE Proxy Request:', req.url);
           });
         },

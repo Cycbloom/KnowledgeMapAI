@@ -86,9 +86,9 @@ async function runTest() {
     }
   }
   
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('测试结果');
-  console.log('='.repeat(60) + '\n');
+  console.log(`${'='.repeat(60)}\n`);
   
   const thresholds = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95];
   const results: { threshold: number; correct: number; total: number; accuracy: number }[] = [];
@@ -125,9 +125,9 @@ async function runTest() {
     console.log(`${r.threshold.toFixed(2)} | ${r.correct.toString().padStart(4)} | ${r.total.toString().padStart(4)} | ${r.accuracy.toFixed(1)}%`);
   }
   
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('详细结果 (阈值=0.85)');
-  console.log('='.repeat(60) + '\n');
+  console.log(`${'='.repeat(60)}\n`);
   
   const threshold = 0.85;
   

@@ -54,7 +54,7 @@ export function create3DForceLayout(
     iterations?: number;
   } = {}
 ): LayoutResult3D {
-  const { width = 800, height = 600, depth = 600, iterations = 300 } = options;
+  const { width: _width = 800, height: _height = 600, depth = 600, iterations = 300 } = options;
 
   const layoutNodes: LayoutNode3D[] = nodes.map((node, index) => {
     const angle = (index / nodes.length) * Math.PI * 2;
@@ -91,7 +91,6 @@ export function create3DForceLayout(
       const dx = centerX - node.x;
       const dy = centerY - node.y;
       const dz = centerZ - node.z;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
       node.vx += dx * 0.001;
       node.vy += dy * 0.001;
       node.vz += dz * 0.001;

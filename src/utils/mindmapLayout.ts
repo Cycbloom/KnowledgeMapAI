@@ -23,14 +23,6 @@ const LEVEL_CHARGE_STRENGTH: Record<NodeLevel, number> = {
   leaf: -120
 };
 
-const LEVEL_LINK_DISTANCE: Record<NodeLevel, number> = {
-  root: 280,
-  core: 220,
-  sub: 180,
-  normal: 150,
-  leaf: 120
-};
-
 export const createMindMapLayout = (
   nodes: Node[],
   edges: Edge[],

@@ -48,4 +48,10 @@ export default tseslint.config(
       'object-shorthand': ['warn', 'properties'],
     },
   },
+  {
+    files: ['test-*.ts', 'vite.config.ts', 'src/utils/serviceWorker.ts', 'src/utils/performance.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 )

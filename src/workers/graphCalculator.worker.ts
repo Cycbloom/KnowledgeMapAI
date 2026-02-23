@@ -129,7 +129,6 @@ const calculateNodeImportance = (
   const inDegree = edges.filter(e => e.target === nodeId).length;
   const totalDegree = outDegree + inDegree;
 
-  let pageRank = 1 / nodes.length;
   const dampingFactor = 0.85;
   const iterations = 20;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAIStatus, useUpdateProfileMutation, useUser } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
@@ -37,12 +37,11 @@ export const Settings = () => {
   const [newModelName, setNewModelName] = useState('');
   const [selectedProviderForAdd, setSelectedProviderForAdd] = useState('deepseek');
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (settings) {
       if (settings.request_retention) setRetention(Number(settings.request_retention));
       if (settings.maximum_interval) setMaxInterval(Number(settings.maximum_interval));
       
-      // Load AI Config from DB
       if (settings.ai_config) {
         if (settings.ai_config.text) setTextConfig(settings.ai_config.text);
         if (settings.ai_config.embedding) setEmbeddingConfig(settings.ai_config.embedding);

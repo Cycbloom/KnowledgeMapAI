@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useLayoutEffect, useRef } from 'react';
 import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gauge, MessageSquare } from 'lucide-react';
 import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
@@ -24,7 +24,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   const [textDisplayLevel, setTextDisplayLevel] = useState<'all' | 'important' | 'root_only'>('important');
   const prevSettingsRef = useRef(graph?.settings);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const currentSettings = graph?.settings;
     if (currentSettings && currentSettings !== prevSettingsRef.current) {
       prevSettingsRef.current = currentSettings;

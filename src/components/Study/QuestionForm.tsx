@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useLayoutEffect, useRef } from 'react';
 import { StudyCard } from '../../types';
 import { CheckSquare, Plus, X } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
@@ -62,13 +62,13 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     el.style.height = `${el.scrollHeight  }px`;
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     adjustHeight(questionRef.current);
     adjustHeight(answerRef.current);
     adjustHeight(explanationRef.current);
   }, [formData.question, formData.answer, formData.explanation, formData.card_type]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (initialData !== prevInitialDataRef.current) {
       prevInitialDataRef.current = initialData;
       setFormData(getInitialFormData(initialData));

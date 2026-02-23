@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useLayoutEffect, useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
 import { StudyCard } from '../types';
@@ -83,7 +83,7 @@ export const Study = () => {
   const [cardRotation, setCardRotation] = useState(0); // 卡片旋转角度
 
   // Reset state when params change
-  useEffect(() => {
+  useLayoutEffect(() => {
     setQuizCards([]);
     setCurrentCardIndex(0);
     setFinished(false);

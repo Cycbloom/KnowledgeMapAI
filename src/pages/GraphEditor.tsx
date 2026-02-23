@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, lazy, Suspense, useCallback, useState, useEffect } from 'react';
+import React, { useRef, useMemo, lazy, Suspense, useCallback, useState, useLayoutEffect, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
@@ -154,7 +154,7 @@ export const GraphEditor = () => {
     });
   }, [selectedNode, state]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (sidebarMode === 'none' || (sidebarMode !== 'create' && sidebarMode !== 'edit')) {
       setIsSelectingParent(false);
     }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useLayoutEffect, useState, useRef } from 'react';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 
 export const LoadingBar: React.FC = () => {
@@ -14,7 +14,7 @@ export const LoadingBar: React.FC = () => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const prevIsLoadingRef = useRef(isLoading);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isLoading === prevIsLoadingRef.current) return;
     prevIsLoadingRef.current = isLoading;
 

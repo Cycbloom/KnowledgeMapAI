@@ -62,8 +62,7 @@ function PlanetNode({
 }: PlanetNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
-  const scaleRef = useRef(1);
-  const [, forceUpdate] = useState(0);
+  const [scale, setScale] = useState(1);
   const type = getNodeType(node, layoutLinks);
   
   const baseSize = useMemo(() => {
@@ -92,13 +91,14 @@ function PlanetNode({
     const baseDistance = 200;
     const newScale = Math.max(0.3, Math.min(2, distance / baseDistance));
     
-    if (Math.abs(scaleRef.current - newScale) > 0.05) {
-      scaleRef.current = newScale;
-      forceUpdate(n => n + 1);
-    }
+    setScale(prev => {
+      if (Math.abs(prev - newScale) > 0.05) {
+        return newScale;
+      }
+      return prev;
+    });
   });
 
-  const scale = scaleRef.current;
   const titleFontSize = 5 * scale;
   const tagFontSize = 3 * scale;
   const labelOffset = baseSize + 3;

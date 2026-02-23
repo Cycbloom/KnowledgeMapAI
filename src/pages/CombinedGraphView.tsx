@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
@@ -30,7 +30,6 @@ export const CombinedGraphView: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(340);
   const [coloringMode, setColoringMode] = useState<GraphColorMode>('level');
-  const [crossGraphConnections, setCrossGraphConnections] = useState<CrossGraphNodeConnection[]>([]);
   
   const { data: graph1Data, isLoading: isLoading1, error: error1 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id1],
@@ -116,33 +115,6 @@ export const CombinedGraphView: React.FC = () => {
   const edges1 = useMemo(() => graph1Data?.edges || [], [graph1Data]);
   const edges2 = useMemo(() => graph2Data?.edges || [], [graph2Data]);
 
-  const aiOps = useCombinedGraphAIOperations({
-    graph1Id: id1 || '',
-    graph2Id: id2 || '',
-    selectedNode,
-    nodes1,
-    nodes2,
-    edges1,
-    edges2,
-    onRefresh: () => {
-      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
-      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
-    },
-  });
-
-  const nodeOps = {
-    handleUpdateNode: async (nodeId: string, updates: Partial<Node>) => {
-      await api.nodes.update(nodeId, updates);
-      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
-      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
-    },
-    handleDeleteNode: async (nodeId: string) => {
-      await api.nodes.delete(nodeId);
-      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
-      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
-    },
-  };
-
   const detectCrossGraphConnections = useCallback((nodes1: Node[], nodes2: Node[], id1: string, id2: string): CrossGraphNodeConnection[] => {
     const connections: CrossGraphNodeConnection[] = [];
     const kpMap1 = new Map<string, Node>();
@@ -183,12 +155,39 @@ export const CombinedGraphView: React.FC = () => {
     return connections;
   }, []);
 
-  useEffect(() => {
+  const crossGraphConnections = useMemo(() => {
     if (nodes1.length > 0 && nodes2.length > 0 && id1 && id2) {
-      const connections = detectCrossGraphConnections(nodes1, nodes2, id1, id2);
-      setCrossGraphConnections(connections);
+      return detectCrossGraphConnections(nodes1, nodes2, id1, id2);
     }
+    return [];
   }, [nodes1, nodes2, id1, id2, detectCrossGraphConnections]);
+
+  const aiOps = useCombinedGraphAIOperations({
+    graph1Id: id1 || '',
+    graph2Id: id2 || '',
+    selectedNode,
+    nodes1,
+    nodes2,
+    edges1,
+    edges2,
+    onRefresh: () => {
+      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
+      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+    },
+  });
+
+  const nodeOps = {
+    handleUpdateNode: async (nodeId: string, updates: Partial<Node>) => {
+      await api.nodes.update(nodeId, updates);
+      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
+      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+    },
+    handleDeleteNode: async (nodeId: string) => {
+      await api.nodes.delete(nodeId);
+      queryClient.invalidateQueries({ queryKey: ['graphData', id1] });
+      queryClient.invalidateQueries({ queryKey: ['graphData', id2] });
+    },
+  };
 
   const handleBack = useCallback(() => {
     navigate('/graph-map');

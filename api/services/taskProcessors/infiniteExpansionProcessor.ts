@@ -107,7 +107,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
             const duplicateCheck = await checkDuplicateGraphTopic(supabase, userId, suggestion.title, { threshold: 0.85 });
             
             let targetGraphId: string | undefined;
-              let isNew = false;
+              let _isNew = false;
 
               if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs[0]) {
               targetGraphId = duplicateCheck.similarGraphs[0].id;
@@ -136,7 +136,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
 
               if (newGraph) {
                 targetGraphId = newGraph.id;
-                isNew = true;
+                _isNew = true;
                 totalGraphsCreated++;
 
                 if (auto_generate_nodes && targetGraphId) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ExplorationPathItem, BranchSuggestion } from '../../types';
-import { Clock, ArrowRight, ChevronRight, ChevronDown, ChevronUp, GitBranch, Check } from 'lucide-react';
+import { Clock, ArrowRight, ChevronRight, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
 
 interface ExplorationTimelineProps {
   explorationPath: ExplorationPathItem[];
@@ -225,7 +225,7 @@ export const ExplorationTimeline: React.FC<ExplorationTimelineProps> = ({
                             备选分支：
                           </div>
                         </div>
-                        {item.alternativeBranches?.map((branch, branchIndex) => {
+                        {item.alternativeBranches?.map((branch, _branchIndex) => {
                           const isSelected = branch.id === item.branchSuggestionId;
                           return (
                             <button

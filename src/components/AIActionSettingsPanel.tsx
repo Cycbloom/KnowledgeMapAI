@@ -24,7 +24,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
   const [actions, setActions] = useState<AIAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAction, setEditingAction] = useState<Partial<AIAction> | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [_isCreating, setIsCreating] = useState(false);
 
   const fetchActions = async () => {
     setLoading(true);

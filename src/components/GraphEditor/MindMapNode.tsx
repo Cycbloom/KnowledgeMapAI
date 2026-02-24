@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import type { LayoutNode, NodeLevel, ColorScheme, GraphColorMode, Edge, NodeSizeMode, Node } from '../../types';
 import { NodeRing } from './NodeRing';
 import { 
@@ -139,7 +139,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   }, [isNew]);
 
   const currentScale = isNew ? hoverScale : animationTransform.scale;
-  const currentOpacity = isNew ? (isAccepted ? nodeOpacity : nodeOpacity * 0.5) : animationTransform.opacity;
+  const currentOpacity = isNew ? (isAccepted ? nodeOpacity : nodeOpacity * 0.5) : nodeOpacity;
 
   const rings = useMemo(() => {
     const result = [];
@@ -228,8 +228,6 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const baseFontSize = level === 'root' ? 14 : level === 'core' ? 12 : 10;
   const scaledFontSize = useMemo(() => baseFontSize / zoomLevel, [baseFontSize, zoomLevel]);
   const tagOffset = useMemo(() => textOffset + scaledFontSize * 1.4, [textOffset, scaledFontSize]);
-  const _shadowBlur = useMemo(() => 3 / zoomLevel, [zoomLevel]);
-  const _shadowOffset = useMemo(() => 1 / zoomLevel, [zoomLevel]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();

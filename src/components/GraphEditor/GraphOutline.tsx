@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Search, ChevronRight, ChevronDown, Circle, Hash, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser, Plus, Network, X, Link2, RefreshCw } from 'lucide-react';
-import { Node, Edge, NodeLevel } from '../../types';
+import { Search, ChevronRight, ChevronDown, CheckSquare, Square, Trash2, Wand2, MousePointer2, Sparkles, List, Layers, ArrowDownAZ, ArrowUpAZ, Filter, ListChecks, Eraser, Plus, Network, X, Link2 } from 'lucide-react';
+import { Node, Edge } from '../../types';
 import { BatchGenerateDialog } from './BatchGenerateDialog';
 import { GraphStatsSummary } from './GraphStatsSummary';
 import { getLevelColors } from '../../config/learningStatusColors';
@@ -26,7 +26,6 @@ interface GraphOutlineProps {
 export const GraphOutline: React.FC<GraphOutlineProps> = ({
   nodes,
   edges = [],
-  nodeStatus,
   onNodeClick,
   selectedNodeId,
   selectedNodeIds = new Set(),
@@ -285,8 +284,6 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         if (node.id === otherNode.id) return;
         if (connectedIds.has(otherNode.id)) return;
         if (existingConnections.has(`${node.id}-${otherNode.id}`)) return;
-        
-        const connectionKey = [node.id, otherNode.id].sort().join('-');
         
         let score = 0;
         const reasons: string[] = [];

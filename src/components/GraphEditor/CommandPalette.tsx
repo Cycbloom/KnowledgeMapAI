@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { 
   Search, Command,
-  Layout,
-  Network, GitBranch, Clock, Layers,
-  FileText, Settings, Download, Share2,
-  Focus, Wand2, Plus, Trash2, Home, ListChecks
+  FileText
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node } from '../../types';
-import { useNavigate } from 'react-router-dom';
 
 export interface CommandItem {
   id: string;
@@ -41,7 +37,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const prevQueryRef = useRef(query);
-  const navigate = useNavigate();
 
   const handleClose = useCallback(() => {
     setQuery('');
@@ -192,7 +187,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 }`}>
                   {categoryLabels[category] || category}
                 </div>
-                {items.map((cmd, index) => {
+                {items.map((cmd, _index) => {
                   // Find the global index for this item to match selectedIndex
                   const globalIndex = filteredCommands.indexOf(cmd);
                   const isSelected = globalIndex === selectedIndex;

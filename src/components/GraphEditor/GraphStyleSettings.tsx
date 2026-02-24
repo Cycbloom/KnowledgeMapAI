@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ColorScheme, NodeStyleVariant, LinkStyle, LinkAnimation, CenterDotShape, NodeShape, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../types';
+import { ColorScheme, LinkStyle, LinkAnimation, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../types';
 import { getColorSchemeNames, COLOR_SCHEMES } from '../../config/learningStatusColors';
 
 interface GraphStyleSettingsProps {

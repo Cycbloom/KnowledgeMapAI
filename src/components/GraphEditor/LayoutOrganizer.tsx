@@ -20,7 +20,7 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
   edges,
   onLayoutUpdate
 }) => {
-  const { isDark } = useTheme();
+  const { isDark: _isDark } = useTheme();
   const { addMessage } = useMessageStore();
   const queryClient = useQueryClient();
   

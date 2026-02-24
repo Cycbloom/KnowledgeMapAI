@@ -280,7 +280,7 @@ export const useUpdateGraphMutation = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => api.graphs.update(id, data),
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       queryClient.invalidateQueries({ queryKey: queryKeys.graph(variables.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphNodeStatus(variables.id) });
@@ -307,7 +307,7 @@ export const useToggleFavoriteMutation = () => {
 
       return { previousGraphs };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context) => {
       if (context?.previousGraphs) {
         queryClient.setQueryData(queryKeys.graphs, context.previousGraphs);
       }
@@ -362,12 +362,12 @@ export const useCreateNodeMutation = () => {
         console.info('Node reused existing knowledge point:', (data as any).knowledge_point_id);
       }
     },
-    onError: (err, newNode, context) => {
+    onError: (_err, newNode, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.graphData(newNode.graph_id), context.previousData);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graph_id) });
     },
   });
@@ -377,7 +377,7 @@ export const useUpdateNodeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data, graphId }: { id: string; data: unknown; graphId?: string }) => api.nodes.update(id, data),
+    mutationFn: ({ id, data, graphId: _graphId }: { id: string; data: unknown; graphId?: string }) => api.nodes.update(id, data),
     onSuccess: (_data, variables) => {
        if (variables.graphId) {
          queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
@@ -409,12 +409,12 @@ export const useUpdateNodeOptimisticMutation = () => {
 
       return { previousData };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.graphData(variables.graphId), context.previousData);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
     },
   });
@@ -448,12 +448,12 @@ export const useDeleteNodeMutation = () => {
         });
       }
     },
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.graphData(variables.graphId), context.previousData);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
     },
   });
@@ -479,12 +479,12 @@ export const useBatchDeleteNodesMutation = () => {
 
       return { previousData };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.graphData(variables.graphId), context.previousData);
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
     },
   });

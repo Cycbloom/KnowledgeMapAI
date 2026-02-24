@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, FileText, Image, List, Check, Download, Loader2 } from 'lucide-react';
-import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
 
 interface ExportDialogProps {
@@ -15,7 +14,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
   const { addMessage } = useMessageStore();
   const [loading, setLoading] = useState(false);
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
-  const [includeStats, setIncludeStats] = useState(true);
+  const [includeStats, _setIncludeStats] = useState(true);
   const [includeDetails, setIncludeDetails] = useState(true);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
 

@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
-  Maximize, Minimize, Download, MoreHorizontal, ChevronDown, ChevronUp, RefreshCw,
+  Maximize, Minimize, Download, MoreHorizontal, ChevronDown, RefreshCw,
   HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe, Keyboard
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, GraphColorMode } from '../../types';
-import { ViewModeSelector } from './ViewModeSelector';
 
 interface GraphToolbarProps {
   // Navigation & History
@@ -103,16 +102,16 @@ interface GraphToolbarProps {
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   onBack, onUndo, onRedo, canUndo, canRedo,
-  title, sidebarMode, setSidebarMode,
+  sidebarMode, setSidebarMode,
   viewMode, setViewMode,
   showGrid, setShowGrid, isFocusMode, setIsFocusMode,
   aiEnabled, onTextToGraph, onAIExpand, onBranchExplore, onBackgroundTask, isChatOpen, setIsChatOpen, isPathfindingMode, setIsPathfindingMode, pathfindingState,
   onAddNode, isDeleteMode, setIsDeleteMode, selectedNodeIds, onDeleteSelected, onBatchDelete,
   onBatchColorUpdate, onBatchLevelUpdate,
-  isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme, setColorScheme, linkStyle, setLinkStyle, linkAnimation, setLinkAnimation,
-  onOpenSettings, isExportMenuOpen, setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onOpenShortcutSettings, onShare,
+  isStyleSettingsOpen, setIsStyleSettingsOpen, colorScheme: _colorScheme, setColorScheme: _setColorScheme, linkStyle: _linkStyle, setLinkStyle: _setLinkStyle, linkAnimation: _linkAnimation, setLinkAnimation: _setLinkAnimation,
+  onOpenSettings, isExportMenuOpen: _isExportMenuOpen, setIsExportMenuOpen: _setIsExportMenuOpen, exportActions, onRefresh, onOpenHelp, onOpenShortcutSettings, onShare,
   isExplorationMode, setIsExplorationMode, coloringMode, setColoringMode, isTimelineVisible, setIsTimelineVisible,
-  isTutorMode, onToggleTutorMode, onOpenAnalysis,
+  isTutorMode: _isTutorMode, onToggleTutorMode: _onToggleTutorMode, onOpenAnalysis,
   onTogglePresentation, onTogglePodcast,
   isRAGChatOpen, ragChatWidth = 420
 }) => {
@@ -141,143 +140,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   };
 
   const Divider = () => <div className={`w-px h-6 mx-1 flex-shrink-0 ${themeClasses.divider}`} />;
-
-  const Button = ({ onClick, active, disabled, title, icon: Icon, colorClass, activeClass }: any) => {
-    // Determine classes based on state and theme
-    let className = `p-1.5 rounded transition-colors flex-shrink-0 `;
-    
-    if (disabled) {
-      className += themeClasses.button.disabled;
-    } else if (active) {
-      className += activeClass || themeClasses.button.active;
-    } else {
-      className += `${themeClasses.button.default} ${colorClass || ''}`;
-    }
-
-    return (
-      <button 
-        onClick={onClick}
-        disabled={disabled}
-        className={className}
-        title={title}
-      >
-        <Icon size={20} />
-      </button>
-    );
-  };
-
-  // Group: Navigation & History
-  const NavGroup = () => (
-    <div className="flex items-center space-x-1">
-      <Button onClick={onBack} icon={ArrowLeft} title="返回" />
-      <Divider />
-      <h2 className={`font-bold px-2 py-1 max-w-[150px] truncate hidden md:block ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{title}</h2>
-      <Divider />
-      <Button onClick={onUndo} disabled={!canUndo} icon={Undo} title="撤销 (Ctrl+Z)" />
-      <Button onClick={onRedo} disabled={!canRedo} icon={Redo} title="重做 (Ctrl+Shift+Z)" />
-    </div>
-  );
-
-  // Group: AI & Advanced Tools
-  const AIGroup = () => (
-    <div className="flex items-center space-x-1">
-      <Button 
-        onClick={() => setIsChatOpen(!isChatOpen)} 
-        active={isChatOpen} 
-        icon={MessageSquare} 
-        colorClass="text-purple-600" 
-        title="图谱助手" 
-      />
-      {onToggleTutorMode && (
-        <Button 
-          onClick={onToggleTutorMode}
-          active={isTutorMode}
-          icon={GraduationCap}
-          colorClass="text-yellow-600"
-          title={isTutorMode ? "关闭助教模式" : "开启助教模式"}
-        />
-      )}
-      <Button 
-        onClick={() => {
-            setIsPathfindingMode(!isPathfindingMode);
-            pathfindingState.reset();
-        }}
-        active={isPathfindingMode}
-        icon={Navigation}
-        title={isPathfindingMode ? "退出路径导航" : "路径导航"}
-      />
-      {/* AI Task Menu */}
-      <div className="relative group">
-         <Button 
-            onClick={() => {}}
-            icon={Sparkles} 
-            colorClass="text-purple-600" 
-            title="AI 任务" 
-         />
-         <div className="absolute top-full left-0 mt-2 hidden group-hover:block bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-lg rounded-lg p-2 z-50 w-48">
-             <button 
-                 className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-sm mb-1 flex items-center gap-2"
-                 onClick={onTextToGraph}
-             >
-                 <Sparkles className="w-4 h-4 text-purple-600" />
-                 文本生成图谱
-             </button>
-             <button 
-                 className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-sm flex items-center gap-2"
-                 onClick={() => onBackgroundTask?.('generate_questions')}
-             >
-                 <HelpCircle className="w-4 h-4 text-blue-600" />
-                 生成题目 (后台)
-             </button>
-             <button 
-                 className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-sm flex items-center gap-2"
-                 onClick={() => onBackgroundTask?.('expand_graph')}
-             >
-                 <List className="w-4 h-4 text-green-600" />
-                 扩展图谱 (后台)
-             </button>
-         </div>
-      </div>
-
-      {aiEnabled === false && (
-        <span className={`ml-1 px-2 py-0.5 rounded text-xs font-semibold ${
-          isDark ? 'bg-amber-900/30 text-amber-300 border border-amber-800/60' : 'bg-amber-50 text-amber-800 border border-amber-200'
-        }`}>
-          AI 未配置
-        </span>
-      )}
-    </div>
-  );
-
-  // Group: Edit Tools
-  const EditGroup = () => {
-    return (
-      <div className="flex items-center space-x-1">
-        <Button 
-          onClick={onAddNode} 
-          icon={Plus} 
-          colorClass="text-blue-600" 
-          title="添加节点" 
-        />
-        <Button 
-          onClick={() => setIsDeleteMode(!isDeleteMode)} 
-          active={isDeleteMode} 
-          activeClass="bg-red-50 text-red-600 ring-2 ring-red-200 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-800"
-          icon={Eraser} 
-          title={isDeleteMode ? "退出删除模式" : "删除模式"} 
-        />
-        
-        {selectedNodeIds.size > 0 && (
-          <Button 
-            onClick={selectedNodeIds.size > 1 ? onBatchDelete : onDeleteSelected}
-            icon={Trash2}
-            colorClass="text-red-600"
-            title={selectedNodeIds.size > 1 ? "批量删除" : "删除选中节点"}
-          />
-        )}
-      </div>
-    );
-  };
 
   const BatchMenu = () => {
     const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
@@ -377,36 +239,6 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       </div>
     );
   };
-
-  // Group: Layout & Export
-  const SystemGroup = () => (
-    <div className="flex items-center space-x-1">
-      <Button onClick={onOpenSettings} icon={Settings} title="图谱设置" />
-      
-      <div className="relative">
-        <Button 
-          onClick={() => setIsExportMenuOpen(!isExportMenuOpen)} 
-          active={isExportMenuOpen} 
-          icon={Download} 
-          title="导出" 
-        />
-        {isExportMenuOpen && (
-          <div className={`absolute top-full right-0 mt-2 shadow-xl rounded-lg border w-48 py-1 z-50 ${themeClasses.dropdown}`}>
-             {/* Reuse existing export menu items */}
-             <div className="py-1">
-               <button onClick={exportActions.onMarkdown} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 Markdown</button>
-         <button onClick={exportActions.onAnki} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 Anki 卡片</button>
-         <button onClick={exportActions.onPDF} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 PDF</button>
-               <button onClick={exportActions.onJSON} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出 JSON (备份)</button>
-               <button onClick={exportActions.onImage} className={`block w-full text-left px-4 py-2 text-sm ${themeClasses.itemHover} ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>导出为图片</button>
-               <div className={`border-t my-1 ${themeClasses.divider}`}></div>
-               <button onClick={exportActions.onDeleteGraph} className={`block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30`}>删除此图谱</button>
-             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
   // Render logic based on responsive state
   if (isFocusMode) {

@@ -67,8 +67,11 @@ export const Layout = () => {
     navigate('/login');
   }, [logoutMutation, setUser, navigate]);
 
+  const hasSetUserRef = useRef(false);
+
   useEffect(() => {
-    if (userData && userData.user) {
+    if (userData && userData.user && !hasSetUserRef.current) {
+      hasSetUserRef.current = true;
       setUser(userData.user, token);
     } else if (userData && !userData.user && !isUserLoading) {
         handleLogout();

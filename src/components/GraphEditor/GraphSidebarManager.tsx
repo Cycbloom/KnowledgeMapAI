@@ -39,7 +39,6 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   isSelectingParent = false,
   onStartSelectingParent,
   onCancelSelectingParent,
-  onSelectParentFromGraph,
   onConnectNodes
 }) => {
   const {

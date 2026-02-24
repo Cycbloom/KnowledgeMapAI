@@ -23,8 +23,6 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   id,
   state,
   graphMeta,
-  aiEnabled,
-  tutorOps,
   nodes
 }) => {
   const queryClient = useQueryClient();

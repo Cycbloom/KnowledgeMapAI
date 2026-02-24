@@ -21,7 +21,7 @@ import { CanvasLayout } from './CanvasLayout';
 import { MiniMap } from './MiniMap';
 import { LayoutOrganizer } from './LayoutOrganizer';
 import { NodePreviewCard } from './NodePreviewCard';
-import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
+import { createMindMapLayout } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
 import { calculateNodeImportance, calculateEdgeStrength } from '../../lib/graphUtils';
@@ -82,7 +82,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   onNodeClick,
   width = 800,
   height = 600,
-  sidebarMode = 'none',
+  sidebarMode: _sidebarMode = 'none',
   focusedNodeIds = new Set(),
   focusedLinkIds = new Set(),
   onCanvasClick,
@@ -102,7 +102,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   edgeWidthMode = 'fixed',
   onNodeContextMenu,
   coloringMode = 'status',
-  isRightPanelOpen = false,
+  isRightPanelOpen: _isRightPanelOpen = false,
   rightPanelWidth = 0,
   graphId,
   onLayoutUpdate,
@@ -311,7 +311,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [_hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [previewNode, setPreviewNode] = useState<{ node: Node; position: { x: number; y: number } } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [isPreviewHovered, setIsPreviewHovered] = useState(false);
@@ -523,30 +523,6 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     setIsDragging(false);
     mouseDownPosRef.current = null;
   }, [isDragging, onCanvasClick]);
-
-  const handleZoomIn = useCallback(() => {
-    hasUserInteracted.current = true;
-    const prev = transformRef.current;
-    const newTransform = {
-      ...prev,
-      k: Math.min(5, prev.k * 1.2)
-    };
-    transformRef.current = newTransform;
-    updateTransformDOM(newTransform);
-    updateTransformState(newTransform);
-  }, [updateTransformDOM, updateTransformState]);
-
-  const handleZoomOut = useCallback(() => {
-    hasUserInteracted.current = true;
-    const prev = transformRef.current;
-    const newTransform = {
-      ...prev,
-      k: Math.max(0.1, prev.k / 1.2)
-    };
-    transformRef.current = newTransform;
-    updateTransformDOM(newTransform);
-    updateTransformState(newTransform);
-  }, [updateTransformDOM, updateTransformState]);
 
   // Calculate visual center based on right panel and left panel state
   const visualCenterX = useMemo(() => {

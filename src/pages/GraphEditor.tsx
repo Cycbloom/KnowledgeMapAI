@@ -8,6 +8,7 @@ import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
 import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
 import { ExplorationTimeline } from '../components/GraphEditor/ExplorationTimeline';
 import { GraphStyleSettings } from '../components/GraphEditor/GraphStyleSettings';
+import { RelationshipTypeSettings } from '../components/GraphEditor/RelationshipTypeSettings';
 
 import { GraphModalManager } from '../components/GraphEditor/GraphModalManager';
 import { GraphSidebarManager } from '../components/GraphEditor/GraphSidebarManager';
@@ -84,6 +85,7 @@ export const GraphEditor = () => {
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
   const [ragChatWidth, setRagChatWidth] = useState(420);
   const [isSelectingParent, setIsSelectingParent] = useState(false);
+  const [isRelationshipTypeSettingsOpen, setIsRelationshipTypeSettingsOpen] = useState(false);
 
   const handleStartSelectingParent = useCallback(() => {
     setIsSelectingParent(true);
@@ -1007,6 +1009,15 @@ export const GraphEditor = () => {
         edgeWidthMode={edgeWidthMode}
         onEdgeWidthModeChange={setEdgeWidthMode}
         coloringMode={coloringMode}
+        onOpenRelationshipTypeSettings={() => {
+          setIsStyleSettingsOpen(false);
+          setIsRelationshipTypeSettingsOpen(true);
+        }}
+      />
+
+      <RelationshipTypeSettings
+        isOpen={isRelationshipTypeSettingsOpen}
+        onClose={() => setIsRelationshipTypeSettingsOpen(false)}
       />
       
       <GraphSidebarManager 

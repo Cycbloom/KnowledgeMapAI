@@ -458,3 +458,32 @@ export const reorderTasksSchema = z.object({
   queue_level: z.number().int().min(0).max(2),
   task_ids: z.array(z.string().uuid()).min(1, '至少需要一个任务ID'),
 });
+
+export const relationshipCategorySchema = z.enum([
+  'hierarchical',
+  'dependency',
+  'semantic',
+  'temporal',
+  'interaction',
+  'causal',
+  'custom'
+]);
+
+export const edgeLineStyleSchema = z.enum(['solid', 'dashed', 'dotted', 'double']);
+
+export const createRelationshipTypeSchema = z.object({
+  name: z.string().min(1, '名称不能为空').max(50, '名称最多50个字符'),
+  display_name: z.string().min(1, '显示名称不能为空').max(100, '显示名称最多100个字符'),
+  category: relationshipCategorySchema,
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, '颜色格式无效'),
+  line_style: edgeLineStyleSchema,
+  show_arrow: z.union([z.boolean(), z.literal('auto')])
+});
+
+export const updateRelationshipTypeSchema = z.object({
+  display_name: z.string().min(1, '显示名称不能为空').max(100, '显示名称最多100个字符').optional(),
+  category: relationshipCategorySchema.optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, '颜色格式无效').optional(),
+  line_style: edgeLineStyleSchema.optional(),
+  show_arrow: z.union([z.boolean(), z.literal('auto')]).optional()
+});

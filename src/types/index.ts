@@ -122,6 +122,31 @@ export type Node = GraphNode & Omit<KnowledgePoint, 'id'> & {
   tags?: string[];
 };
 
+export type EdgeLineStyle = 'solid' | 'dashed' | 'dotted' | 'double';
+
+export type RelationshipCategory = 
+  | 'hierarchical'
+  | 'dependency'
+  | 'semantic'
+  | 'temporal'
+  | 'interaction'
+  | 'causal'
+  | 'custom';
+
+export interface RelationshipTypeConfig {
+  id: string;
+  name: string;
+  display_name: string;
+  category: RelationshipCategory;
+  color: string;
+  line_style: EdgeLineStyle;
+  show_arrow: boolean | 'auto';
+  is_builtin: boolean;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Edge {
   id: string;
   graph_id: string;
@@ -129,6 +154,10 @@ export interface Edge {
   target_knowledge_point_id: string;
   relationship_type?: string;
   weight?: number;
+  custom_label?: string;
+  custom_color?: string;
+  custom_line_style?: EdgeLineStyle;
+  show_arrow?: boolean | null;
   deleted_at?: string;
   created_at?: string;
 }

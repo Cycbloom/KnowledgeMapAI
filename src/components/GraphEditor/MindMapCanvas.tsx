@@ -11,7 +11,8 @@ import type {
   NodeSizeMode, 
   EdgeWidthMode, 
   LayoutNode,
-  GraphColorMode 
+  GraphColorMode,
+  RelationshipTypeConfig
 } from '../../types';
 import type { Node as GraphNode } from '../../types';
 import { MindMapNode } from './MindMapNode';
@@ -21,10 +22,13 @@ import { CanvasLayout } from './CanvasLayout';
 import { MiniMap } from './MiniMap';
 import { LayoutOrganizer } from './LayoutOrganizer';
 import { NodePreviewCard } from './NodePreviewCard';
+import { EdgeContextMenu } from './EdgeContextMenu';
+import { EdgeEditDialog } from './EdgeEditDialog';
 import { createMindMapLayout } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
 import { calculateNodeImportance, calculateEdgeStrength } from '../../lib/graphUtils';
+import { PRESET_RELATIONSHIP_TYPES } from '../../config/relationshipTypes';
 
 interface MindMapCanvasProps {
   nodes: Node[];
@@ -53,6 +57,9 @@ interface MindMapCanvasProps {
   nodeSizeMode?: NodeSizeMode;
   edgeWidthMode?: EdgeWidthMode;
   onNodeContextMenu?: (event: React.MouseEvent, node: LayoutNode) => void;
+  onEdgeContextMenu?: (event: React.MouseEvent, edge: Edge) => void;
+  onEdgeUpdate?: (edgeId: string, data: Partial<Edge>) => Promise<void>;
+  onEdgeDelete?: (edgeId: string) => Promise<void>;
   coloringMode?: GraphColorMode;
   isRightPanelOpen?: boolean;
   rightPanelWidth?: number;
@@ -101,6 +108,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   nodeSizeMode = 'fixed',
   edgeWidthMode = 'fixed',
   onNodeContextMenu,
+  onEdgeContextMenu,
+  onEdgeUpdate,
+  onEdgeDelete,
   coloringMode = 'status',
   isRightPanelOpen: _isRightPanelOpen = false,
   rightPanelWidth = 0,
@@ -117,6 +127,81 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
+
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const relationshipTypes = useMemo<RelationshipTypeConfig[]>(() => {
+    return PRESET_RELATIONSHIP_TYPES.map((type) => ({
+      ...type,
+      id: `preset-${type.name}`,
+    }));
+  }, []);
+
+  const handleEdgeContextMenu = useCallback((event: React.MouseEvent, link: any) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const edge = edges.find(e => e.id === link.id);
+    if (edge) {
+      if (onEdgeContextMenu) {
+        onEdgeContextMenu(event, edge);
+      } else {
+        setSelectedEdge(edge);
+        setContextMenuPosition({ x: event.clientX, y: event.clientY });
+      }
+    }
+  }, [edges, onEdgeContextMenu]);
+
+  const handleEditLabel = useCallback(() => {
+    setIsEditDialogOpen(true);
+  }, []);
+
+  const handleChangeRelationshipType = useCallback(() => {
+    setIsEditDialogOpen(true);
+  }, []);
+
+  const handleDeleteEdge = useCallback(async () => {
+    if (!selectedEdge || !onEdgeDelete) return;
+    
+    try {
+      await onEdgeDelete(selectedEdge.id);
+      setSelectedEdge(null);
+      setContextMenuPosition(null);
+    } catch (error) {
+      console.error('Failed to delete edge:', error);
+    }
+  }, [selectedEdge, onEdgeDelete]);
+
+  const handleSaveEdge = useCallback(async (data: {
+    custom_label?: string;
+    relationship_type?: string;
+    custom_color?: string;
+    custom_line_style?: string;
+    show_arrow?: boolean | null;
+  }) => {
+    if (!selectedEdge || !onEdgeUpdate) return;
+    
+    await onEdgeUpdate(selectedEdge.id, {
+      custom_label: data.custom_label,
+      relationship_type: data.relationship_type,
+      custom_color: data.custom_color,
+      custom_line_style: data.custom_line_style as any,
+      show_arrow: data.show_arrow,
+    });
+    
+    setIsEditDialogOpen(false);
+    setSelectedEdge(null);
+  }, [selectedEdge, onEdgeUpdate]);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenuPosition(null);
+  }, []);
+
+  const handleCloseEditDialog = useCallback(() => {
+    setIsEditDialogOpen(false);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     captureScreenshot: async (options?: any) => {
@@ -647,6 +732,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
               edgeStrength={edgeStrengthMap.get(link.id)}
               allNodes={nodes}
               allEdges={edges}
+              onContextMenu={handleEdgeContextMenu}
             />
           ))}
           {visibleNodes.map(node => {
@@ -904,6 +990,25 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
           }}
         />
       )}
+
+      {contextMenuPosition && selectedEdge && (
+        <EdgeContextMenu
+          edge={selectedEdge}
+          position={contextMenuPosition}
+          onClose={handleCloseContextMenu}
+          onEditLabel={handleEditLabel}
+          onChangeRelationshipType={handleChangeRelationshipType}
+          onDelete={handleDeleteEdge}
+        />
+      )}
+
+      <EdgeEditDialog
+        isOpen={isEditDialogOpen}
+        edge={selectedEdge}
+        onClose={handleCloseEditDialog}
+        onSave={handleSaveEdge}
+        relationshipTypes={relationshipTypes}
+      />
     </div>
   );
 });

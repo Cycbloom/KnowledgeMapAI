@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { Edge } from '@/types';
+import type { Edge, EdgeLineStyle } from '@/types';
 import { softDelete, softDeleteBatch } from '../utils/softDelete.js';
 import { logger } from '../utils/logger.js';
 
@@ -9,11 +9,34 @@ interface CreateEdgeData {
   target_knowledge_point_id: string;
   relationship_type?: string;
   weight?: number;
+  custom_label?: string;
+  custom_color?: string;
+  custom_line_style?: EdgeLineStyle;
+  show_arrow?: boolean | null;
+}
+
+interface UpdateEdgeData {
+  custom_label?: string;
+  custom_color?: string;
+  custom_line_style?: EdgeLineStyle;
+  show_arrow?: boolean | null;
+  relationship_type?: string;
+  weight?: number;
 }
 
 export class EdgeService {
   async create(supabase: SupabaseClient, data: CreateEdgeData): Promise<Edge> {
-    const { graph_id, source_knowledge_point_id, target_knowledge_point_id, relationship_type, weight } = data;
+    const { 
+      graph_id, 
+      source_knowledge_point_id, 
+      target_knowledge_point_id, 
+      relationship_type, 
+      weight,
+      custom_label,
+      custom_color,
+      custom_line_style,
+      show_arrow
+    } = data;
 
     const { data: sourceGn, error: sourceError } = await supabase
       .from('graph_nodes')
@@ -90,7 +113,11 @@ export class EdgeService {
         source_knowledge_point_id: source_knowledge_point_id,
         target_knowledge_point_id: target_knowledge_point_id,
         relationship_type: relationship_type || 'related',
-        weight: weight || 1
+        weight: weight || 1,
+        custom_label: custom_label,
+        custom_color: custom_color,
+        custom_line_style: custom_line_style,
+        show_arrow: show_arrow
       }])
       .select()
       .single();
@@ -111,6 +138,27 @@ export class EdgeService {
     }
   }
 
+  async update(supabase: SupabaseClient, edgeId: string, data: UpdateEdgeData): Promise<Edge> {
+    const { data: updatedEdge, error } = await supabase
+      .from('edges')
+      .update(data)
+      .eq('id', edgeId)
+      .is('deleted_at', null)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Update edge error:', error);
+      throw new Error('更新边失败');
+    }
+
+    if (!updatedEdge) {
+      throw new Error('边不存在或已被删除');
+    }
+
+    return this.mapEdge(updatedEdge);
+  }
+
   async getGraphEdges(supabase: SupabaseClient, graphId: string): Promise<Edge[]> {
     const { data: edges, error } = await supabase
       .from('edges')
@@ -121,6 +169,10 @@ export class EdgeService {
         target_knowledge_point_id,
         relationship_type,
         weight,
+        custom_label,
+        custom_color,
+        custom_line_style,
+        show_arrow,
         deleted_at,
         created_at
       `)
@@ -174,6 +226,10 @@ export class EdgeService {
       target_knowledge_point_id: dbEdge.target_knowledge_point_id,
       relationship_type: dbEdge.relationship_type,
       weight: dbEdge.weight,
+      custom_label: dbEdge.custom_label,
+      custom_color: dbEdge.custom_color,
+      custom_line_style: dbEdge.custom_line_style,
+      show_arrow: dbEdge.show_arrow,
       deleted_at: dbEdge.deleted_at,
       created_at: dbEdge.created_at
     };

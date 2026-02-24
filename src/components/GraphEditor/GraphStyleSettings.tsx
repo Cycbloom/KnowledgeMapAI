@@ -1,6 +1,25 @@
 import React, { useState } from 'react';
 import { ColorScheme, LinkStyle, LinkAnimation, NodeSizeMode, EdgeWidthMode, GraphColorMode } from '../../types';
 import { getColorSchemeNames, COLOR_SCHEMES } from '../../config/learningStatusColors';
+import { PRESET_RELATIONSHIP_TYPES } from '../../config/relationshipTypes';
+
+const ToggleSwitch: React.FC<{
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}> = ({ checked, onChange }) => (
+  <button
+    onClick={() => onChange(!checked)}
+    className={`relative w-11 h-6 rounded-full transition-colors ${
+      checked ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
+    }`}
+  >
+    <span
+      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${
+        checked ? 'translate-x-5' : 'translate-x-0'
+      }`}
+    />
+  </button>
+);
 
 interface GraphStyleSettingsProps {
   isOpen: boolean;
@@ -16,6 +35,11 @@ interface GraphStyleSettingsProps {
   edgeWidthMode?: EdgeWidthMode;
   onEdgeWidthModeChange?: (mode: EdgeWidthMode) => void;
   coloringMode?: GraphColorMode;
+  showLabels?: boolean;
+  onShowLabelsChange?: (show: boolean) => void;
+  showArrows?: boolean;
+  onShowArrowsChange?: (show: boolean) => void;
+  onOpenRelationshipTypeSettings?: () => void;
 }
 
 export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
@@ -31,9 +55,16 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
   onNodeSizeModeChange,
   edgeWidthMode = 'fixed',
   onEdgeWidthModeChange,
-  coloringMode = 'level'
+  coloringMode = 'level',
+  showLabels = true,
+  onShowLabelsChange,
+  showArrows = true,
+  onShowArrowsChange,
+  onOpenRelationshipTypeSettings
 }) => {
-  const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'links' | 'animations' | 'nodes' | 'edges' | 'edgeSettings'>('colors');
+
+  const commonRelationshipTypes = PRESET_RELATIONSHIP_TYPES.slice(0, 8);
 
   if (!isOpen) return null;
 
@@ -119,6 +150,16 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
             }`}
           >
             边粗细
+          </button>
+          <button
+            onClick={() => setActiveTab('edgeSettings')}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeTab === 'edgeSettings'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            边设置
           </button>
         </div>
 
@@ -342,6 +383,64 @@ export const GraphStyleSettings: React.FC<GraphStyleSettingsProps> = ({
                       <div className="font-medium text-gray-900 dark:text-white">{mode.name}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{mode.description}</div>
                     </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'edgeSettings' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                <div>
+                  <div className="font-medium text-gray-900 dark:text-white">显示标签</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">在边上显示关系类型或自定义标签</div>
+                </div>
+                <ToggleSwitch
+                  checked={showLabels}
+                  onChange={(checked) => onShowLabelsChange?.(checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                <div>
+                  <div className="font-medium text-gray-900 dark:text-white">显示箭头</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">在有向关系上显示箭头</div>
+                </div>
+                <ToggleSwitch
+                  checked={showArrows}
+                  onChange={(checked) => onShowArrowsChange?.(checked)}
+                />
+              </div>
+              
+              {onOpenRelationshipTypeSettings && (
+                <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">关系类型管理</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">管理预设和自定义关系类型</div>
+                    </div>
+                    <button
+                      onClick={onOpenRelationshipTypeSettings}
+                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      管理
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">常用关系类型</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {commonRelationshipTypes.map(type => (
+                    <div
+                      key={type.name}
+                      className="flex items-center space-x-2 p-2 rounded-lg border border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: type.color }} />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{type.display_name}</span>
+                    </div>
                   ))}
                 </div>
               </div>

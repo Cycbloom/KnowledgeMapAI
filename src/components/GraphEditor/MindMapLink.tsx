@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation, EdgeWidthMode, Edge, Node } from '../../types';
+import { LayoutNode, LayoutLink, LinkStyle, LinkAnimation, EdgeWidthMode, Edge, Node, RelationshipTypeConfig, RelationshipCategory } from '../../types';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { calculateEdgeStrength } from '../../lib/graphUtils';
+import { getRelationshipTypeConfig, getDefaultRelationshipType } from '../../config/relationshipTypes';
 
 interface MindMapLinkProps {
   link: LayoutLink;
@@ -17,9 +18,25 @@ interface MindMapLinkProps {
   allNodes?: Node[];
   allEdges?: Edge[];
   customColor?: string;
+  showLabels?: boolean;
+  showArrows?: boolean;
+  relationshipTypeConfig?: RelationshipTypeConfig;
+  onContextMenu?: (event: React.MouseEvent, link: LayoutLink) => void;
 }
 
 const normalizeId = (id: any) => String(id).trim();
+
+const CATEGORIES_WITH_ARROW: RelationshipCategory[] = ['dependency', 'causal', 'interaction'];
+
+const getLineStyleDashArray = (lineStyle: string): string => {
+  const dashArrays: Record<string, string> = {
+    solid: 'none',
+    dashed: '8,4',
+    dotted: '2,2',
+    double: '4,2,1,2',
+  };
+  return dashArrays[lineStyle] || 'none';
+};
 
 const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   link,
@@ -35,6 +52,10 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
   allNodes = [],
   allEdges = [],
   customColor,
+  showLabels = false,
+  showArrows = true,
+  relationshipTypeConfig,
+  onContextMenu,
 }) => {
   const sourceId = typeof link.source === 'string' ? normalizeId(link.source) : normalizeId(link.source.id);
   const targetId = typeof link.target === 'string' ? normalizeId(link.target) : normalizeId(link.target.id);
@@ -60,16 +81,54 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     
     return 2;
   }, [edgeWidthMode, edgeStrength, allNodes, allEdges, link]);
-  
-  const linkStyleConfig = useMemo(() => {
-    if (!target) {
-      return { strokeColor: customColor || colors.link, strokeWidth: 2, opacity: 0.4, strokeDasharray: 'none' };
+
+  const relationshipConfig = useMemo(() => {
+    if (relationshipTypeConfig) {
+      return relationshipTypeConfig;
+    }
+    if (link.relationship_type) {
+      return getRelationshipTypeConfig(link.relationship_type);
+    }
+    return getDefaultRelationshipType();
+  }, [relationshipTypeConfig, link.relationship_type]);
+
+  const shouldShowArrow = useMemo(() => {
+    if (!showArrows) return false;
+    
+    if (link.show_arrow !== undefined && link.show_arrow !== null) {
+      return link.show_arrow;
     }
     
-    let strokeColor = customColor || colors.link;
+    const configShowArrow = relationshipConfig.show_arrow;
+    if (typeof configShowArrow === 'boolean') {
+      return configShowArrow;
+    }
+    
+    return CATEGORIES_WITH_ARROW.includes(relationshipConfig.category);
+  }, [showArrows, link.show_arrow, relationshipConfig]);
+
+  const edgeLabel = useMemo(() => {
+    if (link.custom_label) {
+      return link.custom_label;
+    }
+    return relationshipConfig.display_name || link.relationship_type || '';
+  }, [link.custom_label, relationshipConfig.display_name, link.relationship_type]);
+
+  const linkStyleConfig = useMemo(() => {
+    if (!target) {
+      return { 
+        strokeColor: customColor || colors.link, 
+        strokeWidth: 2, 
+        opacity: 0.4, 
+        strokeDasharray: 'none',
+        showArrow: false,
+      };
+    }
+    
+    let strokeColor = customColor || link.custom_color || relationshipConfig.color || colors.link;
     let strokeWidth = dynamicWidth;
     let opacity = 0.4;
-    let strokeDasharray = 'none';
+    let strokeDasharray = getLineStyleDashArray(link.custom_line_style || relationshipConfig.line_style);
     
     const isTargetAccepted = target.is_accepted !== false;
     
@@ -82,19 +141,25 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     if (!hasFocusMode) {
       opacity = isTargetAccepted ? 0.4 : 0.3;
     } else if (focused) {
-      strokeColor = customColor || colors.linkHighlight;
+      strokeColor = customColor || link.custom_color || relationshipConfig.color || colors.linkHighlight;
       strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else if (highlighted) {
-      strokeColor = customColor || colors.linkHighlight;
+      strokeColor = customColor || link.custom_color || relationshipConfig.color || colors.linkHighlight;
       strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else {
       opacity = isTargetAccepted ? 0.1 : 0.05;
     }
 
-    return { strokeColor, strokeWidth, opacity, strokeDasharray };
-  }, [colors, hasFocusMode, focused, highlighted, target, dynamicWidth, customColor]);
+    return { 
+      strokeColor, 
+      strokeWidth, 
+      opacity, 
+      strokeDasharray,
+      showArrow: shouldShowArrow,
+    };
+  }, [colors, hasFocusMode, focused, highlighted, target, dynamicWidth, customColor, link.custom_color, link.custom_line_style, relationshipConfig, shouldShowArrow]);
 
   const pathData = useMemo(() => {
     if (!source || !target) return '';
@@ -161,6 +226,19 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
 
   if (!source || !target) return null;
 
+  const midX = (source.x + target.x) / 2;
+  const midY = (source.y + target.y) / 2;
+  const arrowId = `arrow-${link.id}`;
+  const arrowSize = Math.max(4, Math.min(8, linkStyleConfig.strokeWidth * 2));
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (onContextMenu) {
+      e.preventDefault();
+      e.stopPropagation();
+      onContextMenu(e, link);
+    }
+  };
+
   return (
     <>
       <style>
@@ -180,6 +258,32 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
           }
         `}
       </style>
+      <defs>
+        <marker
+          id={arrowId}
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth={arrowSize}
+          markerHeight={arrowSize}
+          orient="auto-start-reverse"
+        >
+          <path 
+            d="M 0 0 L 10 5 L 0 10 z" 
+            fill={linkStyleConfig.strokeColor}
+            opacity={linkStyleConfig.opacity}
+          />
+        </marker>
+      </defs>
+      <path
+        d={pathData}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={20}
+        strokeLinecap="round"
+        onContextMenu={handleContextMenu}
+        style={{ cursor: onContextMenu ? 'pointer' : 'default' }}
+      />
       <path
         d={pathData}
         fill="none"
@@ -189,7 +293,34 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
         strokeLinecap="round"
         strokeDasharray={linkStyleConfig.strokeDasharray}
         style={animationStyle}
+        markerEnd={linkStyleConfig.showArrow ? `url(#${arrowId})` : undefined}
+        onContextMenu={handleContextMenu}
       />
+      {showLabels && edgeLabel && (
+        <g>
+          <rect
+            x={midX - edgeLabel.length * 3 - 4}
+            y={midY - 8}
+            width={edgeLabel.length * 6 + 8}
+            height={16}
+            fill={isDark ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.8)'}
+            rx={3}
+            ry={3}
+          />
+          <text
+            x={midX}
+            y={midY}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="10"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            fill={isDark ? '#fff' : '#000'}
+            opacity={0.9}
+          >
+            {edgeLabel}
+          </text>
+        </g>
+      )}
     </>
   );
 };
@@ -202,6 +333,12 @@ export const MindMapLink = React.memo(MindMapLinkComponent, (prevProps, nextProp
   const nextSourceId = getSourceId(nextProps.link);
   const prevTargetId = getTargetId(prevProps.link);
   const nextTargetId = getTargetId(nextProps.link);
+
+  const relationshipConfigEqual = 
+    prevProps.relationshipTypeConfig?.id === nextProps.relationshipTypeConfig?.id &&
+    prevProps.relationshipTypeConfig?.color === nextProps.relationshipTypeConfig?.color &&
+    prevProps.relationshipTypeConfig?.line_style === nextProps.relationshipTypeConfig?.line_style &&
+    prevProps.relationshipTypeConfig?.show_arrow === nextProps.relationshipTypeConfig?.show_arrow;
   
   return (
     prevProps.link.id === nextProps.link.id &&
@@ -211,6 +348,15 @@ export const MindMapLink = React.memo(MindMapLinkComponent, (prevProps, nextProp
     prevProps.hasFocusMode === nextProps.hasFocusMode &&
     prevProps.linkStyle === nextProps.linkStyle &&
     prevProps.linkAnimation === nextProps.linkAnimation &&
+    prevProps.showLabels === nextProps.showLabels &&
+    prevProps.showArrows === nextProps.showArrows &&
+    prevProps.customColor === nextProps.customColor &&
+    relationshipConfigEqual &&
+    prevProps.link.show_arrow === nextProps.link.show_arrow &&
+    prevProps.link.custom_label === nextProps.link.custom_label &&
+    prevProps.link.custom_color === nextProps.link.custom_color &&
+    prevProps.link.custom_line_style === nextProps.link.custom_line_style &&
+    prevProps.link.relationship_type === nextProps.link.relationship_type &&
     prevProps.nodes.get(prevSourceId)?.x === nextProps.nodes.get(nextSourceId)?.x &&
     prevProps.nodes.get(prevSourceId)?.y === nextProps.nodes.get(nextSourceId)?.y &&
     prevProps.nodes.get(prevTargetId)?.x === nextProps.nodes.get(nextTargetId)?.x &&

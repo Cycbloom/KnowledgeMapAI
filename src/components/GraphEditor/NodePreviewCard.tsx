@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Node, Edge, LearningStatus } from '../../types';
+import type { Node, Edge } from '../../types';
 import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
 import { getLevel, getLevelLabel } from '../../lib/graphUtils';
 import { useTheme } from '../../hooks/useTheme';

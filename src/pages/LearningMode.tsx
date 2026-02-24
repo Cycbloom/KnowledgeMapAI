@@ -239,6 +239,7 @@ export const LearningMode = () => {
     };
 
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId]);
 
   // Chat Logic

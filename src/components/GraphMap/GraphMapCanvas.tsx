@@ -1,22 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { 
-  Node, 
+import type { 
   Edge, 
   ColorScheme, 
   LinkStyle, 
   LinkAnimation, 
-  LayoutNode,
   GraphRelation,
   GraphRelationType,
   GraphMapFilterMode,
-  GRAPH_RELATION_COLORS,
+  Graph
 } from '../../types';
-import type { Graph } from '../../types';
 import { MindMapNode } from '../GraphEditor/MindMapNode';
 import { MindMapLink } from '../GraphEditor/MindMapLink';
 import { CanvasLayout } from '../GraphEditor/CanvasLayout';
 import { MiniMap } from '../GraphEditor/MiniMap';
-import { createMindMapLayout, LayoutResult } from '../../utils/mindmapLayout';
+import { createMindMapLayout } from '../../utils/mindmapLayout';
 import { 
   convertGraphsToNodes, 
   convertRelationsToEdges, 
@@ -76,7 +73,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [_hoveredNodeId, _setHoveredNodeId] = useState<string | null>(null);
   const [containerSize, setContainerSize] = useState({ 
     width: typeof window !== 'undefined' ? window.innerWidth : width, 
     height: typeof window !== 'undefined' ? window.innerHeight : height 
@@ -425,7 +422,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
           })}
           {layout.nodes.map(node => {
             const graph = graphs.find(g => g.id === node.id);
-            const nodeCount = graph?.node_count || 0;
+            const _nodeCount = graph?.node_count || 0;
             const isFocused = focusedGraphId ? neighborGraphIds.has(node.id) : false;
             const hasFocus = focusedGraphId !== null;
             

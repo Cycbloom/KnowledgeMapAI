@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
-import { LayoutNode, LearningStatus, NodeLevel, CenterDotShape, ColorScheme, GraphColorMode } from '../../types';
+import type { LayoutNode, NodeLevel, ColorScheme, GraphColorMode, Edge, NodeSizeMode, Node } from '../../types';
 import { NodeRing } from './NodeRing';
 import { 
   NODE_STYLE_CONFIG, 
@@ -12,7 +12,6 @@ import {
 } from '../../config/nodeStyleConfig';
 import { getLearningStatus, getStatusColors, getLevelColors } from '../../config/learningStatusColors';
 import { getLevel, calculateNodeImportance } from '../../lib/graphUtils';
-import { Edge, NodeSizeMode, Node } from '../../types';
 
 interface MindMapNodeProps {
   node: LayoutNode;
@@ -229,8 +228,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const baseFontSize = level === 'root' ? 14 : level === 'core' ? 12 : 10;
   const scaledFontSize = useMemo(() => baseFontSize / zoomLevel, [baseFontSize, zoomLevel]);
   const tagOffset = useMemo(() => textOffset + scaledFontSize * 1.4, [textOffset, scaledFontSize]);
-  const shadowBlur = useMemo(() => 3 / zoomLevel, [zoomLevel]);
-  const shadowOffset = useMemo(() => 1 / zoomLevel, [zoomLevel]);
+  const _shadowBlur = useMemo(() => 3 / zoomLevel, [zoomLevel]);
+  const _shadowOffset = useMemo(() => 1 / zoomLevel, [zoomLevel]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();

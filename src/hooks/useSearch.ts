@@ -99,12 +99,14 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchResult {
     } else if (query.trim().length < minLength) {
       setResults(null);
     }
-  }, [query, autoSearch, minLength, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, autoSearch, minLength]);
 
   useEffect(() => {
     if (autoSearch && query.trim().length >= minLength) {
       search(query);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   useEffect(() => {

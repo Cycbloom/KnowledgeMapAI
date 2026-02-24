@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Node as GraphNode, NodeLevel } from '../../types';
 import { getLevelColor, getLevelLabel } from '../../lib/graphUtils';
 import { X, ArrowLeft, Save, Loader2, Search, ChevronDown, Circle, MousePointer2, Check } from 'lucide-react';

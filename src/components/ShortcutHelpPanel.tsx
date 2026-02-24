@@ -24,7 +24,7 @@ export const ShortcutHelpPanel: React.FC<ShortcutHelpPanelProps> = ({
   const { bindings, setBinding, resetBinding, resetAllBindings } = useShortcutStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [pressedKeys, setPressedKeys] = useState<Partial<ShortcutKey>>({});
+  const [_pressedKeys, setPressedKeys] = useState<Partial<ShortcutKey>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {

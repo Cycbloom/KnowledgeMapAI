@@ -115,6 +115,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
 
   useEffect(() => {
     fetchTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphId, scope]);
 
   const getEffectiveTemplate = (code: string) => {

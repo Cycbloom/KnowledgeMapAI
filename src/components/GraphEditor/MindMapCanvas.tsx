@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useImperativeHandle, forwardRef } from 'react';
 import html2canvas from 'html2canvas';
-import { 
+import type { 
   Node, 
   Edge, 
   ColorScheme, 

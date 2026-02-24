@@ -15,8 +15,7 @@ import {
   BarChart3,
   RefreshCw,
   Sparkles,
-  Wand2,
-  Loader2
+  Wand2
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
@@ -67,7 +66,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 }) => {
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [_isGenerating, setIsGenerating] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<'sequential' | 'exploratory' | 'focused' | 'custom'>('sequential');
   const [dailyTime, setDailyTime] = useState(30);
   const [showSettings, setShowSettings] = useState(false);
@@ -125,6 +124,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     if (graphId) {
       fetchLearningPath();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphId]);
 
   const getPriorityColor = (priority: string) => {

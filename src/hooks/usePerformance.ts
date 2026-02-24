@@ -31,6 +31,8 @@ export const useComponentPerformance = (
 
     return () => {
       const renderTime = performance.now() - renderStartTime.current;
+      const renderNum = currentRenderCount + 1;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       renderCount.current++;
 
       const metrics: PerformanceMetrics = {
@@ -46,7 +48,7 @@ export const useComponentPerformance = (
 
       if (renderTime > logThreshold) {
         console.warn(
-          `[Performance] ${componentName} took ${renderTime.toFixed(2)}ms to render (render #${currentRenderCount + 1})`
+          `[Performance] ${componentName} took ${renderTime.toFixed(2)}ms to render (render #${renderNum})`
         );
 
         if (onSlowRender) {

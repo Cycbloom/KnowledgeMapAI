@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
 import type { GraphRelationType, QuickCreateGraphRequest } from '../../types';
-import { GRAPH_RELATION_LABELS } from '../../types';
 import { useTopicCheck } from '../../hooks/useTopicCheck';
 
 interface QuickCreateGraphPanelProps {

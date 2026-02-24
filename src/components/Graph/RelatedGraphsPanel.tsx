@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   FolderOpen, 
-  ChevronRight, 
   ExternalLink, 
   Trash2, 
-  Plus,
   BookOpen,
   ArrowRight,
-  RefreshCw,
-  Loader2
+  RefreshCw
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
@@ -46,7 +43,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
     related: GraphRelation[];
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [_showAddModal, _setShowAddModal] = useState(false);
   
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
@@ -67,6 +64,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
     if (graphId) {
       fetchRelations();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphId]);
 
   const handleDeleteRelation = async (relationId: string) => {
@@ -120,14 +118,14 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {relations!.prerequisites.length > 0 && (
+          {relations?.prerequisites && relations.prerequisites.length > 0 && (
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                 <ArrowRight className="w-3 h-3 rotate-180" />
-                <span>前置知识 ({relations!.prerequisites.length})</span>
+                <span>前置知识 ({relations.prerequisites.length})</span>
               </div>
               <div className="space-y-2">
-                {relations!.prerequisites.map((relation) => (
+                {relations.prerequisites.map((relation) => (
                   <motion.div
                     key={relation.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -164,14 +162,14 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
             </div>
           )}
 
-          {relations!.extensions.length > 0 && (
+          {relations?.extensions && relations.extensions.length > 0 && (
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                 <ArrowRight className="w-3 h-3" />
-                <span>扩展知识 ({relations!.extensions.length})</span>
+                <span>扩展知识 ({relations.extensions.length})</span>
               </div>
               <div className="space-y-2">
-                {relations!.extensions.map((relation) => (
+                {relations.extensions.map((relation) => (
                   <motion.div
                     key={relation.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -208,14 +206,14 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
             </div>
           )}
 
-          {relations!.related.length > 0 && (
+          {relations?.related && relations.related.length > 0 && (
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                 <BookOpen className="w-3 h-3" />
-                <span>相关知识 ({relations!.related.length})</span>
+                <span>相关知识 ({relations.related.length})</span>
               </div>
               <div className="space-y-2">
-                {relations!.related.map((relation) => (
+                {relations.related.map((relation) => (
                   <motion.div
                     key={relation.id}
                     initial={{ opacity: 0, y: 10 }}

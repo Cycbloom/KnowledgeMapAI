@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, Link as LinkIcon, Loader2 } from 'lucide-react';
 import type { Graph, GraphRelationType } from '../../types';
-import { GRAPH_RELATION_LABELS } from '../../types';
 
 interface CreateRelationPanelProps {
   graphs: Graph[];

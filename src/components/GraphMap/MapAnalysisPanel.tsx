@@ -18,7 +18,7 @@ export const MapAnalysisPanel: React.FC<MapAnalysisPanelProps> = ({
   analysis,
   isLoading,
   onGraphClick,
-  onCreateRelation,
+  onCreateRelation: _onCreateRelation,
 }) => {
   if (!isOpen) return null;
 

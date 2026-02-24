@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, BranchSuggestion } from '../../../types';
-import type { Node as GraphNode } from '../../../types';
+import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, BranchSuggestion, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
 import { MindMapNode } from '../MindMapNode';
 import { MindMapLink } from '../MindMapLink';
 import { AlternativeBranches } from '../AlternativeBranches';
@@ -8,7 +7,6 @@ import { createTreeLayout } from '../../../utils/layouts/treeLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from '../../../hooks/useTheme';
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
-import { NodeSizeMode, EdgeWidthMode } from '../../../types';
 
 interface TreeViewProps {
   nodes: Node[];
@@ -72,7 +70,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [_hoveredNodeId, _setHoveredNodeId] = useState<string | null>(null);
   const [containerSize, setContainerSize] = useState({ width, height });
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
@@ -94,7 +92,7 @@ export const TreeView: React.FC<TreeViewProps> = ({
       resizeObserver.observe(containerRef.current);
     }
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [containerRef]);
 
   const layout = useMemo(() => {
     if (nodes.length === 0) return null;

@@ -1,13 +1,11 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode } from '../../../types';
-import type { Node as GraphNode } from '../../../types';
+import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
 import { MindMapNode } from '../MindMapNode';
 import { MindMapLink } from '../MindMapLink';
-import { createMindMapLayout, LayoutResult } from '../../../utils/mindmapLayout';
+import { createMindMapLayout } from '../../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from '../../../hooks/useTheme';
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
-import { NodeSizeMode, EdgeWidthMode } from '../../../types';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 
 interface TimelineViewProps {
@@ -50,7 +48,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   nodeSizeMode = 'fixed',
   edgeWidthMode = 'fixed',
   coloringMode = 'level',
-  isRightPanelOpen = false,
+  isRightPanelOpen: _isRightPanelOpen = false,
   rightPanelWidth = 0
 }) => {
   const { isDark } = useTheme();
@@ -84,7 +82,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       resizeObserver.observe(containerRef.current);
     }
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [containerRef]);
 
   const allNodes = useMemo(() => {
     return nodes.filter(n => n.is_accepted !== false);

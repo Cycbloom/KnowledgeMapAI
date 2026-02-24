@@ -7,7 +7,6 @@ import {
   Sparkles, 
   Loader2, 
   ChevronRight, 
-  ChevronLeft,
   Check,
   Wand2,
   AlertTriangle,
@@ -72,6 +71,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
   useEffect(() => {
     fetchQuestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphId]);
 
   const fetchQuestions = async () => {
@@ -141,7 +141,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         mastery_level: '不了解'
       }));
 
-      console.log('Creating prerequisite graphs:', { graphId, topics, selectedPrerequisites: Array.from(selectedPrerequisites) });
+      console.info('Creating prerequisite graphs:', { graphId, topics, selectedPrerequisites: Array.from(selectedPrerequisites) });
 
       const result = await api.graphs.createPrerequisiteGraphs(graphId, { 
         topics,
@@ -149,7 +149,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         style: 'academic'
       });
       
-      console.log('Create prerequisite graphs result:', result);
+      console.info('Create prerequisite graphs result:', result);
 
       setCreatedGraphs(result.created);
       addMessage({ 
@@ -211,7 +211,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     );
   }
 
-  const totalSteps = unknownPrerequisites.length > 0 ? 4 : 3;
+  const _totalSteps = unknownPrerequisites.length > 0 ? 4 : 3;
   const stepIndicator = unknownPrerequisites.length > 0 ? [1, 2, 3, 4] : [1, 2, 3];
 
   return (

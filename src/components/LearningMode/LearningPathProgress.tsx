@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Target,
   TrendingUp,
-  Award,
   Zap
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';

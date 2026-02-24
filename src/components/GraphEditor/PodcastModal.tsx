@@ -28,7 +28,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
 }) => {
   const [script, setScript] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeSegmentIndex, setActiveSegmentIndex] = useState(-1);
+  const [_activeSegmentIndex, _setActiveSegmentIndex] = useState(-1);
   const { isDark } = useTheme();
   
   const { 
@@ -38,9 +38,9 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
     cancel, 
     isSpeaking, 
     isPaused, 
-    voices, 
-    selectedVoice, 
-    setVoice,
+    voices: _voices, 
+    selectedVoice: _selectedVoice, 
+    setVoice: _setVoice,
     currentEngine,
     switchEngine
   } = useTextToSpeech('qwen3');
@@ -59,6 +59,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
     return () => {
       cancel();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialScript]);
 
   const generateScript = async () => {

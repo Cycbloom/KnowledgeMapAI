@@ -7,8 +7,7 @@ import {
   Lightbulb,
   Settings2,
   GraduationCap,
-  MessageCircle,
-  Route
+  MessageCircle
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useTheme } from '../../hooks/useTheme';
@@ -74,7 +73,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
   const chatState = useChatState();
-  const [ttsEngine, setTTSEngine] = useState<TTSEngine>('browser');
+  const [ttsEngine, _setTTSEngine] = useState<TTSEngine>('browser');
   const { 
     isSpeaking, 
     isPaused, 

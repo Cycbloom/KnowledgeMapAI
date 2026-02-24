@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, Play, Pause, MonitorPlay } from 'lucide-react';
 
 interface PresentationControlsProps {

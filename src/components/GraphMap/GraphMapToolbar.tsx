@@ -2,17 +2,14 @@ import React from 'react';
 import { 
   ArrowLeft, 
   Plus, 
-  Filter, 
   RefreshCw,
   Network,
   BookOpen,
   Layers,
   ArrowRightLeft,
   Sparkles,
-  Lightbulb,
 } from 'lucide-react';
-import type { GraphMapFilterMode, GraphRelationType } from '../../types';
-import { GRAPH_RELATION_LABELS } from '../../types';
+import type { GraphMapFilterMode } from '../../types';
 
 interface GraphMapToolbarProps {
   onBack: () => void;

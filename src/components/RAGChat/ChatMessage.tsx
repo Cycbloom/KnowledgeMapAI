@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { Message, Source } from './hooks/useChatState';
+import { Message } from './hooks/useChatState';
 
 interface ChatMessageProps {
   message: Message;

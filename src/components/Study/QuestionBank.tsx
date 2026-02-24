@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/useQueries';
-import { Search, Trash2, Edit, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { QuestionForm, QuestionFormData } from './QuestionForm';
 import { StudyCardPreview } from './StudyCardPreview';
@@ -26,7 +26,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const [nextReviewRange, setNextReviewRange] = useState<{start: string, end: string}>({ start: '', end: '' });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+  const [_viewMode, _setViewMode] = useState<'list' | 'grid'>('grid');
   const [previewCard, setPreviewCard] = useState<StudyCard | null>(null);
   const [editingCard, setEditingCard] = useState<StudyCard | null>(null);
   const [isCreating, setIsCreating] = useState(false);

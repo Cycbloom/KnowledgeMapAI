@@ -153,6 +153,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('mousemove', handleMouseMove as any);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging]);
 
   if (nodes.length === 0) return null;

@@ -70,9 +70,9 @@ const styleOptions = [
 export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   isOpen,
   onClose,
-  sourceGraphId,
+  sourceGraphId: _sourceGraphId,
   sourceGraphTitle,
-  sourceGraphDescription,
+  sourceGraphDescription: _sourceGraphDescription,
   onDepthExpand,
   onDepthExpandNode,
   onWidthExpand,

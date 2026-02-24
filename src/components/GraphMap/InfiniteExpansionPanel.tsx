@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2 } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
-import { GRAPH_RELATION_LABELS } from '../../types';
 
 interface InfiniteExpansionPanelProps {
   isOpen: boolean;
@@ -24,7 +23,7 @@ interface InfiniteExpansionPanelProps {
 export const InfiniteExpansionPanel: React.FC<InfiniteExpansionPanelProps> = ({
   isOpen,
   onClose,
-  sourceGraphId,
+  sourceGraphId: _sourceGraphId,
   sourceGraphTitle,
   onSubmit,
   progress,

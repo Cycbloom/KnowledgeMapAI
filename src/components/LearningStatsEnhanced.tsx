@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, RadialBarChart, RadialBar, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useTheme } from '../hooks/useTheme';
-import { CheckCircle, BookOpen, AlertTriangle, Target, TrendingUp, Brain, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, BookOpen, TrendingUp, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface KnowledgeHeatmapProps {
   graphData: Array<{
@@ -26,7 +26,7 @@ interface WeakPoint {
   suggestion: string;
 }
 
-interface LearningStatsEnhancedProps {
+interface _LearningStatsEnhancedProps {
   graphData: KnowledgeHeatmapProps['graphData'];
   nodeStatus: Record<string, any>;
   studyCards: any[];
@@ -39,7 +39,7 @@ const STATUS_COLORS = {
   locked: '#6b7280'
 };
 
-const STATUS_LABELS = {
+const _STATUS_LABELS = {
   mastered: '已掌握',
   learning: '学习中',
   new: '未开始',

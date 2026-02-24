@@ -25,7 +25,6 @@ import {
   Play,
   Trash2,
   Plus,
-  ChevronRight,
   Loader2,
   Sparkles,
   Target,
@@ -204,7 +203,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   
   const [pathNodes, setPathNodes] = useState<LearningPathNode[]>(learningPath?.nodes || []);
   const [isAddingNode, setIsAddingNode] = useState(false);
@@ -251,7 +250,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
         pn.id === nodeRefId ? { ...pn, status } : pn
       ));
       addMessage({ type: 'success', content: '状态已更新' });
-    } catch (error) {
+    } catch (_error) {
       addMessage({ type: 'error', content: '更新状态失败' });
     }
   }, [learningPath, addMessage]);
@@ -264,7 +263,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       setPathNodes(prev => prev.filter(pn => pn.id !== nodeRefId));
       addMessage({ type: 'success', content: '节点已从路径中移除' });
       onRefresh();
-    } catch (error) {
+    } catch (_error) {
       addMessage({ type: 'error', content: '移除节点失败' });
     }
   }, [learningPath, addMessage, onRefresh]);
@@ -283,7 +282,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       setIsAddingNode(false);
       addMessage({ type: 'success', content: '节点已添加到路径' });
       onRefresh();
-    } catch (error) {
+    } catch (_error) {
       addMessage({ type: 'error', content: '添加节点失败' });
     } finally {
       setIsSaving(false);
@@ -298,7 +297,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       await api.learningPaths.reorderNodes(learningPath.id, pathNodes.map(pn => pn.id));
       addMessage({ type: 'success', content: '顺序已保存' });
       onRefresh();
-    } catch (error) {
+    } catch (_error) {
       addMessage({ type: 'error', content: '保存顺序失败' });
     } finally {
       setIsSaving(false);

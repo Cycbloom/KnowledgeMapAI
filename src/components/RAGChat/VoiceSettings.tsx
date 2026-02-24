@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Volume2, VolumeX, Pause, Play, Loader2, Settings2, X, Globe, Cpu } from 'lucide-react';
+import React, { useState } from 'react';
+import { Volume2, VolumeX, Loader2, X, Globe, Cpu } from 'lucide-react';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
 import { TTSEngine } from '../../types';
 
@@ -11,16 +11,16 @@ interface VoiceSettingsProps {
 export const VoiceSettings: React.FC<VoiceSettingsProps> = ({ isDark, onClose }) => {
   const [ttsEngine, setTTSEngine] = useState<TTSEngine>('browser');
   const { 
-    isSpeaking, 
-    isPaused, 
-    isLoading: ttsLoading,
+    isSpeaking: _isSpeaking, 
+    isPaused: _isPaused, 
+    isLoading: _ttsLoading,
     error: ttsError, 
     voices, 
     selectedVoice, 
-    speak, 
-    pause, 
-    resume, 
-    cancel, 
+    speak: _speak, 
+    pause: _pause, 
+    resume: _resume, 
+    cancel: _cancel, 
     setVoice,
     switchEngine,
     hasSupport 
@@ -135,7 +135,7 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
   messageId,
   content,
   isDark,
-  isStreaming,
+  isStreaming: _isStreaming,
   currentSpeakingMessageId,
   isSpeaking,
   isPaused,

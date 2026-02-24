@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node, Edge, BranchSuggestion } from '../../types';
+import type { Node, Edge } from '../../types';
 import { levelLabels } from '../../config/graphConfig';
 import { getLearningStatus, getStatusColors } from '../../config/learningStatusColors';
 import { getLevel } from '../../lib/graphUtils';
@@ -12,7 +12,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { 
   X, ArrowLeft, Wand2, Edit3, Trash2, Navigation, 
-  GraduationCap, Sparkles, Check, Lock, Loader2, GitBranch,
+  GraduationCap, Sparkles, Check, Loader2, GitBranch,
   Calendar, Activity, Link as LinkIcon, ChevronRight
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
@@ -77,7 +77,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
 }) => {
   const { isDark } = useTheme();
   const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
-  const isLocked = nodeStatus && nodeStatus[node.id]?.locked;
+  const _isLocked = nodeStatus && nodeStatus[node.id]?.locked;
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
 
@@ -170,15 +170,15 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             urlTransform={(url) => url}
             components={{
               code(props) {
-                const {children, className, node, ...rest} = props
+                const {children, className, ..._rest} = props
                 const match = /language-(\w+)/.exec(className || '')
                 if (match && match[1] === 'mermaid') {
                   return <Mermaid chart={String(children).replace(/\n$/, '')} />
                 }
-                return <CodeBlock className={className} isDark={isDark} node={node}>{children}</CodeBlock>
+                return <CodeBlock className={className} isDark={isDark}>{children}</CodeBlock>
               },
-              img: ({node, ...props}) => <img {...props} className="rounded-lg max-w-full h-auto" loading="lazy" />,
-              a: ({node, ...props}) => {
+              img: (props) => <img {...props} className="rounded-lg max-w-full h-auto" loading="lazy" />,
+              a: (props) => {
                 const { href, children } = props;
                 const cleanHref = href ? decodeURIComponent(href).trim() : '';
                 

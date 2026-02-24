@@ -30,7 +30,7 @@ export const useTutorOperations = ({
     tutorMode, setTutorMode,
     extractedConcepts, setExtractedConcepts,
     isTutorMode, setIsTutorMode,
-    _suggestedNextTopics, setSuggestedNextTopics,
+    suggestedNextTopics: _suggestedNextTopics, setSuggestedNextTopics,
     selectedNode,
     selectedNodeIds,
     setLoading

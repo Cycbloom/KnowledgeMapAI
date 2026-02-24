@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
 import { MindMapNode } from '../MindMapNode';
 import { MindMapLink } from '../MindMapLink';
-import { createMindMapLayout } from '../../../utils/mindmapLayout';
+import { createMindMapLayout, LayoutResult } from '../../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from '../../../hooks/useTheme';
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';

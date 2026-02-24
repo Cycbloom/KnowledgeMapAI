@@ -116,8 +116,8 @@ export const GraphEditor = () => {
   
   const templateLayout = graphMeta?.settings?.layout;
 
-  const nodes = graphData?.nodes || [];
-  const edges = graphData?.edges || [];
+  const nodes = useMemo(() => graphData?.nodes || [], [graphData?.nodes]);
+  const edges = useMemo(() => graphData?.edges || [], [graphData?.edges]);
 
   // State Hook
   const state = useGraphEditorState();

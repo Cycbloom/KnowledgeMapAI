@@ -290,8 +290,8 @@ export const TreeView: React.FC<TreeViewProps> = ({
                   isDark={isDark}
                   zoomLevel={transform.k}
                   onClick={() => onNodeClick(node as GraphNode)}
-                  onMouseEnter={() => setHoveredNodeId(node.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
+                  onMouseEnter={() => _setHoveredNodeId(node.id)}
+                  onMouseLeave={() => _setHoveredNodeId(null)}
                   focused={isFocused}
                   hasFocusMode={hasFocusMode}
                   colorScheme={colorScheme}

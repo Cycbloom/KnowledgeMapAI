@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Loader2, X, Globe, Cpu } from 'lucide-react';
+import { Volume2, VolumeX, Loader2, X, Globe, Cpu, Play, Pause } from 'lucide-react';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
 import { TTSEngine } from '../../types';
 

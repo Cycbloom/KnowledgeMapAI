@@ -26,7 +26,10 @@ export const RecycleBin = () => {
     isBatch: false
   });
 
-  const graphs = Array.isArray(trashData) ? trashData : [];
+  const graphs = useMemo(() => 
+    Array.isArray(trashData) ? trashData : [], 
+    [trashData]
+  );
   
   const filteredGraphs = useMemo(() => graphs.filter(g => 
     g.title.toLowerCase().includes(searchQuery.toLowerCase()) || 

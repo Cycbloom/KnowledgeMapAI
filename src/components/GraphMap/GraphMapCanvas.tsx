@@ -453,8 +453,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
                     }
                   }
                 }}
-                onMouseEnter={() => setHoveredNodeId(node.id)}
-                onMouseLeave={() => setHoveredNodeId(null)}
+                onMouseEnter={() => _setHoveredNodeId(node.id)}
+                onMouseLeave={() => _setHoveredNodeId(null)}
                 focused={isFocused}
                 forceShowText={true}
                 hasFocusMode={hasFocus}

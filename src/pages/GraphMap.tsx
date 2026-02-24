@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
@@ -53,8 +53,8 @@ export const GraphMap = () => {
     },
   });
 
-  const graphs: Graph[] = mapData?.graphs || [];
-  const relations: GraphRelation[] = mapData?.relations || [];
+  const graphs = useMemo(() => mapData?.graphs || [], [mapData?.graphs]);
+  const relations = useMemo(() => mapData?.relations || [], [mapData?.relations]);
 
   const fromGraph = graphs.find((g: Graph) => g.id === fromGraphId);
 

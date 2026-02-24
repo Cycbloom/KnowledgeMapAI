@@ -76,7 +76,10 @@ export const Dashboard = () => {
     }
   }, [newTitle, checkTopic, resetTopicCheck]);
 
-  const graphs = Array.isArray(graphsData) ? graphsData : [];
+  const graphs = useMemo(() => 
+    Array.isArray(graphsData) ? graphsData : [], 
+    [graphsData]
+  );
   
   const filteredGraphs = useMemo(() => {
     let result = graphs;

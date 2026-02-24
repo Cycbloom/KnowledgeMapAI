@@ -123,9 +123,10 @@ export const Dashboard = () => {
       setSelectedTemplate(null);
       setIsCreating(false);
       addMessage({ type: 'success', content: '创建成功!' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      addMessage({ type: 'error', content: err.message || '创建图谱失败' });
+      const message = err instanceof Error ? err.message : '创建图谱失败';
+      addMessage({ type: 'error', content: message });
     }
   };
 
@@ -155,9 +156,10 @@ export const Dashboard = () => {
         addMessage({ type: 'success', content: '图谱删除成功' });
         setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         console.error(err);
-        addMessage({ type: 'error', content: err.message || '删除失败' });
+        const message = err instanceof Error ? err.message : '删除失败';
+        addMessage({ type: 'error', content: message });
         setDeleteConfirm(prev => ({ ...prev, isOpen: false }));
       }
     });
@@ -170,9 +172,10 @@ export const Dashboard = () => {
         onSuccess: () => {
           addMessage({ type: 'success', content: currentFavorite ? '已取消收藏' : '收藏成功' });
         },
-        onError: (err: any) => {
+        onError: (err: unknown) => {
           console.error(err);
-          addMessage({ type: 'error', content: err.message || '操作失败' });
+          const message = err instanceof Error ? err.message : '操作失败';
+          addMessage({ type: 'error', content: message });
         },
       }
     );
@@ -218,9 +221,10 @@ export const Dashboard = () => {
         
         await importGraphMutation.mutateAsync(importData);
         addMessage({ content: '导入成功!', type: 'success' });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
-        addMessage({ content: `导入失败: ${  err.message || '格式错误'}`, type: 'error' });
+        const message = err instanceof Error ? err.message : '格式错误';
+        addMessage({ content: `导入失败: ${message}`, type: 'error' });
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = '';
       }

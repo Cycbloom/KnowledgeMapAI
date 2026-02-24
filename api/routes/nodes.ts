@@ -106,12 +106,13 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
     achievementService.updateCreationStats(req.user.id).catch(console.error);
 
     res.status(201).json(result);
-  } catch (error: any) {
-    if (error.message?.includes('已存在于当前图谱中')) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('已存在于当前图谱中')) {
       throw new AppError('该知识点已存在于当前图谱中', 400, ErrorCodes.VALIDATION_ERROR);
     }
     logger.error('Create graph node error:', error);
-    throw new AppError(error.message || '创建图谱节点失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(message || '创建图谱节点失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -212,9 +213,10 @@ router.put('/nodes/:id', requireAuth, validate(updateNodeSchema), async (req: Au
   if (Object.keys(kpUpdates).length > 0) {
     try {
       await knowledgePointService.update(req.supabase!, existingNode.knowledge_point_id, kpUpdates);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Update knowledge point error:', error);
-      throw new AppError(error.message || '更新知识点失败', 500, ErrorCodes.INTERNAL_ERROR);
+      const message = error instanceof Error ? error.message : '更新知识点失败';
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   }
 
@@ -328,7 +330,7 @@ router.get('/nodes/:id/related', requireAuth, async (req: AuthRequest, res: Resp
 
     res.json(results);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Related nodes error:', error);
     if (error instanceof AppError) throw error;
     res.status(500).json({ error: 'Failed to fetch related nodes' });
@@ -507,14 +509,15 @@ router.post('/edges', requireAuth, validate(createEdgeSchema), async (req: AuthR
       weight: edge.weight,
       created_at: edge.created_at,
     });
-  } catch (error: any) {
-    if (error.message?.includes('源知识点不在当前图谱中')) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('源知识点不在当前图谱中')) {
       throw new AppError('Source node not found or unauthorized', 404, ErrorCodes.NODE_NOT_FOUND);
     }
-    if (error.message?.includes('目标知识点不在当前图谱中')) {
+    if (message.includes('目标知识点不在当前图谱中')) {
       throw new AppError('Target node not found or unauthorized', 404, ErrorCodes.NODE_NOT_FOUND);
     }
-    throw new AppError(error.message || '创建边失败', 500, ErrorCodes.INTERNAL_ERROR);
+    throw new AppError(message || '创建边失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

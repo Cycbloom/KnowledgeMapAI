@@ -1,11 +1,17 @@
 import { Node, Edge } from '../types';
-import { getLevel, getNextLevel, getLevelColorHex } from '../lib/graphUtils';
+import { getLevel } from '../lib/graphUtils';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { queryKeys, useAIExpandMutation, useAIGenerateCardsMutation, useCreateCardsBatchMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from './useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { createAsyncHandler } from '../utils/asyncHandler';
+import {
+  processExpandSuggestions,
+  getExistingTitles,
+  getCurrentChildrenTitles,
+  buildDefaultExpandPrompt
+} from './utils/nodeExpansionUtils';
 
 interface UseCombinedGraphAIOperationsProps {
   graph1Id: string;
@@ -72,83 +78,41 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         const edges = getEdgesForGraph(currentGraphId);
         
         const parentLevel = getLevel(selectedNode, edges);
-        const newLevel = getNextLevel(parentLevel);
         
-        const existingTitles = nodes.map(n => n.title);
+        const existingTitles = getExistingTitles(nodes);
+        const currentChildrenTitles = getCurrentChildrenTitles(selectedNode.id, nodes, edges);
         
-        const currentChildrenIds = edges
-          .filter(e => e.source_knowledge_point_id === selectedNode.id)
-          .map(e => e.target_knowledge_point_id);
-        const currentChildrenTitles = nodes
-          .filter(n => currentChildrenIds.includes(n.id))
-          .map(n => n.title);
-        
-        const expandPrompt = prompt || `请为 ${selectedNode.title} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
+        const expandPrompt = prompt || buildDefaultExpandPrompt(selectedNode.title);
         
         const res = await aiExpandMutation.mutateAsync({
           node_title: selectedNode.title,
           node_content: selectedNode.content,
           node_level: parentLevel,
-          existing_titles: existingTitles.filter(Boolean) as string[],
-          current_children: currentChildrenTitles.filter(Boolean) as string[],
+          existing_titles: existingTitles,
+          current_children: currentChildrenTitles,
           expand_prompt: expandPrompt,
           graph_id: currentGraphId
         });
         
-        const suggestions = res.suggestions;
-        
-        let newNodesCount = 0;
-        let newEdgesCount = 0;
-        
-        for (const s of suggestions) {
-          const existingNode = nodes.find(n => n.title === s.title);
-          
-          if (existingNode) {
-            const edgeExists = edges.some(e =>
-              (e.source_knowledge_point_id === selectedNode.id && e.target_knowledge_point_id === existingNode.id) ||
-              (e.source_knowledge_point_id === existingNode.id && e.target_knowledge_point_id === selectedNode.id)
-            );
-            
-            if (!edgeExists && existingNode.id !== selectedNode.id) {
-              await createEdgeMutation.mutateAsync({
-                source_knowledge_point_id: selectedNode.id,
-                target_knowledge_point_id: existingNode.id,
-                relationship_type: 'related',
-                graphId: currentGraphId
-              });
-              newEdgesCount++;
-            }
-          } else {
-            const angle = Math.random() * Math.PI * 2;
-            const radius = 4 + Math.random() * 4;
-            const x = Math.round(selectedNode.x_position + Math.cos(angle) * radius);
-            const y = Math.round(selectedNode.y_position + Math.sin(angle) * radius);
-            
-            const newNode = await createNodeMutation.mutateAsync({
-              graph_id: currentGraphId,
-              title: s.title,
-              content: s.content,
-              x_position: x,
-              y_position: y,
-              color: getLevelColorHex(newLevel),
-              level: newLevel,
-              properties: {}
-            });
-            
-            await createEdgeMutation.mutateAsync({
-              source_knowledge_point_id: selectedNode.id,
-              target_knowledge_point_id: newNode.id,
-              relationship_type: 'related',
-              graphId: currentGraphId
-            });
-            newNodesCount++;
-            newEdgesCount++;
+        const result = await processExpandSuggestions({
+          selectedNode,
+          nodes,
+          edges,
+          suggestions: res.suggestions,
+          graphId: currentGraphId,
+          createNode: async (data) => {
+            const node = await createNodeMutation.mutateAsync(data);
+            return node;
+          },
+          createEdge: async (data) => {
+            const edge = await createEdgeMutation.mutateAsync(data);
+            return edge;
           }
-        }
+        });
         
         onRefresh();
         
-        return { newNodesCount, newEdgesCount };
+        return result;
       },
       {
         onSuccess: (result) => {

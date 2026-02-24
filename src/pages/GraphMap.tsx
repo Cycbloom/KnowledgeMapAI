@@ -103,8 +103,9 @@ export const GraphMap = () => {
       await api.graphs.createRelation(data);
       addMessage({ type: 'success', content: '关系创建成功' });
       queryClient.invalidateQueries({ queryKey: ['graphMap'] });
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '创建关系失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '创建关系失败';
+      addMessage({ type: 'error', content: message });
       throw error;
     }
   }, [addMessage, queryClient]);
@@ -114,8 +115,9 @@ export const GraphMap = () => {
       await api.graphs.deleteRelationById(relationId);
       addMessage({ type: 'success', content: '关系已删除' });
       queryClient.invalidateQueries({ queryKey: ['graphMap'] });
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '删除关系失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '删除关系失败';
+      addMessage({ type: 'error', content: message });
     }
   }, [addMessage, queryClient]);
 
@@ -147,8 +149,9 @@ export const GraphMap = () => {
       if (data.auto_generate_content) {
         addMessage({ type: 'info', content: '正在生成初始内容...' });
       }
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '创建图谱失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '创建图谱失败';
+      addMessage({ type: 'error', content: message });
       throw error;
     }
   }, [addMessage, queryClient]);
@@ -181,8 +184,9 @@ export const GraphMap = () => {
       });
       
       queryClient.invalidateQueries({ queryKey: ['graphMap'] });
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '启动扩展失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '启动扩展失败';
+      addMessage({ type: 'error', content: message });
       throw error;
     }
   }, [selectedGraphId, addMessage, queryClient]);
@@ -223,8 +227,9 @@ export const GraphMap = () => {
         return { root: result.root, coreNodes: result.coreNodes };
       }
       return null;
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '深度拓展失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '深度拓展失败';
+      addMessage({ type: 'error', content: message });
       throw error;
     }
   }, [selectedGraphId, graphs, addMessage, queryClient]);
@@ -270,8 +275,9 @@ export const GraphMap = () => {
         return result.children;
       }
       return null;
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '展开节点失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '展开节点失败';
+      addMessage({ type: 'error', content: message });
       throw error;
     }
   }, [selectedGraphId, addMessage, queryClient]);
@@ -297,8 +303,9 @@ export const GraphMap = () => {
         setPromptEditMode(mode);
       }
       setIsPromptEditorOpen(true);
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '获取提示词失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '获取提示词失败';
+      addMessage({ type: 'error', content: message });
     }
   }, [addMessage]);
 
@@ -311,8 +318,9 @@ export const GraphMap = () => {
       const effectiveTemplate = userTemplate || systemTemplate;
       setPromptContent(effectiveTemplate?.template_content || '');
       setDepthPromptType(type);
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '获取提示词失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '获取提示词失败';
+      addMessage({ type: 'error', content: message });
     }
   }, [addMessage]);
 
@@ -330,8 +338,9 @@ export const GraphMap = () => {
         template_content: content,
       });
       addMessage({ type: 'success', content: '提示词已保存' });
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '保存提示词失败' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '保存提示词失败';
+      addMessage({ type: 'error', content: message });
       throw error;
     }
   }, [promptEditMode, depthPromptType, addMessage]);

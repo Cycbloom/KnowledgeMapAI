@@ -370,8 +370,9 @@ router.get('/:id/analyze', requireAuth, validate({ params: uuidParamsSchema }), 
   try {
     const analysis = await graphService.analyzeGraph(req.supabase!, userId, id);
     res.json(analysis);
-  } catch (error: any) {
-    throw new AppError(error.message || '图谱分析失败', 500, ErrorCodes.INTERNAL_ERROR);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '图谱分析失败';
+    throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -384,8 +385,9 @@ router.get('/:id/missing-connections', requireAuth, validate({ params: uuidParam
   try {
     const suggestions = await graphService.findMissingConnections(req.supabase!, userId, id, maxSuggestions);
     res.json({ suggestions });
-  } catch (error: any) {
-    throw new AppError(error.message || '获取连接建议失败', 500, ErrorCodes.INTERNAL_ERROR);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : '获取连接建议失败';
+    throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

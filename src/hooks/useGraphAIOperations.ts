@@ -8,6 +8,12 @@ import { useStore } from '../store/useStore';
 import { queryKeys } from './useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { createAsyncHandler } from '../utils/asyncHandler';
+import {
+  processExpandSuggestions,
+  getExistingTitles,
+  getCurrentChildrenTitles,
+  buildDefaultExpandPrompt
+} from './utils/nodeExpansionUtils';
 
 interface UseGraphAIOperationsProps {
   id: string;
@@ -130,88 +136,40 @@ export const useGraphAIOperations = ({
     await asyncHandler(
       async () => {
         const parentLevel = getLevel(selectedNode, edges);
-        const newLevel = getNextLevel(parentLevel);
 
-        const existingTitles = nodes.map(n => n.title);
-        
-        const currentChildrenIds = edges
-          .filter(e => e.source_knowledge_point_id === selectedNode.id)
-          .map(e => e.target_knowledge_point_id);
-        const currentChildrenTitles = nodes
-          .filter(n => currentChildrenIds.includes(n.id))
-          .map(n => n.title);
+        const existingTitles = getExistingTitles(nodes);
+        const currentChildrenTitles = getCurrentChildrenTitles(selectedNode.id, nodes, edges);
 
-        let expandPrompt = aiPrompt;
-        
-        if (!expandPrompt) {
-          expandPrompt = `请为 ${selectedNode.title} 生成 3-5 个相关的子主题，每个子主题应该简洁明确`;
-        }
+        const expandPrompt = aiPrompt || buildDefaultExpandPrompt(selectedNode.title);
 
         const res = await aiExpandMutation.mutateAsync({ 
           node_title: selectedNode.title,
           node_content: selectedNode.content,
           node_level: parentLevel,
-          existing_titles: existingTitles.filter(Boolean) as string[],
-          current_children: currentChildrenTitles.filter(Boolean) as string[],
+          existing_titles: existingTitles,
+          current_children: currentChildrenTitles,
           expand_prompt: expandPrompt,
         });
         
-        const suggestions = res.suggestions;
-        
-        let newNodesCount = 0;
-        let newEdgesCount = 0;
-
-        for (const s of suggestions) {
-          const existingNode = nodes.find(n => n.title === s.title);
-          
-          if (existingNode) {
-            const edgeExists = edges.some(e => 
-              (e.source_knowledge_point_id === selectedNode.id && e.target_knowledge_point_id === existingNode.id) ||
-              (e.source_knowledge_point_id === existingNode.id && e.target_knowledge_point_id === selectedNode.id)
-            );
-            
-            if (!edgeExists && existingNode.id !== selectedNode.id) {
-               const newEdge = await createEdgeMutation.mutateAsync({
-                source_knowledge_point_id: selectedNode.id,
-                target_knowledge_point_id: existingNode.id,
-                relationship_type: 'related',
-                graphId: id
-              });
-              record({ type: 'CREATE_EDGE', payload: newEdge });
-              newEdgesCount++;
-            }
-          } else {
-            const angle = Math.random() * Math.PI * 2;
-            const radius = 4 + Math.random() * 4;
-            const x = Math.round(selectedNode.x_position + Math.cos(angle) * radius);
-            const y = Math.round(selectedNode.y_position + Math.sin(angle) * radius);
-            
-            const newNode = await createNodeMutation.mutateAsync({
-              graph_id: id,
-              title: s.title,
-              content: s.content,
-              x_position: x,
-              y_position: y,
-              color: getLevelColorHex(newLevel), 
-              level: newLevel,
-              properties: {}
-            });
-            
-            record({ type: 'CREATE_NODE', payload: newNode });
-
-            const newEdge = await createEdgeMutation.mutateAsync({
-              source_knowledge_point_id: selectedNode.id,
-              target_knowledge_point_id: newNode.id,
-              relationship_type: 'related',
-              graphId: id
-            });
-            record({ type: 'CREATE_EDGE', payload: newEdge });
-            newNodesCount++;
-            newEdgesCount++;
+        const result = await processExpandSuggestions({
+          selectedNode,
+          nodes,
+          edges,
+          suggestions: res.suggestions,
+          graphId: id,
+          createNode: async (data) => {
+            const node = await createNodeMutation.mutateAsync(data);
+            record({ type: 'CREATE_NODE', payload: node });
+            return node;
+          },
+          createEdge: async (data) => {
+            const edge = await createEdgeMutation.mutateAsync(data);
+            record({ type: 'CREATE_EDGE', payload: edge });
+            return edge;
           }
-        }
+        });
 
-        return { newNodesCount, newEdgesCount };
+        return result;
       },
       {
         loadingSetter: setLoading,

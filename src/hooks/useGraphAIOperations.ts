@@ -67,7 +67,7 @@ export const useGraphAIOperations = ({
         
         if (!prompt && selectedNode) {
           const nodeAiPrompt = selectedNode.properties?.ai_prompt;
-          if (nodeAiPrompt) {
+          if (nodeAiPrompt && typeof nodeAiPrompt === 'string') {
             prompt = nodeAiPrompt.replace(/{主题}/g, selectedNode.title || '');
             
             const parentNode = nodes.find(n => n.id === edges.find(e => e.target_knowledge_point_id === selectedNode.id)?.source_knowledge_point_id);

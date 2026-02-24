@@ -40,9 +40,10 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     // Note: User record is created automatically by handle_new_user trigger
 
     res.status(201).json({ user: authData.user, session: authData.session });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Register error:', error);
-    throw new AppError(error.message || '内部服务器错误', 500, ErrorCodes.INTERNAL_ERROR);
+    const message = error instanceof Error ? error.message : '内部服务器错误';
+    throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -85,7 +86,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
     }
 
     res.json({ user: data.user, session: data.session });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login error:', error);
     next(error);
   }
@@ -116,7 +117,7 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
     }
 
     res.json({ session: data.session, user: data.user });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Refresh token error:', error);
     next(error);
   }
@@ -126,15 +127,18 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
  * User Logout
  * POST /api/auth/logout
  */
-router.post('/logout', async (req: Request, res: Response): Promise<void> => {
-  const { error } = await supabaseAdmin.auth.signOut();
+router.post('/logout', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
+  try {
+    const { error } = await supabaseAdmin.auth.admin.signOut(req.user.id);
 
-  if (error) {
-    res.status(500).json({ error: error.message });
-    return;
+    if (error) {
+      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    next(error);
   }
-
-  res.json({ message: 'Logged out successfully' });
 });
 
 /**

@@ -400,8 +400,9 @@ export const GraphEditor = () => {
         relationship_type: 'related'
       });
       addMessage({ content: '连接已创建', type: 'success' });
-    } catch (error: any) {
-      addMessage({ content: `创建连接失败: ${error.message || '未知错误'}`, type: 'error' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      addMessage({ content: `创建连接失败: ${message}`, type: 'error' });
     }
   }, [mutations.createEdgeMutation, id, addMessage]);
 
@@ -1044,8 +1045,9 @@ export const GraphEditor = () => {
               relationship_type: 'related'
             });
             addMessage({ content: '连接已创建', type: 'success' });
-          } catch (error: any) {
-            addMessage({ content: `创建连接失败: ${  error.message || '未知错误'}`, type: 'error' });
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : '未知错误';
+            addMessage({ content: `创建连接失败: ${message}`, type: 'error' });
           }
         }}
       />

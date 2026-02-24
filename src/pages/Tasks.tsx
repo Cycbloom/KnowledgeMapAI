@@ -5,6 +5,18 @@ import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { CheckCircle2, XCircle, Loader2, Clock, RefreshCw, ArrowRight, Trash2, RotateCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Task } from '../types';
+
+const getStringOrUnknown = (value: unknown, fallback: string = ''): string => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  return fallback;
+};
+
+const getNumberOrUndefined = (value: unknown): number | undefined => {
+  if (typeof value === 'number') return value;
+  return undefined;
+};
 
 const formatTime = (iso?: string) => {
   if (!iso) return '-';
@@ -253,14 +265,14 @@ export const Tasks = () => {
                                 <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
                                   <span className="flex items-center gap-2">
                                     <Loader2 size={12} className="animate-spin text-blue-500" />
-                                    正在处理: <span className="text-blue-600 dark:text-blue-400">{t.result.current_node || '准备中...'}</span>
+                                    正在处理: <span className="text-blue-600 dark:text-blue-400">{getStringOrUnknown(t.result.current_node, '准备中...')}</span>
                                   </span>
-                                  <span>{t.result.progress}%</span>
+                                  <span>{getNumberOrUndefined(t.result.progress) ?? 0}%</span>
                                 </div>
                                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner">
                                   <div 
                                     className="bg-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
-                                    style={{ width: `${t.result.progress}%` }}
+                                    style={{ width: `${getNumberOrUndefined(t.result.progress) ?? 0}%` }}
                                   />
                                 </div>
                               </div>
@@ -300,32 +312,32 @@ export const Tasks = () => {
                             {showResult && t.type === 'infinite_graph_expansion' && t.result?.total_graphs_created !== undefined && (
                               <div className="text-purple-700 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-900/10 p-2 rounded text-xs border border-purple-100/50 dark:border-purple-900/20">
                                 <span className="font-medium">扩展完成：</span> 
-                                创建 {t.result.total_graphs_created} 个图谱，{t.result.total_nodes_created} 个知识点
+                                创建 {getNumberOrUndefined(t.result.total_graphs_created) ?? 0} 个图谱，{getNumberOrUndefined(t.result.total_nodes_created) ?? 0} 个知识点
                               </div>
                             )}
 
                             {showResult && t.type === 'embedding_generation' && typeof t.result?.processed === 'number' && (
                               <div className="text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 p-2 rounded text-xs border border-indigo-100/50 dark:border-indigo-900/20">
                                 <span className="font-medium">嵌入生成完成：</span> 
-                                成功 {t.result.processed} 个{t.result.failed > 0 && `，失败 ${t.result.failed} 个`}
+                                成功 {getNumberOrUndefined(t.result.processed) ?? 0} 个{(getNumberOrUndefined(t.result.failed) ?? 0) > 0 && `，失败 ${getNumberOrUndefined(t.result.failed)} 个`}
                               </div>
                             )}
 
                             {t.status === 'processing' && t.type === 'embedding_generation' && t.result?.progress !== undefined && (
                               <div className="text-indigo-600 dark:text-indigo-400 text-xs flex items-center gap-2">
                                 <span className="font-medium">进度：</span>
-                                <span>{t.result.processed || 0} / {t.result.total || '?'}</span>
+                                <span>{getNumberOrUndefined(t.result.processed) ?? 0} / {getStringOrUnknown(t.result.total, '?')}</span>
                               </div>
                             )}
 
                             {t.status === 'processing' && t.type === 'infinite_graph_expansion' && t.result?.current_depth !== undefined && (
                               <div className="text-purple-600 dark:text-purple-400 text-xs flex items-center gap-2">
                                 <span className="font-medium">深度：</span>
-                                <span>{t.result.current_depth} / {t.result.max_depth || 2}</span>
+                                <span>{getNumberOrUndefined(t.result.current_depth) ?? 0} / {getNumberOrUndefined(t.result.max_depth) ?? 2}</span>
                                 {t.result.total_graphs_created !== undefined && (
                                   <>
                                     <span className="text-gray-300 dark:text-gray-600">|</span>
-                                    <span>已创建 {t.result.total_graphs_created} 个图谱</span>
+                                    <span>已创建 {getNumberOrUndefined(t.result.total_graphs_created) ?? 0} 个图谱</span>
                                   </>
                                 )}
                               </div>

@@ -16,7 +16,9 @@ export interface User {
   name?: string;
   user_metadata?: {
     name?: string;
-    [key: string]: any;
+    avatar_url?: string;
+    theme?: string;
+    [key: string]: unknown;
   };
   profile?: {
     xp?: number;
@@ -31,7 +33,7 @@ export interface User {
       };
       available_models?: AvailableModels;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -44,7 +46,7 @@ export interface Graph {
     gamification_enabled?: boolean;
     learning_direction?: 'top_down' | 'bottom_up';
     text_display_level?: 'all' | 'important' | 'root_only';
-    [key: string]: any;
+    [key: string]: unknown;
   };
   created_at: string;
   updated_at?: string;
@@ -57,12 +59,17 @@ export type NodeLevel = 'root' | 'core' | 'sub' | 'normal' | 'leaf';
 
 export type KnowledgePointVisibility = 'private' | 'public' | 'pending';
 
+export interface NodeProperties {
+  tags?: string[];
+  [key: string]: unknown;
+}
+
 export interface KnowledgePoint {
   id: string;
   title: string;
   content?: string;
   learning_material?: string;
-  properties?: Record<string, any>;
+  properties?: NodeProperties;
   visibility: KnowledgePointVisibility;
   owner_id: string;
   embedding?: number[];
@@ -151,14 +158,30 @@ export interface StudyCard {
   created_at?: string;
 }
 
+export interface TaskPayload {
+  node_id?: string;
+  graph_id?: string;
+  count?: number;
+  depth?: number;
+  node_ids?: string[];
+  [key: string]: unknown;
+}
+
+export interface TaskResult {
+  nodes?: Array<{ id: string; title: string }>;
+  cards?: Array<{ id: string; question: string }>;
+  error?: string;
+  [key: string]: unknown;
+}
+
 export interface Task {
   id: string;
   user_id: string;
   type: 'generate_questions' | 'expand_graph' | 'batch_generate_questions' | string;
   name?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | string;
-  payload: any;
-  result: any;
+  payload: TaskPayload;
+  result: TaskResult;
   error?: string;
   created_at: string;
   updated_at: string;
@@ -453,7 +476,7 @@ export interface GraphRelation {
   target_graph_id: string;
   relation_type: GraphRelationType;
   context?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   source_graph?: Graph | Graph[];
   target_graph?: Graph | Graph[];
@@ -614,7 +637,7 @@ export interface LearningPath {
   estimated_hours?: number;
   daily_minutes_target?: number;
   target_completion_date?: string;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -641,7 +664,7 @@ export interface LearningResource {
   url?: string;
   description?: string;
   source: LearningResourceSource;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -652,7 +675,7 @@ export interface LearningPathProgressLog {
   node_ref_id?: string;
   action: 'started' | 'completed' | 'skipped' | 'reviewed' | 'adjusted';
   duration_minutes?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 

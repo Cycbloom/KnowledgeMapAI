@@ -377,10 +377,13 @@ export const useUpdateNodeMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => api.nodes.update(id, data),
-    onSuccess: () => {
-       // Invalidate all graphData queries
-       queryClient.invalidateQueries({ queryKey: ['graphData'] });
+    mutationFn: ({ id, data, graphId }: { id: string; data: unknown; graphId?: string }) => api.nodes.update(id, data),
+    onSuccess: (_data, variables) => {
+       if (variables.graphId) {
+         queryClient.invalidateQueries({ queryKey: queryKeys.graphData(variables.graphId) });
+       } else {
+         queryClient.invalidateQueries({ queryKey: ['graphData'] });
+       }
     }
   });
 };

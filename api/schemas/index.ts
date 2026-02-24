@@ -3,7 +3,11 @@ import { z } from 'zod';
 // --- Auth Schemas ---
 export const registerSchema = z.object({
   email: z.string().email('邮箱格式不正确'),
-  password: z.string().min(6, '密码至少需要6位'),
+  password: z.string()
+    .min(8, '密码至少需要8位')
+    .regex(/[A-Z]/, '密码需要包含大写字母')
+    .regex(/[a-z]/, '密码需要包含小写字母')
+    .regex(/[0-9]/, '密码需要包含数字'),
   name: z.string().min(1, '姓名不能为空'),
 });
 

@@ -799,3 +799,119 @@ export const usePrefetchTemplates = () => {
     });
   }, [queryClient]);
 };
+
+export const useQueues = () => {
+  return useQuery({
+    queryKey: ['queues'],
+    queryFn: api.scheduler.getQueues,
+    ...realtimeQueryConfig,
+  });
+};
+
+export const useCreateScheduledTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.scheduler.createTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const useUpdateScheduledTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.scheduler.updateTask(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const useDeleteScheduledTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.scheduler.deleteTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const useMoveTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, targetQueue }: { taskId: string; targetQueue: number }) =>
+      api.scheduler.moveTask(taskId, targetQueue),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const useReorderTasksMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ queueLevel, taskIds }: { queueLevel: number; taskIds: string[] }) =>
+      api.scheduler.reorderTasks(queueLevel, taskIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const useStartTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.scheduler.startTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const usePauseTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.scheduler.pauseTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const useCompleteTaskMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.scheduler.completeTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queues'] });
+    },
+  });
+};
+
+export const useTaskSettings = () => {
+  return useQuery({
+    queryKey: ['taskSettings'],
+    queryFn: api.scheduler.getSettings,
+    ...defaultQueryConfig,
+  });
+};
+
+export const useUpdateTaskSettingsMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.scheduler.updateSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['taskSettings'] });
+    },
+  });
+};
+
+export const useTaskStats = (period: 'day' | 'week' | 'month' | 'year' = 'week') => {
+  return useQuery({
+    queryKey: ['taskStats', period],
+    queryFn: () => api.scheduler.getStats(period),
+    ...defaultQueryConfig,
+  });
+};

@@ -1,0 +1,1103 @@
+/* ============================================
+   三层反馈队列任务调度系统 - 科技感UI样式
+   ============================================ */
+
+/* ============================================
+   CSS 变量定义
+   ============================================ */
+:root {
+  --scheduler-q0: #06b6d4;
+  --scheduler-q1: #10b981;
+  --scheduler-q2: #f59e0b;
+
+  --scheduler-q0-light: rgba(6, 182, 212, 0.1);
+  --scheduler-q1-light: rgba(16, 185, 129, 0.1);
+  --scheduler-q2-light: rgba(245, 158, 11, 0.1);
+
+  --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.5);
+  --glow-emerald: 0 0 20px rgba(16, 185, 129, 0.5);
+  --glow-amber: 0 0 20px rgba(245, 158, 11, 0.5);
+
+  --glow-cyan-intense: 0 0 30px rgba(6, 182, 212, 0.8), 0 0 60px rgba(6, 182, 212, 0.4);
+  --glow-emerald-intense: 0 0 30px rgba(16, 185, 129, 0.8), 0 0 60px rgba(16, 185, 129, 0.4);
+  --glow-amber-intense: 0 0 30px rgba(245, 158, 11, 0.8), 0 0 60px rgba(245, 158, 11, 0.4);
+
+  --tech-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  --tech-bg-dark: linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%);
+  --tech-grid: rgba(6, 182, 212, 0.03);
+  --tech-border: rgba(6, 182, 212, 0.2);
+  --tech-border-active: rgba(6, 182, 212, 0.5);
+
+  --scheduler-card-bg: rgba(15, 23, 42, 0.8);
+  --scheduler-card-border: rgba(51, 65, 85, 0.5);
+}
+
+/* ============================================
+   基础容器样式
+   ============================================ */
+.scheduler-container {
+  background: var(--tech-bg);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.scheduler-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(var(--tech-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--tech-grid) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   队列列样式
+   ============================================ */
+.queue-column {
+  position: relative;
+  background: var(--scheduler-card-bg);
+  border: 1px solid var(--tech-border);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.queue-column::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--queue-color), transparent);
+  opacity: 0.8;
+}
+
+.queue-column.q0 {
+  --queue-color: var(--scheduler-q0);
+}
+
+.queue-column.q1 {
+  --queue-color: var(--scheduler-q1);
+}
+
+.queue-column.q2 {
+  --queue-color: var(--scheduler-q2);
+}
+
+.queue-header {
+  position: relative;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--tech-border);
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, transparent 100%);
+}
+
+.queue-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--queue-color);
+  text-shadow: 0 0 10px var(--queue-color);
+}
+
+.queue-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.queue-stat-value {
+  color: var(--queue-color);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   任务卡片样式
+   ============================================ */
+.task-card {
+  position: relative;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--tech-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--queue-color, var(--scheduler-q0));
+  opacity: 0.8;
+}
+
+.task-card:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: var(--tech-border-active);
+  transform: translateX(4px);
+}
+
+.task-card.active {
+  border-color: var(--queue-color, var(--scheduler-q0));
+  box-shadow: var(--glow-cyan);
+}
+
+.task-card.running {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.task-card.q0 {
+  --queue-color: var(--scheduler-q0);
+}
+
+.task-card.q1 {
+  --queue-color: var(--scheduler-q1);
+}
+
+.task-card.q2 {
+  --queue-color: var(--scheduler-q2);
+}
+
+.task-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+  margin-bottom: 4px;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.task-priority {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.task-priority.high {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.task-priority.medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.task-priority.low {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* ============================================
+   流动边框动画
+   ============================================ */
+@keyframes border-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.flow-border {
+  position: relative;
+  border: none;
+  background: var(--scheduler-card-bg);
+}
+
+.flow-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(90deg, 
+    var(--scheduler-q0), 
+    var(--scheduler-q1), 
+    var(--scheduler-q2), 
+    var(--scheduler-q1), 
+    var(--scheduler-q0));
+  background-size: 400% 400%;
+  border-radius: 14px;
+  z-index: -1;
+  animation: border-flow 8s ease infinite;
+}
+
+.flow-border::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  background: var(--scheduler-card-bg);
+  border-radius: 12px;
+  z-index: -1;
+}
+
+/* ============================================
+   脉冲发光动画
+   ============================================ */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--queue-color, var(--scheduler-q0)),
+                0 0 10px var(--queue-color, var(--scheduler-q0));
+  }
+  50% {
+    box-shadow: 0 0 20px var(--queue-color, var(--scheduler-q0)),
+                0 0 40px var(--queue-color, var(--scheduler-q0));
+  }
+}
+
+.pulse-glow-cyan {
+  animation: pulse-glow 2s ease-in-out infinite;
+  --queue-color: var(--scheduler-q0);
+}
+
+.pulse-glow-emerald {
+  animation: pulse-glow 2s ease-in-out infinite;
+  --queue-color: var(--scheduler-q1);
+}
+
+.pulse-glow-amber {
+  animation: pulse-glow 2s ease-in-out infinite;
+  --queue-color: var(--scheduler-q2);
+}
+
+/* ============================================
+   扫描线动画
+   ============================================ */
+@keyframes scan-line {
+  0% {
+    top: -100%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.scan-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-effect::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(6, 182, 212, 0.03) 50%,
+    transparent 100%
+  );
+  animation: scan-line 4s linear infinite;
+  pointer-events: none;
+}
+
+/* ============================================
+   数据流动画
+   ============================================ */
+@keyframes data-flow {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.data-flow-container {
+  position: relative;
+  overflow: hidden;
+  height: 2px;
+  background: rgba(6, 182, 212, 0.1);
+  border-radius: 1px;
+}
+
+.data-flow-particle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--scheduler-q0), transparent);
+  animation: data-flow 3s ease-in-out infinite;
+}
+
+.data-flow-particle:nth-child(2) {
+  animation-delay: 1s;
+}
+
+.data-flow-particle:nth-child(3) {
+  animation-delay: 2s;
+}
+
+/* ============================================
+   霓虹文字效果
+   ============================================ */
+.neon-text-cyan {
+  color: var(--scheduler-q0);
+  text-shadow: 
+    0 0 5px var(--scheduler-q0),
+    0 0 10px var(--scheduler-q0),
+    0 0 20px var(--scheduler-q0),
+    0 0 40px var(--scheduler-q0);
+}
+
+.neon-text-emerald {
+  color: var(--scheduler-q1);
+  text-shadow: 
+    0 0 5px var(--scheduler-q1),
+    0 0 10px var(--scheduler-q1),
+    0 0 20px var(--scheduler-q1),
+    0 0 40px var(--scheduler-q1);
+}
+
+.neon-text-amber {
+  color: var(--scheduler-q2);
+  text-shadow: 
+    0 0 5px var(--scheduler-q2),
+    0 0 10px var(--scheduler-q2),
+    0 0 20px var(--scheduler-q2),
+    0 0 40px var(--scheduler-q2);
+}
+
+/* ============================================
+   霓虹边框效果
+   ============================================ */
+.neon-border-cyan {
+  border: 1px solid var(--scheduler-q0);
+  box-shadow: 
+    0 0 5px var(--scheduler-q0),
+    inset 0 0 5px rgba(6, 182, 212, 0.1);
+}
+
+.neon-border-emerald {
+  border: 1px solid var(--scheduler-q1);
+  box-shadow: 
+    0 0 5px var(--scheduler-q1),
+    inset 0 0 5px rgba(16, 185, 129, 0.1);
+}
+
+.neon-border-amber {
+  border: 1px solid var(--scheduler-q2);
+  box-shadow: 
+    0 0 5px var(--scheduler-q2),
+    inset 0 0 5px rgba(245, 158, 11, 0.1);
+}
+
+/* ============================================
+   进度条样式
+   ============================================ */
+.tech-progress {
+  position: relative;
+  height: 4px;
+  background: rgba(51, 65, 85, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tech-progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.tech-progress-bar.q0 {
+  background: linear-gradient(90deg, var(--scheduler-q0), rgba(6, 182, 212, 0.6));
+  box-shadow: 0 0 10px var(--scheduler-q0);
+}
+
+.tech-progress-bar.q1 {
+  background: linear-gradient(90deg, var(--scheduler-q1), rgba(16, 185, 129, 0.6));
+  box-shadow: 0 0 10px var(--scheduler-q1);
+}
+
+.tech-progress-bar.q2 {
+  background: linear-gradient(90deg, var(--scheduler-q2), rgba(245, 158, 11, 0.6));
+  box-shadow: 0 0 10px var(--scheduler-q2);
+}
+
+.tech-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ============================================
+   时间片指示器
+   ============================================ */
+.time-slice-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.time-slice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(51, 65, 85, 0.5);
+  transition: all 0.3s ease;
+}
+
+.time-slice-dot.active {
+  background: var(--queue-color, var(--scheduler-q0));
+  box-shadow: 0 0 10px var(--queue-color, var(--scheduler-q0));
+}
+
+.time-slice-dot.used {
+  background: var(--queue-color, var(--scheduler-q0));
+  opacity: 0.5;
+}
+
+/* ============================================
+   状态标签
+   ============================================ */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-badge.running {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--scheduler-q0);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.status-badge.ready {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--scheduler-q1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.waiting {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--scheduler-q2);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.blocked {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-badge.running .status-dot {
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ============================================
+   统计面板
+   ============================================ */
+.stats-panel {
+  background: var(--scheduler-card-bg);
+  border: 1px solid var(--tech-border);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 16px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  border: 1px solid var(--tech-border);
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  border-color: var(--tech-border-active);
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--scheduler-q0), var(--scheduler-q1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.8);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================
+   图表容器
+   ============================================ */
+.chart-container {
+  background: var(--scheduler-card-bg);
+  border: 1px solid var(--tech-border);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--tech-border);
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.05em;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.q0 {
+  background: var(--scheduler-q0);
+  box-shadow: 0 0 8px var(--scheduler-q0);
+}
+
+.legend-dot.q1 {
+  background: var(--scheduler-q1);
+  box-shadow: 0 0 8px var(--scheduler-q1);
+}
+
+.legend-dot.q2 {
+  background: var(--scheduler-q2);
+  box-shadow: 0 0 8px var(--scheduler-q2);
+}
+
+/* ============================================
+   按钮样式
+   ============================================ */
+.tech-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.tech-button.primary {
+  background: linear-gradient(135deg, var(--scheduler-q0), rgba(6, 182, 212, 0.7));
+  color: #0f172a;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+.tech-button.primary:hover {
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
+  transform: translateY(-2px);
+}
+
+.tech-button.secondary {
+  background: transparent;
+  color: var(--scheduler-q0);
+  border: 1px solid var(--scheduler-q0);
+}
+
+.tech-button.secondary:hover {
+  background: rgba(6, 182, 212, 0.1);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+}
+
+.tech-button.ghost {
+  background: transparent;
+  color: rgba(148, 163, 184, 0.8);
+  border: 1px solid var(--tech-border);
+}
+
+.tech-button.ghost:hover {
+  color: #e2e8f0;
+  border-color: var(--tech-border-active);
+  background: rgba(30, 41, 59, 0.5);
+}
+
+/* ============================================
+   输入框样式
+   ============================================ */
+.tech-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--tech-border);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.tech-input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.tech-input:focus {
+  border-color: var(--scheduler-q0);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.2);
+}
+
+.tech-input:hover:not(:focus) {
+  border-color: var(--tech-border-active);
+}
+
+/* ============================================
+   下拉选择框
+   ============================================ */
+.tech-select {
+  appearance: none;
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  background: rgba(30, 41, 59, 0.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 1px solid var(--tech-border);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  outline: none;
+  cursor: pointer;
+}
+
+.tech-select:focus {
+  border-color: var(--scheduler-q0);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.2);
+}
+
+.tech-select option {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* ============================================
+   模态框样式
+   ============================================ */
+.tech-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tech-modal {
+  background: var(--tech-bg);
+  border: 1px solid var(--tech-border);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-slide-in 0.3s ease;
+}
+
+@keyframes modal-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tech-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--tech-border);
+}
+
+.tech-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.tech-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--tech-border);
+  border-radius: 6px;
+  color: rgba(148, 163, 184, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tech-modal-close:hover {
+  color: #e2e8f0;
+  border-color: var(--tech-border-active);
+  background: rgba(30, 41, 59, 0.5);
+}
+
+/* ============================================
+   时间线样式
+   ============================================ */
+.timeline-container {
+  position: relative;
+  padding-left: 24px;
+}
+
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--scheduler-q0), var(--scheduler-q1), var(--scheduler-q2));
+  border-radius: 1px;
+}
+
+.timeline-item {
+  position: relative;
+  padding: 12px 0;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--scheduler-q0);
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 10px var(--scheduler-q0);
+}
+
+.timeline-item.q1::before {
+  background: var(--scheduler-q1);
+  box-shadow: 0 0 10px var(--scheduler-q1);
+}
+
+.timeline-item.q2::before {
+  background: var(--scheduler-q2);
+  box-shadow: 0 0 10px var(--scheduler-q2);
+}
+
+/* ============================================
+   工具提示
+   ============================================ */
+.tech-tooltip {
+  position: relative;
+}
+
+.tech-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--tech-border);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 100;
+  margin-bottom: 8px;
+}
+
+.tech-tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   空状态
+   ============================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: rgba(51, 65, 85, 0.5);
+}
+
+.empty-state-text {
+  font-size: 14px;
+  color: rgba(148, 163, 184, 0.6);
+  margin-bottom: 16px;
+}
+
+/* ============================================
+   加载状态
+   ============================================ */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--tech-border);
+  border-top-color: var(--scheduler-q0);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--scheduler-q0);
+  animation: bounce 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   响应式设计
+   ============================================ */
+@media (max-width: 768px) {
+  .queue-column {
+    margin-bottom: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .tech-modal {
+    padding: 16px;
+    margin: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-legend {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* ============================================
+   深色模式增强
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  .scheduler-container {
+    background: var(--tech-bg-dark);
+  }
+
+  .task-card {
+    background: rgba(15, 23, 42, 0.8);
+  }
+
+  .stat-item {
+    background: rgba(15, 23, 42, 0.6);
+  }
+}
+
+/* ============================================
+   减少动画偏好
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -15,6 +15,20 @@ export { ragApi } from './rag';
 export { autoGraphApi } from './autoGraph';
 export { healthApi } from './health';
 export { backupApi } from './backup';
+export { schedulerApi } from './scheduler';
+export type {
+  ScheduledTask,
+  CreateScheduledTaskData,
+  UpdateScheduledTaskData,
+  TaskExecution,
+  TaskSettings,
+  UpdateTaskSettingsData,
+  TaskStats,
+  HeatmapData,
+  TaskFilters,
+  ExecutionFilters,
+  QueueData,
+} from './scheduler';
 
 import { authApi } from './auth';
 import { graphsApi } from './graphs';
@@ -30,6 +44,7 @@ import { ragApi } from './rag';
 import { autoGraphApi } from './autoGraph';
 import { healthApi } from './health';
 import { backupApi } from './backup';
+import { schedulerApi } from './scheduler';
 
 export const api = {
   aiActions: aiActionsApi,
@@ -58,4 +73,5 @@ export const api = {
   learningPath: learningPathApi,
   health: healthApi,
   backup: backupApi,
+  scheduler: schedulerApi,
 };

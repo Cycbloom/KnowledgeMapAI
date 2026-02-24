@@ -1,0 +1,245 @@
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { Circle, PlayCircle, CheckCircle2, XCircle, PauseCircle, Clock } from 'lucide-react';
+import { ScheduledTask } from '../../services/api/scheduler';
+import { TaskCard } from './TaskCard';
+
+interface KanbanViewProps {
+  tasks: ScheduledTask[];
+  onTaskMove?: (taskId: string, status: string) => void;
+  onTaskClick?: (task: ScheduledTask) => void;
+}
+
+const KANBAN_COLUMNS = [
+  {
+    id: 'pending',
+    title: '待办',
+    icon: Circle,
+    color: 'slate',
+    gradient: 'from-slate-500 to-slate-600',
+    border: 'border-slate-500/30',
+    bg: 'bg-slate-500/10',
+    text: 'text-slate-400',
+  },
+  {
+    id: 'in_progress',
+    title: '进行中',
+    icon: PlayCircle,
+    color: 'blue',
+    gradient: 'from-blue-500 to-cyan-500',
+    border: 'border-blue-500/30',
+    bg: 'bg-blue-500/10',
+    text: 'text-blue-400',
+  },
+  {
+    id: 'paused',
+    title: '已暂停',
+    icon: PauseCircle,
+    color: 'amber',
+    gradient: 'from-amber-500 to-orange-500',
+    border: 'border-amber-500/30',
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-400',
+  },
+  {
+    id: 'completed',
+    title: '已完成',
+    icon: CheckCircle2,
+    color: 'emerald',
+    gradient: 'from-emerald-500 to-teal-500',
+    border: 'border-emerald-500/30',
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-400',
+  },
+  {
+    id: 'cancelled',
+    title: '已取消',
+    icon: XCircle,
+    color: 'red',
+    gradient: 'from-red-500 to-rose-500',
+    border: 'border-red-500/30',
+    bg: 'bg-red-500/10',
+    text: 'text-red-400',
+  },
+];
+
+export const KanbanView: React.FC<KanbanViewProps> = ({
+  tasks,
+  onTaskMove,
+  onTaskClick,
+}) => {
+  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
+  const [draggedTask, setDraggedTask] = useState<string | null>(null);
+
+  const columnsData = useMemo(() => {
+    return KANBAN_COLUMNS.map((column) => ({
+      ...column,
+      tasks: tasks.filter((task) => task.status === column.id),
+    }));
+  }, [tasks]);
+
+  const handleDragStart = (e: React.DragEvent, taskId: string, currentStatus: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+    e.dataTransfer.setData('currentStatus', currentStatus);
+    setDraggedTask(taskId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+    setDraggedOverColumn(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    setDraggedOverColumn(columnId);
+  };
+
+  const handleDragLeave = () => {
+    setDraggedOverColumn(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetStatus: string) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    const currentStatus = e.dataTransfer.getData('currentStatus');
+    
+    if (taskId && currentStatus !== targetStatus && onTaskMove) {
+      onTaskMove(taskId, targetStatus);
+    }
+    
+    setDraggedTask(null);
+    setDraggedOverColumn(null);
+  };
+
+  const totalEstimatedTime = (columnTasks: ScheduledTask[]) => {
+    return columnTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
+  };
+
+  const formatDuration = (minutes: number) => {
+    if (minutes === 0) return '0h';
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  return (
+    <div className="h-full overflow-x-auto custom-scrollbar">
+      <div className="flex gap-4 min-w-max h-full p-1">
+        <AnimatePresence>
+          {columnsData.map((column, index) => {
+            const IconComponent = column.icon;
+            const isOver = draggedOverColumn === column.id;
+            const estimatedTime = totalEstimatedTime(column.tasks);
+
+            return (
+              <motion.div
+                key={column.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.1 }}
+                className={`
+                  flex flex-col w-80 flex-shrink-0 rounded-2xl border transition-all duration-300
+                  ${isOver ? 'ring-2 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : ''}
+                  ${column.border}
+                  bg-slate-900/60 backdrop-blur-sm
+                `}
+                style={{
+                  boxShadow: isOver 
+                    ? `0 0 30px ${column.color === 'blue' ? 'rgba(59, 130, 246, 0.3)' : 
+                       column.color === 'emerald' ? 'rgba(16, 185, 129, 0.3)' : 
+                       column.color === 'amber' ? 'rgba(245, 158, 11, 0.3)' : 
+                       column.color === 'red' ? 'rgba(239, 68, 68, 0.3)' : 
+                       'rgba(100, 116, 139, 0.3)'}`
+                    : undefined,
+                }}
+                onDragOver={(e) => handleDragOver(e, column.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, column.id)}
+              >
+                <div className={`
+                  p-4 rounded-t-2xl border-b
+                  ${column.bg} ${column.border}
+                `}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${column.gradient} shadow-lg`}>
+                        <IconComponent size={18} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white">{column.title}</h3>
+                        <p className="text-xs text-slate-400">{column.tasks.length} 个任务</p>
+                      </div>
+                    </div>
+                    <div className={`
+                      px-2.5 py-1 rounded-full text-sm font-bold
+                      ${column.bg} ${column.text}
+                    `}>
+                      {column.tasks.length}
+                    </div>
+                  </div>
+
+                  {estimatedTime > 0 && (
+                    <div className="flex items-center gap-2 mt-3 text-xs text-slate-400">
+                      <Clock size={12} className={column.text} />
+                      <span>预计: <span className="text-white font-medium">{formatDuration(estimatedTime)}</span></span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 p-3 overflow-y-auto custom-scrollbar max-h-[calc(100vh-280px)]">
+                  {column.tasks.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <IconComponent size={32} className="mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">暂无任务</p>
+                      {draggedTask && (
+                        <p className="text-xs mt-1 text-slate-600">拖拽任务到此处</p>
+                      )}
+                    </div>
+                  ) : (
+                    <Reorder.Group
+                      axis="y"
+                      values={column.tasks}
+                      onReorder={() => {}}
+                      className="space-y-3"
+                    >
+                      <AnimatePresence>
+                        {column.tasks.map((task) => (
+                          <Reorder.Item
+                            key={task.id}
+                            value={task}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, task.id, task.status)}
+                            onDragEnd={handleDragEnd}
+                            className={`
+                              cursor-grab active:cursor-grabbing
+                              ${draggedTask === task.id ? 'opacity-50 scale-95' : ''}
+                            `}
+                          >
+                            <TaskCard
+                              task={task}
+                              onEdit={onTaskClick ? () => onTaskClick(task) : undefined}
+                            />
+                          </Reorder.Item>
+                        ))}
+                      </AnimatePresence>
+                    </Reorder.Group>
+                  )}
+                </div>
+
+                {isOver && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 rounded-2xl border-2 border-dashed border-white/30 bg-white/5 pointer-events-none"
+                  />
+                )}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};

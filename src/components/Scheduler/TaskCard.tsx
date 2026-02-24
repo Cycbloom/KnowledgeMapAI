@@ -1,0 +1,221 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Clock, Calendar, Tag, Play, Pause, Check, Edit2, Trash2, GripVertical } from 'lucide-react';
+import { ScheduledTask } from '../../services/api/scheduler';
+
+interface TaskCardProps {
+  task: ScheduledTask;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onStart?: () => void;
+  onPause?: () => void;
+  onComplete?: () => void;
+  isDragging?: boolean;
+}
+
+const QUEUE_COLORS = {
+  0: {
+    border: 'border-cyan-400',
+    glow: 'shadow-cyan-500/30',
+    bg: 'bg-cyan-500/10',
+    text: 'text-cyan-400',
+    badge: 'bg-cyan-500/20 text-cyan-300',
+  },
+  1: {
+    border: 'border-emerald-400',
+    glow: 'shadow-emerald-500/30',
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-400',
+    badge: 'bg-emerald-500/20 text-emerald-300',
+  },
+  2: {
+    border: 'border-amber-400',
+    glow: 'shadow-amber-500/30',
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-400',
+    badge: 'bg-amber-500/20 text-amber-300',
+  },
+};
+
+const STATUS_CONFIG = {
+  pending: { label: '待处理', color: 'bg-slate-500/20 text-slate-400' },
+  in_progress: { label: '进行中', color: 'bg-blue-500/20 text-blue-400' },
+  paused: { label: '已暂停', color: 'bg-amber-500/20 text-amber-400' },
+  completed: { label: '已完成', color: 'bg-emerald-500/20 text-emerald-400' },
+  cancelled: { label: '已取消', color: 'bg-red-500/20 text-red-400' },
+};
+
+export const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  onEdit,
+  onDelete,
+  onStart,
+  onPause,
+  onComplete,
+  isDragging = false,
+}) => {
+  const queueStyle = QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
+  const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
+
+  const formatDuration = (minutes?: number) => {
+    if (!minutes) return '--';
+    if (minutes < 60) return `${minutes}分钟`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+  };
+
+  const formatDeadline = (date?: string) => {
+    if (!date) return null;
+    const d = new Date(date);
+    const now = new Date();
+    const diff = d.getTime() - now.getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    
+    if (days < 0) return { text: '已过期', color: 'text-red-400' };
+    if (days === 0) return { text: '今天', color: 'text-amber-400' };
+    if (days === 1) return { text: '明天', color: 'text-yellow-400' };
+    if (days <= 7) return { text: `${days}天后`, color: 'text-blue-400' };
+    return { text: d.toLocaleDateString(), color: 'text-slate-400' };
+  };
+
+  const deadlineInfo = formatDeadline(task.deadline);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={`
+        group relative p-4 rounded-xl border transition-all duration-300
+        ${isDragging ? 'scale-105 shadow-2xl' : 'hover:shadow-lg'}
+        ${queueStyle.border} ${queueStyle.glow}
+        bg-slate-900/80 backdrop-blur-sm
+        ${isDragging ? 'shadow-xl' : 'hover:shadow-lg'}
+      `}
+      style={{
+        boxShadow: isDragging 
+          ? `0 0 20px ${task.queue_level === 0 ? 'rgba(34, 211, 238, 0.3)' : task.queue_level === 1 ? 'rgba(52, 211, 153, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`
+          : undefined,
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${queueStyle.text} opacity-50 hover:opacity-100 transition-opacity`}>
+          <GripVertical size={16} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${queueStyle.badge}`}>
+              Q{task.queue_level}
+            </span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}>
+              {statusConfig.label}
+            </span>
+            {task.priority >= 3 && (
+              <span className="text-red-400 text-xs">★</span>
+            )}
+          </div>
+
+          <h4 className="font-semibold text-white mb-1 truncate">{task.title}</h4>
+          
+          {task.description && (
+            <p className="text-sm text-slate-400 line-clamp-2 mb-3">{task.description}</p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+            {task.estimated_duration && (
+              <div className="flex items-center gap-1">
+                <Clock size={12} className={queueStyle.text} />
+                <span>{formatDuration(task.estimated_duration)}</span>
+              </div>
+            )}
+            
+            {deadlineInfo && (
+              <div className="flex items-center gap-1">
+                <Calendar size={12} className={deadlineInfo.color} />
+                <span className={deadlineInfo.color}>{deadlineInfo.text}</span>
+              </div>
+            )}
+
+            {task.tags && task.tags.length > 0 && (
+              <div className="flex items-center gap-1">
+                <Tag size={12} className="text-indigo-400" />
+                <span className="text-indigo-400">{task.tags.slice(0, 2).join(', ')}{task.tags.length > 2 ? '...' : ''}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className={`
+        absolute right-2 top-1/2 -translate-y-1/2
+        flex items-center gap-1
+        opacity-0 group-hover:opacity-100
+        transition-opacity duration-200
+      `}>
+        {task.status === 'pending' && onStart && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onStart(); }}
+            className={`p-1.5 rounded-lg transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+            title="开始"
+          >
+            <Play size={14} />
+          </button>
+        )}
+
+        {task.status === 'in_progress' && onPause && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onPause(); }}
+            className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 transition-all hover:scale-110"
+            title="暂停"
+          >
+            <Pause size={14} />
+          </button>
+        )}
+
+        {(task.status === 'pending' || task.status === 'in_progress' || task.status === 'paused') && onComplete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onComplete(); }}
+            className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 transition-all hover:scale-110"
+            title="完成"
+          >
+            <Check size={14} />
+          </button>
+        )}
+
+        {onEdit && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="p-1.5 rounded-lg bg-slate-700 text-slate-400 hover:text-amber-400 transition-all hover:scale-110"
+            title="编辑"
+          >
+            <Edit2 size={14} />
+          </button>
+        )}
+
+        {onDelete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-1.5 rounded-lg bg-slate-700 text-slate-400 hover:text-red-400 transition-all hover:scale-110"
+            title="删除"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+      </div>
+
+      {task.status === 'in_progress' && (
+        <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} rounded-b-xl overflow-hidden`}>
+          <motion.div
+            className={`h-full ${queueStyle.text.replace('text-', 'bg-')}`}
+            initial={{ width: '0%' }}
+            animate={{ width: '100%' }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        </div>
+      )}
+    </motion.div>
+  );
+};

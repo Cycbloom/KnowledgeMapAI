@@ -791,3 +791,66 @@ export interface CrossGraphRelationData {
   cross_graph_connections: CrossGraphNodeConnection[];
   exported_at: string;
 }
+
+export interface ScheduledTask {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  queue_level: number;
+  position: number;
+  estimated_duration?: number;
+  actual_duration?: number;
+  deadline?: string;
+  status: 'pending' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
+  tags: string[];
+  knowledge_point_id?: string;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+  completed_at?: string;
+}
+
+export interface TaskExecution {
+  id: string;
+  task_id: string;
+  user_id: string;
+  started_at: string;
+  ended_at?: string;
+  duration?: number;
+  queue_level: number;
+  status: 'completed' | 'interrupted' | 'time_slice_ended';
+}
+
+export interface TaskSettings {
+  id: string;
+  user_id: string;
+  q0_time_slice: number;
+  q1_time_slice: number;
+  q2_time_slice: number;
+  break_duration: number;
+  sound_enabled: boolean;
+  notification_enabled: boolean;
+}
+
+export interface TaskStats {
+  total_tasks: number;
+  completed_tasks: number;
+  total_duration: number;
+  avg_duration: number;
+  completion_rate: number;
+  tasks_by_queue: { q0: number; q1: number; q2: number };
+  tasks_by_status: Record<string, number>;
+  daily?: Array<{
+    date: string;
+    completed: number;
+    duration: number;
+  }>;
+}
+
+export interface HeatmapData {
+  date: string;
+  count: number;
+  duration: number;
+}

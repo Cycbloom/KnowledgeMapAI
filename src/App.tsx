@@ -1,27 +1,86 @@
-import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { useStore } from './store/useStore';
-import { LoadingBar } from './components/LoadingBar';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import React, { Suspense, lazy } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { useStore } from "./store/useStore";
+import { LoadingBar } from "./components/LoadingBar";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Lazy Load Pages
-const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
-const Register = lazy(() => import('./pages/Register').then(module => ({ default: module.Register })));
-const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
-const GraphEditor = lazy(() => import('./pages/GraphEditor').then(module => ({ default: module.GraphEditor })));
-const Study = lazy(() => import('./pages/Study').then(module => ({ default: module.Study })));
-const LearningMode = lazy(() => import('./pages/LearningMode').then(module => ({ default: module.LearningMode })));
-const Statistics = lazy(() => import('./pages/Statistics').then(module => ({ default: module.Statistics })));
-const LearningStatsCenter = lazy(() => import('./pages/LearningStatsCenter').then(module => ({ default: module.LearningStatsCenter })));
-const Tasks = lazy(() => import('./pages/Tasks').then(module => ({ default: module.Tasks })));
-const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: module.Profile })));
-const Settings = lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
-const RecycleBin = lazy(() => import('./pages/RecycleBin').then(module => ({ default: module.RecycleBin })));
-const Templates = lazy(() => import('./pages/Templates').then(module => ({ default: module.Templates })));
-const Achievements = lazy(() => import('./pages/Achievements').then(module => ({ default: module.Achievements })));
-const GraphMap = lazy(() => import('./pages/GraphMap').then(module => ({ default: module.GraphMap })));
-const CombinedGraphView = lazy(() => import('./pages/CombinedGraphView').then(module => ({ default: module.CombinedGraphView })));
+const Login = lazy(() =>
+  import("./pages/Login").then((module) => ({ default: module.Login }))
+);
+const Register = lazy(() =>
+  import("./pages/Register").then((module) => ({ default: module.Register }))
+);
+const Dashboard = lazy(() =>
+  import("./pages/Dashboard").then((module) => ({ default: module.Dashboard }))
+);
+const GraphEditor = lazy(() =>
+  import("./pages/GraphEditor").then((module) => ({
+    default: module.GraphEditor,
+  }))
+);
+const Study = lazy(() =>
+  import("./pages/Study").then((module) => ({ default: module.Study }))
+);
+const LearningMode = lazy(() =>
+  import("./pages/LearningMode").then((module) => ({
+    default: module.LearningMode,
+  }))
+);
+const Statistics = lazy(() =>
+  import("./pages/Statistics").then((module) => ({
+    default: module.Statistics,
+  }))
+);
+const LearningStatsCenter = lazy(() =>
+  import("./pages/LearningStatsCenter").then((module) => ({
+    default: module.LearningStatsCenter,
+  }))
+);
+const Tasks = lazy(() =>
+  import("./pages/Tasks").then((module) => ({ default: module.Tasks }))
+);
+const Profile = lazy(() =>
+  import("./pages/Profile").then((module) => ({ default: module.Profile }))
+);
+const Settings = lazy(() =>
+  import("./pages/Settings").then((module) => ({ default: module.Settings }))
+);
+const RecycleBin = lazy(() =>
+  import("./pages/RecycleBin").then((module) => ({
+    default: module.RecycleBin,
+  }))
+);
+const Templates = lazy(() =>
+  import("./pages/Templates").then((module) => ({ default: module.Templates }))
+);
+const Achievements = lazy(() =>
+  import("./pages/Achievements").then((module) => ({
+    default: module.Achievements,
+  }))
+);
+const GraphMap = lazy(() =>
+  import("./pages/GraphMap").then((module) => ({ default: module.GraphMap }))
+);
+const CombinedGraphView = lazy(() =>
+  import("./pages/CombinedGraphView").then((module) => ({
+    default: module.CombinedGraphView,
+  }))
+);
+const Scheduler = lazy(() =>
+  import("./pages/Scheduler").then((module) => ({ default: module.Scheduler }))
+);
+const CurrentTask = lazy(() =>
+  import("./pages/CurrentTask").then((module) => ({
+    default: module.CurrentTask,
+  }))
+);
+const SchedulerStats = lazy(() =>
+  import("./pages/SchedulerStats").then((module) => ({
+    default: module.SchedulerStats,
+  }))
+);
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -44,13 +103,23 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Navigate to="/" replace />} />
             <Route path="graphs" element={<Navigate to="/" replace />} />
             <Route path="graph/:id" element={<GraphEditor />} />
-            <Route path="combined-graphs/:id1/:id2" element={<CombinedGraphView />} />
+            <Route
+              path="combined-graphs/:id1/:id2"
+              element={<CombinedGraphView />}
+            />
             <Route path="study" element={<Study />} />
             <Route path="learning" element={<LearningMode />} />
             <Route path="statistics" element={<Statistics />} />
@@ -62,6 +131,9 @@ function App() {
             <Route path="templates" element={<Templates />} />
             <Route path="achievements" element={<Achievements />} />
             <Route path="graph-map" element={<GraphMap />} />
+            <Route path="scheduler" element={<Scheduler />} />
+            <Route path="scheduler/current" element={<CurrentTask />} />
+            <Route path="scheduler/stats" element={<SchedulerStats />} />
           </Route>
         </Routes>
       </Suspense>

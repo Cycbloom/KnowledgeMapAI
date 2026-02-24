@@ -423,3 +423,38 @@ export const createTaskSchema = z.object({
 export const deleteRelationSchema = z.object({
   relationId: z.string().uuid('无效的关系ID'),
 });
+
+// --- Scheduler Schemas ---
+export const createScheduledTaskSchema = z.object({
+  title: z.string().min(1, '标题不能为空'),
+  description: z.string().optional(),
+  queue_level: z.number().int().min(0).max(2).optional(),
+  estimated_duration: z.number().int().positive().optional(),
+  deadline: z.string().datetime().optional(),
+  tags: z.array(z.string()).optional(),
+  knowledge_point_id: z.string().uuid().optional(),
+  priority: z.number().int().optional(),
+});
+
+export const updateScheduledTaskSchema = z.object({
+  title: z.string().min(1, '标题不能为空').optional(),
+  description: z.string().optional(),
+  queue_level: z.number().int().min(0).max(2).optional(),
+  position: z.number().int().optional(),
+  estimated_duration: z.number().int().positive().optional(),
+  actual_duration: z.number().int().positive().optional(),
+  deadline: z.string().datetime().optional(),
+  status: z.enum(['pending', 'in_progress', 'paused', 'completed', 'cancelled']).optional(),
+  tags: z.array(z.string()).optional(),
+  knowledge_point_id: z.string().uuid().nullable().optional(),
+  priority: z.number().int().optional(),
+});
+
+export const moveTaskSchema = z.object({
+  target_queue: z.number().int().min(0).max(2, '队列级别必须在0-2之间'),
+});
+
+export const reorderTasksSchema = z.object({
+  queue_level: z.number().int().min(0).max(2),
+  task_ids: z.array(z.string().uuid()).min(1, '至少需要一个任务ID'),
+});

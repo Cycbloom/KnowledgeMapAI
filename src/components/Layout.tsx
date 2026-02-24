@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { useUser, useLogoutMutation, useTasks } from '../hooks/useQueries';
 import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useMessageStore } from '../store/useMessageStore';
-import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network, BarChart3, Sun, Moon, LucideIcon } from 'lucide-react';
+import { LogOut, BookOpen, User, ChevronLeft, ChevronRight, Menu, X, ListChecks, HelpCircle, GraduationCap, Trash2, Sparkles, Trophy, Network, BarChart3, Sun, Moon, LucideIcon, Zap } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageBar } from './MessageBar';
 import { HelpModal } from './HelpModal';
@@ -195,6 +195,7 @@ export const Layout = () => {
               <SidebarLink to="/achievements" icon={Trophy} label="成就系统" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/templates" icon={Sparkles} label="模板管理" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/scheduler" icon={Zap} label="任务调度" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/profile" icon={User} label="个人设置" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/trash" icon={Trash2} label="回收站" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
             </nav>

@@ -1,68 +1,59 @@
 -- =====================================================
--- Focus Sessions and Achievement System
+-- Focus Sessions and Achievement System Enhancement
 -- Created: 2026-02-24
 -- =====================================================
 
 -- =====================================================
--- TABLES
+-- ADD MISSING COLUMNS TO EXISTING TABLES
 -- =====================================================
 
--- Focus sessions table (detailed focus records)
-CREATE TABLE IF NOT EXISTS focus_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL,
-  started_at TIMESTAMPTZ NOT NULL,
-  ended_at TIMESTAMPTZ,
-  duration INTEGER,
-  pomodoro_count INTEGER DEFAULT 0,
-  white_noise_type TEXT,
-  is_break BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Add missing columns to existing focus_sessions table
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'focus_sessions' AND column_name = 'task_id') THEN
+    ALTER TABLE focus_sessions ADD COLUMN task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'focus_sessions' AND column_name = 'pomodoro_count') THEN
+    ALTER TABLE focus_sessions ADD COLUMN pomodoro_count INTEGER DEFAULT 0;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'focus_sessions' AND column_name = 'white_noise_type') THEN
+    ALTER TABLE focus_sessions ADD COLUMN white_noise_type TEXT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'focus_sessions' AND column_name = 'is_break') THEN
+    ALTER TABLE focus_sessions ADD COLUMN is_break BOOLEAN DEFAULT FALSE;
+  END IF;
+END $$;
 
-COMMENT ON TABLE focus_sessions IS 'Detailed focus session records for statistics and achievements';
-COMMENT ON COLUMN focus_sessions.duration IS 'Session duration in seconds';
-COMMENT ON COLUMN focus_sessions.pomodoro_count IS 'Number of pomodoros completed in this session';
-COMMENT ON COLUMN focus_sessions.white_noise_type IS 'Type of white noise used: rain, forest, cafe, etc.';
-COMMENT ON COLUMN focus_sessions.is_break IS 'Whether this is a break session';
+-- Add missing columns to existing achievements table
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'achievements' AND column_name = 'color') THEN
+    ALTER TABLE achievements ADD COLUMN color TEXT DEFAULT '#3B82F6';
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'achievements' AND column_name = 'is_hidden') THEN
+    ALTER TABLE achievements ADD COLUMN is_hidden BOOLEAN DEFAULT FALSE;
+  END IF;
+END $$;
 
--- Achievements table (achievement definitions)
-CREATE TABLE IF NOT EXISTS achievements (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('focus', 'tasks', 'streak', 'special')),
-  icon TEXT NOT NULL,
-  color TEXT DEFAULT '#3B82F6',
-  xp_reward INTEGER DEFAULT 0,
-  condition_type TEXT NOT NULL,
-  condition_value INTEGER NOT NULL,
-  is_hidden BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Add missing columns to existing user_achievements table
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_achievements' AND column_name = 'progress') THEN
+    ALTER TABLE user_achievements ADD COLUMN progress INTEGER DEFAULT 0;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_achievements' AND column_name = 'metadata') THEN
+    ALTER TABLE user_achievements ADD COLUMN metadata JSONB DEFAULT '{}';
+  END IF;
+END $$;
 
-COMMENT ON TABLE achievements IS 'Achievement definitions for gamification';
-COMMENT ON COLUMN achievements.code IS 'Unique code for the achievement (e.g., first_focus, streak_7)';
-COMMENT ON COLUMN achievements.category IS 'Achievement category: focus, tasks, streak, special';
-COMMENT ON COLUMN achievements.condition_type IS 'Type of condition: total_focus_hours, consecutive_days, tasks_completed, etc.';
-COMMENT ON COLUMN achievements.condition_value IS 'Value required to unlock the achievement';
-
--- User achievements table (unlocked achievements)
-CREATE TABLE IF NOT EXISTS user_achievements (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  achievement_id UUID NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
-  unlocked_at TIMESTAMPTZ DEFAULT NOW(),
-  progress INTEGER DEFAULT 0,
-  metadata JSONB DEFAULT '{}',
-  UNIQUE(user_id, achievement_id)
-);
-
-COMMENT ON TABLE user_achievements IS 'User unlocked achievements with progress tracking';
-COMMENT ON COLUMN user_achievements.progress IS 'Current progress towards the achievement (0-100)';
-COMMENT ON COLUMN user_achievements.metadata IS 'Additional data like streak dates, task counts, etc.';
+-- =====================================================
+-- CREATE NEW TABLES
+-- =====================================================
 
 -- User focus stats table (aggregated statistics)
 CREATE TABLE IF NOT EXISTS user_focus_stats (
@@ -80,16 +71,12 @@ CREATE TABLE IF NOT EXISTS user_focus_stats (
 );
 
 COMMENT ON TABLE user_focus_stats IS 'Aggregated user focus statistics for quick access';
-COMMENT ON COLUMN user_focus_stats.total_focus_seconds IS 'Total focus time in seconds';
-COMMENT ON COLUMN user_focus_stats.current_streak IS 'Current consecutive days with focus';
-COMMENT ON COLUMN user_focus_stats.longest_streak IS 'Longest consecutive days streak achieved';
 
 -- =====================================================
 -- INDEXES
 -- =====================================================
 
-CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_started ON focus_sessions(user_id, started_at DESC);
-CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_date ON focus_sessions(user_id, (started_at::date));
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_started ON focus_sessions(user_id, start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_task ON focus_sessions(task_id) WHERE task_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_break ON focus_sessions(user_id, is_break);
 
@@ -108,28 +95,34 @@ CREATE INDEX IF NOT EXISTS idx_user_focus_stats_user ON user_focus_stats(user_id
 
 ALTER TABLE focus_sessions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own focus sessions" ON focus_sessions;
 CREATE POLICY "Users can view own focus sessions" 
   ON focus_sessions FOR SELECT 
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own focus sessions" ON focus_sessions;
 CREATE POLICY "Users can insert own focus sessions" 
   ON focus_sessions FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own focus sessions" ON focus_sessions;
 CREATE POLICY "Users can update own focus sessions" 
   ON focus_sessions FOR UPDATE 
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own focus sessions" ON focus_sessions;
 CREATE POLICY "Users can delete own focus sessions" 
   ON focus_sessions FOR DELETE 
   USING (auth.uid() = user_id);
 
 ALTER TABLE achievements ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view achievements" ON achievements;
 CREATE POLICY "Anyone can view achievements" 
   ON achievements FOR SELECT 
   USING (TRUE);
 
+DROP POLICY IF EXISTS "Only admins can manage achievements" ON achievements;
 CREATE POLICY "Only admins can manage achievements" 
   ON achievements FOR ALL 
   USING (
@@ -140,28 +133,34 @@ CREATE POLICY "Only admins can manage achievements"
 
 ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own achievements" ON user_achievements;
 CREATE POLICY "Users can view own achievements" 
   ON user_achievements FOR SELECT 
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own achievements" ON user_achievements;
 CREATE POLICY "Users can insert own achievements" 
   ON user_achievements FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own achievements" ON user_achievements;
 CREATE POLICY "Users can update own achievements" 
   ON user_achievements FOR UPDATE 
   USING (auth.uid() = user_id);
 
 ALTER TABLE user_focus_stats ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own focus stats" ON user_focus_stats;
 CREATE POLICY "Users can view own focus stats" 
   ON user_focus_stats FOR SELECT 
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own focus stats" ON user_focus_stats;
 CREATE POLICY "Users can insert own focus stats" 
   ON user_focus_stats FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own focus stats" ON user_focus_stats;
 CREATE POLICY "Users can update own focus stats" 
   ON user_focus_stats FOR UPDATE 
   USING (auth.uid() = user_id);
@@ -176,8 +175,14 @@ DECLARE
   focus_date DATE;
   prev_focus_date DATE;
   new_streak INTEGER;
+  col_name TEXT;
 BEGIN
-  focus_date := NEW.started_at::date;
+  col_name := 'start_time';
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'focus_sessions' AND column_name = 'started_at') THEN
+    col_name := 'started_at';
+  END IF;
+  
+  EXECUTE format('SELECT ($1).%I::date', col_name) INTO focus_date USING NEW;
   
   INSERT INTO user_focus_stats (user_id, total_focus_seconds, total_sessions, total_pomodoros, current_streak, longest_streak, last_focus_date)
   VALUES (
@@ -196,7 +201,7 @@ BEGIN
     last_focus_date = focus_date,
     updated_at = NOW();
   
-  IF NEW.is_break = FALSE THEN
+  IF COALESCE(NEW.is_break, FALSE) = FALSE THEN
     SELECT last_focus_date INTO prev_focus_date 
     FROM user_focus_stats 
     WHERE user_id = NEW.user_id;
@@ -220,6 +225,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_focus_session_created ON focus_sessions;
 CREATE TRIGGER on_focus_session_created
   AFTER INSERT ON focus_sessions
   FOR EACH ROW
@@ -229,7 +235,7 @@ CREATE TRIGGER on_focus_session_created
 CREATE OR REPLACE FUNCTION update_stats_on_task_complete()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NEW.status = 'completed' AND OLD.status != 'completed' THEN
+  IF NEW.status = 'completed' AND (OLD.status IS NULL OR OLD.status != 'completed') THEN
     UPDATE user_focus_stats 
     SET total_tasks_completed = total_tasks_completed + 1,
         updated_at = NOW()
@@ -245,6 +251,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_task_completed ON scheduled_tasks;
 CREATE TRIGGER on_task_completed
   AFTER UPDATE ON scheduled_tasks
   FOR EACH ROW
@@ -258,6 +265,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS user_focus_stats_updated_at ON user_focus_stats;
 CREATE TRIGGER user_focus_stats_updated_at
   BEFORE UPDATE ON user_focus_stats
   FOR EACH ROW EXECUTE FUNCTION update_focus_stats_updated_at();

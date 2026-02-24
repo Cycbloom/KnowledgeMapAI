@@ -9,33 +9,6 @@
 export class TemplateEngine {
   static render(template: string, context: Record<string, any>): string {
     if (!template) return '';
-    const result = template;
-
-    // 1. Handle Conditionals (Recursively)
-    // Match {{#if key}} content {{/if}} or {{#if key}} content {{else}} content {{/if}}
-    // We use a regex that matches the outermost balanced tags is hard with regex.
-    // So we'll use a loop to find innermost blocks first or just support non-nested for simplicity if that fails?
-    // Actually, for this specific use case, simple regex with lazy matching works if we don't nest deeply.
-    // But let's try to handle basic nesting by processing from inside out or just using a loop.
-    
-    // Simple approach: Match the first occurrence of {{#if ...}} ... {{/if}}
-    const ifRegex = /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
-    
-    // We need to handle {{else}} inside.
-    // To handle nesting correctly without a full parser, we can process from the "innermost" but that's hard to identify.
-    // Given the project constraints, I'll implement a simple parser.
-
-    const tokens = result.split(/(\{\{#if\s+\w+\}\}|\{\{else\}\}|\{\{\/if\}\})/);
-    // This split isn't quite right for capturing content.
-    
-    // Let's go with a simpler regex replacement loop that handles non-nested or simple nested.
-    // Loop until no more {{#if}} tags are found.
-    // Note: This simple regex approach fails on nested tags like {{#if A}} {{#if B}}...{{/if}} {{/if}}
-    // because the first {{/if}} will close the first {{#if}}.
-    // For now, let's assume NO NESTING or simple nesting is handled by careful template design.
-    // The current migration uses nested ifs:
-    // {{#if isRootOrCore}} ... {{else}} {{#if isLeaf}} ... {{/if}} {{/if}}
-    // So we MUST support nesting.
 
     return this.parseBlock(template, context);
   }

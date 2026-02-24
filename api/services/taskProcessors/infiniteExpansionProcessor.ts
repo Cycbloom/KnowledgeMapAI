@@ -107,9 +107,9 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
             const duplicateCheck = await checkDuplicateGraphTopic(supabase, userId, suggestion.title, { threshold: 0.85 });
             
             let targetGraphId: string | undefined;
-            let isNew = false;
+              let isNew = false;
 
-            if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs[0]) {
+              if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs[0]) {
               targetGraphId = duplicateCheck.similarGraphs[0].id;
               logger.info(`Reusing existing graph "${duplicateCheck.similarGraphs[0].title}" (similarity: ${(duplicateCheck.similarGraphs[0].similarity * 100).toFixed(1)}%) for suggested topic "${suggestion.title}"`);
             } else {

@@ -7,7 +7,6 @@ import { cacheService, CacheKeys } from '../services/cache.js';
 import { aiService } from '../services/aiService.js';
 import { knowledgePointService } from '../services/knowledgePointService.js';
 import { graphNodeService } from '../services/graphNodeService.js';
-import { edgeService } from '../services/edgeService.js';
 import { graphService } from '../services/graphService.js';
 import { authService } from '../services/authService.js';
 import { z } from 'zod';

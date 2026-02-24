@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, Tag, CheckCircle, Lock, Trash2 } from 'lucide-react';
+import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, CheckCircle, Lock, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useTheme } from '../hooks/useTheme';
 

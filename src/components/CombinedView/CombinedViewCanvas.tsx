@@ -37,7 +37,7 @@ const SHARED_NODE_RADIUS = 35;
 
 function calculateLayout(
   nodes: MergedNode[],
-  edges: MergedEdge[],
+  _edges: MergedEdge[],
   layoutMode: CombinedViewLayoutMode,
   width: number,
   height: number
@@ -64,7 +64,7 @@ function calculateLayout(
     const centerY = height / 2;
     
     let groupIndex = 0;
-    graphGroups.forEach((groupNodes, graphId) => {
+    graphGroups.forEach((groupNodes, _graphId) => {
       const groupCenterX = centerX + Math.cos(groupAngle * groupIndex - Math.PI / 2) * groupRadius;
       const groupCenterY = centerY + Math.sin(groupAngle * groupIndex - Math.PI / 2) * groupRadius;
       
@@ -278,7 +278,6 @@ export const CombinedViewCanvas: React.FC<CombinedViewCanvasProps> = ({
             
             const isHovered = hoveredNodeId === node.id;
             const radius = node.isShared ? SHARED_NODE_RADIUS : NODE_RADIUS;
-            const primaryColor = node.primaryColor;
             
             return (
               <g

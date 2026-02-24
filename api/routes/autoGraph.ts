@@ -8,7 +8,6 @@ import { promptService } from '../services/promptService.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
-import { aiService } from '../services/aiService.js';
 import { autoGraphService } from '../services/autoGraphService.js';
 import { embeddingService } from '../services/embeddingService.js';
 import { graphNodeService } from '../services/graphNodeService.js';
@@ -16,8 +15,6 @@ import { z } from 'zod';
 import { saveNodesSchema } from '../schemas/index.js';
 
 const router = Router();
-
-const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
 const URL_PATTERN = /^https?:\/\/.+/;
 
@@ -301,7 +298,7 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : '用�
 });
 
 router.post('/save-nodes', requireAuth, validate(saveNodesSchema), async (req: AuthRequest, res: Response) => {
-  const { graph_id, nodes, auto_reuse = true, reuse_threshold = REUSE_SIMILARITY_THRESHOLD } = req.body;
+  const { graph_id, nodes } = req.body;
 
   try {
     const existingGraphNodes = await graphNodeService.getGraphNodes(req.supabase!, graph_id);

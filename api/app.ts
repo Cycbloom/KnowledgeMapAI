@@ -9,13 +9,10 @@ import express, {
 } from 'express'
 import 'express-async-errors'
 import cors from 'cors'
-import path from 'path'
 import dotenv from 'dotenv'
 import helmet from 'helmet'
 import compression from 'compression'
 import cookieParser from 'cookie-parser'
-import { fileURLToPath } from 'url'
-import redisClient from './utils/redis.js'
 import authRoutes from './routes/auth.js'
 import graphRoutes from './routes/graphs.js'
 import nodeRoutes from './routes/nodes.js'
@@ -46,10 +43,6 @@ import { swaggerSpec } from './docs/swagger.js'
 import { startAutoBackupScheduler } from './jobs/autoBackupScheduler.js'
 import { syncExistingBackups } from './services/backupSync.js'
 
-// for esm mode
-const _filename = fileURLToPath(import.meta.url)
-const _dirname = path.dirname(_filename)
-
 // load env
 dotenv.config()
 
@@ -57,7 +50,6 @@ import { errorHandler } from './middleware/errorHandler.js'
 import { csrfProtection, getCsrfToken } from './middleware/csrf.js'
 import { rateLimiters } from './middleware/rateLimiter.js'
 import { requestLogger, slowRequestLogger } from './middleware/requestLogger.js'
-import { logger } from './utils/logger.js'
 
 const app: express.Application = express()
 
@@ -149,7 +141,7 @@ app.use('/api/combined-view', knowledgePointRoutes)
  */
 app.use(
   '/api/health',
-  (req: Request, res: Response, next: NextFunction): void => {
+  (_req: Request, res: Response, _next: NextFunction): void => {
     res.status(200).json({
       success: true,
       message: 'ok',
@@ -168,7 +160,7 @@ app.use(errorHandler)
 /**
  * 404 handler
  */
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: 'API not found',

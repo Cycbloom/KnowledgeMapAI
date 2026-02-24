@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Search, ChevronRight, ChevronDown, X, FileText, Tag, Layers, List, Link, ArrowLeft, Edit3, Trash2, Wand2, Navigation, GraduationCap, Sparkles, Save, Loader2 } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, X, List, Link, Sparkles } from 'lucide-react';
 import type { Node, Edge, CrossGraphNodeConnection } from '../../types';
 import { CombinedNodeDetailSidebar } from './CombinedNodeDetailSidebar';
 import { CombinedNodeEditSidebar } from './CombinedNodeEditSidebar';
@@ -49,7 +49,6 @@ export const CombinedGraphSidebar: React.FC<CombinedGraphSidebarProps> = ({
   graph1Color,
   graph2Color,
   graph1Id,
-  graph2Id,
   selectedNode,
   onNodeClick,
   onWidthChange,

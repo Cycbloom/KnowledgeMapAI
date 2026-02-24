@@ -60,7 +60,7 @@ const getMemoryUsage = () => {
   };
 };
 
-router.get('/system', async (req, res) => {
+router.get('/system', async (_req, res) => {
   try {
     const cpuUsage = getCpuUsage();
     const memoryUsage = getMemoryUsage();
@@ -85,7 +85,7 @@ router.get('/system', async (req, res) => {
   }
 });
 
-router.get('/services', async (req, res) => {
+router.get('/services', async (_req, res) => {
   const services: ServiceStatus[] = [];
   const now = new Date().toISOString();
 
@@ -222,7 +222,7 @@ router.get('/requests', (req, res) => {
   });
 });
 
-router.get('/requests/reset', (req, res) => {
+router.get('/requests/reset', (_req, res) => {
   requestStats = {
     total: 0,
     success: 0,
@@ -270,7 +270,7 @@ router.get('/logs', async (req, res) => {
   }
 });
 
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', async (_req, res) => {
   try {
     const [cpuUsage, memoryUsage] = [getCpuUsage(), getMemoryUsage()];
     const cpus = os.cpus();

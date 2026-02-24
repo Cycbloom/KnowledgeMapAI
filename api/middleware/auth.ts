@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { supabaseAdmin, createClientWithToken } from '../supabase.js';
+import { supabaseAdmin, supabaseAnon, createClientWithToken } from '../supabase.js';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from './errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
@@ -49,7 +49,7 @@ const parseTokenError = (error: { message?: string }): TokenError => {
   };
 };
 
-export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireAuth = async (req: AuthRequest, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -84,24 +84,24 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
   next();
 };
 
-export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    req.supabase = supabaseAdmin;
+    req.supabase = supabaseAnon;
     return next();
   }
 
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
-    req.supabase = supabaseAdmin;
+    req.supabase = supabaseAnon;
     return next();
   }
 
   const token = parts[1];
 
   if (!token) {
-    req.supabase = supabaseAdmin;
+    req.supabase = supabaseAnon;
     return next();
   }
 
@@ -112,10 +112,10 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
       req.user = user;
       req.supabase = createClientWithToken(token);
     } else {
-      req.supabase = supabaseAdmin;
+      req.supabase = supabaseAnon;
     }
   } catch {
-    req.supabase = supabaseAdmin;
+    req.supabase = supabaseAnon;
   }
   
   next();
@@ -123,12 +123,29 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
 
 export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
   await requireAuth(req, res, async () => {
+    if (!req.user?.id) {
+      throw new AppError('User not authenticated', 401, ErrorCodes.UNAUTHORIZED);
+    }
+
+    const { data: userRecord, error } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
+
+    if (error || !userRecord) {
+      throw new AppError('Failed to verify user role', 500, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    if (userRecord.role === 'admin') {
+      return next();
+    }
+
     const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
-    
-    if (!req.user?.email || !adminEmails.includes(req.user.email)) {
-      throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
+    if (req.user.email && adminEmails.includes(req.user.email)) {
+      return next();
     }
     
-    next();
+    throw new AppError('Admin access required', 403, ErrorCodes.FORBIDDEN);
   });
 };

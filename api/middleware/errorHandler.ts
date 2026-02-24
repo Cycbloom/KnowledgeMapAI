@@ -88,7 +88,7 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
   const sanitizedBody = sanitizeBody(req.body);
   
   logger.error('Error:', {

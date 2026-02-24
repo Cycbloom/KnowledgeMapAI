@@ -21,7 +21,7 @@ export class AliyunProvider extends BaseAIProvider {
     return this.synthesizeChunk(text, voice, speed, format);
   }
 
-  private async synthesizeLongText(text: string, voice: string, speed: number, format: string): Promise<Buffer> {
+  private async synthesizeLongText(text: string, voice: string, speed: number, _format: string): Promise<Buffer> {
     const chunks = this.splitText(text);
     logger.info(`Splitting TTS text into ${chunks.length} chunks`);
 

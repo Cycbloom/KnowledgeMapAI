@@ -52,7 +52,7 @@ Please respond in Markdown format.
 
 export class AIActionService {
 
-  async listActions(supabase: SupabaseClient, userId: string, graphId?: string): Promise<AIAction[]> {
+  async listActions(supabase: SupabaseClient, _userId: string, _graphId?: string): Promise<AIAction[]> {
     // Fetch System + User + Graph actions
     // Note: Supabase OR logic can be complex with RLS. 
     // Since we want to prioritize or merge, we can just fetch all accessible and filter/sort in app or let UI handle it.

@@ -390,7 +390,7 @@ export class GraphService {
     return { count: data?.length || 0 };
   }
 
-  async getGraphNodes(supabase: SupabaseClient, userId: string | null, graphId: string) {
+  async getGraphNodes(supabase: SupabaseClient, _userId: string | null, graphId: string) {
     const { data: graphNodes, error: gnError } = await supabase
       .from('graph_nodes')
       .select(GRAPH_NODES_SELECT)
@@ -472,7 +472,7 @@ export class GraphService {
     return statusMap;
   }
 
-  async getLearningPath(supabase: SupabaseClient, userId: string | null, graphId: string) {
+  async getLearningPath(supabase: SupabaseClient, _userId: string | null, graphId: string) {
     const { data, error } = await supabase
       .from('learning_paths')
       .select('*')

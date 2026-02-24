@@ -19,7 +19,6 @@ const REUSE_SIMILARITY_THRESHOLD = 0.85;
 
 router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthRequest, res: Response) => {
   const { 
-    id, 
     graph_id, 
     title, 
     content, 

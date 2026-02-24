@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { 
-  Search, Command, X, ArrowRight, 
-  Layout, Sun, Moon, Maximize, Minimize, 
+  Search, Command,
+  Layout,
   Network, GitBranch, Clock, Layers,
   FileText, Settings, Download, Share2,
   Focus, Wand2, Plus, Trash2, Home, ListChecks

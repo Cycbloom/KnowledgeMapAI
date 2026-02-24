@@ -192,7 +192,7 @@ router.get('/map/analyze', requireAuth, async (req: AuthRequest, res: Response) 
     titleGroups.get(key)!.push(g.id);
   });
   
-  titleGroups.forEach((ids, key) => {
+  titleGroups.forEach((ids, _key) => {
     if (ids.length > 1) {
       mergeSuggestions.push({
         graph_ids: ids,

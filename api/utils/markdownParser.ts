@@ -30,7 +30,7 @@ export const parseMarkdownToGraph = (text: string): ParsedGraph => {
     }
   };
 
-  lines.forEach((line, index) => {
+  lines.forEach((line, _index) => {
     const headerMatch = line.match(/^(#{1,6})\s+(.*)/);
     
     if (headerMatch) {

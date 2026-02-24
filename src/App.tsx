@@ -30,7 +30,7 @@ const LoadingFallback = () => (
 );
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, token } = useStore();
+  const { token } = useStore();
   // Simple check. Real app should verify token expiry or fetch user on mount.
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;

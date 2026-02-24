@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
-import { api } from '../../services/api';
 
 interface BatchGenerateDialogProps {
   isOpen: boolean;
@@ -18,8 +17,6 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
   const [types, setTypes] = useState<string[]>(['qa', 'choice']);
   const [count, setCount] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [progress, setProgress] = useState<{ current: number, total: number, message: string }>({ current: 0, total: 100, message: '准备中...' });
   const [packTemplate, setPackTemplate] = useState<string | null>(null);
 
   const packPresets = [

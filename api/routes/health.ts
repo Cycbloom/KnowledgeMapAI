@@ -69,7 +69,7 @@ router.get('/predictions', requireAuth, async (req: AuthRequest, res: Response) 
   }
 });
 
-router.get('/system', async (req, res) => {
+router.get('/system', async (_req, res) => {
   const startTime = Date.now();
   const checks: Record<string, { status: 'ok' | 'error'; latency?: number; message?: string }> = {};
 

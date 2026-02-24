@@ -533,7 +533,7 @@ Your task:
     }
   }
 
-  async suggestNextTopic(nodeTitle: string, nodeContent?: string, existingNodes?: string[], options: { provider?: AIProviderType; model?: string; userProgress?: { masteredCount?: number; currentLevel?: string } } = {}) {
+  async suggestNextTopic(nodeTitle: string, nodeContent?: string, _existingNodes?: string[], options: { provider?: AIProviderType; model?: string; userProgress?: { masteredCount?: number; currentLevel?: string } } = {}) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
       : await getAIProviderForTask('text');

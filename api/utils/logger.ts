@@ -85,7 +85,7 @@ export class Logger {
     return `${time} ${header}\n${COLORS.bright}${message}${COLORS.reset}${metaStr}`;
   }
 
-  private formatSimple(level: LogLevel, message: string, meta?: unknown): string {
+  private _formatSimple(level: LogLevel, message: string, meta?: unknown): string {
     const style = LEVEL_STYLES[level];
     const timestamp = new Date().toISOString();
     const prefixStr = this.prefix ? ` [${this.prefix}]` : '';

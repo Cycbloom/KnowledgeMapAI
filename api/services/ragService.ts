@@ -219,7 +219,7 @@ export class RAGService {
       model?: string;
     } = {}
   ): Promise<RAGResponse> {
-    const { graphId, currentNodeId, history = [], provider, model } = options;
+    const { graphId, currentNodeId, history = [], model } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
@@ -357,7 +357,7 @@ ${context || '(暂无相关上下文)'}`;
       model?: string;
     } = {}
   ): Promise<RAGSearchResult[]> {
-    const { graphId, currentNodeId, history = [], provider, model } = options;
+    const { graphId, currentNodeId, history = [], model } = options;
 
     const { context, sources } = await this.buildContext(message, userId, {
       graphId,
@@ -424,7 +424,7 @@ ${context || '(暂无相关上下文)'}`;
 
   async analyzeKnowledgeGaps(
     graphId: string,
-    userId: string
+    _userId: string
   ): Promise<{
     gaps: Array<{ topic: string; reason: string; priority: 'high' | 'medium' | 'low' }>;
     suggestions: string[];
@@ -463,7 +463,7 @@ ${context || '(暂无相关上下文)'}`;
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
-    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+    const _nodeMap = new Map(nodes.map(n => [n.id, n]));
     const connectedNodes = new Set<string>();
     
     if (edges) {
@@ -475,7 +475,7 @@ ${context || '(暂无相关上下文)'}`;
 
     const isolatedNodes = nodes.filter(n => !connectedNodes.has(n.id));
     const nodesWithoutContent = nodes.filter(n => !n.content || n.content.length < 50);
-    const leafNodes = nodes.filter(n => n.level === 'leaf');
+    const _leafNodes = nodes.filter(n => n.level === 'leaf');
 
     const gaps: Array<{ topic: string; reason: string; priority: 'high' | 'medium' | 'low' }> = [];
 

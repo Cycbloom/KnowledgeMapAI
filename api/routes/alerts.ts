@@ -4,7 +4,7 @@ import { logger } from '../utils/logger.js';
 
 const router = Router();
 
-router.get('/rules', (req, res) => {
+router.get('/rules', (_req, res) => {
   const rules = alertManager.getRules();
   res.json({ rules });
 });
@@ -61,7 +61,7 @@ router.get('/', (req, res) => {
   res.json({ alerts });
 });
 
-router.get('/stats', (req, res) => {
+router.get('/stats', (_req, res) => {
   const stats = alertManager.getStats();
   res.json(stats);
 });
@@ -102,7 +102,7 @@ router.post('/check', (req, res) => {
   }
 });
 
-router.delete('/', (req, res) => {
+router.delete('/', (_req, res) => {
   alertManager.clearAlerts();
   res.json({ success: true });
 });

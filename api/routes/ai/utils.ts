@@ -14,7 +14,7 @@ export const ALLOWED_MIME_TYPES = [
 
 export const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.md', '.csv', '.png', '.jpg', '.jpeg', '.webp', '.gif'];
 
-const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const ext = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
   
   if (!ALLOWED_MIME_TYPES.includes(file.mimetype) && !ALLOWED_EXTENSIONS.includes(ext)) {

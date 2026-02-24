@@ -19,6 +19,8 @@ const validAnonKey = supabaseAnonKey || validKey;
 
 export const supabaseAdmin = createClient(validUrl, validKey);
 
+export const supabaseAnon = createClient(validUrl, validAnonKey);
+
 export const createClientWithToken = (token: string) => {
   return createClient(validUrl, validAnonKey, {
     global: {

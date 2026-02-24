@@ -9,7 +9,7 @@ import { logger } from '../../utils/logger.js';
 
 const router = Router();
 
-router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (req: AuthRequest, res: Response) => {
+router.get('/tts/voices', requireAuth, validate(ttsVoicesSchema), async (_req: AuthRequest, res: Response) => {
   try {
     const voices = [
       { id: 'Cherry', name: 'Cherry (Female, Chinese)', lang: 'zh' },
@@ -60,7 +60,7 @@ router.post('/tts', requireAuth, validate(ttsSchema), async (req: AuthRequest, r
   }
 });
 
-router.get('/tts/health', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/tts/health', requireAuth, async (_req: AuthRequest, res: Response) => {
   try {
     const provider = await getAIProviderForTask('tts');
     if (provider.hasKey) {

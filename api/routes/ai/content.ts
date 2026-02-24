@@ -18,7 +18,7 @@ import { setSSEHeaders, sendStreamChunk, sendStreamDone, sendStreamError } from 
 
 const router = Router();
 
-router.get('/status', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/status', requireAuth, async (_req: AuthRequest, res: Response) => {
   const provider = await getAIProviderForTask('text');
   res.json({ 
     enabled: provider.hasKey, 

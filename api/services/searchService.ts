@@ -163,7 +163,7 @@ export class SearchService {
         .in('knowledge_point_id', kpIds)
         .is('deleted_at', null);
 
-      const kpMap = new Map(semanticKPs.data.map((kp: any) => [kp.id, kp]));
+      const _kpMap = new Map(semanticKPs.data.map((kp: any) => [kp.id, kp]));
       const gnMap = new Map((graphNodes || []).map((gn: any) => [gn.knowledge_point_id, gn]));
 
       nodes = semanticKPs.data

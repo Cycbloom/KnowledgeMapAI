@@ -281,7 +281,7 @@ export class AchievementService {
    * Update focus achievements (total minutes)
    */
   async updateFocusStats(userId: string): Promise<void> {
-    const { data: sessions, error } = await supabaseAdmin
+    const { error: _error } = await supabaseAdmin
       .from('focus_sessions')
       .select('duration')
       .eq('user_id', userId)

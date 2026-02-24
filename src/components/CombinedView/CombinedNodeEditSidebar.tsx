@@ -22,7 +22,6 @@ interface CombinedNodeEditSidebarProps {
 }
 
 export const CombinedNodeEditSidebar: React.FC<CombinedNodeEditSidebarProps> = ({
-  node,
   graphColor,
   graphTitle,
   nodeForm,

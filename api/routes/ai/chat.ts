@@ -9,7 +9,6 @@ import {
   suggestNextTopicSchema
 } from '../../schemas/index.js';
 import { ErrorCodes } from '../../constants/errorCodes.js';
-import { AppError } from '../../middleware/errorHandler.js';
 import { getMockResponse, aiService } from '../../services/aiService.js';
 import { getAIProviderForTask, getAIProvider } from '../../services/ai/factory.js';
 import { logger } from '../../utils/logger.js';

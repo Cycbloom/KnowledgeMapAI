@@ -13,7 +13,7 @@ const router = Router();
  * User Register
  * POST /api/auth/register
  */
-router.post('/register', validate(registerSchema), async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
+router.post('/register', validate(registerSchema), async (req: Request, res: Response, _next: import('express').NextFunction): Promise<void> => {
   try {
     const { email, password, name } = req.body;
     // Manual validation removed as it is handled by middleware

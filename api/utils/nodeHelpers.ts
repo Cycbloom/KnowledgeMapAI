@@ -1,4 +1,4 @@
-import type { Node, NodeLevel, KnowledgePointVisibility, KnowledgePoint, GraphNode } from '../../src/types';
+import type { Node, KnowledgePoint, GraphNode } from '../../src/types';
 
 export type GraphNodeRaw = Omit<GraphNode, 'knowledge_point_id'> & {
   knowledge_point_id: string;

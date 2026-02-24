@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useFocusStore, TimerMode } from '../store/useFocusStore';
-import { Play, Pause, RotateCcw, Coffee, Brain, X, Settings2, Minimize2, Maximize2, Volume2, VolumeX, SkipForward, GripVertical } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Brain, Settings2, Minimize2, Volume2, VolumeX, SkipForward } from 'lucide-react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 const formatTime = (seconds: number) => {
@@ -70,7 +70,7 @@ export const FocusTimer: React.FC = () => {
     return ((total - timeLeft) / total) * 100;
   };
 
-  const toggleExpand = (e: React.MouseEvent) => {
+  const toggleExpand = (_e: React.MouseEvent) => {
     // Prevent toggle if we were dragging
     if (isDragging.current) return;
     setIsExpanded(!isExpanded);

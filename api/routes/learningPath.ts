@@ -6,7 +6,6 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { graphService } from '../services/graphService.js';
 import { getAIProviderForTask } from '../services/ai/factory.js';
 import { promptService } from '../services/promptService.js';
-import { supabaseAdmin } from '../supabase.js';
 import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
@@ -275,7 +274,7 @@ async function generateAIPath(
   dailyTimeMinutes: number,
   currentKnowledge: string | undefined,
   graphTitle: string,
-  providerType: string | undefined,
+  _providerType: string | undefined,
   model: string | undefined
 ): Promise<{ stages: LearningPathStage[]; suggestions: string[] }> {
   const provider = await getAIProviderForTask('text');
@@ -388,7 +387,7 @@ function generateRulePath(
   parentMap: Map<string, string[]>,
   childMap: Map<string, string[]>,
   targetNodeId: string | undefined,
-  dailyTimeMinutes: number
+  _dailyTimeMinutes: number
 ): { stages: LearningPathStage[]; suggestions: string[] } {
   const sortedNodes: string[] = [];
   const visited = new Set<string>();
@@ -421,7 +420,7 @@ function generateRulePath(
     if (!node) continue;
 
     const parents = parentMap.get(nodeId) || [];
-    const completedPrerequisites = parents.filter(pId => {
+    const _completedPrerequisites = parents.filter(pId => {
       const pProgress = progressMap.get(pId);
       return pProgress && pProgress.masteryLevel > 0.6;
     });

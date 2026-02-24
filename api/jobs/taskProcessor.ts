@@ -1,8 +1,6 @@
-
 import { supabaseAdmin } from '../supabase.js';
 import { taskService, Task } from '../services/taskService.js';
 import { aiService } from '../services/aiService.js';
-import { graphService } from '../services/graphService.js';
 import { getNextLevel } from '../utils/graphUtils.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
@@ -271,7 +269,6 @@ class TaskProcessor {
 
         if (existingGraphNode) {
           const existingKpId = (existingGraphNode as any).knowledge_points?.id || existingGraphNode.knowledge_point_id;
-          const existingGnId = existingGraphNode.id;
           if (existingKpId && existingKpId !== node_id) {
             const { data: existingEdge } = await supabaseAdmin
               .from('edges')

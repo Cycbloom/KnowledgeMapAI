@@ -2,7 +2,6 @@ import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link2, Sparkles, Loader2, Check, X, RefreshCw, Network } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { Node, Edge } from '../types';
-import { api } from '../services/api';
 
 interface SuggestedConnection {
   sourceId: string;
@@ -24,7 +23,6 @@ interface ConnectionDiscoveryProps {
 export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
   nodes,
   edges,
-  graphId,
   onConnect,
   selectedNodeId
 }) => {
@@ -47,8 +45,6 @@ export const ConnectionDiscovery: React.FC<ConnectionDiscoveryProps> = ({
     setLoading(true);
     try {
       const suggestions: SuggestedConnection[] = [];
-      
-      const nodeMap = new Map(nodes.map(n => [n.id, n]));
       
       nodes.forEach(node => {
         const nodeTags = new Set(node.tags || node.properties?.tags || []);
@@ -340,7 +336,7 @@ export const NodeConnectionSuggestions: React.FC<{
       </div>
       
       <div className="space-y-2">
-        {suggestions.map(({ node: other, score, commonTags }) => (
+        {suggestions.map(({ node: other, score: _score, commonTags }) => (
           <button
             key={other.id}
             onClick={() => onConnect(other.id)}

@@ -8,4 +8,49 @@ export { TimelineView } from './TimelineView';
 export { KanbanView } from './KanbanView';
 export { ListView } from './ListView';
 
+export { FocusMode } from './FocusMode';
+export { BreakTimer } from './BreakTimer';
+export { FocusStreak, MiniStreak } from './FocusStreak';
+
+export { TaskTemplateSelector } from './TaskTemplateSelector';
+export { TemplateForm } from './TemplateForm';
+export { TemplateCategory, TemplateCategoryCard, TemplateCategoryGrid } from './TemplateCategory';
+
+export { DailyStats } from './DailyStats';
+export { WeeklyReport } from './WeeklyReport';
+export { MonthlyReport } from './MonthlyReport';
+export { FocusHeatmap } from './FocusHeatmap';
+export { AchievementBadge, AchievementBadgeNotification } from './AchievementBadge';
+export { AchievementGallery } from './AchievementGallery';
+export { AchievementNotificationProvider, useAchievementNotification, AchievementUnlockModal } from './AchievementNotification';
+
+export { DailyReview } from './DailyReview';
+export { TaskRetrospect } from './TaskRetrospect';
+export { WeeklyReflection } from './WeeklyReflection';
+
+export { HotkeyHelp } from './HotkeyHelp';
+export { MiniTimer } from './MiniTimer';
+
+export { EfficiencyTrend } from './EfficiencyTrend';
+export { TaskDistribution } from './TaskDistribution';
+export { TimeAnalysis } from './TimeAnalysis';
+
+export { PomodoroSettings } from './PomodoroSettings';
+export { DependencyGraph, DependencyIndicator } from './DependencyGraph';
+
+export { TaskRecommendation } from './TaskRecommendation';
+export { SmartSuggestion } from './SmartSuggestion';
+
 export type { ScheduledTask, CreateScheduledTaskData, TaskExecution } from '../../services/api/scheduler';
+export type { TaskTemplate, CreateTemplateData, UpdateTemplateData, TemplateFilters, ApplyTemplateData, TemplateCategory as TemplateCategoryType } from '../../services/api/template';
+export type { 
+  FocusSession, 
+  CreateFocusSessionData, 
+  UserFocusStats, 
+  Achievement, 
+  UserAchievement,
+  DailyFocusStats,
+  WeeklyFocusStats,
+  MonthlyFocusStats,
+  AchievementCheckResult 
+} from '../../services/api/scheduler';

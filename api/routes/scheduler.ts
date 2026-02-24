@@ -868,4 +868,790 @@ router.post(
   }
 );
 
+import { taskRecommendationService } from "../services/taskRecommendationService.js";
+import { schedulerService } from "../services/schedulerService.js";
+
+const createFocusSessionSchema = z.object({
+  task_id: z.string().uuid().optional(),
+  started_at: z.string().datetime(),
+  ended_at: z.string().datetime().optional(),
+  duration: z.number().int().min(0).optional(),
+  pomodoro_count: z.number().int().min(0).optional(),
+  white_noise_type: z.string().optional(),
+  is_break: z.boolean().optional(),
+});
+
+const getFocusSessionsQuerySchema = z.object({
+  from_date: z.string().datetime().optional(),
+  to_date: z.string().datetime().optional(),
+  task_id: z.string().uuid().optional(),
+  is_break: z.coerce.boolean().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+});
+
+const getMonthlyStatsQuerySchema = z.object({
+  year: z.coerce.number().int().optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(),
+});
+
+router.post(
+  "/focus-sessions",
+  requireAuth,
+  validate({ body: createFocusSessionSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    try {
+      const session = await schedulerService.createFocusSession(supabase, req.user.id, req.body);
+      res.status(201).json({ success: true, data: session });
+    } catch (error) {
+      const err = error as Error;
+      console.error("Create focus session error:", err);
+      res.status(500).json({ error: err.message || "创建专注会话失败" });
+    }
+  }
+);
+
+router.put(
+  "/focus-sessions/:id",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const updates = req.body;
+
+    try {
+      const session = await schedulerService.updateFocusSession(supabase, id, req.user.id, updates);
+      res.json({ success: true, data: session });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "更新专注会话失败" });
+    }
+  }
+);
+
+router.get(
+  "/focus-sessions",
+  requireAuth,
+  validate({ query: getFocusSessionsQuerySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { from_date, to_date, task_id, is_break, limit } = req.query as z.infer<typeof getFocusSessionsQuerySchema>;
+
+    try {
+      const sessions = await schedulerService.getFocusSessions(supabase, req.user.id, {
+        from_date,
+        to_date,
+        task_id,
+        is_break,
+        limit,
+      });
+      res.json({ success: true, data: sessions });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取专注会话失败" });
+    }
+  }
+);
+
+router.get("/focus-stats", requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase;
+  if (!supabase) {
+    return res.status(500).json({ error: "Database connection not available" });
+  }
+
+  try {
+    const stats = await schedulerService.getUserFocusStats(supabase, req.user.id);
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message || "获取专注统计失败" });
+  }
+});
+
+router.get(
+  "/focus-stats/daily",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { date } = req.query;
+
+    try {
+      const stats = await schedulerService.getDailyFocusStats(supabase, req.user.id, date as string);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取每日统计失败" });
+    }
+  }
+);
+
+router.get(
+  "/focus-stats/weekly",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { week_start } = req.query;
+
+    try {
+      const stats = await schedulerService.getWeeklyFocusStats(supabase, req.user.id, week_start as string);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取周统计失败" });
+    }
+  }
+);
+
+router.get(
+  "/focus-stats/monthly",
+  requireAuth,
+  validate({ query: getMonthlyStatsQuerySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { year, month } = req.query as z.infer<typeof getMonthlyStatsQuerySchema>;
+
+    try {
+      const stats = await schedulerService.getMonthlyFocusStats(supabase, req.user.id, year, month);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取月统计失败" });
+    }
+  }
+);
+
+router.get(
+  "/focus-stats/heatmap",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+
+    try {
+      const data = await schedulerService.getYearlyHeatmap(supabase, req.user.id, year);
+      res.json({ success: true, data });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取热力图数据失败" });
+    }
+  }
+);
+
+router.get("/achievements", requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase;
+  if (!supabase) {
+    return res.status(500).json({ error: "Database connection not available" });
+  }
+
+  try {
+    const achievements = await schedulerService.getAllAchievements(supabase);
+    res.json({ success: true, data: achievements });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message || "获取成就列表失败" });
+  }
+});
+
+router.get("/achievements/user", requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase;
+  if (!supabase) {
+    return res.status(500).json({ error: "Database connection not available" });
+  }
+
+  try {
+    const achievements = await schedulerService.getUserAchievements(supabase, req.user.id);
+    res.json({ success: true, data: achievements });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message || "获取用户成就失败" });
+  }
+});
+
+router.post("/achievements/check", requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase;
+  if (!supabase) {
+    return res.status(500).json({ error: "Database connection not available" });
+  }
+
+  try {
+    const result = await schedulerService.checkAndUnlockAchievements(supabase, req.user.id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message || "检查成就失败" });
+  }
+});
+
+router.get(
+  "/recommendations",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    try {
+      const recommendations = await taskRecommendationService.getTaskRecommendations(
+        supabase,
+        req.user.id,
+        { currentTime: new Date() }
+      );
+
+      res.json({ success: true, data: recommendations });
+    } catch (error) {
+      const err = error as Error;
+      console.error("Get recommendations error:", err);
+      res.status(500).json({ error: err.message || "获取任务推荐失败" });
+    }
+  }
+);
+
+router.get(
+  "/smart-suggestions",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    try {
+      const suggestions = await taskRecommendationService.getSmartSuggestions(
+        supabase,
+        req.user.id,
+        { currentTime: new Date() }
+      );
+
+      res.json({ success: true, data: suggestions });
+    } catch (error) {
+      const err = error as Error;
+      console.error("Get smart suggestions error:", err);
+      res.status(500).json({ error: err.message || "获取智能建议失败" });
+    }
+  }
+);
+
+router.post(
+  "/analyze-priority",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { title, description } = req.body;
+
+      if (!title || typeof title !== "string") {
+        return res.status(400).json({ error: "请提供任务标题" });
+      }
+
+      const result = taskRecommendationService.analyzePriorityFromText(
+        title,
+        description
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "分析优先级失败" });
+    }
+  }
+);
+
+router.get(
+  "/efficiency-data",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const days = req.query.days ? Number(req.query.days) : 30;
+
+    try {
+      const efficiencyData = await taskRecommendationService.calculateEfficiencyData(
+        supabase,
+        req.user.id,
+        days
+      );
+
+      res.json({ success: true, data: efficiencyData });
+    } catch (error) {
+      const err = error as Error;
+      console.error("Get efficiency data error:", err);
+      res.status(500).json({ error: err.message || "获取效率数据失败" });
+    }
+  }
+);
+
+const createTemplateSchema = z.object({
+  name: z.string().min(1, "模板名称不能为空").max(50, "模板名称不能超过50个字符"),
+  description: z.string().max(200, "描述不能超过200个字符").optional(),
+  category: z.enum(["study", "work", "life", "health", "custom"]).optional(),
+  title_template: z.string().min(1, "标题模板不能为空").max(100, "标题模板不能超过100个字符"),
+  description_template: z.string().max(500, "描述模板不能超过500个字符").optional(),
+  estimated_duration: z.number().int().min(1).max(480).optional(),
+  tags: z.array(z.string()).max(5, "最多5个标签").optional(),
+  priority: z.number().int().min(1).max(4).optional(),
+  is_default: z.boolean().optional(),
+});
+
+const updateTemplateSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  description: z.string().max(200).optional(),
+  category: z.enum(["study", "work", "life", "health", "custom"]).optional(),
+  title_template: z.string().min(1).max(100).optional(),
+  description_template: z.string().max(500).optional(),
+  estimated_duration: z.number().int().min(1).max(480).optional(),
+  tags: z.array(z.string()).max(5).optional(),
+  priority: z.number().int().min(1).max(4).optional(),
+  is_default: z.boolean().optional(),
+});
+
+const getTemplatesQuerySchema = z.object({
+  category: z.enum(["study", "work", "life", "health", "custom"]).optional(),
+  search: z.string().max(50).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+});
+
+const applyTemplateSchema = z.object({
+  placeholders: z.record(z.string()).optional(),
+  queue_level: z.number().int().min(0).max(2).optional(),
+  knowledge_point_id: z.string().uuid().optional(),
+  deadline: z.string().datetime().optional(),
+});
+
+router.get(
+  "/templates",
+  requireAuth,
+  validate({ query: getTemplatesQuerySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { category, search, limit, offset } = req.query as z.infer<typeof getTemplatesQuerySchema>;
+
+    let query = supabase
+      .from("task_templates")
+      .select("*", { count: "exact" })
+      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
+      .order("is_system", { ascending: true })
+      .order("category", { ascending: true })
+      .order("name", { ascending: true })
+      .range(offset, offset + limit - 1);
+
+    if (category) {
+      query = query.eq("category", category);
+    }
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,title_template.ilike.%${search}%`);
+    }
+
+    const { data: templates, error, count } = await query;
+
+    if (error) {
+      console.error("Get templates error:", error);
+      return res.status(500).json({ error: "获取模板列表失败" });
+    }
+
+    res.json({ success: true, data: templates, total: count });
+  }
+);
+
+router.get(
+  "/templates/categories",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { data: templates, error } = await supabase
+      .from("task_templates")
+      .select("category")
+      .or(`user_id.eq.${req.user.id},is_system.eq.true`);
+
+    if (error) {
+      return res.status(500).json({ error: "获取分类失败" });
+    }
+
+    const categories = [
+      { value: "study", label: "学习", icon: "📚", color: "blue" },
+      { value: "work", label: "工作", icon: "💼", color: "purple" },
+      { value: "life", label: "生活", icon: "🏠", color: "green" },
+      { value: "health", label: "健康", icon: "💪", color: "red" },
+      { value: "custom", label: "自定义", icon: "⭐", color: "amber" },
+    ];
+
+    const categoryCounts: Record<string, number> = {};
+    for (const t of templates || []) {
+      categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
+    }
+
+    const result = categories.map((cat) => ({
+      ...cat,
+      count: categoryCounts[cat.value] || 0,
+    }));
+
+    res.json({ success: true, data: result });
+  }
+);
+
+router.get(
+  "/templates/:id",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: template, error } = await supabase
+      .from("task_templates")
+      .select("*")
+      .eq("id", id)
+      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
+      .single();
+
+    if (error || !template) {
+      return res.status(404).json({ error: "模板不存在" });
+    }
+
+    res.json({ success: true, data: template });
+  }
+);
+
+router.post(
+  "/templates",
+  requireAuth,
+  validate({ body: createTemplateSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const {
+      name,
+      description,
+      category,
+      title_template,
+      description_template,
+      estimated_duration,
+      tags,
+      priority,
+      is_default,
+    } = req.body;
+
+    const { data: template, error } = await supabase
+      .from("task_templates")
+      .insert({
+        user_id: req.user.id,
+        name,
+        description,
+        category: category ?? "custom",
+        title_template,
+        description_template,
+        estimated_duration: estimated_duration ?? 25,
+        tags: tags ?? [],
+        priority: priority ?? 2,
+        is_default: is_default ?? false,
+        is_system: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Create template error:", error);
+      return res.status(500).json({ error: "创建模板失败" });
+    }
+
+    res.status(201).json({ success: true, data: template });
+  }
+);
+
+router.put(
+  "/templates/:id",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: updateTemplateSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const { data: template, error } = await supabase
+      .from("task_templates")
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .eq("is_system", false)
+      .select()
+      .single();
+
+    if (error || !template) {
+      return res.status(404).json({ error: "模板不存在或无法更新" });
+    }
+
+    res.json({ success: true, data: template });
+  }
+);
+
+router.delete(
+  "/templates/:id",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from("task_templates")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .eq("is_system", false);
+
+    if (error) {
+      return res.status(500).json({ error: "删除模板失败" });
+    }
+
+    res.json({ success: true });
+  }
+);
+
+router.post(
+  "/templates/:id/apply",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: applyTemplateSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { placeholders, queue_level, knowledge_point_id, deadline } = req.body;
+
+    const { data: template, error: templateError } = await supabase
+      .from("task_templates")
+      .select("*")
+      .eq("id", id)
+      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
+      .single();
+
+    if (templateError || !template) {
+      return res.status(404).json({ error: "模板不存在" });
+    }
+
+    let title = template.title_template;
+    let description = template.description_template;
+
+    if (placeholders) {
+      for (const [key, value] of Object.entries(placeholders)) {
+        const placeholder = `{{${key}}}`;
+        title = title.replace(new RegExp(placeholder, "g"), value as string);
+        if (description) {
+          description = description.replace(new RegExp(placeholder, "g"), value as string);
+        }
+      }
+    }
+
+    const unresolvedPlaceholders = title.match(/\{\{[^}]+\}\}/g);
+    if (unresolvedPlaceholders) {
+      for (const placeholder of unresolvedPlaceholders) {
+        const key = placeholder.slice(2, -2);
+        title = title.replace(placeholder, key);
+        if (description) {
+          description = description.replace(placeholder, key);
+        }
+      }
+    }
+
+    const { count } = await supabase
+      .from("scheduled_tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", req.user.id)
+      .eq("queue_level", queue_level ?? 0)
+      .is("deleted_at", null);
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .insert({
+        user_id: req.user.id,
+        title,
+        description,
+        queue_level: queue_level ?? 0,
+        position: count ?? 0,
+        estimated_duration: template.estimated_duration,
+        tags: template.tags,
+        priority: template.priority,
+        knowledge_point_id,
+        deadline,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (taskError) {
+      console.error("Create task from template error:", taskError);
+      return res.status(500).json({ error: "从模板创建任务失败" });
+    }
+
+    await supabase
+      .from("task_templates")
+      .update({ usage_count: template.usage_count + 1 })
+      .eq("id", id);
+
+    res.status(201).json({ success: true, data: task });
+  }
+);
+
+router.post(
+  "/templates/:id/duplicate",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { name } = req.body;
+
+    const { data: original, error: fetchError } = await supabase
+      .from("task_templates")
+      .select("*")
+      .eq("id", id)
+      .or(`user_id.eq.${req.user.id},is_system.eq.true`)
+      .single();
+
+    if (fetchError || !original) {
+      return res.status(404).json({ error: "模板不存在" });
+    }
+
+    const { data: template, error } = await supabase
+      .from("task_templates")
+      .insert({
+        user_id: req.user.id,
+        name: name || `${original.name} (副本)`,
+        description: original.description,
+        category: original.category,
+        title_template: original.title_template,
+        description_template: original.description_template,
+        estimated_duration: original.estimated_duration,
+        tags: original.tags,
+        priority: original.priority,
+        is_default: false,
+        is_system: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Duplicate template error:", error);
+      return res.status(500).json({ error: "复制模板失败" });
+    }
+
+    res.status(201).json({ success: true, data: template });
+  }
+);
+
+router.post(
+  "/templates/:id/set-default",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res.status(500).json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: template, error: fetchError } = await supabase
+      .from("task_templates")
+      .select("category")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .single();
+
+    if (fetchError || !template) {
+      return res.status(404).json({ error: "模板不存在" });
+    }
+
+    await supabase
+      .from("task_templates")
+      .update({ is_default: false })
+      .eq("user_id", req.user.id)
+      .eq("category", template.category);
+
+    const { data: updated, error } = await supabase
+      .from("task_templates")
+      .update({ is_default: true })
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: "设置默认模板失败" });
+    }
+
+    res.json({ success: true, data: updated });
+  }
+);
+
 export default router;

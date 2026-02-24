@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, Clock, Tag, Link, Star, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { X, Calendar, Clock, Tag, Link, Star, AlertCircle, Sparkles, Loader2, Zap } from 'lucide-react';
 import { ScheduledTask, CreateScheduledTaskData, schedulerApi } from '../../services/api/scheduler';
+import { taskRecommendationApi, PrioritySuggestion } from '../../services/api/taskRecommendation';
 
 interface TaskFormProps {
   task?: ScheduledTask;
@@ -51,8 +52,43 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [queueLevel, setQueueLevel] = useState(task?.queue_level ?? defaultQueueLevel);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [prioritySuggestion, setPrioritySuggestion] = useState<PrioritySuggestion | null>(null);
+  const [showPrioritySuggestion, setShowPrioritySuggestion] = useState(false);
 
   const isEditing = !!task;
+
+  const analyzePriority = useCallback(async (titleText: string, descriptionText?: string) => {
+    if (!titleText.trim() || isEditing) return;
+    
+    try {
+      const result = await taskRecommendationApi.analyzePriority(titleText, descriptionText);
+      setPrioritySuggestion(result.data);
+      setShowPrioritySuggestion(true);
+    } catch (error) {
+      console.error('Failed to analyze priority:', error);
+    }
+  }, [isEditing]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (title.trim()) {
+        analyzePriority(title, description);
+      } else {
+        setPrioritySuggestion(null);
+        setShowPrioritySuggestion(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [title, description, analyzePriority]);
+
+  const applyPrioritySuggestion = () => {
+    if (prioritySuggestion) {
+      setPriority(prioritySuggestion.suggestedPriority);
+      setQueueLevel(prioritySuggestion.suggestedQueue);
+      setShowPrioritySuggestion(false);
+    }
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -300,6 +336,47 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   </button>
                 ))}
               </div>
+              {showPrioritySuggestion && prioritySuggestion && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-2 p-2 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-500/10 dark:to-pink-500/10 border border-purple-200 dark:border-purple-500/30"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Zap size={14} className="text-purple-500 dark:text-purple-400" />
+                      <span className="text-xs text-purple-700 dark:text-purple-300">
+                        建议: P{prioritySuggestion.suggestedPriority} / Q{prioritySuggestion.suggestedQueue}
+                        <span className="ml-1 text-purple-400 dark:text-purple-500">
+                          ({Math.round(prioritySuggestion.confidence * 100)}%)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={applyPrioritySuggestion}
+                        className="px-2 py-0.5 rounded text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-colors"
+                      >
+                        应用
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowPrioritySuggestion(false)}
+                        className="px-2 py-0.5 rounded text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                      >
+                        忽略
+                      </button>
+                    </div>
+                  </div>
+                  {prioritySuggestion.keywords.length > 0 && (
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      检测到: {prioritySuggestion.keywords.slice(0, 3).join(', ')}
+                    </p>
+                  )}
+                </motion.div>
+              )}
             </div>
 
             <div>

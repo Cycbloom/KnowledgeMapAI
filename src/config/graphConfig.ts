@@ -1,5 +1,3 @@
-import { NodeLevel } from '../types/index';
-
 export const levelLabels: Record<string, string> = {
   root: '根节点',
   core: '核心节点',

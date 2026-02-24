@@ -1,11 +1,10 @@
-import React, { useRef, useMemo, lazy, Suspense, useCallback, useState, useLayoutEffect, useEffect } from 'react';
+import React, { useMemo, lazy, Suspense, useCallback, useState, useLayoutEffect, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 import { GraphToolbar } from '../components/GraphEditor/GraphToolbar';
-import { ErrorBoundary } from '../components/ErrorBoundary';
 import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
 import { ExplorationTimeline } from '../components/GraphEditor/ExplorationTimeline';
 import { GraphStyleSettings } from '../components/GraphEditor/GraphStyleSettings';
@@ -35,9 +34,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts.tsx';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { useExplorationPath } from '../hooks/useExplorationPath';
 import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../lib/graphUtils';
-import type { Node as GraphNode, ColorScheme, GraphColorMode, LinkStyle, LinkAnimation, GraphViewMode, NodeSizeMode, EdgeWidthMode, BranchSuggestion } from '../types';
-import { ViewModeSelector } from '../components/GraphEditor/ViewModeSelector';
-import { useFocusStore } from '../store/useFocusStore';
+import type { Node as GraphNode, ColorScheme, GraphColorMode, LinkStyle, LinkAnimation, NodeSizeMode, EdgeWidthMode } from '../types';
 import { PresentationControls } from '../components/GraphEditor/PresentationControls';
 import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
 import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
@@ -594,7 +591,7 @@ export const GraphEditor = () => {
               isRightPanelOpen={sidebarMode !== 'none'}
               rightPanelWidth={sidebarMode !== 'none' ? state.sidebarWidth : 0}
               graphId={id}
-              onLayoutUpdate={(positions) => {
+              onLayoutUpdate={(_positions) => {
                 queryClient.invalidateQueries({ queryKey: ['graphData', id] });
               }}
               isSelectingParent={isSelectingParent}
@@ -603,7 +600,7 @@ export const GraphEditor = () => {
               selectedParentIds={state.nodeForm.parentNodeIds}
               leftPanelWidth={isRAGChatOpen ? ragChatWidth : 0}
               onNavigateToGraphMap={() => navigate(`/graph-map?from=${id}`)}
-              onMarkNodeMastered={async (nodeId: string) => {
+              onMarkNodeMastered={async (_nodeId: string) => {
                 try {
                   await queryClient.invalidateQueries({ queryKey: ['graphNodeStatus', id] });
                   addMessage({ type: 'success', content: '节点状态已更新' });

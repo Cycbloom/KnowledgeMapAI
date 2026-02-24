@@ -123,7 +123,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           const updatedAnswers = currentAnswers.map(a => a === oldOption ? value : a);
           newAnswer = JSON.stringify(updatedAnswers);
         }
-      } catch (e) {
+      } catch (_e) {
         // Ignore parse errors
       }
     }

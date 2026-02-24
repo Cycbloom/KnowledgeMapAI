@@ -1,4 +1,4 @@
-import { Node, Edge, NodeLevel, BranchSuggestion } from '../types';
+import { Node, Edge, BranchSuggestion } from '../types';
 import { getLevel, getNextLevel, getLevelColorHex } from '../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
@@ -42,7 +42,7 @@ export const useGraphAIOperations = ({
   const queryClient = useQueryClient();
   const asyncHandler = createAsyncHandler(addMessage);
   const { 
-    nodeForm, setNodeForm, 
+    nodeForm, 
     selectedNode, 
     selectedNodeIds, 
     setLoading, 
@@ -272,8 +272,8 @@ export const useGraphAIOperations = ({
     if (!id) return;
     
     const nodesToProcess = selectedNodeIds.size > 0 
-      ? Array.from(selectedNodeIds).map(nid => nodes.find(n => n.id === nid)).filter(Boolean)
-      : [selectedNode];
+      ? Array.from(selectedNodeIds).map(nid => nodes.find(n => n.id === nid)).filter((n): n is NonNullable<typeof n> => Boolean(n))
+      : [selectedNode].filter((n): n is NonNullable<typeof n> => Boolean(n));
 
     if (nodesToProcess.length === 0) return;
 
@@ -291,7 +291,7 @@ export const useGraphAIOperations = ({
               duration: 2000
           });
 
-          const nodeIds = nodesToProcess.map(n => n!.id);
+          const nodeIds = nodesToProcess.map(n => n.id);
           
           await api.ai.batchGenerateCards(nodeIds, {
             ...params,

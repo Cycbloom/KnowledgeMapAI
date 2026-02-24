@@ -27,6 +27,7 @@ export const useComponentPerformance = (
     if (!enabled) return;
 
     renderStartTime.current = performance.now();
+    const currentRenderCount = renderCount.current;
 
     return () => {
       const renderTime = performance.now() - renderStartTime.current;
@@ -45,7 +46,7 @@ export const useComponentPerformance = (
 
       if (renderTime > logThreshold) {
         console.warn(
-          `[Performance] ${componentName} took ${renderTime.toFixed(2)}ms to render (render #${renderCount.current})`
+          `[Performance] ${componentName} took ${renderTime.toFixed(2)}ms to render (render #${currentRenderCount + 1})`
         );
 
         if (onSlowRender) {
@@ -72,14 +73,14 @@ export const useComponentPerformance = (
   };
 };
 
-export const useRenderCount = (componentName: string) => {
+export const useRenderCount = (_componentName: string) => {
   const count = useRef(0);
   const [renderCount, setRenderCount] = useState(0);
 
   useEffect(() => {
     count.current += 1;
     setRenderCount(count.current);
-  });
+  }, []);
 
   return renderCount;
 };
@@ -104,7 +105,7 @@ export const useWhyDidYouRender = (componentName: string, props: Record<string, 
     }
 
     if (hasChanges) {
-      console.log(`[${componentName}] Re-rendered due to prop changes:`, changedProps);
+      console.info(`[${componentName}] Re-rendered due to prop changes:`, changedProps);
     }
 
     previousProps.current = props;

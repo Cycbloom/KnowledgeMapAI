@@ -1,5 +1,4 @@
-import { useCallback } from 'react';
-import { Node, Edge, Graph } from '../types';
+import type { Node, Edge, Graph } from '../types';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';

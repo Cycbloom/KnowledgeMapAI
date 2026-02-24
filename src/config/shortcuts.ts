@@ -1,5 +1,3 @@
-import { GraphViewMode } from '../types';
-
 export interface ShortcutKey {
   key: string;
   ctrl?: boolean;

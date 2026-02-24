@@ -23,7 +23,8 @@ export const getDescendantNodes = (nodeId: string, nodes: Node[], edges: Edge[])
   });
   
   while (queue.length > 0) {
-    const currentId = queue.shift()!;
+    const currentId = queue.shift();
+    if (!currentId) continue;
     const children = childrenMap.get(currentId) || [];
     
     for (const childId of children) {
@@ -74,7 +75,8 @@ export const getAncestorNodes = (nodeId: string, nodes: Node[], edges: Edge[]): 
   });
   
   while (queue.length > 0) {
-    const currentId = queue.shift()!;
+    const currentId = queue.shift();
+    if (!currentId) continue;
     const parents = parentsMap.get(currentId) || [];
     
     for (const parentId of parents) {
@@ -156,7 +158,8 @@ export const findShortestPath = (nodes: Node[], edges: Edge[], startId: string, 
   let found = false;
 
   while (queue.length > 0) {
-    const currentId = queue.shift()!;
+    const currentId = queue.shift();
+    if (!currentId) continue;
     
     if (currentId === eId) {
       found = true;

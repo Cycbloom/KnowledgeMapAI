@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Node, Edge } from '../types';
+import type { Node } from '../types';
 import { GraphEditorState } from './useGraphEditorState';
 
 interface UseGraphEffectsProps {

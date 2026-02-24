@@ -68,7 +68,7 @@ export function useShortcutAction(actionId: string): {
   execute: () => void;
 } {
   const { bindings, getShortcut } = useShortcutStore();
-  const shortcut = getShortcut(actionId);
+  const _shortcut = getShortcut(actionId);
   const binding = bindings[actionId];
   
   const formattedKey = binding?.enabled 

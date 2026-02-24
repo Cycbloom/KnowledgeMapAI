@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Achievement, DailyTask } from '../types';
-import { useTheme } from '../hooks/useTheme';
 import { 
   Trophy, Medal, Target, Flame, Zap, Crown, Timer, Brain, 
   GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar
@@ -22,7 +21,6 @@ const taskTypeMap: Record<string, { label: string, icon: any }> = {
 };
 
 export const Achievements = () => {
-  const { isDark } = useTheme();
   const { user } = useStore();
   
   // Fetch Achievements

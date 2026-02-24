@@ -67,7 +67,8 @@ export const analyzeGraph = (nodes: Node[], edges: Edge[]): GraphAnalysis => {
     visited.add(startId);
     
     while (queue.length > 0) {
-      const current = queue.shift()!;
+      const current = queue.shift();
+      if (!current) continue;
       const children = childrenMap.get(current) || new Set();
       const parents = parentsMap.get(current) || new Set();
       
@@ -110,7 +111,9 @@ export const analyzeGraph = (nodes: Node[], edges: Edge[]): GraphAnalysis => {
     const localVisited = new Set<string>();
     
     while (queue.length > 0) {
-      const { id, depth } = queue.shift()!;
+      const item = queue.shift();
+      if (!item) continue;
+      const { id, depth } = item;
       if (localVisited.has(id)) continue;
       localVisited.add(id);
       
@@ -264,7 +267,7 @@ export const findMissingConnections = (
     if (!parentMap.has(tgt)) {
       parentMap.set(tgt, new Set());
     }
-    parentMap.get(tgt)!.add(src);
+    parentMap.get(tgt)?.add(src);
   });
   
   const siblingsMap = new Map<string, string[]>();
@@ -275,7 +278,7 @@ export const findMissingConnections = (
       if (!siblingsMap.has(parentId)) {
         siblingsMap.set(parentId, []);
       }
-      siblingsMap.get(parentId)!.push(id);
+      siblingsMap.get(parentId)?.push(id);
     });
   });
   
@@ -474,7 +477,9 @@ const countPaths = (
   ];
   
   while (queue.length > 0) {
-    const { id, depth, visited } = queue.shift()!;
+    const item = queue.shift();
+    if (!item) continue;
+    const { id, depth, visited } = item;
     
     if (depth > 3) continue;
     

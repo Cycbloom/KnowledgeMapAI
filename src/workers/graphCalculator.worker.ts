@@ -59,8 +59,8 @@ const calculateForceDirectedLayout = (
     if (!adjacencyList.has(edge.target)) {
       adjacencyList.set(edge.target, new Set());
     }
-    adjacencyList.get(edge.source)!.add(edge.target);
-    adjacencyList.get(edge.target)!.add(edge.source);
+    adjacencyList.get(edge.source)?.add(edge.target);
+    adjacencyList.get(edge.target)?.add(edge.source);
   });
 
   for (let iter = 0; iter < iterations; iter++) {
@@ -75,8 +75,8 @@ const calculateForceDirectedLayout = (
         if (i === j) continue;
         const nodeB = nodesArray[j];
 
-        const dx = nodeA.x! - nodeB.x!;
-        const dy = nodeA.y! - nodeB.y!;
+        const dx = (nodeA.x ?? 0) - (nodeB.x ?? 0);
+        const dy = (nodeA.y ?? 0) - (nodeB.y ?? 0);
         const distance = Math.sqrt(dx * dx + dy * dy) || 1;
 
         const force = repulsionStrength / (distance * distance);
@@ -89,8 +89,8 @@ const calculateForceDirectedLayout = (
         neighbors.forEach(neighborId => {
           const neighbor = nodeMap.get(neighborId);
           if (neighbor) {
-            const dx = neighbor.x! - nodeA.x!;
-            const dy = neighbor.y! - nodeA.y!;
+            const dx = (neighbor.x ?? 0) - (nodeA.x ?? 0);
+            const dy = (neighbor.y ?? 0) - (nodeA.y ?? 0);
             const distance = Math.sqrt(dx * dx + dy * dy) || 1;
             const displacement = distance - linkDistance;
             const force = displacement * attractionStrength;
@@ -101,16 +101,16 @@ const calculateForceDirectedLayout = (
         });
       }
 
-      nodeA.vx = (nodeA.vx! + fx) * damping;
-      nodeA.vy = (nodeA.vy! + fy) * damping;
+      nodeA.vx = ((nodeA.vx ?? 0) + fx) * damping;
+      nodeA.vy = ((nodeA.vy ?? 0) + fy) * damping;
     }
 
     nodesArray.forEach(node => {
-      node.x! += node.vx!;
-      node.y! += node.vy!;
+      node.x = (node.x ?? 0) + (node.vx ?? 0);
+      node.y = (node.y ?? 0) + (node.vy ?? 0);
 
-      node.x = Math.max(50, Math.min(width - 50, node.x!));
-      node.y = Math.max(50, Math.min(height - 50, node.y!));
+      node.x = Math.max(50, Math.min(width - 50, node.x ?? 0));
+      node.y = Math.max(50, Math.min(height - 50, node.y ?? 0));
     });
   }
 
@@ -142,8 +142,8 @@ const calculateNodeImportance = (
     if (!outgoingEdges.has(edge.source)) {
       outgoingEdges.set(edge.source, []);
     }
-    incomingEdges.get(edge.target)!.push(edge.source);
-    outgoingEdges.get(edge.source)!.push(edge.target);
+    incomingEdges.get(edge.target)?.push(edge.source);
+    outgoingEdges.get(edge.source)?.push(edge.target);
   });
 
   const ranks = new Map<string, number>();

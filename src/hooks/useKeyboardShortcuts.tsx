@@ -1,8 +1,5 @@
 import { useEffect } from 'react';
-import React from 'react';
-import { Maximize, Minimize } from 'lucide-react';
-import { useMessageStore } from '../store/useMessageStore';
-
+import { useMessageStore } from '@/store/useMessageStore';
 import { Node, GraphViewMode } from '../types';
 
 interface UseKeyboardShortcutsProps {
@@ -42,7 +39,7 @@ export const useKeyboardShortcuts = ({
   viewMode,
   setViewMode
 }: UseKeyboardShortcutsProps) => {
-  const { addMessage } = useMessageStore();
+  const { addMessage: _addMessage } = useMessageStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

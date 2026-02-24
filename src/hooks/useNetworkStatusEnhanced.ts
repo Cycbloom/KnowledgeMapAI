@@ -139,7 +139,7 @@ export const useRetryOnReconnect = <T>(
   fetchFn: () => Promise<T>,
   options: { maxRetries?: number; retryDelay?: number } = {}
 ) => {
-  const { maxRetries = 3, retryDelay = 1000 } = options;
+  const { maxRetries = 3, retryDelay: _retryDelay = 1000 } = options;
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 

@@ -47,7 +47,7 @@ export const createTreeLayout = (
     if (childrenMap.has(src)) {
       const targetNode = nodes.find(n => normalizeId(n.id) === tgt);
       if (targetNode) {
-        childrenMap.get(src)!.push(targetNode);
+        childrenMap.get(src)?.push(targetNode);
       }
     }
   });

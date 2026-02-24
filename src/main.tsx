@@ -28,28 +28,31 @@ if (import.meta.env.PROD) {
   
   registerServiceWorker({
     onUpdate: (registration) => {
-      console.log('[SW] New version available')
+      console.info('[SW] New version available')
       if (confirm('发现新版本，是否立即更新？')) {
         registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
         window.location.reload()
       }
     },
     onSuccess: () => {
-      console.log('[SW] App is ready for offline use')
+      console.info('[SW] App is ready for offline use')
     },
   })
 
   initPerformanceMonitoring()
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </StrictMode>,
-)
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  createRoot(rootElement).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </StrictMode>,
+  );
+}

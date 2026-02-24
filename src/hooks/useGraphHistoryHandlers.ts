@@ -47,7 +47,7 @@ export const useGraphHistoryHandlers = ({ mutations }: UseGraphHistoryHandlersPr
     createEdgeMutation.mutate(payload);
   }, [createEdgeMutation]);
 
-  const handleBatchHistory = useCallback((payload: any[]) => {
+  const _handleBatchHistory = useCallback((payload: any[]) => {
     // Reverse batch operations
     [...payload].reverse().forEach(action => {
       switch (action.type) {

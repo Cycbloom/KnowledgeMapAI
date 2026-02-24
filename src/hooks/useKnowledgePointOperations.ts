@@ -4,7 +4,6 @@ import { useMessageStore } from '../store/useMessageStore';
 import { createAsyncHandler } from '../utils/asyncHandler';
 import type { 
   SimilarKnowledgePoint, 
-  DeleteKnowledgePointResult,
   KnowledgePointVisibility 
 } from '../types';
 
@@ -41,7 +40,7 @@ export const useKnowledgePointOperations = ({
     const result = await asyncHandler(
       async () => {
         const results = await api.knowledgePoints.searchSimilar({
-          query: `${title}${content ? ' ' + content : ''}`,
+          query: `${title}${content ? ` ${content}` : ''}`,
           threshold,
           limit
         });

@@ -102,7 +102,7 @@ export const useSpeechRecognition = () => {
       };
 
       recognition.start();
-    } catch (e) {
+    } catch (_e) {
       setError('Failed to start speech recognition');
       isStartingRef.current = false;
     }

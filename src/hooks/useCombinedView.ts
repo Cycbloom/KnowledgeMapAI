@@ -109,9 +109,11 @@ export const useCombinedView = (props?: UseCombinedViewProps) => {
       graph.nodes.forEach(gn => {
         const kpId = gn.knowledge_point_id;
         if (nodeMap.has(kpId)) {
-          const existing = nodeMap.get(kpId)!;
-          existing.graphNodes.push(gn);
-          existing.graphIds.push(graph.graph_id);
+          const existing = nodeMap.get(kpId);
+          if (existing) {
+            existing.graphNodes.push(gn);
+            existing.graphIds.push(graph.graph_id);
+          }
         } else {
           nodeMap.set(kpId, {
             knowledgePoint: gn,

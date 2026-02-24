@@ -6,15 +6,9 @@ import { useCombinedGraphAIOperations } from '../hooks/useCombinedGraphAIOperati
 import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
 import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
 import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';
-import type { Graph, GraphRelation, Node, Edge, GraphColorMode, CrossGraphNodeConnection, CrossGraphRelationData } from '../types';
+import type { GraphRelation, Node, Edge, GraphColorMode, CrossGraphNodeConnection, CrossGraphRelationData } from '../types';
 
 const GRAPH_SPACING = 400;
-
-const relationColors: Record<string, { color: string; label: string }> = {
-  prerequisite: { color: '#3B82F6', label: '前置知识' },
-  extension: { color: '#10B981', label: '扩展知识' },
-  related: { color: '#F59E0B', label: '相关知识' },
-};
 
 interface GraphDataResponse {
   nodes: Node[];
@@ -34,7 +28,8 @@ export const CombinedGraphView: React.FC = () => {
   const { data: graph1Data, isLoading: isLoading1, error: error1 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id1],
     queryFn: async () => {
-      const data = await api.graphs.getNodes(id1!);
+      if (!id1) return { nodes: [], edges: [] };
+      const data = await api.graphs.getNodes(id1);
       return {
         nodes: (data.nodes || []) as Node[],
         edges: (data.edges || []) as Edge[],
@@ -46,7 +41,8 @@ export const CombinedGraphView: React.FC = () => {
   const { data: graph2Data, isLoading: isLoading2, error: error2 } = useQuery<GraphDataResponse>({
     queryKey: ['graphData', id2],
     queryFn: async () => {
-      const data = await api.graphs.getNodes(id2!);
+      if (!id2) return { nodes: [], edges: [] };
+      const data = await api.graphs.getNodes(id2);
       return {
         nodes: (data.nodes || []) as Node[],
         edges: (data.edges || []) as Edge[],
@@ -57,13 +53,19 @@ export const CombinedGraphView: React.FC = () => {
   
   const { data: graph1Meta } = useQuery({
     queryKey: ['graph', id1],
-    queryFn: () => api.graphs.get(id1!),
+    queryFn: () => {
+      if (!id1) return null;
+      return api.graphs.get(id1);
+    },
     enabled: !!id1,
   });
   
   const { data: graph2Meta } = useQuery({
     queryKey: ['graph', id2],
-    queryFn: () => api.graphs.get(id2!),
+    queryFn: () => {
+      if (!id2) return null;
+      return api.graphs.get(id2);
+    },
     enabled: !!id2,
   });
   
@@ -203,7 +205,7 @@ export const CombinedGraphView: React.FC = () => {
   }, []);
 
   const handleExportImage = useCallback(() => {
-    console.log('Export image');
+    console.info('Export image');
   }, []);
 
   const handleExportJSON = useCallback(() => {

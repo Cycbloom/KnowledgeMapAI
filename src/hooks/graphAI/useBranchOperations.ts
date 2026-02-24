@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
-import { Node, Edge, NodeLevel, BranchSuggestion } from '../../types';
+import { Node, Edge, BranchSuggestion } from '../../types';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { useMessageStore } from '../../store/useMessageStore';
 import { api } from '../../services/api';
-import { handleError, isNetworkError } from '../../services/errorService';
 
 interface UseBranchOperationsOptions {
   id: string;

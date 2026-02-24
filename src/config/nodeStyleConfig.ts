@@ -1,5 +1,4 @@
-import React from 'react';
-import { NodeStyle, NodeStyleVariant, NodeLevel, NodeShape, CenterDotShape, ShadowConfig, AnimationConfig, GradientConfig } from '../types';
+import type { NodeStyleVariant, NodeLevel, NodeShape, CenterDotShape, ShadowConfig, AnimationConfig, GradientConfig } from '../types';
 
 export interface NodeStyleConfig {
   variant: NodeStyleVariant;

@@ -30,7 +30,7 @@ export const createTimelineLayout = (
     if (!nodesByPeriod.has(periodKey)) {
       nodesByPeriod.set(periodKey, []);
     }
-    nodesByPeriod.get(periodKey)!.push(node);
+    nodesByPeriod.get(periodKey)?.push(node);
   });
   
   // Calculate positions

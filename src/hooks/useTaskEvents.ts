@@ -36,7 +36,7 @@ export const useTaskEvents = () => {
     setSSEStatus('connecting');
     reconnectAttemptsRef.current = 0;
 
-    console.log('[SSE] Attempting to connect to /api/tasks/events');
+    console.info('[SSE] Attempting to connect to /api/tasks/events');
 
     try {
       const es = new EventSourcePolyfill('/api/tasks/events', {
@@ -50,7 +50,7 @@ export const useTaskEvents = () => {
       eventSourceRef.current = es;
 
       es.onopen = () => {
-        console.log('[SSE] Connection established successfully');
+        console.info('[SSE] Connection established successfully');
         setSSEStatus('connected');
         reconnectAttemptsRef.current = 0;
       };
@@ -60,13 +60,13 @@ export const useTaskEvents = () => {
           const data = JSON.parse(event.data);
           
           if (data.type === 'connected') {
-            console.log('[SSE] Connected message:', data.message);
+            console.info('[SSE] Connected message:', data.message);
             return;
           }
 
           if (data.type === 'task_update') {
             const { taskId, status, result, error } = data;
-            console.log(`[SSE] Task Update: ${taskId} -> ${status}`);
+            console.info(`[SSE] Task Update: ${taskId} -> ${status}`);
 
             queryClient.setQueryData(['tasks'], (oldTasks: Task[] | undefined) => {
               if (!oldTasks) return [];
@@ -114,7 +114,7 @@ export const useTaskEvents = () => {
           reconnectAttemptsRef.current++;
           const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current - 1);
           
-          console.log(`[SSE] Reconnection attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts} in ${delay}ms`);
+          console.info(`[SSE] Reconnection attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts} in ${delay}ms`);
           setSSEStatus('connecting', `Reconnecting... (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -152,7 +152,7 @@ export const useTaskEvents = () => {
     return () => {
       cleanup();
       setSSEStatus('disconnected');
-      console.log('[SSE] Connection closed');
+      console.info('[SSE] Connection closed');
     };
   }, [token, connect, cleanup, setSSEStatus]);
 };

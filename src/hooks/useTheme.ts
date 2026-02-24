@@ -67,8 +67,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [resolvedTheme, themeMode]);
 
   const toggleTheme = () => {
-    // Toggling always exits system mode and switches to the opposite of current resolved theme
-    setThemeMode(prev => (resolvedTheme === 'dark' ? 'light' : 'dark'));
+    setThemeMode(_prev => (resolvedTheme === 'dark' ? 'light' : 'dark'));
   };
 
   const setTheme = (mode: ThemeMode) => {

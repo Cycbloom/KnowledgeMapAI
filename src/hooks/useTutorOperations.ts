@@ -1,10 +1,9 @@
-import { Node, Edge, NodeLevel, ExtractedConcept, TutorMode } from '../types';
+import type { Node, Edge, ExtractedConcept, TutorMode } from '../types';
 import { getNextLevel, getLevelColorHex } from '../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
-import { useStore } from '../store/useStore';
 
 interface UseTutorOperationsProps {
   id: string;
@@ -21,7 +20,7 @@ interface UseTutorOperationsProps {
 export const useTutorOperations = ({
   id,
   nodes,
-  edges,
+  edges: _edges,
   state,
   mutations,
   record
@@ -31,7 +30,7 @@ export const useTutorOperations = ({
     tutorMode, setTutorMode,
     extractedConcepts, setExtractedConcepts,
     isTutorMode, setIsTutorMode,
-    suggestedNextTopics, setSuggestedNextTopics,
+    _suggestedNextTopics, setSuggestedNextTopics,
     selectedNode,
     selectedNodeIds,
     setLoading
@@ -43,7 +42,7 @@ export const useTutorOperations = ({
     try {
       const contextNodeIds = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedNode ? [selectedNode.id] : []);
       
-      const existingNodes = nodes.map(n => n.title);
+      const _existingNodes = nodes.map(n => n.title);
 
       await api.ai.tutorChatStream(
         {
@@ -270,7 +269,7 @@ export const useTutorOperations = ({
   };
 
   const handleToggleTutorMode = () => {
-    const newMode = isTutorMode ? 'none' : 'free';
+    const _newMode = isTutorMode ? 'none' : 'free';
     setIsTutorMode(!isTutorMode);
     if (!isTutorMode) {
       setTutorMode('free');

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, useToggleFavoriteMutation, queryKeys } from '../hooks/useQueries';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { Plus, BookOpen, Upload, Trash2, BarChart, Settings2, Search, MoreVertical, Calendar, Share2, Network, ArrowRight, Sparkles, Tag, X, Star, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, BookOpen, Upload, Trash2, BarChart, Search, Network, ArrowRight, Sparkles, Tag, X, Star, AlertCircle, Loader2 } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { parseMarkdownToGraph } from '../utils/markdownParser';
 import { parseOpmlToGraph } from '../utils/opmlParser';
@@ -13,12 +13,11 @@ import { Template } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { api } from '../services/api';
 import { useTopicCheck } from '../hooks/useTopicCheck';
-import { useSearch, SearchMode } from '../hooks/useSearch';
+import { useSearch } from '../hooks/useSearch';
 import { SearchResults } from '../components/SearchResults';
 
 export const Dashboard = () => {
   const { isDark } = useTheme();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: graphsData, isLoading, error } = useGraphs();
   const { data: statsData } = useDashboardStats();
@@ -56,9 +55,7 @@ export const Dashboard = () => {
     mode: searchMode, 
     setMode: setSearchMode, 
     isSearching, 
-    results: searchResults, 
-    error: searchError,
-    clear: clearSearch 
+    results: searchResults
   } = useSearch({ debounceMs: 300 });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -533,7 +530,7 @@ export const Dashboard = () => {
             <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl">
               <AutoGraphGenerator
                 onClose={() => setIsAIGeneratorOpen(false)}
-                onGraphGenerated={(nodes, edges) => {
+                onGraphGenerated={(nodes, _edges) => {
                   setIsAIGeneratorOpen(false);
                   queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
                   queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });

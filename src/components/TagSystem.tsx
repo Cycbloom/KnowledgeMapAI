@@ -67,9 +67,11 @@ export const TagCloud: React.FC<TagCloudProps> = ({
       const tags = node.tags || node.properties?.tags || [];
       tags.forEach((tag: string) => {
         if (tagMap.has(tag)) {
-          const data = tagMap.get(tag)!;
-          data.count++;
-          data.nodes.push(node);
+          const data = tagMap.get(tag);
+          if (data) {
+            data.count++;
+            data.nodes.push(node);
+          }
         } else {
           tagMap.set(tag, {
             name: tag,

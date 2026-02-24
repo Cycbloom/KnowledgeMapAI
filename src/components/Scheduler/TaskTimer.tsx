@@ -41,10 +41,10 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
   const progressColor = isBreak 
     ? '#10B981' 
     : progress < 0.5 
-      ? '#22D3EE' 
+      ? '#06b6d4'
       : progress < 0.8 
-        ? '#F59E0B' 
-        : '#EF4444';
+        ? '#f59e0b' 
+        : '#ef4444';
 
   return (
     <div className="relative flex flex-col items-center justify-center p-6">
@@ -72,7 +72,8 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
             cy="100"
             r="90"
             fill="none"
-            stroke="rgba(30, 41, 59, 0.8)"
+            stroke="rgba(148, 163, 184, 0.2)"
+            className="dark:[stroke:rgba(30,41,59,0.8)]"
             strokeWidth="8"
           />
 
@@ -97,7 +98,8 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
             cy="100"
             r="75"
             fill="none"
-            stroke="rgba(51, 65, 85, 0.3)"
+            stroke="rgba(148, 163, 184, 0.15)"
+            className="dark:[stroke:rgba(51,65,85,0.3)]"
             strokeWidth="1"
             strokeDasharray="4 4"
           />
@@ -105,7 +107,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {isBreak ? (
-            <Coffee size={24} className="text-emerald-400 mb-1" />
+            <Coffee size={24} className="text-emerald-500 dark:text-emerald-400 mb-1" />
           ) : null}
           
           <motion.div
@@ -119,12 +121,12 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
             {formatTime(remaining)}
           </motion.div>
           
-          <div className="text-xs text-slate-500 mt-1">
+          <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             {isBreak ? '休息时间' : '专注时间'}
           </div>
           
           {duration > 0 && (
-            <div className="text-xs text-slate-600 mt-1">
+            <div className="text-xs text-slate-500 dark:text-slate-600 mt-1">
               {Math.round(progress * 100)}%
             </div>
           )}
@@ -152,7 +154,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
         {isRunning ? (
           <motion.button
             onClick={onPause}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -162,7 +164,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
         ) : (
           <motion.button
             onClick={onResume}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30 hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -173,7 +175,7 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
 
         <motion.button
           onClick={onComplete}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -182,13 +184,13 @@ export const TaskTimer: React.FC<TaskTimerProps> = ({
         </motion.button>
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-slate-500">
+      <div className="mt-4 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+          <span className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400" />
           <span>已用: {formatTime(displayTime)}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-slate-400" />
+          <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
           <span>总计: {formatTime(duration)}</span>
         </div>
       </div>

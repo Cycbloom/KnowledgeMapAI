@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, Clock, Tag, Link, Star, AlertCircle } from 'lucide-react';
-import { ScheduledTask, CreateScheduledTaskData } from '../../services/api/scheduler';
+import { X, Calendar, Clock, Tag, Link, Star, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { ScheduledTask, CreateScheduledTaskData, schedulerApi } from '../../services/api/scheduler';
 
 interface TaskFormProps {
   task?: ScheduledTask;
@@ -23,10 +23,10 @@ const DURATION_OPTIONS = [
 ];
 
 const PRIORITY_OPTIONS = [
-  { value: 1, label: '低', color: 'text-slate-400' },
-  { value: 2, label: '中', color: 'text-blue-400' },
-  { value: 3, label: '高', color: 'text-amber-400' },
-  { value: 4, label: '紧急', color: 'text-red-400' },
+  { value: 1, label: '低', color: 'text-slate-500 dark:text-slate-400' },
+  { value: 2, label: '中', color: 'text-blue-600 dark:text-blue-400' },
+  { value: 3, label: '高', color: 'text-amber-600 dark:text-amber-400' },
+  { value: 4, label: '紧急', color: 'text-red-600 dark:text-red-400' },
 ];
 
 const COMMON_TAGS = [
@@ -50,6 +50,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [priority, setPriority] = useState(task?.priority || 2);
   const [queueLevel, setQueueLevel] = useState(task?.queue_level ?? defaultQueueLevel);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const isEditing = !!task;
 
@@ -63,6 +64,48 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAIGenerate = async () => {
+    if (!title.trim()) {
+      setErrors({ title: '请先输入任务标题' });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const result = await schedulerApi.generateTaskDetails(title.trim(), description || undefined);
+      
+      if (result) {
+        if (result.description) {
+          setDescription(result.description);
+        }
+        if (result.tags && result.tags.length > 0) {
+          setTags(prev => {
+            const newTags = [...new Set([...prev, ...result.tags])];
+            return newTags.slice(0, 5);
+          });
+        }
+        if (result.estimated_duration) {
+          const closest = DURATION_OPTIONS.reduce((prev, curr) => 
+            Math.abs(curr.value - result.estimated_duration) < Math.abs(prev.value - result.estimated_duration) 
+              ? curr 
+              : prev
+          );
+          setEstimatedDuration(closest.value);
+        }
+        if (result.priority) {
+          setPriority(result.priority);
+        }
+        if (result.suggested_queue !== undefined) {
+          setQueueLevel(result.suggested_queue);
+        }
+      }
+    } catch (error) {
+      console.error('AI generation failed:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -104,7 +147,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4"
       onClick={onCancel}
     >
       <motion.div
@@ -112,15 +155,15 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800/50">
-          <h2 className="text-lg font-bold text-white">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
             {isEditing ? '编辑任务' : '创建新任务'}
           </h2>
           <button
             onClick={onCancel}
-            className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <X size={20} />
           </button>
@@ -128,24 +171,46 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
-              任务标题 <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              任务标题 <span className="text-red-500 dark:text-red-400">*</span>
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="输入任务标题..."
-              className={`
-                w-full px-4 py-2.5 rounded-xl
-                bg-slate-800 border transition-all
-                text-white placeholder-slate-500
-                focus:outline-none focus:ring-2 focus:ring-cyan-500/50
-                ${errors.title ? 'border-red-500' : 'border-slate-600 hover:border-slate-500'}
-              `}
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="输入任务标题..."
+                className={`
+                  flex-1 px-4 py-2.5 rounded-xl
+                  bg-slate-50 dark:bg-slate-800 border transition-all
+                  text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                  ${errors.title ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'}
+                `}
+              />
+              <button
+                type="button"
+                onClick={handleAIGenerate}
+                disabled={isGenerating || !title.trim()}
+                className={`
+                  flex items-center gap-1.5 px-4 py-2.5 rounded-xl
+                  transition-all whitespace-nowrap
+                  ${isGenerating 
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/20'}
+                `}
+                title="AI 自动生成描述和标签"
+              >
+                {isGenerating ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Sparkles size={16} />
+                )}
+                <span className="text-sm font-medium">AI</span>
+              </button>
+            </div>
             {errors.title && (
-              <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
                 <AlertCircle size={12} />
                 {errors.title}
               </p>
@@ -153,18 +218,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               任务描述
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="添加任务描述..."
+              placeholder="添加任务描述，或点击 AI 按钮自动生成..."
               rows={3}
               className="
                 w-full px-4 py-2.5 rounded-xl
-                bg-slate-800 border border-slate-600 hover:border-slate-500
-                text-white placeholder-slate-500
+                bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
                 focus:outline-none focus:ring-2 focus:ring-cyan-500/50
                 resize-none
               "
@@ -173,7 +238,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Clock size={14} className="inline mr-1" />
                 预计时长
               </label>
@@ -182,8 +247,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 onChange={(e) => setEstimatedDuration(Number(e.target.value))}
                 className="
                   w-full px-4 py-2.5 rounded-xl
-                  bg-slate-800 border border-slate-600 hover:border-slate-500
-                  text-white
+                  bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                  text-slate-900 dark:text-white
                   focus:outline-none focus:ring-2 focus:ring-cyan-500/50
                 "
               >
@@ -194,7 +259,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Calendar size={14} className="inline mr-1" />
                 截止日期
               </label>
@@ -204,8 +269,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 onChange={(e) => setDeadline(e.target.value)}
                 className="
                   w-full px-4 py-2.5 rounded-xl
-                  bg-slate-800 border border-slate-600 hover:border-slate-500
-                  text-white
+                  bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                  text-slate-900 dark:text-white
                   focus:outline-none focus:ring-2 focus:ring-cyan-500/50
                 "
               />
@@ -214,7 +279,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Star size={14} className="inline mr-1" />
                 优先级
               </label>
@@ -227,8 +292,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                     className={`
                       flex-1 py-2 rounded-lg text-sm font-medium transition-all
                       ${priority === opt.value 
-                        ? `bg-slate-700 ${opt.color} ring-1 ring-current` 
-                        : 'bg-slate-800 text-slate-500 hover:text-slate-300'}
+                        ? `bg-slate-100 dark:bg-slate-700 ${opt.color} ring-1 ring-current` 
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}
                     `}
                   >
                     {opt.label}
@@ -238,7 +303,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 队列级别
               </label>
               <div className="flex gap-1">
@@ -251,11 +316,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       flex-1 py-2 rounded-lg text-sm font-medium transition-all
                       ${queueLevel === level 
                         ? level === 0 
-                          ? 'bg-cyan-500/20 text-cyan-400 ring-1 ring-cyan-500/50'
+                          ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 ring-1 ring-cyan-300 dark:ring-cyan-500/50'
                           : level === 1
-                            ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50'
-                            : 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50'
-                        : 'bg-slate-800 text-slate-500 hover:text-slate-300'}
+                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-300 dark:ring-emerald-500/50'
+                            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-300 dark:ring-amber-500/50'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}
                     `}
                   >
                     Q{level}
@@ -266,7 +331,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               <Tag size={14} className="inline mr-1" />
               标签
             </label>
@@ -274,13 +339,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               {tags.map(tag => (
                 <span
                   key={tag}
-                  className="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-sm flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-sm flex items-center gap-1"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="hover:text-red-400 transition-colors"
+                    className="hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   >
                     <X size={12} />
                   </button>
@@ -293,7 +358,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   key={tag}
                   type="button"
                   onClick={() => addTag(tag)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-700 text-slate-400 text-sm hover:bg-slate-600 hover:text-white transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-sm hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-white transition-colors"
                 >
                   + {tag}
                 </button>
@@ -307,8 +372,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               placeholder="输入自定义标签，按 Enter 添加..."
               className="
                 w-full px-4 py-2 rounded-xl
-                bg-slate-800 border border-slate-600 hover:border-slate-500
-                text-white placeholder-slate-500 text-sm
+                bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm
                 focus:outline-none focus:ring-2 focus:ring-cyan-500/50
               "
             />
@@ -316,7 +381,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           {knowledgePoints.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Link size={14} className="inline mr-1" />
                 关联知识点
               </label>
@@ -325,8 +390,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 onChange={(e) => setKnowledgePointId(e.target.value)}
                 className="
                   w-full px-4 py-2.5 rounded-xl
-                  bg-slate-800 border border-slate-600 hover:border-slate-500
-                  text-white
+                  bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                  text-slate-900 dark:text-white
                   focus:outline-none focus:ring-2 focus:ring-cyan-500/50
                 "
               >
@@ -339,11 +404,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           )}
         </form>
 
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700 bg-slate-800/30">
+        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
           >
             取消
           </button>

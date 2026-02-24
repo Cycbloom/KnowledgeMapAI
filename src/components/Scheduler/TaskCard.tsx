@@ -15,34 +15,34 @@ interface TaskCardProps {
 
 const QUEUE_COLORS = {
   0: {
-    border: 'border-cyan-400',
+    border: 'border-cyan-300 dark:border-cyan-400',
     glow: 'shadow-cyan-500/30',
-    bg: 'bg-cyan-500/10',
-    text: 'text-cyan-400',
-    badge: 'bg-cyan-500/20 text-cyan-300',
+    bg: 'bg-cyan-100 dark:bg-cyan-500/10',
+    text: 'text-cyan-600 dark:text-cyan-400',
+    badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300',
   },
   1: {
-    border: 'border-emerald-400',
+    border: 'border-emerald-300 dark:border-emerald-400',
     glow: 'shadow-emerald-500/30',
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-400',
-    badge: 'bg-emerald-500/20 text-emerald-300',
+    bg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
   },
   2: {
-    border: 'border-amber-400',
+    border: 'border-amber-300 dark:border-amber-400',
     glow: 'shadow-amber-500/30',
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-400',
-    badge: 'bg-amber-500/20 text-amber-300',
+    bg: 'bg-amber-100 dark:bg-amber-500/10',
+    text: 'text-amber-600 dark:text-amber-400',
+    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
   },
 };
 
 const STATUS_CONFIG = {
-  pending: { label: '待处理', color: 'bg-slate-500/20 text-slate-400' },
-  in_progress: { label: '进行中', color: 'bg-blue-500/20 text-blue-400' },
-  paused: { label: '已暂停', color: 'bg-amber-500/20 text-amber-400' },
-  completed: { label: '已完成', color: 'bg-emerald-500/20 text-emerald-400' },
-  cancelled: { label: '已取消', color: 'bg-red-500/20 text-red-400' },
+  pending: { label: '待处理', color: 'bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400' },
+  in_progress: { label: '进行中', color: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' },
+  paused: { label: '已暂停', color: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400' },
+  completed: { label: '已完成', color: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' },
+  cancelled: { label: '已取消', color: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' },
 };
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -72,11 +72,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     const diff = d.getTime() - now.getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     
-    if (days < 0) return { text: '已过期', color: 'text-red-400' };
-    if (days === 0) return { text: '今天', color: 'text-amber-400' };
-    if (days === 1) return { text: '明天', color: 'text-yellow-400' };
-    if (days <= 7) return { text: `${days}天后`, color: 'text-blue-400' };
-    return { text: d.toLocaleDateString(), color: 'text-slate-400' };
+    if (days < 0) return { text: '已过期', color: 'text-red-500 dark:text-red-400' };
+    if (days === 0) return { text: '今天', color: 'text-amber-500 dark:text-amber-400' };
+    if (days === 1) return { text: '明天', color: 'text-yellow-500 dark:text-yellow-400' };
+    if (days <= 7) return { text: `${days}天后`, color: 'text-blue-500 dark:text-blue-400' };
+    return { text: d.toLocaleDateString(), color: 'text-slate-500 dark:text-slate-400' };
   };
 
   const deadlineInfo = formatDeadline(task.deadline);
@@ -91,7 +91,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         group relative p-4 rounded-xl border transition-all duration-300
         ${isDragging ? 'scale-105 shadow-2xl' : 'hover:shadow-lg'}
         ${queueStyle.border} ${queueStyle.glow}
-        bg-slate-900/80 backdrop-blur-sm
+        bg-white dark:bg-slate-900/80 backdrop-blur-sm
         ${isDragging ? 'shadow-xl' : 'hover:shadow-lg'}
       `}
       style={{
@@ -114,17 +114,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               {statusConfig.label}
             </span>
             {task.priority >= 3 && (
-              <span className="text-red-400 text-xs">★</span>
+              <span className="text-red-500 dark:text-red-400 text-xs">★</span>
             )}
           </div>
 
-          <h4 className="font-semibold text-white mb-1 truncate">{task.title}</h4>
+          <h4 className="font-semibold text-slate-900 dark:text-white mb-1 truncate">{task.title}</h4>
           
           {task.description && (
-            <p className="text-sm text-slate-400 line-clamp-2 mb-3">{task.description}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{task.description}</p>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
             {task.estimated_duration && (
               <div className="flex items-center gap-1">
                 <Clock size={12} className={queueStyle.text} />
@@ -141,8 +141,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             {task.tags && task.tags.length > 0 && (
               <div className="flex items-center gap-1">
-                <Tag size={12} className="text-indigo-400" />
-                <span className="text-indigo-400">{task.tags.slice(0, 2).join(', ')}{task.tags.length > 2 ? '...' : ''}</span>
+                <Tag size={12} className="text-indigo-500 dark:text-indigo-400" />
+                <span className="text-indigo-500 dark:text-indigo-400">{task.tags.slice(0, 2).join(', ')}{task.tags.length > 2 ? '...' : ''}</span>
               </div>
             )}
           </div>
@@ -168,7 +168,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {task.status === 'in_progress' && onPause && (
           <button
             onClick={(e) => { e.stopPropagation(); onPause(); }}
-            className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 transition-all hover:scale-110"
+            className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
             title="暂停"
           >
             <Pause size={14} />
@@ -178,7 +178,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {(task.status === 'pending' || task.status === 'in_progress' || task.status === 'paused') && onComplete && (
           <button
             onClick={(e) => { e.stopPropagation(); onComplete(); }}
-            className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 transition-all hover:scale-110"
+            className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
             title="完成"
           >
             <Check size={14} />
@@ -188,7 +188,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {onEdit && (
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            className="p-1.5 rounded-lg bg-slate-700 text-slate-400 hover:text-amber-400 transition-all hover:scale-110"
+            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
             title="编辑"
           >
             <Edit2 size={14} />
@@ -198,7 +198,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {onDelete && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1.5 rounded-lg bg-slate-700 text-slate-400 hover:text-red-400 transition-all hover:scale-110"
+            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
             title="删除"
           >
             <Trash2 size={14} />

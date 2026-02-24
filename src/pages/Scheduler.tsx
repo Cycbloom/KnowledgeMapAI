@@ -173,15 +173,15 @@ export const Scheduler: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full bg-slate-950 text-white overflow-hidden">
+    <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/5 dark:bg-blue-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 h-full flex flex-col">
-        <header className="flex-shrink-0 border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-xl">
+        <header className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -194,13 +194,13 @@ export const Scheduler: React.FC = () => {
                     <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30">
                       <Zap size={24} className="text-white" />
                     </div>
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-slate-900 animate-pulse" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 dark:from-cyan-400 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                       任务调度器
                     </h1>
-                    <p className="text-sm text-slate-400">三层反馈队列 · 智能时间管理</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">三层反馈队列 · 智能时间管理</p>
                   </div>
                 </motion.div>
               </div>
@@ -219,7 +219,7 @@ export const Scheduler: React.FC = () => {
                 <button
                   onClick={() => refetch()}
                   disabled={isFetching}
-                  className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-600 transition-all disabled:opacity-50"
+                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600 transition-all disabled:opacity-50"
                 >
                   <RefreshCw size={18} className={isFetching ? 'animate-spin' : ''} />
                 </button>
@@ -228,8 +228,8 @@ export const Scheduler: React.FC = () => {
                   onClick={() => setShowSettings(!showSettings)}
                   className={`p-2.5 rounded-xl border transition-all ${
                     showSettings 
-                      ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' 
-                      : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
+                      ? 'bg-cyan-100 dark:bg-cyan-500/20 border-cyan-300 dark:border-cyan-500/50 text-cyan-600 dark:text-cyan-400' 
+                      : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600'
                   }`}
                 >
                   <Settings size={18} />
@@ -238,25 +238,25 @@ export const Scheduler: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-6 mt-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="text-sm text-slate-400">待处理</span>
-                <span className="text-sm font-bold text-cyan-400">{stats.pending}</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
+                <span className="text-sm text-slate-500 dark:text-slate-400">待处理</span>
+                <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">{stats.pending}</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                <span className="text-sm text-slate-400">进行中</span>
-                <span className="text-sm font-bold text-blue-400">{stats.inProgress}</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
+                <span className="text-sm text-slate-500 dark:text-slate-400">进行中</span>
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700">
-                <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-sm text-slate-400">已完成</span>
-                <span className="text-sm font-bold text-emerald-400">{stats.completed}</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                <span className="text-sm text-slate-500 dark:text-slate-400">已完成</span>
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{stats.completed}</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <Clock size={14} className="text-slate-400" />
-                <span className="text-sm text-slate-400">预计时长</span>
-                <span className="text-sm font-bold text-white">{formatTotalTime(stats.totalEstimated)}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">预计时长</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">{formatTotalTime(stats.totalEstimated)}</span>
               </div>
             </div>
           </div>
@@ -264,10 +264,10 @@ export const Scheduler: React.FC = () => {
 
         {error && (
           <div className="flex-shrink-0 p-4">
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
               <AlertCircle size={20} />
               <span>加载失败: {(error as Error).message}</span>
-              <button onClick={() => refetch()} className="ml-auto text-sm underline hover:text-red-300">
+              <button onClick={() => refetch()} className="ml-auto text-sm underline hover:text-red-500 dark:hover:text-red-300">
                 重试
               </button>
             </div>
@@ -280,9 +280,9 @@ export const Scheduler: React.FC = () => {
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
                   <div className="w-16 h-16 border-4 border-cyan-500/30 rounded-full animate-spin border-t-cyan-500" />
-                  <Sparkles size={24} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-400" />
+                  <Sparkles size={24} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-500 dark:text-cyan-400" />
                 </div>
-                <p className="text-slate-400">加载任务队列...</p>
+                <p className="text-slate-500 dark:text-slate-400">加载任务队列...</p>
               </div>
             </div>
           ) : (
@@ -339,41 +339,41 @@ export const Scheduler: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="flex-shrink-0 border-t border-slate-800/50 bg-slate-900/50 backdrop-blur-xl p-4"
+              className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl p-4"
             >
               <div className="flex items-center gap-6">
-                <h3 className="text-sm font-medium text-slate-400">时间片设置</h3>
+                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">时间片设置</h3>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <Zap size={14} className="text-cyan-400" />
-                    <span className="text-sm text-slate-400">Q0:</span>
-                    <span className="text-sm font-bold text-cyan-400">{timeSlices.q0}分钟</span>
+                    <Zap size={14} className="text-cyan-600 dark:text-cyan-400" />
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Q0:</span>
+                    <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">{timeSlices.q0}分钟</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Target size={14} className="text-emerald-400" />
-                    <span className="text-sm text-slate-400">Q1:</span>
-                    <span className="text-sm font-bold text-emerald-400">{timeSlices.q1}分钟</span>
+                    <Target size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Q1:</span>
+                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{timeSlices.q1}分钟</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <ListTodo size={14} className="text-amber-400" />
-                    <span className="text-sm text-slate-400">Q2:</span>
-                    <span className="text-sm font-bold text-amber-400">{timeSlices.q2}分钟</span>
+                    <ListTodo size={14} className="text-amber-600 dark:text-amber-400" />
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Q2:</span>
+                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{timeSlices.q2}分钟</span>
                   </div>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                  <span className="text-xs text-slate-500">休息时长:</span>
-                  <span className="text-xs font-medium text-slate-300">{settings?.break_duration || 5}分钟</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">休息时长:</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{settings?.break_duration || 5}分钟</span>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex-shrink-0 border-t border-slate-800/50 bg-slate-900/30 backdrop-blur-sm px-6 py-3">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800/50 bg-slate-50/80 dark:bg-slate-900/30 backdrop-blur-sm px-6 py-3">
+          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
             <div className="flex items-center gap-4">
               <span>拖拽任务卡片可在队列间移动或重新排序</span>
-              <span className="text-slate-600">|</span>
+              <span className="text-slate-300 dark:text-slate-600">|</span>
               <span>任务完成后将自动降级到下一队列</span>
             </div>
             <div className="flex items-center gap-2">
@@ -399,5 +399,3 @@ export const Scheduler: React.FC = () => {
     </div>
   );
 };
-
-export default Scheduler;

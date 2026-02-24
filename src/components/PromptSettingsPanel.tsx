@@ -27,7 +27,8 @@ const PROMPT_NAME_MAP: Record<string, string> = {
   term_annotation: '术语标注 (Term Annotation)',
   infinite_graph_expansion: '无限扩展知识网络 (Infinite Graph Expansion)',
   auto_graph_init: '图谱初始化 (Auto Graph Init)',
-  auto_graph_expand: '节点展开 (Auto Graph Expand)'
+  auto_graph_expand: '节点展开 (Auto Graph Expand)',
+  generate_task_details: '任务详情生成 (Generate Task Details)',
 };
 
 const SOURCE_NAME_MAP: Record<string, string> = {
@@ -60,6 +61,13 @@ const PROMPT_CATEGORIES = [
     codes: ['chat', 'tutor_chat', 'generate_content']
   },
   {
+    id: 'task_scheduler',
+    name: '任务调度',
+    icon: Wrench,
+    color: 'cyan',
+    codes: ['generate_task_details']
+  },
+  {
     id: 'other',
     name: '其他工具',
     icon: Wrench,
@@ -86,6 +94,12 @@ const CATEGORY_COLOR_MAP: Record<string, { bg: string; bgHover: string; icon: st
     bgHover: 'hover:bg-amber-100/80 dark:hover:bg-amber-900/50',
     icon: 'text-amber-600 dark:text-amber-400',
     border: 'border-amber-200 dark:border-amber-700'
+  },
+  cyan: {
+    bg: 'bg-cyan-50/70 dark:bg-cyan-900/30',
+    bgHover: 'hover:bg-cyan-100/80 dark:hover:bg-cyan-900/50',
+    icon: 'text-cyan-600 dark:text-cyan-400',
+    border: 'border-cyan-200 dark:border-cyan-700'
   },
   rose: {
     bg: 'bg-rose-50/70 dark:bg-rose-900/30',

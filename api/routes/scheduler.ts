@@ -8,6 +8,7 @@ import {
   moveTaskSchema,
   reorderTasksSchema,
 } from "../schemas/index.js";
+import { aiService } from "../services/ai/index.js";
 
 const router = Router();
 
@@ -840,6 +841,30 @@ router.get(
     }));
 
     res.json({ success: true, data: result });
+  }
+);
+
+router.post(
+  "/generate-details",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { title, context } = req.body;
+
+      if (!title || typeof title !== "string") {
+        return res.status(400).json({ error: "请提供任务标题" });
+      }
+
+      const result = await aiService.generateTaskDetails(title, {
+        context,
+        userId: req.user.id,
+      });
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "AI 生成任务详情失败" });
+    }
   }
 );
 

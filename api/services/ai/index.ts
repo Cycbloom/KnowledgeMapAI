@@ -1,48 +1,60 @@
-import { getAIProviderForTask, getAIProvider } from '../ai/factory.js';
-import type { AIProviderType } from '../ai/types.js';
-import { promptService } from '../promptService.js';
-import { cacheService, CacheKeys } from '../cache.js';
-import { supabaseAdmin } from '../../supabase.js';
-import { logger } from '../../utils/logger.js';
-import { parseAIResponse, buildTutorContext } from './utils.js';
-import { 
-  getMockResponse, 
-  getMockCards, 
-  getMockBranchSuggestions, 
-  getMockConcepts, 
+import { getAIProviderForTask, getAIProvider } from "../ai/factory.js";
+import type { AIProviderType } from "../ai/types.js";
+import { promptService } from "../promptService.js";
+import { cacheService, CacheKeys } from "../cache.js";
+import { supabaseAdmin } from "../../supabase.js";
+import { logger } from "../../utils/logger.js";
+import { parseAIResponse, buildTutorContext } from "./utils.js";
+import {
+  getMockResponse,
+  getMockCards,
+  getMockBranchSuggestions,
+  getMockConcepts,
   getMockNextTopics,
-  getMockImageGraph 
-} from './mock.js';
+  getMockImageGraph,
+} from "./mock.js";
 
 const DEFAULT_TIMEOUT = 60000;
 const pendingRequests = new Map<string, Promise<unknown>>();
 
-function withTimeout<T>(promise: Promise<T>, ms: number = DEFAULT_TIMEOUT): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number = DEFAULT_TIMEOUT
+): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<T>((_, reject) => 
-      setTimeout(() => reject(new Error(`AI request timeout after ${ms}ms`)), ms)
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`AI request timeout after ${ms}ms`)),
+        ms
+      )
     ),
   ]);
 }
 
-async function dedupedRequest<T>(key: string, fn: () => Promise<T>): Promise<T> {
+async function dedupedRequest<T>(
+  key: string,
+  fn: () => Promise<T>
+): Promise<T> {
   const pending = pendingRequests.get(key) as Promise<T> | undefined;
   if (pending) {
     logger.debug(`Reusing pending request for key: ${key}`);
     return pending;
   }
-  
+
   const promise = fn().finally(() => pendingRequests.delete(key));
   pendingRequests.set(key, promise);
   return promise;
 }
 
-function generateRequestKey(operation: string, params: Record<string, unknown>): string {
+function generateRequestKey(
+  operation: string,
+  params: Record<string, unknown>
+): string {
   const sortedParams = Object.keys(params)
     .sort()
-    .map(k => `${k}=${JSON.stringify(params[k])}`)
-    .join('&');
+    .map((k) => `${k}=${JSON.stringify(params[k])}`)
+    .join("&");
   return `${operation}:${sortedParams}`;
 }
 
@@ -60,7 +72,7 @@ export interface GenerateCardsOptions {
 
 export class AIService {
   async generateEmbedding(text: string): Promise<number[] | null> {
-    const provider = await getAIProviderForTask('embedding');
+    const provider = await getAIProviderForTask("embedding");
 
     if (!provider.hasKey) {
       return null;
@@ -70,20 +82,20 @@ export class AIService {
       if (provider.createEmbedding) {
         return await provider.createEmbedding(text);
       }
-      
+
       const response = await provider.client.embeddings.create({
         model: provider.embeddingModel || provider.model,
         input: text,
       });
       return response.data[0].embedding;
     } catch (error) {
-      logger.error('Failed to generate embedding:', error);
+      logger.error("Failed to generate embedding:", error);
       return null;
     }
   }
 
   async generateEmbeddingsBatch(texts: string[]): Promise<(number[] | null)[]> {
-    const provider = await getAIProviderForTask('embedding');
+    const provider = await getAIProviderForTask("embedding");
 
     if (!provider.hasKey) {
       return texts.map(() => null);
@@ -96,22 +108,22 @@ export class AIService {
     if (provider.createEmbedding) {
       const concurrencyLimit = 5;
       const results: (number[] | null)[] = new Array(texts.length).fill(null);
-      
+
       for (let i = 0; i < texts.length; i += concurrencyLimit) {
         const batch = texts.slice(i, i + concurrencyLimit);
         const batchResults = await Promise.all(
-          batch.map(text => provider.createEmbedding!(text).catch(() => null))
+          batch.map((text) => provider.createEmbedding!(text).catch(() => null))
         );
-        
+
         for (let j = 0; j < batch.length; j++) {
           results[i + j] = batchResults[j];
         }
-        
+
         if (i + concurrencyLimit < texts.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
-      
+
       return results;
     }
 
@@ -120,31 +132,41 @@ export class AIService {
         model: provider.embeddingModel || provider.model,
         input: texts,
       });
-      
+
       const results: (number[] | null)[] = new Array(texts.length).fill(null);
       for (const item of response.data) {
         results[item.index] = item.embedding;
       }
       return results;
     } catch (error) {
-      logger.error('Failed to generate embeddings batch:', error);
+      logger.error("Failed to generate embeddings batch:", error);
       return texts.map(() => null);
     }
   }
 
-  async chat(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>, options: { provider?: AIProviderType; model?: string; timeout?: number } = {}): Promise<string> {
+  async chat(
+    messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      timeout?: number;
+    } = {}
+  ): Promise<string> {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
-      const response = getMockResponse('chat', messages[messages.length - 1].content);
-      return typeof response === 'string' ? response : JSON.stringify(response);
+      const response = getMockResponse(
+        "chat",
+        messages[messages.length - 1].content
+      );
+      return typeof response === "string" ? response : JSON.stringify(response);
     }
 
-    const requestKey = generateRequestKey('chat', { 
-      model: options.model || provider.model, 
-      lastMessage: messages[messages.length - 1].content.slice(0, 100) 
+    const requestKey = generateRequestKey("chat", {
+      model: options.model || provider.model,
+      lastMessage: messages[messages.length - 1].content.slice(0, 100),
     });
 
     try {
@@ -157,16 +179,19 @@ export class AIService {
           options.timeout || DEFAULT_TIMEOUT
         );
 
-        return completion.choices[0].message.content || '';
+        return completion.choices[0].message.content || "";
       });
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Chat Error:', error);
-      throw new Error(err.message || 'AI chat failed');
+      logger.error("AI Chat Error:", error);
+      throw new Error(err.message || "AI chat failed");
     }
   }
 
-  async generatePodcastScript(context: string, language: string = 'zh'): Promise<string> {
+  async generatePodcastScript(
+    context: string,
+    language: string = "zh"
+  ): Promise<string> {
     const prompt = `You are a professional podcast host. 
 Your task is to create an engaging, educational podcast script based on the provided knowledge graph content.
 The script should be:
@@ -182,8 +207,8 @@ ${context}
 Please output the script in raw Markdown format.
 IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \`\`\`). Just return the raw Markdown text directly.`;
 
-    const provider = await getAIProviderForTask('text');
-    
+    const provider = await getAIProviderForTask("text");
+
     if (!provider.hasKey) {
       return `**主持人**: 大家好，欢迎来到今天的知识播客！今天我们要聊的主题非常有意思。
 
@@ -196,30 +221,39 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       const completion = await withTimeout(
         provider.client.chat.completions.create({
           messages: [
-            { role: 'system', content: 'You are an expert podcast script writer.' },
-            { role: 'user', content: prompt }
+            {
+              role: "system",
+              content: "You are an expert podcast script writer.",
+            },
+            { role: "user", content: prompt },
           ],
           model: provider.model,
         }),
         DEFAULT_TIMEOUT
       );
 
-      return completion.choices[0].message.content || '';
+      return completion.choices[0].message.content || "";
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('Generate Podcast Script Error:', error);
-      throw new Error(err.message || 'Failed to generate podcast script');
+      logger.error("Generate Podcast Script Error:", error);
+      throw new Error(err.message || "Failed to generate podcast script");
     }
   }
 
-  async generateCards(topic: string, content: string, options: GenerateCardsOptions = {}) {
-    const types = options.type ? [options.type] : (options.types || ['qa', 'choice']);
+  async generateCards(
+    topic: string,
+    content: string,
+    options: GenerateCardsOptions = {}
+  ) {
+    const types = options.type
+      ? [options.type]
+      : options.types || ["qa", "choice"];
     const count = options.count || 3;
     const context = options.context;
 
-    const provider = options.provider 
-      ? await getAIProvider(options.provider) 
-      : await getAIProviderForTask('text');
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
       return { cards: getMockCards(topic, types, count) };
@@ -227,54 +261,70 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
 
     const typePrompts: Record<string, string> = {
       qa: "For 'qa' type: Create thought-provoking open-ended questions that test deep understanding.",
-      choice: "For 'choice' type: Create multiple-choice questions with 4 plausible options.",
-      true_false: "For 'true_false' type: Create statements focusing on common misconceptions.",
-      multi_choice: "For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE options can be correct.",
-      fill_in_the_blank: "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks.",
-      essay: "For 'essay' type: Create complex questions requiring a long-form structured answer."
+      choice:
+        "For 'choice' type: Create multiple-choice questions with 4 plausible options.",
+      true_false:
+        "For 'true_false' type: Create statements focusing on common misconceptions.",
+      multi_choice:
+        "For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE options can be correct.",
+      fill_in_the_blank:
+        "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks.",
+      essay:
+        "For 'essay' type: Create complex questions requiring a long-form structured answer.",
     };
 
     try {
-      const promptParts = await Promise.all(types.map(async (type) => {
-        const code = `generate_cards_${type}`;
-        const rendered = await promptService.getRenderedPrompt(
-          supabaseAdmin,
-          code,
-          { count: Math.ceil(count / types.length) },
-          options.userId,
-          options.graphId
-        );
+      const promptParts = await Promise.all(
+        types.map(async (type) => {
+          const code = `generate_cards_${type}`;
+          const rendered = await promptService.getRenderedPrompt(
+            supabaseAdmin,
+            code,
+            { count: Math.ceil(count / types.length) },
+            options.userId,
+            options.graphId
+          );
 
-        if (rendered && rendered.trim().length > 0) {
-          return rendered;
-        }
+          if (rendered && rendered.trim().length > 0) {
+            return rendered;
+          }
 
-        return typePrompts[type] || "";
-      }));
+          return typePrompts[type] || "";
+        })
+      );
 
-      let systemPrompt = promptParts.filter(p => p.length > 0).join('\n\n---\n\n');
+      let systemPrompt = promptParts
+        .filter((p) => p.length > 0)
+        .join("\n\n---\n\n");
 
       if (!systemPrompt.trim()) {
         systemPrompt = await promptService.getRenderedPrompt(
           supabaseAdmin,
-          'generate_cards',
+          "generate_cards",
           {
             count,
-            allowedTypes: types.join(', '),
-            context: context ? `Parent/Context Info: ${context}` : '',
+            allowedTypes: types.join(", "),
+            context: context ? `Parent/Context Info: ${context}` : "",
           },
           options.userId,
           options.graphId
         );
       } else {
-        systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.\n\nContext: ${context || 'None'}\n\n${systemPrompt}`;
+        systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.\n\nContext: ${
+          context || "None"
+        }\n\n${systemPrompt}`;
       }
 
       const completion = await withTimeout(
         provider.client.chat.completions.create({
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Topic: ${topic}\nContent: ${content || 'No detailed content provided.'}` }
+            {
+              role: "user",
+              content: `Topic: ${topic}\nContent: ${
+                content || "No detailed content provided."
+              }`,
+            },
           ],
           model: options.model || provider.model,
           response_format: { type: "json_object" },
@@ -282,56 +332,81 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
         DEFAULT_TIMEOUT
       );
 
-      const result = completion.choices[0].message.content || '';
-      const parsed = parseAIResponse<{ cards: unknown[] }>(result, 'Generate Cards');
-      
+      const result = completion.choices[0].message.content || "";
+      const parsed = parseAIResponse<{ cards: unknown[] }>(
+        result,
+        "Generate Cards"
+      );
+
       return { cards: parsed.cards || [] };
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Error:', error);
-      throw new Error(err.message || 'AI card generation failed');
+      logger.error("AI Error:", error);
+      throw new Error(err.message || "AI card generation failed");
     }
   }
 
-  async expandKnowledge(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string; expandPrompt?: string; userId?: string; graphId?: string } = {}) {
+  async expandKnowledge(
+    nodeTitle: string,
+    nodeContent?: string,
+    existingNodes?: string[],
+    childNodes?: string[],
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      contextLevel?: string;
+      expandPrompt?: string;
+      userId?: string;
+      graphId?: string;
+    } = {}
+  ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
-      return getMockResponse('expand', nodeTitle) as { suggestions: unknown[] };
+      return getMockResponse("expand", nodeTitle) as { suggestions: unknown[] };
     }
 
-    const cacheKey = CacheKeys.AI_EXPAND(nodeTitle, options.contextLevel || 'normal');
+    const cacheKey = CacheKeys.AI_EXPAND(
+      nodeTitle,
+      options.contextLevel || "normal"
+    );
     const cached = await cacheService.get<{ suggestions: unknown[] }>(cacheKey);
     if (cached) {
       return cached;
     }
 
     try {
-      const existingNodesContext = existingNodes && existingNodes.length > 0 
-        ? `\nExisting Nodes in Graph: ${existingNodes.slice(0, 300).join(', ')}`
-        : '';
-        
-      const childrenContext = childNodes && childNodes.length > 0
-        ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(', ')}`
-        : '';
+      const existingNodesContext =
+        existingNodes && existingNodes.length > 0
+          ? `\nExisting Nodes in Graph: ${existingNodes
+              .slice(0, 300)
+              .join(", ")}`
+          : "";
 
-      const contextLevel = options.contextLevel || 'normal';
-      
+      const childrenContext =
+        childNodes && childNodes.length > 0
+          ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
+              ", "
+            )}`
+          : "";
+
+      const contextLevel = options.contextLevel || "normal";
+
       const templateContext = {
         customPrompt: options.expandPrompt,
         nodeTitle,
-        nodeContent: nodeContent || '',
+        nodeContent: nodeContent || "",
         existingNodes: existingNodesContext,
         childrenContext,
-        isRootOrCore: ['root', 'core'].includes(contextLevel),
-        isLeaf: contextLevel === 'leaf'
+        isRootOrCore: ["root", "core"].includes(contextLevel),
+        isLeaf: contextLevel === "leaf",
       };
 
       const systemPrompt = await promptService.getRenderedPrompt(
         supabaseAdmin,
-        'expand_knowledge',
+        "expand_knowledge",
         templateContext,
         options.userId,
         options.graphId
@@ -340,70 +415,102 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
+          {
+            role: "user",
+            content: `Node Title: ${nodeTitle}\nNode Content: ${
+              nodeContent || ""
+            }${existingNodesContext}${childrenContext}`,
+          },
         ],
         model: options.model || provider.model,
         response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0].message.content || '';
-      
-      if (!content || content.trim() === '') {
-        logger.error('[AI] Empty response from AI provider for expandKnowledge');
-        return getMockResponse('expand', nodeTitle) as { suggestions: unknown[] };
+      const content = completion.choices[0].message.content || "";
+
+      if (!content || content.trim() === "") {
+        logger.error(
+          "[AI] Empty response from AI provider for expandKnowledge"
+        );
+        return getMockResponse("expand", nodeTitle) as {
+          suggestions: unknown[];
+        };
       }
-      
-      const parsed = parseAIResponse<{ suggestions: unknown[] }>(content, 'Expand Knowledge');
+
+      const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+        content,
+        "Expand Knowledge"
+      );
       const result = { suggestions: parsed.suggestions || parsed };
-      
+
       await cacheService.set(cacheKey, result, 60 * 60 * 24);
-      
+
       return result;
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Error:', error);
-      
-      if (err.message?.includes('parse') || err.message?.includes('JSON')) {
-        logger.warn('[AI] Returning mock response due to parse error');
-        return getMockResponse('expand', nodeTitle) as { suggestions: unknown[] };
+      logger.error("AI Error:", error);
+
+      if (err.message?.includes("parse") || err.message?.includes("JSON")) {
+        logger.warn("[AI] Returning mock response due to parse error");
+        return getMockResponse("expand", nodeTitle) as {
+          suggestions: unknown[];
+        };
       }
-      
-      throw new Error(err.message || 'AI expansion failed');
+
+      throw new Error(err.message || "AI expansion failed");
     }
   }
 
-  async getBranchSuggestions(nodeTitle: string, nodeContent?: string, existingNodes?: string[], childNodes?: string[], options: { provider?: AIProviderType; model?: string; contextLevel?: string; userId?: string; graphId?: string } = {}) {
+  async getBranchSuggestions(
+    nodeTitle: string,
+    nodeContent?: string,
+    existingNodes?: string[],
+    childNodes?: string[],
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      contextLevel?: string;
+      userId?: string;
+      graphId?: string;
+    } = {}
+  ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
       return { suggestions: getMockBranchSuggestions(nodeTitle) };
     }
 
     try {
-      const existingNodesContext = existingNodes && existingNodes.length > 0 
-        ? `\nExisting Nodes in Graph: ${existingNodes.slice(0, 300).join(', ')}`
-        : '';
-        
-      const childrenContext = childNodes && childNodes.length > 0
-        ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(', ')}`
-        : '';
+      const existingNodesContext =
+        existingNodes && existingNodes.length > 0
+          ? `\nExisting Nodes in Graph: ${existingNodes
+              .slice(0, 300)
+              .join(", ")}`
+          : "";
 
-      const contextLevel = options.contextLevel || 'normal';
+      const childrenContext =
+        childNodes && childNodes.length > 0
+          ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
+              ", "
+            )}`
+          : "";
+
+      const contextLevel = options.contextLevel || "normal";
 
       const templateContext = {
         nodeTitle,
-        nodeContent: nodeContent || '',
+        nodeContent: nodeContent || "",
         existingNodes: existingNodesContext,
         childrenContext,
-        isRootOrCore: ['root', 'core'].includes(contextLevel),
-        isLeaf: contextLevel === 'leaf'
+        isRootOrCore: ["root", "core"].includes(contextLevel),
+        isLeaf: contextLevel === "leaf",
       };
 
       const systemPrompt = await promptService.getRenderedPrompt(
         supabaseAdmin,
-        'branch_suggestions',
+        "branch_suggestions",
         templateContext,
         options.userId,
         options.graphId
@@ -412,30 +519,41 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ''}${existingNodesContext}${childrenContext}` }
+          {
+            role: "user",
+            content: `Node Title: ${nodeTitle}\nNode Content: ${
+              nodeContent || ""
+            }${existingNodesContext}${childrenContext}`,
+          },
         ],
         model: options.model || provider.model,
         response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0].message.content || '';
-      const parsed = parseAIResponse<{ suggestions: unknown[] }>(content, 'Branch Suggestions');
+      const content = completion.choices[0].message.content || "";
+      const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+        content,
+        "Branch Suggestions"
+      );
 
       return { suggestions: parsed.suggestions || [] };
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Error:', error);
-      throw new Error(err.message || 'AI branch suggestions failed');
+      logger.error("AI Error:", error);
+      throw new Error(err.message || "AI branch suggestions failed");
     }
   }
 
-  async generateGraphFromImage(imageBase64: string, options: { provider?: AIProviderType; model?: string } = {}) {
+  async generateGraphFromImage(
+    imageBase64: string,
+    options: { provider?: AIProviderType; model?: string } = {}
+  ) {
     let providerName = options.provider;
-    
+
     if (!providerName) {
-      const defaultTextProvider = await getAIProviderForTask('text');
-      if (defaultTextProvider.providerType === 'deepseek') {
-        providerName = 'aliyun';
+      const defaultTextProvider = await getAIProviderForTask("text");
+      if (defaultTextProvider.providerType === "deepseek") {
+        providerName = "aliyun";
       } else {
         providerName = defaultTextProvider.providerType;
       }
@@ -448,15 +566,15 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
     }
 
     let model = options.model || provider.model;
-    if (provider.providerType === 'aliyun' && !model.includes('vl')) {
-      model = 'qwen-vl-max';
+    if (provider.providerType === "aliyun" && !model.includes("vl")) {
+      model = "qwen-vl-max";
     }
 
     try {
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { 
-            role: "system", 
+          {
+            role: "system",
             content: `You are a knowledge graph expert capable of analyzing visual content.
             
 Your task:
@@ -465,149 +583,190 @@ Your task:
    - Nodes: { "id": "temp_id", "title": "Title", "content": "Description", "level": "root|core|sub|normal|leaf" }
    - Edges: { "source": "parent_id", "target": "child_id", "relationship": "contains|related" }
 3. Limit to 30-50 nodes.
-4. Respond in Chinese.`
+4. Respond in Chinese.`,
           },
-          { 
-            role: "user", 
+          {
+            role: "user",
             content: [
-              { type: "text", text: "Please analyze this image and generate the knowledge graph JSON." },
-              { type: "image_url", image_url: { url: imageBase64 } }
-            ]
-          }
+              {
+                type: "text",
+                text: "Please analyze this image and generate the knowledge graph JSON.",
+              },
+              { type: "image_url", image_url: { url: imageBase64 } },
+            ],
+          },
         ],
         model,
         response_format: { type: "json_object" },
         max_tokens: 4000,
       });
 
-      const content = completion.choices[0].message.content || '';
-      return parseAIResponse<{ nodes: unknown[]; edges: unknown[] }>(content, 'Image to Graph');
-
+      const content = completion.choices[0].message.content || "";
+      return parseAIResponse<{ nodes: unknown[]; edges: unknown[] }>(
+        content,
+        "Image to Graph"
+      );
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('Image-to-Graph Error:', error);
-      throw new Error(err.message || 'Image processing failed');
+      logger.error("Image-to-Graph Error:", error);
+      throw new Error(err.message || "Image processing failed");
     }
   }
 
-  async generateLearningMaterial(topic: string, context: string, options: { provider?: AIProviderType; model?: string; level?: string } = {}) {
+  async generateLearningMaterial(
+    topic: string,
+    context: string,
+    options: { provider?: AIProviderType; model?: string; level?: string } = {}
+  ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
-      return getMockResponse('content', `Learning Material for ${topic}`);
+      return getMockResponse("content", `Learning Material for ${topic}`);
     }
 
     try {
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { 
-            role: "system", 
-            content: "You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.\n" +
-                     "Target Audience: University students or professionals learning this concept.\n" +
-                     "Structure:\n" +
-                     "1. **Introduction (Hook)**: Briefly explain what this is and why it matters.\n" +
-                     "2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.\n" +
-                     "3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.\n" +
-                     "4. **Real-world Examples**: Concrete use cases or historical context.\n" +
-                     "5. **Summary**: Key takeaways.\n\n" +
-                     "Formatting:\n" +
-                     "- Use Markdown headers (##, ###).\n" +
-                     "- Use bolding for key terms.\n" +
-                     "- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.\n" +
-                     "- Use lists and bullet points for readability.\n" +
-                     "- Length: Comprehensive (approx 800-1500 words).\n" +
-                     "Please respond in Chinese." 
+          {
+            role: "system",
+            content:
+              "You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.\n" +
+              "Target Audience: University students or professionals learning this concept.\n" +
+              "Structure:\n" +
+              "1. **Introduction (Hook)**: Briefly explain what this is and why it matters.\n" +
+              "2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.\n" +
+              "3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.\n" +
+              "4. **Real-world Examples**: Concrete use cases or historical context.\n" +
+              "5. **Summary**: Key takeaways.\n\n" +
+              "Formatting:\n" +
+              "- Use Markdown headers (##, ###).\n" +
+              "- Use bolding for key terms.\n" +
+              "- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.\n" +
+              "- Use lists and bullet points for readability.\n" +
+              "- Length: Comprehensive (approx 800-1500 words).\n" +
+              "Please respond in Chinese.",
           },
-          { role: "user", content: `Topic: ${topic}\nContext/Background: ${context || 'General knowledge'}` }
+          {
+            role: "user",
+            content: `Topic: ${topic}\nContext/Background: ${
+              context || "General knowledge"
+            }`,
+          },
         ],
         model: options.model || provider.model,
       });
 
-      return completion.choices[0].message.content || '';
+      return completion.choices[0].message.content || "";
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Learning Material Error:', error);
-      throw new Error(err.message || 'AI generation failed');
+      logger.error("AI Learning Material Error:", error);
+      throw new Error(err.message || "AI generation failed");
     }
   }
 
-  async suggestNextTopic(nodeTitle: string, nodeContent?: string, _existingNodes?: string[], options: { provider?: AIProviderType; model?: string; userProgress?: { masteredCount?: number; currentLevel?: string } } = {}) {
+  async suggestNextTopic(
+    nodeTitle: string,
+    nodeContent?: string,
+    _existingNodes?: string[],
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      userProgress?: { masteredCount?: number; currentLevel?: string };
+    } = {}
+  ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
       return { suggestions: getMockNextTopics(nodeTitle) };
     }
 
     try {
-      const progressContext = options.userProgress 
-        ? `\nUser Progress:\n- Mastered nodes: ${options.userProgress.masteredCount || 0}\n- Current level: ${options.userProgress.currentLevel || 'beginner'}`
-        : '';
+      const progressContext = options.userProgress
+        ? `\nUser Progress:\n- Mastered nodes: ${
+            options.userProgress.masteredCount || 0
+          }\n- Current level: ${
+            options.userProgress.currentLevel || "beginner"
+          }`
+        : "";
 
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { 
-            role: "system", 
-            content: "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
+          {
+            role: "system",
+            content:
+              "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
               "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
               "- 'title': Brief topic title (max 30 chars)\n" +
               "- 'description': Short explanation (max 80 chars)\n" +
               "- 'priority': 'high', 'medium', or 'low'\n" +
               "- 'estimatedDifficulty': Number from 1-5\n" +
-              "Please respond in Chinese." 
+              "Please respond in Chinese.",
           },
-          { 
-            role: "user", 
-            content: `Current Node:\nTitle: ${nodeTitle}\nContent: ${nodeContent || ''}${progressContext}` 
-          }
+          {
+            role: "user",
+            content: `Current Node:\nTitle: ${nodeTitle}\nContent: ${
+              nodeContent || ""
+            }${progressContext}`,
+          },
         ],
         model: options.model || provider.model,
         response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0].message.content || '';
-      const parsed = parseAIResponse<{ suggestions: unknown[] }>(content, 'Suggest Next Topic');
+      const content = completion.choices[0].message.content || "";
+      const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+        content,
+        "Suggest Next Topic"
+      );
 
       return { suggestions: parsed.suggestions || [] };
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Error:', error);
-      throw new Error(err.message || 'AI suggestion failed');
+      logger.error("AI Error:", error);
+      throw new Error(err.message || "AI suggestion failed");
     }
   }
 
-  async tutorChat(messages: Array<{ role: string; content: string }>, context: {
-    graphId?: string;
-    currentNodeId?: string;
-    currentNodeTitle?: string;
-    currentNodeContent?: string;
-    existingNodes?: string[];
-    userProgress?: { masteredCount?: number; dueCount?: number };
-    mode?: 'free' | 'guided';
-    learningPath?: string[];
-  } = {}, options: { provider?: AIProviderType; model?: string } = {}) {
+  async tutorChat(
+    messages: Array<{ role: string; content: string }>,
+    context: {
+      graphId?: string;
+      currentNodeId?: string;
+      currentNodeTitle?: string;
+      currentNodeContent?: string;
+      existingNodes?: string[];
+      userProgress?: { masteredCount?: number; dueCount?: number };
+      mode?: "free" | "guided";
+      learningPath?: string[];
+    } = {},
+    options: { provider?: AIProviderType; model?: string } = {}
+  ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
       const lastMessage = messages[messages.length - 1];
-      return `[模拟助教回复] 我收到了你的消息: "${lastMessage?.content || ''}"。这是一个模拟回复，因为后端没有配置 API Key。`;
+      return `[模拟助教回复] 我收到了你的消息: "${
+        lastMessage?.content || ""
+      }"。这是一个模拟回复，因为后端没有配置 API Key。`;
     }
 
     try {
       const contextText = buildTutorContext(context);
-      const modePrompt = context.mode === 'guided' 
-        ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step."
-        : "Free Mode: Allow open-ended discussion. Answer questions freely.";
+      const modePrompt =
+        context.mode === "guided"
+          ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step."
+          : "Free Mode: Allow open-ended discussion. Answer questions freely.";
 
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { 
-            role: "system", 
+          {
+            role: "system",
             content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
 
 ${modePrompt}
@@ -620,41 +779,55 @@ Instructions:
 2. Use markdown formatting for better readability
 3. When explaining concepts, provide examples
 4. Respond in the same language as the user (default to Chinese)
-5. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`
+5. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`,
           },
-          ...messages.map((msg) => ({ role: msg.role as 'user' | 'assistant' | 'system', content: msg.content }))
+          ...messages.map((msg) => ({
+            role: msg.role as "user" | "assistant" | "system",
+            content: msg.content,
+          })),
         ],
         model: options.model || provider.model,
       });
 
-      return completion.choices[0].message.content || '';
+      return completion.choices[0].message.content || "";
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Tutor Chat Error:', error);
-      throw new Error(err.message || 'AI tutor chat failed');
+      logger.error("AI Tutor Chat Error:", error);
+      throw new Error(err.message || "AI tutor chat failed");
     }
   }
 
-  async extractConcepts(text: string, existingNodes?: string[], options: { provider?: AIProviderType; model?: string; maxConcepts?: number } = {}) {
+  async extractConcepts(
+    text: string,
+    existingNodes?: string[],
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      maxConcepts?: number;
+    } = {}
+  ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
       return { concepts: getMockConcepts() };
     }
 
     try {
-      const existingNodesContext = existingNodes && existingNodes.length > 0
-        ? `\nExisting Nodes (DO NOT duplicate these): ${existingNodes.slice(0, 50).join(', ')}`
-        : '';
+      const existingNodesContext =
+        existingNodes && existingNodes.length > 0
+          ? `\nExisting Nodes (DO NOT duplicate these): ${existingNodes
+              .slice(0, 50)
+              .join(", ")}`
+          : "";
 
       const maxConcepts = options.maxConcepts || 5;
 
       const completion = await provider.client.chat.completions.create({
         messages: [
-          { 
-            role: "system", 
+          {
+            role: "system",
             content: `You are a concept extraction expert. Analyze the given text and extract key concepts.
 
 Requirements:
@@ -669,69 +842,97 @@ Return a JSON object with a 'concepts' array. Each object must have:
 - 'description': Brief explanation (max 100 chars)
 - 'priority': 'high', 'medium', or 'low'
 
-Please respond in Chinese.` 
+Please respond in Chinese.`,
           },
-          { 
-            role: "user", 
-            content: `Text to analyze:\n${text}${existingNodesContext}` 
-          }
+          {
+            role: "user",
+            content: `Text to analyze:\n${text}${existingNodesContext}`,
+          },
         ],
         model: options.model || provider.model,
         response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0].message.content || '';
-      const parsed = parseAIResponse<{ concepts: unknown[] }>(content, 'Extract Concepts');
+      const content = completion.choices[0].message.content || "";
+      const parsed = parseAIResponse<{ concepts: unknown[] }>(
+        content,
+        "Extract Concepts"
+      );
 
       return { concepts: parsed.concepts || [] };
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Error:', error);
-      throw new Error(err.message || 'AI concept extraction failed');
+      logger.error("AI Error:", error);
+      throw new Error(err.message || "AI concept extraction failed");
     }
   }
 
   async analyzeCrossGraphConnections(
-    graph1: { id: string; title?: string; nodes: Array<{ id: string; title: string; content?: string }> },
-    graph2: { id: string; title?: string; nodes: Array<{ id: string; title: string; content?: string }> },
+    graph1: {
+      id: string;
+      title?: string;
+      nodes: Array<{ id: string; title: string; content?: string }>;
+    },
+    graph2: {
+      id: string;
+      title?: string;
+      nodes: Array<{ id: string; title: string; content?: string }>;
+    },
     options: { provider?: AIProviderType; model?: string; userId?: string } = {}
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
-      : await getAIProviderForTask('text');
+      : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
       return {
         connections: [],
         summary: {
           total_connections: 0,
-          by_type: { same_concept: 0, related_concept: 0, complementary: 0, prerequisite: 0 },
-          overall_relationship: '需要配置 AI API Key 才能分析连接'
-        }
+          by_type: {
+            same_concept: 0,
+            related_concept: 0,
+            complementary: 0,
+            prerequisite: 0,
+          },
+          overall_relationship: "需要配置 AI API Key 才能分析连接",
+        },
       };
     }
 
     try {
-      const graph1NodesText = graph1.nodes.slice(0, 50).map(n => 
-        `- ID: ${n.id}, Title: ${n.title}${n.content ? `, Content: ${n.content.slice(0, 200)}...` : ''}`
-      ).join('\n');
-      
-      const graph2NodesText = graph2.nodes.slice(0, 50).map(n => 
-        `- ID: ${n.id}, Title: ${n.title}${n.content ? `, Content: ${n.content.slice(0, 200)}...` : ''}`
-      ).join('\n');
+      const graph1NodesText = graph1.nodes
+        .slice(0, 50)
+        .map(
+          (n) =>
+            `- ID: ${n.id}, Title: ${n.title}${
+              n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
+            }`
+        )
+        .join("\n");
+
+      const graph2NodesText = graph2.nodes
+        .slice(0, 50)
+        .map(
+          (n) =>
+            `- ID: ${n.id}, Title: ${n.title}${
+              n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
+            }`
+        )
+        .join("\n");
 
       const templateContext = {
-        graph1Title: graph1.title || '图谱 1',
-        graph2Title: graph2.title || '图谱 2',
-        graph1Description: '',
-        graph2Description: '',
+        graph1Title: graph1.title || "图谱 1",
+        graph2Title: graph2.title || "图谱 2",
+        graph1Description: "",
+        graph2Description: "",
         graph1Nodes: graph1NodesText,
-        graph2Nodes: graph2NodesText
+        graph2Nodes: graph2NodesText,
       };
 
       const systemPrompt = await promptService.getRenderedPrompt(
         supabaseAdmin,
-        'cross_graph_connection_analysis',
+        "cross_graph_connection_analysis",
         templateContext,
         options.userId
       );
@@ -739,13 +940,13 @@ Please respond in Chinese.`
       const completion = await provider.client.chat.completions.create({
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `请分析这两个图谱之间的节点连接关系。` }
+          { role: "user", content: `请分析这两个图谱之间的节点连接关系。` },
         ],
         model: options.model || provider.model,
         response_format: { type: "json_object" },
       });
 
-      const content = completion.choices[0].message.content || '';
+      const content = completion.choices[0].message.content || "";
       return parseAIResponse<{
         connections: Array<{
           node1_id: string;
@@ -761,12 +962,91 @@ Please respond in Chinese.`
           by_type: Record<string, number>;
           overall_relationship: string;
         };
-      }>(content, 'Cross Graph Connections');
-
+      }>(content, "Cross Graph Connections");
     } catch (error: unknown) {
       const err = error as Error;
-      logger.error('AI Cross Graph Connections Error:', error);
-      throw new Error(err.message || 'AI 跨图谱连接分析失败');
+      logger.error("AI Cross Graph Connections Error:", error);
+      throw new Error(err.message || "AI 跨图谱连接分析失败");
+    }
+  }
+
+  async generateTaskDetails(
+    title: string,
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      context?: string;
+      userId?: string;
+    } = {}
+  ): Promise<{
+    description: string;
+    tags: string[];
+    estimated_duration: number;
+    priority: number;
+    suggested_queue: number;
+  }> {
+    const provider = options.provider
+      ? await getAIProvider(options.provider)
+      : await getAIProviderForTask("text");
+
+    if (!provider.hasKey) {
+      return {
+        description: `这是一个关于"${title}"的任务。请根据任务标题合理安排时间完成。`,
+        tags: ["待分类"],
+        estimated_duration: 25,
+        priority: 2,
+        suggested_queue: 2,
+      };
+    }
+
+    try {
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabaseAdmin,
+        "generate_task_details",
+        {
+          title,
+          context: options.context || "",
+        },
+        options.userId
+      );
+
+      const completion = await provider.client.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `任务标题：${title}${
+              options.context ? `\n\n补充信息：${options.context}` : ""
+            }`,
+          },
+        ],
+        model: options.model || provider.model,
+        response_format: { type: "json_object" },
+      });
+
+      const content = completion.choices[0].message.content || "";
+      const parsed = parseAIResponse<{
+        description: string;
+        tags: string[];
+        estimated_duration: number;
+        priority: number;
+        suggested_queue: number;
+      }>(content, "Generate Task Details");
+
+      return {
+        description: parsed.description || "",
+        tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+        estimated_duration: Math.min(
+          180,
+          Math.max(15, parsed.estimated_duration || 25)
+        ),
+        priority: Math.min(4, Math.max(1, parsed.priority || 2)),
+        suggested_queue: Math.min(2, Math.max(0, parsed.suggested_queue || 2)),
+      };
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("AI Generate Task Details Error:", error);
+      throw new Error(err.message || "AI 任务详情生成失败");
     }
   }
 }

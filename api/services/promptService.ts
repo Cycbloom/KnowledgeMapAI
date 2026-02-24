@@ -216,7 +216,34 @@ Important:
 - Only suggest connections with similarity >= 0.5
 - Provide clear reasons in Chinese
 - similarity should be between 0 and 1
-- Respond in Chinese`
+- Respond in Chinese`,
+
+  generate_task_details: `
+Return a JSON object with the following structure:
+{
+  "description": "任务的详细描述（50-150字，说明任务目标、关键步骤、预期成果）",
+  "tags": ["标签1", "标签2", "标签3"],
+  "estimated_duration": 30,
+  "priority": 2,
+  "suggested_queue": 1
+}
+
+Field descriptions:
+- description: Detailed task description (50-150 characters, explain goals, key steps, expected outcomes)
+- tags: Array of 2-5 relevant tags (e.g., 学习, 工作, 阅读, 编程, 复习, 项目, 会议, 运动, 休息)
+- estimated_duration: Estimated completion time in minutes (range: 15-180)
+- priority: Priority level (1=Low, 2=Medium, 3=High, 4=Urgent)
+- suggested_queue: Suggested queue level (0=Urgent queue Q0, 1=Important queue Q1, 2=Normal queue Q2)
+
+Queue determination criteria:
+- Q0 (Urgent): Tasks requiring immediate attention, urgent deadlines, high priority
+- Q1 (Important): Important but not urgent, requires focused completion
+- Q2 (Normal): Regular tasks, can be handled later
+
+Important:
+- Respond in Chinese
+- Tags should be practical and commonly used
+- Duration should be realistic for the task complexity`
 };
 
 export interface PromptListOptions {

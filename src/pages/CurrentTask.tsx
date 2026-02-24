@@ -33,30 +33,30 @@ import type { ScheduledTask, TaskSettings } from '../services/api/scheduler';
 const QUEUE_CONFIG = {
   0: {
     name: '紧急队列',
-    color: '#22D3EE',
+    color: '#06b6d4',
     gradient: 'from-cyan-400 to-blue-500',
-    bgClass: 'bg-cyan-500/10',
-    textClass: 'text-cyan-400',
-    borderClass: 'border-cyan-500/30',
-    glowColor: 'rgba(34, 211, 238, 0.4)',
+    bgClass: 'bg-cyan-100 dark:bg-cyan-500/10',
+    textClass: 'text-cyan-600 dark:text-cyan-400',
+    borderClass: 'border-cyan-200 dark:border-cyan-500/30',
+    glowColor: 'rgba(6, 182, 212, 0.4)',
   },
   1: {
     name: '重要队列',
-    color: '#34D399',
+    color: '#10b981',
     gradient: 'from-emerald-400 to-green-500',
-    bgClass: 'bg-emerald-500/10',
-    textClass: 'text-emerald-400',
-    borderClass: 'border-emerald-500/30',
-    glowColor: 'rgba(52, 211, 153, 0.4)',
+    bgClass: 'bg-emerald-100 dark:bg-emerald-500/10',
+    textClass: 'text-emerald-600 dark:text-emerald-400',
+    borderClass: 'border-emerald-200 dark:border-emerald-500/30',
+    glowColor: 'rgba(16, 185, 129, 0.4)',
   },
   2: {
     name: '普通队列',
-    color: '#FBBF24',
+    color: '#f59e0b',
     gradient: 'from-amber-400 to-orange-500',
-    bgClass: 'bg-amber-500/10',
-    textClass: 'text-amber-400',
-    borderClass: 'border-amber-500/30',
-    glowColor: 'rgba(251, 191, 36, 0.4)',
+    bgClass: 'bg-amber-100 dark:bg-amber-500/10',
+    textClass: 'text-amber-600 dark:text-amber-400',
+    borderClass: 'border-amber-200 dark:border-amber-500/30',
+    glowColor: 'rgba(245, 158, 11, 0.4)',
   },
 };
 
@@ -300,15 +300,15 @@ export const CurrentTask: React.FC = () => {
     : progress < 0.5
       ? queueConfig.color
       : progress < 0.8
-        ? '#F59E0B'
-        : '#EF4444';
+        ? '#f59e0b'
+        : '#ef4444';
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-900">
+      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">加载中...</p>
+          <p className="text-slate-500 dark:text-slate-400">加载中...</p>
         </div>
       </div>
     );
@@ -316,18 +316,18 @@ export const CurrentTask: React.FC = () => {
 
   if (!currentTask) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-900">
+      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center max-w-md px-6">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', duration: 0.5 }}
-            className="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-6"
+            className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6"
           >
-            <Coffee size={40} className="text-slate-500" />
+            <Coffee size={40} className="text-slate-400 dark:text-slate-500" />
           </motion.div>
-          <h2 className="text-2xl font-bold text-white mb-3">当前没有进行中的任务</h2>
-          <p className="text-slate-400 mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">当前没有进行中的任务</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">
             从任务队列中选择一个任务开始专注，或者创建新任务
           </p>
           <Link
@@ -343,12 +343,12 @@ export const CurrentTask: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-900 p-6 lg:p-8">
+    <div className="h-full overflow-y-auto bg-slate-50 dark:bg-slate-900 p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <Link
             to="/scheduler"
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft size={20} />
             <span>返回任务队列</span>
@@ -358,7 +358,7 @@ export const CurrentTask: React.FC = () => {
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={`p-2 rounded-lg transition-colors ${
-                soundEnabled ? 'bg-slate-800 text-cyan-400' : 'bg-slate-800 text-slate-500'
+                soundEnabled ? 'bg-slate-100 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
               }`}
               title={soundEnabled ? '关闭声音' : '开启声音'}
             >
@@ -367,7 +367,7 @@ export const CurrentTask: React.FC = () => {
             <button
               onClick={() => setNotificationEnabled(!notificationEnabled)}
               className={`p-2 rounded-lg transition-colors ${
-                notificationEnabled ? 'bg-slate-800 text-cyan-400' : 'bg-slate-800 text-slate-500'
+                notificationEnabled ? 'bg-slate-100 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
               }`}
               title={notificationEnabled ? '关闭通知' : '开启通知'}
             >
@@ -406,7 +406,8 @@ export const CurrentTask: React.FC = () => {
                   cy="150"
                   r="140"
                   fill="none"
-                  stroke="rgba(30, 41, 59, 0.8)"
+                  stroke="rgba(148, 163, 184, 0.2)"
+                  className="dark:[stroke:rgba(30,41,59,0.8)]"
                   strokeWidth="12"
                 />
 
@@ -431,7 +432,8 @@ export const CurrentTask: React.FC = () => {
                   cy="150"
                   r="120"
                   fill="none"
-                  stroke="rgba(51, 65, 85, 0.3)"
+                  stroke="rgba(148, 163, 184, 0.15)"
+                  className="dark:[stroke:rgba(51,65,85,0.3)]"
                   strokeWidth="1"
                   strokeDasharray="4 4"
                 />
@@ -444,7 +446,7 @@ export const CurrentTask: React.FC = () => {
                     animate={{ scale: 1 }}
                     className="mb-2"
                   >
-                    <Coffee size={28} className="text-emerald-400" />
+                    <Coffee size={28} className="text-emerald-500 dark:text-emerald-400" />
                   </motion.div>
                 )}
 
@@ -459,11 +461,11 @@ export const CurrentTask: React.FC = () => {
                   {formatTime(remaining)}
                 </motion.div>
 
-                <div className="text-sm text-slate-500 mt-2">
+                <div className="text-sm text-slate-400 dark:text-slate-500 mt-2">
                   {isBreak ? '休息时间' : '专注时间'}
                 </div>
 
-                <div className="text-sm text-slate-600 mt-1">
+                <div className="text-sm text-slate-400 dark:text-slate-600 mt-1">
                   {Math.round(progress * 100)}%
                 </div>
               </div>
@@ -490,7 +492,7 @@ export const CurrentTask: React.FC = () => {
               {isRunning ? (
                 <motion.button
                   onClick={handlePause}
-                  className="flex items-center gap-2 px-8 py-4 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-all"
+                  className="flex items-center gap-2 px-8 py-4 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -500,7 +502,7 @@ export const CurrentTask: React.FC = () => {
               ) : (
                 <motion.button
                   onClick={handleResume}
-                  className="flex items-center gap-2 px-8 py-4 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all"
+                  className="flex items-center gap-2 px-8 py-4 rounded-xl bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/30 hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -511,7 +513,7 @@ export const CurrentTask: React.FC = () => {
 
               <motion.button
                 onClick={handleComplete}
-                className="flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all"
+                className="flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -520,13 +522,13 @@ export const CurrentTask: React.FC = () => {
               </motion.button>
             </div>
 
-            <div className="mt-4 flex items-center gap-6 text-sm text-slate-500">
+            <div className="mt-4 flex items-center gap-6 text-sm text-slate-400 dark:text-slate-500">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: queueConfig.color }} />
                 <span>已用: {formatTime(isBreak ? breakElapsed : elapsed)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
                 <span>总计: {formatTime(isBreak ? breakDuration : timeSlice)}</span>
               </div>
             </div>
@@ -552,17 +554,17 @@ export const CurrentTask: React.FC = () => {
                     <span className={`text-xs font-bold px-2 py-0.5 rounded ${queueConfig.bgClass} ${queueConfig.textClass}`}>
                       Q{currentTask.queue_level}
                     </span>
-                    <span className="text-xs text-slate-500">{queueConfig.name}</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{queueConfig.name}</span>
                   </div>
-                  <h2 className="text-xl font-bold text-white mt-1">{currentTask.title}</h2>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-1">{currentTask.title}</h2>
                 </div>
               </div>
 
               {currentTask.description && (
-                <p className="text-slate-400 text-sm mb-4">{currentTask.description}</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">{currentTask.description}</p>
               )}
 
-              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400 dark:text-slate-500">
                 {currentTask.estimated_duration && (
                   <div className="flex items-center gap-2">
                     <Clock size={14} className={queueConfig.textClass} />
@@ -572,8 +574,8 @@ export const CurrentTask: React.FC = () => {
 
                 {currentTask.deadline && (
                   <div className="flex items-center gap-2">
-                    <Calendar size={14} className="text-red-400" />
-                    <span className="text-red-400">
+                    <Calendar size={14} className="text-red-500 dark:text-red-400" />
+                    <span className="text-red-500 dark:text-red-400">
                       截止 {new Date(currentTask.deadline).toLocaleDateString()}
                     </span>
                   </div>
@@ -581,37 +583,37 @@ export const CurrentTask: React.FC = () => {
 
                 {currentTask.tags && currentTask.tags.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <Tag size={14} className="text-indigo-400" />
-                    <span className="text-indigo-400">{currentTask.tags.join(', ')}</span>
+                    <Tag size={14} className="text-indigo-500 dark:text-indigo-400" />
+                    <span className="text-indigo-500 dark:text-indigo-400">{currentTask.tags.join(', ')}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-700 bg-slate-800/50 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">操作选项</h3>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">操作选项</h3>
               <div className="space-y-3">
                 <motion.button
                   onClick={handleSkip}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl bg-slate-700/50 text-slate-300 hover:bg-slate-700 transition-colors"
+                  className="w-full flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   whileHover={{ x: 4 }}
                 >
-                  <SkipForward size={18} className="text-amber-400" />
+                  <SkipForward size={18} className="text-amber-500 dark:text-amber-400" />
                   <div className="text-left">
                     <div className="font-medium">跳过任务</div>
-                    <div className="text-xs text-slate-500">任务将降级到下一队列</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">任务将降级到下一队列</div>
                   </div>
                 </motion.button>
 
                 <motion.button
                   onClick={handleStartBreak}
-                  className="w-full flex items-center gap-3 p-4 rounded-xl bg-slate-700/50 text-slate-300 hover:bg-slate-700 transition-colors"
+                  className="w-full flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   whileHover={{ x: 4 }}
                 >
-                  <Coffee size={18} className="text-emerald-400" />
+                  <Coffee size={18} className="text-emerald-500 dark:text-emerald-400" />
                   <div className="text-left">
                     <div className="font-medium">开始休息</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-400 dark:text-slate-500">
                       休息 {settings?.break_duration || 5} 分钟
                     </div>
                   </div>
@@ -619,24 +621,24 @@ export const CurrentTask: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-700 bg-slate-800/50 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">时间片设置</h3>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">时间片设置</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                  <div className="text-xs text-cyan-400 mb-1">Q0 紧急</div>
-                  <div className="text-lg font-bold text-white">
+                <div className="text-center p-3 rounded-xl bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20">
+                  <div className="text-xs text-cyan-600 dark:text-cyan-400 mb-1">Q0 紧急</div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
                     {settings?.q0_time_slice || 15}分钟
                   </div>
                 </div>
-                <div className="text-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="text-xs text-emerald-400 mb-1">Q1 重要</div>
-                  <div className="text-lg font-bold text-white">
+                <div className="text-center p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                  <div className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">Q1 重要</div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
                     {settings?.q1_time_slice || 25}分钟
                   </div>
                 </div>
-                <div className="text-center p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <div className="text-xs text-amber-400 mb-1">Q2 普通</div>
-                  <div className="text-lg font-bold text-white">
+                <div className="text-center p-3 rounded-xl bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                  <div className="text-xs text-amber-600 dark:text-amber-400 mb-1">Q2 普通</div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
                     {settings?.q2_time_slice || 45}分钟
                   </div>
                 </div>
@@ -651,23 +653,23 @@ export const CurrentTask: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/70 backdrop-blur-sm"
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="w-full max-w-md rounded-2xl bg-slate-800 border border-slate-700 p-6"
+                className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-full bg-amber-500/20">
-                    <AlertCircle size={24} className="text-amber-400" />
+                  <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-500/20">
+                    <AlertCircle size={24} className="text-amber-500 dark:text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                       {isBreak ? '休息结束' : '时间片结束'}
                     </h3>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       {isBreak ? '休息时间已结束' : '当前任务的时间片已用完'}
                     </p>
                   </div>
@@ -686,7 +688,7 @@ export const CurrentTask: React.FC = () => {
                       </motion.button>
                       <motion.button
                         onClick={handleDismissModal}
-                        className="w-full py-3 rounded-xl bg-slate-700 text-slate-300 font-medium"
+                        className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -705,7 +707,7 @@ export const CurrentTask: React.FC = () => {
                       </motion.button>
                       <motion.button
                         onClick={handleContinueWork}
-                        className="w-full py-3 rounded-xl bg-slate-700 text-slate-300 font-medium"
+                        className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -713,7 +715,7 @@ export const CurrentTask: React.FC = () => {
                       </motion.button>
                       <motion.button
                         onClick={handleComplete}
-                        className="w-full py-3 rounded-xl bg-slate-700/50 text-emerald-400 font-medium"
+                        className="w-full py-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-emerald-600 dark:text-emerald-400 font-medium"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >

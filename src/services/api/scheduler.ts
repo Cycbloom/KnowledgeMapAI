@@ -113,6 +113,14 @@ export interface QueueData {
   q2: ScheduledTask[];
 }
 
+export interface GenerateTaskDetailsResult {
+  description: string;
+  tags: string[];
+  estimated_duration: number;
+  priority: number;
+  suggested_queue: number;
+}
+
 export const schedulerApi = {
   createTask: (data: CreateScheduledTaskData) =>
     request('/scheduler/tasks', { method: 'POST', body: JSON.stringify(data) }),
@@ -182,4 +190,10 @@ export const schedulerApi = {
     const queryString = params.toString();
     return request(`/scheduler/heatmap${queryString ? `?${queryString}` : ''}`);
   },
+
+  generateTaskDetails: (title: string, context?: string) =>
+    request('/scheduler/generate-details', {
+      method: 'POST',
+      body: JSON.stringify({ title, context }),
+    }),
 };

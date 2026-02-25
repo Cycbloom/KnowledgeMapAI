@@ -110,7 +110,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     setIsGenerating(true);
     try {
-      const result = await schedulerApi.generateTaskDetails(title.trim(), description || undefined);
+      const response = await schedulerApi.generateTaskDetails(title.trim(), description || undefined);
+      
+      const result = response.data || response;
       
       if (result) {
         if (result.description) {

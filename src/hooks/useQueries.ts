@@ -735,8 +735,14 @@ export const useUpdateProfileMutation = () => {
 export const useTemplates = (category?: string) => {
   return useQuery({
     queryKey: queryKeys.templates(category),
-    queryFn: () => api.templates.list(category),
-    staleTime: 1000 * 60 * 30, // 30 mins
+    queryFn: async () => {
+      const result = await api.templates.list(category);
+      if (result && typeof result === 'object' && 'templates' in result) {
+        return result.templates;
+      }
+      return Array.isArray(result) ? result : [];
+    },
+    staleTime: 1000 * 60 * 30,
   });
 };
 

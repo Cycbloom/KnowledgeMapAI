@@ -73,6 +73,26 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     return source;
   }, []);
 
+  const stopAudio = useCallback(() => {
+    oscillatorsRef.current.forEach(osc => {
+      try {
+        osc.stop();
+      } catch {
+        // ignore errors on stop
+      }
+    });
+    oscillatorsRef.current = [];
+    
+    if (noiseSourceRef.current) {
+      try {
+        noiseSourceRef.current.stop();
+      } catch {
+        // ignore errors on stop
+      }
+      noiseSourceRef.current = null;
+    }
+  }, []);
+
   const startAudio = useCallback((noiseType: WhiteNoiseType) => {
     if (noiseType === 'none') {
       stopAudio();
@@ -151,23 +171,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       
       oscillatorsRef.current = [osc1, osc2, osc3, lfo];
     }
-  }, [volume, createWhiteNoise]);
-
-  const stopAudio = useCallback(() => {
-    oscillatorsRef.current.forEach(osc => {
-      try {
-        osc.stop();
-      } catch (e) {}
-    });
-    oscillatorsRef.current = [];
-    
-    if (noiseSourceRef.current) {
-      try {
-        noiseSourceRef.current.stop();
-      } catch (e) {}
-      noiseSourceRef.current = null;
-    }
-  }, []);
+  }, [volume, createWhiteNoise, stopAudio]);
 
   useEffect(() => {
     if (isOpen && selectedNoise !== 'none') {

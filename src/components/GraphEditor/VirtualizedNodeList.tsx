@@ -224,7 +224,7 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
     if (acceptedNodes.length === 0) return [];
     
     const bounds = getViewportBounds(
-      transformRef.current,
+      transform,
       containerSize,
       BUFFER_SIZE
     );
@@ -248,7 +248,7 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
       node.y >= bounds.minY &&
       node.y <= bounds.maxY
     );
-  }, [acceptedNodes, spatialGrid, containerSize, viewportVersion, isExplorationMode, transformRef]);
+  }, [acceptedNodes, spatialGrid, containerSize, viewportVersion, isExplorationMode, transform]);
   
   const sortedVisibleNodes = useMemo(() => {
     return [...visibleNodes].sort((a, b) => {

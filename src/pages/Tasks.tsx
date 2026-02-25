@@ -409,7 +409,7 @@ export const Tasks = () => {
                             </button>
                           )}
 
-                          {t.status === 'completed' && t.type === 'infinite_graph_expansion' && t.result?.source_graph_id && Boolean(t.result.source_graph_id) && (
+                          {t.status === 'completed' && t.type === 'infinite_graph_expansion' && typeof t.result?.source_graph_id === 'string' && t.result.source_graph_id && (
                             <button
                               onClick={() => {
                                 navigate(`/graph-map?from=${String(t.result.source_graph_id)}`);

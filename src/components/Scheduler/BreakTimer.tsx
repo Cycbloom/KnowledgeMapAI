@@ -62,6 +62,29 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
     }
   }, [isOpen, duration]);
 
+  const playNotificationSound = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 523.25;
+      gain.gain.value = 0.2;
+      osc.start();
+      setTimeout(() => {
+        osc.frequency.value = 659.25;
+        setTimeout(() => {
+          osc.frequency.value = 783.99;
+          setTimeout(() => osc.stop(), 200);
+        }, 200);
+      }, 200);
+    } catch (e) {
+      console.error('Audio play failed', e);
+    }
+  };
+
   useEffect(() => {
     if (isRunning && isOpen) {
       intervalRef.current = setInterval(() => {
@@ -92,29 +115,6 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
       return () => clearInterval(suggestionInterval);
     }
   }, [isOpen, isRunning]);
-
-  const playNotificationSound = () => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.value = 523.25;
-      gain.gain.value = 0.2;
-      osc.start();
-      setTimeout(() => {
-        osc.frequency.value = 659.25;
-        setTimeout(() => {
-          osc.frequency.value = 783.99;
-          setTimeout(() => osc.stop(), 200);
-        }, 200);
-      }, 200);
-    } catch (e) {
-      console.error('Audio play failed', e);
-    }
-  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

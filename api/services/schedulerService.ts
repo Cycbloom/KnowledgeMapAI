@@ -1315,10 +1315,11 @@ export class SchedulerService {
         case 'pomodoros_completed':
           current = stats.total_pomodoros;
           break;
-        case 'daily_focus_hours':
+        case 'daily_focus_hours': {
           const todayStats = await this.getDailyFocusStats(client, userId);
           current = Math.floor(todayStats.total_duration / 3600);
           break;
+        }
         default:
           continue;
       }

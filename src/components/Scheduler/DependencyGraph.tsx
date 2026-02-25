@@ -27,10 +27,6 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 }) => {
   const [nodes, setNodes] = useState<TaskNode[]>([]);
 
-  useEffect(() => {
-    calculateLayout();
-  }, [tasks]);
-
   const calculateLayout = () => {
     const taskMap = new Map<string, ScheduledTask>();
     tasks.forEach(t => taskMap.set(t.id, t));
@@ -57,6 +53,10 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 
     setNodes(nodesWithPositions);
   };
+
+  useEffect(() => {
+    calculateLayout();
+  }, [tasks]);
 
   const getNodeColor = (node: TaskNode) => {
     if (node.task.status === 'completed') return '#10b981';

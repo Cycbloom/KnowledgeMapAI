@@ -265,14 +265,14 @@ export const schedulerApi = {
 
   moveTask: (id: string, targetQueue: number) =>
     request(`/scheduler/tasks/${id}/move`, {
-      method: 'POST',
-      body: JSON.stringify({ queue_level: targetQueue }),
+      method: 'PUT',
+      body: JSON.stringify({ target_queue: targetQueue }),
     }),
 
   reorderTasks: (queueLevel: number, taskIds: string[]) =>
-    request(`/scheduler/queues/${queueLevel}/reorder`, {
-      method: 'POST',
-      body: JSON.stringify({ task_ids: taskIds }),
+    request(`/scheduler/tasks/reorder`, {
+      method: 'PUT',
+      body: JSON.stringify({ queue_level: queueLevel, task_ids: taskIds }),
     }),
 
   getExecutions: (filters?: ExecutionFilters) => {

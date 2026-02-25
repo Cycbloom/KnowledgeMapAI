@@ -109,10 +109,12 @@ export const CurrentTask: React.FC = () => {
   const [soundEnabled, setSoundEnabled] = useState(settings?.sound_enabled ?? true);
   const [notificationEnabled, setNotificationEnabled] = useState(settings?.notification_enabled ?? true);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
+  const [glowOffset, setGlowOffset] = useState(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const glowAnimationRef = useRef<number | null>(null);
 
   const queueConfig = currentTask ? QUEUE_CONFIG[currentTask.queue_level as keyof typeof QUEUE_CONFIG] : QUEUE_CONFIG[0];
   const timeSlice = currentTask ? getTimeSlice(currentTask.queue_level, settings) : 25 * 60;
@@ -172,6 +174,21 @@ export const CurrentTask: React.FC = () => {
   useEffect(() => {
     requestNotificationPermission();
   }, [requestNotificationPermission]);
+
+  useEffect(() => {
+    if (isRunning) {
+      const animateGlow = () => {
+        setGlowOffset(Math.sin(Date.now() / 500) * 15);
+        glowAnimationRef.current = requestAnimationFrame(animateGlow);
+      };
+      glowAnimationRef.current = requestAnimationFrame(animateGlow);
+      return () => {
+        if (glowAnimationRef.current) {
+          cancelAnimationFrame(glowAnimationRef.current);
+        }
+      };
+    }
+  }, [isRunning]);
 
   useEffect(() => {
     if (currentTask && currentTask.status === 'in_progress' && !isBreak) {
@@ -474,7 +491,7 @@ export const CurrentTask: React.FC = () => {
                 <motion.div
                   className="absolute inset-0 rounded-full pointer-events-none"
                   style={{
-                    boxShadow: `0 0 ${30 + Math.sin(Date.now() / 500) * 15}px ${progressColor}40`,
+                    boxShadow: `0 0 ${30 + glowOffset}px ${progressColor}40`,
                   }}
                   animate={{
                     opacity: [0.5, 0.8, 0.5],

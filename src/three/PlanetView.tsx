@@ -62,7 +62,7 @@ function PlanetNode({
 }: PlanetNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
-  const scaleRef = useRef(1);
+  const [scale, setScale] = useState(1);
   const nodePosRef = useRef(new THREE.Vector3(node.x, node.z, node.y));
   const type = getNodeType(node, layoutLinks);
   
@@ -91,9 +91,12 @@ function PlanetNode({
     const baseDistance = 200;
     const newScale = Math.max(0.3, Math.min(2, distance / baseDistance));
     
-    if (Math.abs(scaleRef.current - newScale) > 0.05) {
-      scaleRef.current = newScale;
-    }
+    setScale(prev => {
+      if (Math.abs(prev - newScale) > 0.05) {
+        return newScale;
+      }
+      return prev;
+    });
   });
 
   useEffect(() => {
@@ -109,8 +112,8 @@ function PlanetNode({
     };
   }, []);
 
-  const titleFontSize = 5 * scaleRef.current;
-  const tagFontSize = 3 * scaleRef.current;
+  const titleFontSize = 5 * scale;
+  const tagFontSize = 3 * scale;
   const labelOffset = baseSize + 3;
 
   return (
@@ -175,8 +178,6 @@ interface PlanetLinkProps {
 }
 
 function PlanetLink({ source, target }: PlanetLinkProps) {
-  const curveRef = useRef<THREE.QuadraticBezierCurve3 | null>(null);
-  
   const points = useMemo(() => {
     const start: [number, number, number] = [source.x, source.z, source.y];
     const end: [number, number, number] = [target.x, target.z, target.y];
@@ -186,18 +187,12 @@ function PlanetLink({ source, target }: PlanetLinkProps) {
       (source.y + target.y) / 2
     ];
     
-    if (!curveRef.current) {
-      curveRef.current = new THREE.QuadraticBezierCurve3(
-        new THREE.Vector3(...start),
-        new THREE.Vector3(...mid),
-        new THREE.Vector3(...end)
-      );
-    } else {
-      curveRef.current.v0.set(...start);
-      curveRef.current.v1.set(...mid);
-      curveRef.current.v2.set(...end);
-    }
-    return curveRef.current.getPoints(20).map(p => [p.x, p.y, p.z] as [number, number, number]);
+    const curve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(...start),
+      new THREE.Vector3(...mid),
+      new THREE.Vector3(...end)
+    );
+    return curve.getPoints(20).map(p => [p.x, p.y, p.z] as [number, number, number]);
   }, [source, target]);
 
   return (

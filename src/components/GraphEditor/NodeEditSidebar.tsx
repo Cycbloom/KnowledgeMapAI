@@ -50,6 +50,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   const [showParentDropdown, setShowParentDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const selectedParents = useMemo(() => {
     return nodes.filter(n => nodeForm.parentNodeIds.includes(n.id));
@@ -85,6 +86,20 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   const handleParentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setParentSearch(e.target.value);
     setShowParentDropdown(true);
+  };
+
+  const handleParentInputFocus = () => {
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+    setShowParentDropdown(true);
+  };
+
+  const handleParentInputBlur = () => {
+    blurTimeoutRef.current = setTimeout(() => {
+      setShowParentDropdown(false);
+    }, 150);
   };
 
   const removeParent = (nodeId: string) => {
@@ -179,7 +194,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   type="text"
                   value={parentSearch}
                   onChange={handleParentInputChange}
-                  onFocus={() => setShowParentDropdown(true)}
+                  onFocus={handleParentInputFocus}
+                  onBlur={handleParentInputBlur}
                   className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'pl-11 pr-10 py-3 min-h-[44px] text-base' : 'pl-9 pr-8 py-2'}`}
                   placeholder="搜索选择父节点..."
                 />
@@ -202,7 +218,9 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                 </div>
                 
                 {showParentDropdown && (
-                  <div className={`absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-y-auto ${isMobile ? 'max-h-[50vh]' : 'max-h-60'}`}>
+                  <div 
+                    onMouseDown={(e) => e.preventDefault()}
+                    className={`absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-y-auto ${isMobile ? 'max-h-[50vh]' : 'max-h-60'}`}>
                     <button
                       onClick={clearAllParents}
                       className={`w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 ${

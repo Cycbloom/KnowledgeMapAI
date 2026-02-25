@@ -67,6 +67,7 @@ export const Scheduler: React.FC = () => {
   
   const sourceQueueRef = useRef<string | null>(null);
   const currentQueueRef = useRef<string | null>(null);
+  const targetIndexRef = useRef<number>(-1);
 
   const { data: queuesData, isLoading, error, refetch, isFetching } = useQueues();
   const { data: settings } = useTaskSettings();
@@ -159,6 +160,7 @@ export const Scheduler: React.FC = () => {
       setActiveTask(result.task);
       sourceQueueRef.current = result.queueKey;
       currentQueueRef.current = result.queueKey;
+      targetIndexRef.current = -1;
     }
   };
 
@@ -188,8 +190,10 @@ export const Scheduler: React.FC = () => {
       
       if (overIndex !== -1) {
         destTasks.splice(overIndex, 0, updatedTask);
+        targetIndexRef.current = overIndex;
       } else {
         destTasks.push(updatedTask);
+        targetIndexRef.current = destTasks.length - 1;
       }
       
       newQueues[activeQueueKey as keyof QueueData] = sourceTasks;
@@ -197,14 +201,17 @@ export const Scheduler: React.FC = () => {
       
       setLocalQueues(newQueues);
       currentQueueRef.current = overQueueKey;
-    } else if (overIndex !== -1) {
+    } else {
       const tasks = [...displayQueues[activeQueueKey as keyof QueueData]];
       const oldIndex = tasks.findIndex(t => t.id === activeId);
       
-      if (oldIndex !== -1 && oldIndex !== overIndex) {
+      if (overIndex !== -1 && oldIndex !== -1 && oldIndex !== overIndex) {
         const newTasks = arrayMove(tasks, oldIndex, overIndex);
         const newQueues = { ...displayQueues, [activeQueueKey]: newTasks };
         setLocalQueues(newQueues);
+        targetIndexRef.current = overIndex;
+      } else if (overIndex === -1 && oldIndex !== -1) {
+        targetIndexRef.current = tasks.length - 1;
       }
     }
   };
@@ -213,46 +220,70 @@ export const Scheduler: React.FC = () => {
     setActiveTask(null);
     sourceQueueRef.current = null;
     currentQueueRef.current = null;
+    targetIndexRef.current = -1;
     setLocalQueues(null);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     const sourceQueue = sourceQueueRef.current;
-    const targetQueue = currentQueueRef.current;
+    let targetQueueKey = currentQueueRef.current;
+    let targetIndex = targetIndexRef.current;
     
-    console.log('handleDragEnd:', { 
+    console.log('handleDragEnd start:', { 
       activeId: active.id, 
       overId: over?.id,
       sourceQueue,
-      targetQueue
+      targetQueueKey,
+      targetIndex
     });
     
+    setActiveTask(null);
+    sourceQueueRef.current = null;
+    currentQueueRef.current = null;
+    targetIndexRef.current = -1;
+
     if (!over) {
-      handleDragCancel();
+      setLocalQueues(null);
       return;
     }
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    let overQueueKey = targetQueue;
-    
-    if (!overQueueKey) {
-      const overResult = getQueueKeyFromOver(over, displayQueues);
-      if (!overResult) {
-        handleDragCancel();
-        return;
+    if (!targetQueueKey) {
+      const overResult = getQueueKeyFromOver(over, queues);
+      console.log('getQueueKeyFromOver result:', overResult);
+      if (overResult) {
+        targetQueueKey = overResult.queueKey;
+        if (targetIndex === -1) {
+          targetIndex = overResult.index;
+        }
       }
-      overQueueKey = overResult.queueKey;
     }
 
-    setActiveTask(null);
-    sourceQueueRef.current = null;
-    currentQueueRef.current = null;
+    if (!targetQueueKey) {
+      setLocalQueues(null);
+      return;
+    }
 
-    if (sourceQueue && sourceQueue !== overQueueKey) {
-      const targetQueueLevel = parseInt(overQueueKey!.replace('q', ''));
+    const tasks = queues[targetQueueKey as keyof QueueData] as ScheduledTask[];
+    
+    if (targetIndex === -1) {
+      console.log('Calculating targetIndex:', { overId, activeId, tasksLength: tasks.length });
+      if (overId.startsWith('queue-')) {
+        targetIndex = tasks.length > 0 ? tasks.length - 1 : 0;
+      } else if (overId !== activeId) {
+        targetIndex = tasks.findIndex((t: ScheduledTask) => t.id === overId);
+      } else {
+        targetIndex = tasks.findIndex((t: ScheduledTask) => t.id === activeId);
+      }
+    }
+    
+    console.log('Final values:', { sourceQueue, targetQueueKey, targetIndex, activeId });
+
+    if (sourceQueue && sourceQueue !== targetQueueKey) {
+      const targetQueueLevel = parseInt(targetQueueKey.replace('q', ''));
       try {
         await moveTaskMutation.mutateAsync({ taskId: activeId, targetQueue: targetQueueLevel });
         addMessage({ type: 'success', content: `任务已移动到 Q${targetQueueLevel}` });
@@ -260,18 +291,13 @@ export const Scheduler: React.FC = () => {
         const details = err.details?.map((d: any) => `${d.field}: ${d.message}`).join(', ');
         addMessage({ type: 'error', content: details || err.message || '移动任务失败' });
       }
-    } else if (sourceQueue === overQueueKey && activeId !== overId) {
-      const tasks = displayQueues[overQueueKey as keyof QueueData] as ScheduledTask[];
+    } else if (sourceQueue === targetQueueKey && targetIndex !== -1) {
       const oldIndex = tasks.findIndex((t: ScheduledTask) => t.id === activeId);
-      const overIndex = tasks.findIndex((t: ScheduledTask) => t.id === overId);
       
-      console.log('Reorder:', { sourceQueue, overQueueKey, activeId, overId, oldIndex, overIndex, tasksLength: tasks.length });
-      
-      if (oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex) {
-        const newOrder = arrayMove(tasks, oldIndex, overIndex);
+      if (oldIndex !== -1 && oldIndex !== targetIndex) {
+        const newOrder = arrayMove(tasks, oldIndex, targetIndex);
         const taskIds = newOrder.map((t: ScheduledTask) => t.id);
-        const queueLevel = parseInt(overQueueKey!.replace('q', ''));
-        console.log('Sending reorder API:', { queueLevel, taskIds });
+        const queueLevel = parseInt(targetQueueKey.replace('q', ''));
         try {
           await reorderMutation.mutateAsync({ queueLevel, taskIds });
           addMessage({ type: 'success', content: '任务顺序已更新' });

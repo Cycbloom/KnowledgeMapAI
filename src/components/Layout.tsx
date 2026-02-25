@@ -150,14 +150,6 @@ export const Layout = () => {
   return (
     <div className={`flex h-screen flex-col ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-gray-50 text-gray-900'}`}>
       
-      {/* Mobile Header */}
-      <div className={`md:hidden p-4 flex justify-between items-center z-20 shadow-md ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-900 text-white'}`}>
-        <span className="font-bold text-lg">知识图谱</span>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Mobile Overlay */}
         {isMobileMenuOpen && (
@@ -219,21 +211,27 @@ export const Layout = () => {
           
           {/* Top Header */}
           {!isFullScreenPage && (
-            <header className={`h-12 px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${
+            <header className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${
               isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
             }`}>
-              {/* Left: Breadcrumb */}
-              <div className="flex-shrink-0">
+              {/* Left: Mobile Menu Button and Breadcrumb */}
+              <div className="flex-shrink-0 flex items-center gap-2">
+                <button 
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                  className="md:hidden p-1.5 -ml-1"
+                >
+                  {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                </button>
                 <Breadcrumb />
               </div>
               
-              {/* Center: Greeting & Stats - 绝对定位居中 */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              {/* Center: Greeting & Stats - 绝对定位居中，移动端隐藏 */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
                 <HeaderGreeting />
               </div>
               
               {/* Right: Status & User */}
-              <div className="flex items-center gap-4 flex-shrink-0">
+              <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
                  <SSEStatusIndicator />
                  <button 
                    onClick={toggleTheme}
@@ -254,7 +252,7 @@ export const Layout = () => {
                    <HelpCircle size={18} />
                  </button>
                  {user && (
-                   <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full border transition-colors ${
+                   <div className={`hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full border transition-colors ${
                      isDark ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'
                    }`}>
                       <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${

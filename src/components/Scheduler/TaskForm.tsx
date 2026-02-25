@@ -34,6 +34,47 @@ const COMMON_TAGS = [
   '学习', '工作', '阅读', '写作', '编程', '复习', '项目', '会议', '运动', '休息'
 ];
 
+const TASK_DRAFT_KEY = 'task_form_draft';
+
+interface TaskDraft {
+  title: string;
+  description: string;
+  estimatedDuration: number;
+  deadline: string;
+  tags: string[];
+  knowledgePointId: string;
+  priority: number;
+  queueLevel: number;
+}
+
+const loadDraft = (): TaskDraft | null => {
+  try {
+    const saved = localStorage.getItem(TASK_DRAFT_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load draft:', e);
+  }
+  return null;
+};
+
+const saveDraft = (draft: TaskDraft) => {
+  try {
+    localStorage.setItem(TASK_DRAFT_KEY, JSON.stringify(draft));
+  } catch (e) {
+    console.error('Failed to save draft:', e);
+  }
+};
+
+const clearDraft = () => {
+  try {
+    localStorage.removeItem(TASK_DRAFT_KEY);
+  } catch (e) {
+    console.error('Failed to clear draft:', e);
+  }
+};
+
 export const TaskForm: React.FC<TaskFormProps> = ({
   task,
   onSubmit,
@@ -41,21 +82,52 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   knowledgePoints = [],
   defaultQueueLevel = 2,
 }) => {
-  const [title, setTitle] = useState(task?.title || '');
-  const [description, setDescription] = useState(task?.description || '');
-  const [estimatedDuration, setEstimatedDuration] = useState(task?.estimated_duration || 25);
-  const [deadline, setDeadline] = useState(task?.deadline ? task.deadline.slice(0, 16) : '');
-  const [tags, setTags] = useState<string[]>(task?.tags || []);
+  const isEditing = !!task;
+  
+  const getInitialState = () => {
+    if (isEditing) {
+      return {
+        title: task?.title || '',
+        description: task?.description || '',
+        estimatedDuration: task?.estimated_duration || 25,
+        deadline: task?.deadline ? task.deadline.slice(0, 16) : '',
+        tags: task?.tags || [],
+        knowledgePointId: task?.knowledge_point_id || '',
+        priority: task?.priority || 2,
+        queueLevel: task?.queue_level ?? defaultQueueLevel,
+      };
+    }
+    const draft = loadDraft();
+    if (draft) {
+      return draft;
+    }
+    return {
+      title: '',
+      description: '',
+      estimatedDuration: 25,
+      deadline: '',
+      tags: [],
+      knowledgePointId: '',
+      priority: 2,
+      queueLevel: defaultQueueLevel,
+    };
+  };
+
+  const initialState = getInitialState();
+  
+  const [title, setTitle] = useState(initialState.title);
+  const [description, setDescription] = useState(initialState.description);
+  const [estimatedDuration, setEstimatedDuration] = useState(initialState.estimatedDuration);
+  const [deadline, setDeadline] = useState(initialState.deadline);
+  const [tags, setTags] = useState<string[]>(initialState.tags);
   const [customTag, setCustomTag] = useState('');
-  const [knowledgePointId, setKnowledgePointId] = useState(task?.knowledge_point_id || '');
-  const [priority, setPriority] = useState(task?.priority || 2);
-  const [queueLevel, setQueueLevel] = useState(task?.queue_level ?? defaultQueueLevel);
+  const [knowledgePointId, setKnowledgePointId] = useState(initialState.knowledgePointId);
+  const [priority, setPriority] = useState(initialState.priority);
+  const [queueLevel, setQueueLevel] = useState(initialState.queueLevel);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [prioritySuggestion, setPrioritySuggestion] = useState<PrioritySuggestion | null>(null);
   const [showPrioritySuggestion, setShowPrioritySuggestion] = useState(false);
-
-  const isEditing = !!task;
 
   const analyzePriority = useCallback(async (titleText: string, descriptionText?: string) => {
     if (!titleText.trim() || isEditing) return;
@@ -81,6 +153,21 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     return () => clearTimeout(timer);
   }, [title, description, analyzePriority]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      saveDraft({
+        title,
+        description,
+        estimatedDuration,
+        deadline,
+        tags,
+        knowledgePointId,
+        priority,
+        queueLevel,
+      });
+    }
+  }, [title, description, estimatedDuration, deadline, tags, knowledgePointId, priority, queueLevel, isEditing]);
 
   const applyPrioritySuggestion = () => {
     if (prioritySuggestion) {
@@ -150,6 +237,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
+    if (!isEditing) {
+      clearDraft();
+    }
+
     onSubmit({
       title: title.trim(),
       description: description.trim() || undefined,
@@ -160,6 +251,34 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       priority,
       queue_level: queueLevel,
     });
+  };
+
+  const handleCancel = () => {
+    if (!isEditing) {
+      clearDraft();
+    }
+    onCancel();
+  };
+
+  const handleReset = () => {
+    if (!isEditing) {
+      clearDraft();
+      setTitle('');
+      setDescription('');
+      setEstimatedDuration(25);
+      setDeadline('');
+      setTags([]);
+      setKnowledgePointId('');
+      setPriority(2);
+      setQueueLevel(defaultQueueLevel);
+      setErrors({});
+      setPrioritySuggestion(null);
+      setShowPrioritySuggestion(false);
+    }
+  };
+
+  const handleClose = () => {
+    onCancel();
   };
 
   const addTag = (tag: string) => {
@@ -186,7 +305,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm p-4"
-      onClick={onCancel}
+      onClick={handleClose}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
@@ -200,7 +319,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             {isEditing ? '编辑任务' : '创建新任务'}
           </h2>
           <button
-            onClick={onCancel}
+            onClick={handleClose}
             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <X size={20} />
@@ -484,9 +603,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         </form>
 
         <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+            >
+              重置
+            </button>
+          )}
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
           >
             取消

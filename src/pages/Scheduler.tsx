@@ -1,5 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+  Over,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import { 
   Plus, 
   RefreshCw, 
@@ -25,6 +42,7 @@ import {
 } from '../hooks/useQueries';
 import { useMessageStore } from '../store/useMessageStore';
 import { QueueColumn } from '../components/Scheduler/QueueColumn';
+import { TaskCard } from '../components/Scheduler/TaskCard';
 import { TaskForm } from '../components/Scheduler/TaskForm';
 import { ScheduledTask, CreateScheduledTaskData, QueueData } from '../services/api/scheduler';
 
@@ -42,6 +60,10 @@ export const Scheduler: React.FC = () => {
   const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
   const [showSettings, setShowSettings] = useState(false);
+  const [activeTask, setActiveTask] = useState<ScheduledTask | null>(null);
+  const [localQueues, setLocalQueues] = useState<QueueData | null>(null);
+  
+  const initialQueueRef = useRef<string | null>(null);
 
   const { data: queuesData, isLoading, error, refetch, isFetching } = useQueues();
   const { data: settings } = useTaskSettings();
@@ -55,14 +77,28 @@ export const Scheduler: React.FC = () => {
   const pauseTaskMutation = usePauseTaskMutation();
   const completeTaskMutation = useCompleteTaskMutation();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const queues = useMemo(() => {
     if (!queuesData || typeof queuesData !== 'object') return QueueDataDefault;
+    const actualData = (queuesData as any).data || queuesData;
     return {
-      q0: Array.isArray((queuesData as QueueData).q0) ? (queuesData as QueueData).q0 : [],
-      q1: Array.isArray((queuesData as QueueData).q1) ? (queuesData as QueueData).q1 : [],
-      q2: Array.isArray((queuesData as QueueData).q2) ? (queuesData as QueueData).q2 : [],
+      q0: Array.isArray(actualData.q0) ? actualData.q0 : [],
+      q1: Array.isArray(actualData.q1) ? actualData.q1 : [],
+      q2: Array.isArray(actualData.q2) ? actualData.q2 : [],
     };
   }, [queuesData]);
+
+  const displayQueues = localQueues || queues;
 
   const timeSlices = useMemo(() => ({
     q0: settings?.q0_time_slice || DEFAULT_TIME_SLICES.q0,
@@ -71,13 +107,135 @@ export const Scheduler: React.FC = () => {
   }), [settings]);
 
   const stats = useMemo(() => {
-    const allTasks = [...queues.q0, ...queues.q1, ...queues.q2];
+    const allTasks = [...displayQueues.q0, ...displayQueues.q1, ...displayQueues.q2];
     const pending = allTasks.filter(t => t.status === 'pending').length;
     const inProgress = allTasks.filter(t => t.status === 'in_progress').length;
     const completed = allTasks.filter(t => t.status === 'completed').length;
     const totalEstimated = allTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
     return { total: allTasks.length, pending, inProgress, completed, totalEstimated };
-  }, [queues]);
+  }, [displayQueues]);
+
+  const findTaskById = (id: string, searchQueues: QueueData): { task: ScheduledTask; queueKey: string } | null => {
+    for (const key of ['q0', 'q1', 'q2'] as const) {
+      const task = searchQueues[key].find(t => t.id === id);
+      if (task) {
+        return { task, queueKey: key };
+      }
+    }
+    return null;
+  };
+
+  const getQueueKeyFromOver = (over: Over, searchQueues: QueueData): { queueKey: string; index: number } | null => {
+    const overId = over.id as string;
+    
+    if (overId.startsWith('queue-')) {
+      return { queueKey: overId.replace('queue-', 'q'), index: -1 };
+    }
+    
+    for (const key of ['q0', 'q1', 'q2'] as const) {
+      const index = searchQueues[key].findIndex(t => t.id === overId);
+      if (index !== -1) {
+        return { queueKey: key, index };
+      }
+    }
+    return null;
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const result = findTaskById(active.id as string, queues);
+    if (result) {
+      setActiveTask(result.task);
+      initialQueueRef.current = result.queueKey;
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const activeQueueKey = initialQueueRef.current;
+    if (!activeQueueKey) return;
+
+    const overResult = getQueueKeyFromOver(over, displayQueues);
+    if (!overResult) return;
+
+    const { queueKey: overQueueKey } = overResult;
+
+    if (activeQueueKey === overQueueKey) return;
+
+    const newQueues = { ...displayQueues };
+    const sourceTasks = [...newQueues[activeQueueKey as keyof QueueData]];
+    const destTasks = [...newQueues[overQueueKey as keyof QueueData]];
+    
+    const taskIndex = sourceTasks.findIndex(t => t.id === activeId);
+    if (taskIndex === -1) return;
+    
+    const [movedTask] = sourceTasks.splice(taskIndex, 1);
+    const updatedTask = { ...movedTask, queue_level: parseInt(overQueueKey.replace('q', '')) };
+    
+    destTasks.push(updatedTask);
+    
+    newQueues[activeQueueKey as keyof QueueData] = sourceTasks;
+    newQueues[overQueueKey as keyof QueueData] = destTasks;
+    
+    setLocalQueues(newQueues);
+    initialQueueRef.current = overQueueKey;
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    const originalQueue = initialQueueRef.current;
+    
+    setActiveTask(null);
+    initialQueueRef.current = null;
+
+    if (!over) {
+      setLocalQueues(null);
+      return;
+    }
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    if (activeId === overId) {
+      setLocalQueues(null);
+      return;
+    }
+
+    const overResult = getQueueKeyFromOver(over, queues);
+    if (!overResult) {
+      setLocalQueues(null);
+      return;
+    }
+
+    const { queueKey: overQueueKey, index: overIndex } = overResult;
+    const targetQueue = parseInt(overQueueKey.replace('q', ''));
+
+    if (originalQueue && originalQueue !== overQueueKey) {
+      try {
+        await moveTaskMutation.mutateAsync({ taskId: activeId, targetQueue });
+        addMessage({ type: 'success', content: `任务已移动到 Q${targetQueue}` });
+      } catch (err: any) {
+        addMessage({ type: 'error', content: err.message || '移动任务失败' });
+      }
+    } else if (originalQueue === overQueueKey && overIndex !== -1) {
+      const tasks = queues[overQueueKey as keyof QueueData] as ScheduledTask[];
+      const oldIndex = tasks.findIndex((t: ScheduledTask) => t.id === activeId);
+      if (oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex) {
+        const newOrder = arrayMove(tasks, oldIndex, overIndex);
+        const taskIds = newOrder.map((t: ScheduledTask) => t.id);
+        try {
+          await reorderMutation.mutateAsync({ queueLevel: targetQueue, taskIds });
+        } catch (err: any) {
+          addMessage({ type: 'error', content: err.message || '排序失败' });
+        }
+      }
+    }
+
+    setLocalQueues(null);
+  };
 
   const handleCreateTask = async (data: CreateScheduledTaskData) => {
     try {
@@ -229,7 +387,7 @@ export const Scheduler: React.FC = () => {
                   className={`p-2.5 rounded-xl border transition-all ${
                     showSettings 
                       ? 'bg-cyan-100 dark:bg-cyan-500/20 border-cyan-300 dark:border-cyan-500/50 text-cyan-600 dark:text-cyan-400' 
-                      : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600'
+                      : 'bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600'
                   }`}
                 >
                   <Settings size={18} />
@@ -286,50 +444,66 @@ export const Scheduler: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="h-full flex gap-6 overflow-x-auto pb-4 custom-scrollbar">
-              <QueueColumn
-                level={0}
-                title="紧急队列"
-                timeSlice={timeSlices.q0}
-                tasks={queues.q0}
-                onTaskMove={handleMoveTask}
-                onReorder={handleReorder(0)}
-                onEditTask={openEditTaskForm}
-                onDeleteTask={handleDeleteTask}
-                onStartTask={handleStartTask}
-                onPauseTask={handlePauseTask}
-                onCompleteTask={handleCompleteTask}
-                onAddTask={() => openAddTaskForm(0)}
-              />
-              <QueueColumn
-                level={1}
-                title="重要队列"
-                timeSlice={timeSlices.q1}
-                tasks={queues.q1}
-                onTaskMove={handleMoveTask}
-                onReorder={handleReorder(1)}
-                onEditTask={openEditTaskForm}
-                onDeleteTask={handleDeleteTask}
-                onStartTask={handleStartTask}
-                onPauseTask={handlePauseTask}
-                onCompleteTask={handleCompleteTask}
-                onAddTask={() => openAddTaskForm(1)}
-              />
-              <QueueColumn
-                level={2}
-                title="待办队列"
-                timeSlice={timeSlices.q2}
-                tasks={queues.q2}
-                onTaskMove={handleMoveTask}
-                onReorder={handleReorder(2)}
-                onEditTask={openEditTaskForm}
-                onDeleteTask={handleDeleteTask}
-                onStartTask={handleStartTask}
-                onPauseTask={handlePauseTask}
-                onCompleteTask={handleCompleteTask}
-                onAddTask={() => openAddTaskForm(2)}
-              />
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="h-full flex gap-6 overflow-x-auto pb-4 custom-scrollbar">
+                <QueueColumn
+                    level={0}
+                    title="紧急队列"
+                    timeSlice={timeSlices.q0}
+                    tasks={displayQueues.q0}
+                    onTaskMove={handleMoveTask}
+                    onReorder={handleReorder(0)}
+                    onEditTask={openEditTaskForm}
+                    onDeleteTask={handleDeleteTask}
+                    onStartTask={handleStartTask}
+                    onPauseTask={handlePauseTask}
+                    onCompleteTask={handleCompleteTask}
+                    onAddTask={() => openAddTaskForm(0)}
+                  />
+                  <QueueColumn
+                    level={1}
+                    title="重要队列"
+                    timeSlice={timeSlices.q1}
+                    tasks={displayQueues.q1}
+                    onTaskMove={handleMoveTask}
+                    onReorder={handleReorder(1)}
+                    onEditTask={openEditTaskForm}
+                    onDeleteTask={handleDeleteTask}
+                    onStartTask={handleStartTask}
+                    onPauseTask={handlePauseTask}
+                    onCompleteTask={handleCompleteTask}
+                    onAddTask={() => openAddTaskForm(1)}
+                  />
+                  <QueueColumn
+                    level={2}
+                    title="待办队列"
+                    timeSlice={timeSlices.q2}
+                    tasks={displayQueues.q2}
+                    onTaskMove={handleMoveTask}
+                    onReorder={handleReorder(2)}
+                    onEditTask={openEditTaskForm}
+                    onDeleteTask={handleDeleteTask}
+                    onStartTask={handleStartTask}
+                    onPauseTask={handlePauseTask}
+                    onCompleteTask={handleCompleteTask}
+                    onAddTask={() => openAddTaskForm(2)}
+                  />
+                </div>
+
+              <DragOverlay>
+                {activeTask ? (
+                  <div className="opacity-90">
+                    <TaskCard task={activeTask} />
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
           )}
         </main>
 

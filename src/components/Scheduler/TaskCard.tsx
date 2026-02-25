@@ -1,5 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Clock, Calendar, Tag, Play, Pause, Check, Edit2, Trash2, GripVertical } from 'lucide-react';
 import { ScheduledTask } from '../../services/api/scheduler';
 
@@ -10,7 +12,6 @@ interface TaskCardProps {
   onStart?: () => void;
   onPause?: () => void;
   onComplete?: () => void;
-  isDragging?: boolean;
 }
 
 const QUEUE_COLORS = {
@@ -52,10 +53,30 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onStart,
   onPause,
   onComplete,
-  isDragging = false,
 }) => {
   const queueStyle = QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: task.id,
+    data: { 
+      taskId: task.id,
+      queueLevel: task.queue_level,
+    },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const formatDuration = (minutes?: number) => {
     if (!minutes) return '--';
@@ -83,25 +104,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   return (
     <motion.div
+      ref={setNodeRef}
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
+      style={style}
       className={`
         group relative p-4 rounded-xl border transition-all duration-300
-        ${isDragging ? 'scale-105 shadow-2xl' : 'hover:shadow-lg'}
+        ${isDragging ? 'scale-105 shadow-2xl z-50' : 'hover:shadow-lg'}
         ${queueStyle.border} ${queueStyle.glow}
         bg-white dark:bg-slate-900/80 backdrop-blur-sm
-        ${isDragging ? 'shadow-xl' : 'hover:shadow-lg'}
       `}
-      style={{
-        boxShadow: isDragging 
-          ? `0 0 20px ${task.queue_level === 0 ? 'rgba(34, 211, 238, 0.3)' : task.queue_level === 1 ? 'rgba(52, 211, 153, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`
-          : undefined,
-      }}
     >
       <div className="flex items-start gap-3">
-        <div className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${queueStyle.text} opacity-50 hover:opacity-100 transition-opacity`}>
+        <div 
+          {...attributes}
+          {...listeners}
+          className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${queueStyle.text} opacity-50 hover:opacity-100 transition-opacity`}
+        >
           <GripVertical size={16} />
         </div>
 

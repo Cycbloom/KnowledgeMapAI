@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Clock, Plus, ChevronDown, ChevronUp, Zap, Target, ListTodo } from 'lucide-react';
 import { ScheduledTask } from '../../services/api/scheduler';
 import { TaskCard } from './TaskCard';
@@ -30,6 +32,7 @@ const QUEUE_CONFIG = {
     accentColor: 'text-cyan-600 dark:text-cyan-400',
     badgeBg: 'bg-cyan-100 dark:bg-cyan-500/20',
     description: '紧急重要任务',
+    ringColor: 'ring-cyan-400',
   },
   1: {
     icon: Target,
@@ -40,6 +43,7 @@ const QUEUE_CONFIG = {
     accentColor: 'text-emerald-600 dark:text-emerald-400',
     badgeBg: 'bg-emerald-100 dark:bg-emerald-500/20',
     description: '重要任务',
+    ringColor: 'ring-emerald-400',
   },
   2: {
     icon: ListTodo,
@@ -50,6 +54,7 @@ const QUEUE_CONFIG = {
     accentColor: 'text-amber-600 dark:text-amber-400',
     badgeBg: 'bg-amber-100 dark:bg-amber-500/20',
     description: '待办任务',
+    ringColor: 'ring-amber-400',
   },
 };
 
@@ -59,8 +64,8 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
   timeSlice,
   tasks,
   onTaskClick: _onTaskClick,
-  onTaskMove,
-  onReorder,
+  onTaskMove: _onTaskMove,
+  onReorder: _onReorder,
   onEditTask,
   onDeleteTask,
   onStartTask,
@@ -69,35 +74,16 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
   onAddTask,
 }) => {
   void _onTaskClick;
+  void _onTaskMove;
+  void _onReorder;
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [draggedOver, setDraggedOver] = useState(false);
   const config = QUEUE_CONFIG[level as keyof typeof QUEUE_CONFIG] || QUEUE_CONFIG[2];
   const IconComponent = config.icon;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDraggedOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setDraggedOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDraggedOver(false);
-    const taskId = e.dataTransfer.getData('taskId');
-    const sourceQueue = e.dataTransfer.getData('sourceQueue');
-    if (taskId && sourceQueue && onTaskMove && parseInt(sourceQueue) !== level) {
-      onTaskMove(taskId, level);
-    }
-  };
-
-  const handleReorder = (newOrder: ScheduledTask[]) => {
-    if (onReorder) {
-      onReorder(newOrder.map(t => t.id));
-    }
-  };
+  const { setNodeRef, isOver } = useDroppable({
+    id: `queue-${level}`,
+    data: { queueLevel: level },
+  });
 
   const formatTimeSlice = (minutes: number) => {
     if (minutes < 60) return `${minutes}分钟`;
@@ -110,23 +96,23 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
   const pendingTasks = tasks.filter(t => t.status === 'pending');
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
 
+  const taskIds = tasks.map(t => t.id);
+
   return (
     <div
+      ref={setNodeRef}
       className={`
         flex flex-col rounded-2xl border transition-all duration-300
         ${config.border} ${config.glow}
-        ${draggedOver ? 'ring-2 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}
+        ${isOver ? `ring-2 ${config.ringColor} ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900` : ''}
         bg-white/90 dark:bg-slate-900/60 backdrop-blur-sm
         min-w-[320px] max-w-[380px]
       `}
       style={{
-        boxShadow: draggedOver 
+        boxShadow: isOver 
           ? `0 0 30px ${level === 0 ? 'rgba(34, 211, 238, 0.3)' : level === 1 ? 'rgba(52, 211, 153, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`
           : undefined,
       }}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
     >
       <div className={`${config.headerBg} rounded-t-2xl p-4 border-b ${config.border}`}>
         <div className="flex items-center justify-between">
@@ -200,36 +186,24 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                   )}
                 </div>
               ) : (
-                <Reorder.Group
-                  axis="y"
-                  values={tasks}
-                  onReorder={handleReorder}
-                  className="space-y-3"
+                <SortableContext
+                  items={taskIds}
+                  strategy={verticalListSortingStrategy}
                 >
                   <AnimatePresence>
                     {tasks.map((task) => (
-                      <Reorder.Item
+                      <TaskCard
                         key={task.id}
-                        value={task}
-                        className="cursor-grab active:cursor-grabbing"
-                        onDragStart={(e) => {
-                          const target = e.target as HTMLElement;
-                          target.setAttribute('data-task-id', task.id);
-                          target.setAttribute('data-source-queue', level.toString());
-                        }}
-                      >
-                        <TaskCard
-                          task={task}
-                          onEdit={onEditTask ? () => onEditTask(task) : undefined}
-                          onDelete={onDeleteTask ? () => onDeleteTask(task) : undefined}
-                          onStart={onStartTask ? () => onStartTask(task) : undefined}
-                          onPause={onPauseTask ? () => onPauseTask(task) : undefined}
-                          onComplete={onCompleteTask ? () => onCompleteTask(task) : undefined}
-                        />
-                      </Reorder.Item>
+                        task={task}
+                        onEdit={onEditTask ? () => onEditTask(task) : undefined}
+                        onDelete={onDeleteTask ? () => onDeleteTask(task) : undefined}
+                        onStart={onStartTask ? () => onStartTask(task) : undefined}
+                        onPause={onPauseTask ? () => onPauseTask(task) : undefined}
+                        onComplete={onCompleteTask ? () => onCompleteTask(task) : undefined}
+                      />
                     ))}
                   </AnimatePresence>
-                </Reorder.Group>
+                </SortableContext>
               )}
             </div>
 

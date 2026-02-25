@@ -17,6 +17,7 @@ import { useGraphEffects } from '../hooks/useGraphEffects';
 
 import { useTheme } from '../hooks/useTheme';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { MobileNodeActionMenu } from '../components/GraphEditor/MobileNodeActionMenu';
 import { useGraph, 
   useGraphData, 
   useGraphNodeStatus, 
@@ -68,8 +69,12 @@ export const GraphEditor = () => {
   const { token } = useStore();
   const { addMessage } = useMessageStore();
   const { isDark, toggleTheme } = useTheme();
-  const isMobile = useIsMobile();
+  const { isMobile } = useIsMobile();
   const queryClient = useQueryClient();
+  
+  const [mobileActionMenuOpen, setMobileActionMenuOpen] = useState(false);
+  const [mobileActionNodeId, setMobileActionNodeId] = useState<string | null>(null);
+  const [isMobilePreviewMode, setIsMobilePreviewMode] = useState(true);
   
   const [isStyleSettingsOpen, setIsStyleSettingsOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, nodeId: string } | null>(null);
@@ -415,12 +420,18 @@ export const GraphEditor = () => {
     
     setSelectedNode(node);
     setSelectedNodeIds(new Set([node.id]));
-    setSidebarMode('detail');
     setFocusedNodeId(node.id);
     setFocusedNodeIds(focusedNodes);
     setFocusedLinkIds(focusedLinks);
     state.setForceShowTextIds(new Set([node.id, ...directChildren]));
-  }, [setSelectedNode, setSelectedNodeIds, setSidebarMode, nodes, edges, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state]);
+    
+    if (isMobile && isMobilePreviewMode) {
+      // 预览模式：不打开侧边栏，只选中节点
+    } else {
+      // 侧边栏模式：打开详情侧边栏
+      setSidebarMode('detail');
+    }
+  }, [setSelectedNode, setSelectedNodeIds, setSidebarMode, nodes, edges, setFocusedNodeId, setFocusedNodeIds, setFocusedLinkIds, state, isMobile, isMobilePreviewMode]);
 
   const handleGetBranchSuggestions = useCallback(async () => {
     if (!selectedNode || !id) return;
@@ -443,6 +454,11 @@ export const GraphEditor = () => {
   const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: any) => {
     event.preventDefault();
     setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+  }, []);
+
+  const handleNodeLongPress = useCallback((node: GraphNode) => {
+    setMobileActionNodeId(node.id);
+    setMobileActionMenuOpen(true);
   }, []);
 
   const handleExecuteAction = async (action: AIAction, nodeId: string) => {
@@ -500,7 +516,7 @@ export const GraphEditor = () => {
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden ${isDark ? 'dark' : ''}`}>
       {/* Main Canvas Area */}
-      <div className={`flex-1 h-full relative ${isDeleteMode ? 'cursor-not-allowed' : ''}`}>
+      <div className={`flex-1 h-full relative ${isDeleteMode ? 'cursor-not-allowed' : ''} ${isMobile ? 'pb-14' : ''}`}>
         {isGraphLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-sm">
              <div className="text-center">
@@ -526,7 +542,7 @@ export const GraphEditor = () => {
           />
         )}
         
-        <div className="h-full w-full bg-white relative">
+        <div className="h-full w-full bg-white dark:bg-slate-900 relative">
           {viewMode === 'mindmap' && (
             <MindMapCanvas
                 ref={graphRef}
@@ -611,6 +627,9 @@ export const GraphEditor = () => {
                   console.error('Failed to update node status:', err);
                 }
               }}
+              onNodeLongPress={isMobile ? handleNodeLongPress : undefined}
+              isMobilePreviewMode={isMobile && isMobilePreviewMode}
+              onOpenDetail={() => setSidebarMode('detail')}
             />
           )}
           {viewMode === 'timeline' && (
@@ -841,6 +860,8 @@ export const GraphEditor = () => {
           }
         }}
         onTogglePodcast={() => state.setIsPodcastModalOpen(true)}
+        isMobilePreviewMode={isMobilePreviewMode}
+        setIsMobilePreviewMode={setIsMobilePreviewMode}
         isRAGChatOpen={isRAGChatOpen}
         ragChatWidth={ragChatWidth}
       />
@@ -1109,7 +1130,60 @@ export const GraphEditor = () => {
         onTutorChat={tutorOps.handleTutorChat}
         width={ragChatWidth}
         onWidthChange={setRagChatWidth}
+        isMobilePreviewMode={isMobile && isMobilePreviewMode && !!selectedNode}
       />
+
+      {isMobile && (
+        <MobileNodeActionMenu
+          isOpen={mobileActionMenuOpen}
+          onClose={() => {
+            setMobileActionMenuOpen(false);
+            setMobileActionNodeId(null);
+          }}
+          nodeId={mobileActionNodeId}
+          nodeTitle={nodes.find(n => n.id === mobileActionNodeId)?.title}
+          onEdit={() => {
+            const node = nodes.find(n => n.id === mobileActionNodeId);
+            if (node) {
+              setSelectedNode(node);
+              setSidebarMode('edit');
+            }
+          }}
+          onAIExpand={() => {
+            const node = nodes.find(n => n.id === mobileActionNodeId);
+            if (node) {
+              setSelectedNode(node);
+              aiOps.handleAIExpand();
+            }
+          }}
+          onGenerateContent={() => {
+            const node = nodes.find(n => n.id === mobileActionNodeId);
+            if (node) {
+              setSelectedNode(node);
+              state.setIsTextToGraphOpen(true);
+            }
+          }}
+          onGenerateCards={() => {
+            const node = nodes.find(n => n.id === mobileActionNodeId);
+            if (node) {
+              setSelectedNode(node);
+            }
+          }}
+          onStartLearning={() => {
+            const node = nodes.find(n => n.id === mobileActionNodeId);
+            if (node) {
+              setSelectedNode(node);
+              tutorOps.handleToggleTutorMode();
+            }
+          }}
+          onDelete={() => {
+            const node = nodes.find(n => n.id === mobileActionNodeId);
+            if (node) {
+              nodeOps.handleDeleteNode(node);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

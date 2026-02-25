@@ -128,12 +128,21 @@ export const CombinedNodeDetailSidebar: React.FC<CombinedNodeDetailSidebarProps>
           )}
         </section>
 
-        <section className="prose prose-sm max-w-none text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+        <section className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
           <ReactMarkdown 
             remarkPlugins={[remarkGfm, remarkMath]} 
             rehypePlugins={[rehypeKatex]}
             urlTransform={(url) => url}
             components={{
+              h1: ({children}) => <h1 className="text-gray-900 dark:text-gray-100">{children}</h1>,
+              h2: ({children}) => <h2 className="text-gray-900 dark:text-gray-100">{children}</h2>,
+              h3: ({children}) => <h3 className="text-gray-900 dark:text-gray-100">{children}</h3>,
+              h4: ({children}) => <h4 className="text-gray-900 dark:text-gray-100">{children}</h4>,
+              h5: ({children}) => <h5 className="text-gray-900 dark:text-gray-100">{children}</h5>,
+              h6: ({children}) => <h6 className="text-gray-900 dark:text-gray-100">{children}</h6>,
+              p: ({children}) => <p className="text-gray-600 dark:text-gray-300">{children}</p>,
+              li: ({children}) => <li className="text-gray-600 dark:text-gray-300">{children}</li>,
+              blockquote: ({children}) => <blockquote className="text-gray-600 dark:text-gray-300 border-l-gray-300 dark:border-l-gray-600">{children}</blockquote>,
               code(props) {
                 const {children, className, node} = props
                 const match = /language-(\w+)/.exec(className || '')
@@ -151,7 +160,7 @@ export const CombinedNodeDetailSidebar: React.FC<CombinedNodeDetailSidebarProps>
                     const explanation = cleanHref.substring(5);
                     return <TermTooltip term={String(children)} explanation={explanation} />;
                 }
-                return <a {...props} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" />;
+                return <a {...props} className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" />;
               }
             }}
           >

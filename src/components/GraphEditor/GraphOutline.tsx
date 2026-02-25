@@ -380,12 +380,18 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
           <div 
             className="w-2 h-2 rounded-full shrink-0"
-            style={{ backgroundColor: getLevelColors(node.level || 'leaf').background }}
+            style={{ backgroundColor: getLevelColors(node.level || 'leaf').primary }}
           />
           <span className="truncate flex-1 font-medium">
             {node.title || '未命名节点'}
           </span>
-          <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded uppercase">
+          <span 
+            className="text-[10px] px-1 py-0.5 rounded uppercase"
+            style={{ 
+              backgroundColor: getLevelColors(level).background,
+              color: getLevelColors(level).text
+            }}
+          >
             {level}
           </span>
         </div>
@@ -485,7 +491,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
           <div 
             className="w-2 h-2 rounded-full shrink-0 mr-2"
-            style={{ backgroundColor: getLevelColors(node.level || 'leaf').background }}
+            style={{ backgroundColor: getLevelColors(node.level || 'leaf').primary }}
           />
           
           <span className="truncate flex-1 font-medium">
@@ -493,8 +499,17 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           </span>
           
           {node.level && (
-            <span className={`text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block
-               ${selectedNodeId === node.id ? 'bg-blue-100 dark:bg-blue-800 text-blue-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+            <span 
+              className="text-[10px] uppercase ml-2 px-1 rounded hidden group-hover:inline-block"
+              style={{ 
+                backgroundColor: selectedNodeId === node.id 
+                  ? getLevelColors(node.level).primary 
+                  : getLevelColors(node.level).background,
+                color: selectedNodeId === node.id 
+                  ? '#ffffff' 
+                  : getLevelColors(node.level).text
+              }}
+            >
               {node.level}
             </span>
           )}
@@ -758,7 +773,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                 ))
              )}
              {nodes.length === 0 && (
-               <div className="text-center py-8 text-slate-500 text-sm">
+               <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
                  暂无节点
                </div>
              )}

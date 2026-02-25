@@ -82,7 +82,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
 
   const { setNodeRef, isOver } = useDroppable({
     id: `queue-${level}`,
-    data: { queueLevel: level },
+    data: { queueLevel: level, type: 'queue' },
   });
 
   const formatTimeSlice = (minutes: number) => {
@@ -96,7 +96,8 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
   const pendingTasks = tasks.filter(t => t.status === 'pending');
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
 
-  const taskIds = tasks.map(t => t.id);
+  const visibleTasks = [...inProgressTasks, ...pendingTasks];
+  const taskIds = visibleTasks.map(t => t.id);
 
   return (
     <div
@@ -173,9 +174,12 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
           >
             <div className="p-3 space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar">
               {pendingTasks.length === 0 && inProgressTasks.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 dark:text-slate-500">
+                <div className="text-center py-8 text-slate-400 dark:text-slate-500 min-h-[100px]">
                   <IconComponent size={32} className="mx-auto mb-2 opacity-40 dark:opacity-30" />
                   <p className="text-sm">暂无任务</p>
+                  {isOver && (
+                    <p className="text-xs mt-2 text-cyan-500 dark:text-cyan-400">释放以放置任务</p>
+                  )}
                   {onAddTask && (
                     <button
                       onClick={onAddTask}
@@ -191,7 +195,7 @@ export const QueueColumn: React.FC<QueueColumnProps> = ({
                   strategy={verticalListSortingStrategy}
                 >
                   <AnimatePresence>
-                    {tasks.map((task) => (
+                    {visibleTasks.map((task) => (
                       <TaskCard
                         key={task.id}
                         task={task}

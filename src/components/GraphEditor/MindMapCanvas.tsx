@@ -22,6 +22,7 @@ import { CanvasLayout } from './CanvasLayout';
 import { MiniMap } from './MiniMap';
 import { LayoutOrganizer } from './LayoutOrganizer';
 import { NodePreviewCard } from './NodePreviewCard';
+import { MobileNodePreviewCard } from './MobileNodePreviewCard';
 import { EdgeContextMenu } from './EdgeContextMenu';
 import { EdgeEditDialog } from './EdgeEditDialog';
 import {
@@ -80,6 +81,9 @@ interface MindMapCanvasProps {
   onNavigateToGraphMap?: () => void;
   onMarkNodeMastered?: (nodeId: string) => void;
   previewDelay?: number;
+  onNodeLongPress?: (node: GraphNode) => void;
+  isMobilePreviewMode?: boolean;
+  onOpenDetail?: () => void;
 }
 
 interface Transform {
@@ -130,7 +134,10 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   leftPanelWidth = 0,
   onNavigateToGraphMap,
   onMarkNodeMastered,
-  previewDelay = 500
+  previewDelay = 500,
+  onNodeLongPress,
+  isMobilePreviewMode = false,
+  onOpenDetail
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -299,7 +306,10 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       const effectiveRightWidth = rightPanelWidth || 0;
       const effectiveLeftWidth = leftPanelWidth || 0;
       const visualCenterX = (effectiveLeftWidth + containerSize.width - effectiveRightWidth) / 2;
-      const visualCenterY = containerSize.height / 2;
+      let visualCenterY = containerSize.height / 2;
+      if (isMobilePreviewMode && selectedNodeId) {
+        visualCenterY -= 140;
+      }
       
       const rootNode = layout.nodes.find(n => n.level === 'root') || layout.nodes[0];
       const targetX = visualCenterX - rootNode.x;
@@ -421,6 +431,16 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  
+  const [touchPressedNodeId, setTouchPressedNodeId] = useState<string | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchStartDistanceRef = useRef<number | null>(null);
+  const touchStartCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartTransformRef = useRef<Transform | null>(null);
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressTriggeredRef = useRef(false);
+  const touchMovedRef = useRef(false);
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
   const [_hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [previewNode, setPreviewNode] = useState<{ node: Node; position: { x: number; y: number } } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -476,6 +496,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       }
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
+      }
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
       }
     };
   }, []);
@@ -620,6 +643,195 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     mouseDownPosRef.current = null;
   }, [isDragging, onCanvasClick]);
 
+  const getTouchDistance = (touches: React.TouchList): number => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getTouchCenter = (touches: React.TouchList): { x: number; y: number } => {
+    if (touches.length < 2) {
+      return { x: touches[0].clientX, y: touches[0].clientY };
+    }
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+  };
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    hasUserInteracted.current = true;
+    const touches = e.touches;
+    
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+    
+    isLongPressTriggeredRef.current = false;
+    touchMovedRef.current = false;
+
+    if (touches.length === 1) {
+      const touch = touches[0];
+      touchStartRef.current = { 
+        x: touch.clientX, 
+        y: touch.clientY, 
+        time: Date.now() 
+      };
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+      touchStartDistanceRef.current = null;
+      touchStartCenterRef.current = null;
+      touchStartTransformRef.current = null;
+      
+      const target = e.target as SVGElement;
+      const nodeElement = target.closest('[data-node-id]');
+      if (nodeElement && onNodeLongPress) {
+        const nodeId = nodeElement.getAttribute('data-node-id');
+        if (nodeId) {
+          setTouchPressedNodeId(nodeId);
+          longPressTimeoutRef.current = setTimeout(() => {
+            if (!touchMovedRef.current && !isLongPressTriggeredRef.current) {
+              isLongPressTriggeredRef.current = true;
+              const node = layout?.nodes.find(n => n.id === nodeId);
+              if (node) {
+                onNodeLongPress(node);
+              }
+            }
+            setTouchPressedNodeId(null);
+          }, 500);
+        }
+      }
+    } else if (touches.length === 2) {
+      setTouchPressedNodeId(null);
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+      
+      touchStartDistanceRef.current = getTouchDistance(touches);
+      touchStartCenterRef.current = getTouchCenter(touches);
+      touchStartTransformRef.current = { ...transformRef.current };
+      
+      setIsDragging(true);
+      setDragStart({
+        x: touches[0].clientX - transformRef.current.x,
+        y: touches[0].clientY - transformRef.current.y
+      });
+    }
+  }, [onNodeLongPress, layout?.nodes]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    const touches = e.touches;
+    
+    if (touches.length === 1 && touchStartRef.current) {
+      const touch = touches[0];
+      const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+      const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+      const moveThreshold = 10;
+      
+      if (dx > moveThreshold || dy > moveThreshold) {
+        touchMovedRef.current = true;
+        setTouchPressedNodeId(null);
+        
+        if (longPressTimeoutRef.current) {
+          clearTimeout(longPressTimeoutRef.current);
+          longPressTimeoutRef.current = null;
+        }
+      }
+      
+      if (touchMovedRef.current || !onNodeLongPress) {
+        const newTransform = {
+          x: touch.clientX - touchStartRef.current.x + transformRef.current.x - (lastTouchRef.current?.x || touchStartRef.current.x - transformRef.current.x),
+          y: touch.clientY - touchStartRef.current.y + transformRef.current.y - (lastTouchRef.current?.y || touchStartRef.current.y - transformRef.current.y),
+          k: transformRef.current.k
+        };
+        
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        scheduleViewportUpdate();
+        updateTransformState(newTransform);
+      }
+      
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+    } else if (touches.length === 2 && 
+               touchStartDistanceRef.current !== null && 
+               touchStartCenterRef.current !== null &&
+               touchStartTransformRef.current !== null) {
+      
+      const currentDistance = getTouchDistance(touches);
+      const currentCenter = getTouchCenter(touches);
+      
+      const scaleRatio = currentDistance / touchStartDistanceRef.current;
+      const newK = Math.max(0.1, Math.min(3, touchStartTransformRef.current.k * scaleRatio));
+      
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const centerX = currentCenter.x - rect.left;
+      const centerY = currentCenter.y - rect.top;
+      
+      const startCenterX = touchStartCenterRef.current.x - rect.left;
+      const startCenterY = touchStartCenterRef.current.y - rect.top;
+      
+      const deltaX = currentCenter.x - touchStartCenterRef.current.x;
+      const deltaY = currentCenter.y - touchStartCenterRef.current.y;
+      
+      const scaleChange = newK / touchStartTransformRef.current.k;
+      
+      const newX = centerX - (startCenterX - touchStartTransformRef.current.x) * scaleChange + deltaX;
+      const newY = centerY - (startCenterY - touchStartTransformRef.current.y) * scaleChange + deltaY;
+      
+      const newTransform = { x: newX, y: newY, k: newK };
+      
+      transformRef.current = newTransform;
+      updateTransformDOM(newTransform);
+      scheduleViewportUpdate();
+      updateTransformState(newTransform);
+    }
+  }, [updateTransformDOM, updateTransformState, scheduleViewportUpdate, onNodeLongPress]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    const touches = e.touches;
+    
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+    
+    setTouchPressedNodeId(null);
+    
+    if (touches.length === 0) {
+      setIsDragging(false);
+      touchStartRef.current = null;
+      touchStartDistanceRef.current = null;
+      touchStartCenterRef.current = null;
+      touchStartTransformRef.current = null;
+      lastTouchRef.current = null;
+      
+      if (!touchMovedRef.current && !isLongPressTriggeredRef.current && onCanvasClick) {
+        onCanvasClick();
+      }
+    } else if (touches.length === 1) {
+      const touch = touches[0];
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now()
+      };
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+      touchStartDistanceRef.current = null;
+      touchStartCenterRef.current = null;
+      touchStartTransformRef.current = null;
+      
+      setDragStart({
+        x: touch.clientX - transformRef.current.x,
+        y: touch.clientY - transformRef.current.y
+      });
+    }
+  }, [onCanvasClick]);
+
   // Calculate visual center based on right panel and left panel state
   const visualCenterX = useMemo(() => {
     // If right panel is open, the visual center shifts left
@@ -627,7 +839,13 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     return (containerSize.width - rightPanelWidth + leftPanelWidth) / 2;
   }, [rightPanelWidth, leftPanelWidth, containerSize.width]);
 
-  const visualCenterY = containerSize.height / 2;
+  const visualCenterY = useMemo(() => {
+    let centerY = containerSize.height / 2;
+    if (isMobilePreviewMode && selectedNodeId) {
+      centerY -= 140;
+    }
+    return centerY;
+  }, [containerSize.height, isMobilePreviewMode, selectedNodeId]);
 
   const handleResetView = useCallback(() => {
     hasUserInteracted.current = true;
@@ -714,12 +932,15 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         ref={svgRef}
         width="100%"
         height="100%"
-        style={{ backgroundColor: colors.background, cursor: isDragging ? 'grabbing' : 'grab' }}
+        style={{ backgroundColor: colors.background, cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         onContextMenu={(e) => e.preventDefault()}
       >
         <g ref={contentRef}>
@@ -807,6 +1028,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
                 isSelectableAsParent={isSelectableAsParent}
                 isExcludedAsParent={isSelectingParent && node.id === currentNodeId}
                 isSelectedAsParent={isSelectedAsParent}
+                isTouchPressed={touchPressedNodeId === node.id}
               />
             );
           })}
@@ -842,7 +1064,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
 
       {/* Controls */}
       <div 
-        className="absolute bottom-4 flex flex-row gap-4 items-end pointer-events-none transition-all duration-300"
+        className={`absolute flex flex-row gap-4 items-end pointer-events-none transition-all duration-300 ${isMobilePreviewMode && selectedNodeId ? 'bottom-72' : 'bottom-4'}`}
         style={{ right: rightPanelWidth > 0 ? rightPanelWidth + 16 : 16 }}
       >
         {showMiniMap && layout && (
@@ -970,11 +1192,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm pointer-events-none">
+      <div className={`absolute left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm pointer-events-none transition-all duration-300 ${isMobilePreviewMode && selectedNodeId ? 'bottom-72' : 'bottom-4'}`}>
         缩放: {Math.round(transform.k * 100)}%
       </div>
 
-      {showPreview && previewNode && (
+      {showPreview && previewNode && !(isMobilePreviewMode && selectedNodeId) && (
         <NodePreviewCard
           node={previewNode.node}
           nodes={nodes}
@@ -998,6 +1220,23 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
             setIsPreviewHovered(false);
             setShowPreview(false);
             setPreviewNode(null);
+          }}
+        />
+      )}
+
+      {isMobilePreviewMode && selectedNodeId && (
+        <MobileNodePreviewCard
+          node={nodes.find(n => n.id === selectedNodeId)!}
+          nodes={nodes}
+          edges={edges}
+          nodeStatus={nodeStatus}
+          onNavigateToNode={(node) => {
+            onNodeClick(node);
+          }}
+          onMarkMastered={onMarkNodeMastered}
+          onOpenDetail={onOpenDetail}
+          onClose={() => {
+            if (onCanvasClick) onCanvasClick();
           }}
         />
       )}

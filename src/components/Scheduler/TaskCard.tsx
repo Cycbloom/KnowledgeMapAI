@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, Calendar, Tag, Play, Pause, Check, Edit2, Trash2, GripVertical } from 'lucide-react';
+import { Clock, Calendar, Tag, Play, Pause, Check, Edit2, Trash2 } from 'lucide-react';
 import { ScheduledTask } from '../../services/api/scheduler';
 
 interface TaskCardProps {
@@ -21,6 +21,7 @@ const QUEUE_COLORS = {
     bg: 'bg-cyan-100 dark:bg-cyan-500/10',
     text: 'text-cyan-600 dark:text-cyan-400',
     badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300',
+    accent: 'bg-cyan-500',
   },
   1: {
     border: 'border-emerald-300 dark:border-emerald-400',
@@ -28,6 +29,7 @@ const QUEUE_COLORS = {
     bg: 'bg-emerald-100 dark:bg-emerald-500/10',
     text: 'text-emerald-600 dark:text-emerald-400',
     badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
+    accent: 'bg-emerald-500',
   },
   2: {
     border: 'border-amber-300 dark:border-amber-400',
@@ -35,6 +37,7 @@ const QUEUE_COLORS = {
     bg: 'bg-amber-100 dark:bg-amber-500/10',
     text: 'text-amber-600 dark:text-amber-400',
     badge: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+    accent: 'bg-amber-500',
   },
 };
 
@@ -69,13 +72,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     data: { 
       taskId: task.id,
       queueLevel: task.queue_level,
+      type: 'task',
     },
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
 
   const formatDuration = (minutes?: number) => {
@@ -102,36 +105,47 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const deadlineInfo = formatDeadline(task.deadline);
 
+  const hasActions = (task.status === 'pending' && onStart) ||
+    (task.status === 'in_progress' && onPause) ||
+    ((task.status === 'pending' || task.status === 'in_progress' || task.status === 'paused') && onComplete) ||
+    onEdit || onDelete;
+
   return (
     <motion.div
       ref={setNodeRef}
       layout
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: isDragging ? 0.9 : 1, y: 0, scale: isDragging ? 1.02 : 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       style={style}
+      {...attributes}
+      {...listeners}
       className={`
-        group relative p-4 rounded-xl border transition-all duration-300
-        ${isDragging ? 'scale-105 shadow-2xl z-50' : 'hover:shadow-lg'}
-        ${queueStyle.border} ${queueStyle.glow}
+        group relative rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing
+        ${isDragging ? 'shadow-2xl z-50 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900' : 'hover:shadow-lg'}
+        ${queueStyle.border} ${isDragging ? queueStyle.glow : ''}
         bg-white dark:bg-slate-900/80 backdrop-blur-sm
+        overflow-hidden
       `}
     >
-      <div className="flex items-start gap-3">
+      {isDragging && (
         <div 
-          {...attributes}
-          {...listeners}
-          className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${queueStyle.text} opacity-50 hover:opacity-100 transition-opacity`}
-        >
-          <GripVertical size={16} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${queueStyle.badge}`}>
+          className={`
+            absolute inset-0 rounded-xl border-2 border-dashed 
+            ${queueStyle.border} ${queueStyle.bg}
+            animate-pulse pointer-events-none
+          `}
+          style={{ zIndex: -1 }}
+        />
+      )}
+        <div className={`absolute left-0 top-0 bottom-0 w-1 ${queueStyle.accent}`} />
+        
+        <div className="p-3 pl-4">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${queueStyle.badge}`}>
               Q{task.queue_level}
             </span>
-            <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}>
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.color}`}>
               {statusConfig.label}
             </span>
             {task.priority >= 3 && (
@@ -139,10 +153,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             )}
           </div>
 
-          <h4 className="font-semibold text-slate-900 dark:text-white mb-1 truncate">{task.title}</h4>
+          <h4 className="font-medium text-slate-900 dark:text-white mb-1 truncate pr-2">{task.title}</h4>
           
           {task.description && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{task.description}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">{task.description}</p>
           )}
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
@@ -168,75 +182,80 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             )}
           </div>
         </div>
-      </div>
 
-      <div className={`
-        absolute right-2 top-1/2 -translate-y-1/2
-        flex items-center gap-1
-        opacity-0 group-hover:opacity-100
-        transition-opacity duration-200
-      `}>
-        {task.status === 'pending' && onStart && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onStart(); }}
-            className={`p-1.5 rounded-lg transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
-            title="开始"
+        {hasActions && (
+          <div 
+            className={`
+              flex items-center justify-end gap-1 px-3 py-2
+              bg-slate-50/80 dark:bg-slate-800/50
+              border-t border-slate-100 dark:border-slate-700/50
+              opacity-0 group-hover:opacity-100
+              transition-opacity duration-200
+            `}
+            onPointerDown={(e) => e.stopPropagation()}
           >
-            <Play size={14} />
-          </button>
+            {task.status === 'pending' && onStart && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onStart(); }}
+                className={`p-1.5 rounded-md transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+                title="开始"
+              >
+                <Play size={14} />
+              </button>
+            )}
+
+            {task.status === 'in_progress' && onPause && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onPause(); }}
+                className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
+                title="暂停"
+              >
+                <Pause size={14} />
+              </button>
+            )}
+
+            {(task.status === 'pending' || task.status === 'in_progress' || task.status === 'paused') && onComplete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onComplete(); }}
+                className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
+                title="完成"
+              >
+                <Check size={14} />
+              </button>
+            )}
+
+            {onEdit && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
+                title="编辑"
+              >
+                <Edit2 size={14} />
+              </button>
+            )}
+
+            {onDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
+                title="删除"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         )}
 
-        {task.status === 'in_progress' && onPause && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onPause(); }}
-            className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all hover:scale-110"
-            title="暂停"
-          >
-            <Pause size={14} />
-          </button>
+        {task.status === 'in_progress' && (
+          <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} overflow-hidden`}>
+            <motion.div
+              className={`h-full ${queueStyle.accent}`}
+              initial={{ width: '0%' }}
+              animate={{ width: '100%' }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </div>
         )}
-
-        {(task.status === 'pending' || task.status === 'in_progress' || task.status === 'paused') && onComplete && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onComplete(); }}
-            className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-all hover:scale-110"
-            title="完成"
-          >
-            <Check size={14} />
-          </button>
-        )}
-
-        {onEdit && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all hover:scale-110"
-            title="编辑"
-          >
-            <Edit2 size={14} />
-          </button>
-        )}
-
-        {onDelete && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all hover:scale-110"
-            title="删除"
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
-      </div>
-
-      {task.status === 'in_progress' && (
-        <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${queueStyle.bg} rounded-b-xl overflow-hidden`}>
-          <motion.div
-            className={`h-full ${queueStyle.text.replace('text-', 'bg-')}`}
-            initial={{ width: '0%' }}
-            animate={{ width: '100%' }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        </div>
-      )}
     </motion.div>
   );
 };

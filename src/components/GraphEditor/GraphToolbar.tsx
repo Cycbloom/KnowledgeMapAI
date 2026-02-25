@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Undo, Redo, List, Search, Sparkles, MessageSquare, 
   Plus, Eraser, Trash2, Navigation, Grid, Settings, Sun, Moon, 
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, RefreshCw,
-  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe, Keyboard
+  HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe, Keyboard, X, Eye, EyeOff
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, GraphColorMode } from '../../types';
 
 interface GraphToolbarProps {
@@ -96,6 +98,10 @@ interface GraphToolbarProps {
   onTogglePresentation?: () => void;
   onTogglePodcast?: () => void;
   
+  // Mobile Preview Mode
+  isMobilePreviewMode?: boolean;
+  setIsMobilePreviewMode?: (mode: boolean) => void;
+  
   // RAG Chat Panel
   isRAGChatOpen?: boolean;
 }
@@ -113,12 +119,15 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isExplorationMode, setIsExplorationMode, coloringMode, setColoringMode, isTimelineVisible, setIsTimelineVisible,
   isTutorMode: _isTutorMode, onToggleTutorMode: _onToggleTutorMode, onOpenAnalysis,
   onTogglePresentation, onTogglePodcast,
+  isMobilePreviewMode, setIsMobilePreviewMode,
   isRAGChatOpen, ragChatWidth = 420
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { isDark, toggleTheme } = useTheme();
+  const { isMobile } = useIsMobile();
   const [openDropdown, setOpenDropdown] = useState<'edit' | 'ai' | 'system' | 'view' | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<'ai' | 'view' | 'more' | null>(null);
 
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(null);
@@ -140,6 +149,163 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   };
 
   const Divider = () => <div className={`w-px h-6 mx-1 flex-shrink-0 ${themeClasses.divider}`} />;
+
+  const MobileBottomNav = () => {
+    const navItems = [
+      { icon: ArrowLeft, label: '返回', onClick: onBack },
+      { icon: Plus, label: '添加', onClick: onAddNode },
+      { 
+        icon: isMobilePreviewMode ? Eye : EyeOff, 
+        label: isMobilePreviewMode ? '预览' : '详情', 
+        onClick: () => setIsMobilePreviewMode?.(!isMobilePreviewMode),
+        active: isMobilePreviewMode
+      },
+      { 
+        icon: Sparkles, 
+        label: 'AI', 
+        onClick: () => setMobileMenuOpen(mobileMenuOpen === 'ai' ? null : 'ai'),
+        active: isChatOpen || isPathfindingMode
+      },
+      { 
+        icon: MoreHorizontal, 
+        label: '更多', 
+        onClick: () => setMobileMenuOpen(mobileMenuOpen === 'more' ? null : 'more')
+      },
+    ];
+
+    return (
+      <div className={`fixed bottom-0 left-0 right-0 z-50 ${
+        isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-gray-200'
+      } border-t backdrop-blur-lg safe-area-bottom`}>
+        <div className="flex justify-around items-center h-14 px-2">
+          {navItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={item.onClick}
+              className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] rounded-lg transition-colors ${
+                item.active || mobileMenuOpen !== null && navItems.find(n => n.label === item.label)?.onClick === item.onClick && mobileMenuOpen
+                  ? (isDark ? 'text-blue-400' : 'text-blue-600')
+                  : (isDark ? 'text-gray-400 active:bg-slate-800' : 'text-gray-600 active:bg-gray-100')
+              }`}
+              title={item.label}
+            >
+              <item.icon size={22} />
+              <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  interface MobileMenuItem {
+    icon: any;
+    label: string;
+    onClick: () => void;
+    active?: boolean;
+    color?: string;
+    disabled?: boolean;
+    show?: boolean;
+  }
+
+  const MobileBottomSheet = ({ type, onClose }: { type: 'ai' | 'view' | 'more'; onClose: () => void }) => {
+    const menuItems: Record<'ai' | 'view' | 'more', MobileMenuItem[]> = {
+      ai: [
+        { icon: Sparkles, label: '文本/文档生成', onClick: () => { onTextToGraph(); onClose(); }, color: 'text-purple-500' },
+        { icon: Navigation, label: '智能拓展', onClick: () => { if (selectedNodeIds.size === 1 && onAIExpand) { onAIExpand(); } onClose(); }, disabled: selectedNodeIds.size !== 1, color: 'text-green-500' },
+        { icon: MessageSquare, label: '智能问答', onClick: () => { setIsChatOpen(!isChatOpen); onClose(); }, active: isChatOpen, color: 'text-purple-500' },
+        { icon: Navigation, label: isPathfindingMode ? '退出路径导航' : '路径导航', onClick: () => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); onClose(); }, active: isPathfindingMode },
+      ],
+      view: [
+        { icon: GraduationCap, label: '大纲学习模式', onClick: () => { navigate(`/learning?graph_id=${id}`); onClose(); }, color: 'text-indigo-600' },
+        { icon: Network, label: '思维导图', onClick: () => { setViewMode('mindmap'); onClose(); }, active: viewMode === 'mindmap', color: 'text-blue-600' },
+        { icon: Clock, label: '时间线', onClick: () => { setViewMode('timeline'); onClose(); }, active: viewMode === 'timeline', color: 'text-blue-600' },
+        { icon: GitBranch, label: '树形视图', onClick: () => { setViewMode('tree'); onClose(); }, active: viewMode === 'tree', color: 'text-blue-600' },
+        { icon: Globe, label: '知识星球', onClick: () => { setViewMode('planet'); onClose(); }, active: viewMode === 'planet', color: 'text-blue-600' },
+        { icon: List, label: '侧边栏大纲', onClick: () => { setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline'); onClose(); }, active: sidebarMode === 'outline' },
+        { icon: GitBranch, label: isExplorationMode ? '退出探索模式' : '探索分支模式', onClick: () => { setIsExplorationMode(!isExplorationMode); onClose(); }, active: isExplorationMode, color: 'text-purple-600' },
+        { icon: Grid, label: showGrid ? '隐藏网格' : '显示网格', onClick: () => { setShowGrid(!showGrid); onClose(); }, active: showGrid },
+        { icon: Maximize, label: '专注模式', onClick: () => { setIsFocusMode(true); onClose(); } },
+      ],
+      more: [
+        { icon: Settings, label: '图谱参数设置', onClick: () => { onOpenSettings(); onClose(); } },
+        { icon: Palette, label: '样式设置', onClick: () => { setIsStyleSettingsOpen(true); onClose(); }, active: isStyleSettingsOpen },
+        { icon: isDark ? Sun : Moon, label: isDark ? '浅色模式' : '深色模式', onClick: () => { toggleTheme(); onClose(); } },
+        { icon: Download, label: '导出 Markdown', onClick: () => { exportActions.onMarkdown(); onClose(); } },
+        { icon: BookOpen, label: '导出 Anki 卡片', onClick: () => { exportActions.onAnki(); onClose(); } },
+        { icon: Download, label: '导出 PDF', onClick: () => { exportActions.onPDF(); onClose(); } },
+        { icon: Download, label: '导出 JSON', onClick: () => { exportActions.onJSON(); onClose(); } },
+        { icon: Download, label: '导出图片', onClick: () => { exportActions.onImage(); onClose(); } },
+        { icon: Share2, label: '分享图谱', onClick: () => { onShare?.(); onClose(); }, show: !!onShare },
+        { icon: HelpCircle, label: '操作指南', onClick: () => { onOpenHelp?.(); onClose(); }, show: !!onOpenHelp },
+        { icon: RefreshCw, label: '刷新数据', onClick: () => { onRefresh?.(); onClose(); }, show: !!onRefresh },
+        { icon: Trash2, label: '删除图谱', onClick: () => { exportActions.onDeleteGraph(); onClose(); }, color: 'text-red-500' },
+      ].filter(item => item.show !== false),
+    };
+
+    const items = menuItems[type];
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[60]"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 bg-black/40" />
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          className={`absolute bottom-0 left-0 right-0 rounded-t-2xl ${
+            isDark ? 'bg-slate-900' : 'bg-white'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-center pt-3 pb-2">
+            <div className={`w-10 h-1 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-300'}`} />
+          </div>
+          <div className="px-4 pb-2">
+            <div className="flex items-center justify-between">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {type === 'ai' ? 'AI 助手' : type === 'view' ? '视图选项' : '更多功能'}
+              </h3>
+              <button
+                onClick={onClose}
+                className={`p-2 rounded-full ${isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-100'}`}
+              >
+                <X size={20} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
+              </button>
+            </div>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto pb-8">
+            <div className="px-2 py-2 space-y-1">
+              {items.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={item.onClick}
+                  disabled={item.disabled}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                    item.disabled
+                      ? 'opacity-50 cursor-not-allowed'
+                      : item.active
+                        ? (isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600')
+                        : (isDark ? 'hover:bg-slate-800 active:bg-slate-700' : 'hover:bg-gray-50 active:bg-gray-100')
+                  } ${item.color || (isDark ? 'text-gray-300' : 'text-gray-700')}`}
+                >
+                  <item.icon size={20} />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-[env(safe-area-inset-bottom)]" />
+        </motion.div>
+      </motion.div>
+    );
+  };
 
   const BatchMenu = () => {
     const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
@@ -242,6 +408,24 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
   // Render logic based on responsive state
   if (isFocusMode) {
+    if (isMobile) {
+      return (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
+          <button 
+            onClick={() => setIsFocusMode(false)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-full backdrop-blur-md transition-all shadow-lg ${
+              isDark 
+                ? 'bg-slate-800/90 hover:bg-slate-700 text-white' 
+                : 'bg-white/90 hover:bg-gray-100 text-gray-800'
+            }`}
+            title="退出专注模式 (Esc)"
+          >
+            <Minimize size={18} />
+            <span className="text-sm font-medium">退出专注</span>
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="absolute top-4 left-4 z-50">
         <button 
@@ -318,6 +502,23 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       </div>
     );
   };
+
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <>
+        <MobileBottomNav />
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <MobileBottomSheet 
+              type={mobileMenuOpen} 
+              onClose={() => setMobileMenuOpen(null)} 
+            />
+          )}
+        </AnimatePresence>
+      </>
+    );
+  }
 
   // Desktop Layout - Priority Sorted with Dropdowns
   return (

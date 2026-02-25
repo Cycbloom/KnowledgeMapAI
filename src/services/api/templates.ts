@@ -41,3 +41,17 @@ export const achievementsApi = {
   
   checkIn: () => request('/achievements/daily-tasks/check-in', { method: 'POST' }),
 };
+
+export const periodicTasksApi = {
+  list: () => request('/periodic-tasks'),
+  
+  check: (taskType: string, value: number) => 
+    request('/periodic-tasks/check', { method: 'POST', body: JSON.stringify({ taskType, value }) }),
+  
+  getPass: () => request('/periodic-tasks/pass'),
+  
+  claimReward: (passId: string, level: number) => 
+    request('/periodic-tasks/pass/claim', { method: 'POST', body: JSON.stringify({ passId, level }) }),
+  
+  checkStreak: () => request('/periodic-tasks/streak/check', { method: 'POST' }),
+};

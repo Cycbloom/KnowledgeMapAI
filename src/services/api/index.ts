@@ -9,7 +9,7 @@ export { aiApi, aiActionsApi } from './ai';
 export { ttsApi } from './tts';
 export { studyApi, dashboardApi, statisticsApi } from './study';
 export { tasksApi, searchApi, dataApi } from './tasks';
-export { templatesApi, promptsApi, focusApi, achievementsApi } from './templates';
+export { templatesApi, promptsApi, focusApi, achievementsApi, periodicTasksApi } from './templates';
 export { learningPathsApi, learningPathApi } from './learningPaths';
 export { ragApi } from './rag';
 export { autoGraphApi } from './autoGraph';
@@ -38,7 +38,7 @@ import { aiApi, aiActionsApi } from './ai';
 import { ttsApi } from './tts';
 import { studyApi, dashboardApi, statisticsApi } from './study';
 import { tasksApi, searchApi, dataApi } from './tasks';
-import { templatesApi, promptsApi, focusApi, achievementsApi } from './templates';
+import { templatesApi, promptsApi, focusApi, achievementsApi, periodicTasksApi } from './templates';
 import { learningPathsApi, learningPathApi } from './learningPaths';
 import { ragApi } from './rag';
 import { autoGraphApi } from './autoGraph';
@@ -67,6 +67,7 @@ export const api = {
   prompts: promptsApi,
   focus: focusApi,
   achievements: achievementsApi,
+  periodicTasks: periodicTasksApi,
   learningPaths: learningPathsApi,
   rag: ragApi,
   autoGraph: autoGraphApi,

@@ -186,7 +186,7 @@ function VirtualizedNodeListComponent(props: VirtualizedNodeListProps) {
     selectedNodeId,
     isDark,
     zoomLevel,
-    transformRef,
+    transform,
     containerSize,
     focusedNodeIds,
     forceShowTextIds,

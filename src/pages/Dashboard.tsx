@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, useToggleFavoriteMutation, usePrefetchGraph, queryKeys } from '../hooks/useQueries';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Plus, BookOpen, Upload, Trash2, BarChart, Search, Network, ArrowRight, Sparkles, Tag, X, Star, AlertCircle, Loader2 } from 'lucide-react';
@@ -18,6 +18,7 @@ import { SearchResults } from '../components/SearchResults';
 
 export const Dashboard = () => {
   const { isDark } = useTheme();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { data: graphsData, isLoading, error } = useGraphs();
   const { data: statsData } = useDashboardStats();
@@ -60,6 +61,22 @@ export const Dashboard = () => {
   } = useSearch({ debounceMs: 300 });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const state = location.state as { templateId?: string } | null;
+    if (state?.templateId) {
+      api.templates.get(state.templateId).then((template) => {
+        setSelectedTemplate(template);
+        setNewTitle(template.name);
+        setNewDescription(template.description || '');
+        setIsCreating(true);
+      }).catch((err) => {
+        console.error('Failed to load template:', err);
+        addMessage({ type: 'error', content: '加载模板失败' });
+      });
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, addMessage]);
 
   useEffect(() => {
     if (searchQuery.length >= 2) {
@@ -428,7 +445,7 @@ export const Dashboard = () => {
                     <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-600 text-white">
                       {selectedTemplate.name}
                     </span>
-                    <span className="text-xs text-gray-500">{selectedTemplate.nodes.length} 个节点</span>
+                    <span className="text-xs text-gray-500">{selectedTemplate.nodes?.length ?? 0} 个节点</span>
                   </div>
                   <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
                     {selectedTemplate.description || '暂无描述'}

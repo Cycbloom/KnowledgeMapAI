@@ -8,19 +8,27 @@ interface SimpleRAGChatButtonProps {
   isDark: boolean;
   isTutorMode: boolean;
   onClick: () => void;
+  isMobilePreviewMode?: boolean;
+  hasSelectedNode?: boolean;
 }
 
 const SimpleRAGChatButton: React.FC<SimpleRAGChatButtonProps> = ({
   isDark,
   isTutorMode,
-  onClick
+  onClick,
+  isMobilePreviewMode,
+  hasSelectedNode
 }) => {
+  const shouldMoveUp = isMobilePreviewMode && hasSelectedNode;
+  
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`fixed bottom-16 left-4 z-40 p-2.5 rounded-xl shadow-lg transition-colors ${
+      className={`fixed left-4 z-40 p-2.5 rounded-xl shadow-lg transition-all duration-300 ${
+        shouldMoveUp ? 'bottom-72' : 'bottom-16'
+      } ${
         isTutorMode
           ? isDark 
             ? 'bg-amber-600 hover:bg-amber-500 text-white' 
@@ -59,6 +67,7 @@ interface RAGChatButtonProps {
   onTutorChat?: (message: string, history: any[], onChunk: (content: string) => void) => void;
   width?: number;
   onWidthChange?: (width: number) => void;
+  isMobilePreviewMode?: boolean;
 }
 
 export const RAGChatButton: React.FC<RAGChatButtonProps> = ({
@@ -82,7 +91,8 @@ export const RAGChatButton: React.FC<RAGChatButtonProps> = ({
   suggestedNextTopics,
   onTutorChat,
   width = 420,
-  onWidthChange
+  onWidthChange,
+  isMobilePreviewMode
 }) => {
   const { isDark } = useTheme();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -102,6 +112,8 @@ export const RAGChatButton: React.FC<RAGChatButtonProps> = ({
         isDark={isDark}
         isTutorMode={isTutorMode || false}
         onClick={() => setIsOpen(true)}
+        isMobilePreviewMode={isMobilePreviewMode}
+        hasSelectedNode={!!currentNodeId}
       />
 
       <AnimatePresence>

@@ -26,8 +26,8 @@ export const graphsApi = {
   create: (data: { title: string; description?: string }) => 
     request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
   
-  createFromTemplate: (data: { template_id: string; title?: string }) => 
-    request('/graphs/from-template', { method: 'POST', body: JSON.stringify(data) }),
+  createFromTemplate: (data: { template_id: string; title?: string; description?: string }) => 
+    request('/templates/from-template', { method: 'POST', body: JSON.stringify(data) }),
   
   get: (id: string) => request(`/graphs/${id}`),
   

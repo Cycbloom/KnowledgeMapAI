@@ -158,7 +158,7 @@ export const Templates = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDark ? "bg-slate-900" : "bg-gray-50"}`}>
+    <div className={`h-full overflow-y-auto ${isDark ? "bg-slate-900" : "bg-gray-50"}`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1

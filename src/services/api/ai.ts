@@ -1,4 +1,4 @@
-import { request, getAIConfig, getApiUrl, handleResponse, injectAIConfig } from './client';
+import { request, getAIConfig, getApiUrl, handleResponse, injectAIConfig, getCookie } from './client';
 import { useStore } from '../../store/useStore';
 import type { AIAction } from './types';
 
@@ -23,12 +23,15 @@ const createStreamHandler = async (
   onChunk: (content: string) => void
 ) => {
   const token = useStore.getState().token;
+  const csrfToken = getCookie('csrf-token');
   const response = await fetch(`${getApiUrl()}${url}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
     },
+    credentials: 'include',
     body: JSON.stringify(payload)
   });
 
@@ -131,6 +134,7 @@ export const aiApi = {
   
   documentToGraph: async (data: { graph_id: string; file: File }) => {
     const token = useStore.getState().token;
+    const csrfToken = getCookie('csrf-token');
     const config = getAIConfig('text');
     const formData = new FormData();
     formData.append('graph_id', data.graph_id);
@@ -142,7 +146,9 @@ export const aiApi = {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
       },
+      credentials: 'include',
       body: formData
     });
     return handleResponse(response);

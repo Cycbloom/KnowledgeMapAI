@@ -1,9 +1,11 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  pointerWithin,
+  closestCenter,
+  CollisionDetection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -63,7 +65,8 @@ export const Scheduler: React.FC = () => {
   const [activeTask, setActiveTask] = useState<ScheduledTask | null>(null);
   const [localQueues, setLocalQueues] = useState<QueueData | null>(null);
   
-  const initialQueueRef = useRef<string | null>(null);
+  const sourceQueueRef = useRef<string | null>(null);
+  const currentQueueRef = useRef<string | null>(null);
 
   const { data: queuesData, isLoading, error, refetch, isFetching } = useQueues();
   const { data: settings } = useTaskSettings();
@@ -80,13 +83,21 @@ export const Scheduler: React.FC = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3,
       },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
+    }
+    return closestCenter(args);
+  }, []);
 
   const queues = useMemo(() => {
     if (!queuesData || typeof queuesData !== 'object') return QueueDataDefault;
@@ -146,7 +157,8 @@ export const Scheduler: React.FC = () => {
     const result = findTaskById(active.id as string, queues);
     if (result) {
       setActiveTask(result.task);
-      initialQueueRef.current = result.queueKey;
+      sourceQueueRef.current = result.queueKey;
+      currentQueueRef.current = result.queueKey;
     }
   };
 
@@ -155,81 +167,117 @@ export const Scheduler: React.FC = () => {
     if (!over) return;
 
     const activeId = active.id as string;
-    const activeQueueKey = initialQueueRef.current;
+    const activeQueueKey = currentQueueRef.current;
     if (!activeQueueKey) return;
 
     const overResult = getQueueKeyFromOver(over, displayQueues);
     if (!overResult) return;
 
-    const { queueKey: overQueueKey } = overResult;
+    const { queueKey: overQueueKey, index: overIndex } = overResult;
 
-    if (activeQueueKey === overQueueKey) return;
+    if (activeQueueKey !== overQueueKey) {
+      const newQueues = { ...displayQueues };
+      const sourceTasks = [...newQueues[activeQueueKey as keyof QueueData]];
+      const destTasks = [...newQueues[overQueueKey as keyof QueueData]];
+      
+      const taskIndex = sourceTasks.findIndex(t => t.id === activeId);
+      if (taskIndex === -1) return;
+      
+      const [movedTask] = sourceTasks.splice(taskIndex, 1);
+      const updatedTask = { ...movedTask, queue_level: parseInt(overQueueKey.replace('q', '')) };
+      
+      if (overIndex !== -1) {
+        destTasks.splice(overIndex, 0, updatedTask);
+      } else {
+        destTasks.push(updatedTask);
+      }
+      
+      newQueues[activeQueueKey as keyof QueueData] = sourceTasks;
+      newQueues[overQueueKey as keyof QueueData] = destTasks;
+      
+      setLocalQueues(newQueues);
+      currentQueueRef.current = overQueueKey;
+    } else if (overIndex !== -1) {
+      const tasks = [...displayQueues[activeQueueKey as keyof QueueData]];
+      const oldIndex = tasks.findIndex(t => t.id === activeId);
+      
+      if (oldIndex !== -1 && oldIndex !== overIndex) {
+        const newTasks = arrayMove(tasks, oldIndex, overIndex);
+        const newQueues = { ...displayQueues, [activeQueueKey]: newTasks };
+        setLocalQueues(newQueues);
+      }
+    }
+  };
 
-    const newQueues = { ...displayQueues };
-    const sourceTasks = [...newQueues[activeQueueKey as keyof QueueData]];
-    const destTasks = [...newQueues[overQueueKey as keyof QueueData]];
-    
-    const taskIndex = sourceTasks.findIndex(t => t.id === activeId);
-    if (taskIndex === -1) return;
-    
-    const [movedTask] = sourceTasks.splice(taskIndex, 1);
-    const updatedTask = { ...movedTask, queue_level: parseInt(overQueueKey.replace('q', '')) };
-    
-    destTasks.push(updatedTask);
-    
-    newQueues[activeQueueKey as keyof QueueData] = sourceTasks;
-    newQueues[overQueueKey as keyof QueueData] = destTasks;
-    
-    setLocalQueues(newQueues);
-    initialQueueRef.current = overQueueKey;
+  const handleDragCancel = () => {
+    setActiveTask(null);
+    sourceQueueRef.current = null;
+    currentQueueRef.current = null;
+    setLocalQueues(null);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    const originalQueue = initialQueueRef.current;
+    const sourceQueue = sourceQueueRef.current;
+    const targetQueue = currentQueueRef.current;
     
-    setActiveTask(null);
-    initialQueueRef.current = null;
-
+    console.log('handleDragEnd:', { 
+      activeId: active.id, 
+      overId: over?.id,
+      sourceQueue,
+      targetQueue
+    });
+    
     if (!over) {
-      setLocalQueues(null);
+      handleDragCancel();
       return;
     }
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    if (activeId === overId) {
-      setLocalQueues(null);
-      return;
-    }
-
-    const overResult = getQueueKeyFromOver(over, queues);
-    if (!overResult) {
-      setLocalQueues(null);
-      return;
-    }
-
-    const { queueKey: overQueueKey, index: overIndex } = overResult;
-    const targetQueue = parseInt(overQueueKey.replace('q', ''));
-
-    if (originalQueue && originalQueue !== overQueueKey) {
-      try {
-        await moveTaskMutation.mutateAsync({ taskId: activeId, targetQueue });
-        addMessage({ type: 'success', content: `任务已移动到 Q${targetQueue}` });
-      } catch (err: any) {
-        addMessage({ type: 'error', content: err.message || '移动任务失败' });
+    let overQueueKey = targetQueue;
+    
+    if (!overQueueKey) {
+      const overResult = getQueueKeyFromOver(over, displayQueues);
+      if (!overResult) {
+        handleDragCancel();
+        return;
       }
-    } else if (originalQueue === overQueueKey && overIndex !== -1) {
-      const tasks = queues[overQueueKey as keyof QueueData] as ScheduledTask[];
+      overQueueKey = overResult.queueKey;
+    }
+
+    setActiveTask(null);
+    sourceQueueRef.current = null;
+    currentQueueRef.current = null;
+
+    if (sourceQueue && sourceQueue !== overQueueKey) {
+      const targetQueueLevel = parseInt(overQueueKey!.replace('q', ''));
+      try {
+        await moveTaskMutation.mutateAsync({ taskId: activeId, targetQueue: targetQueueLevel });
+        addMessage({ type: 'success', content: `任务已移动到 Q${targetQueueLevel}` });
+      } catch (err: any) {
+        const details = err.details?.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+        addMessage({ type: 'error', content: details || err.message || '移动任务失败' });
+      }
+    } else if (sourceQueue === overQueueKey && activeId !== overId) {
+      const tasks = displayQueues[overQueueKey as keyof QueueData] as ScheduledTask[];
       const oldIndex = tasks.findIndex((t: ScheduledTask) => t.id === activeId);
+      const overIndex = tasks.findIndex((t: ScheduledTask) => t.id === overId);
+      
+      console.log('Reorder:', { sourceQueue, overQueueKey, activeId, overId, oldIndex, overIndex, tasksLength: tasks.length });
+      
       if (oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex) {
         const newOrder = arrayMove(tasks, oldIndex, overIndex);
         const taskIds = newOrder.map((t: ScheduledTask) => t.id);
+        const queueLevel = parseInt(overQueueKey!.replace('q', ''));
+        console.log('Sending reorder API:', { queueLevel, taskIds });
         try {
-          await reorderMutation.mutateAsync({ queueLevel: targetQueue, taskIds });
+          await reorderMutation.mutateAsync({ queueLevel, taskIds });
+          addMessage({ type: 'success', content: '任务顺序已更新' });
         } catch (err: any) {
-          addMessage({ type: 'error', content: err.message || '排序失败' });
+          const details = err.details?.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+          addMessage({ type: 'error', content: details || err.message || '排序失败' });
         }
       }
     }
@@ -446,10 +494,11 @@ export const Scheduler: React.FC = () => {
           ) : (
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCorners}
+              collisionDetection={collisionDetection}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
             >
               <div className="h-full flex gap-6 overflow-x-auto pb-4 custom-scrollbar">
                 <QueueColumn

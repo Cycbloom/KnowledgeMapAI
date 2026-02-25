@@ -37,6 +37,7 @@ interface MindMapNodeProps {
   isSelectableAsParent?: boolean;
   isExcludedAsParent?: boolean;
   isSelectedAsParent?: boolean;
+  isTouchPressed?: boolean;
 }
 
 const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
@@ -85,7 +86,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   onContextMenu,
   isSelectableAsParent = false,
   isExcludedAsParent = false,
-  isSelectedAsParent = false
+  isSelectedAsParent = false,
+  isTouchPressed = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const level = getLevel(node, edges);
@@ -128,7 +130,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   
   const nodeOpacity = !hasFocusMode ?1 : (focused ?1 : 0.3);
   const isAccepted = node.is_accepted !== false;
-  const hoverScale = isHovered ? styleConfig.animation.hoverScale : 1;
+  const hoverScale = isHovered || isTouchPressed ? styleConfig.animation.hoverScale : 1;
   const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;
   const shadowStyle = getShadowStyle(styleConfig.shadow);
   const transitionDuration = styleConfig.animation.transitionDuration;
@@ -266,6 +268,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
 
   return (
     <g
+      data-node-id={node.id}
       transform={`translate(${node.x}, ${node.y})`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -302,6 +305,16 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           stroke="#3b82f6"
           strokeWidth={3}
           opacity={0.8}
+        />
+      )}
+      {isTouchPressed && (
+        <circle
+          r={styleConfig.baseRadius + 16}
+          fill="none"
+          stroke={colors.primary}
+          strokeWidth={3}
+          opacity={0.6}
+          className="animate-pulse"
         />
       )}
       <g
@@ -470,6 +483,7 @@ export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProp
     prevProps.isSelectableAsParent === nextProps.isSelectableAsParent &&
     prevProps.isExcludedAsParent === nextProps.isExcludedAsParent &&
     prevProps.isSelectedAsParent === nextProps.isSelectedAsParent &&
+    prevProps.isTouchPressed === nextProps.isTouchPressed &&
     prevProps.node.x === nextProps.node.x &&
     prevProps.node.y === nextProps.node.y &&
     prevProps.node.title === nextProps.node.title &&

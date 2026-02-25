@@ -486,6 +486,38 @@ router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 router.put(
+  "/tasks/reorder",
+  requireAuth,
+  validate({ body: reorderTasksSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { queue_level, task_ids } = req.body;
+
+    const updates = task_ids.map((taskId: string, index: number) => ({
+      id: taskId,
+      position: index,
+      queue_level,
+    }));
+
+    for (const update of updates) {
+      await supabase
+        .from("scheduled_tasks")
+        .update({ position: update.position, queue_level: update.queue_level })
+        .eq("id", update.id)
+        .eq("user_id", req.user.id);
+    }
+
+    res.json({ success: true });
+  }
+);
+
+router.put(
   "/tasks/:id/move",
   requireAuth,
   validate({ params: uuidParamsSchema, body: moveTaskSchema }),
@@ -524,38 +556,6 @@ router.put(
     }
 
     res.json({ success: true, data: task });
-  }
-);
-
-router.put(
-  "/tasks/reorder",
-  requireAuth,
-  validate({ body: reorderTasksSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase;
-    if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
-    }
-
-    const { queue_level, task_ids } = req.body;
-
-    const updates = task_ids.map((taskId: string, index: number) => ({
-      id: taskId,
-      position: index,
-      queue_level,
-    }));
-
-    for (const update of updates) {
-      await supabase
-        .from("scheduled_tasks")
-        .update({ position: update.position, queue_level: update.queue_level })
-        .eq("id", update.id)
-        .eq("user_id", req.user.id);
-    }
-
-    res.json({ success: true });
   }
 );
 

@@ -2,6 +2,8 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Node as GraphNode, NodeLevel } from '../../types';
 import { getLevelColor, getLevelLabel } from '../../lib/graphUtils';
 import { X, ArrowLeft, Save, Loader2, Search, ChevronDown, Circle, MousePointer2, Check } from 'lucide-react';
+import { useTheme } from '../../hooks/useTheme';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface NodeFormState {
   title: string;
@@ -42,6 +44,8 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
   onStartSelectingParent,
   onCancelSelectingParent
 }) => {
+  const { isDark } = useTheme();
+  const { isMobile } = useIsMobile();
   const [parentSearch, setParentSearch] = useState('');
   const [showParentDropdown, setShowParentDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -94,50 +98,53 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
     inputRef.current?.focus();
   };
 
-  const getLevelBadgeStyle = (level: NodeLevel) => {
+  const getLevelBadgeStyle = (level: NodeLevel, isDark: boolean = false) => {
     const styles = {
-      root: 'bg-purple-100 text-purple-700 border-purple-200',
-      core: 'bg-red-100 text-red-700 border-red-200',
-      sub: 'bg-orange-100 text-orange-700 border-orange-200',
-      normal: 'bg-blue-100 text-blue-700 border-blue-200',
-      leaf: 'bg-green-100 text-green-700 border-green-200'
+      root: isDark ? 'bg-purple-900/50 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-700 border-purple-200',
+      core: isDark ? 'bg-red-900/50 text-red-300 border-red-700' : 'bg-red-100 text-red-700 border-red-200',
+      sub: isDark ? 'bg-orange-900/50 text-orange-300 border-orange-700' : 'bg-orange-100 text-orange-700 border-orange-200',
+      normal: isDark ? 'bg-blue-900/50 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-700 border-blue-200',
+      leaf: isDark ? 'bg-green-900/50 text-green-300 border-green-700' : 'bg-green-100 text-green-700 border-green-200'
     };
     return styles[level] || styles.normal;
   };
 
   return (
-    <div className="h-full flex flex-col">
-       <div className="flex justify-between items-center mb-6">
+    <div className={`h-full flex flex-col ${isMobile ? 'pb-[env(safe-area-inset-bottom)]' : ''}`}>
+       <div className={`flex justify-between items-center ${isMobile ? 'mb-4 px-1' : 'mb-6'}`}>
          <div className="flex items-center space-x-2">
            {prevSidebarMode === 'outline' && (
              <button 
                onClick={onBack}
-               className="mr-1 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+               className={`text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all ${isMobile ? 'mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center' : 'mr-1 p-1.5'}`}
                title="返回大纲"
              >
-               <ArrowLeft size={18} />
+               <ArrowLeft size={isMobile ? 20 : 18} />
              </button>
            )}
            <div className={`w-3 h-3 rounded-full ${mode === 'create' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
-           <h3 className="text-lg font-bold text-gray-800">
+           <h3 className={`font-bold text-gray-800 dark:text-gray-100 ${isMobile ? 'text-base' : 'text-lg'}`}>
              {mode === 'create' ? '创建新节点' : '编辑节点'}
            </h3>
          </div>
-         <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-           <X size={20} />
+         <button 
+           onClick={onClose} 
+           className={`text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg ${isMobile ? 'p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center' : ''}`}
+         >
+           <X size={isMobile ? 22 : 20} />
          </button>
        </div>
 
        {isSelectingParent && (
-         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-           <div className="flex items-center justify-between">
+         <div className={`mb-4 p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg ${isMobile ? 'mx-1' : ''}`}>
+           <div className={`flex items-center ${isMobile ? 'flex-col gap-2' : 'justify-between'}`}>
              <div className="flex items-center gap-2">
-               <MousePointer2 size={16} className="text-amber-600 animate-pulse" />
-               <span className="text-sm text-amber-700 font-medium">点击图谱选择父节点（可多选）</span>
+               <MousePointer2 size={16} className="text-amber-600 dark:text-amber-400 animate-pulse" />
+               <span className="text-sm text-amber-700 dark:text-amber-300 font-medium">点击图谱选择父节点（可多选）</span>
              </div>
              <button
                onClick={onCancelSelectingParent}
-               className="px-2 py-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 rounded transition-colors"
+               className={`bg-amber-100 dark:bg-amber-800 hover:bg-amber-200 dark:hover:bg-amber-700 text-amber-700 dark:text-amber-200 rounded transition-colors ${isMobile ? 'w-full py-2.5 min-h-[44px] text-sm font-medium' : 'px-2 py-1 text-xs'}`}
              >
                完成
              </button>
@@ -145,27 +152,27 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
          </div>
        )}
 
-       <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+       <div className={`flex-1 overflow-y-auto ${isMobile ? 'space-y-5 px-1 pb-32' : 'space-y-4 pr-1'}`}>
          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">标题</label>
+            <label className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? 'text-base mb-2' : 'text-sm mb-1'}`}>标题</label>
             <input
               type="text"
               value={nodeForm.title}
               onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2'}`}
               placeholder="输入节点标题"
             />
          </div>
          
          <div className="relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? 'text-base mb-2' : 'text-sm mb-1'}`}>
               父节点 (可多选)
             </label>
             
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10">
-                  <Search size={16} />
+            <div className={`flex gap-2 ${isMobile ? 'flex-col' : ''}`}>
+              <div className={`relative ${isMobile ? 'w-full' : 'flex-1'}`}>
+                <div className={`absolute text-gray-400 z-10 ${isMobile ? 'left-4 top-1/2 -translate-y-1/2' : 'left-3 top-1/2 -translate-y-1/2'}`}>
+                  <Search size={isMobile ? 18 : 16} />
                 </div>
                 <input
                   ref={inputRef}
@@ -173,41 +180,41 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                   value={parentSearch}
                   onChange={handleParentInputChange}
                   onFocus={() => setShowParentDropdown(true)}
-                  className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'pl-11 pr-10 py-3 min-h-[44px] text-base' : 'pl-9 pr-8 py-2'}`}
                   placeholder="搜索选择父节点..."
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 ${isMobile ? 'right-3' : 'right-2'}`}>
                   {nodeForm.parentNodeIds.length > 0 && (
                     <button
                       onClick={clearAllParents}
-                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                      className={`text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${isMobile ? 'p-1.5 min-h-[36px] min-w-[36px]' : 'p-1'}`}
                       title="清除全部"
                     >
-                      <X size={14} />
+                      <X size={isMobile ? 16 : 14} />
                     </button>
                   )}
                   <button
                     onClick={() => setShowParentDropdown(!showParentDropdown)}
-                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                    className={`text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${isMobile ? 'p-1.5 min-h-[36px] min-w-[36px]' : 'p-1'}`}
                   >
-                    <ChevronDown size={14} className={`transition-transform ${showParentDropdown ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={isMobile ? 16 : 14} className={`transition-transform ${showParentDropdown ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
                 
                 {showParentDropdown && (
-                  <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className={`absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-y-auto ${isMobile ? 'max-h-[50vh]' : 'max-h-60'}`}>
                     <button
                       onClick={clearAllParents}
-                      className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b ${
-                        nodeForm.parentNodeIds.length === 0 ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
-                      }`}
+                      className={`w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 ${
+                        nodeForm.parentNodeIds.length === 0 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
+                      } ${isMobile ? 'px-4 py-3.5 min-h-[48px]' : 'px-3 py-2.5'}`}
                     >
                       <Circle size={12} className="text-gray-400" />
-                      <span className="text-sm">无父节点</span>
+                      <span className={`${isMobile ? 'text-base' : 'text-sm'}`}>无父节点</span>
                     </button>
                     
                     {filteredNodes.length === 0 ? (
-                      <div className="px-3 py-4 text-center text-gray-400 text-sm">
+                      <div className={`text-center text-gray-400 dark:text-gray-500 ${isMobile ? 'px-4 py-5 text-base' : 'px-3 py-4 text-sm'}`}>
                         {parentSearch ? '没有匹配的节点' : '没有可选的节点'}
                       </div>
                     ) : (
@@ -217,22 +224,22 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                           <button
                             key={node.id}
                             onClick={() => toggleParent(node.id)}
-                            className={`w-full px-3 py-2.5 text-left hover:bg-gray-50 flex items-center justify-between ${
-                              isSelected ? 'bg-blue-50' : ''
-                            }`}
+                            className={`w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between ${
+                              isSelected ? 'bg-blue-50 dark:bg-blue-900/30' : ''
+                            } ${isMobile ? 'px-4 py-3.5 min-h-[48px]' : 'px-3 py-2.5'}`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
                                 isSelected 
                                   ? 'bg-blue-500 border-blue-500' 
-                                  : 'border-gray-300'
+                                  : 'border-gray-300 dark:border-gray-600'
                               }`}>
                                 {isSelected && <Check size={10} className="text-white" />}
                               </div>
                               <div className={`w-2 h-2 rounded-full ${getLevelColor(node.level || 'normal')}`}></div>
-                              <span className="truncate text-sm text-gray-800">{node.title}</span>
+                              <span className={`truncate text-gray-800 dark:text-gray-200 ${isMobile ? 'text-base' : 'text-sm'}`}>{node.title}</span>
                             </div>
-                            <span className={`text-xs px-1.5 py-0.5 rounded border flex-shrink-0 ${getLevelBadgeStyle(node.level || 'normal')}`}>
+                            <span className={`px-1.5 py-0.5 rounded border flex-shrink-0 ${getLevelBadgeStyle(node.level || 'normal', isDark)} text-xs`}>
                               {getLevelLabel(node.level || 'normal')}
                             </span>
                           </button>
@@ -246,31 +253,32 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
               <button
                 type="button"
                 onClick={isSelectingParent ? onCancelSelectingParent : onStartSelectingParent}
-                className={`p-2 rounded-lg border transition-all ${
+                className={`rounded-lg border transition-all ${
                   isSelectingParent
-                    ? 'bg-amber-100 border-amber-300 text-amber-600'
-                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-blue-500 hover:border-blue-300'
-                }`}
+                    ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400'
+                    : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-500 hover:border-blue-300'
+                } ${isMobile ? 'w-full py-3 min-h-[48px] flex items-center justify-center gap-2 font-medium' : 'p-2'}`}
                 title={isSelectingParent ? '完成选择' : '从图谱选择'}
               >
-                <MousePointer2 size={16} className={isSelectingParent ? 'animate-pulse' : ''} />
+                <MousePointer2 size={isMobile ? 18 : 16} className={isSelectingParent ? 'animate-pulse' : ''} />
+                {isMobile && <span>{isSelectingParent ? '完成选择' : '从图谱选择'}</span>}
               </button>
             </div>
 
             {selectedParents.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className={`flex flex-wrap ${isMobile ? 'mt-3 gap-2' : 'mt-2 gap-1.5'}`}>
                 {selectedParents.map(parent => (
                   <div 
                     key={parent.id}
-                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm"
+                    className={`inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg ${isMobile ? 'px-3 py-2 text-base' : 'px-2 py-1 text-sm'}`}
                   >
                     <div className={`w-1.5 h-1.5 rounded-full ${getLevelColor(parent.level || 'normal')}`}></div>
-                    <span className="truncate max-w-[120px]">{parent.title}</span>
+                    <span className={`truncate ${isMobile ? 'max-w-[150px]' : 'max-w-[120px]'}`}>{parent.title}</span>
                     <button
                       onClick={() => removeParent(parent.id)}
-                      className="p-0.5 hover:bg-blue-100 rounded"
+                      className={`hover:bg-blue-100 dark:hover:bg-blue-800 rounded ${isMobile ? 'p-1 min-h-[32px] min-w-[32px]' : 'p-0.5'}`}
                     >
-                      <X size={12} />
+                      <X size={isMobile ? 14 : 12} />
                     </button>
                   </div>
                 ))}
@@ -279,7 +287,7 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
          </div>
 
          <div>
-             <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
+             <label className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? 'text-base mb-2' : 'text-sm mb-1'}`}>标签 (逗号分隔)</label>
              <input
                type="text"
                value={nodeForm.tags.join(', ')}
@@ -287,17 +295,17 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
                  const tags = e.target.value.split(/[,，]/).map(t => t.trim()).filter(Boolean);
                  setNodeForm({ ...nodeForm, tags });
                }}
-               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+               className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2'}`}
                placeholder="例如: 重要, 待办, 概念"
              />
           </div>
 
           <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">层级</label>
+              <label className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? 'text-base mb-2' : 'text-sm mb-1'}`}>层级</label>
               <select
                 value={nodeForm.level}
                 onChange={(e) => setNodeForm({ ...nodeForm, level: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'px-4 py-3 min-h-[44px] text-base' : 'px-3 py-2 text-sm'}`}
               >
                 <option value="root">根节点</option>
                 <option value="core">核心节点</option>
@@ -308,38 +316,70 @@ export const NodeEditSidebar: React.FC<NodeEditSidebarProps> = ({
            </div>
 
          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">内容</label>
+            <label className={`block font-medium text-gray-700 dark:text-gray-300 ${isMobile ? 'text-base mb-2' : 'text-sm mb-1'}`}>内容</label>
             <textarea
               value={nodeForm.content}
               onChange={(e) => setNodeForm({ ...nodeForm, content: e.target.value })}
-              className="w-full h-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none font-mono text-sm"
+              className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${isMobile ? 'h-48 px-4 py-3 text-base' : 'h-64 px-3 py-2 text-sm'}`}
               placeholder="支持 Markdown 格式..."
             />
          </div>
        </div>
 
-       <div className="mt-6 pt-4 border-t border-gray-100 sticky bottom-0 bg-white z-10">
-         <button
-           onClick={onSave}
-           disabled={loading || !nodeForm.title.trim()}
-           className={`w-full py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all ${
-             loading || !nodeForm.title.trim() 
-               ? 'bg-gray-300 cursor-not-allowed' 
-               : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-200 active:scale-[0.99]'
-           }`}
-         >
-           {loading ? (
-             <>
-               <Loader2 className="animate-spin mr-2" size={18} />
-               保存中...
-             </>
-           ) : (
-             <>
-               <Save className="mr-2" size={18} />
-               保存节点
-             </>
-           )}
-         </button>
+       <div className={`border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 z-10 ${isMobile ? 'fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]' : 'mt-6 pt-4 sticky bottom-0'}`}>
+         {isMobile ? (
+           <div className="flex gap-3">
+             <button
+               onClick={onClose}
+               className="flex-1 py-3 rounded-xl flex items-center justify-center font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all min-h-[48px]"
+             >
+               取消
+             </button>
+             <button
+               onClick={onSave}
+               disabled={loading || !nodeForm.title.trim()}
+               className={`flex-1 py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all min-h-[48px] ${
+                 loading || !nodeForm.title.trim() 
+                   ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed' 
+                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-200 dark:hover:shadow-blue-900/30 active:scale-[0.99]'
+               }`}
+             >
+               {loading ? (
+                 <>
+                   <Loader2 className="animate-spin mr-2" size={18} />
+                   保存中...
+                 </>
+               ) : (
+                 <>
+                   <Save className="mr-2" size={18} />
+                   保存
+                 </>
+               )}
+             </button>
+           </div>
+         ) : (
+           <button
+             onClick={onSave}
+             disabled={loading || !nodeForm.title.trim()}
+             className={`w-full py-3 rounded-xl flex items-center justify-center font-bold text-white shadow-lg transition-all ${
+               loading || !nodeForm.title.trim() 
+                 ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed' 
+                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-200 dark:hover:shadow-blue-900/30 active:scale-[0.99]'
+             }`}
+           >
+             {loading ? (
+               <>
+                 <Loader2 className="animate-spin mr-2" size={18} />
+                 保存中...
+               </>
+             ) : (
+               <>
+                 <Save className="mr-2" size={18} />
+                 保存节点
+               </>
+             )}
+           </button>
+         )}
        </div>
     </div>
   );

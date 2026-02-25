@@ -4,6 +4,7 @@ import { TemplateCard } from './TemplateCard';
 import { TemplatePreview } from './TemplatePreview';
 import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTemplates } from '../hooks/useQueries';
+import { useTheme } from '../hooks/useTheme';
 
 interface TemplateSelectorProps {
   onSelectTemplate: (template: Template | null) => void;
@@ -24,6 +25,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onSelectTemplate,
   onCancel,
 }) => {
+  const { isDark } = useTheme();
   const { data: templates = [], isLoading } = useTemplates();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | 'all'>('all');
@@ -84,31 +86,39 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
-        <div className="p-6 border-b border-gray-200">
+      <div className={`w-full max-w-5xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col ${
+        isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white'
+      }`}>
+        <div className={`p-6 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">选择模板</h2>
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>选择模板</h2>
             <button
               onClick={onCancel}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className={`p-2 rounded-full transition-colors ${
+                isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
+              }`}
             >
-              <X size={24} className="text-gray-500" />
+              <X size={24} />
             </button>
           </div>
 
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} size={18} />
               <input
                 type="text"
                 placeholder="搜索模板..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
+                  isDark 
+                    ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
+                    : 'border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                }`}
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
@@ -116,7 +126,9 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                   className={`px-4 py-2.5 rounded-xl font-medium transition-all ${
                     selectedCategory === cat
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : isDark
+                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   {cat === 'all' ? '全部' : categoryLabels[cat]}
@@ -127,16 +139,16 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className={`flex-1 p-6 overflow-y-auto ${isDark ? 'bg-slate-800' : ''}`}>
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">加载模板中...</p>
+                  <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>加载模板中...</p>
                 </div>
               </div>
             ) : filteredTemplates.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <div className={`flex flex-col items-center justify-center h-full ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
                 <p className="text-lg mb-2">未找到匹配的模板</p>
                 <p className="text-sm">尝试更换搜索关键词或分类</p>
               </div>
@@ -158,17 +170,21 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     <button
                       onClick={handlePrevPage}
                       disabled={currentPage === 0}
-                      className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className={`p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                        isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-gray-100 text-gray-600'
+                      }`}
                     >
                       <ChevronLeft size={20} />
                     </button>
-                    <span className="text-sm text-gray-600">
+                    <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
                       第 {currentPage + 1} / {totalPages} 页
                     </span>
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages - 1}
-                      className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className={`p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                        isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-gray-100 text-gray-600'
+                      }`}
                     >
                       <ChevronRight size={20} />
                     </button>
@@ -179,17 +195,19 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           </div>
 
           {selectedTemplate && (
-            <div className="w-80 border-l border-gray-200 p-6 overflow-y-auto bg-gray-50">
-              <h3 className="font-bold text-gray-900 mb-4">模板预览</h3>
+            <div className={`w-80 border-l p-6 overflow-y-auto ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
+              <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>模板预览</h3>
               <TemplatePreview template={selectedTemplate} />
             </div>
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-200 flex justify-between items-center">
+        <div className={`p-6 border-t flex justify-between items-center ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <button
             onClick={handleSkip}
-            className="px-6 py-2.5 rounded-xl font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+            className={`px-6 py-2.5 rounded-xl font-medium transition-colors ${
+              isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-gray-700 hover:bg-gray-100'
+            }`}
           >
             跳过，创建空白图谱
           </button>

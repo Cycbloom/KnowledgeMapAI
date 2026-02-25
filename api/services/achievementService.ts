@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../supabase.js';
+import { periodicTaskService } from './periodicTaskService.js';
 
 export interface Achievement {
   id: string;
@@ -335,7 +336,8 @@ export class AchievementService {
     const totalMinutes = allSessions?.reduce((acc, curr) => acc + curr.duration, 0) || 0;
     await this.checkAndUnlock(userId, 'focus_minutes', totalMinutes);
     
-    // Also update streak
+    await periodicTaskService.updatePeriodicTaskProgress(userId, 'focus', totalMinutes);
+    
     await this.updateStudyStreak(userId);
   }
 
@@ -377,15 +379,13 @@ export class AchievementService {
       .from('study_cards')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .gt('fsrs_stability', 21); // Stability > 21 days
+      .gt('fsrs_stability', 21);
 
     if (!error) {
       await this.checkAndUnlock(userId, 'cards_mastered', count || 0);
+      await periodicTaskService.updatePeriodicTaskProgress(userId, 'study', count || 0);
     }
     
-    // Daily Task: Review/Study Cards
-    // This method is called after review.
-    // Let's increment 'study_cards' daily task.
     await this.updateDailyTask(userId, 'study_cards', 1);
   }
 
@@ -393,7 +393,6 @@ export class AchievementService {
    * Update creation achievements (graphs/nodes created)
    */
   async updateCreationStats(userId: string): Promise<void> {
-    // 1. Check graphs count
     const { count: graphCount, error: graphError } = await supabaseAdmin
       .from('graphs')
       .select('*', { count: 'exact', head: true })
@@ -403,24 +402,8 @@ export class AchievementService {
       await this.checkAndUnlock(userId, 'graphs_created', graphCount || 0);
     }
 
-    // Daily Task: Create Node (just check if created today)
-    // For simplicity, we can just increment daily task progress when this is called,
-    // assuming this is called on creation.
-    // BUT updateCreationStats is called on createGraph/createNode.
-    // Let's increment 'create_node' daily task.
-    // Ideally we should distinguish between graph and node creation triggers.
-    // But 'create_node' task could be generic "Create Content".
-    // Let's stick to 'create_node'. If user creates graph, we can count it too or ignore.
-    // The current implementation calls updateCreationStats for BOTH.
-    // Let's check if we can differentiate or just increment.
-    // Let's increment 'create_node' task by 1 whenever this is called.
-    // This might be inaccurate if called multiple times or for bulk ops, but fine for now.
-    
     await this.updateDailyTask(userId, 'create_node', 1);
 
-    // 2. Check nodes count
-    // Note: We need to join with graphs to check ownership if nodes don't have user_id (which they don't seem to have directly on nodes table usually, let's check schema or assume ownership via graph)
-    // Actually nodes usually belong to a graph, and graph belongs to user.
     const { count: nodeCount, error: nodeError } = await supabaseAdmin
       .from('graph_nodes')
       .select('id, knowledge_graphs!inner(user_id)', { count: 'exact', head: true })
@@ -429,6 +412,7 @@ export class AchievementService {
 
     if (!nodeError) {
       await this.checkAndUnlock(userId, 'nodes_created', nodeCount || 0);
+      await periodicTaskService.updatePeriodicTaskProgress(userId, 'create', nodeCount || 0);
     }
   }
 }

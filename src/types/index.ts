@@ -23,6 +23,10 @@ export interface User {
   profile?: {
     xp?: number;
     level?: number;
+    daily_task_streak?: number;
+    weekly_streak?: number;
+    monthly_streak?: number;
+    quarterly_streak?: number;
     settings?: {
       request_retention?: number;
       maximum_interval?: number;
@@ -233,6 +237,10 @@ export interface UserProfile extends User {
   xp: number;
   level: number;
   role?: 'admin' | 'user';
+  daily_task_streak?: number;
+  weekly_streak?: number;
+  monthly_streak?: number;
+  quarterly_streak?: number;
 }
 
 export interface DailyTask {

@@ -553,32 +553,47 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
 interface RAGChatButtonWrapperProps extends RAGChatPanelProps {
   onOpenChange?: (open: boolean) => void;
+  isMobilePreviewMode?: boolean;
 }
 
-const SimpleChatButton: React.FC<{ isDark: boolean; isTutorMode: boolean; onClick: () => void }> = ({
+const SimpleChatButton: React.FC<{ 
+  isDark: boolean; 
+  isTutorMode: boolean; 
+  onClick: () => void;
+  isMobilePreviewMode?: boolean;
+  hasSelectedNode?: boolean;
+}> = ({
   isDark,
   isTutorMode,
-  onClick
-}) => (
-  <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={onClick}
-    className={`fixed bottom-16 left-4 z-40 p-2.5 rounded-xl shadow-lg transition-colors ${
-      isTutorMode
-        ? isDark 
-          ? 'bg-amber-600 hover:bg-amber-500 text-white' 
-          : 'bg-amber-500 hover:bg-amber-600 text-white'
-        : isDark 
-          ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
-          : 'bg-indigo-500 hover:bg-indigo-600 text-white'
-    }`}
-    title={isTutorMode ? 'AI 助教' : '智能问答'}
-  >
-    {isTutorMode ? <GraduationCap size={18} /> : <MessageCircle size={18} />}
-    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white animate-pulse" />
-  </motion.button>
-);
+  onClick,
+  isMobilePreviewMode,
+  hasSelectedNode
+}) => {
+  const shouldMoveUp = isMobilePreviewMode && hasSelectedNode;
+  
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`fixed left-4 z-40 p-2.5 rounded-xl shadow-lg transition-all duration-300 ${
+        shouldMoveUp ? 'bottom-72' : 'bottom-16'
+      } ${
+        isTutorMode
+          ? isDark 
+            ? 'bg-amber-600 hover:bg-amber-500 text-white' 
+            : 'bg-amber-500 hover:bg-amber-600 text-white'
+          : isDark 
+            ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
+            : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+      }`}
+      title={isTutorMode ? 'AI 助教' : '智能问答'}
+    >
+      {isTutorMode ? <GraduationCap size={18} /> : <MessageCircle size={18} />}
+      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white animate-pulse" />
+    </motion.button>
+  );
+};
 
 export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
   graphId,
@@ -601,7 +616,8 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
   suggestedNextTopics,
   onTutorChat,
   width = 420,
-  onWidthChange
+  onWidthChange,
+  isMobilePreviewMode
 }) => {
   const { isDark } = useTheme();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -621,6 +637,8 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
         isDark={isDark}
         isTutorMode={isTutorMode || false}
         onClick={() => setIsOpen(true)}
+        isMobilePreviewMode={isMobilePreviewMode}
+        hasSelectedNode={!!currentNodeId}
       />
 
       <AnimatePresence>

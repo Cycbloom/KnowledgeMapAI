@@ -165,7 +165,6 @@ export const useTextToSpeech = (engine: TTSEngine = 'browser') => {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[] | string[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const _utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const browserTTS = useBrowserTTS();
 

@@ -26,7 +26,6 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   onTaskClick,
 }) => {
   const [nodes, setNodes] = useState<TaskNode[]>([]);
-  const [selectedTask, setSelectedTask] = useState<ScheduledTask | null>(null);
 
   useEffect(() => {
     calculateLayout();
@@ -140,7 +139,6 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
                 key={node.task.id}
                 className="cursor-pointer"
                 onClick={() => {
-                  setSelectedTask(node.task);
                   onTaskClick?.(node.task);
                 }}
               >
@@ -213,13 +211,11 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 };
 
 interface DependencyIndicatorProps {
-  task: ScheduledTask;
   blockingTasks?: ScheduledTask[];
   className?: string;
 }
 
 export const DependencyIndicator: React.FC<DependencyIndicatorProps> = ({
-  task,
   blockingTasks = [],
   className = '',
 }) => {

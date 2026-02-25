@@ -42,7 +42,7 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
   onCancel,
 }) => {
   const [name, setName] = useState(template?.name || '');
-  const [description, setDescription] = useState(template?.description || '');
+  const [description] = useState(template?.description || '');
   const [category, setCategory] = useState(template?.category || 'custom');
   const [titleTemplate, setTitleTemplate] = useState(template?.title_template || '');
   const [descriptionTemplate, setDescriptionTemplate] = useState(template?.description_template || '');

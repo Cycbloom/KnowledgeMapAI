@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Calendar, X, Save, TrendingUp, Target, Award, 
-  BarChart3, Clock, CheckCircle, Brain, Lightbulb,
+  Calendar, X, Save, Target, 
+  BarChart3, Brain, Lightbulb,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { reviewApi, TaskReview, Mood } from '../../services/api/review';
-import { schedulerApi, ScheduledTask, SchedulerStats } from '../../services/api/scheduler';
+import { schedulerApi, ScheduledTask, TaskStats } from '../../services/api/scheduler';
 
 interface WeeklyReflectionProps {
   isOpen: boolean;
@@ -33,8 +33,7 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
-  const [weekStats, setWeekStats] = useState<SchedulerStats | null>(null);
-  const [weekTasks, setWeekTasks] = useState<ScheduledTask[]>([]);
+  const [weekStats, setWeekStats] = useState<TaskStats | null>(null);
   const [weekReviews, setWeekReviews] = useState<TaskReview[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -78,12 +77,6 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
 
       setWeekStats(stats);
       
-      const filteredTasks = tasks.filter(t => {
-        if (!t.completed_at) return false;
-        const completedDate = new Date(t.completed_at).toISOString().split('T')[0];
-        return completedDate >= weekRange.start && completedDate <= weekRange.end;
-      });
-      setWeekTasks(filteredTasks);
       setWeekReviews(reviews);
 
       if (existingReview) {
@@ -246,8 +239,9 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
                       每日完成趋势
                     </h3>
                     <div className="flex items-end gap-1 h-20">
-                      {weekStats.daily.map((day, i) => {
-                        const maxCompleted = Math.max(...weekStats!.daily.map(d => d.completed), 1);
+                      {weekStats.daily.map((day: { date: string; completed: number; duration: number }, i: number) => {
+                        const dailyData = weekStats?.daily ?? [];
+                        const maxCompleted = Math.max(...dailyData.map((d: { date: string; completed: number; duration: number }) => d.completed), 1);
                         const height = (day.completed / maxCompleted) * 100;
                         return (
                           <div key={i} className="flex-1 flex flex-col items-center">

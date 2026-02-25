@@ -193,7 +193,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
       async () => {
         const res = await aiGenerateCardsMutation.mutateAsync({
           node_title: selectedNode.title,
-          node_content: selectedNode.content
+          node_content: selectedNode.content || ''
         });
         
         const cards = res.cards.map((c: { question: string; answer: string; type: string; options?: string[] }) => ({

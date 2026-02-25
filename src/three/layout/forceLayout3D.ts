@@ -37,7 +37,7 @@ function getLevelNumber(level?: NodeLevel): number {
   return LEVEL_PRIORITY[level] ?? 3;
 }
 
-function calculateNodeImportance(node: Node, nodes: Node[], edges: Edge[]): number {
+function calculateNodeImportance(node: Node, _nodes: Node[], edges: Edge[]): number {
   const connections = edges.filter(e => e.source_knowledge_point_id === node.id || e.target_knowledge_point_id === node.id).length;
   const childCount = edges.filter(e => e.source_knowledge_point_id === node.id).length;
   const levelFactor = Math.max(1, 5 - getLevelNumber(node.level));

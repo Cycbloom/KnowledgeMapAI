@@ -82,10 +82,6 @@ export const GraphMap = () => {
     }
   }, []);
 
-  const _handleGraphDoubleClick = useCallback((graph: Graph) => {
-    navigate(`/graph/${graph.id}`);
-  }, [navigate]);
-
   const handleCombinedOpen = useCallback(() => {
     const ids = Array.from(multiSelectedGraphIds);
     if (ids.length === 2) {
@@ -604,7 +600,7 @@ export const GraphMap = () => {
         onClose={() => setIsCreateGraphPanelOpen(false)}
         onSubmit={handleQuickCreateGraph}
         relatedGraphId={selectedGraphId || undefined}
-        relatedGraphTitle={graphs.find(g => g.id === selectedGraphId)?.title}
+        relatedGraphTitle={graphs.find((g: Graph) => g.id === selectedGraphId)?.title}
         defaultRelationType={createGraphRelationType}
       />
 
@@ -630,15 +626,15 @@ export const GraphMap = () => {
         isOpen={isAIExpansionOpen}
         onClose={() => setIsAIExpansionOpen(false)}
         sourceGraphId={selectedGraphId || ''}
-        sourceGraphTitle={graphs.find(g => g.id === selectedGraphId)?.title || ''}
-        sourceGraphDescription={graphs.find(g => g.id === selectedGraphId)?.description}
+        sourceGraphTitle={graphs.find((g: Graph) => g.id === selectedGraphId)?.title || ''}
+        sourceGraphDescription={graphs.find((g: Graph) => g.id === selectedGraphId)?.description}
         onDepthExpand={handleDepthExpand}
         onDepthExpandNode={handleDepthExpandNode}
         onWidthExpand={handleInfiniteExpand}
         progress={expansionProgress}
         isRunning={isExpansionRunning}
         onEditPrompt={handleOpenPromptEditor}
-        hasNodes={(graphs.find(g => g.id === selectedGraphId) as any)?.node_count > 0}
+        hasNodes={(graphs.find((g: Graph) => g.id === selectedGraphId) as any)?.node_count > 0}
       />
 
       {isPromptEditorOpen && (

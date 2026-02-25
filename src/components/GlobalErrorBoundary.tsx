@@ -231,7 +231,12 @@ export function useErrorBoundary() {
   const [error, setError] = useState<Error | null>(null);
 
   const showBoundary = useCallback((err: Error | AppError) => {
-    setError(err instanceof Error ? err : new Error(err.message));
+    if (err instanceof Error) {
+      setError(err);
+    } else {
+      const appErr = err as AppError;
+      setError(new Error(appErr.message));
+    }
   }, []);
 
   if (error) {

@@ -207,7 +207,7 @@ export const useGraphNodeOperations = ({
       message,
       onConfirm: () => {
         deleteNodeMutation.mutate({ id: nodeToDelete.id, graphId: id, hardDelete }, {
-          onSuccess: (data) => {
+          onSuccess: (data: { affected_graphs?: string[] }) => {
             record({ 
               type: 'DELETE_NODE', 
               payload: { node: nodeToDelete, edges: connectedEdges } 

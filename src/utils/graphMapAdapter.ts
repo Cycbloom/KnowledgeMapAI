@@ -16,7 +16,7 @@ export const calculateGraphLevel = (
 };
 
 export const convertGraphsToNodes = (
-  graphs: Array<Graph & { node_count?: number; x_position?: number; y_position?: number }>,
+  graphs: Array<Graph & { node_count?: number; x_position?: number; y_position?: number; updated_at?: string }>,
   relations: GraphRelation[]
 ): Node[] => {
   return graphs.map(graph => ({
@@ -28,11 +28,11 @@ export const convertGraphsToNodes = (
     level: calculateGraphLevel(graph.id, relations),
     is_accepted: true,
     created_at: graph.created_at,
-    updated_at: graph.updated_at,
+    updated_at: graph.updated_at || graph.created_at,
     title: graph.title,
     content: graph.description || '',
     visibility: 'private' as const,
-    owner_id: graph.user_id,
+    owner_id: graph.user_id || '',
     properties: {
       nodeCount: graph.node_count || 0,
       createdAt: graph.created_at,

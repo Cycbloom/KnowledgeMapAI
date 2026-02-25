@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSchedulerStats, useHeatmap, useExecutions } from '../hooks/useScheduler';
-import type { ExecutionFilters } from '../services/api/scheduler';
+import type { ExecutionFilters, TaskExecution } from '../services/api/scheduler';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell, LineChart, Line
@@ -218,7 +218,7 @@ const DurationTrendChart = ({ data }: { data: { date: string; completed: number;
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              formatter={(value: number) => [formatDuration(value), '执行时长']}
+              formatter={(value: number | undefined) => value !== undefined ? [formatDuration(value), '执行时长'] : ['', '执行时长']}
               labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
             />
             <Line 
@@ -472,7 +472,7 @@ const ExecutionHistoryTable = ({ filters, onFiltersChange }: {
                 </td>
               </tr>
             ) : (
-              data.map((execution) => (
+              data.map((execution: TaskExecution) => (
                 <tr key={execution.id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
                   <td className="py-3 px-4 text-slate-300 font-mono text-sm">
                     {execution.task_id.slice(0, 8)}...
@@ -541,7 +541,7 @@ const EfficiencyChart = ({ data }: { data: { date: string; completed: number; du
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              formatter={(value: number) => [`${value} 分钟/任务`, '平均效率']}
+              formatter={(value: number | undefined) => value !== undefined ? [`${value} 分钟/任务`, '平均效率'] : ['', '平均效率']}
               labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
             />
             <Bar 

@@ -17,7 +17,6 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
   onClose,
   onSave,
 }) => {
-  const [settings, setSettings] = useState<TaskSettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -40,7 +39,6 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
     setLoading(true);
     try {
       const data = await schedulerApi.getSettings();
-      setSettings(data);
       setFocusDuration(data.q0_time_slice);
       setShortBreakDuration(data.break_duration);
       setSoundEnabled(data.sound_enabled);
@@ -63,7 +61,6 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
         sound_enabled: soundEnabled,
         notification_enabled: notificationEnabled,
       });
-      setSettings(updated);
       onSave?.(updated);
       onClose();
     } catch (error) {

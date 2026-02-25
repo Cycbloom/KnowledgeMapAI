@@ -41,8 +41,6 @@ export const useTutorOperations = ({
   const handleTutorChat = async (message: string, history: any[] = [], onChunk: (content: string) => void) => {
     try {
       const contextNodeIds = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedNode ? [selectedNode.id] : []);
-      
-      const _existingNodes = nodes.map(n => n.title);
 
       await api.ai.tutorChatStream(
         {
@@ -269,7 +267,6 @@ export const useTutorOperations = ({
   };
 
   const handleToggleTutorMode = () => {
-    const _newMode = isTutorMode ? 'none' : 'free';
     setIsTutorMode(!isTutorMode);
     if (!isTutorMode) {
       setTutorMode('free');

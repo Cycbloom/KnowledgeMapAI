@@ -1,19 +1,3 @@
-interface QueryOptions {
-  select?: string;
-  filter?: Record<string, unknown>;
-  order?: { column: string; ascending?: boolean };
-  limit?: number;
-  offset?: number;
-  range?: { from: number; to: number };
-}
-
-interface _BatchQueryOptions {
-  queries: Array<{
-    table: string;
-    options: QueryOptions;
-  }>;
-}
-
 interface GraphData {
   graph: Record<string, unknown> | null;
   nodes: Record<string, unknown>[];

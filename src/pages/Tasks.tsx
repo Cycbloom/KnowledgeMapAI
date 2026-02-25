@@ -5,7 +5,6 @@ import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { CheckCircle2, XCircle, Loader2, Clock, RefreshCw, ArrowRight, Trash2, RotateCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Task } from '../types';
 
 const getStringOrUnknown = (value: unknown, fallback: string = ''): string => {
   if (typeof value === 'string') return value;
@@ -410,10 +409,10 @@ export const Tasks = () => {
                             </button>
                           )}
 
-                          {t.status === 'completed' && t.type === 'infinite_graph_expansion' && t.result?.source_graph_id && (
+                          {t.status === 'completed' && t.type === 'infinite_graph_expansion' && t.result?.source_graph_id && Boolean(t.result.source_graph_id) && (
                             <button
                               onClick={() => {
-                                navigate(`/graph-map?from=${t.result.source_graph_id}`);
+                                navigate(`/graph-map?from=${String(t.result.source_graph_id)}`);
                                 addMessage({ type: 'success', content: '已打开图谱地图，可查看扩展的知识网络' });
                               }}
                               className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 shadow-sm shadow-purple-200 dark:shadow-none transition-colors"

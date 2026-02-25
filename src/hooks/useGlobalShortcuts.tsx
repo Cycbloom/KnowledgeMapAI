@@ -67,7 +67,7 @@ export function useShortcutAction(actionId: string): {
   formattedKey: string;
   execute: () => void;
 } {
-  const { bindings, getShortcut } = useShortcutStore();
+  const { bindings } = useShortcutStore();
   const binding = bindings[actionId];
   
   const formattedKey = binding?.enabled 
@@ -114,8 +114,8 @@ function formatKey(shortcut: ShortcutKey): string {
 }
 
 export function useKeyboardHint(actionId: string): string {
-  const { bindings, getShortcut } = useShortcutStore();
-  const shortcut = getShortcut(actionId);
+  const { bindings } = useShortcutStore();
+  const shortcut = bindings[actionId];
   const binding = bindings[actionId];
   
   if (!shortcut || !binding || !binding.enabled) {

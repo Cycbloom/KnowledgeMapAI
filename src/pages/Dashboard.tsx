@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, useToggleFavoriteMutation, queryKeys } from '../hooks/useQueries';
+import { useGraphs, useCreateGraphMutation, useImportGraphMutation, useDeleteGraphMutation, useDashboardStats, useCreateGraphFromTemplateMutation, useToggleFavoriteMutation, usePrefetchGraph, queryKeys } from '../hooks/useQueries';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Plus, BookOpen, Upload, Trash2, BarChart, Search, Network, ArrowRight, Sparkles, Tag, X, Star, AlertCircle, Loader2 } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
@@ -26,6 +26,7 @@ export const Dashboard = () => {
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
+  const prefetchGraph = usePrefetchGraph();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addMessage } = useMessageStore();
 
@@ -576,6 +577,7 @@ export const Dashboard = () => {
             paginatedGraphs.map((graph, index) => (
               <div 
                 key={graph.id || index} 
+                onMouseEnter={() => prefetchGraph(graph.id)}
                 className={`group relative rounded-2xl transition-all duration-300 hover:-translate-y-1 ${
                   isDark 
                     ? 'bg-slate-800 border border-slate-700 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20' 

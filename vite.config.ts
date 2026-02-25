@@ -4,7 +4,60 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vite.dev/config/
+function getChunkStrategy(id: string): string | undefined {
+  if (!id.includes('node_modules')) return undefined;
+
+  if (id.includes('mermaid')) {
+    return 'vendor-mermaid';
+  }
+
+  if (id.includes('dagre') || id.includes('graphlib') || id.includes('elkjs')) {
+    return 'vendor-mermaid';
+  }
+
+  if (id.includes('katex')) return 'vendor-katex';
+
+  if (id.includes('react-markdown') || id.includes('remark-') || id.includes('rehype-') || 
+      id.includes('unified') || id.includes('unist-') || id.includes('mdast-') || 
+      id.includes('micromark') || id.includes('decode-named-character-reference')) {
+    return 'vendor-markdown';
+  }
+
+  if (id.includes('@react-three') || id.includes('three') || id.includes('postprocessing')) {
+    return 'vendor-three';
+  }
+
+  if (id.includes('recharts')) return 'vendor-charts';
+
+  if (id.includes('d3-')) return 'vendor-d3';
+
+  if (id.includes('lucide-react') || id.includes('framer-motion')) return 'vendor-ui';
+  if (id.includes('@dnd-kit')) return 'vendor-dnd';
+
+  if (id.includes('zustand') || id.includes('@tanstack/react-query')) return 'vendor-state';
+
+  if (id.includes('@supabase')) return 'vendor-supabase';
+
+  if (id.includes('openai') || id.includes('zod')) return 'vendor-ai';
+
+  if (id.includes('react') || id.includes('react-dom') || id.includes('react-router') || id.includes('scheduler')) {
+    return 'vendor-react';
+  }
+
+  if (id.includes('react-')) return 'vendor-react-ecosystem';
+
+  if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('axios') || id.includes('comlink')) {
+    return 'vendor-utils';
+  }
+
+  if (id.includes('html2canvas')) return 'vendor-export';
+  if (id.includes('ts-fsrs')) return 'vendor-fsrs';
+  if (id.includes('cheerio')) return 'vendor-parser';
+  if (id.includes('bullmq') || id.includes('ioredis')) return 'vendor-queue';
+
+  return undefined;
+}
+
 export default defineConfig({
   plugins: [
     react(),
@@ -45,6 +98,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -53,7 +107,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -67,14 +121,13 @@ export default defineConfig({
               cacheName: 'gstatic-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
                 statuses: [0, 200]
               }
             }
           },
-          // API Caching Strategy (Network First for data)
           {
             urlPattern: /\/api\/.*/i,
             handler: 'NetworkFirst',
@@ -82,7 +135,7 @@ export default defineConfig({
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
+                maxAgeSeconds: 60 * 5
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -97,40 +150,19 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('three') || id.includes('@react-three')) {
-              return 'vendor-three';
-            }
-            if (id.includes('recharts') || id.includes('d3-')) {
-              return 'vendor-charts';
-            }
-            if (id.includes('lucide-react') || id.includes('framer-motion')) {
-              return 'vendor-ui';
-            }
-            if (id.includes('react-markdown') || id.includes('remark-') || id.includes('rehype-') || id.includes('katex')) {
-              return 'vendor-markdown';
-            }
-            if (id.includes('mermaid')) {
-              return 'vendor-mermaid';
-            }
-            if (id.includes('zustand') || id.includes('@tanstack/react-query')) {
-              return 'vendor-state';
-            }
-            if (id.includes('clsx') || id.includes('tailwind-merge')) {
-              return 'vendor-utils';
-            }
-          }
-        },
+        manualChunks: getChunkStrategy,
         compact: true,
-        experimentalMinChunkSize: 10000,
+        experimentalMinChunkSize: 20000,
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
     target: 'es2020',
     minify: 'esbuild',
+    esbuild: {
+      drop: ['console', 'debugger'],
+      legalComments: 'none',
+    },
     sourcemap: false,
     cssCodeSplit: true,
     reportCompressedSize: true,
@@ -139,7 +171,7 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // 允许局域网访问
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

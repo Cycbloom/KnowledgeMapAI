@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useCallback, Suspense } from 'react';
+import React, { useMemo, useRef, useState, useCallback, Suspense, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Stars, Line, Billboard } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -62,7 +62,8 @@ function PlanetNode({
 }: PlanetNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
-  const [scale, setScale] = useState(1);
+  const scaleRef = useRef(1);
+  const nodePosRef = useRef(new THREE.Vector3(node.x, node.z, node.y));
   const type = getNodeType(node, layoutLinks);
   
   const baseSize = useMemo(() => {
@@ -86,21 +87,30 @@ function PlanetNode({
       meshRef.current.rotation.y += 0.003;
     }
     
-    const nodePos = new THREE.Vector3(node.x, node.z, node.y);
-    const distance = camera.position.distanceTo(nodePos);
+    const distance = camera.position.distanceTo(nodePosRef.current);
     const baseDistance = 200;
     const newScale = Math.max(0.3, Math.min(2, distance / baseDistance));
     
-    setScale(prev => {
-      if (Math.abs(prev - newScale) > 0.05) {
-        return newScale;
-      }
-      return prev;
-    });
+    if (Math.abs(scaleRef.current - newScale) > 0.05) {
+      scaleRef.current = newScale;
+    }
   });
 
-  const titleFontSize = 5 * scale;
-  const tagFontSize = 3 * scale;
+  useEffect(() => {
+    return () => {
+      if (meshRef.current) {
+        meshRef.current.geometry.dispose();
+        if (Array.isArray(meshRef.current.material)) {
+          meshRef.current.material.forEach(m => m.dispose());
+        } else {
+          meshRef.current.material.dispose();
+        }
+      }
+    };
+  }, []);
+
+  const titleFontSize = 5 * scaleRef.current;
+  const tagFontSize = 3 * scaleRef.current;
   const labelOffset = baseSize + 3;
 
   return (
@@ -165,6 +175,8 @@ interface PlanetLinkProps {
 }
 
 function PlanetLink({ source, target }: PlanetLinkProps) {
+  const curveRef = useRef<THREE.QuadraticBezierCurve3 | null>(null);
+  
   const points = useMemo(() => {
     const start: [number, number, number] = [source.x, source.z, source.y];
     const end: [number, number, number] = [target.x, target.z, target.y];
@@ -174,12 +186,18 @@ function PlanetLink({ source, target }: PlanetLinkProps) {
       (source.y + target.y) / 2
     ];
     
-    const curve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(...start),
-      new THREE.Vector3(...mid),
-      new THREE.Vector3(...end)
-    );
-    return curve.getPoints(20).map(p => [p.x, p.y, p.z] as [number, number, number]);
+    if (!curveRef.current) {
+      curveRef.current = new THREE.QuadraticBezierCurve3(
+        new THREE.Vector3(...start),
+        new THREE.Vector3(...mid),
+        new THREE.Vector3(...end)
+      );
+    } else {
+      curveRef.current.v0.set(...start);
+      curveRef.current.v1.set(...mid);
+      curveRef.current.v2.set(...end);
+    }
+    return curveRef.current.getPoints(20).map(p => [p.x, p.y, p.z] as [number, number, number]);
   }, [source, target]);
 
   return (

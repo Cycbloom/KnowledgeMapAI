@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { logger } from './utils/logger.js';
 
 dotenv.config();
 
@@ -8,7 +9,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('⚠️ Supabase credentials missing in .env file!');
+  logger.warn('Supabase credentials missing in .env file!');
 }
 
 // Prevent crash if env vars are missing by using placeholders. 

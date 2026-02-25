@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle, X, Save, MessageSquare, AlertTriangle,
-  Lightbulb, Target, Clock, Tag, Brain
+  Lightbulb, Clock, Tag, Brain
 } from 'lucide-react';
 import { reviewApi, TaskReview } from '../../services/api/review';
 import { ScheduledTask } from '../../services/api/scheduler';

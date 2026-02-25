@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Calendar, BarChart3 } from 'lucide-react';
-import { schedulerApi, SchedulerStats } from '../../services/api/scheduler';
+import { TrendingUp, Calendar } from 'lucide-react';
+import { schedulerApi, TaskStats } from '../../services/api/scheduler';
 
 interface EfficiencyTrendProps {
   period?: '7d' | '30d' | '90d';
@@ -12,7 +12,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
   period = '7d',
   className = '',
 }) => {
-  const [stats, setStats] = useState<SchedulerStats | null>(null);
+  const [stats, setStats] = useState<TaskStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
 
   const getChartData = () => {
     if (!stats?.daily) return [];
-    return stats.daily.map((day, index) => ({
+    return stats.daily.map((day: { duration: number; completed: number; date: string }, index: number) => ({
       day: index,
       duration: day.duration,
       completed: day.completed,
@@ -53,8 +53,8 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
   };
 
   const chartData = getChartData();
-  const maxDuration = Math.max(...chartData.map(d => d.duration), 1);
-  const avgDuration = chartData.reduce((sum, d) => sum + d.duration, 0) / chartData.length;
+  const maxDuration = Math.max(...chartData.map((d: { duration: number }) => d.duration), 1);
+  const avgDuration = chartData.reduce((sum: number, d: { duration: number }) => sum + d.duration, 0) / chartData.length;
 
   return (
     <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}>

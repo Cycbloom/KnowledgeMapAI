@@ -55,7 +55,7 @@ export async function generateNodesForGraph(
     const parsed = JSON.parse(completion.choices[0].message.content || '{"root":null,"coreNodes":[]}');
 
     if (parsed.root) {
-      const rootNodeResult = await createKnowledgePointWithGraphNode(supabase, userId, {
+      const rootNodeResult = await createKnowledgePointWithGraphNode(supabase, userId || '', {
         graph_id: graphId,
         title: parsed.root.title || topic,
         content: parsed.root.content || '',
@@ -75,7 +75,7 @@ export async function generateNodesForGraph(
           const angle = (2 * Math.PI * i) / coreNodes.length;
           const radius = 200;
 
-          const childNodeResult = await createKnowledgePointWithGraphNode(supabase, userId, {
+          const childNodeResult = await createKnowledgePointWithGraphNode(supabase, userId || '', {
             graph_id: graphId,
             title: coreNode.title,
             content: coreNode.content || '',
@@ -181,7 +181,7 @@ export async function expandNodeForGraph(
         const angle = (2 * Math.PI * i) / children.length;
         const radius = 150;
 
-        const childNodeResult = await createKnowledgePointWithGraphNode(supabase, userId, {
+        const childNodeResult = await createKnowledgePointWithGraphNode(supabase, userId || '', {
           graph_id: graphId,
           title: child.title,
           content: child.content || '',

@@ -77,7 +77,6 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
 }) => {
   const { isDark } = useTheme();
   const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
-  const _isLocked = nodeStatus && nodeStatus[node.id]?.locked;
   const status = getLearningStatus(nodeStatus?.[node.id]);
   const colors = getStatusColors(status, isDark);
 
@@ -170,7 +169,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             urlTransform={(url) => url}
             components={{
               code(props) {
-                const {children, className, ..._rest} = props
+                const {children, className} = props
                 const match = /language-(\w+)/.exec(className || '')
                 if (match && match[1] === 'mermaid') {
                   return <Mermaid chart={String(children).replace(/\n$/, '')} />

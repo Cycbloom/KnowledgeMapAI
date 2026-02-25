@@ -211,7 +211,6 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     );
   }
 
-  const _totalSteps = unknownPrerequisites.length > 0 ? 4 : 3;
   const stepIndicator = unknownPrerequisites.length > 0 ? [1, 2, 3, 4] : [1, 2, 3];
 
   return (

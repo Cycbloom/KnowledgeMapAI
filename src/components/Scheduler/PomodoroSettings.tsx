@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Settings, Clock, Coffee, Timer, Zap, X, Save,
-  Play, Pause, RefreshCw
+  Clock, Coffee, Timer, Zap, X, Save,
+  RefreshCw
 } from 'lucide-react';
 import { schedulerApi, TaskSettings } from '../../services/api/scheduler';
 

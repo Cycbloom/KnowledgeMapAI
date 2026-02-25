@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getPaginationParams, PaginationOptions } from '../utils/pagination.js';
+import { logger } from '../utils/logger.js';
 
 export interface TaskTemplate {
   id: string;
@@ -233,7 +234,7 @@ export class TemplateService {
         .eq('id', templateId);
 
       if (updateError) {
-        console.warn('Failed to increment usage count:', updateError.message);
+        logger.warn('Failed to increment usage count:', updateError.message);
       }
     }
   }

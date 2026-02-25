@@ -10,14 +10,13 @@ import {
   updateGraphSchema,
   uuidParamsSchema,
   shareGraphSchema,
-  createGraphFromTemplateSchema,
 } from "../schemas/index.js";
 import { graphService } from "../services/graphService.js";
-import { templateService } from "../services/templateService.js";
 import { ErrorCodes } from "../constants/errorCodes.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { achievementService } from "../services/achievementService.js";
 import { cacheService } from "../services/cache.js";
+import { logger } from "../utils/logger.js";
 import { z } from "zod";
 
 const checkTopicSchema = z.object({
@@ -299,25 +298,6 @@ router.post(
   }
 );
 
-// Create a new graph from template (Auth Required)
-router.post(
-  "/from-template",
-  requireAuth,
-  validate({ body: createGraphFromTemplateSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const { template_id, title, description } = req.body;
-    const data = await templateService.createGraphFromTemplate(
-      req.supabase!,
-      req.user.id,
-      template_id,
-      title,
-      description
-    );
-    res.status(201).json(data);
-  }
-);
-
-// Get a specific graph (Optional Auth for Public Graphs)
 router.get(
   "/:id",
   optionalAuth,
@@ -491,7 +471,7 @@ router.get(
     if (userId) {
       graphService
         .updateLastUsedAt(req.supabase!, id, userId)
-        .catch(console.error);
+        .catch(err => logger.error('Update last used at failed:', err));
     }
 
     res.json(data);

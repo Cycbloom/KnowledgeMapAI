@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate.js';
 import { focusService } from '../services/focusService.js';
 import { achievementService } from '../services/achievementService.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.post('/sessions', requireAuth, validate(createSessionSchema), async (req:
   });
 
   if (completed) {
-    achievementService.updateFocusStats(req.user.id).catch(console.error);
+    achievementService.updateFocusStats(req.user.id).catch(err => logger.error('Focus stats update failed:', err));
   }
 
   res.status(201).json({ success: true, data: session });

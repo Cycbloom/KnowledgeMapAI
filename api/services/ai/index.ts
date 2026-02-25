@@ -13,24 +13,14 @@ import {
   getMockNextTopics,
   getMockImageGraph,
 } from "./mock.js";
+import {
+  withTimeoutAndRetry,
+  TimeoutError,
+  RetryError,
+  DEFAULT_TIMEOUT,
+} from "../../utils/retry.js";
 
-const DEFAULT_TIMEOUT = 60000;
 const pendingRequests = new Map<string, Promise<unknown>>();
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number = DEFAULT_TIMEOUT
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`AI request timeout after ${ms}ms`)),
-        ms
-      )
-    ),
-  ]);
-}
 
 async function dedupedRequest<T>(
   key: string,
@@ -171,12 +161,21 @@ export class AIService {
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const completion = await withTimeout(
-          provider.client.chat.completions.create({
-            messages,
-            model: options.model || provider.model,
-          }),
-          options.timeout || DEFAULT_TIMEOUT
+        const completion = await withTimeoutAndRetry(
+          () =>
+            provider.client.chat.completions.create({
+              messages,
+              model: options.model || provider.model,
+            }),
+          {
+            timeout: options.timeout || DEFAULT_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `Chat request retry attempt ${attempt}: ${error.message}`
+              );
+            },
+          }
         );
 
         return completion.choices[0].message.content || "";
@@ -184,6 +183,13 @@ export class AIService {
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Chat Error:", error);
+      
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
       throw new Error(err.message || "AI chat failed");
     }
   }
@@ -217,25 +223,49 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
 **主持人**: 请配置好 API Key 后，我将为你带来精彩的深度解读！`;
     }
 
-    try {
-      const completion = await withTimeout(
-        provider.client.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert podcast script writer.",
-            },
-            { role: "user", content: prompt },
-          ],
-          model: provider.model,
-        }),
-        DEFAULT_TIMEOUT
-      );
+    const requestKey = generateRequestKey("generatePodcastScript", {
+      context: context.slice(0, 200),
+      language,
+      model: provider.model,
+    });
 
-      return completion.choices[0].message.content || "";
+    try {
+      return await dedupedRequest(requestKey, async () => {
+        const completion = await withTimeoutAndRetry(
+          () =>
+            provider.client.chat.completions.create({
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an expert podcast script writer.",
+                },
+                { role: "user", content: prompt },
+              ],
+              model: provider.model,
+            }),
+          {
+            timeout: DEFAULT_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `Generate Podcast Script retry attempt ${attempt}: ${error.message}`
+              );
+            },
+          }
+        );
+
+        return completion.choices[0].message.content || "";
+      });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Generate Podcast Script Error:", error);
+      
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
       throw new Error(err.message || "Failed to generate podcast script");
     }
   }
@@ -259,6 +289,13 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       return { cards: getMockCards(topic, types, count) };
     }
 
+    const requestKey = generateRequestKey("generateCards", {
+      topic: topic.slice(0, 100),
+      types: types.sort(),
+      count,
+      model: options.model || provider.model,
+    });
+
     const typePrompts: Record<string, string> = {
       qa: "For 'qa' type: Create thought-provoking open-ended questions that test deep understanding.",
       choice:
@@ -274,74 +311,92 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
     };
 
     try {
-      const promptParts = await Promise.all(
-        types.map(async (type) => {
-          const code = `generate_cards_${type}`;
-          const rendered = await promptService.getRenderedPrompt(
+      return await dedupedRequest(requestKey, async () => {
+        const promptParts = await Promise.all(
+          types.map(async (type) => {
+            const code = `generate_cards_${type}`;
+            const rendered = await promptService.getRenderedPrompt(
+              supabaseAdmin,
+              code,
+              { count: Math.ceil(count / types.length) },
+              options.userId,
+              options.graphId
+            );
+
+            if (rendered && rendered.trim().length > 0) {
+              return rendered;
+            }
+
+            return typePrompts[type] || "";
+          })
+        );
+
+        let systemPrompt = promptParts
+          .filter((p) => p.length > 0)
+          .join("\n\n---\n\n");
+
+        if (!systemPrompt.trim()) {
+          systemPrompt = await promptService.getRenderedPrompt(
             supabaseAdmin,
-            code,
-            { count: Math.ceil(count / types.length) },
+            "generate_cards",
+            {
+              count,
+              allowedTypes: types.join(", "),
+              context: context ? `Parent/Context Info: ${context}` : "",
+            },
             options.userId,
             options.graphId
           );
+        } else {
+          systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.\n\nContext: ${
+            context || "None"
+          }\n\n${systemPrompt}`;
+        }
 
-          if (rendered && rendered.trim().length > 0) {
-            return rendered;
-          }
-
-          return typePrompts[type] || "";
-        })
-      );
-
-      let systemPrompt = promptParts
-        .filter((p) => p.length > 0)
-        .join("\n\n---\n\n");
-
-      if (!systemPrompt.trim()) {
-        systemPrompt = await promptService.getRenderedPrompt(
-          supabaseAdmin,
-          "generate_cards",
-          {
-            count,
-            allowedTypes: types.join(", "),
-            context: context ? `Parent/Context Info: ${context}` : "",
+        const completion = await withTimeoutAndRetry(
+        () =>
+          provider.client.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `Topic: ${topic}\nContent: ${
+                  content || "No detailed content provided."
+                }`,
+              },
+            ],
+            model: options.model || provider.model,
+            response_format: { type: "json_object" },
+          }),
+        {
+          timeout: DEFAULT_TIMEOUT,
+          maxRetries: 3,
+          onRetry: (attempt, error) => {
+            logger.warn(
+              `Generate Cards retry attempt ${attempt}: ${error.message}`
+            );
           },
-          options.userId,
-          options.graphId
+        }
+      );
+
+        const result = completion.choices[0].message.content || "";
+        const parsed = parseAIResponse<{ cards: unknown[] }>(
+          result,
+          "Generate Cards"
         );
-      } else {
-        systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.\n\nContext: ${
-          context || "None"
-        }\n\n${systemPrompt}`;
-      }
 
-      const completion = await withTimeout(
-        provider.client.chat.completions.create({
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `Topic: ${topic}\nContent: ${
-                content || "No detailed content provided."
-              }`,
-            },
-          ],
-          model: options.model || provider.model,
-          response_format: { type: "json_object" },
-        }),
-        DEFAULT_TIMEOUT
-      );
-
-      const result = completion.choices[0].message.content || "";
-      const parsed = parseAIResponse<{ cards: unknown[] }>(
-        result,
-        "Generate Cards"
-      );
-
-      return { cards: parsed.cards || [] };
+        return { cards: parsed.cards || [] };
+      });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
+      
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
       throw new Error(err.message || "AI card generation failed");
     }
   }
@@ -412,19 +467,31 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
         options.graphId
       );
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Node Title: ${nodeTitle}\nNode Content: ${
-              nodeContent || ""
-            }${existingNodesContext}${childrenContext}`,
+      const completion = await withTimeoutAndRetry(
+        () =>
+          provider.client.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `Node Title: ${nodeTitle}\nNode Content: ${
+                  nodeContent || ""
+                }${existingNodesContext}${childrenContext}`,
+              },
+            ],
+            model: options.model || provider.model,
+            response_format: { type: "json_object" },
+          }),
+        {
+          timeout: DEFAULT_TIMEOUT,
+          maxRetries: 3,
+          onRetry: (attempt, error) => {
+            logger.warn(
+              `Expand Knowledge retry attempt ${attempt}: ${error.message}`
+            );
           },
-        ],
-        model: options.model || provider.model,
-        response_format: { type: "json_object" },
-      });
+        }
+      );
 
       const content = completion.choices[0].message.content || "";
 
@@ -449,6 +516,13 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
+
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
 
       if (err.message?.includes("parse") || err.message?.includes("JSON")) {
         logger.warn("[AI] Returning mock response due to parse error");
@@ -482,61 +556,69 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       return { suggestions: getMockBranchSuggestions(nodeTitle) };
     }
 
+    const requestKey = generateRequestKey("getBranchSuggestions", {
+      nodeTitle: nodeTitle.slice(0, 100),
+      contextLevel: options.contextLevel || "normal",
+      model: options.model || provider.model,
+    });
+
     try {
-      const existingNodesContext =
-        existingNodes && existingNodes.length > 0
-          ? `\nExisting Nodes in Graph: ${existingNodes
-              .slice(0, 300)
-              .join(", ")}`
-          : "";
+      return await dedupedRequest(requestKey, async () => {
+        const existingNodesContext =
+          existingNodes && existingNodes.length > 0
+            ? `\nExisting Nodes in Graph: ${existingNodes
+                .slice(0, 300)
+                .join(", ")}`
+            : "";
 
-      const childrenContext =
-        childNodes && childNodes.length > 0
-          ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
-              ", "
-            )}`
-          : "";
+        const childrenContext =
+          childNodes && childNodes.length > 0
+            ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
+                ", "
+              )}`
+            : "";
 
-      const contextLevel = options.contextLevel || "normal";
+        const contextLevel = options.contextLevel || "normal";
 
-      const templateContext = {
-        nodeTitle,
-        nodeContent: nodeContent || "",
-        existingNodes: existingNodesContext,
-        childrenContext,
-        isRootOrCore: ["root", "core"].includes(contextLevel),
-        isLeaf: contextLevel === "leaf",
-      };
+        const templateContext = {
+          nodeTitle,
+          nodeContent: nodeContent || "",
+          existingNodes: existingNodesContext,
+          childrenContext,
+          isRootOrCore: ["root", "core"].includes(contextLevel),
+          isLeaf: contextLevel === "leaf",
+        };
 
-      const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
-        "branch_suggestions",
-        templateContext,
-        options.userId,
-        options.graphId
-      );
+        const systemPrompt = await promptService.getRenderedPrompt(
+          supabaseAdmin,
+          "branch_suggestions",
+          templateContext,
+          options.userId,
+          options.graphId
+        );
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Node Title: ${nodeTitle}\nNode Content: ${
-              nodeContent || ""
-            }${existingNodesContext}${childrenContext}`,
-          },
-        ],
-        model: options.model || provider.model,
-        response_format: { type: "json_object" },
+        const completion = await provider.client.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `Node Title: ${nodeTitle}\nNode Content: ${
+                nodeContent || ""
+              }${existingNodesContext}${childrenContext}`,
+            },
+          ],
+          model: options.model || provider.model,
+          response_format: { type: "json_object" },
+        });
+
+        const content = completion.choices[0].message.content || "";
+        const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+          content,
+          "Branch Suggestions"
+        );
+
+        return { suggestions: parsed.suggestions || [] };
       });
-
-      const content = completion.choices[0].message.content || "";
-      const parsed = parseAIResponse<{ suggestions: unknown[] }>(
-        content,
-        "Branch Suggestions"
-      );
-
-      return { suggestions: parsed.suggestions || [] };
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
@@ -626,39 +708,47 @@ Your task:
       return getMockResponse("content", `Learning Material for ${topic}`);
     }
 
-    try {
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.\n" +
-              "Target Audience: University students or professionals learning this concept.\n" +
-              "Structure:\n" +
-              "1. **Introduction (Hook)**: Briefly explain what this is and why it matters.\n" +
-              "2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.\n" +
-              "3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.\n" +
-              "4. **Real-world Examples**: Concrete use cases or historical context.\n" +
-              "5. **Summary**: Key takeaways.\n\n" +
-              "Formatting:\n" +
-              "- Use Markdown headers (##, ###).\n" +
-              "- Use bolding for key terms.\n" +
-              "- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.\n" +
-              "- Use lists and bullet points for readability.\n" +
-              "- Length: Comprehensive (approx 800-1500 words).\n" +
-              "Please respond in Chinese.",
-          },
-          {
-            role: "user",
-            content: `Topic: ${topic}\nContext/Background: ${
-              context || "General knowledge"
-            }`,
-          },
-        ],
-        model: options.model || provider.model,
-      });
+    const requestKey = generateRequestKey("generateLearningMaterial", {
+      topic: topic.slice(0, 100),
+      level: options.level || "normal",
+      model: options.model || provider.model,
+    });
 
-      return completion.choices[0].message.content || "";
+    try {
+      return await dedupedRequest(requestKey, async () => {
+        const completion = await provider.client.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.\n" +
+                "Target Audience: University students or professionals learning this concept.\n" +
+                "Structure:\n" +
+                "1. **Introduction (Hook)**: Briefly explain what this is and why it matters.\n" +
+                "2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.\n" +
+                "3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.\n" +
+                "4. **Real-world Examples**: Concrete use cases or historical context.\n" +
+                "5. **Summary**: Key takeaways.\n\n" +
+                "Formatting:\n" +
+                "- Use Markdown headers (##, ###).\n" +
+                "- Use bolding for key terms.\n" +
+                "- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.\n" +
+                "- Use lists and bullet points for readability.\n" +
+                "- Length: Comprehensive (approx 800-1500 words).\n" +
+                "Please respond in Chinese.",
+            },
+            {
+              role: "user",
+              content: `Topic: ${topic}\nContext/Background: ${
+                context || "General knowledge"
+              }`,
+            },
+          ],
+          model: options.model || provider.model,
+        });
+
+        return completion.choices[0].message.content || "";
+      });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Learning Material Error:", error);
@@ -684,46 +774,55 @@ Your task:
       return { suggestions: getMockNextTopics(nodeTitle) };
     }
 
+    const requestKey = generateRequestKey("suggestNextTopic", {
+      nodeTitle: nodeTitle.slice(0, 100),
+      masteredCount: options.userProgress?.masteredCount || 0,
+      currentLevel: options.userProgress?.currentLevel || "beginner",
+      model: options.model || provider.model,
+    });
+
     try {
-      const progressContext = options.userProgress
-        ? `\nUser Progress:\n- Mastered nodes: ${
-            options.userProgress.masteredCount || 0
-          }\n- Current level: ${
-            options.userProgress.currentLevel || "beginner"
-          }`
-        : "";
+      return await dedupedRequest(requestKey, async () => {
+        const progressContext = options.userProgress
+          ? `\nUser Progress:\n- Mastered nodes: ${
+              options.userProgress.masteredCount || 0
+            }\n- Current level: ${
+              options.userProgress.currentLevel || "beginner"
+            }`
+          : "";
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
-              "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
-              "- 'title': Brief topic title (max 30 chars)\n" +
-              "- 'description': Short explanation (max 80 chars)\n" +
-              "- 'priority': 'high', 'medium', or 'low'\n" +
-              "- 'estimatedDifficulty': Number from 1-5\n" +
-              "Please respond in Chinese.",
-          },
-          {
-            role: "user",
-            content: `Current Node:\nTitle: ${nodeTitle}\nContent: ${
-              nodeContent || ""
-            }${progressContext}`,
-          },
-        ],
-        model: options.model || provider.model,
-        response_format: { type: "json_object" },
+        const completion = await provider.client.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
+                "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
+                "- 'title': Brief topic title (max 30 chars)\n" +
+                "- 'description': Short explanation (max 80 chars)\n" +
+                "- 'priority': 'high', 'medium', or 'low'\n" +
+                "- 'estimatedDifficulty': Number from 1-5\n" +
+                "Please respond in Chinese.",
+            },
+            {
+              role: "user",
+              content: `Current Node:\nTitle: ${nodeTitle}\nContent: ${
+                nodeContent || ""
+              }${progressContext}`,
+            },
+          ],
+          model: options.model || provider.model,
+          response_format: { type: "json_object" },
+        });
+
+        const content = completion.choices[0].message.content || "";
+        const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+          content,
+          "Suggest Next Topic"
+        );
+
+        return { suggestions: parsed.suggestions || [] };
       });
-
-      const content = completion.choices[0].message.content || "";
-      const parsed = parseAIResponse<{ suggestions: unknown[] }>(
-        content,
-        "Suggest Next Topic"
-      );
-
-      return { suggestions: parsed.suggestions || [] };
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
@@ -763,11 +862,13 @@ Your task:
           ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step."
           : "Free Mode: Allow open-ended discussion. Answer questions freely.";
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
+      const completion = await withTimeoutAndRetry(
+        () =>
+          provider.client.chat.completions.create({
+            messages: [
+              {
+                role: "system",
+                content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
 
 ${modePrompt}
 
@@ -780,19 +881,36 @@ Instructions:
 3. When explaining concepts, provide examples
 4. Respond in the same language as the user (default to Chinese)
 5. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`,
+              },
+              ...messages.map((msg) => ({
+                role: msg.role as "user" | "assistant" | "system",
+                content: msg.content,
+              })),
+            ],
+            model: options.model || provider.model,
+          }),
+        {
+          timeout: DEFAULT_TIMEOUT,
+          maxRetries: 3,
+          onRetry: (attempt, error) => {
+            logger.warn(
+              `Tutor Chat retry attempt ${attempt}: ${error.message}`
+            );
           },
-          ...messages.map((msg) => ({
-            role: msg.role as "user" | "assistant" | "system",
-            content: msg.content,
-          })),
-        ],
-        model: options.model || provider.model,
-      });
+        }
+      );
 
       return completion.choices[0].message.content || "";
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Tutor Chat Error:", error);
+      
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
       throw new Error(err.message || "AI tutor chat failed");
     }
   }
@@ -814,21 +932,30 @@ Instructions:
       return { concepts: getMockConcepts() };
     }
 
+    const requestKey = generateRequestKey("extractConcepts", {
+      text: text.slice(0, 200),
+      maxConcepts: options.maxConcepts || 5,
+      model: options.model || provider.model,
+    });
+
     try {
-      const existingNodesContext =
-        existingNodes && existingNodes.length > 0
-          ? `\nExisting Nodes (DO NOT duplicate these): ${existingNodes
-              .slice(0, 50)
-              .join(", ")}`
-          : "";
+      return await dedupedRequest(requestKey, async () => {
+        const existingNodesContext =
+          existingNodes && existingNodes.length > 0
+            ? `\nExisting Nodes (DO NOT duplicate these): ${existingNodes
+                .slice(0, 50)
+                .join(", ")}`
+            : "";
 
-      const maxConcepts = options.maxConcepts || 5;
+        const maxConcepts = options.maxConcepts || 5;
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: `You are a concept extraction expert. Analyze the given text and extract key concepts.
+        const completion = await withTimeoutAndRetry(
+          () =>
+            provider.client.chat.completions.create({
+              messages: [
+                {
+                  role: "system",
+                  content: `You are a concept extraction expert. Analyze the given text and extract key concepts.
 
 Requirements:
 1. Extract ${maxConcepts} most important concepts
@@ -843,26 +970,44 @@ Return a JSON object with a 'concepts' array. Each object must have:
 - 'priority': 'high', 'medium', or 'low'
 
 Please respond in Chinese.`,
-          },
+                },
+                {
+                  role: "user",
+                  content: `Text to analyze:\n${text}${existingNodesContext}`,
+                },
+              ],
+              model: options.model || provider.model,
+              response_format: { type: "json_object" },
+            }),
           {
-            role: "user",
-            content: `Text to analyze:\n${text}${existingNodesContext}`,
-          },
-        ],
-        model: options.model || provider.model,
-        response_format: { type: "json_object" },
+            timeout: DEFAULT_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `Extract Concepts retry attempt ${attempt}: ${error.message}`
+              );
+            },
+          }
+        );
+
+        const content = completion.choices[0].message.content || "";
+        const parsed = parseAIResponse<{ concepts: unknown[] }>(
+          content,
+          "Extract Concepts"
+        );
+
+        return { concepts: parsed.concepts || [] };
       });
-
-      const content = completion.choices[0].message.content || "";
-      const parsed = parseAIResponse<{ concepts: unknown[] }>(
-        content,
-        "Extract Concepts"
-      );
-
-      return { concepts: parsed.concepts || [] };
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
+      
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
       throw new Error(err.message || "AI concept extraction failed");
     }
   }
@@ -937,14 +1082,26 @@ Please respond in Chinese.`,
         options.userId
       );
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `请分析这两个图谱之间的节点连接关系。` },
-        ],
-        model: options.model || provider.model,
-        response_format: { type: "json_object" },
-      });
+      const completion = await withTimeoutAndRetry(
+        () =>
+          provider.client.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: `请分析这两个图谱之间的节点连接关系。` },
+            ],
+            model: options.model || provider.model,
+            response_format: { type: "json_object" },
+          }),
+        {
+          timeout: DEFAULT_TIMEOUT,
+          maxRetries: 3,
+          onRetry: (attempt, error) => {
+            logger.warn(
+              `Cross Graph Connections retry attempt ${attempt}: ${error.message}`
+            );
+          },
+        }
+      );
 
       const content = completion.choices[0].message.content || "";
       return parseAIResponse<{
@@ -966,6 +1123,13 @@ Please respond in Chinese.`,
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Cross Graph Connections Error:", error);
+      
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
       throw new Error(err.message || "AI 跨图谱连接分析失败");
     }
   }
@@ -999,53 +1163,79 @@ Please respond in Chinese.`,
       };
     }
 
+    const requestKey = generateRequestKey("generateTaskDetails", {
+      title: title.slice(0, 100),
+      model: options.model || provider.model,
+    });
+
     try {
-      const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
-        "generate_task_details",
-        {
-          title,
-          context: options.context || "",
-        },
-        options.userId
-      );
-
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
+      return await dedupedRequest(requestKey, async () => {
+        const systemPrompt = await promptService.getRenderedPrompt(
+          supabaseAdmin,
+          "generate_task_details",
           {
-            role: "user",
-            content: `任务标题：${title}${
-              options.context ? `\n\n补充信息：${options.context}` : ""
-            }`,
+            title,
+            context: options.context || "",
           },
-        ],
-        model: options.model || provider.model,
-        response_format: { type: "json_object" },
+          options.userId
+        );
+
+        const completion = await withTimeoutAndRetry(
+          () =>
+            provider.client.chat.completions.create({
+              messages: [
+                { role: "system", content: systemPrompt },
+                {
+                  role: "user",
+                  content: `任务标题：${title}${
+                    options.context ? `\n\n补充信息：${options.context}` : ""
+                  }`,
+                },
+              ],
+              model: options.model || provider.model,
+              response_format: { type: "json_object" },
+            }),
+          {
+            timeout: DEFAULT_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `Generate Task Details retry attempt ${attempt}: ${error.message}`
+              );
+            },
+          }
+        );
+
+        const content = completion.choices[0].message.content || "";
+        const parsed = parseAIResponse<{
+          description: string;
+          tags: string[];
+          estimated_duration: number;
+          priority: number;
+          suggested_queue: number;
+        }>(content, "Generate Task Details");
+
+        return {
+          description: parsed.description || "",
+          tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+          estimated_duration: Math.min(
+            180,
+            Math.max(15, parsed.estimated_duration || 25)
+          ),
+          priority: Math.min(4, Math.max(1, parsed.priority || 2)),
+          suggested_queue: Math.min(2, Math.max(0, parsed.suggested_queue || 2)),
+        };
       });
-
-      const content = completion.choices[0].message.content || "";
-      const parsed = parseAIResponse<{
-        description: string;
-        tags: string[];
-        estimated_duration: number;
-        priority: number;
-        suggested_queue: number;
-      }>(content, "Generate Task Details");
-
-      return {
-        description: parsed.description || "",
-        tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-        estimated_duration: Math.min(
-          180,
-          Math.max(15, parsed.estimated_duration || 25)
-        ),
-        priority: Math.min(4, Math.max(1, parsed.priority || 2)),
-        suggested_queue: Math.min(2, Math.max(0, parsed.suggested_queue || 2)),
-      };
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Generate Task Details Error:", error);
+      
+      if (err instanceof TimeoutError) {
+        throw new Error("AI 请求超时，请稍后重试");
+      }
+      if (err instanceof RetryError) {
+        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+      }
       throw new Error(err.message || "AI 任务详情生成失败");
     }
   }

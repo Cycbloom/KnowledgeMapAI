@@ -16,7 +16,7 @@ export const BatchGenerateDialog: React.FC<BatchGenerateDialogProps> = ({
 }) => {
   const [types, setTypes] = useState<string[]>(['qa', 'choice']);
   const [count, setCount] = useState(3);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [packTemplate, setPackTemplate] = useState<string | null>(null);
 
   const packPresets = [

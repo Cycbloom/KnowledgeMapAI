@@ -26,24 +26,11 @@ interface WeakPoint {
   suggestion: string;
 }
 
-interface _LearningStatsEnhancedProps {
-  graphData: KnowledgeHeatmapProps['graphData'];
-  nodeStatus: Record<string, any>;
-  studyCards: any[];
-}
-
 const STATUS_COLORS = {
   mastered: '#10b981',
   learning: '#3b82f6',
   new: '#f59e0b',
   locked: '#6b7280'
-};
-
-const _STATUS_LABELS = {
-  mastered: '已掌握',
-  learning: '学习中',
-  new: '未开始',
-  locked: '已锁定'
 };
 
 export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData }) => {

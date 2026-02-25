@@ -4,6 +4,7 @@ import { aiService } from '../services/aiService.js';
 import { getNextLevel } from '../utils/graphUtils.js';
 import { cacheService, CacheKeys } from '../services/cache.js';
 import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
+import { logger } from '../utils/logger.js';
 
 class TaskProcessor {
   
@@ -49,7 +50,7 @@ class TaskProcessor {
       }
 
     } catch (error: any) {
-      console.error(`[TaskProcessor] Task ${task.id} failed:`, error);
+      logger.error(`Task ${task.id} failed:`, error);
       await taskService.updateTaskStatus(supabaseAdmin, task.id, 'failed', undefined, error.message);
     }
   }
@@ -92,7 +93,7 @@ class TaskProcessor {
         }
     }
 
-    console.log(`[TaskProcessor] Generating questions for node ${node_title}. Types: ${types.join(',')}, Total: ${totalRequestCount}`);
+    logger.debug(`Generating questions for node ${node_title}. Types: ${types.join(',')}, Total: ${totalRequestCount}`);
 
     // Concurrency control
     const CONCURRENCY = 3;
@@ -146,7 +147,7 @@ class TaskProcessor {
                 console.warn(`[TaskProcessor] AI returned 0 cards for type ${type}`);
             }
         } catch (err: any) {
-            console.error(`[TaskProcessor] Error generating type ${type}:`, err);
+            logger.error(`Error generating type ${type}:`, err);
             errors.push(`Failed to generate ${type}: ${err.message}`);
         } finally {
             completedTasks++;

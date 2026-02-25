@@ -1,4 +1,9 @@
 import { useStore } from '../../store/useStore';
+import {
+  AppError,
+  TokenExpiredError,
+  createErrorFromResponse,
+} from '../../utils/errors';
 
 const API_URL = '/api';
 
@@ -64,34 +69,16 @@ export const handleResponse = async <T = any>(res: Response): Promise<T> => {
   }
   
   if (!res.ok) {
-    if (res.status === 401) {
-      const error = new Error('Unauthorized');
-      (error as any).status = 401;
-      (error as any).code = 'UNAUTHORIZED';
-      throw error;
-    }
-    if (res.status === 403) {
-      const error = new Error(data?.message || 'Forbidden');
-      (error as any).status = 403;
-      (error as any).code = 'FORBIDDEN';
-      throw error;
-    }
-    if (res.status === 404) {
-      const error = new Error(data?.message || 'Not Found');
-      (error as any).status = 404;
-      (error as any).code = 'NOT_FOUND';
-      throw error;
-    }
-    if (res.status >= 500) {
-      const error = new Error(data?.message || 'Server Error');
-      (error as any).status = res.status;
-      (error as any).code = 'SERVER_ERROR';
-      throw error;
-    }
-    const error = new Error((data && data.message) || (data && data.error) || res.statusText);
-    (error as any).status = res.status;
-    (error as any).code = data?.code || 'API_ERROR';
-    throw error;
+    throw createErrorFromResponse({
+      status: res.status,
+      statusText: res.statusText,
+      data: {
+        message: data?.message,
+        error: data?.error,
+        code: data?.code,
+        details: data?.details,
+      },
+    });
   }
   
   return data as T;
@@ -118,8 +105,10 @@ export const request = async <T = any>(url: string, options: RequestInit = {}): 
   try {
     return await doRequest();
   } catch (error: unknown) {
-    const err = error as Error & { message: string };
-    if (err.message === 'Unauthorized' && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
+    const isTokenExpired = error instanceof TokenExpiredError || 
+      (error instanceof AppError && (error.code === 'TOKEN_EXPIRED' || error.code === 'AUTH_ERROR'));
+    
+    if (isTokenExpired && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
       const { refreshToken } = useStore.getState();
 
       if (!refreshToken) {
@@ -145,7 +134,7 @@ export const request = async <T = any>(url: string, options: RequestInit = {}): 
         });
 
         if (!refreshRes.ok) {
-          throw new Error('Refresh failed');
+          throw new TokenExpiredError('Token refresh failed');
         }
 
         const data = await refreshRes.json();

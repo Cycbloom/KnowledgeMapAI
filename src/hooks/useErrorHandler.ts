@@ -2,13 +2,13 @@ import { useCallback, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { useMessageStore, MessageType } from '../store/useMessageStore';
 import { useNavigate } from 'react-router-dom';
-
-interface ApiError {
-  success: boolean;
-  code: string;
-  error: string;
-  details?: Array<{ field: string; message: string }>;
-}
+import {
+  isAuthError,
+  isNetworkError,
+  isValidationError,
+  wrapUnknownError,
+  ValidationError,
+} from '../utils/errors';
 
 interface ErrorHandlerOptions {
   silent?: boolean;
@@ -26,41 +26,17 @@ interface ErrorInfo {
   details?: Array<{ field: string; message: string }>;
 }
 
-const parseError = (error: any): ErrorInfo => {
-  let message = '操作失败，请稍后重试';
-  let code = 'UNKNOWN_ERROR';
-  let isAuthError = false;
-  let isNetworkError = false;
-  let isValidationError = false;
-  let details: Array<{ field: string; message: string }> | undefined;
+const parseError = (error: unknown): ErrorInfo => {
+  const appError = wrapUnknownError(error);
 
-  if (!navigator.onLine || error?.name === 'TypeError' && error?.message === 'Failed to fetch') {
-    message = '网络连接失败，请检查网络设置';
-    code = 'NETWORK_ERROR';
-    isNetworkError = true;
-  } else if (error?.response?.data) {
-    const data = error.response.data as ApiError;
-    message = data.error || message;
-    code = data.code || code;
-
-    if (error.response.status === 401) {
-      isAuthError = true;
-      message = '登录已过期，请重新登录';
-      code = 'AUTH_ERROR';
-    }
-
-    if (data.code === 'VALIDATION_ERROR' && data.details) {
-      isValidationError = true;
-      details = data.details;
-      message = data.details.map(d => d.message).join('、');
-    }
-  } else if (error instanceof Error) {
-    message = error.message;
-  } else if (typeof error === 'string') {
-    message = error;
-  }
-
-  return { message, code, isAuthError, isNetworkError, isValidationError, details };
+  return {
+    message: appError.message,
+    code: appError.code,
+    isAuthError: isAuthError(appError),
+    isNetworkError: isNetworkError(appError),
+    isValidationError: isValidationError(appError),
+    details: appError instanceof ValidationError ? appError.details : undefined,
+  };
 };
 
 export const useErrorHandler = () => {
@@ -68,13 +44,17 @@ export const useErrorHandler = () => {
   const { addMessage } = useMessageStore();
   const { setUser } = useStore();
 
-  const handleError = useCallback((error: any, options: ErrorHandlerOptions = {}) => {
+  const handleError = useCallback((error: unknown, options: ErrorHandlerOptions = {}) => {
     const { silent = false, redirect, context, fallbackMessage } = options;
     const errorInfo = parseError(error);
+    const appError = wrapUnknownError(error);
 
     const prefix = context ? `[${context}] ` : '';
-    const logMessage = `${prefix}${errorInfo.message}`;
-    console.error('[ErrorHandler]', logMessage, error);
+    console.error('[ErrorHandler]', prefix, {
+      message: appError.message,
+      code: appError.code,
+      statusCode: appError.statusCode,
+    });
 
     if (errorInfo.isAuthError) {
       setUser(null, null);

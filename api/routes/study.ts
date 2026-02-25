@@ -7,6 +7,7 @@ import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { studyService } from '../services/studyService.js';
 import { achievementService } from '../services/achievementService.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -71,7 +72,7 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
 
     res.json(cards);
   } catch (error: any) {
-    console.error('Error fetching cards:', error);
+    logger.error('Error fetching cards:', error);
     throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
@@ -215,7 +216,7 @@ router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async
     const createdCards = await studyService.createCardsBatch(req.supabase!, cardsData, req.user.id);
     res.status(201).json(createdCards);
   } catch (error: any) {
-    console.error('Error creating cards batch:', error);
+    logger.error('Error creating cards batch:', error);
     throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
@@ -266,7 +267,7 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
 
     res.json(result.card);
   } catch (error: any) {
-    console.error('Error updating card progress:', error);
+    logger.error('Error updating card progress:', error);
     if (error.message === 'Card not found') {
       throw new AppError('未找到卡片', 404, ErrorCodes.CARD_NOT_FOUND);
     }

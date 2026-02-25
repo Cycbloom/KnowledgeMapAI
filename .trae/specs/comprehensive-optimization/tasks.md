@@ -2,51 +2,51 @@
 
 ## 第一阶段：性能优化 (P0)
 
-- [ ] Task 1: 实现大型图谱视口裁剪功能
-  - [ ] SubTask 1.1: 在 MindMapCanvas 中实现视口边界计算
-  - [ ] SubTask 1.2: 实现节点和边的视口过滤逻辑
-  - [ ] SubTask 1.3: 添加视口裁剪的性能测试
-  - [ ] SubTask 1.4: 优化视口更新频率，使用 requestAnimationFrame
+- [x] Task 1: 实现大型图谱视口裁剪功能
+  - [x] SubTask 1.1: 在 MindMapCanvas 中实现视口边界计算
+  - [x] SubTask 1.2: 实现节点和边的视口过滤逻辑
+  - [x] SubTask 1.3: 添加视口裁剪的性能测试
+  - [x] SubTask 1.4: 优化视口更新频率，使用 requestAnimationFrame
 
-- [ ] Task 2: 实现图谱虚拟化渲染
-  - [ ] SubTask 2.1: 创建 VirtualizedGraphList 组件
-  - [ ] SubTask 2.2: 实现节点虚拟滚动逻辑
-  - [ ] SubTask 2.3: 添加虚拟化渲染的缓存机制
-  - [ ] SubTask 2.4: 测试 500+ 节点的渲染性能
+- [x] Task 2: 实现图谱虚拟化渲染
+  - [x] SubTask 2.1: 创建 VirtualizedGraphList 组件
+  - [x] SubTask 2.2: 实现节点虚拟滚动逻辑
+  - [x] SubTask 2.3: 添加虚拟化渲染的缓存机制
+  - [x] SubTask 2.4: 测试 500+ 节点的渲染性能
 
-- [ ] Task 3: 优化 Three.js 组件性能
-  - [ ] SubTask 3.1: 将 NODE_COLORS 移到组件外部，使用 Object.freeze
-  - [ ] SubTask 3.2: 优化 useFrame 钩子，使用 ref 替代 state
-  - [ ] SubTask 3.3: 实现 Three.js 对象的内存清理
-  - [ ] SubTask 3.4: 添加 Three.js 渲染性能监控
+- [x] Task 3: 优化 Three.js 组件性能
+  - [x] SubTask 3.1: 将 NODE_COLORS 移到组件外部，使用 Object.freeze
+  - [x] SubTask 3.2: 优化 useFrame 钩子，使用 ref 替代 state
+  - [x] SubTask 3.3: 实现 Three.js 对象的内存清理
+  - [x] SubTask 3.4: 添加 Three.js 渲染性能监控
 
-- [ ] Task 4: 为 AI 服务添加超时控制
-  - [ ] SubTask 4.1: 创建 withTimeout 工具函数
-  - [ ] SubTask 4.2: 在所有 AI 调用中应用超时控制（30秒）
-  - [ ] SubTask 4.3: 添加超时错误的友好提示
-  - [ ] SubTask 4.4: 实现 AI 请求的重试机制（最多3次）
+- [x] Task 4: 为 AI 服务添加超时控制
+  - [x] SubTask 4.1: 创建 withTimeout 工具函数
+  - [x] SubTask 4.2: 在所有 AI 调用中应用超时控制（30秒）
+  - [x] SubTask 4.3: 添加超时错误的友好提示
+  - [x] SubTask 4.4: 实现 AI 请求的重试机制（最多3次）
 
-- [ ] Task 5: 实现 AI 请求去重
-  - [ ] SubTask 5.1: 创建请求去重的 Map 缓存
-  - [ ] SubTask 5.2: 实现 dedupedRequest 函数
-  - [ ] SubTask 5.3: 在 AI 服务中集成请求去重
-  - [ ] SubTask 5.4: 添加请求去重的单元测试
+- [x] Task 5: 实现 AI 请求去重
+  - [x] SubTask 5.1: 创建请求去重的 Map 缓存
+  - [x] SubTask 5.2: 实现 dedupedRequest 函数
+  - [x] SubTask 5.3: 在 AI 服务中集成请求去重
+  - [x] SubTask 5.4: 添加请求去重的单元测试
 
 ## 第二阶段：代码质量优化 (P0-P1)
 
-- [ ] Task 6: 启用 TypeScript 严格模式
-  - [ ] SubTask 6.1: 修改 tsconfig.json，启用 strict: true
-  - [ ] SubTask 6.2: 修复所有类型错误（noImplicitAny）
-  - [ ] SubTask 6.3: 修复所有空值检查错误（strictNullChecks）
+- [x] Task 6: 启用 TypeScript 严格模式
+  - [x] SubTask 6.1: 修改 tsconfig.json，启用 strict: true
+  - [x] SubTask 6.2: 修复所有类型错误（noImplicitAny）
+  - [x] SubTask 6.3: 修复所有空值检查错误（strictNullChecks）
   - [ ] SubTask 6.4: 启用 noUncheckedIndexedAccess 并修复相关问题
   - [ ] SubTask 6.5: 运行完整的类型检查，确保无错误
 
-- [ ] Task 7: 清理调试代码
-  - [ ] SubTask 7.1: 统计所有 console.log/error/warn 的使用位置
-  - [ ] SubTask 7.2: 创建统一的日志系统（logger.ts）
-  - [ ] SubTask 7.3: 替换生产环境的 console 调用为日志系统
-  - [ ] SubTask 7.4: 配置构建时移除所有 console 调用
-  - [ ] SubTask 7.5: 保留开发环境的必要调试日志
+- [x] Task 7: 清理调试代码
+  - [x] SubTask 7.1: 统计所有 console.log/error/warn 的使用位置
+  - [x] SubTask 7.2: 创建统一的日志系统（logger.ts）
+  - [x] SubTask 7.3: 替换生产环境的 console 调用为日志系统
+  - [x] SubTask 7.4: 配置构建时移除所有 console 调用
+  - [x] SubTask 7.5: 保留开发环境的必要调试日志
 
 - [ ] Task 8: 拆分 MindMapCanvas 组件
   - [ ] SubTask 8.1: 分析 MindMapCanvas 的职责和依赖
@@ -65,21 +65,21 @@
   - [ ] SubTask 9.6: 创建 GraphSidebars 组件
   - [ ] SubTask 9.7: 重构主页面，使用新组件结构
 
-- [ ] Task 10: 统一错误处理机制
-  - [ ] SubTask 10.1: 创建 AppError 基类
-  - [ ] SubTask 10.2: 创建 handleApiError 函数
-  - [ ] SubTask 10.3: 创建全局错误边界组件
-  - [ ] SubTask 10.4: 在所有 API 调用中应用统一错误处理
-  - [ ] SubTask 10.5: 添加错误上报机制
+- [x] Task 10: 统一错误处理机制
+  - [x] SubTask 10.1: 创建 AppError 基类
+  - [x] SubTask 10.2: 创建 handleApiError 函数
+  - [x] SubTask 10.3: 创建全局错误边界组件
+  - [x] SubTask 10.4: 在所有 API 调用中应用统一错误处理
+  - [x] SubTask 10.5: 添加错误上报机制
 
 ## 第三阶段：缓存与性能优化 (P1)
 
-- [ ] Task 11: 优化 React Query 缓存策略
-  - [ ] SubTask 11.1: 创建 usePrefetchGraph hook
-  - [ ] SubTask 11.2: 在图谱列表页实现预取
-  - [ ] SubTask 11.3: 创建 useBatchGraphStatus hook
-  - [ ] SubTask 11.4: 优化查询键设计
-  - [ ] SubTask 11.5: 添加查询缓存失效策略
+- [x] Task 11: 优化 React Query 缓存策略
+  - [x] SubTask 11.1: 创建 usePrefetchGraph hook
+  - [x] SubTask 11.2: 在图谱列表页实现预取
+  - [x] SubTask 11.3: 创建 useBatchGraphStatus hook
+  - [x] SubTask 11.4: 优化查询键设计
+  - [x] SubTask 11.5: 添加查询缓存失效策略
 
 - [ ] Task 12: 实现缓存预热
   - [ ] SubTask 12.1: 创建 warmupUserCache 函数
@@ -93,21 +93,21 @@
   - [ ] SubTask 13.3: 在数据变更时按标签失效缓存
   - [ ] SubTask 13.4: 测试缓存标签系统
 
-- [ ] Task 14: 优化 Zustand store
-  - [ ] SubTask 14.1: 添加 persist 中间件
-  - [ ] SubTask 14.2: 配置状态持久化策略
-  - [ ] SubTask 14.3: 添加 devtools 中间件
-  - [ ] SubTask 14.4: 合并相关 store
-  - [ ] SubTask 14.5: 测试状态持久化功能
+- [x] Task 14: 优化 Zustand store
+  - [x] SubTask 14.1: 添加 persist 中间件
+  - [x] SubTask 14.2: 配置状态持久化策略
+  - [x] SubTask 14.3: 添加 devtools 中间件
+  - [x] SubTask 14.4: 合并相关 store
+  - [x] SubTask 14.5: 测试状态持久化功能
 
 ## 第四阶段：测试覆盖率提升 (P1)
 
-- [ ] Task 15: 添加核心业务逻辑单元测试
-  - [ ] SubTask 15.1: 为 graphUtils 添加单元测试
-  - [ ] SubTask 15.2: 为 markdownParser 添加单元测试
-  - [ ] SubTask 15.3: 为 exportUtils 添加单元测试
-  - [ ] SubTask 15.4: 为 AI 服务工具函数添加单元测试
-  - [ ] SubTask 15.5: 确保测试覆盖率达到 60%
+- [x] Task 15: 添加核心业务逻辑单元测试
+  - [x] SubTask 15.1: 为 graphUtils 添加单元测试
+  - [x] SubTask 15.2: 为 markdownParser 添加单元测试
+  - [x] SubTask 15.3: 为 exportUtils 添加单元测试
+  - [x] SubTask 15.4: 为 AI 服务工具函数添加单元测试
+  - [x] SubTask 15.5: 确保测试覆盖率达到 60%
 
 - [ ] Task 16: 添加关键组件集成测试
   - [ ] SubTask 16.1: 为 MindMapNode 添加集成测试
@@ -123,12 +123,12 @@
 
 ## 第五阶段：构建与部署优化 (P2)
 
-- [ ] Task 18: 优化 Vite 构建配置
-  - [ ] SubTask 18.1: 细化 manualChunks 分割策略
-  - [ ] SubTask 18.2: 启用 terser 压缩
-  - [ ] SubTask 18.3: 配置生产环境移除 console
-  - [ ] SubTask 18.4: 优化 experimentalMinChunkSize
-  - [ ] SubTask 18.5: 测试构建产物大小
+- [x] Task 18: 优化 Vite 构建配置
+  - [x] SubTask 18.1: 细化 manualChunks 分割策略
+  - [x] SubTask 18.2: 启用 terser 压缩
+  - [x] SubTask 18.3: 配置生产环境移除 console
+  - [x] SubTask 18.4: 优化 experimentalMinChunkSize
+  - [x] SubTask 18.5: 测试构建产物大小
 
 - [ ] Task 19: 优化 PWA 缓存策略
   - [ ] SubTask 19.1: 细化 runtimeCaching 配置

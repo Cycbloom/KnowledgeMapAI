@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  GitBranch, AlertCircle, CheckCircle, Clock, 
-  ArrowRight, Lock, Unlock, X
+  GitBranch, CheckCircle, 
+  Lock, Unlock
 } from 'lucide-react';
 import { ScheduledTask } from '../../services/api/scheduler';
 
@@ -224,7 +224,6 @@ export const DependencyIndicator: React.FC<DependencyIndicatorProps> = ({
   className = '',
 }) => {
   const isBlocked = blockingTasks.some(t => t.status !== 'completed');
-  const completedBlockers = blockingTasks.filter(t => t.status === 'completed');
   const pendingBlockers = blockingTasks.filter(t => t.status !== 'completed');
 
   if (blockingTasks.length === 0) return null;

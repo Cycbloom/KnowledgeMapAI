@@ -463,7 +463,6 @@ ${context || '(暂无相关上下文)'}`;
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
-    const _nodeMap = new Map(nodes.map(n => [n.id, n]));
     const connectedNodes = new Set<string>();
     
     if (edges) {
@@ -475,7 +474,6 @@ ${context || '(暂无相关上下文)'}`;
 
     const isolatedNodes = nodes.filter(n => !connectedNodes.has(n.id));
     const nodesWithoutContent = nodes.filter(n => !n.content || n.content.length < 50);
-    const _leafNodes = nodes.filter(n => n.level === 'leaf');
 
     const gaps: Array<{ topic: string; reason: string; priority: 'high' | 'medium' | 'low' }> = [];
 

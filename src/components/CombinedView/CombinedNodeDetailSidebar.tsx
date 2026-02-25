@@ -135,7 +135,7 @@ export const CombinedNodeDetailSidebar: React.FC<CombinedNodeDetailSidebarProps>
             urlTransform={(url) => url}
             components={{
               code(props) {
-                const {children, className, node, ..._rest} = props
+                const {children, className, node} = props
                 const match = /language-(\w+)/.exec(className || '')
                 if (match && match[1] === 'mermaid') {
                   return <Mermaid chart={String(children).replace(/\n$/, '')} />

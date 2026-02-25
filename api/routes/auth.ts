@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate.js';
 import { registerSchema, loginSchema, updateProfileSchema } from '../schemas/index.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -118,7 +119,7 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
 
     res.json({ session: data.session, user: data.user });
   } catch (error: unknown) {
-    console.error('Refresh token error:', error);
+    logger.error('Refresh token error:', error);
     next(error);
   }
 });

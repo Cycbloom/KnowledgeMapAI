@@ -1,5 +1,6 @@
 import { BaseAIProvider } from './base.js';
 import { AIProviderConfig } from '../types.js';
+import { logger } from '../../../utils/logger.js';
 
 export class VolcengineProvider extends BaseAIProvider {
   constructor(config: AIProviderConfig) {
@@ -81,11 +82,11 @@ export class VolcengineProvider extends BaseAIProvider {
         return data.data[0].embedding;
       }
       else {
-        console.error('Unexpected response format from Volcengine:', JSON.stringify(data, null, 2));
+        logger.error('Unexpected response format from Volcengine:', JSON.stringify(data, null, 2));
         return null;
       }
     } catch (error) {
-      console.error('Volcengine Multimodal embedding error:', error);
+      logger.error('Volcengine Multimodal embedding error:', error);
       throw error;
     }
   }

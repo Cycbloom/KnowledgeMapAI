@@ -99,20 +99,20 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
       return link.show_arrow;
     }
     
-    const configShowArrow = relationshipConfig.show_arrow;
+    const configShowArrow = relationshipConfig?.show_arrow;
     if (typeof configShowArrow === 'boolean') {
       return configShowArrow;
     }
     
-    return CATEGORIES_WITH_ARROW.includes(relationshipConfig.category);
+    return relationshipConfig ? CATEGORIES_WITH_ARROW.includes(relationshipConfig.category) : false;
   }, [showArrows, link.show_arrow, relationshipConfig]);
 
   const edgeLabel = useMemo(() => {
     if (link.custom_label) {
       return link.custom_label;
     }
-    return relationshipConfig.display_name || link.relationship_type || '';
-  }, [link.custom_label, relationshipConfig.display_name, link.relationship_type]);
+    return relationshipConfig?.display_name || link.relationship_type || '';
+  }, [link.custom_label, relationshipConfig?.display_name, link.relationship_type]);
 
   const linkStyleConfig = useMemo(() => {
     if (!target) {
@@ -125,10 +125,10 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
       };
     }
     
-    let strokeColor = customColor || link.custom_color || relationshipConfig.color || colors.link;
+    let strokeColor = customColor || link.custom_color || relationshipConfig?.color || colors.link;
     let strokeWidth = dynamicWidth;
     let opacity = 0.4;
-    let strokeDasharray = getLineStyleDashArray(link.custom_line_style || relationshipConfig.line_style);
+    let strokeDasharray = getLineStyleDashArray(link.custom_line_style || relationshipConfig?.line_style || 'solid');
     
     const isTargetAccepted = target.is_accepted !== false;
     
@@ -141,11 +141,11 @@ const MindMapLinkComponent: React.FC<MindMapLinkProps> = ({
     if (!hasFocusMode) {
       opacity = isTargetAccepted ? 0.4 : 0.3;
     } else if (focused) {
-      strokeColor = customColor || link.custom_color || relationshipConfig.color || colors.linkHighlight;
+      strokeColor = customColor || link.custom_color || relationshipConfig?.color || colors.linkHighlight;
       strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else if (highlighted) {
-      strokeColor = customColor || link.custom_color || relationshipConfig.color || colors.linkHighlight;
+      strokeColor = customColor || link.custom_color || relationshipConfig?.color || colors.linkHighlight;
       strokeWidth = Math.max(3, dynamicWidth * 1.5);
       opacity = 0.8;
     } else {

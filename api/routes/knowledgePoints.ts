@@ -9,6 +9,7 @@ import { knowledgePointService } from '../services/knowledgePointService.js';
 import { graphNodeService } from '../services/graphNodeService.js';
 import { graphService } from '../services/graphService.js';
 import { authService } from '../services/authService.js';
+import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -180,7 +181,7 @@ router.post('/knowledge-points/search-similar', requireAuth, validate(searchSimi
     
     res.json(data || []);
   } catch (error: any) {
-    console.error('Search similar error:', error);
+    logger.error('Search similar error:', error);
     res.json([]);
   }
 });

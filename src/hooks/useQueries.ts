@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
@@ -128,6 +128,33 @@ export const useGraphNodeStatus = (id: string) => {
     enabled: !!id,
     ...realtimeQueryConfig,
   });
+};
+
+export const useBatchGraphStatus = (graphIds: string[], enabled: boolean = true) => {
+  const queries = useQueries({
+    queries: graphIds.map((id) => ({
+      queryKey: queryKeys.graphNodeStatus(id),
+      queryFn: () => api.graphs.getNodeStatus(id),
+      enabled: enabled && !!id,
+      ...realtimeQueryConfig,
+    })),
+  });
+
+  const isLoading = queries.some((q) => q.isLoading);
+  const isPending = queries.some((q) => q.isPending);
+  
+  const data = graphIds.reduce((acc, id, index) => {
+    acc[id] = queries[index].data;
+    return acc;
+  }, {} as Record<string, unknown>);
+
+  return {
+    data,
+    queries,
+    isLoading,
+    isPending,
+    isAllSuccess: queries.every((q) => q.isSuccess),
+  };
 };
 
 export const useStudyCards = (params?: { graph_id?: string; node_id?: string; node_ids?: string; due?: boolean }, enabled: boolean = true) => {

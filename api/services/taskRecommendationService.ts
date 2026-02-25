@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ScheduledTask } from './schedulerService.js';
+import { logger } from '../utils/logger.js';
 
 export interface TaskRecommendation {
   task: ScheduledTask;
@@ -140,7 +141,7 @@ export class TaskRecommendationService {
       .not('duration', 'is', null);
 
     if (error) {
-      console.error('Failed to fetch executions for efficiency data:', error);
+      logger.error('Failed to fetch executions for efficiency data:', error);
       return this.getDefaultEfficiencyData();
     }
 
@@ -341,7 +342,7 @@ export class TaskRecommendationService {
       }
 
       if (task.tags && task.tags.length > 0) {
-        const matchingTags = task.tags.filter(tag =>
+        const matchingTags = task.tags.filter((tag: string) =>
           TIME_SLOT_CONFIG[currentTimeSlot.type].recommendedTypes.includes(tag)
         );
         if (matchingTags.length > 0) {
@@ -350,11 +351,11 @@ export class TaskRecommendationService {
       }
 
       const tagEfficiencies = (task.tags || [])
-        .map(tag => efficiencyData.tagEfficiency[tag]?.completionRate || 0)
-        .filter(rate => rate > 0);
+        .map((tag: string) => efficiencyData.tagEfficiency[tag]?.completionRate || 0)
+        .filter((rate: number) => rate > 0);
 
       if (tagEfficiencies.length > 0) {
-        const avgEfficiency = tagEfficiencies.reduce((a, b) => a + b, 0) / tagEfficiencies.length;
+        const avgEfficiency = tagEfficiencies.reduce((a: number, b: number) => a + b, 0) / tagEfficiencies.length;
         if (avgEfficiency > 0.7) {
           reasons.push('历史完成率较高');
         }

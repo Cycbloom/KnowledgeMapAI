@@ -24,6 +24,13 @@ import { LayoutOrganizer } from './LayoutOrganizer';
 import { NodePreviewCard } from './NodePreviewCard';
 import { EdgeContextMenu } from './EdgeContextMenu';
 import { EdgeEditDialog } from './EdgeEditDialog';
+import {
+  useSpatialGrid,
+  useViewportBounds,
+  useVisibleNodes,
+  useVisibleEdges,
+  useVisibleNodeSet,
+} from './hooks/useVirtualization';
 import { createMindMapLayout } from '../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../config/learningStatusColors';
 import { useTheme } from '../../hooks/useTheme';
@@ -307,6 +314,10 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
   
+  // Viewport culling state - forces re-render for real-time culling during drag/zoom
+  const [viewportVersion, setViewportVersion] = useState(0);
+  const viewportUpdateFrameRef = useRef<number | null>(null);
+  
   // Debounce helper for transform state updates
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const updateTransformState = useCallback((newTransform: Transform) => {
@@ -316,6 +327,17 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     debounceTimeoutRef.current = setTimeout(() => {
       setTransform(newTransform);
     }, 100);
+  }, []);
+  
+  // Throttled viewport update using requestAnimationFrame
+  const scheduleViewportUpdate = useCallback(() => {
+    if (viewportUpdateFrameRef.current !== null) {
+      return;
+    }
+    viewportUpdateFrameRef.current = requestAnimationFrame(() => {
+      setViewportVersion(v => v + 1);
+      viewportUpdateFrameRef.current = null;
+    });
   }, []);
 
   const updateTransformDOM = useCallback((t: Transform) => {
@@ -375,6 +397,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (viewportUpdateFrameRef.current) {
+        cancelAnimationFrame(viewportUpdateFrameRef.current);
+      }
     };
   }, []);
 
@@ -420,8 +445,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     hasUserInteracted.current = true;
     transformRef.current = newTransform;
     updateTransformDOM(newTransform);
+    scheduleViewportUpdate();
     updateTransformState(newTransform);
-  }, [updateTransformDOM, updateTransformState]);
+  }, [updateTransformDOM, updateTransformState, scheduleViewportUpdate]);
 
   useEffect(() => {
     const updateContainerSize = () => {
@@ -462,48 +488,27 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     });
   }, [nodes, edges, containerSize]);
 
-  const visibleNodes = useMemo(() => {
-    if (!layout) return [];
-    
-    let nodes = layout.nodes;
-    
-    if (!isExplorationMode) {
-      nodes = nodes.filter(node => node.is_accepted !== false);
-    }
-
-    if (nodes.length > 100) {
-      const { x, y, k } = transformRef.current;
-      const padding = 150;
-      const viewportBounds = {
-        minX: (-x - padding) / k,
-        maxX: (-x + containerSize.width + padding) / k,
-        minY: (-y - padding) / k,
-        maxY: (-y + containerSize.height + padding) / k,
-      };
-      
-      nodes = nodes.filter(node => 
-        node.x >= viewportBounds.minX &&
-        node.x <= viewportBounds.maxX &&
-        node.y >= viewportBounds.minY &&
-        node.y <= viewportBounds.maxY
-      );
-    }
-    
-    return nodes;
-  }, [layout, isExplorationMode, transform, containerSize]);
-
-  const visibleLinks = useMemo(() => {
-    if (!layout) return [];
-    
-    const visibleNodeIds = new Set(visibleNodes.map(n => String(n.id).trim()));
-    
-    return layout.links.filter(link => {
-      const sourceId = typeof link.source === 'string' ? String(link.source).trim() : String(link.source.id).trim();
-      const targetId = typeof link.target === 'string' ? String(link.target).trim() : String(link.target.id).trim();
-      
-      return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
-    });
-  }, [layout, visibleNodes]);
+  const layoutNodes = useMemo(() => layout?.nodes ?? [], [layout]);
+  const layoutLinks = useMemo(() => layout?.links ?? [], [layout]);
+  
+  const spatialGrid = useSpatialGrid(layoutNodes);
+  const viewportBounds = useViewportBounds(transformRef.current, containerSize, 200, viewportVersion);
+  
+  const visibleNodes = useVisibleNodes(
+    layoutNodes,
+    spatialGrid,
+    viewportBounds,
+    isExplorationMode
+  );
+  
+  const visibleNodeIds = useVisibleNodeSet(visibleNodes);
+  
+  const visibleLinks = useVisibleEdges(
+    layoutLinks,
+    layoutNodes,
+    visibleNodeIds,
+    viewportBounds
+  );
 
   // Calculate node importance map
   const nodeImportanceMap = useMemo(() => {
@@ -565,9 +570,12 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
     transformRef.current = newTransform;
     updateTransformDOM(newTransform);
     
+    // Schedule viewport update for real-time culling
+    scheduleViewportUpdate();
+    
     // Debounce state update
     updateTransformState(newTransform);
-  }, [updateTransformDOM, updateTransformState]);
+  }, [updateTransformDOM, updateTransformState, scheduleViewportUpdate]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
@@ -591,9 +599,12 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
       
       transformRef.current = newTransform;
       updateTransformDOM(newTransform);
+      
+      scheduleViewportUpdate();
+      
       updateTransformState(newTransform);
     }
-  }, [isDragging, dragStart, updateTransformDOM, updateTransformState]);
+  }, [isDragging, dragStart, updateTransformDOM, updateTransformState, scheduleViewportUpdate]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (isDragging && mouseDownPosRef.current && onCanvasClick) {

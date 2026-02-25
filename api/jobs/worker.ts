@@ -2,6 +2,7 @@ import { Worker } from 'bullmq';
 import Redis from 'ioredis';
 import { taskProcessor } from './taskProcessor.js';
 import { supabaseAdmin } from '../supabase.js';
+import { logger } from '../utils/logger.js';
 
 // Reuse REDIS_URL from environment
 const connection = new Redis(process.env.REDIS_URL!, {
@@ -10,7 +11,7 @@ const connection = new Redis(process.env.REDIS_URL!, {
 
 export const taskWorker = new Worker('task-queue', async (job) => {
   const { taskId } = job.data;
-  console.log(`[Worker] Processing job ${job.id} for task ${taskId}`);
+  logger.debug(`Processing job ${job.id} for task ${taskId}`);
 
   try {
     // Fetch the task record from database
@@ -38,9 +39,9 @@ export const taskWorker = new Worker('task-queue', async (job) => {
 });
 
 taskWorker.on('completed', job => {
-  console.log(`[Worker] Job ${job.id} completed successfully`);
+  logger.debug(`Job ${job.id} completed successfully`);
 });
 
 taskWorker.on('failed', (job, err) => {
-  console.error(`[Worker] Job ${job?.id} failed: ${err.message}`);
+  logger.error(`Job ${job?.id} failed: ${err.message}`);
 });

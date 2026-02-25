@@ -5,7 +5,6 @@ import {
   TaskTemplate,
   CreateTemplateData,
   UpdateTemplateData,
-  templateApi,
   TEMPLATE_CATEGORIES,
 } from '../../services/api/template';
 

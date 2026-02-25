@@ -422,7 +422,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
           })}
           {layout.nodes.map(node => {
             const graph = graphs.find(g => g.id === node.id);
-            const _nodeCount = graph?.node_count || 0;
             const isFocused = focusedGraphId ? neighborGraphIds.has(node.id) : false;
             const hasFocus = focusedGraphId !== null;
             

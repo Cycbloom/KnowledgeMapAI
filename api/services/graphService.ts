@@ -239,11 +239,12 @@ export class GraphService {
       }
     }
 
-    let embedding: number[] | undefined;
+    let embedding: number[] | null;
     try {
       embedding = await aiService.generateEmbedding(title);
     } catch (e) {
       logger.warn("Failed to generate embedding for graph topic:", e);
+      embedding = null;
     }
 
     const { data, error } = await supabase
@@ -252,7 +253,7 @@ export class GraphService {
         user_id: userId,
         title,
         description: description || null,
-        embedding,
+        embedding: embedding ?? undefined,
       })
       .select()
       .single();
@@ -578,13 +579,14 @@ export class GraphService {
       graphId
     );
 
-    const nodeCount = nodes.length;
+    const validNodes = nodes.filter((n): n is NonNullable<typeof n> => n !== null);
+    const nodeCount = validNodes.length;
     const edgeCount = edges.length;
     const avgConnections = nodeCount > 0 ? (edgeCount * 2) / nodeCount : 0;
 
-    const levels = nodes.reduce(
-      (acc: Record<number, number>, node: Record<string, unknown>) => {
-        const level = (node.level as number) || 0;
+    const levels = validNodes.reduce(
+      (acc: Record<number, number>, node) => {
+        const level = typeof node.level === 'string' ? parseInt(node.level, 10) || 0 : (node.level as number) || 0;
         acc[level] = (acc[level] || 0) + 1;
         return acc;
       },
@@ -629,23 +631,25 @@ export class GraphService {
       score: number;
     }> = [];
 
+    const validNodes = nodes.filter((n): n is NonNullable<typeof n> => n !== null);
+    
     for (
       let i = 0;
-      i < nodes.length && suggestions.length < maxSuggestions;
+      i < validNodes.length && suggestions.length < maxSuggestions;
       i++
     ) {
       for (
         let j = i + 1;
-        j < nodes.length && suggestions.length < maxSuggestions;
+        j < validNodes.length && suggestions.length < maxSuggestions;
         j++
       ) {
-        const sourceId = nodes[i].id as string;
-        const targetId = nodes[j].id as string;
+        const sourceId = validNodes[i].id as string;
+        const targetId = validNodes[j].id as string;
         const key = `${sourceId}-${targetId}`;
 
         if (!connectedPairs.has(key)) {
-          const sourceLevel = getLevelIndex(nodes[i].level as string) || 0;
-          const targetLevel = getLevelIndex(nodes[j].level as string) || 0;
+          const sourceLevel = getLevelIndex(validNodes[i].level as string) || 0;
+          const targetLevel = getLevelIndex(validNodes[j].level as string) || 0;
           const score = Math.abs(sourceLevel - targetLevel);
 
           suggestions.push({

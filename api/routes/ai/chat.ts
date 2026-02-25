@@ -45,17 +45,19 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
     let contextText = "";
     const MAX_CONTEXT_LENGTH = 15000;
 
+    const validNodes = nodes.filter((n): n is NonNullable<typeof n> => n !== null);
+    
     if (context_node_ids && context_node_ids.length > 0) {
-      const selectedNodes = nodes.filter((n: { id: string }) => context_node_ids.includes(n.id));
-      const nodesText = selectedNodes.map((n: { title: string; content?: string }) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
+      const selectedNodes = validNodes.filter((n) => context_node_ids.includes(n.id));
+      const nodesText = selectedNodes.map((n) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
       
-      const relatedEdges = edges.filter((e: { source_knowledge_point_id: string; target_knowledge_point_id: string }) => 
+      const relatedEdges = edges.filter((e) => 
         context_node_ids.includes(e.source_knowledge_point_id) && context_node_ids.includes(e.target_knowledge_point_id)
       );
       
-      const nodeTitleMap = new Map(nodes.map((n: { id: string; title: string }) => [n.id, n.title]));
+      const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
       
-      const edgesText = relatedEdges.map((e: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship?: string }) => {
+      const edgesText = relatedEdges.map((e) => {
         const source = nodeTitleMap.get(e.source_knowledge_point_id) || 'Unknown';
         const target = nodeTitleMap.get(e.target_knowledge_point_id) || 'Unknown';
         return `[Edge] ${source} -> ${target} (${e.relationship || 'related'})`;
@@ -63,14 +65,14 @@ router.post('/chat', requireAuth, validate(chatSchema), async (req: AuthRequest,
 
       contextText = `Selected Nodes:\n${nodesText}\n\nRelationships:\n${edgesText}`;
     } else {
-      const nodeTitleMap = new Map(nodes.map((n: { id: string; title: string }) => [n.id, n.title]));
+      const nodeTitleMap = new Map(validNodes.map((n) => [n.id, n.title]));
       
-      if (nodes.length > 100) {
-        const nodesText = nodes.map((n: { title: string }) => `- ${n.title}`).join('\n');
+      if (validNodes.length > 100) {
+        const nodesText = validNodes.map((n) => `- ${n.title}`).join('\n');
         contextText = `Graph Overview (Nodes Only):\n${nodesText}`;
       } else {
-        const nodesText = nodes.map((n: { title: string; content?: string }) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
-        const edgesText = edges.map((e: { source_knowledge_point_id: string; target_knowledge_point_id: string; relationship?: string }) => {
+        const nodesText = validNodes.map((n) => `[Node] ${n.title}: ${n.content || '(No content)'}`).join('\n');
+        const edgesText = edges.map((e) => {
           const source = nodeTitleMap.get(e.source_knowledge_point_id) || 'Unknown';
           const target = nodeTitleMap.get(e.target_knowledge_point_id) || 'Unknown';
           return `[Edge] ${source} -> ${target} (${e.relationship || 'related'})`;
@@ -149,11 +151,12 @@ router.post('/tutor-chat', requireAuth, validate(tutorChatSchema), async (req: A
     
     if (graph_id) {
       const { nodes } = await graphService.getGraphNodes(req.supabase!, req.user.id, graph_id);
+      const validNodes = nodes.filter((n): n is NonNullable<typeof n> => n !== null);
       context.graphId = graph_id;
-      context.existingNodes = nodes.map((n: { title: string }) => n.title);
+      context.existingNodes = validNodes.map((n) => n.title);
       
       if (context_node_ids && context_node_ids.length > 0) {
-        const currentNode = nodes.find((n: { id: string }) => n.id === context_node_ids[0]);
+        const currentNode = validNodes.find((n) => n.id === context_node_ids[0]);
         if (currentNode) {
           context.currentNodeId = currentNode.id;
           context.currentNodeTitle = currentNode.title;

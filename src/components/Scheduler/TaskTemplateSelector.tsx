@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Clock, Tag, Star, Check, Copy, Plus, Loader2 } from 'lucide-react';
+import { Search, X, Clock, Tag, Star, Plus, Loader2 } from 'lucide-react';
 import {
   TaskTemplate,
   TemplateCategory,

@@ -5,7 +5,8 @@ export type UpdateTaskStatusFunction = (
   taskId: string,
   status: string,
   progress?: { stage?: string; progress?: number; [key: string]: unknown } | null,
-  result?: unknown,
+  result?: any,
+  errorMsg?: string,
   userId?: string
 ) => Promise<void>;
 

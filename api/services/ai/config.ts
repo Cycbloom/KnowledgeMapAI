@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { AIProviderType, AIProviderConfig } from './types.js';
 import { settingsService } from '../settingsService.js';
+import { logger } from '../../utils/logger.js';
 
 dotenv.config();
 
@@ -46,7 +47,7 @@ export const getProviderConfig = async (provider: AIProviderType): Promise<AIPro
         };
     }
   } catch (error) {
-    console.error('Failed to load settings from DB, falling back to env', error);
+    logger.error('Failed to load settings from DB, falling back to env', error);
   }
 
   return getEnvConfig(provider);

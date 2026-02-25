@@ -420,10 +420,6 @@ function generateRulePath(
     if (!node) continue;
 
     const parents = parentMap.get(nodeId) || [];
-    const _completedPrerequisites = parents.filter(pId => {
-      const pProgress = progressMap.get(pId);
-      return pProgress && pProgress.masteryLevel > 0.6;
-    });
 
     let priority: 'high' | 'medium' | 'low' = 'medium';
     let reason = '';
@@ -643,7 +639,8 @@ router.post('/questions', requireAuth, validate(getQuestionsSchema), async (req:
       return res.json(defaultQuestions);
     }
 
-    const nodesInfo = nodes.slice(0, 20).map(n => n.title).join('、');
+    const validNodes = nodes.filter((n): n is NonNullable<typeof n> => n !== null);
+    const nodesInfo = validNodes.slice(0, 20).map(n => n.title).join('、');
     
     const systemPrompt = await promptService.getRenderedPrompt(
       supabase,

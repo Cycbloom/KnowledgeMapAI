@@ -102,7 +102,7 @@ router.post('/nodes', requireAuth, validate(createNodeSchema), async (req: AuthR
     await cacheService.invalidateGraphCache(req.user.id, graph_id);
     await cacheService.invalidateUserGraphsCache(req.user.id);
 
-    achievementService.updateCreationStats(req.user.id).catch(console.error);
+    achievementService.updateCreationStats(req.user.id).catch(err => logger.error('Achievement update failed:', err));
 
     res.status(201).json(result);
   } catch (error: unknown) {

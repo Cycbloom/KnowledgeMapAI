@@ -33,7 +33,6 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { api } from '../../services/api';
-import { useQueryClient } from '@tanstack/react-query';
 import { useMessageStore } from '../../store/useMessageStore';
 
 interface LearningPathNode {
@@ -203,7 +202,6 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
-  const _queryClient = useQueryClient();
   
   const [pathNodes, setPathNodes] = useState<LearningPathNode[]>(learningPath?.nodes || []);
   const [isAddingNode, setIsAddingNode] = useState(false);

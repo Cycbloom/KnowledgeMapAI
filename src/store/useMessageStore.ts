@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
 export type MessageType = 'info' | 'success' | 'warning' | 'error';
 
@@ -21,27 +22,32 @@ interface MessageState {
   clearMessages: () => void;
 }
 
-export const useMessageStore = create<MessageState>((set) => ({
-  messages: [],
-  addMessage: (message) => {
-    const id = Math.random().toString(36).substring(7);
-    const newMessage = { ...message, id };
-    
-    set((state) => ({ messages: [...state.messages, newMessage] }));
+export const useMessageStore = create<MessageState>()(
+  devtools(
+    (set) => ({
+      messages: [],
+      addMessage: (message) => {
+        const id = Math.random().toString(36).substring(7);
+        const newMessage = { ...message, id };
+        
+        set((state) => ({ messages: [...state.messages, newMessage] }));
 
-    if (message.duration !== 0) {
-      setTimeout(() => {
+        if (message.duration !== 0) {
+          setTimeout(() => {
+            set((state) => ({
+              messages: state.messages.filter((m) => m.id !== id),
+            }));
+          }, message.duration || 3000);
+        }
+
+        return id;
+      },
+      removeMessage: (id) =>
         set((state) => ({
           messages: state.messages.filter((m) => m.id !== id),
-        }));
-      }, message.duration || 3000);
-    }
-
-    return id;
-  },
-  removeMessage: (id) =>
-    set((state) => ({
-      messages: state.messages.filter((m) => m.id !== id),
-    })),
-  clearMessages: () => set({ messages: [] }),
-}));
+        })),
+      clearMessages: () => set({ messages: [] }),
+    }),
+    { name: 'MessageStore' }
+  )
+);

@@ -9,6 +9,7 @@ import {
   reorderTasksSchema,
 } from "../schemas/index.js";
 import { aiService } from "../services/ai/index.js";
+import { logger } from "../utils/logger.js";
 
 const router = Router();
 
@@ -109,7 +110,7 @@ router.get(
         .json({ error: "Database connection not available" });
     }
 
-    const { status, queue_level, limit, offset } = req.query as z.infer<
+    const { status, queue_level, limit, offset } = req.query as unknown as z.infer<
       typeof getTasksQuerySchema
     >;
 
@@ -570,7 +571,7 @@ router.get(
         .json({ error: "Database connection not available" });
     }
 
-    const { task_id, limit, offset } = req.query as z.infer<
+    const { task_id, limit, offset } = req.query as unknown as z.infer<
       typeof getExecutionsQuerySchema
     >;
 
@@ -909,7 +910,7 @@ router.post(
       res.status(201).json({ success: true, data: session });
     } catch (error) {
       const err = error as Error;
-      console.error("Create focus session error:", err);
+      logger.error("Create focus session error:", err);
       res.status(500).json({ error: err.message || "创建专注会话失败" });
     }
   }
@@ -948,7 +949,7 @@ router.get(
       return res.status(500).json({ error: "Database connection not available" });
     }
 
-    const { from_date, to_date, task_id, is_break, limit } = req.query as z.infer<typeof getFocusSessionsQuerySchema>;
+    const { from_date, to_date, task_id, is_break, limit } = req.query as unknown as z.infer<typeof getFocusSessionsQuerySchema>;
 
     try {
       const sessions = await schedulerService.getFocusSessions(supabase, req.user.id, {
@@ -1266,7 +1267,7 @@ router.get(
       return res.status(500).json({ error: "Database connection not available" });
     }
 
-    const { category, search, limit, offset } = req.query as z.infer<typeof getTemplatesQuerySchema>;
+    const { category, search, limit, offset } = req.query as unknown as z.infer<typeof getTemplatesQuerySchema>;
 
     let query = supabase
       .from("task_templates")
@@ -1403,7 +1404,7 @@ router.post(
       .single();
 
     if (error) {
-      console.error("Create template error:", error);
+      logger.error("Create template error:", error);
       return res.status(500).json({ error: "创建模板失败" });
     }
 
@@ -1601,7 +1602,7 @@ router.post(
       .single();
 
     if (error) {
-      console.error("Duplicate template error:", error);
+      logger.error("Duplicate template error:", error);
       return res.status(500).json({ error: "复制模板失败" });
     }
 

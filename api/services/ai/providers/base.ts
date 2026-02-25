@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { AIProvider, AIProviderConfig, AIProviderType } from '../types.js';
+import { logger } from '../../../utils/logger.js';
 
 export abstract class BaseAIProvider implements AIProvider {
   public client: OpenAI;
@@ -16,7 +17,7 @@ export abstract class BaseAIProvider implements AIProvider {
     
     // Warning: Don't log API keys
     if (!config.apiKey) {
-      console.warn(`[AI] ${providerType} API Key is missing. Functionality may be limited.`);
+      logger.warn(`[AI] ${providerType} API Key is missing. Functionality may be limited.`);
     }
 
     this.client = new OpenAI({

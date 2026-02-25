@@ -32,12 +32,16 @@ const LEVEL_STYLES: Record<LogLevel, { color: string; icon: string; label: strin
 export class Logger {
   private level: LogLevel = LogLevel.INFO;
   private prefix?: string;
+  private isProduction: boolean;
 
   constructor(prefix?: string) {
     this.prefix = prefix;
+    this.isProduction = process.env.NODE_ENV === 'production';
     const envLevel = process.env.LOG_LEVEL as LogLevel;
     if (envLevel && Object.values(LogLevel).includes(envLevel)) {
       this.level = envLevel;
+    } else if (this.isProduction) {
+      this.level = LogLevel.WARN;
     }
   }
 
@@ -83,14 +87,6 @@ export class Logger {
     const metaStr = this.formatMeta(meta);
     
     return `${time} ${header}\n${COLORS.bright}${message}${COLORS.reset}${metaStr}`;
-  }
-
-  private _formatSimple(level: LogLevel, message: string, meta?: unknown): string {
-    const style = LEVEL_STYLES[level];
-    const timestamp = new Date().toISOString();
-    const prefixStr = this.prefix ? ` [${this.prefix}]` : '';
-    const metaString = meta ? ` ${typeof meta === 'object' ? JSON.stringify(meta) : meta}` : '';
-    return `[${timestamp}] [${style.label}]${prefixStr} ${message}${metaString}`;
   }
 
   info(message: string, meta?: unknown) {

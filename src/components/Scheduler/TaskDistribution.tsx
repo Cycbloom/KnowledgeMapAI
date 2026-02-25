@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PieChart, Tag, Layers } from 'lucide-react';
+import { PieChart, Tag } from 'lucide-react';
 import { schedulerApi, ScheduledTask } from '../../services/api/scheduler';
 
 interface TaskDistributionProps {

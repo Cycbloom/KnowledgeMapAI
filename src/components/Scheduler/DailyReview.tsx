@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Sun, Moon, CloudSun, CloudMoon, CloudRain,
-  Smile, Meh, Frown, Zap, Brain, Lightbulb,
-  Calendar, Clock, CheckCircle, X, Save, ChevronLeft, ChevronRight
+  Sun, Moon, CloudRain,
+  Smile, Meh, Zap, Brain, Lightbulb,
+  Calendar, CheckCircle, X, Save
 } from 'lucide-react';
 import { reviewApi, TaskReview, Mood } from '../../services/api/review';
 import { schedulerApi, ScheduledTask } from '../../services/api/scheduler';
@@ -89,7 +89,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
         setLearnings(review.learnings || '');
       }
 
-      const todayTasks = tasks.filter(t => {
+      const todayTasks = tasks.filter((t: ScheduledTask) => {
         if (!t.completed_at) return false;
         const completedDate = new Date(t.completed_at).toISOString().split('T')[0];
         return completedDate === targetDate;

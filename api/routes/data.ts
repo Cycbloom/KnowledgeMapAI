@@ -363,9 +363,8 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
     res.status(201).json({ graph });
 
   } catch (error: any) {
-    console.error('Import failed, rolling back:', error);
+    logger.error('Import failed, rolling back:', error);
     
-    // Rollback: Delete the graph if it was created
     if (createdGraphId) {
       await req.supabase!
         .from('knowledge_graphs')

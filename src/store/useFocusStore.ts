@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, devtools } from 'zustand/middleware';
 import { api } from '../services/api';
 
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
@@ -35,110 +35,108 @@ const DEFAULT_DURATIONS = {
 };
 
 export const useFocusStore = create<FocusState>()(
-  persist(
-    (set, get) => ({
-      isActive: false,
-      mode: 'focus',
-      timeLeft: DEFAULT_DURATIONS.focus * 60,
-      focusDuration: DEFAULT_DURATIONS.focus,
-      shortBreakDuration: DEFAULT_DURATIONS.shortBreak,
-      longBreakDuration: DEFAULT_DURATIONS.longBreak,
-      soundEnabled: true,
-      sessionsCompleted: 0,
+  devtools(
+    persist(
+      (set, get) => ({
+        isActive: false,
+        mode: 'focus',
+        timeLeft: DEFAULT_DURATIONS.focus * 60,
+        focusDuration: DEFAULT_DURATIONS.focus,
+        shortBreakDuration: DEFAULT_DURATIONS.shortBreak,
+        longBreakDuration: DEFAULT_DURATIONS.longBreak,
+        soundEnabled: true,
+        sessionsCompleted: 0,
 
-      startTimer: () => set({ isActive: true }),
-      
-      pauseTimer: () => set({ isActive: false }),
-      
-      resetTimer: () => {
-        const { mode, focusDuration, shortBreakDuration, longBreakDuration } = get();
-        let duration = focusDuration;
-        if (mode === 'shortBreak') duration = shortBreakDuration;
-        if (mode === 'longBreak') duration = longBreakDuration;
+        startTimer: () => set({ isActive: true }),
         
-        set({ isActive: false, timeLeft: duration * 60 });
-      },
-      
-      setMode: (mode) => {
-        const { focusDuration, shortBreakDuration, longBreakDuration } = get();
-        let duration = focusDuration;
-        if (mode === 'shortBreak') duration = shortBreakDuration;
-        if (mode === 'longBreak') duration = longBreakDuration;
+        pauseTimer: () => set({ isActive: false }),
         
-        set({ mode, isActive: false, timeLeft: duration * 60 });
-      },
-      
-      tick: () => {
-        const { timeLeft, isActive, soundEnabled } = get();
-        if (!isActive) return;
-        
-        if (timeLeft > 0) {
-          set({ timeLeft: timeLeft - 1 });
-        } else {
-          // Timer finished
+        resetTimer: () => {
           const { mode, focusDuration, shortBreakDuration, longBreakDuration } = get();
+          let duration = focusDuration;
+          if (mode === 'shortBreak') duration = shortBreakDuration;
+          if (mode === 'longBreak') duration = longBreakDuration;
           
-          // Calculate duration in minutes
-          let duration = 0;
-          if (mode === 'focus') duration = focusDuration;
-          else if (mode === 'shortBreak') duration = shortBreakDuration;
-          else if (mode === 'longBreak') duration = longBreakDuration;
+          set({ isActive: false, timeLeft: duration * 60 });
+        },
+        
+        setMode: (mode) => {
+          const { focusDuration, shortBreakDuration, longBreakDuration } = get();
+          let duration = focusDuration;
+          if (mode === 'shortBreak') duration = shortBreakDuration;
+          if (mode === 'longBreak') duration = longBreakDuration;
+          
+          set({ mode, isActive: false, timeLeft: duration * 60 });
+        },
+        
+        tick: () => {
+          const { timeLeft, isActive, soundEnabled } = get();
+          if (!isActive) return;
+          
+          if (timeLeft > 0) {
+            set({ timeLeft: timeLeft - 1 });
+          } else {
+            const { mode, focusDuration, shortBreakDuration, longBreakDuration } = get();
+            
+            let duration = 0;
+            if (mode === 'focus') duration = focusDuration;
+            else if (mode === 'shortBreak') duration = shortBreakDuration;
+            else if (mode === 'longBreak') duration = longBreakDuration;
 
-          // Save to backend (fire and forget)
-          const endTime = new Date();
-          const startTime = new Date(endTime.getTime() - duration * 60 * 1000);
-          
-          api.focus.saveSession({
-            duration,
-            mode,
-            start_time: startTime.toISOString(),
-            end_time: endTime.toISOString()
-          }).catch(err => console.error('Failed to save focus session:', err));
+            const endTime = new Date();
+            const startTime = new Date(endTime.getTime() - duration * 60 * 1000);
+            
+            api.focus.saveSession({
+              duration,
+              mode,
+              start_time: startTime.toISOString(),
+              end_time: endTime.toISOString()
+            }).catch(err => console.error('Failed to save focus session:', err));
 
-          set((state) => ({ 
-            isActive: false,
-            sessionsCompleted: mode === 'focus' ? state.sessionsCompleted + 1 : state.sessionsCompleted
-          }));
-          
-          if (soundEnabled) {
-            try {
-              if (typeof window !== 'undefined') {
-                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.type = 'sine';
-                osc.frequency.value = 880; // A5
-                gain.gain.value = 0.1;
-                osc.start();
-                setTimeout(() => osc.stop(), 500);
+            set((state) => ({ 
+              isActive: false,
+              sessionsCompleted: mode === 'focus' ? state.sessionsCompleted + 1 : state.sessionsCompleted
+            }));
+            
+            if (soundEnabled) {
+              try {
+                if (typeof window !== 'undefined') {
+                  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                  const osc = ctx.createOscillator();
+                  const gain = ctx.createGain();
+                  osc.connect(gain);
+                  gain.connect(ctx.destination);
+                  osc.type = 'sine';
+                  osc.frequency.value = 880;
+                  gain.gain.value = 0.1;
+                  osc.start();
+                  setTimeout(() => osc.stop(), 500);
+                }
+              } catch (e) {
+                console.error('Audio play failed', e);
               }
-            } catch (e) {
-              console.error('Audio play failed', e);
             }
           }
-        }
-      },
-      
-      updateSettings: (settings) => {
-        set((state) => {
-          const newState = { ...state, ...settings };
-          // If the updated setting affects the current mode, reset the timer
-          // Logic can be refined, but for now simple update
-          return newState;
-        });
-      },
-    }),
-    {
-      name: 'focus-storage',
-      partialize: (state) => ({
-        focusDuration: state.focusDuration,
-        shortBreakDuration: state.shortBreakDuration,
-        longBreakDuration: state.longBreakDuration,
-        soundEnabled: state.soundEnabled,
-        sessionsCompleted: state.sessionsCompleted,
+        },
+        
+        updateSettings: (settings) => {
+          set((state) => {
+            const newState = { ...state, ...settings };
+            return newState;
+          });
+        },
       }),
-    }
+      {
+        name: 'focus-storage',
+        partialize: (state) => ({
+          focusDuration: state.focusDuration,
+          shortBreakDuration: state.shortBreakDuration,
+          longBreakDuration: state.longBreakDuration,
+          soundEnabled: state.soundEnabled,
+          sessionsCompleted: state.sessionsCompleted,
+        }),
+      }
+    ),
+    { name: 'FocusStore' }
   )
 );

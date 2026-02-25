@@ -1,4 +1,5 @@
 import type { Node, KnowledgePoint, GraphNode } from '../../src/types';
+import { logger } from './logger.js';
 
 export type GraphNodeRaw = Omit<GraphNode, 'knowledge_point_id'> & {
   knowledge_point_id: string;
@@ -88,7 +89,7 @@ export async function getGraphNodesFromNewTable(supabase: any, graphId: string):
     .is('deleted_at', null);
 
   if (error) {
-    console.error('getGraphNodesFromNewTable error:', error);
+    logger.error('getGraphNodesFromNewTable error:', error);
     return [];
   }
 
@@ -151,7 +152,7 @@ export async function createKnowledgePointWithGraphNode(
     .single();
 
   if (kpError) {
-    console.error('createKnowledgePoint error:', kpError);
+    logger.error('createKnowledgePoint error:', kpError);
     return null;
   }
 
@@ -194,7 +195,7 @@ export async function getKnowledgePointsByIds(
     .is('deleted_at', null);
 
   if (error) {
-    console.error('getKnowledgePointsByIds error:', error);
+    logger.error('getKnowledgePointsByIds error:', error);
     return [];
   }
 

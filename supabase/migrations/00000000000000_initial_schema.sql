@@ -1,7 +1,6 @@
 -- =====================================================
 -- Knowledge Map - Unified Database Schema
--- Generated: 2026-02-13
--- Updated: 2026-02-21 (知识点与图谱解耦架构)
+-- Generated: 2026-02-26 (Consolidated Migration)
 -- =====================================================
 
 -- Enable required extensions
@@ -11,6 +10,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- Create enum types
 CREATE TYPE prompt_scope AS ENUM ('system', 'user', 'graph');
 CREATE TYPE knowledge_point_visibility AS ENUM ('private', 'public', 'pending');
+CREATE TYPE user_role AS ENUM ('user', 'admin');
 
 -- =====================================================
 -- TABLES
@@ -26,15 +26,18 @@ CREATE TABLE IF NOT EXISTS users (
   settings JSONB DEFAULT '{}',
   xp INTEGER DEFAULT 0,
   level INTEGER DEFAULT 1,
+  role user_role DEFAULT 'user',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+COMMENT ON COLUMN users.role IS 'User role: user (default) or admin';
 
 -- Knowledge graphs table
 CREATE TABLE IF NOT EXISTS knowledge_graphs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
+  title VARCHAR(512) NOT NULL,
   description TEXT,
   settings JSONB DEFAULT '{}',
   is_public BOOLEAN DEFAULT false,
@@ -42,6 +45,7 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   podcast_script TEXT,
   parent_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
   last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  embedding vector(1024),
   deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -50,7 +54,7 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
 -- Knowledge points table (独立的知识点实体)
 CREATE TABLE IF NOT EXISTS knowledge_points (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(255) NOT NULL,
+  title VARCHAR(512) NOT NULL,
   content TEXT,
   learning_material TEXT,
   properties JSONB DEFAULT '{}',
@@ -94,10 +98,20 @@ CREATE TABLE IF NOT EXISTS edges (
   target_knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE CASCADE,
   relationship_type VARCHAR(50) DEFAULT 'related',
   weight INTEGER DEFAULT 1,
+  custom_label TEXT,
+  custom_color TEXT,
+  custom_line_style TEXT DEFAULT 'solid',
+  show_arrow BOOLEAN,
   deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(source_knowledge_point_id, target_knowledge_point_id, relationship_type)
+  UNIQUE(source_knowledge_point_id, target_knowledge_point_id, relationship_type),
+  CONSTRAINT chk_line_style CHECK (custom_line_style IS NULL OR custom_line_style IN ('solid', 'dashed', 'dotted', 'double'))
 );
+
+COMMENT ON COLUMN edges.custom_label IS '自定义标签，覆盖默认的 relationship_type 显示';
+COMMENT ON COLUMN edges.custom_color IS '自定义颜色，覆盖关系类型默认颜色';
+COMMENT ON COLUMN edges.custom_line_style IS '线型：solid, dashed, dotted, double';
+COMMENT ON COLUMN edges.show_arrow IS '是否显示箭头，null表示根据关系类型自动判断';
 
 -- Study cards table
 CREATE TABLE IF NOT EXISTS study_cards (
@@ -217,11 +231,15 @@ CREATE TABLE IF NOT EXISTS app_settings (
 CREATE TABLE IF NOT EXISTS focus_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  task_id UUID,
   start_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   end_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   duration INTEGER NOT NULL,
   mode TEXT NOT NULL CHECK (mode IN ('focus', 'shortBreak', 'longBreak')),
   completed BOOLEAN DEFAULT TRUE,
+  pomodoro_count INTEGER DEFAULT 0,
+  white_noise_type TEXT,
+  is_break BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -233,9 +251,11 @@ CREATE TABLE IF NOT EXISTS achievements (
   description TEXT,
   category VARCHAR(50) NOT NULL,
   icon VARCHAR(50),
+  color TEXT DEFAULT '#3B82F6',
   xp_reward INTEGER DEFAULT 100,
   condition_type VARCHAR(50) NOT NULL,
   condition_value INTEGER NOT NULL,
+  is_hidden BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -244,6 +264,8 @@ CREATE TABLE IF NOT EXISTS user_achievements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   achievement_id UUID REFERENCES achievements(id) ON DELETE CASCADE,
+  progress INTEGER DEFAULT 0,
+  metadata JSONB DEFAULT '{}',
   unlocked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, achievement_id)
 );
@@ -297,8 +319,261 @@ COMMENT ON COLUMN graph_relations.context IS 'Context or reason for the relation
 COMMENT ON TABLE prompt_templates IS 'Prompt templates with priority: graph > user > system';
 
 -- =====================================================
+-- SCHEDULER TABLES
+-- =====================================================
+
+-- Scheduled tasks table (main task table)
+CREATE TABLE IF NOT EXISTS scheduled_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  queue_level INTEGER DEFAULT 0,
+  position INTEGER DEFAULT 0,
+  estimated_duration INTEGER,
+  actual_duration INTEGER,
+  deadline TIMESTAMPTZ,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'paused', 'completed', 'cancelled')),
+  tags TEXT[] DEFAULT '{}',
+  knowledge_point_id UUID,
+  priority INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ
+);
+
+COMMENT ON TABLE scheduled_tasks IS 'Three-layer feedback queue task scheduler - main task table';
+COMMENT ON COLUMN scheduled_tasks.queue_level IS 'Queue level: 0=Q0 (focus), 1=Q1 (standard), 2=Q2 (background)';
+COMMENT ON COLUMN scheduled_tasks.position IS 'Position within the queue for ordering';
+COMMENT ON COLUMN scheduled_tasks.estimated_duration IS 'Estimated duration in minutes';
+COMMENT ON COLUMN scheduled_tasks.actual_duration IS 'Actual duration in minutes';
+COMMENT ON COLUMN scheduled_tasks.status IS 'Task status: pending, in_progress, paused, completed, cancelled';
+
+-- Task executions table (execution history)
+CREATE TABLE IF NOT EXISTS task_executions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  started_at TIMESTAMPTZ NOT NULL,
+  ended_at TIMESTAMPTZ,
+  duration INTEGER,
+  queue_level INTEGER,
+  status TEXT CHECK (status IN ('completed', 'interrupted', 'time_slice_ended'))
+);
+
+COMMENT ON TABLE task_executions IS 'Task execution history for tracking work sessions';
+COMMENT ON COLUMN task_executions.duration IS 'Execution duration in seconds';
+COMMENT ON COLUMN task_executions.status IS 'Execution result: completed, interrupted, time_slice_ended';
+
+-- Task tags table (user-defined tags)
+CREATE TABLE IF NOT EXISTS task_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  color TEXT DEFAULT '#3B82F6',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, name)
+);
+
+COMMENT ON TABLE task_tags IS 'User-defined task tags for categorization';
+
+-- Task settings table (user preferences)
+CREATE TABLE IF NOT EXISTS task_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+  q0_time_slice INTEGER DEFAULT 25,
+  q1_time_slice INTEGER DEFAULT 50,
+  q2_time_slice INTEGER DEFAULT 100,
+  break_duration INTEGER DEFAULT 5,
+  sound_enabled BOOLEAN DEFAULT TRUE,
+  notification_enabled BOOLEAN DEFAULT TRUE
+);
+
+COMMENT ON TABLE task_settings IS 'User preferences for task scheduler';
+COMMENT ON COLUMN task_settings.q0_time_slice IS 'Q0 queue time slice in minutes (focus tasks)';
+COMMENT ON COLUMN task_settings.q1_time_slice IS 'Q1 queue time slice in minutes (standard tasks)';
+COMMENT ON COLUMN task_settings.q2_time_slice IS 'Q2 queue time slice in minutes (background tasks)';
+COMMENT ON COLUMN task_settings.break_duration IS 'Break duration between tasks in minutes';
+
+-- =====================================================
+-- RELATIONSHIP TYPES TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS relationship_types (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE,
+  display_name text NOT NULL,
+  category text NOT NULL DEFAULT 'custom',
+  color text NOT NULL DEFAULT '#6B7280',
+  line_style text NOT NULL DEFAULT 'solid',
+  show_arrow text NOT NULL DEFAULT 'auto',
+  is_builtin boolean NOT NULL DEFAULT false,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  
+  CONSTRAINT chk_relationship_line_style CHECK (line_style IN ('solid', 'dashed', 'dotted', 'double')),
+  CONSTRAINT chk_show_arrow CHECK (show_arrow IN ('true', 'false', 'auto'))
+);
+
+COMMENT ON TABLE relationship_types IS '关系类型配置表，存储预设和用户自定义的关系类型';
+COMMENT ON COLUMN relationship_types.name IS '关系类型名称，用于程序标识';
+COMMENT ON COLUMN relationship_types.display_name IS '显示名称，用于UI展示';
+COMMENT ON COLUMN relationship_types.category IS '分类：hierarchical, dependency, semantic, temporal, interaction, causal, custom';
+COMMENT ON COLUMN relationship_types.color IS '默认颜色，十六进制格式';
+COMMENT ON COLUMN relationship_types.line_style IS '默认线型';
+COMMENT ON COLUMN relationship_types.show_arrow IS '箭头显示：true, false, auto';
+COMMENT ON COLUMN relationship_types.is_builtin IS '是否为内置预设类型';
+COMMENT ON COLUMN relationship_types.user_id IS '创建用户ID，内置类型为null';
+
+-- =====================================================
+-- USER FOCUS STATS TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS user_focus_stats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+  total_focus_seconds BIGINT DEFAULT 0,
+  total_sessions INTEGER DEFAULT 0,
+  total_pomodoros INTEGER DEFAULT 0,
+  total_tasks_completed INTEGER DEFAULT 0,
+  current_streak INTEGER DEFAULT 0,
+  longest_streak INTEGER DEFAULT 0,
+  weekly_streak INTEGER DEFAULT 0,
+  monthly_streak INTEGER DEFAULT 0,
+  quarterly_streak INTEGER DEFAULT 0,
+  daily_task_streak INTEGER DEFAULT 0,
+  last_daily_completion DATE,
+  last_focus_date DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE user_focus_stats IS 'Aggregated user focus statistics for quick access';
+
+-- =====================================================
+-- TASK TEMPLATES TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS task_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL DEFAULT 'custom',
+  title_template TEXT NOT NULL,
+  description_template TEXT,
+  estimated_duration INTEGER DEFAULT 25,
+  tags TEXT[] DEFAULT '{}',
+  priority INTEGER DEFAULT 2,
+  is_default BOOLEAN DEFAULT FALSE,
+  is_system BOOLEAN DEFAULT FALSE,
+  usage_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE task_templates IS 'Task templates for quick task creation';
+COMMENT ON COLUMN task_templates.category IS 'Template category: study, work, life, health, custom';
+COMMENT ON COLUMN task_templates.title_template IS 'Template for task title, supports placeholders like {{topic}}';
+COMMENT ON COLUMN task_templates.description_template IS 'Template for task description';
+COMMENT ON COLUMN task_templates.is_default IS 'Whether this is a default template for the category';
+COMMENT ON COLUMN task_templates.is_system IS 'Whether this is a system preset template';
+COMMENT ON COLUMN task_templates.usage_count IS 'Number of times this template has been used';
+
+-- =====================================================
+-- TASK REVIEWS TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS task_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_id UUID REFERENCES scheduled_tasks(id) ON DELETE SET NULL,
+  review_type TEXT NOT NULL CHECK (review_type IN ('daily', 'task', 'weekly')),
+  content TEXT,
+  mood TEXT CHECK (mood IN ('great', 'good', 'neutral', 'tired', 'stressed')),
+  difficulties TEXT,
+  improvements TEXT,
+  learnings TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- PERIODIC TASKS AND PASS SYSTEM
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS periodic_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  period_type TEXT NOT NULL CHECK (period_type IN ('weekly', 'monthly', 'quarterly')),
+  period_start DATE NOT NULL,
+  period_end DATE NOT NULL,
+  task_type TEXT NOT NULL CHECK (task_type IN ('focus', 'study', 'create', 'tasks')),
+  target INTEGER NOT NULL,
+  progress INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+  xp_reward INTEGER NOT NULL,
+  pass_points INTEGER NOT NULL DEFAULT 10,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT unique_user_period_task UNIQUE (user_id, period_type, period_start, task_type)
+);
+
+COMMENT ON TABLE periodic_tasks IS 'Periodic tasks for weekly, monthly, and quarterly goals';
+
+CREATE TABLE IF NOT EXISTS periodic_passes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  period_type TEXT NOT NULL CHECK (period_type IN ('weekly', 'monthly', 'quarterly')),
+  period_start DATE NOT NULL,
+  period_end DATE NOT NULL,
+  total_points INTEGER DEFAULT 0,
+  current_level INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, period_type, period_start)
+);
+
+COMMENT ON TABLE periodic_passes IS 'User pass progress for each period';
+
+CREATE TABLE IF NOT EXISTS pass_rewards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  period_type TEXT NOT NULL CHECK (period_type IN ('weekly', 'monthly', 'quarterly')),
+  level INTEGER NOT NULL,
+  points_required INTEGER NOT NULL,
+  reward_type TEXT NOT NULL CHECK (reward_type IN ('xp', 'achievement', 'badge')),
+  reward_value INTEGER,
+  achievement_code TEXT,
+  name TEXT NOT NULL,
+  description TEXT,
+  icon TEXT DEFAULT '🎁',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(period_type, level)
+);
+
+COMMENT ON TABLE pass_rewards IS 'Reward configuration for each pass level';
+
+CREATE TABLE IF NOT EXISTS user_pass_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  pass_id UUID NOT NULL REFERENCES periodic_passes(id) ON DELETE CASCADE,
+  level INTEGER NOT NULL,
+  claimed BOOLEAN DEFAULT FALSE,
+  claimed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(pass_id, level)
+);
+
+COMMENT ON TABLE user_pass_progress IS 'Track which rewards user has claimed';
+
+-- =====================================================
 -- INDEXES
 -- =====================================================
+
+-- Users
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- Knowledge graphs
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_id ON knowledge_graphs(user_id);
@@ -310,6 +585,7 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_deleted ON knowledge_graphs
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_created ON knowledge_graphs(user_id, created_at DESC) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_public ON knowledge_graphs(id) WHERE is_public = true AND deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_favorite ON knowledge_graphs(user_id, is_favorite DESC) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS knowledge_graphs_embedding_idx ON knowledge_graphs USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Knowledge points
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_id ON knowledge_points(owner_id);
@@ -319,6 +595,7 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_points_content_trgm ON knowledge_points
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_embedding ON knowledge_points USING hnsw (embedding vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_public ON knowledge_points(id) WHERE visibility = 'public';
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_visibility ON knowledge_points(owner_id, visibility);
+CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner ON knowledge_points(owner_id);
 
 -- Graph nodes
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_graph_id ON graph_nodes(graph_id);
@@ -336,6 +613,7 @@ CREATE INDEX IF NOT EXISTS idx_edges_deleted_at ON edges(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_edges_source_graph ON edges(source_knowledge_point_id, graph_id);
 CREATE INDEX IF NOT EXISTS idx_edges_target_graph ON edges(target_knowledge_point_id, graph_id);
 CREATE INDEX IF NOT EXISTS idx_edges_graph ON edges(graph_id);
+CREATE INDEX IF NOT EXISTS idx_edges_graph_deleted ON edges(graph_id, deleted_at);
 
 -- Study cards
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_next_review ON study_cards(user_id, next_review);
@@ -386,13 +664,19 @@ CREATE INDEX IF NOT EXISTS focus_sessions_user_id_idx ON focus_sessions(user_id)
 CREATE INDEX IF NOT EXISTS focus_sessions_created_at_idx ON focus_sessions(created_at);
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_date ON focus_sessions(user_id, start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_completed ON focus_sessions(user_id, completed) WHERE completed = true;
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_started ON focus_sessions(user_id, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_task ON focus_sessions(task_id) WHERE task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_break ON focus_sessions(user_id, is_break);
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_completed_2 ON focus_sessions(user_id, completed);
 
 -- Achievements
 CREATE INDEX IF NOT EXISTS idx_achievements_code ON achievements(code);
+CREATE INDEX IF NOT EXISTS idx_achievements_category ON achievements(category);
 
 -- User achievements
 CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON user_achievements(achievement_id);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_unlocked ON user_achievements(user_id, unlocked_at DESC);
 
 -- Daily tasks
 CREATE INDEX IF NOT EXISTS idx_daily_tasks_user_date ON daily_tasks(user_id, task_date);
@@ -405,6 +689,60 @@ CREATE INDEX IF NOT EXISTS idx_graph_relations_type ON graph_relations(relation_
 -- Backup snapshots
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_id ON backup_snapshots(user_id);
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_type ON backup_snapshots(type);
+CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_created ON backup_snapshots(user_id, created_at DESC);
+
+-- Scheduled tasks indexes
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_status ON scheduled_tasks(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_queue_position ON scheduled_tasks(user_id, queue_level, position);
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deleted ON scheduled_tasks(user_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deadline ON scheduled_tasks(user_id, deadline) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_knowledge_point ON scheduled_tasks(knowledge_point_id) WHERE knowledge_point_id IS NOT NULL;
+
+-- Task executions indexes
+CREATE INDEX IF NOT EXISTS idx_task_executions_task ON task_executions(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_executions_user_started ON task_executions(user_id, started_at DESC);
+
+-- Task tags indexes
+CREATE INDEX IF NOT EXISTS idx_task_tags_user ON task_tags(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_tags_user_name ON task_tags(user_id, name);
+
+-- Task settings indexes
+CREATE INDEX IF NOT EXISTS idx_task_settings_user ON task_settings(user_id);
+
+-- Relationship types indexes
+CREATE INDEX IF NOT EXISTS idx_relationship_types_category ON relationship_types(category);
+CREATE INDEX IF NOT EXISTS idx_relationship_types_user ON relationship_types(user_id);
+
+-- User focus stats indexes
+CREATE INDEX IF NOT EXISTS idx_user_focus_stats_user ON user_focus_stats(user_id);
+
+-- Task templates indexes
+CREATE INDEX IF NOT EXISTS idx_task_templates_user ON task_templates(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_task_templates_category ON task_templates(category);
+CREATE INDEX IF NOT EXISTS idx_task_templates_system ON task_templates(is_system) WHERE is_system = TRUE;
+CREATE INDEX IF NOT EXISTS idx_task_templates_user_category ON task_templates(user_id, category) WHERE user_id IS NOT NULL;
+
+-- Task reviews indexes
+CREATE INDEX IF NOT EXISTS idx_task_reviews_user_id ON task_reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_reviews_task_id ON task_reviews(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_reviews_type ON task_reviews(review_type);
+CREATE INDEX IF NOT EXISTS idx_task_reviews_created_at ON task_reviews(created_at DESC);
+
+-- Periodic tasks indexes
+CREATE INDEX IF NOT EXISTS idx_periodic_tasks_user ON periodic_tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_periodic_tasks_period ON periodic_tasks(user_id, period_type, period_start);
+CREATE INDEX IF NOT EXISTS idx_periodic_tasks_status ON periodic_tasks(user_id, status);
+
+-- Periodic passes indexes
+CREATE INDEX IF NOT EXISTS idx_periodic_passes_user ON periodic_passes(user_id);
+CREATE INDEX IF NOT EXISTS idx_periodic_passes_period ON periodic_passes(user_id, period_type, period_start);
+
+-- Pass rewards indexes
+CREATE INDEX IF NOT EXISTS idx_pass_rewards_period ON pass_rewards(period_type, level);
+
+-- User pass progress indexes
+CREATE INDEX IF NOT EXISTS idx_user_pass_progress_pass ON user_pass_progress(pass_id);
+CREATE INDEX IF NOT EXISTS idx_user_pass_progress_user ON user_pass_progress(user_id);
 
 -- =====================================================
 -- ROW LEVEL SECURITY
@@ -523,12 +861,18 @@ CREATE POLICY "Users can delete their own focus sessions" ON focus_sessions FOR 
 
 -- Achievements
 ALTER TABLE achievements ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Achievements are viewable by everyone" ON achievements FOR SELECT USING (true);
+CREATE POLICY "Anyone can view achievements" ON achievements FOR SELECT USING (TRUE);
+CREATE POLICY "Only admins can manage achievements" ON achievements FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
+  )
+);
 
 -- User Achievements
 ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their own achievements" ON user_achievements FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert their own achievements" ON user_achievements FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own achievements" ON user_achievements FOR UPDATE USING (auth.uid() = user_id);
 
 -- Daily Tasks
 ALTER TABLE daily_tasks ENABLE ROW LEVEL SECURITY;
@@ -558,6 +902,77 @@ ALTER TABLE backup_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own backup snapshots" ON backup_snapshots FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own backup snapshots" ON backup_snapshots FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete own backup snapshots" ON backup_snapshots FOR DELETE USING (auth.uid() = user_id);
+
+-- Scheduled tasks RLS
+ALTER TABLE scheduled_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own scheduled tasks" ON scheduled_tasks FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own scheduled tasks" ON scheduled_tasks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own scheduled tasks" ON scheduled_tasks FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own scheduled tasks" ON scheduled_tasks FOR DELETE USING (auth.uid() = user_id);
+
+-- Task executions RLS
+ALTER TABLE task_executions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task executions" ON task_executions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own task executions" ON task_executions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own task executions" ON task_executions FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own task executions" ON task_executions FOR DELETE USING (auth.uid() = user_id);
+
+-- Task tags RLS
+ALTER TABLE task_tags ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task tags" ON task_tags FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own task tags" ON task_tags FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own task tags" ON task_tags FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own task tags" ON task_tags FOR DELETE USING (auth.uid() = user_id);
+
+-- Task settings RLS
+ALTER TABLE task_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task settings" ON task_settings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own task settings" ON task_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own task settings" ON task_settings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own task settings" ON task_settings FOR DELETE USING (auth.uid() = user_id);
+
+-- Relationship types RLS
+ALTER TABLE relationship_types ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view builtin relationship types" ON relationship_types FOR SELECT USING (is_builtin = true);
+CREATE POLICY "Users can view own relationship types" ON relationship_types FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own relationship types" ON relationship_types FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own relationship types" ON relationship_types FOR UPDATE USING (user_id = auth.uid() AND is_builtin = false);
+CREATE POLICY "Users can delete own relationship types" ON relationship_types FOR DELETE USING (user_id = auth.uid() AND is_builtin = false);
+
+-- User focus stats RLS
+ALTER TABLE user_focus_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own focus stats" ON user_focus_stats FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own focus stats" ON user_focus_stats FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own focus stats" ON user_focus_stats FOR UPDATE USING (auth.uid() = user_id);
+
+-- Task templates RLS
+ALTER TABLE task_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task templates" ON task_templates FOR SELECT USING (auth.uid() = user_id OR is_system = TRUE);
+CREATE POLICY "Users can insert own task templates" ON task_templates FOR INSERT WITH CHECK (auth.uid() = user_id OR is_system = TRUE);
+CREATE POLICY "Users can update own task templates" ON task_templates FOR UPDATE USING (auth.uid() = user_id AND is_system = FALSE);
+CREATE POLICY "Users can delete own task templates" ON task_templates FOR DELETE USING (auth.uid() = user_id AND is_system = FALSE);
+
+-- Periodic tasks RLS
+ALTER TABLE periodic_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own periodic tasks" ON periodic_tasks FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own periodic tasks" ON periodic_tasks FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own periodic tasks" ON periodic_tasks FOR UPDATE USING (auth.uid() = user_id);
+
+-- Periodic passes RLS
+ALTER TABLE periodic_passes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own periodic passes" ON periodic_passes FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own periodic passes" ON periodic_passes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own periodic passes" ON periodic_passes FOR UPDATE USING (auth.uid() = user_id);
+
+-- Pass rewards RLS
+ALTER TABLE pass_rewards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view pass rewards" ON pass_rewards FOR SELECT USING (TRUE);
+
+-- User pass progress RLS
+ALTER TABLE user_pass_progress ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own pass progress" ON user_pass_progress FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own pass progress" ON user_pass_progress FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own pass progress" ON user_pass_progress FOR UPDATE USING (auth.uid() = user_id);
 
 -- =====================================================
 -- FUNCTIONS
@@ -593,7 +1008,7 @@ CREATE OR REPLACE FUNCTION match_knowledge_points (
 )
 RETURNS TABLE (
   id uuid,
-  title text,
+  title varchar(255),
   content text,
   similarity float
 )
@@ -608,7 +1023,8 @@ BEGIN
     1 - (kp.embedding <=> query_embedding) as similarity
   FROM knowledge_points kp
   WHERE (kp.visibility = 'public' OR kp.owner_id = p_user_id)
-  AND 1 - (kp.embedding <=> query_embedding) > match_threshold
+    AND kp.embedding IS NOT NULL
+    AND 1 - (kp.embedding <=> query_embedding) > match_threshold
   ORDER BY kp.embedding <=> query_embedding
   LIMIT match_count;
 END;
@@ -688,7 +1104,7 @@ CREATE OR REPLACE FUNCTION get_user_graphs_with_counts(p_user_id UUID)
 RETURNS TABLE (
   id UUID,
   user_id UUID,
-  title TEXT,
+  title VARCHAR(512),
   description TEXT,
   is_public BOOLEAN,
   is_favorite BOOLEAN,
@@ -715,8 +1131,8 @@ BEGIN
   FROM knowledge_graphs g
   LEFT JOIN (
     SELECT graph_id, COUNT(*) as count
-    FROM graph_nodes
-    WHERE deleted_at IS NULL
+    FROM graph_nodes gn
+    WHERE gn.deleted_at IS NULL
     GROUP BY graph_id
   ) n ON n.graph_id = g.id
   WHERE g.user_id = p_user_id
@@ -730,7 +1146,7 @@ CREATE OR REPLACE FUNCTION get_user_trashed_graphs(p_user_id UUID)
 RETURNS TABLE (
   id UUID,
   user_id UUID,
-  title TEXT,
+  title VARCHAR(512),
   description TEXT,
   is_public BOOLEAN,
   created_at TIMESTAMPTZ,
@@ -753,8 +1169,8 @@ BEGIN
   FROM knowledge_graphs g
   LEFT JOIN (
     SELECT graph_id, COUNT(*) as count
-    FROM graph_nodes
-    WHERE deleted_at IS NULL
+    FROM graph_nodes gn
+    WHERE gn.deleted_at IS NULL
     GROUP BY graph_id
   ) n ON n.graph_id = g.id
   WHERE g.user_id = p_user_id
@@ -786,7 +1202,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION get_accessible_knowledge_points(p_user_id UUID)
 RETURNS TABLE (
   id UUID,
-  title VARCHAR(255),
+  title VARCHAR(512),
   content TEXT,
   learning_material TEXT,
   properties JSONB,
@@ -822,7 +1238,7 @@ CREATE OR REPLACE FUNCTION search_similar_knowledge_points(
 )
 RETURNS TABLE (
   id UUID,
-  title VARCHAR(255),
+  title VARCHAR(512),
   content TEXT,
   similarity FLOAT,
   visibility knowledge_point_visibility
@@ -847,7 +1263,7 @@ $$ LANGUAGE plpgsql STABLE;
 CREATE OR REPLACE FUNCTION get_knowledge_point_graphs(p_knowledge_point_id UUID, p_user_id UUID)
 RETURNS TABLE (
   graph_id UUID,
-  graph_title VARCHAR(255),
+  graph_title VARCHAR(512),
   x_position FLOAT,
   y_position FLOAT,
   level VARCHAR(20)
@@ -949,6 +1365,245 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Search similar graphs by topic embedding
+CREATE OR REPLACE FUNCTION search_similar_graphs(
+  p_query_embedding vector(1024),
+  p_user_id UUID,
+  p_match_threshold FLOAT DEFAULT 0.85,
+  p_match_count INT DEFAULT 10,
+  p_exclude_graph_id UUID DEFAULT NULL
+)
+RETURNS TABLE (
+  id UUID,
+  title VARCHAR(512),
+  description TEXT,
+  similarity FLOAT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    kg.id,
+    kg.title,
+    kg.description,
+    1 - (kg.embedding <=> p_query_embedding) as similarity
+  FROM knowledge_graphs kg
+  WHERE kg.user_id = p_user_id
+    AND kg.deleted_at IS NULL
+    AND kg.embedding IS NOT NULL
+    AND (p_exclude_graph_id IS NULL OR kg.id != p_exclude_graph_id)
+    AND (1 - (kg.embedding <=> p_query_embedding)) > p_match_threshold
+  ORDER BY kg.embedding <=> p_query_embedding
+  LIMIT p_match_count;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Check if a topic is duplicate
+CREATE OR REPLACE FUNCTION check_duplicate_graph_topic(
+  p_topic VARCHAR(255),
+  p_user_id UUID,
+  p_threshold FLOAT DEFAULT 0.85,
+  p_exclude_graph_id UUID DEFAULT NULL
+)
+RETURNS TABLE (
+  is_duplicate BOOLEAN,
+  similar_graph_id UUID,
+  similar_graph_title VARCHAR(512),
+  similarity FLOAT
+) AS $$
+DECLARE
+  v_embedding vector(1024);
+  v_similar record;
+BEGIN
+  RETURN QUERY
+  SELECT 
+    FALSE as is_duplicate,
+    NULL::UUID as similar_graph_id,
+    NULL::VARCHAR(512) as similar_graph_title,
+    0.0::FLOAT as similarity;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Auto-create task settings for new users
+CREATE OR REPLACE FUNCTION handle_new_user_task_settings()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO task_settings (user_id)
+  VALUES (NEW.id)
+  ON CONFLICT (user_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE TRIGGER on_user_created_task_settings
+  AFTER INSERT ON users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user_task_settings();
+
+-- Update timestamp trigger for scheduled_tasks
+CREATE OR REPLACE FUNCTION update_scheduled_tasks_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER scheduled_tasks_updated_at
+  BEFORE UPDATE ON scheduled_tasks
+  FOR EACH ROW EXECUTE FUNCTION update_scheduled_tasks_updated_at();
+
+-- Update timestamp trigger for relationship_types
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_relationship_types_updated_at
+  BEFORE UPDATE ON relationship_types
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Update user focus stats
+CREATE OR REPLACE FUNCTION update_user_focus_stats()
+RETURNS TRIGGER AS $$
+DECLARE
+  focus_date DATE;
+  prev_focus_date DATE;
+  new_streak INTEGER;
+BEGIN
+  focus_date := NEW.start_time::date;
+  
+  INSERT INTO user_focus_stats (user_id, total_focus_seconds, total_sessions, total_pomodoros, current_streak, longest_streak, last_focus_date)
+  VALUES (
+    NEW.user_id,
+    COALESCE(NEW.duration, 0),
+    1,
+    COALESCE(NEW.pomodoro_count, 0),
+    1,
+    1,
+    focus_date
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    total_focus_seconds = user_focus_stats.total_focus_seconds + COALESCE(NEW.duration, 0),
+    total_sessions = user_focus_stats.total_sessions + 1,
+    total_pomodoros = user_focus_stats.total_pomodoros + COALESCE(NEW.pomodoro_count, 0),
+    last_focus_date = focus_date,
+    updated_at = NOW();
+  
+  IF COALESCE(NEW.is_break, FALSE) = FALSE THEN
+    SELECT last_focus_date INTO prev_focus_date 
+    FROM user_focus_stats 
+    WHERE user_id = NEW.user_id;
+    
+    IF prev_focus_date IS NOT NULL THEN
+      IF prev_focus_date = focus_date - 1 THEN
+        new_streak := (SELECT current_streak FROM user_focus_stats WHERE user_id = NEW.user_id) + 1;
+        UPDATE user_focus_stats 
+        SET current_streak = new_streak,
+            longest_streak = GREATEST(longest_streak, new_streak)
+        WHERE user_id = NEW.user_id;
+      ELSIF prev_focus_date < focus_date - 1 THEN
+        UPDATE user_focus_stats 
+        SET current_streak = 1
+        WHERE user_id = NEW.user_id;
+      END IF;
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_focus_session_created
+  AFTER INSERT ON focus_sessions
+  FOR EACH ROW
+  WHEN (NEW.is_break = FALSE OR NEW.is_break IS NULL)
+  EXECUTE FUNCTION update_user_focus_stats();
+
+-- Update stats on task complete
+CREATE OR REPLACE FUNCTION update_stats_on_task_complete()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'completed' AND (OLD.status IS NULL OR OLD.status != 'completed') THEN
+    UPDATE user_focus_stats 
+    SET total_tasks_completed = total_tasks_completed + 1,
+        updated_at = NOW()
+    WHERE user_id = NEW.user_id;
+    
+    IF NOT FOUND THEN
+      INSERT INTO user_focus_stats (user_id, total_tasks_completed)
+      VALUES (NEW.user_id, 1);
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_task_completed
+  AFTER UPDATE ON scheduled_tasks
+  FOR EACH ROW
+  EXECUTE FUNCTION update_stats_on_task_complete();
+
+-- Update timestamp trigger for user_focus_stats
+CREATE OR REPLACE FUNCTION update_focus_stats_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER user_focus_stats_updated_at
+  BEFORE UPDATE ON user_focus_stats
+  FOR EACH ROW EXECUTE FUNCTION update_focus_stats_updated_at();
+
+-- Update timestamp trigger for task_templates
+CREATE OR REPLACE FUNCTION update_task_templates_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER task_templates_updated_at
+  BEFORE UPDATE ON task_templates
+  FOR EACH ROW EXECUTE FUNCTION update_task_templates_updated_at();
+
+-- Update timestamp trigger for task_reviews
+CREATE OR REPLACE FUNCTION update_task_reviews_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_task_reviews_updated_at
+  BEFORE UPDATE ON task_reviews
+  FOR EACH ROW
+  EXECUTE FUNCTION update_task_reviews_updated_at();
+
+-- Update timestamp trigger for periodic_tasks
+CREATE OR REPLACE FUNCTION update_periodic_tasks_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER periodic_tasks_updated_at
+  BEFORE UPDATE ON periodic_tasks
+  FOR EACH ROW EXECUTE FUNCTION update_periodic_tasks_updated_at();
+
+CREATE TRIGGER periodic_passes_updated_at
+  BEFORE UPDATE ON periodic_passes
+  FOR EACH ROW EXECUTE FUNCTION update_periodic_tasks_updated_at();
+
 -- =====================================================
 -- GRANTS
 -- =====================================================
@@ -971,6 +1626,36 @@ GRANT SELECT ON templates TO anon;
 GRANT ALL PRIVILEGES ON templates TO authenticated;
 GRANT ALL ON backup_snapshots TO authenticated;
 
+GRANT ALL PRIVILEGES ON scheduled_tasks TO authenticated;
+GRANT ALL PRIVILEGES ON task_executions TO authenticated;
+GRANT ALL PRIVILEGES ON task_tags TO authenticated;
+GRANT ALL PRIVILEGES ON task_settings TO authenticated;
+GRANT SELECT ON scheduled_tasks TO anon;
+GRANT SELECT ON task_executions TO anon;
+GRANT SELECT ON task_tags TO anon;
+GRANT SELECT ON task_settings TO anon;
+
+GRANT ALL PRIVILEGES ON focus_sessions TO authenticated;
+GRANT ALL PRIVILEGES ON user_achievements TO authenticated;
+GRANT ALL PRIVILEGES ON user_focus_stats TO authenticated;
+GRANT SELECT ON achievements TO authenticated;
+GRANT SELECT ON focus_sessions TO anon;
+GRANT SELECT ON achievements TO anon;
+GRANT SELECT ON user_achievements TO anon;
+GRANT SELECT ON user_focus_stats TO anon;
+
+GRANT ALL PRIVILEGES ON task_templates TO authenticated;
+GRANT SELECT ON task_templates TO anon;
+
+GRANT ALL PRIVILEGES ON periodic_tasks TO authenticated;
+GRANT ALL PRIVILEGES ON periodic_passes TO authenticated;
+GRANT ALL PRIVILEGES ON user_pass_progress TO authenticated;
+GRANT SELECT ON pass_rewards TO authenticated;
+GRANT SELECT ON periodic_tasks TO anon;
+GRANT SELECT ON periodic_passes TO anon;
+GRANT SELECT ON pass_rewards TO anon;
+GRANT SELECT ON user_pass_progress TO anon;
+
 -- Grant execute permissions on functions
 GRANT EXECUTE ON FUNCTION get_user_graphs_with_counts(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_trashed_graphs(UUID) TO authenticated;
@@ -981,3 +1666,4 @@ GRANT EXECUTE ON FUNCTION search_similar_knowledge_points(vector(1024), UUID, FL
 GRANT EXECUTE ON FUNCTION get_knowledge_point_graphs(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION soft_delete_graph_node(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION hard_delete_knowledge_point(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION search_similar_graphs(vector(1024), UUID, FLOAT, INT, UUID) TO authenticated;

@@ -1,6 +1,6 @@
 -- =====================================================
 -- Knowledge Map - Initial Seed Data
--- Generated: 2026-02-19 (consolidated migrations)
+-- Generated: 2026-02-26 (Consolidated Migration)
 -- =====================================================
 
 -- =====================================================
@@ -23,26 +23,77 @@ ON CONFLICT (key) DO NOTHING;
 -- ACHIEVEMENTS
 -- =====================================================
 
-INSERT INTO achievements (code, name, description, category, icon, xp_reward, condition_type, condition_value) VALUES
-  ('streak_3', '初出茅庐', '保持3天连续学习', 'study', 'Flame', 100, 'streak_days', 3),
-  ('streak_7', '坚持不懈', '保持7天连续学习', 'study', 'Zap', 300, 'streak_days', 7),
-  ('streak_14', '持之以恒', '保持14天连续学习', 'study', 'Zap', 500, 'streak_days', 14),
-  ('streak_30', '月度大师', '保持30天连续学习', 'study', 'Crown', 1000, 'streak_days', 30),
-  ('streak_100', '百日筑基', '保持100天连续学习', 'study', 'Crown', 5000, 'streak_days', 100),
-  ('focus_10', '专注时刻', '完成10分钟专注时间', 'focus', 'Timer', 50, 'focus_minutes', 10),
-  ('focus_60', '深度潜入', '完成60分钟专注时间', 'focus', 'Timer', 150, 'focus_minutes', 60),
-  ('focus_300', '专注大师', '完成300分钟(5小时)专注时间', 'focus', 'Brain', 500, 'focus_minutes', 300),
-  ('focus_1000', '心流境界', '完成1000分钟专注时间', 'focus', 'Brain', 1500, 'focus_minutes', 1000),
-  ('mastery_1', '初试牛刀', '掌握1张知识卡片', 'study', 'GraduationCap', 50, 'cards_mastered', 1),
-  ('mastery_10', '跬步千里', '掌握10张知识卡片', 'study', 'GraduationCap', 100, 'cards_mastered', 10),
-  ('mastery_50', '求知若渴', '掌握50张知识卡片', 'study', 'BookOpen', 300, 'cards_mastered', 50),
-  ('mastery_100', '领域专家', '掌握100张知识卡片', 'study', 'Trophy', 600, 'cards_mastered', 100),
-  ('mastery_500', '博闻强识', '掌握500张知识卡片', 'study', 'Trophy', 2500, 'cards_mastered', 500),
-  ('creation_graph_1', '创世之初', '创建第1个知识图谱', 'creation', 'BookOpen', 200, 'graphs_created', 1),
-  ('creation_graph_5', '知识架构师', '创建5个知识图谱', 'creation', 'BookOpen', 800, 'graphs_created', 5),
-  ('creation_node_10', '萌芽', '创建10个知识节点', 'creation', 'Target', 100, 'nodes_created', 10),
-  ('creation_node_100', '枝繁叶茂', '创建100个知识节点', 'creation', 'Target', 500, 'nodes_created', 100),
-  ('creation_node_1000', '知识森林', '创建1000个知识节点', 'creation', 'Target', 2000, 'nodes_created', 1000)
+INSERT INTO achievements (code, name, description, category, icon, color, xp_reward, condition_type, condition_value, is_hidden) VALUES
+-- Study streak achievements
+  ('streak_3', '初出茅庐', '保持3天连续学习', 'study', 'Flame', '#F97316', 100, 'streak_days', 3, FALSE),
+  ('streak_7', '坚持不懈', '保持7天连续学习', 'study', 'Zap', '#3B82F6', 300, 'streak_days', 7, FALSE),
+  ('streak_14', '持之以恒', '保持14天连续学习', 'study', 'Zap', '#8B5CF6', 500, 'streak_days', 14, FALSE),
+  ('streak_30', '月度大师', '保持30天连续学习', 'study', 'Crown', '#A855F7', 1000, 'streak_days', 30, FALSE),
+  ('streak_100', '百日筑基', '保持100天连续学习', 'study', 'Crown', '#FCD34D', 5000, 'streak_days', 100, FALSE),
+-- Focus time achievements
+  ('focus_10', '专注时刻', '完成10分钟专注时间', 'focus', 'Timer', '#10B981', 50, 'focus_minutes', 10, FALSE),
+  ('focus_60', '深度潜入', '完成60分钟专注时间', 'focus', 'Timer', '#3B82F6', 150, 'focus_minutes', 60, FALSE),
+  ('focus_300', '专注大师', '完成300分钟(5小时)专注时间', 'focus', 'Brain', '#8B5CF6', 500, 'focus_minutes', 300, FALSE),
+  ('focus_1000', '心流境界', '完成1000分钟专注时间', 'focus', 'Brain', '#EC4899', 1500, 'focus_minutes', 1000, FALSE),
+-- Mastery achievements
+  ('mastery_1', '初试牛刀', '掌握1张知识卡片', 'study', 'GraduationCap', '#10B981', 50, 'cards_mastered', 1, FALSE),
+  ('mastery_10', '跬步千里', '掌握10张知识卡片', 'study', 'GraduationCap', '#3B82F6', 100, 'cards_mastered', 10, FALSE),
+  ('mastery_50', '求知若渴', '掌握50张知识卡片', 'study', 'BookOpen', '#8B5CF6', 300, 'cards_mastered', 50, FALSE),
+  ('mastery_100', '领域专家', '掌握100张知识卡片', 'study', 'Trophy', '#F59E0B', 600, 'cards_mastered', 100, FALSE),
+  ('mastery_500', '博闻强识', '掌握500张知识卡片', 'study', 'Trophy', '#FCD34D', 2500, 'cards_mastered', 500, FALSE),
+-- Creation achievements
+  ('creation_graph_1', '创世之初', '创建第1个知识图谱', 'creation', 'BookOpen', '#10B981', 200, 'graphs_created', 1, FALSE),
+  ('creation_graph_5', '知识架构师', '创建5个知识图谱', 'creation', 'BookOpen', '#3B82F6', 800, 'graphs_created', 5, FALSE),
+  ('creation_node_10', '萌芽', '创建10个知识节点', 'creation', 'Target', '#F59E0B', 100, 'nodes_created', 10, FALSE),
+  ('creation_node_100', '枝繁叶茂', '创建100个知识节点', 'creation', 'Target', '#8B5CF6', 500, 'nodes_created', 100, FALSE),
+  ('creation_node_1000', '知识森林', '创建1000个知识节点', 'creation', 'Target', '#FCD34D', 2000, 'nodes_created', 1000, FALSE),
+-- Focus achievements (new)
+  ('first_focus', '初次专注', '完成第一次专注会话', 'focus', '🎯', '#10B981', 10, 'focus_sessions', 1, FALSE),
+  ('focus_1h', '一小时达人', '累计专注时间达到1小时', 'focus', '⏱️', '#3B82F6', 20, 'total_focus_hours', 1, FALSE),
+  ('focus_10h', '专注新手', '累计专注时间达到10小时', 'focus', '🔥', '#F59E0B', 50, 'total_focus_hours', 10, FALSE),
+  ('focus_50h', '专注达人', '累计专注时间达到50小时', 'focus', '💪', '#8B5CF6', 100, 'total_focus_hours', 50, FALSE),
+  ('focus_100h', '专注大师', '累计专注时间达到100小时', 'focus', '🏆', '#EC4899', 200, 'total_focus_hours', 100, FALSE),
+  ('focus_500h', '专注传奇', '累计专注时间达到500小时', 'focus', '👑', '#FCD34D', 500, 'total_focus_hours', 500, FALSE),
+  ('daily_4h', '高效一天', '单日专注时间达到4小时', 'focus', '⚡', '#06B6D4', 50, 'daily_focus_hours', 4, FALSE),
+  ('daily_8h', '极限挑战', '单日专注时间达到8小时', 'focus', '🚀', '#EF4444', 100, 'daily_focus_hours', 8, FALSE),
+-- Streak achievements (new)
+  ('streak_3_new', '三天坚持', '连续专注3天', 'streak', '🌟', '#F97316', 30, 'consecutive_days', 3, FALSE),
+  ('streak_7_new', '一周达人', '连续专注7天', 'streak', '✨', '#84CC16', 70, 'consecutive_days', 7, FALSE),
+  ('streak_14_new', '两周毅力', '连续专注14天', 'streak', '💫', '#14B8A6', 140, 'consecutive_days', 14, FALSE),
+  ('streak_30_new', '月度冠军', '连续专注30天', 'streak', '🏅', '#A855F7', 300, 'consecutive_days', 30, FALSE),
+  ('streak_100_new', '百日传奇', '连续专注100天', 'streak', '💎', '#F43F5E', 1000, 'consecutive_days', 100, FALSE),
+-- Task achievements
+  ('tasks_10', '任务新手', '完成10个任务', 'tasks', '📋', '#6366F1', 30, 'tasks_completed', 10, FALSE),
+  ('tasks_50', '任务达人', '完成50个任务', 'tasks', '📝', '#8B5CF6', 100, 'tasks_completed', 50, FALSE),
+  ('tasks_100', '任务大师', '完成100个任务', 'tasks', '🎖️', '#EC4899', 200, 'tasks_completed', 100, FALSE),
+  ('tasks_500', '任务传奇', '完成500个任务', 'tasks', '🏅', '#F59E0B', 500, 'tasks_completed', 500, FALSE),
+-- Pomodoro achievements
+  ('pomodoro_10', '番茄新手', '完成10个番茄钟', 'focus', '🍅', '#EF4444', 20, 'pomodoros_completed', 10, FALSE),
+  ('pomodoro_50', '番茄达人', '完成50个番茄钟', 'focus', '🍅', '#F97316', 50, 'pomodoros_completed', 50, FALSE),
+  ('pomodoro_100', '番茄大师', '完成100个番茄钟', 'focus', '🍅', '#DC2626', 100, 'pomodoros_completed', 100, FALSE),
+-- Special achievements
+  ('night_owl', '夜猫子', '在凌晨(0:00-5:00)完成专注会话', 'special', '🦉', '#6366F1', 30, 'special_condition', 1, TRUE),
+  ('early_bird', '早起鸟', '在早晨(5:00-7:00)完成专注会话', 'special', '🐦', '#FBBF24', 30, 'special_condition', 1, TRUE),
+  ('weekend_warrior', '周末战士', '在周末完成4小时专注', 'special', '⚔️', '#8B5CF6', 50, 'special_condition', 1, TRUE),
+  ('perfectionist', '完美主义者', '一天内完成所有计划任务', 'special', '✅', '#10B981', 50, 'special_condition', 1, TRUE),
+  ('multitasker', '多面手', '在一天内完成5个不同任务', 'special', '🎭', '#EC4899', 40, 'special_condition', 1, TRUE),
+-- Weekly streak achievements
+  ('weekly_streak_4', '四周坚持', '连续完成4周所有周任务', 'streak', '📅', '#10B981', 100, 'weekly_streak', 4, FALSE),
+  ('weekly_streak_8', '两月坚持', '连续完成8周所有周任务', 'streak', '📆', '#3B82F6', 200, 'weekly_streak', 8, FALSE),
+  ('weekly_streak_12', '季度坚持', '连续完成12周所有周任务', 'streak', '🗓️', '#8B5CF6', 400, 'weekly_streak', 12, FALSE),
+-- Monthly streak achievements
+  ('monthly_streak_3', '三月连冠', '连续完成3个月所有月任务', 'streak', '🏆', '#F59E0B', 300, 'monthly_streak', 3, FALSE),
+  ('monthly_streak_6', '半年传奇', '连续完成6个月所有月任务', 'streak', '👑', '#EC4899', 600, 'monthly_streak', 6, FALSE),
+  ('monthly_streak_12', '年度霸主', '连续完成12个月所有月任务', 'streak', '💎', '#FCD34D', 1500, 'monthly_streak', 12, FALSE),
+-- Quarterly streak achievements
+  ('quarterly_streak_2', '半年坚持', '连续完成2个季度所有任务', 'streak', '🌟', '#14B8A6', 500, 'quarterly_streak', 2, FALSE),
+  ('quarterly_streak_4', '年度传奇', '连续完成4个季度所有任务', 'streak', '🏅', '#A855F7', 1000, 'quarterly_streak', 4, FALSE),
+-- Daily task streak achievements
+  ('daily_streak_7', '周常达人', '连续7天完成所有每日任务', 'streak', '🔥', '#F97316', 50, 'daily_task_streak', 7, FALSE),
+  ('daily_streak_14', '两周毅力', '连续14天完成所有每日任务', 'streak', '💪', '#EF4444', 100, 'daily_task_streak', 14, FALSE),
+  ('daily_streak_30', '月度坚持', '连续30天完成所有每日任务', 'streak', '🎯', '#DC2626', 300, 'daily_task_streak', 30, FALSE),
+  ('daily_streak_60', '双月传奇', '连续60天完成所有每日任务', 'streak', '⭐', '#7C3AED', 600, 'daily_task_streak', 60, FALSE),
+  ('daily_streak_100', '百日王者', '连续100天完成所有每日任务', 'streak', '👑', '#FCD34D', 1000, 'daily_task_streak', 100, FALSE)
 ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
@@ -109,7 +160,7 @@ Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS
 {{/if}}
 {{/if}}
 
-Do not suggest topics that are already listed in ''Current Direct Children''.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+Do not suggest topics that are already listed in ''Current Direct Children''.', NOW(), NOW()),
 ('generate_cards', 'system', null, null, 'You are an educational expert. Generate {{count}} flashcards based on the provided topic and content.
 
 Context: The current node is part of a larger knowledge structure.
@@ -142,7 +193,7 @@ For ''fill_in_the_blank'' type: Create a sentence with one or more ''___'' (3 un
 
 {{#if includesEssay}}
 For ''essay'' type: Create complex questions requiring a long-form structured answer. The ''answer'' should be a model response with key points. Provide a detailed ''explanation'' with scoring criteria.
-{{/if}}', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+{{/if}}', NOW(), NOW()),
 ('chat', 'system', null, null, 'You are an intelligent assistant for a Knowledge Graph.
 Answer the user''s question based on the provided Graph Context.
 
@@ -153,7 +204,7 @@ Instructions:
 1. Use the information in the Graph Context to answer.
 2. If the answer is not in the context, use your general knowledge but mention that it''s not explicitly in the graph.
 3. Be concise and helpful.
-4. Respond in the same language as the user''s question (default to Chinese).', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+4. Respond in the same language as the user''s question (default to Chinese).', NOW(), NOW()),
 ('text_to_graph', 'system', null, null, 'You are a knowledge graph expert. Analyze the provided text and extract key concepts to build a structured Knowledge Tree.
 
 Requirements:
@@ -168,7 +219,7 @@ Requirements:
 4. Output a TREE structure. Minimise cross-links to keep it clean. Ensure every node (except root) has a valid parent.
 5. **Content Richness**: Every node must have substantial ''content'' description, not just a title.
 6. IMPORTANT: All mathematical formulas in ''content'' must be wrapped in standard LaTeX delimiters. Use $...$ for inline formulas and $$...$$ for block formulas.
-7. Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+7. Limit the output to a maximum of 50-100 nodes. Prioritize the most important concepts to fit within this limit.', NOW(), NOW()),
 ('tutor_chat', 'system', null, null, 'You are an intelligent knowledge tutor for a Knowledge Graph application.
 
 {{#if isGuided}}
@@ -196,7 +247,7 @@ Instructions:
 4. In free mode, identify key concepts that could be new nodes in the knowledge graph
 5. In guided mode, follow the learning path and check understanding
 6. Respond in the same language as the user (default to Chinese)
-7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+7. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$', NOW(), NOW()),
 ('branch_suggestions', 'system', null, null, 'You are a knowledge graph expert specializing in creating interactive exploration paths like story branches or adventure game choices.
 
 Goal: Generate 3-5 distinct branch suggestions for the user to explore from the current node.
@@ -230,7 +281,7 @@ Content Strategy (MID LEVEL): Suggest SPECIFIC CONCEPTS or FUNCTIONAL COMPONENTS
 {{/if}}
 {{/if}}
 
-Do not suggest topics that are already listed in ''Current Direct Children''.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+Do not suggest topics that are already listed in ''Current Direct Children''.', NOW(), NOW()),
 ('deep_analysis', 'system', null, null, 'You are an expert professor and researcher. Your task is to provide a deep analysis of the following concept: "{{node_title}}".
 
 Context:
@@ -244,7 +295,7 @@ Please provide a structured analysis including:
 5. Current Research Trends (if applicable)
 
 Format your response in Markdown.
-IMPORTANT: Directly output the analysis content. Do NOT include any conversational filler (e.g., "Okay", "Here is the analysis", "As an expert...").', '2026-02-09 17:07:36.60188+00', '2026-02-09 17:07:36.60188+00'),
+IMPORTANT: Directly output the analysis content. Do NOT include any conversational filler (e.g., "Okay", "Here is the analysis", "As an expert...").', NOW(), NOW()),
 ('document_to_graph', 'system', null, null, 'You are a top-tier knowledge architect, skilled in reconstructing original knowledge outlines and logical hierarchies from unstructured documents.
 
 Your Task:
@@ -262,7 +313,7 @@ Output Requirements:
 - Node titles must preserve core terminology.
 - **Content Richness**: Each node MUST have substantial ''content'' (100-200 words), not just a title.
 - Node count: 40-60 nodes to ensure completeness.
-- All titles and descriptions in Chinese.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+- All titles and descriptions in Chinese.', NOW(), NOW()),
 ('generate_content', 'system', null, null, 'You are an expert tutor and content creator. Generate detailed, structured educational content for the topic "{{topic}}".
 
 Context: {{context}}
@@ -277,7 +328,7 @@ Strategy (NORMAL/SUB): Provide a balanced explanation covering key components, r
 {{/if}}
 {{/if}}
 
-Format your response in Markdown. Use headers, bullet points, and code blocks (if applicable) to make it readable.', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
+Format your response in Markdown. Use headers, bullet points, and code blocks (if applicable) to make it readable.', NOW(), NOW()),
 ('recommend_connections', 'system', null, null, 'You are a knowledge graph expert. Given a new node (title and content) and a list of existing nodes in a graph, suggest 1-3 most relevant existing nodes to connect to.
 
 New Node:
@@ -285,23 +336,23 @@ Title: {{node_title}}
 Content: {{node_content}}
 
 Existing Nodes:
-{{existing_nodes_json}}', '2026-02-09 08:32:26.326666+00', '2026-02-09 08:32:26.326666+00'),
-('term_annotation', 'system', null, null, '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。', '2026-02-09 15:15:32.619571+00', '2026-02-09 15:15:32.619571+00'),
+{{existing_nodes_json}}', NOW(), NOW()),
+('term_annotation', 'system', null, null, '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。', NOW(), NOW()),
 ('generate_cards_choice', 'system', null, null, 'For ''choice'' type: Create multiple-choice questions with 4 plausible options. 
 Provide the correct answer and a detailed ''explanation'' of why it is correct and others are wrong.
-Distractors should be common misconceptions if possible.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
+Distractors should be common misconceptions if possible.', NOW(), NOW()),
 ('generate_cards_essay', 'system', null, null, 'For ''essay'' type: Create complex questions requiring a long-form structured answer. 
 The ''answer'' should be a model response with key points. 
-Provide a detailed ''explanation'' with scoring criteria and key concepts to cover.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
+Provide a detailed ''explanation'' with scoring criteria and key concepts to cover.', NOW(), NOW()),
 ('generate_cards_fill_blank', 'system', null, null, 'For ''fill_in_the_blank'' type: Create a sentence with one or more ''___'' (3 underscores) as blanks. 
-The ''answer'' should be the missing text. Provide a detailed ''explanation''.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
+The ''answer'' should be the missing text. Provide a detailed ''explanation''.', NOW(), NOW()),
 ('generate_cards_multi_choice', 'system', null, null, 'For ''multi_choice'' type: Create multiple-choice questions where ONE OR MORE options can be correct. 
-Provide 4 options, the ''answer'' as a JSON array of correct strings, and a detailed ''explanation''.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
+Provide 4 options, the ''answer'' as a JSON array of correct strings, and a detailed ''explanation''.', NOW(), NOW()),
 ('generate_cards_qa', 'system', null, null, 'For ''qa'' type: Create thought-provoking open-ended questions that test deep understanding. 
 Provide a detailed ''explanation'' analyzing the answer.
-Focus on explaining the "Why" and "How" rather than just "What".', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
+Focus on explaining the "Why" and "How" rather than just "What".', NOW(), NOW()),
 ('generate_cards_true_false', 'system', null, null, 'For ''true_false'' type: Create statements focusing on common misconceptions or key details. 
-Provide a detailed ''explanation'' clarifying the fact.', '2026-02-10 13:37:50.705989+00', '2026-02-10 13:37:50.705989+00'),
+Provide a detailed ''explanation'' clarifying the fact.', NOW(), NOW()),
 ('auto_graph_init', 'system', null, null, 'You are a knowledge graph expert. Initialize a new knowledge graph based on the given topic.
 
 ## Task
@@ -545,5 +596,159 @@ Respond in Chinese.', NOW(), NOW()),
 3. 提供清晰的连接理由
 4. 相似度范围：0 到 1
 
-请用中文回复。', NOW(), NOW())
+请用中文回复。', NOW(), NOW()),
+('generate_task_details', 'system', null, null, '你是一个专业的任务管理助手。根据用户提供的任务标题，生成详细的任务描述和建议。
+
+请分析任务标题{{#if context}}和补充信息：{{context}}{{/if}}，生成以下内容：
+
+1. **任务描述**：详细说明任务目标、关键步骤、预期成果（50-150字）
+2. **标签**：推荐2-5个相关标签（如：学习、工作、阅读、编程、复习、项目、会议、运动、休息等）
+3. **预计时长**：根据任务复杂度估算完成时间（15-180分钟）
+4. **优先级**：评估任务重要程度（1=低，2=中，3=高，4=紧急）
+5. **队列建议**：推荐任务应该放入的队列
+
+队列判断标准：
+- **Q0 紧急队列**：需要立即处理、有紧迫截止日期、高优先级任务
+- **Q1 重要队列**：重要但不紧急、需要专注完成的任务  
+- **Q2 待办队列**：常规任务、可以稍后处理的任务
+
+请确保：
+- 描述具体、可操作
+- 标签实用、常用
+- 时长合理、符合任务复杂度', NOW(), NOW())
 ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
+
+-- =====================================================
+-- RELATIONSHIP TYPES
+-- =====================================================
+
+-- 层级结构 (hierarchical)
+INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
+  ('contains', '包含', 'hierarchical', '#3B82F6', 'solid', 'auto', true),
+  ('part_of', '属于', 'hierarchical', '#3B82F6', 'solid', 'auto', true),
+  ('parent_child', '父子', 'hierarchical', '#3B82F6', 'solid', 'auto', true)
+ON CONFLICT (name) DO NOTHING;
+
+-- 依赖约束 (dependency)
+INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
+  ('depends_on', '依赖', 'dependency', '#F59E0B', 'dashed', 'true', true),
+  ('prerequisite', '前提', 'dependency', '#F59E0B', 'dashed', 'true', true),
+  ('constrains', '制约', 'dependency', '#F59E0B', 'dashed', 'true', true),
+  ('supports', '支撑', 'dependency', '#F59E0B', 'dashed', 'true', true),
+  ('mutex', '互斥', 'dependency', '#EF4444', 'dotted', 'false', true),
+  ('exclusive', '排他', 'dependency', '#EF4444', 'dotted', 'false', true)
+ON CONFLICT (name) DO NOTHING;
+
+-- 语义关系 (semantic)
+INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
+  ('related', '相关', 'semantic', '#6B7280', 'solid', 'false', true),
+  ('similar_to', '相似', 'semantic', '#8B5CF6', 'solid', 'false', true),
+  ('opposite', '相反', 'semantic', '#EC4899', 'solid', 'false', true),
+  ('synonym', '同义', 'semantic', '#8B5CF6', 'solid', 'false', true),
+  ('equivalent', '等价', 'semantic', '#8B5CF6', 'solid', 'false', true),
+  ('generalization', '泛化', 'semantic', '#10B981', 'solid', 'true', true),
+  ('specialization', '特化', 'semantic', '#10B981', 'solid', 'true', true)
+ON CONFLICT (name) DO NOTHING;
+
+-- 时序流程 (temporal)
+INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
+  ('follows', '后续', 'temporal', '#06B6D4', 'dashed', 'true', true),
+  ('parallel', '并行', 'temporal', '#06B6D4', 'solid', 'false', true),
+  ('branch', '分支', 'temporal', '#06B6D4', 'solid', 'true', true),
+  ('merge', '汇合', 'temporal', '#06B6D4', 'solid', 'true', true),
+  ('trigger', '触发', 'temporal', '#06B6D4', 'dashed', 'true', true),
+  ('loop', '循环', 'temporal', '#06B6D4', 'dashed', 'true', true)
+ON CONFLICT (name) DO NOTHING;
+
+-- 交互行为 (interaction)
+INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
+  ('points_to', '指向', 'interaction', '#F97316', 'solid', 'true', true),
+  ('acts_on', '作用', 'interaction', '#F97316', 'solid', 'true', true),
+  ('influences', '影响', 'interaction', '#F97316', 'dashed', 'true', true),
+  ('feedback', '反馈', 'interaction', '#F97316', 'dashed', 'true', true),
+  ('calls', '调用', 'interaction', '#F97316', 'solid', 'true', true)
+ON CONFLICT (name) DO NOTHING;
+
+-- 因果推导 (causal)
+INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
+  ('causes', '因果', 'causal', '#DC2626', 'solid', 'true', true),
+  ('derives', '推导', 'causal', '#DC2626', 'solid', 'true', true),
+  ('proportional', '正比', 'causal', '#DC2626', 'solid', 'false', true),
+  ('inverse', '反比', 'causal', '#DC2626', 'solid', 'false', true)
+ON CONFLICT (name) DO NOTHING;
+
+-- =====================================================
+-- TASK TEMPLATES
+-- =====================================================
+
+INSERT INTO task_templates (name, description, category, title_template, description_template, estimated_duration, tags, priority, is_system, is_default) VALUES
+-- Study templates
+('深度学习', '专注学习新知识', 'study', '学习：{{topic}}', '深入学习 {{topic}}，理解核心概念和应用场景', 45, ARRAY['学习', '专注'], 3, TRUE, TRUE),
+('复习巩固', '复习已学内容', 'study', '复习：{{topic}}', '复习 {{topic}}，巩固知识点，查漏补缺', 25, ARRAY['学习', '复习'], 2, TRUE, FALSE),
+('阅读笔记', '阅读并做笔记', 'study', '阅读：{{book_name}}', '阅读 {{book_name}}，记录要点和心得', 30, ARRAY['学习', '阅读'], 2, TRUE, FALSE),
+('练习题', '做练习题巩固知识', 'study', '练习：{{subject}}', '完成 {{subject}} 相关练习题', 40, ARRAY['学习', '练习'], 2, TRUE, FALSE),
+
+-- Work templates
+('项目开发', '开发项目任务', 'work', '开发：{{feature}}', '开发 {{feature}} 功能，包括设计、编码和测试', 60, ARRAY['工作', '开发'], 3, TRUE, TRUE),
+('会议准备', '准备会议材料', 'work', '准备会议：{{meeting_name}}', '准备 {{meeting_name}} 会议材料和演示文稿', 30, ARRAY['工作', '会议'], 2, TRUE, FALSE),
+('代码审查', '审查代码', 'work', '代码审查：{{project}}', '审查 {{project}} 项目代码，检查代码质量和规范', 45, ARRAY['工作', '代码'], 2, TRUE, FALSE),
+('文档编写', '编写文档', 'work', '文档：{{doc_name}}', '编写 {{doc_name}} 相关文档', 40, ARRAY['工作', '文档'], 2, TRUE, FALSE),
+('邮件处理', '处理邮件', 'work', '处理邮件', '检查和回复重要邮件', 15, ARRAY['工作', '邮件'], 1, TRUE, FALSE),
+
+-- Life templates
+('购物清单', '采购物品', 'life', '购物：{{items}}', '购买 {{items}}', 30, ARRAY['生活', '购物'], 1, TRUE, TRUE),
+('家务整理', '整理家务', 'life', '家务：{{task}}', '完成 {{task}} 家务整理', 30, ARRAY['生活', '家务'], 1, TRUE, FALSE),
+('账单支付', '支付账单', 'life', '支付账单', '处理各类账单支付', 15, ARRAY['生活', '财务'], 2, TRUE, FALSE),
+
+-- Health templates
+('运动健身', '锻炼身体', 'health', '运动：{{type}}', '进行 {{type}} 运动，保持身体健康', 45, ARRAY['健康', '运动'], 2, TRUE, TRUE),
+('冥想放松', '冥想放松身心', 'health', '冥想放松', '进行冥想练习，放松身心', 15, ARRAY['健康', '冥想'], 1, TRUE, FALSE),
+('健康检查', '健康相关事项', 'health', '健康：{{item}}', '处理 {{item}} 健康相关事项', 30, ARRAY['健康'], 2, TRUE, FALSE)
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- PASS REWARDS
+-- =====================================================
+
+INSERT INTO pass_rewards (period_type, level, points_required, reward_type, reward_value, name, description, icon) VALUES
+-- Weekly Pass (15 levels, 40 points total to complete all tasks = 4 tasks * 10 points each)
+('weekly', 1, 10, 'xp', 50, '起步者', '完成第一个周任务', '🌱'),
+('weekly', 2, 20, 'xp', 50, '初见成效', '继续努力', '⭐'),
+('weekly', 3, 30, 'xp', 75, '渐入佳境', '保持势头', '✨'),
+('weekly', 4, 40, 'xp', 75, '周常达人', '完成所有周任务', '🏆'),
+('weekly', 5, 50, 'achievement', 0, '周冠军', '连续完成周任务', '🥇'),
+
+-- Monthly Pass (20 levels, ~160 points total)
+('monthly', 1, 10, 'xp', 50, '月度起步', '开始你的月度旅程', '📅'),
+('monthly', 2, 20, 'xp', 50, '稳步前行', '持续进步', '📈'),
+('monthly', 3, 30, 'xp', 75, '小有成就', '月度任务进行中', '🎯'),
+('monthly', 4, 40, 'xp', 75, '坚持就是胜利', '保持专注', '💪'),
+('monthly', 5, 50, 'xp', 100, '月度中坚', '完成一半目标', '🌟'),
+('monthly', 6, 60, 'xp', 100, '势不可挡', '继续冲刺', '🔥'),
+('monthly', 7, 70, 'xp', 125, '接近终点', '胜利在望', '💫'),
+('monthly', 8, 80, 'xp', 125, '月度精英', '即将完成', '🏅'),
+('monthly', 9, 90, 'xp', 150, '月度大师', '几乎完成', '👑'),
+('monthly', 10, 100, 'achievement', 0, '月度冠军', '完成所有月任务', '🥇'),
+('monthly', 11, 110, 'xp', 150, '超额完成', '超越目标', '🚀'),
+('monthly', 12, 120, 'xp', 175, '月度传奇', '持续超越', '💎'),
+('monthly', 13, 130, 'xp', 175, '月度神话', '非凡成就', '🌈'),
+('monthly', 14, 140, 'xp', 200, '月度至尊', '登峰造极', '🏆'),
+('monthly', 15, 150, 'achievement', 0, '月度之神', '完美月度', '⚡'),
+
+-- Quarterly Pass (20 levels, ~480 points total)
+('quarterly', 1, 20, 'xp', 75, '季度启程', '开始你的季度旅程', '🗓️'),
+('quarterly', 2, 40, 'xp', 75, '季度进展', '稳步前进', '📊'),
+('quarterly', 3, 60, 'xp', 100, '季度中坚', '保持势头', '🎯'),
+('quarterly', 4, 80, 'xp', 100, '季度精英', '持续努力', '⭐'),
+('quarterly', 5, 100, 'xp', 125, '季度达人', '表现优秀', '🌟'),
+('quarterly', 6, 120, 'xp', 125, '季度高手', '技艺精湛', '💫'),
+('quarterly', 7, 140, 'xp', 150, '季度专家', '专业水准', '🏅'),
+('quarterly', 8, 160, 'xp', 150, '季度大师', '登峰造极', '👑'),
+('quarterly', 9, 180, 'xp', 175, '季度传奇', '非凡成就', '💎'),
+('quarterly', 10, 200, 'achievement', 0, '季度冠军', '完成所有季度任务', '🥇'),
+('quarterly', 11, 220, 'xp', 175, '超额完成', '超越目标', '🚀'),
+('quarterly', 12, 240, 'xp', 200, '季度神话', '持续超越', '🌈'),
+('quarterly', 13, 260, 'xp', 200, '季度至尊', '非凡表现', '🏆'),
+('quarterly', 14, 280, 'xp', 225, '季度之神', '登峰造极', '⚡'),
+('quarterly', 15, 300, 'achievement', 0, '完美季度', '季度完美表现', '🌟')
+ON CONFLICT (period_type, level) DO NOTHING;

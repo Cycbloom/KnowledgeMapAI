@@ -27,3 +27,8 @@ dist-ssr
 .env
 
 backups/
+
+# Playwright test outputs
+test-results/
+playwright-report/
+playwright/.cache/

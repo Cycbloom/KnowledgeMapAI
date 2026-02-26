@@ -1,0 +1,18 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 运行代码检查..."
+
+npm run check
+if [ $? -ne 0 ]; then
+  echo "❌ 类型检查失败，请修复后再提交"
+  exit 1
+fi
+
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ 代码检查失败，请修复后再提交"
+  exit 1
+fi
+
+echo "✅ 代码检查通过"

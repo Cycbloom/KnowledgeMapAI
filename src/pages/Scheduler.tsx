@@ -19,6 +19,7 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
+import { logger } from '../utils/logger';
 import { 
   Plus, 
   RefreshCw, 
@@ -156,6 +157,7 @@ export const Scheduler: React.FC = () => {
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const result = findTaskById(active.id as string, queues);
+    logger.debug('handleDragStart', { activeId: active.id, result });
     if (result) {
       setActiveTask(result.task);
       sourceQueueRef.current = result.queueKey;
@@ -173,6 +175,7 @@ export const Scheduler: React.FC = () => {
     if (!activeQueueKey) return;
 
     const overResult = getQueueKeyFromOver(over, displayQueues);
+    logger.debug('handleDragOver', { activeId, overId: over.id, activeQueueKey, overResult });
     if (!overResult) return;
 
     const { queueKey: overQueueKey, index: overIndex } = overResult;
@@ -230,7 +233,7 @@ export const Scheduler: React.FC = () => {
     let targetQueueKey = currentQueueRef.current;
     let targetIndex = targetIndexRef.current;
     
-    console.log('handleDragEnd start:', { 
+    logger.debug('handleDragEnd start:', { 
       activeId: active.id, 
       overId: over?.id,
       sourceQueue,
@@ -253,7 +256,7 @@ export const Scheduler: React.FC = () => {
 
     if (!targetQueueKey) {
       const overResult = getQueueKeyFromOver(over, queues);
-      console.log('getQueueKeyFromOver result:', overResult);
+      logger.debug('getQueueKeyFromOver result:', overResult);
       if (overResult) {
         targetQueueKey = overResult.queueKey;
         if (targetIndex === -1) {
@@ -270,7 +273,7 @@ export const Scheduler: React.FC = () => {
     const tasks = queues[targetQueueKey as keyof QueueData] as ScheduledTask[];
     
     if (targetIndex === -1) {
-      console.log('Calculating targetIndex:', { overId, activeId, tasksLength: tasks.length });
+      logger.debug('Calculating targetIndex:', { overId, activeId, tasksLength: tasks.length });
       if (overId.startsWith('queue-')) {
         targetIndex = tasks.length > 0 ? tasks.length - 1 : 0;
       } else if (overId !== activeId) {
@@ -280,7 +283,7 @@ export const Scheduler: React.FC = () => {
       }
     }
     
-    console.log('Final values:', { sourceQueue, targetQueueKey, targetIndex, activeId });
+    logger.debug('Final values:', { sourceQueue, targetQueueKey, targetIndex, activeId });
 
     if (sourceQueue && sourceQueue !== targetQueueKey) {
       const targetQueueLevel = parseInt(targetQueueKey.replace('q', ''));

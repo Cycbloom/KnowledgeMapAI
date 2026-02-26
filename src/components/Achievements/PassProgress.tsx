@@ -48,20 +48,12 @@ export const PassProgress: React.FC<PassProgressProps> = ({ pass, rewards, userP
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(true);
   
-  if (!pass) {
-    return (
-      <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-        暂无通行证数据
-      </div>
-    );
-  }
-  
-  const config = periodTypeConfig[pass.period_type];
-  const passRewards = rewards.filter(r => r.period_type === pass.period_type);
+  const config = pass ? periodTypeConfig[pass.period_type] : null;
+  const passRewards = pass ? rewards.filter(r => r.period_type === pass.period_type) : [];
   const progressMap = new Map(userProgress.map(p => [p.level, p]));
   
-  const maxPoints = Math.max(...passRewards.map(r => r.points_required), 1);
-  const progressPercent = Math.min(100, (pass.total_points / maxPoints) * 100);
+  const maxPoints = pass ? Math.max(...passRewards.map(r => r.points_required), 1) : 1;
+  const progressPercent = pass ? Math.min(100, (pass.total_points / maxPoints) * 100) : 0;
 
   const checkScrollButtons = () => {
     if (scrollRef.current) {
@@ -79,6 +71,14 @@ export const PassProgress: React.FC<PassProgressProps> = ({ pass, rewards, userP
       return () => el.removeEventListener('scroll', checkScrollButtons);
     }
   }, [passRewards]);
+  
+  if (!pass || !config) {
+    return (
+      <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+        暂无通行证数据
+      </div>
+    );
+  }
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {

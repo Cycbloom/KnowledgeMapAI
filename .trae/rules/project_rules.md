@@ -2,33 +2,48 @@
 
 ## 数据库操作
 
-### 数据库重置
+### 数据库修改流程（无迁移模式）
 
-**使用 `npx supabase db reset` 后必须执行以下步骤：**
+**项目采用直接修改 schema 文件的方式，不使用增量迁移：**
 
-1. 运行 `npx supabase db reset` 重置数据库
-2. **立即运行** `npm run db:seed` 插入测试数据
-3. 确认测试用户创建成功
+1. **修改数据库架构**：直接编辑 `supabase/migrations/00000000000000_initial_schema.sql`
+2. **修改种子数据**：直接编辑 `supabase/migrations/00000000000001_initial_seed.sql`
+3. **重置数据库**：运行 `npx supabase db reset`
+4. **插入测试数据**：运行 `npm run db:seed`
 
 **注意事项：**
+- 不创建新的迁移文件（如 `20250301_xxx.sql`）
+- 所有架构变更直接在 `00000000000000_initial_schema.sql` 中修改
+- 所有种子数据变更直接在 `00000000000001_initial_seed.sql` 中修改
 - db reset 会删除所有本地数据库数据
-- 必须在 reset 后运行 seed 脚本创建测试用户
 - 测试用户: `test@example.com` / `test123456`
 
-### 安全的数据库迁移命令
+### 数据库重置完整流程
 
-对于本地 Supabase 数据库迁移，使用以下安全命令：
+```bash
+# 1. 重置数据库（应用 schema 和 seed 文件）
+npx supabase db reset
 
-1. `npx supabase migration up` - 应用新的迁移文件
-2. `npx supabase db push` - 推送迁移到远程数据库（需要先 link）
+# 2. 插入测试数据
+npm run db:seed
+```
 
-### 迁移失败处理
+### 修改数据库的最佳实践
 
-如果迁移失败，正确的处理方式：
+1. **添加新表**：在 schema 文件的 `TABLES` 部分添加
+2. **添加新字段**：找到对应表定义，添加字段
+3. **添加索引**：在 `INDEXES` 部分添加
+4. **添加 RLS 策略**：在 `ROW LEVEL SECURITY` 部分添加
+5. **添加函数/触发器**：在 `FUNCTIONS` 部分添加
+6. **添加种子数据**：在 seed 文件中添加 INSERT 语句
 
-1. 修改迁移文件修复问题
-2. 如果是 RPC 函数返回类型变更，使用 `DROP FUNCTION IF EXISTS` 先删除再创建
-3. 手动在数据库中执行修复 SQL
+### 远程数据库同步
+
+**注意**：此方式仅适用于本地开发环境。远程生产环境需要谨慎处理：
+
+1. 本地开发完成后，导出 schema 差异
+2. 在远程环境手动执行变更 SQL
+3. 或使用 `npx supabase db push` 推送（需要先 link）
 
 ## 自动化测试
 
@@ -123,7 +138,3 @@ tests/
 4. 运行相关测试 `npx playwright test --grep="功能名称"`
 5. 修复发现的问题
 6. 提交代码
-
-## 其他规则
-
-（待补充）

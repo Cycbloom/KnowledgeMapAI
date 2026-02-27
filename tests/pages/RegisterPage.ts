@@ -9,6 +9,7 @@ export class RegisterPage {
   readonly loginLink: Locator;
   readonly errorMessage: Locator;
   readonly themeButton: Locator;
+  readonly successMessage: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -19,6 +20,7 @@ export class RegisterPage {
     this.loginLink = page.locator('a[href="/login"]');
     this.errorMessage = page.locator('.bg-red-100, .dark\\:bg-red-900\\/30');
     this.themeButton = page.locator('button[title*="切换"]');
+    this.successMessage = page.locator('.bg-green-100, .dark\\:bg-green-900\\/30');
   }
 
   async goto() {
@@ -32,8 +34,28 @@ export class RegisterPage {
     await this.registerButton.click();
   }
 
+  async fillName(name: string) {
+    await this.nameInput.fill(name);
+  }
+
+  async fillEmail(email: string) {
+    await this.emailInput.fill(email);
+  }
+
+  async fillPassword(password: string) {
+    await this.passwordInput.fill(password);
+  }
+
+  async submit() {
+    await this.registerButton.click();
+  }
+
   async getErrorMessage() {
     return await this.errorMessage.textContent();
+  }
+
+  async isErrorMessageVisible() {
+    return await this.errorMessage.isVisible();
   }
 
   async clickLogin() {
@@ -46,5 +68,18 @@ export class RegisterPage {
 
   async isDarkMode() {
     return await this.page.locator('.dark').count() > 0;
+  }
+
+  async clearForm() {
+    await this.nameInput.clear();
+    await this.emailInput.clear();
+    await this.passwordInput.clear();
+  }
+
+  async getInputValidationState(inputName: string) {
+    const input = this.page.locator(`input[name="${inputName}"]`);
+    const isValid = await input.evaluate((el: HTMLInputElement) => el.checkValidity());
+    const validationMessage = await input.evaluate((el: HTMLInputElement) => el.validationMessage);
+    return { isValid, validationMessage };
   }
 }

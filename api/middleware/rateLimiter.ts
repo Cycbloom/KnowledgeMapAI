@@ -2,6 +2,10 @@ import { type Request, type Response, type NextFunction } from 'express';
 import redisClient from '../utils/redis.js';
 import { logger } from '../utils/logger.js';
 
+const isRateLimitDisabled = () => {
+  return process.env.DISABLE_RATE_LIMIT === 'true' || process.env.NODE_ENV === 'test';
+};
+
 interface RateLimitConfig {
   windowMs: number;
   maxRequests: number;
@@ -33,6 +37,11 @@ export const createRateLimiter = (config: RateLimitConfig) => {
   } = config;
 
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (isRateLimitDisabled()) {
+      logger.info('Rate limit disabled for testing');
+      return next();
+    }
+
     const userId = (req as any).user?.id;
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
     const key = userId ? `${keyPrefix}:user:${userId}` : `${keyPrefix}:ip:${ip}`;

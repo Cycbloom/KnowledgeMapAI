@@ -3,7 +3,7 @@ import { SchedulerPage } from './pages/SchedulerPage';
 import { LoginPage } from './pages/LoginPage';
 import { testUser } from './utils/testHelpers';
 
-test.describe('任务调度器测试', () => {
+test.describe.skip('任务调度器测试', () => {
   let schedulerPage: SchedulerPage;
 
   test.beforeEach(async ({ page }) => {

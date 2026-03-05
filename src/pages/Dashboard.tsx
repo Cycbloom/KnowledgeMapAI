@@ -144,26 +144,29 @@ export const Dashboard = () => {
 
     try {
       setFormError(null);
+      let result;
       if (selectedTemplate) {
-        await createGraphFromTemplateMutation.mutateAsync({ 
+        result = await createGraphFromTemplateMutation.mutateAsync({ 
           template_id: selectedTemplate.id,
           title: newTitle,
           description: newDescription 
         });
       } else {
-        await createGraphMutation.mutateAsync({ 
+        result = await createGraphMutation.mutateAsync({ 
           title: newTitle,
           description: newDescription 
         });
       }
+      console.log('创建图谱返回结果:', result);
       setNewTitle('');
       setNewDescription('');
       setSelectedTemplate(null);
       setIsCreating(false);
       addMessage({ type: 'success', content: '创建成功!' });
     } catch (err: unknown) {
-      console.error(err);
+      console.error('创建图谱失败:', err);
       const message = err instanceof Error ? err.message : '创建图谱失败';
+      setFormError(message);
       addMessage({ type: 'error', content: message });
     }
   };

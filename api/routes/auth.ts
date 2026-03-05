@@ -40,7 +40,22 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
 
     // Note: User record is created automatically by handle_new_user trigger
 
-    res.status(201).json({ user: authData.user, session: authData.session });
+    // If email confirmation is disabled, automatically sign in the user
+    let session = authData.session;
+    if (!session) {
+      const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        throw new AppError(signInError.message, 400, ErrorCodes.VALIDATION_ERROR);
+      }
+
+      session = signInData.session;
+    }
+
+    res.status(201).json({ user: authData.user, session });
   } catch (error: unknown) {
     console.error('Register error:', error);
     const message = error instanceof Error ? error.message : '内部服务器错误';

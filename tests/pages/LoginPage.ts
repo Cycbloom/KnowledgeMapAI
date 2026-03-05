@@ -26,7 +26,7 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto('/login');
   }
 
   async login(email: string, password: string) {
@@ -56,7 +56,9 @@ export class LoginPage {
   }
 
   async isDarkMode() {
-    return await this.page.locator('.dark').count() > 0;
+    return await this.page.evaluate(() => {
+      return document.documentElement.classList.contains('dark');
+    });
   }
 
   async isEmailInputFocused() {

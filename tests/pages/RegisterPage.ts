@@ -67,7 +67,9 @@ export class RegisterPage {
   }
 
   async isDarkMode() {
-    return await this.page.locator('.dark').count() > 0;
+    return await this.page.evaluate(() => {
+      return document.documentElement.classList.contains('dark');
+    });
   }
 
   async clearForm() {

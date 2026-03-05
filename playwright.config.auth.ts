@@ -1,38 +1,22 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/**
- * Playwright 测试配置文件
- * 文档: https://playwright.dev/docs/test-configuration
- */
 export default defineConfig({
-  // 测试文件目录
   testDir: "./tests",
-  // 完全并行运行测试
+  testMatch: ["login.spec.ts", "login-pom.spec.ts", "register.spec.ts"],
   fullyParallel: true,
-  // CI 环境下禁止使用 .only
   forbidOnly: !!process.env.CI,
-  // CI 环境下重试次数
   retries: process.env.CI ? 2 : 0,
-  // 并行工作进程数
   workers: 10,
-  // 测试报告格式
   reporter: "html",
   use: {
-    // 基础 URL
     baseURL: "http://localhost:5174",
-    // 失败时追踪
     trace: "on-first-retry",
-    // 失败时截图
     screenshot: "only-on-failure",
-    // 失败时保留视频
     video: "retain-on-failure",
-    // 操作超时时间 (毫秒)
     actionTimeout: 30000,
-    // 导航超时时间 (毫秒)
     navigationTimeout: 30000,
   },
 
-  // 测试项目配置
   projects: [
     {
       name: "chromium",
@@ -52,7 +36,6 @@ export default defineConfig({
     },
   ],
 
-  // Web 服务器配置
   webServer: {
     command: "npm run dev",
     url: "http://localhost:5174",

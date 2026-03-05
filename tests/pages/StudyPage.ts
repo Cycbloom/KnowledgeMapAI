@@ -8,18 +8,20 @@ export class StudyPage {
   readonly backButton: Locator;
   readonly sidebar: Locator;
   
-  // 统计区域
+  // 统计区域 - 使用图标和布局结构定位,避免依赖文本内容
   readonly progressStats: Locator;
   readonly totalCardsStat: Locator;
   readonly masteredCardsStat: Locator;
   readonly dueCardsStat: Locator;
+  readonly streakDaysStat: Locator;
+  readonly weeklyStudyTimeStat: Locator;
   
   // 卡片列表
   readonly cardList: Locator;
   readonly cardItem: Locator;
   readonly emptyState: Locator;
   
-  // 学习按钮
+  // 学习按钮 - 使用布局结构和图标定位,避免依赖动态文本
   readonly startStudyButton: Locator;
   readonly startDueStudyButton: Locator;
   readonly startAllStudyButton: Locator;
@@ -45,13 +47,13 @@ export class StudyPage {
   readonly returnToDashboardButton: Locator;
   readonly restartButton: Locator;
   
-  // 视图切换
+  // 视图切换 - 使用布局结构定位,避免依赖文本内容
   readonly viewTabs: Locator;
   readonly dashboardTab: Locator;
   readonly bankTab: Locator;
   readonly focusTab: Locator;
   
-  // 搜索和筛选
+  // 搜索和筛选 - 使用布局结构定位
   readonly searchInput: Locator;
   readonly tableModeDueButton: Locator;
   readonly tableModeAllButton: Locator;
@@ -80,7 +82,7 @@ export class StudyPage {
   readonly reviewCardsStat: Locator;
   readonly relearningCardsStat: Locator;
   
-  // 薄弱知识点和预测
+  // 薄弱知识点和预测 - 使用布局结构定位,避免依赖文本内容
   readonly weakPointsSection: Locator;
   readonly predictionsSection: Locator;
   
@@ -88,6 +90,11 @@ export class StudyPage {
   readonly finishStatsSection: Locator;
   readonly finishCorrectRate: Locator;
   readonly finishTotalCards: Locator;
+
+  // 移动端专用选择器 - 考虑响应式布局差异
+  readonly mobileViewTabs: Locator;
+  readonly mobileSearchInput: Locator;
+  readonly mobileStatCards: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -97,21 +104,27 @@ export class StudyPage {
     this.backButton = page.locator('button:has(svg[class*="ArrowLeft"])');
     this.sidebar = page.locator('nav');
     
-    // 统计区域
-    this.progressStats = page.locator('[data-testid="progress-stats"]');
-    this.totalCardsStat = page.locator('p:has-text("总卡片")').locator('..').locator('p').nth(1);
-    this.masteredCardsStat = page.locator('p:has-text("已掌握")').locator('..').locator('p').nth(1);
-    this.dueCardsStat = page.locator('p:has-text("待复习")').locator('..').locator('p').nth(1);
+    // 统计区域 - 使用布局结构和索引定位,避免依赖文本内容
+    // 统计卡片位于 grid-cols-3 或 grid-cols-5 的 grid 中
+    this.progressStats = page.locator('.grid.grid-cols-3, .grid.grid-cols-5');
+    // 使用索引定位各个统计卡片,避免依赖文本
+    this.totalCardsStat = this.progressStats.locator('div.p-3').nth(0).locator('p.text-xl');
+    this.masteredCardsStat = this.progressStats.locator('div.p-3').nth(1).locator('p.text-xl');
+    this.dueCardsStat = this.progressStats.locator('div.p-3').nth(2).locator('p.text-xl');
+    this.streakDaysStat = this.progressStats.locator('div.p-3').nth(3).locator('p.text-xl');
+    this.weeklyStudyTimeStat = this.progressStats.locator('div.p-3').nth(4).locator('p.text-xl');
     
     // 卡片列表
     this.cardList = page.locator('[data-testid="card-list"]');
     this.cardItem = page.locator('[class*="group relative rounded"]');
     this.emptyState = page.locator('text=没有找到匹配的卡片');
     
-    // 学习按钮
+    // 学习按钮 - 使用布局结构和图标定位,避免依赖动态文本
     this.startStudyButton = page.locator('button:has-text("开始学习")');
-    this.startDueStudyButton = page.locator('button:has-text("立即开始")');
-    this.startAllStudyButton = page.locator('button:has-text("开始自测")');
+    // 使用 Brain 图标定位"今日待复习"按钮
+    this.startDueStudyButton = page.locator('button').filter({ has: page.locator('svg').filter({ hasText: '' }) }).nth(0);
+    // 使用 Play 图标定位"自由练习"按钮
+    this.startAllStudyButton = page.locator('button').filter({ has: page.locator('svg').filter({ hasText: '' }) }).nth(1);
     
     // 答题模式
     this.quizContainer = page.locator('[class*="perspective-1000"]');
@@ -134,16 +147,19 @@ export class StudyPage {
     this.returnToDashboardButton = page.locator('button:has-text("返回学习中心")');
     this.restartButton = page.locator('button:has-text("再练一次")');
     
-    // 视图切换
-    this.viewTabs = page.locator('div:has(> button:has-text("概览"))');
-    this.dashboardTab = page.locator('button:has-text("概览")');
-    this.bankTab = page.locator('button:has-text("题库管理")');
-    this.focusTab = page.locator('button:has-text("专注统计")');
+    // 视图切换 - 使用布局结构定位,避免依赖文本内容
+    this.viewTabs = page.locator('div.flex.p-1.rounded-lg');
+    // 使用索引定位各个标签页按钮
+    this.dashboardTab = this.viewTabs.locator('button').nth(0);
+    this.bankTab = this.viewTabs.locator('button').nth(1);
+    this.focusTab = this.viewTabs.locator('button').nth(2);
     
-    // 搜索和筛选
+    // 搜索和筛选 - 使用布局结构定位
     this.searchInput = page.locator('input[placeholder*="搜索"]');
-    this.tableModeDueButton = page.locator('button:has-text("待复习")');
-    this.tableModeAllButton = page.locator('button:has-text("全部")');
+    // 使用布局结构定位筛选按钮组
+    const filterButtons = page.locator('div.flex.p-1.rounded-xl');
+    this.tableModeDueButton = filterButtons.locator('button').nth(0);
+    this.tableModeAllButton = filterButtons.locator('button').nth(1);
     
     // 分页
     this.paginationControls = page.locator('div:has(> button:has(svg[class*="ChevronLeft"]))');
@@ -161,22 +177,32 @@ export class StudyPage {
     this.nextReviewStartInput = page.locator('input[type="date"]').first();
     this.nextReviewEndInput = page.locator('input[type="date"]').nth(1);
     
-    // 统计卡片
-    this.streakDaysStat = page.locator('p:has-text("连续学习")').locator('..').locator('p').nth(1);
-    this.weeklyStudyTimeStat = page.locator('p:has-text("本周学习")').locator('..').locator('p').nth(1);
+    // 统计卡片 - 已在上方定义,这里删除重复定义
+    // this.streakDaysStat = page.locator('p:has-text("连续学习")').locator('..').locator('p').nth(1);
+    // this.weeklyStudyTimeStat = page.locator('p:has-text("本周学习")').locator('..').locator('p').nth(1);
     this.newCardsStat = page.locator('text=新卡片').locator('..');
     this.learningCardsStat = page.locator('text=学习中').locator('..');
     this.reviewCardsStat = page.locator('text=复习中').locator('..');
     this.relearningCardsStat = page.locator('text=重学中').locator('..');
     
-    // 薄弱知识点和预测
-    this.weakPointsSection = page.locator('h3:has-text("薄弱知识点")').locator('..');
-    this.predictionsSection = page.locator('h3:has-text("未来7天预测")').locator('..');
+    // 薄弱知识点和预测 - 使用布局结构定位,避免依赖文本内容
+    // 使用 AlertTriangle 图标定位薄弱知识点区域
+    this.weakPointsSection = page.locator('div').filter({ has: page.locator('svg').filter({ hasText: '' }) }).filter({ hasText: /薄弱知识点|Weak Points/ });
+    // 使用 TrendingUp 图标定位未来7天预测区域
+    this.predictionsSection = page.locator('div').filter({ has: page.locator('svg').filter({ hasText: '' }) }).filter({ hasText: /未来7天预测|Predictions/ });
     
     // 完成界面统计
     this.finishStatsSection = page.locator('div:has(> h2:has-text("本次学习完成"))');
     this.finishCorrectRate = page.locator('text=正确率').locator('..').locator('span');
     this.finishTotalCards = page.locator('text=已学习').locator('..').locator('span');
+
+    // 移动端专用选择器 - 考虑响应式布局差异
+    // 移动端的视图标签可能在不同的容器中
+    this.mobileViewTabs = page.locator('div.flex.p-1.rounded-lg, div.flex.p-1.rounded-md');
+    // 移动端的搜索框可能有不同的样式
+    this.mobileSearchInput = page.locator('input[placeholder*="搜索"], input[placeholder*="search"]');
+    // 移动端的统计卡片可能在单列布局中
+    this.mobileStatCards = page.locator('div.p-3.rounded-xl');
   }
 
   /**
@@ -320,10 +346,11 @@ export class StudyPage {
   }
 
   /**
-   * 搜索卡片
+   * 搜索卡片 - 支持响应式布局
    */
   async searchCards(query: string) {
-    await this.searchInput.fill(query);
+    const searchInput = await this.getSearchInput();
+    await searchInput.fill(query);
     await this.page.waitForTimeout(300); // 等待搜索结果更新
   }
 
@@ -480,10 +507,11 @@ export class StudyPage {
   }
 
   /**
-   * 清空搜索
+   * 清空搜索 - 支持响应式布局
    */
   async clearSearch() {
-    await this.searchInput.clear();
+    const searchInput = await this.getSearchInput();
+    await searchInput.clear();
     await this.page.waitForTimeout(300);
   }
 
@@ -620,5 +648,29 @@ export class StudyPage {
       return await hintLocator.first().textContent();
     }
     return null;
+  }
+
+  /**
+   * 检查是否为移动端视图
+   */
+  async isMobileView(): Promise<boolean> {
+    const viewport = this.page.viewportSize();
+    return viewport ? viewport.width < 768 : false;
+  }
+
+  /**
+   * 获取适合当前设备的视图标签选择器
+   */
+  async getViewTabs(): Promise<Locator> {
+    const isMobile = await this.isMobileView();
+    return isMobile ? this.mobileViewTabs : this.viewTabs;
+  }
+
+  /**
+   * 获取适合当前设备的搜索框选择器
+   */
+  async getSearchInput(): Promise<Locator> {
+    const isMobile = await this.isMobileView();
+    return isMobile ? this.mobileSearchInput : this.searchInput;
   }
 }

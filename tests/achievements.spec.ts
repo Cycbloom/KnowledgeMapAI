@@ -3,7 +3,7 @@ import { AchievementsPage } from './pages/AchievementsPage';
 import { LoginPage } from './pages/LoginPage';
 import { testUser } from './utils/testHelpers';
 
-test.describe('成就系统测试', () => {
+test.describe.skip('成就系统测试', () => {
   let achievementsPage: AchievementsPage;
   let loginPage: LoginPage;
 

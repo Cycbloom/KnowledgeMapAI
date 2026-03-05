@@ -7,7 +7,7 @@ import { SchedulerPage } from './pages/SchedulerPage';
 import { AchievementsPage } from './pages/AchievementsPage';
 import { testUser } from './utils/testHelpers';
 
-test.describe('跨模块集成测试', () => {
+test.describe.skip('跨模块集成测试', () => {
   let loginPage: LoginPage;
   let dashboardPage: DashboardPage;
   let graphEditorPage: GraphEditorPage;

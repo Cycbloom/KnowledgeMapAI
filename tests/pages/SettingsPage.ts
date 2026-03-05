@@ -67,7 +67,6 @@ export class SettingsPage {
 
   async goto() {
     await this.page.goto('/settings');
-    await this.page.waitForLoadState('networkidle');
     // 等待页面标题出现
     await this.title.waitFor({ state: 'visible', timeout: 10000 });
   }

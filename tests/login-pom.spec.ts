@@ -33,9 +33,12 @@ test.describe('登录功能测试 (POM)', () => {
     await expect(page).toHaveURL(/\/register/);
   });
 
-  test('应该支持主题切换', async () => {
+  test('应该支持主题切换', async ({ page }) => {
     const isDarkBefore = await loginPage.isDarkMode();
     await loginPage.toggleTheme();
+    
+    await page.waitForTimeout(500);
+    
     const isDarkAfter = await loginPage.isDarkMode();
     expect(isDarkBefore).not.toBe(isDarkAfter);
   });

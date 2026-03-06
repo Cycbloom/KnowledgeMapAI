@@ -11,9 +11,9 @@ interface TimelineViewProps {
 }
 
 const QUEUE_COLORS = {
-  0: { border: 'border-cyan-400', glow: 'shadow-cyan-500/30', bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
-  1: { border: 'border-emerald-400', glow: 'shadow-emerald-500/30', bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
-  2: { border: 'border-amber-400', glow: 'shadow-amber-500/30', bg: 'bg-amber-500/10', text: 'text-amber-400' },
+  0: { border: 'border-cyan-400 dark:border-cyan-400', glow: 'shadow-cyan-500/30', bg: 'bg-cyan-100 dark:bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400' },
+  1: { border: 'border-emerald-400 dark:border-emerald-400', glow: 'shadow-emerald-500/30', bg: 'bg-emerald-100 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400' },
+  2: { border: 'border-amber-400 dark:border-amber-400', glow: 'shadow-amber-500/30', bg: 'bg-amber-100 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
 };
 
 export const TimelineView: React.FC<TimelineViewProps> = ({
@@ -108,8 +108,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4 px-2">
         <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold text-white">时间轴视图</h3>
-          <div className="flex items-center gap-2 text-sm text-slate-400">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">时间轴视图</h3>
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <Calendar size={14} />
             <span>{currentDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}</span>
           </div>
@@ -117,19 +117,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigateDate('prev')}
-            className="p-2 rounded-lg bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all"
+            className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-all"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => setCurrentDate(new Date())}
-            className="px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm font-medium hover:bg-cyan-500/30 transition-all"
+            className="px-3 py-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-sm font-medium hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all"
           >
             今天
           </button>
           <button
             onClick={() => navigateDate('next')}
-            className="p-2 rounded-lg bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all"
+            className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-all"
           >
             <ChevronRight size={18} />
           </button>
@@ -151,10 +151,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   ${day.isToday 
                     ? 'border-cyan-500/50 shadow-lg shadow-cyan-500/20' 
                     : day.isPast 
-                      ? 'border-slate-700/30 opacity-60' 
-                      : 'border-slate-700/50'
+                      ? 'border-slate-200 dark:border-slate-700/30 opacity-60' 
+                      : 'border-slate-200 dark:border-slate-700/50'
                   }
-                  bg-slate-900/60 backdrop-blur-sm
+                  bg-white dark:bg-slate-900/60 backdrop-blur-sm
                 `}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, day.date)}
@@ -162,31 +162,31 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 <div className={`
                   p-3 border-b
                   ${day.isToday 
-                    ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-500/30' 
-                    : 'border-slate-700/50'
+                    ? 'bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20 border-cyan-300 dark:border-cyan-500/30' 
+                    : 'border-slate-200 dark:border-slate-700/50'
                   }
                 `}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {day.isToday && (
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
                       )}
-                      <span className={`font-semibold ${day.isToday ? 'text-cyan-400' : 'text-white'}`}>
+                      <span className={`font-semibold ${day.isToday ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-800 dark:text-white'}`}>
                         {day.label}
                       </span>
                     </div>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-400 dark:text-slate-500">
                       {['日', '一', '二', '三', '四', '五', '六'][day.date.getDay()]}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {day.tasks.length} 个任务
                   </div>
                 </div>
 
                 <div className="p-2 space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
                   {day.tasks.length === 0 ? (
-                    <div className="text-center py-6 text-slate-500 text-sm">
+                    <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-sm">
                       {day.isToday ? '暂无任务安排' : '无任务'}
                     </div>
                   ) : (
@@ -226,28 +226,28 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       </div>
 
       {(overdueTasks.length > 0 || noDeadlineTasks.length > 0) && (
-        <div className="mt-4 pt-4 border-t border-slate-700/50">
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
           <div className="grid grid-cols-2 gap-4">
             {overdueTasks.length > 0 && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+              <div className="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">
                 <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle size={16} className="text-red-400" />
-                  <span className="text-sm font-medium text-red-400">已过期 ({overdueTasks.length})</span>
+                  <AlertCircle size={16} className="text-red-500 dark:text-red-400" />
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">已过期 ({overdueTasks.length})</span>
                 </div>
                 <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
                   {overdueTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="p-2 rounded-lg bg-slate-800/50 text-sm cursor-pointer hover:bg-slate-700/50 transition-colors"
+                      className="p-2 rounded-lg bg-white dark:bg-slate-800/50 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border border-slate-100 dark:border-transparent"
                       onClick={() => onTaskClick?.(task)}
                     >
                       <div className="flex items-center gap-2">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-500/20 text-slate-400'
+                          QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
                         }`}>
                           Q{task.queue_level}
                         </span>
-                        <span className="text-white truncate">{task.title}</span>
+                        <span className="text-slate-800 dark:text-white truncate">{task.title}</span>
                       </div>
                     </div>
                   ))}
@@ -256,25 +256,25 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             )}
 
             {noDeadlineTasks.length > 0 && (
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <Clock size={16} className="text-slate-400" />
-                  <span className="text-sm font-medium text-slate-400">未设置截止日期 ({noDeadlineTasks.length})</span>
+                  <Clock size={16} className="text-slate-500 dark:text-slate-400" />
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">未设置截止日期 ({noDeadlineTasks.length})</span>
                 </div>
                 <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
                   {noDeadlineTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="p-2 rounded-lg bg-slate-800/50 text-sm cursor-pointer hover:bg-slate-700/50 transition-colors"
+                      className="p-2 rounded-lg bg-white dark:bg-slate-800/50 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border border-slate-100 dark:border-transparent"
                       onClick={() => onTaskClick?.(task)}
                     >
                       <div className="flex items-center gap-2">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-500/20 text-slate-400'
+                          QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS]?.bg || 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'
                         }`}>
                           Q{task.queue_level}
                         </span>
-                        <span className="text-white truncate">{task.title}</span>
+                        <span className="text-slate-800 dark:text-white truncate">{task.title}</span>
                       </div>
                     </div>
                   ))}

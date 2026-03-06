@@ -82,7 +82,8 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
   const totalEstimatedTime = tasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
   const pendingTasks = tasks.filter(t => t.status === 'pending');
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
-  const visibleTasks = [...inProgressTasks, ...pendingTasks];
+  const pausedTasks = tasks.filter(t => t.status === 'paused');
+  const visibleTasks = [...inProgressTasks, ...pausedTasks, ...pendingTasks];
 
   useEffect(() => {
     // 队列初始位置保持在左边，不自动滚动到右边

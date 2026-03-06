@@ -35,7 +35,7 @@ export const SchedulerViews: React.FC<SchedulerViewsProps> = ({
   onViewChange,
 }) => {
   return (
-    <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-800/50 backdrop-blur-sm border border-slate-700/50">
+    <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200 dark:border-slate-700/50">
       {(Object.keys(VIEW_CONFIG) as Array<keyof typeof VIEW_CONFIG>).map((viewKey) => {
         const config = VIEW_CONFIG[viewKey];
         const IconComponent = config.icon;
@@ -49,8 +49,8 @@ export const SchedulerViews: React.FC<SchedulerViewsProps> = ({
               relative flex items-center gap-2 px-4 py-2 rounded-lg
               transition-all duration-300
               ${isActive 
-                ? 'text-white' 
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                ? 'text-slate-800 dark:text-white' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700/50'
               }
             `}
             whileHover={{ scale: 1.02 }}
@@ -59,7 +59,7 @@ export const SchedulerViews: React.FC<SchedulerViewsProps> = ({
             {isActive && (
               <motion.div
                 layoutId="activeViewIndicator"
-                className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30"
+                className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20 border border-cyan-300 dark:border-cyan-500/30"
                 initial={false}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />

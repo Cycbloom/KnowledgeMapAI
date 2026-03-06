@@ -29,6 +29,7 @@ import { KanbanView } from '../components/Scheduler/KanbanView';
 import { ListView } from '../components/Scheduler/ListView';
 import { TimelineView } from '../components/Scheduler/TimelineView';
 import { TaskForm } from '../components/Scheduler/TaskForm';
+import { ActiveTaskPanel } from '../components/Scheduler/ActiveTaskPanel';
 import { ScheduledTask, CreateScheduledTaskData, QueueData } from '../services/api/scheduler';
 
 type ViewType = 'queue' | 'kanban' | 'list' | 'timeline';
@@ -86,6 +87,16 @@ export const Scheduler: React.FC = () => {
   const allTasks = useMemo(() => {
     return [...queues.q0, ...queues.q1, ...queues.q2];
   }, [queues]);
+
+  const activeTask = useMemo(() => {
+    return allTasks.find(t => t.status === 'in_progress') || null;
+  }, [allTasks]);
+
+  const activeTaskTimeSlice = useMemo(() => {
+    if (!activeTask) return DEFAULT_TIME_SLICES.q2;
+    const queueKey = `q${activeTask.queue_level}` as keyof typeof timeSlices;
+    return timeSlices[queueKey] || DEFAULT_TIME_SLICES.q2;
+  }, [activeTask, timeSlices]);
 
   const stats = useMemo(() => {
     const pending = allTasks.filter(t => t.status === 'pending').length;
@@ -302,45 +313,55 @@ export const Scheduler: React.FC = () => {
               </div>
             </div>
           ) : (
-            <HorizontalQueueView
-              queues={queues}
-              timeSlices={timeSlices}
-              currentView={currentView}
-              onViewChange={(view) => setCurrentView(view as ViewType)}
-              onTaskMove={handleMoveTask}
-              onReorder={(queueLevel, taskIds) => handleReorder(queueLevel)(taskIds)}
-              onEditTask={openEditTaskForm}
-              onDeleteTask={handleDeleteTask}
-              onStartTask={handleStartTask}
-              onPauseTask={handlePauseTask}
-              onCompleteTask={handleCompleteTask}
-              onAddTask={openAddTaskForm}
-            >
-              {{
-                timeline: (
-                  <TimelineView
-                    tasks={allTasks}
-                    onTaskClick={openEditTaskForm}
-                  />
-                ),
-                kanban: (
-                  <KanbanView
-                    tasks={allTasks}
-                    onTaskClick={openEditTaskForm}
-                  />
-                ),
-                list: (
-                  <ListView
-                    tasks={allTasks}
-                    onEditTask={openEditTaskForm}
-                    onDeleteTask={handleDeleteTask}
-                    onStartTask={handleStartTask}
-                    onPauseTask={handlePauseTask}
-                    onCompleteTask={handleCompleteTask}
-                  />
-                ),
-              }}
-            </HorizontalQueueView>
+            <>
+              {activeTask && (
+                <ActiveTaskPanel
+                  task={activeTask}
+                  timeSlice={activeTaskTimeSlice}
+                  onPause={() => handlePauseTask(activeTask)}
+                  onComplete={() => handleCompleteTask(activeTask)}
+                />
+              )}
+              <HorizontalQueueView
+                queues={queues}
+                timeSlices={timeSlices}
+                currentView={currentView}
+                onViewChange={(view) => setCurrentView(view as ViewType)}
+                onTaskMove={handleMoveTask}
+                onReorder={(queueLevel, taskIds) => handleReorder(queueLevel)(taskIds)}
+                onEditTask={openEditTaskForm}
+                onDeleteTask={handleDeleteTask}
+                onStartTask={handleStartTask}
+                onPauseTask={handlePauseTask}
+                onCompleteTask={handleCompleteTask}
+                onAddTask={openAddTaskForm}
+              >
+                {{
+                  timeline: (
+                    <TimelineView
+                      tasks={allTasks}
+                      onTaskClick={openEditTaskForm}
+                    />
+                  ),
+                  kanban: (
+                    <KanbanView
+                      tasks={allTasks}
+                      onTaskClick={openEditTaskForm}
+                    />
+                  ),
+                  list: (
+                    <ListView
+                      tasks={allTasks}
+                      onEditTask={openEditTaskForm}
+                      onDeleteTask={handleDeleteTask}
+                      onStartTask={handleStartTask}
+                      onPauseTask={handlePauseTask}
+                      onCompleteTask={handleCompleteTask}
+                    />
+                  ),
+                }}
+              </HorizontalQueueView>
+            </>
           )}
         </main>
 

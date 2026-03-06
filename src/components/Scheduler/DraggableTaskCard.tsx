@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { Clock, Play, Pause, Check, Edit2, Trash2 } from 'lucide-react';
+import { Clock, Play, Pause, Check, Edit2, Trash2, Lock } from 'lucide-react';
 import { ScheduledTask } from '../../services/api/scheduler';
 
 interface DraggableTaskCardProps {
@@ -62,6 +62,8 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
 }) => {
   const queueStyle = QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
+  const [showDragTip, setShowDragTip] = useState(false);
+  const isInProgress = task.status === 'in_progress';
 
   const formatDuration = (minutes?: number) => {
     if (!minutes) return '--';
@@ -72,24 +74,29 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   };
 
   const hasActions = (task.status === 'pending' && onStart) ||
+    (task.status === 'paused' && onStart) ||
     (task.status === 'in_progress' && onPause) ||
     ((task.status === 'pending' || task.status === 'in_progress' || task.status === 'paused') && onComplete) ||
     onEdit || onDelete;
 
   return (
-    <Draggable draggableId={task.id} index={index}>
+    <Draggable draggableId={task.id} index={index} isDragDisabled={isInProgress}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}
+          {...(isInProgress ? {} : provided.dragHandleProps)}
+          onMouseEnter={() => isInProgress && setShowDragTip(true)}
+          onMouseLeave={() => setShowDragTip(false)}
           className={`
-            group relative rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing
+            group relative rounded-xl border transition-all duration-200
+            ${isInProgress ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}
             ${snapshot.isDragging 
               ? 'shadow-2xl z-[9999] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 opacity-95' 
               : 'hover:shadow-lg'
             }
             ${queueStyle.border} ${snapshot.isDragging ? queueStyle.glow : ''}
+            ${isInProgress ? 'ring-2 ring-blue-400/50 dark:ring-blue-500/50' : ''}
             bg-white dark:bg-slate-900/80 backdrop-blur-sm
             overflow-hidden flex-shrink-0
           `}
@@ -154,6 +161,16 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
                 </button>
               )}
 
+              {task.status === 'paused' && onStart && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onStart(); }}
+                  className={`p-1 rounded transition-all hover:scale-110 ${queueStyle.bg} ${queueStyle.text}`}
+                  title="继续"
+                >
+                  <Play size={12} />
+                </button>
+              )}
+
               {task.status === 'in_progress' && onPause && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onPause(); }}
@@ -202,6 +219,15 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
                 className={`h-full ${queueStyle.accent} animate-pulse`}
                 style={{ width: '60%' }}
               />
+            </div>
+          )}
+
+          {showDragTip && isInProgress && (
+            <div className="absolute top-0 left-0 right-0 bottom-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-t-xl z-10 pointer-events-none">
+              <div className="flex items-center gap-2 text-white text-xs px-3 py-2 bg-slate-800/90 rounded-lg shadow-lg pointer-events-auto">
+                <Lock size={14} />
+                <span>请先暂停任务再移动</span>
+              </div>
             </div>
           )}
         </div>

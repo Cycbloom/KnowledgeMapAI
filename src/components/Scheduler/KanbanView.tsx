@@ -16,50 +16,50 @@ const KANBAN_COLUMNS = [
     title: '待办',
     icon: Circle,
     color: 'slate',
-    gradient: 'from-slate-500 to-slate-600',
-    border: 'border-slate-500/30',
-    bg: 'bg-slate-500/10',
-    text: 'text-slate-400',
+    gradient: 'from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600',
+    border: 'border-slate-300 dark:border-slate-500/30',
+    bg: 'bg-slate-100 dark:bg-slate-500/10',
+    text: 'text-slate-600 dark:text-slate-400',
   },
   {
     id: 'in_progress',
     title: '进行中',
     icon: PlayCircle,
     color: 'blue',
-    gradient: 'from-blue-500 to-cyan-500',
-    border: 'border-blue-500/30',
-    bg: 'bg-blue-500/10',
-    text: 'text-blue-400',
+    gradient: 'from-blue-400 to-cyan-400 dark:from-blue-500 dark:to-cyan-500',
+    border: 'border-blue-300 dark:border-blue-500/30',
+    bg: 'bg-blue-100 dark:bg-blue-500/10',
+    text: 'text-blue-600 dark:text-blue-400',
   },
   {
     id: 'paused',
     title: '已暂停',
     icon: PauseCircle,
     color: 'amber',
-    gradient: 'from-amber-500 to-orange-500',
-    border: 'border-amber-500/30',
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-400',
+    gradient: 'from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500',
+    border: 'border-amber-300 dark:border-amber-500/30',
+    bg: 'bg-amber-100 dark:bg-amber-500/10',
+    text: 'text-amber-600 dark:text-amber-400',
   },
   {
     id: 'completed',
     title: '已完成',
     icon: CheckCircle2,
     color: 'emerald',
-    gradient: 'from-emerald-500 to-teal-500',
-    border: 'border-emerald-500/30',
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-400',
+    gradient: 'from-emerald-400 to-teal-400 dark:from-emerald-500 dark:to-teal-500',
+    border: 'border-emerald-300 dark:border-emerald-500/30',
+    bg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    text: 'text-emerald-600 dark:text-emerald-400',
   },
   {
     id: 'cancelled',
     title: '已取消',
     icon: XCircle,
     color: 'red',
-    gradient: 'from-red-500 to-rose-500',
-    border: 'border-red-500/30',
-    bg: 'bg-red-500/10',
-    text: 'text-red-400',
+    gradient: 'from-red-400 to-rose-400 dark:from-red-500 dark:to-rose-500',
+    border: 'border-red-300 dark:border-red-500/30',
+    bg: 'bg-red-100 dark:bg-red-500/10',
+    text: 'text-red-600 dark:text-red-400',
   },
 ];
 
@@ -141,9 +141,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                 transition={{ delay: index * 0.1 }}
                 className={`
                   flex flex-col w-80 flex-shrink-0 rounded-2xl border transition-all duration-300
-                  ${isOver ? 'ring-2 ring-offset-2 ring-offset-slate-900 scale-[1.02]' : ''}
+                  ${isOver ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-[1.02]' : ''}
                   ${column.border}
-                  bg-slate-900/60 backdrop-blur-sm
+                  bg-white dark:bg-slate-900/60 backdrop-blur-sm
                 `}
                 style={{
                   boxShadow: isOver 
@@ -168,8 +168,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         <IconComponent size={18} className="text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white">{column.title}</h3>
-                        <p className="text-xs text-slate-400">{column.tasks.length} 个任务</p>
+                        <h3 className="font-bold text-slate-800 dark:text-white">{column.title}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{column.tasks.length} 个任务</p>
                       </div>
                     </div>
                     <div className={`
@@ -181,20 +181,20 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   </div>
 
                   {estimatedTime > 0 && (
-                    <div className="flex items-center gap-2 mt-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 mt-3 text-xs text-slate-500 dark:text-slate-400">
                       <Clock size={12} className={column.text} />
-                      <span>预计: <span className="text-white font-medium">{formatDuration(estimatedTime)}</span></span>
+                      <span>预计: <span className="text-slate-800 dark:text-white font-medium">{formatDuration(estimatedTime)}</span></span>
                     </div>
                   )}
                 </div>
 
                 <div className="flex-1 p-3 overflow-y-auto custom-scrollbar max-h-[calc(100vh-280px)]">
                   {column.tasks.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
+                    <div className="text-center py-8 text-slate-400 dark:text-slate-500">
                       <IconComponent size={32} className="mx-auto mb-2 opacity-30" />
                       <p className="text-sm">暂无任务</p>
                       {draggedTask && (
-                        <p className="text-xs mt-1 text-slate-600">拖拽任务到此处</p>
+                        <p className="text-xs mt-1 text-slate-400 dark:text-slate-600">拖拽任务到此处</p>
                       )}
                     </div>
                   ) : (
@@ -232,7 +232,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="absolute inset-0 rounded-2xl border-2 border-dashed border-white/30 bg-white/5 pointer-events-none"
+                    className="absolute inset-0 rounded-2xl border-2 border-dashed border-slate-400/50 dark:border-white/30 bg-slate-200/30 dark:bg-white/5 pointer-events-none"
                   />
                 )}
               </motion.div>

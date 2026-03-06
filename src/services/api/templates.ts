@@ -25,7 +25,7 @@ export const promptsApi = {
 };
 
 export const focusApi = {
-  saveSession: (data: { duration: number; mode: string; start_time: string; end_time: string }) => 
+  saveSession: (data: { duration: number; mode: string; start_time: string; end_time: string; task_id?: string }) => 
     request('/focus/sessions', { method: 'POST', body: JSON.stringify(data) }),
   
   getStats: () => request('/focus/stats'),

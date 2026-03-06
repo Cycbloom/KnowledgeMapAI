@@ -10,6 +10,9 @@ interface FocusState {
   timeLeft: number; // in seconds
   mode: TimerMode;
   
+  // Task Association
+  taskId: string | null;
+  
   // Settings
   focusDuration: number; // in minutes
   shortBreakDuration: number; // in minutes
@@ -26,6 +29,8 @@ interface FocusState {
   setMode: (mode: TimerMode) => void;
   tick: () => void;
   updateSettings: (settings: Partial<Pick<FocusState, 'focusDuration' | 'shortBreakDuration' | 'longBreakDuration' | 'soundEnabled'>>) => void;
+  setTaskId: (taskId: string | null) => void;
+  setDuration: (minutes: number) => void;
 }
 
 const DEFAULT_DURATIONS = {
@@ -41,6 +46,7 @@ export const useFocusStore = create<FocusState>()(
         isActive: false,
         mode: 'focus',
         timeLeft: DEFAULT_DURATIONS.focus * 60,
+        taskId: null,
         focusDuration: DEFAULT_DURATIONS.focus,
         shortBreakDuration: DEFAULT_DURATIONS.shortBreak,
         longBreakDuration: DEFAULT_DURATIONS.longBreak,
@@ -76,7 +82,7 @@ export const useFocusStore = create<FocusState>()(
           if (timeLeft > 0) {
             set({ timeLeft: timeLeft - 1 });
           } else {
-            const { mode, focusDuration, shortBreakDuration, longBreakDuration } = get();
+            const { mode, focusDuration, shortBreakDuration, longBreakDuration, taskId } = get();
             
             let duration = 0;
             if (mode === 'focus') duration = focusDuration;
@@ -90,7 +96,8 @@ export const useFocusStore = create<FocusState>()(
               duration,
               mode,
               start_time: startTime.toISOString(),
-              end_time: endTime.toISOString()
+              end_time: endTime.toISOString(),
+              task_id: taskId || undefined,
             }).catch(err => console.error('Failed to save focus session:', err));
 
             set((state) => ({ 
@@ -124,6 +131,15 @@ export const useFocusStore = create<FocusState>()(
             const newState = { ...state, ...settings };
             return newState;
           });
+        },
+
+        setTaskId: (taskId) => set({ taskId }),
+
+        setDuration: (minutes) => {
+          const { isActive } = get();
+          if (!isActive) {
+            set({ timeLeft: minutes * 60, focusDuration: minutes });
+          }
         },
       }),
       {

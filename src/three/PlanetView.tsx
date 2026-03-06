@@ -1,11 +1,12 @@
 import React, { useMemo, useRef, useState, useCallback, Suspense, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Stars, Line, Billboard } from '@react-three/drei';
+import { OrbitControls, Text, Stars, Line, Billboard, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Node, Edge, ColorScheme, GraphColorMode, type Node as GraphNode } from '../types';
 import { create3DForceLayout, LayoutNode3D, LayoutLink3D } from './layout/forceLayout3D';
 import { useTheme } from '../hooks/useTheme';
+import { truncateText } from '../utils/textUtils';
 
 interface PlanetViewProps {
   nodes: Node[];
@@ -82,6 +83,8 @@ function PlanetNode({
     return node.data.properties?.tags || [];
   }, [node.data.properties?.tags]);
 
+  const titleInfo = useMemo(() => truncateText(node.data.title || '未命名'), [node.data.title]);
+
   useFrame(() => {
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.003;
@@ -154,8 +157,40 @@ function PlanetNode({
           outlineWidth={0.3}
           outlineColor={isDark ? '#000000' : '#ffffff'}
         >
-          {node.data.title}
+          {titleInfo.truncated}
         </Text>
+        {titleInfo.isTruncated && isHovered && (
+          <Html
+            position={[0, titleFontSize + 2, 0]}
+            center
+            style={{
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <div
+              style={{
+                background: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                color: isDark ? '#f1f5f9' : '#0f172a',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 500,
+                boxShadow: isDark 
+                  ? '0 4px 12px rgba(0, 0, 0, 0.4)' 
+                  : '0 4px 12px rgba(0, 0, 0, 0.15)',
+                border: isDark 
+                  ? '1px solid rgba(255, 255, 255, 0.1)' 
+                  : '1px solid rgba(0, 0, 0, 0.1)',
+                maxWidth: '300px',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+              }}
+            >
+              {titleInfo.original}
+            </div>
+          </Html>
+        )}
         {tags && tags.length > 0 && (
           <Text
             position={[0, titleFontSize + 1, 0]}

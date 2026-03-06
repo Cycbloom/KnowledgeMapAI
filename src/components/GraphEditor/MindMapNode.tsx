@@ -12,6 +12,7 @@ import {
 } from '../../config/nodeStyleConfig';
 import { getLearningStatus, getStatusColors, getLevelColors } from '../../config/learningStatusColors';
 import { getLevel, calculateNodeImportance } from '../../lib/graphUtils';
+import { truncateText } from '../../utils/textUtils';
 
 interface MindMapNodeProps {
   node: LayoutNode;
@@ -92,6 +93,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const level = getLevel(node, edges);
   const tags = useMemo(() => node.tags || node.properties?.tags || [], [node.tags, node.properties]);
+  const titleInfo = useMemo(() => truncateText(node.title || '未命名'), [node.title]);
   
   const dynamicSize = useMemo(() => {
     if (nodeSizeMode === 'fixed') {
@@ -435,7 +437,10 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
               : `0 ${2 / zoomLevel}px ${4 / zoomLevel}px rgba(0,0,0,0.15), 0 0 ${8 / zoomLevel}px rgba(0,0,0,0.1)`
           }}
         >
-          {node.title || '未命名'}
+          {titleInfo.truncated}
+          {titleInfo.isTruncated && (
+            <title>{titleInfo.original}</title>
+          )}
         </text>
       )}
       

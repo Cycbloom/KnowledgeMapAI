@@ -122,24 +122,24 @@ export const PassProgress: React.FC<PassProgressProps> = ({ pass, rewards, userP
 
   return (
     <div className="space-y-4">
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-4 text-white">
+      <div className="bg-white dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-0">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-lg font-bold">{config.label}</h3>
-            <p className="text-slate-400 text-sm">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">{config.label}</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
               等级 {pass.current_level} | 积分 {pass.total_points}/{maxPoints}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <div className="text-2xl font-bold">{pass.current_level}</div>
-              <div className="text-xs text-slate-400">级</div>
+              <div className="text-2xl font-bold text-slate-800 dark:text-white">{pass.current_level}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">级</div>
             </div>
           </div>
         </div>
         
         <div className="relative">
-          <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}

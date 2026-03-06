@@ -368,7 +368,7 @@ export class PeriodicTaskService {
         level,
         claimed: true,
         claimed_at: new Date().toISOString(),
-      }, { onConflict: 'pass_id,level' });
+      }, { onConflict: 'user_id,pass_id,level' });
     
     if (reward.reward_type === 'xp' && reward.reward_value) {
       const { data: user } = await supabaseAdmin

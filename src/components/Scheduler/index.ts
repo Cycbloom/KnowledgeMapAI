@@ -1,5 +1,8 @@
 export { TaskCard } from './TaskCard';
 export { QueueColumn } from './QueueColumn';
+export { HorizontalQueue } from './HorizontalQueue';
+export { HorizontalQueueView } from './HorizontalQueueView';
+export { DraggableTaskCard } from './DraggableTaskCard';
 export { TaskTimer } from './TaskTimer';
 export { TaskForm } from './TaskForm';
 export { TaskDetail } from './TaskDetail';
@@ -36,6 +39,8 @@ export { TaskDistribution } from './TaskDistribution';
 export { TimeAnalysis } from './TimeAnalysis';
 
 export { PomodoroSettings } from './PomodoroSettings';
+export { QueueSettings } from './QueueSettings';
+export type { Queue, QueueColor, CreateQueueData, UpdateQueueData } from './QueueSettings';
 export { DependencyGraph, DependencyIndicator } from './DependencyGraph';
 
 export { TaskRecommendation } from './TaskRecommendation';

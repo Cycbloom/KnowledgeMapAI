@@ -95,7 +95,7 @@ router.post(
     }
 
     res.status(201).json({ success: true, data: task });
-  }
+  },
 );
 
 router.get(
@@ -110,9 +110,8 @@ router.get(
         .json({ error: "Database connection not available" });
     }
 
-    const { status, queue_level, limit, offset } = req.query as unknown as z.infer<
-      typeof getTasksQuerySchema
-    >;
+    const { status, queue_level, limit, offset } =
+      req.query as unknown as z.infer<typeof getTasksQuerySchema>;
 
     let query = supabase
       .from("scheduled_tasks")
@@ -141,7 +140,39 @@ router.get(
     }
 
     res.json({ success: true, data: tasks, total: count });
-  }
+  },
+);
+
+router.put(
+  "/tasks/reorder",
+  requireAuth,
+  validate({ body: reorderTasksSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { queue_level, task_ids } = req.body;
+
+    const updates = task_ids.map((taskId: string, index: number) => ({
+      id: taskId,
+      position: index,
+      queue_level,
+    }));
+
+    for (const update of updates) {
+      await supabase
+        .from("scheduled_tasks")
+        .update({ position: update.position, queue_level: update.queue_level })
+        .eq("id", update.id)
+        .eq("user_id", req.user.id);
+    }
+
+    res.json({ success: true });
+  },
 );
 
 router.get(
@@ -171,7 +202,7 @@ router.get(
     }
 
     res.json({ success: true, data: task });
-  }
+  },
 );
 
 router.put(
@@ -203,7 +234,7 @@ router.put(
     }
 
     res.json({ success: true, data: task });
-  }
+  },
 );
 
 router.delete(
@@ -231,7 +262,7 @@ router.delete(
     }
 
     res.json({ success: true });
-  }
+  },
 );
 
 router.post(
@@ -277,7 +308,7 @@ router.post(
     }
 
     res.json({ success: true, data: { task, execution } });
-  }
+  },
 );
 
 router.post(
@@ -334,7 +365,7 @@ router.post(
     }
 
     res.json({ success: true, data: { task, duration } });
-  }
+  },
 );
 
 router.post(
@@ -366,7 +397,7 @@ router.post(
       const startedAt = new Date(execution.started_at);
       const endedAt = new Date();
       const duration = Math.floor(
-        (endedAt.getTime() - startedAt.getTime()) / 1000
+        (endedAt.getTime() - startedAt.getTime()) / 1000,
       );
 
       await supabase
@@ -397,7 +428,7 @@ router.post(
     }
 
     res.json({ success: true, data: task });
-  }
+  },
 );
 
 router.post(
@@ -454,7 +485,7 @@ router.post(
     }
 
     res.json({ success: true, data: task });
-  }
+  },
 );
 
 router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
@@ -484,38 +515,6 @@ router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
 
   res.json({ success: true, data: queues });
 });
-
-router.put(
-  "/tasks/reorder",
-  requireAuth,
-  validate({ body: reorderTasksSchema }),
-  async (req: AuthRequest, res: Response) => {
-    const supabase = req.supabase;
-    if (!supabase) {
-      return res
-        .status(500)
-        .json({ error: "Database connection not available" });
-    }
-
-    const { queue_level, task_ids } = req.body;
-
-    const updates = task_ids.map((taskId: string, index: number) => ({
-      id: taskId,
-      position: index,
-      queue_level,
-    }));
-
-    for (const update of updates) {
-      await supabase
-        .from("scheduled_tasks")
-        .update({ position: update.position, queue_level: update.queue_level })
-        .eq("id", update.id)
-        .eq("user_id", req.user.id);
-    }
-
-    res.json({ success: true });
-  }
-);
 
 router.put(
   "/tasks/:id/move",
@@ -556,7 +555,7 @@ router.put(
     }
 
     res.json({ success: true, data: task });
-  }
+  },
 );
 
 router.get(
@@ -596,7 +595,7 @@ router.get(
     }
 
     res.json({ success: true, data: executions, total: count });
-  }
+  },
 );
 
 router.get(
@@ -625,7 +624,7 @@ router.get(
     }
 
     res.json({ success: true, data: execution });
-  }
+  },
 );
 
 router.get(
@@ -664,7 +663,7 @@ router.get(
     }
 
     res.json({ success: true, data: settings });
-  }
+  },
 );
 
 router.put(
@@ -710,7 +709,7 @@ router.put(
     }
 
     res.json({ success: true, data: settings });
-  }
+  },
 );
 
 router.get(
@@ -785,7 +784,7 @@ router.get(
         end_date: now.toISOString(),
       },
     });
-  }
+  },
 );
 
 router.get(
@@ -842,7 +841,7 @@ router.get(
     }));
 
     res.json({ success: true, data: result });
-  }
+  },
 );
 
 router.post(
@@ -866,7 +865,7 @@ router.post(
       const err = error as Error;
       res.status(500).json({ error: err.message || "AI 生成任务详情失败" });
     }
-  }
+  },
 );
 
 import { taskRecommendationService } from "../services/taskRecommendationService.js";
@@ -902,18 +901,24 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     try {
-      const session = await schedulerService.createFocusSession(supabase, req.user.id, req.body);
+      const session = await schedulerService.createFocusSession(
+        supabase,
+        req.user.id,
+        req.body,
+      );
       res.status(201).json({ success: true, data: session });
     } catch (error) {
       const err = error as Error;
       logger.error("Create focus session error:", err);
       res.status(500).json({ error: err.message || "创建专注会话失败" });
     }
-  }
+  },
 );
 
 router.put(
@@ -923,20 +928,27 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { id } = req.params;
     const updates = req.body;
 
     try {
-      const session = await schedulerService.updateFocusSession(supabase, id, req.user.id, updates);
+      const session = await schedulerService.updateFocusSession(
+        supabase,
+        id,
+        req.user.id,
+        updates,
+      );
       res.json({ success: true, data: session });
     } catch (error) {
       const err = error as Error;
       res.status(500).json({ error: err.message || "更新专注会话失败" });
     }
-  }
+  },
 );
 
 router.get(
@@ -946,41 +958,57 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
-    const { from_date, to_date, task_id, is_break, limit } = req.query as unknown as z.infer<typeof getFocusSessionsQuerySchema>;
+    const { from_date, to_date, task_id, is_break, limit } =
+      req.query as unknown as z.infer<typeof getFocusSessionsQuerySchema>;
 
     try {
-      const sessions = await schedulerService.getFocusSessions(supabase, req.user.id, {
-        from_date,
-        to_date,
-        task_id,
-        is_break,
-        limit,
-      });
+      const sessions = await schedulerService.getFocusSessions(
+        supabase,
+        req.user.id,
+        {
+          from_date,
+          to_date,
+          task_id,
+          is_break,
+          limit,
+        },
+      );
       res.json({ success: true, data: sessions });
     } catch (error) {
       const err = error as Error;
       res.status(500).json({ error: err.message || "获取专注会话失败" });
     }
-  }
+  },
 );
 
-router.get("/focus-stats", requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase;
-  if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
-  }
+router.get(
+  "/focus-stats",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
 
-  try {
-    const stats = await schedulerService.getUserFocusStats(supabase, req.user.id);
-    res.json({ success: true, data: stats });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ error: err.message || "获取专注统计失败" });
-  }
-});
+    try {
+      const stats = await schedulerService.getUserFocusStats(
+        supabase,
+        req.user.id,
+      );
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取专注统计失败" });
+    }
+  },
+);
 
 router.get(
   "/focus-stats/daily",
@@ -988,19 +1016,25 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { date } = req.query;
 
     try {
-      const stats = await schedulerService.getDailyFocusStats(supabase, req.user.id, date as string);
+      const stats = await schedulerService.getDailyFocusStats(
+        supabase,
+        req.user.id,
+        date as string,
+      );
       res.json({ success: true, data: stats });
     } catch (error) {
       const err = error as Error;
       res.status(500).json({ error: err.message || "获取每日统计失败" });
     }
-  }
+  },
 );
 
 router.get(
@@ -1009,19 +1043,25 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { week_start } = req.query;
 
     try {
-      const stats = await schedulerService.getWeeklyFocusStats(supabase, req.user.id, week_start as string);
+      const stats = await schedulerService.getWeeklyFocusStats(
+        supabase,
+        req.user.id,
+        week_start as string,
+      );
       res.json({ success: true, data: stats });
     } catch (error) {
       const err = error as Error;
       res.status(500).json({ error: err.message || "获取周统计失败" });
     }
-  }
+  },
 );
 
 router.get(
@@ -1031,19 +1071,28 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
-    const { year, month } = req.query as z.infer<typeof getMonthlyStatsQuerySchema>;
+    const { year, month } = req.query as z.infer<
+      typeof getMonthlyStatsQuerySchema
+    >;
 
     try {
-      const stats = await schedulerService.getMonthlyFocusStats(supabase, req.user.id, year, month);
+      const stats = await schedulerService.getMonthlyFocusStats(
+        supabase,
+        req.user.id,
+        year,
+        month,
+      );
       res.json({ success: true, data: stats });
     } catch (error) {
       const err = error as Error;
       res.status(500).json({ error: err.message || "获取月统计失败" });
     }
-  }
+  },
 );
 
 router.get(
@@ -1052,65 +1101,97 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
-    const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+    const year = req.query.year
+      ? parseInt(req.query.year as string)
+      : undefined;
 
     try {
-      const data = await schedulerService.getYearlyHeatmap(supabase, req.user.id, year);
+      const data = await schedulerService.getYearlyHeatmap(
+        supabase,
+        req.user.id,
+        year,
+      );
       res.json({ success: true, data });
     } catch (error) {
       const err = error as Error;
       res.status(500).json({ error: err.message || "获取热力图数据失败" });
     }
-  }
+  },
 );
 
-router.get("/achievements", requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase;
-  if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
-  }
+router.get(
+  "/achievements",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
 
-  try {
-    const achievements = await schedulerService.getAllAchievements(supabase);
-    res.json({ success: true, data: achievements });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ error: err.message || "获取成就列表失败" });
-  }
-});
+    try {
+      const achievements = await schedulerService.getAllAchievements(supabase);
+      res.json({ success: true, data: achievements });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取成就列表失败" });
+    }
+  },
+);
 
-router.get("/achievements/user", requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase;
-  if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
-  }
+router.get(
+  "/achievements/user",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
 
-  try {
-    const achievements = await schedulerService.getUserAchievements(supabase, req.user.id);
-    res.json({ success: true, data: achievements });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ error: err.message || "获取用户成就失败" });
-  }
-});
+    try {
+      const achievements = await schedulerService.getUserAchievements(
+        supabase,
+        req.user.id,
+      );
+      res.json({ success: true, data: achievements });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "获取用户成就失败" });
+    }
+  },
+);
 
-router.post("/achievements/check", requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase;
-  if (!supabase) {
-    return res.status(500).json({ error: "Database connection not available" });
-  }
+router.post(
+  "/achievements/check",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
 
-  try {
-    const result = await schedulerService.checkAndUnlockAchievements(supabase, req.user.id);
-    res.json({ success: true, data: result });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ error: err.message || "检查成就失败" });
-  }
-});
+    try {
+      const result = await schedulerService.checkAndUnlockAchievements(
+        supabase,
+        req.user.id,
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({ error: err.message || "检查成就失败" });
+    }
+  },
+);
 
 router.get(
   "/recommendations",
@@ -1124,11 +1205,12 @@ router.get(
     }
 
     try {
-      const recommendations = await taskRecommendationService.getTaskRecommendations(
-        supabase,
-        req.user.id,
-        { currentTime: new Date() }
-      );
+      const recommendations =
+        await taskRecommendationService.getTaskRecommendations(
+          supabase,
+          req.user.id,
+          { currentTime: new Date() },
+        );
 
       res.json({ success: true, data: recommendations });
     } catch (error) {
@@ -1136,7 +1218,7 @@ router.get(
       console.error("Get recommendations error:", err);
       res.status(500).json({ error: err.message || "获取任务推荐失败" });
     }
-  }
+  },
 );
 
 router.get(
@@ -1154,7 +1236,7 @@ router.get(
       const suggestions = await taskRecommendationService.getSmartSuggestions(
         supabase,
         req.user.id,
-        { currentTime: new Date() }
+        { currentTime: new Date() },
       );
 
       res.json({ success: true, data: suggestions });
@@ -1163,7 +1245,7 @@ router.get(
       console.error("Get smart suggestions error:", err);
       res.status(500).json({ error: err.message || "获取智能建议失败" });
     }
-  }
+  },
 );
 
 router.post(
@@ -1179,7 +1261,7 @@ router.post(
 
       const result = taskRecommendationService.analyzePriorityFromText(
         title,
-        description
+        description,
       );
 
       res.json({ success: true, data: result });
@@ -1187,7 +1269,7 @@ router.post(
       const err = error as Error;
       res.status(500).json({ error: err.message || "分析优先级失败" });
     }
-  }
+  },
 );
 
 router.get(
@@ -1204,11 +1286,12 @@ router.get(
     const days = req.query.days ? Number(req.query.days) : 30;
 
     try {
-      const efficiencyData = await taskRecommendationService.calculateEfficiencyData(
-        supabase,
-        req.user.id,
-        days
-      );
+      const efficiencyData =
+        await taskRecommendationService.calculateEfficiencyData(
+          supabase,
+          req.user.id,
+          days,
+        );
 
       res.json({ success: true, data: efficiencyData });
     } catch (error) {
@@ -1216,15 +1299,24 @@ router.get(
       console.error("Get efficiency data error:", err);
       res.status(500).json({ error: err.message || "获取效率数据失败" });
     }
-  }
+  },
 );
 
 const createTemplateSchema = z.object({
-  name: z.string().min(1, "模板名称不能为空").max(50, "模板名称不能超过50个字符"),
+  name: z
+    .string()
+    .min(1, "模板名称不能为空")
+    .max(50, "模板名称不能超过50个字符"),
   description: z.string().max(200, "描述不能超过200个字符").optional(),
   category: z.enum(["study", "work", "life", "health", "custom"]).optional(),
-  title_template: z.string().min(1, "标题模板不能为空").max(100, "标题模板不能超过100个字符"),
-  description_template: z.string().max(500, "描述模板不能超过500个字符").optional(),
+  title_template: z
+    .string()
+    .min(1, "标题模板不能为空")
+    .max(100, "标题模板不能超过100个字符"),
+  description_template: z
+    .string()
+    .max(500, "描述模板不能超过500个字符")
+    .optional(),
   estimated_duration: z.number().int().min(1).max(480).optional(),
   tags: z.array(z.string()).max(5, "最多5个标签").optional(),
   priority: z.number().int().min(1).max(4).optional(),
@@ -1264,10 +1356,14 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
-    const { category, search, limit, offset } = req.query as unknown as z.infer<typeof getTemplatesQuerySchema>;
+    const { category, search, limit, offset } = req.query as unknown as z.infer<
+      typeof getTemplatesQuerySchema
+    >;
 
     let query = supabase
       .from("task_templates")
@@ -1282,7 +1378,9 @@ router.get(
       query = query.eq("category", category);
     }
     if (search) {
-      query = query.or(`name.ilike.%${search}%,title_template.ilike.%${search}%`);
+      query = query.or(
+        `name.ilike.%${search}%,title_template.ilike.%${search}%`,
+      );
     }
 
     const { data: templates, error, count } = await query;
@@ -1293,7 +1391,7 @@ router.get(
     }
 
     res.json({ success: true, data: templates, total: count });
-  }
+  },
 );
 
 router.get(
@@ -1302,7 +1400,9 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { data: templates, error } = await supabase
@@ -1333,7 +1433,7 @@ router.get(
     }));
 
     res.json({ success: true, data: result });
-  }
+  },
 );
 
 router.get(
@@ -1343,7 +1443,9 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { id } = req.params;
@@ -1360,7 +1462,7 @@ router.get(
     }
 
     res.json({ success: true, data: template });
-  }
+  },
 );
 
 router.post(
@@ -1370,7 +1472,9 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const {
@@ -1409,7 +1513,7 @@ router.post(
     }
 
     res.status(201).json({ success: true, data: template });
-  }
+  },
 );
 
 router.put(
@@ -1419,7 +1523,9 @@ router.put(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { id } = req.params;
@@ -1442,7 +1548,7 @@ router.put(
     }
 
     res.json({ success: true, data: template });
-  }
+  },
 );
 
 router.delete(
@@ -1452,7 +1558,9 @@ router.delete(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { id } = req.params;
@@ -1469,7 +1577,7 @@ router.delete(
     }
 
     res.json({ success: true });
-  }
+  },
 );
 
 router.post(
@@ -1479,11 +1587,14 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { id } = req.params;
-    const { placeholders, queue_level, knowledge_point_id, deadline } = req.body;
+    const { placeholders, queue_level, knowledge_point_id, deadline } =
+      req.body;
 
     const { data: template, error: templateError } = await supabase
       .from("task_templates")
@@ -1504,7 +1615,10 @@ router.post(
         const placeholder = `{{${key}}}`;
         title = title.replace(new RegExp(placeholder, "g"), value as string);
         if (description) {
-          description = description.replace(new RegExp(placeholder, "g"), value as string);
+          description = description.replace(
+            new RegExp(placeholder, "g"),
+            value as string,
+          );
         }
       }
     }
@@ -1556,7 +1670,7 @@ router.post(
       .eq("id", id);
 
     res.status(201).json({ success: true, data: task });
-  }
+  },
 );
 
 router.post(
@@ -1566,7 +1680,9 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { id } = req.params;
@@ -1607,7 +1723,7 @@ router.post(
     }
 
     res.status(201).json({ success: true, data: template });
-  }
+  },
 );
 
 router.post(
@@ -1617,7 +1733,9 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     const supabase = req.supabase;
     if (!supabase) {
-      return res.status(500).json({ error: "Database connection not available" });
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
     }
 
     const { id } = req.params;
@@ -1652,7 +1770,7 @@ router.post(
     }
 
     res.json({ success: true, data: updated });
-  }
+  },
 );
 
 export default router;

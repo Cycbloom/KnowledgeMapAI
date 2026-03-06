@@ -1144,3 +1144,60 @@ export const useTaskStats = (
     ...defaultQueryConfig,
   });
 };
+
+export const useSchedulerQueues = () => {
+  return useQuery({
+    queryKey: ["schedulerQueues"],
+    queryFn: api.scheduler.getQueues,
+    ...realtimeQueryConfig,
+  });
+};
+
+export const useCreateQueueMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.scheduler.createQueue,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedulerQueues"] });
+    },
+  });
+};
+
+export const useUpdateQueueMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.scheduler.updateQueue(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedulerQueues"] });
+    },
+  });
+};
+
+export const useDeleteQueueMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      targetQueueId,
+    }: {
+      id: string;
+      targetQueueId?: string;
+    }) => api.scheduler.deleteQueue(id, targetQueueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedulerQueues"] });
+      queryClient.invalidateQueries({ queryKey: ["queues"] });
+    },
+  });
+};
+
+export const useReorderQueuesMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (queueIds: string[]) =>
+      api.scheduler.reorderQueues(queueIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedulerQueues"] });
+    },
+  });
+};

@@ -14,10 +14,35 @@ export interface ScheduledTask {
   tags: string[];
   knowledge_point_id?: string;
   priority: number;
+  queue_id?: string;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
   completed_at?: string;
+}
+
+export interface Queue {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  time_slice: number;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateQueueData {
+  name: string;
+  color?: string;
+  time_slice?: number;
+  priority: number;
+}
+
+export interface UpdateQueueData {
+  name?: string;
+  color?: string;
+  time_slice?: number;
 }
 
 export interface CreateScheduledTaskData {
@@ -263,11 +288,33 @@ export const schedulerApi = {
 
   getQueues: () => request('/scheduler/queues'),
 
-  moveTask: (id: string, targetQueue: number) =>
-    request(`/scheduler/tasks/${id}/move`, {
-      method: 'PUT',
-      body: JSON.stringify({ target_queue: targetQueue }),
+  createQueue: (data: CreateQueueData) =>
+    request('/scheduler/queues', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateQueue: (id: string, data: UpdateQueueData) =>
+    request(`/scheduler/queues/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteQueue: (id: string, targetQueueId?: string) =>
+    request(`/scheduler/queues/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ target_queue_id: targetQueueId }),
     }),
+
+  reorderQueues: (queueIds: string[]) =>
+    request('/scheduler/queues/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ queue_ids: queueIds }),
+    }),
+
+  moveTask: (id: string, targetQueue: number | string) => {
+    const body = typeof targetQueue === 'number'
+      ? { target_queue: targetQueue }
+      : { target_queue_id: targetQueue };
+    return request(`/scheduler/tasks/${id}/move`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  },
 
   reorderTasks: (queueLevel: number, taskIds: string[]) =>
     request(`/scheduler/tasks/reorder`, {

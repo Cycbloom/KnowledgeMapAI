@@ -207,7 +207,7 @@ export const Layout = () => {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 overflow-hidden flex flex-col w-full relative">
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col w-full relative">
           
           {/* Top Header */}
           {!isFullScreenPage && (
@@ -269,7 +269,7 @@ export const Layout = () => {
             </header>
           )}
 
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-y-auto custom-scrollbar relative">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

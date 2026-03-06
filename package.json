@@ -36,6 +36,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource/noto-sans-sc": "^5.2.9",
+    "@hello-pangea/dnd": "^18.0.1",
     "@playwright/test": "^1.58.2",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",

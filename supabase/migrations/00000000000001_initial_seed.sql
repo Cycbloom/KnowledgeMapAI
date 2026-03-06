@@ -4,6 +4,28 @@
 -- =====================================================
 
 -- =====================================================
+-- DEFAULT QUEUES FOR NEW USERS
+-- =====================================================
+
+-- Function to create default queues for new users
+CREATE OR REPLACE FUNCTION create_default_queues_for_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO queues (user_id, name, color, time_slice, priority) VALUES
+    (NEW.id, '紧急队列', 'cyan', 25, 0),
+    (NEW.id, '重要队列', 'emerald', 45, 1),
+    (NEW.id, '待办队列', 'amber', 90, 2);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Trigger to auto-create default queues when a new user is created
+DROP TRIGGER IF EXISTS on_user_created_queues ON users;
+CREATE TRIGGER on_user_created_queues
+  AFTER INSERT ON users
+  FOR EACH ROW EXECUTE FUNCTION create_default_queues_for_user();
+
+-- =====================================================
 -- APP SETTINGS
 -- =====================================================
 

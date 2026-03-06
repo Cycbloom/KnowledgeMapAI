@@ -322,14 +322,35 @@ COMMENT ON TABLE prompt_templates IS 'Prompt templates with priority: graph > us
 -- SCHEDULER TABLES
 -- =====================================================
 
+-- Queues table (configurable task queues)
+CREATE TABLE IF NOT EXISTS queues (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT 'blue',
+  time_slice INTEGER NOT NULL DEFAULT 30,
+  priority INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  
+  UNIQUE(user_id, priority)
+);
+
+COMMENT ON TABLE queues IS 'Configurable task queues for each user';
+COMMENT ON COLUMN queues.name IS 'Queue display name';
+COMMENT ON COLUMN queues.color IS 'Queue color for UI (e.g., cyan, emerald, amber)';
+COMMENT ON COLUMN queues.time_slice IS 'Default time slice in minutes for tasks in this queue';
+COMMENT ON COLUMN queues.priority IS 'Queue priority (lower = higher priority)';
+
 -- Scheduled tasks table (main task table)
 CREATE TABLE IF NOT EXISTS scheduled_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
+  queue_id UUID REFERENCES queues(id) ON DELETE SET NULL,
   queue_level INTEGER DEFAULT 0,
-  position INTEGER DEFAULT 0,
+  position INTEGER NOT NULL DEFAULT 0,
   estimated_duration INTEGER,
   actual_duration INTEGER,
   deadline TIMESTAMPTZ,
@@ -344,7 +365,8 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
 );
 
 COMMENT ON TABLE scheduled_tasks IS 'Three-layer feedback queue task scheduler - main task table';
-COMMENT ON COLUMN scheduled_tasks.queue_level IS 'Queue level: 0=Q0 (focus), 1=Q1 (standard), 2=Q2 (background)';
+COMMENT ON COLUMN scheduled_tasks.queue_id IS 'Reference to the queue this task belongs to';
+COMMENT ON COLUMN scheduled_tasks.queue_level IS 'Queue level: 0=Q0 (focus), 1=Q1 (standard), 2=Q2 (background) - kept for transition';
 COMMENT ON COLUMN scheduled_tasks.position IS 'Position within the queue for ordering';
 COMMENT ON COLUMN scheduled_tasks.estimated_duration IS 'Estimated duration in minutes';
 COMMENT ON COLUMN scheduled_tasks.actual_duration IS 'Actual duration in minutes';
@@ -563,7 +585,7 @@ CREATE TABLE IF NOT EXISTS user_pass_progress (
   claimed BOOLEAN DEFAULT FALSE,
   claimed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(pass_id, level)
+  UNIQUE(user_id, pass_id, level)
 );
 
 COMMENT ON TABLE user_pass_progress IS 'Track which rewards user has claimed';
@@ -691,12 +713,17 @@ CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_id ON backup_snapshots(user
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_type ON backup_snapshots(type);
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_created ON backup_snapshots(user_id, created_at DESC);
 
+-- Queues indexes
+CREATE INDEX IF NOT EXISTS idx_queues_user_id ON queues(user_id);
+CREATE INDEX IF NOT EXISTS idx_queues_priority ON queues(user_id, priority);
+
 -- Scheduled tasks indexes
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_status ON scheduled_tasks(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_queue_position ON scheduled_tasks(user_id, queue_level, position);
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deleted ON scheduled_tasks(user_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deadline ON scheduled_tasks(user_id, deadline) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_knowledge_point ON scheduled_tasks(knowledge_point_id) WHERE knowledge_point_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_queue_id ON scheduled_tasks(queue_id) WHERE queue_id IS NOT NULL;
 
 -- Task executions indexes
 CREATE INDEX IF NOT EXISTS idx_task_executions_task ON task_executions(task_id);
@@ -902,6 +929,13 @@ ALTER TABLE backup_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own backup snapshots" ON backup_snapshots FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own backup snapshots" ON backup_snapshots FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete own backup snapshots" ON backup_snapshots FOR DELETE USING (auth.uid() = user_id);
+
+-- Queues RLS
+ALTER TABLE queues ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own queues" ON queues FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own queues" ON queues FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own queues" ON queues FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own queues" ON queues FOR DELETE USING (auth.uid() = user_id);
 
 -- Scheduled tasks RLS
 ALTER TABLE scheduled_tasks ENABLE ROW LEVEL SECURITY;
@@ -1451,6 +1485,19 @@ CREATE TRIGGER scheduled_tasks_updated_at
   BEFORE UPDATE ON scheduled_tasks
   FOR EACH ROW EXECUTE FUNCTION update_scheduled_tasks_updated_at();
 
+-- Update timestamp trigger for queues
+CREATE OR REPLACE FUNCTION update_queues_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER queues_updated_at
+  BEFORE UPDATE ON queues
+  FOR EACH ROW EXECUTE FUNCTION update_queues_updated_at();
+
 -- Update timestamp trigger for relationship_types
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -1630,10 +1677,12 @@ GRANT ALL PRIVILEGES ON scheduled_tasks TO authenticated;
 GRANT ALL PRIVILEGES ON task_executions TO authenticated;
 GRANT ALL PRIVILEGES ON task_tags TO authenticated;
 GRANT ALL PRIVILEGES ON task_settings TO authenticated;
+GRANT ALL PRIVILEGES ON queues TO authenticated;
 GRANT SELECT ON scheduled_tasks TO anon;
 GRANT SELECT ON task_executions TO anon;
 GRANT SELECT ON task_tags TO anon;
 GRANT SELECT ON task_settings TO anon;
+GRANT SELECT ON queues TO anon;
 
 GRANT ALL PRIVILEGES ON focus_sessions TO authenticated;
 GRANT ALL PRIVILEGES ON user_achievements TO authenticated;

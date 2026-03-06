@@ -25,6 +25,8 @@ export async function syncExistingBackups(): Promise<void> {
 
     const userDirs = await fs.readdir(BACKUP_DIR);
 
+    let syncedCount = 0;
+
     for (const userId of userDirs) {
       const userDir = path.join(BACKUP_DIR, userId);
       const stat = await fs.stat(userDir);
@@ -65,11 +67,15 @@ export async function syncExistingBackups(): Promise<void> {
           created_at: data.exportedAt || fileStat.birthtime.toISOString(),
         });
 
-        logger.info(`Synced backup: ${file} for user ${userId}`);
+        syncedCount++;
       }
     }
 
-    logger.info('Backup sync completed');
+    if (syncedCount > 0) {
+      logger.info(`Backup sync completed: ${syncedCount} backups synced`);
+    } else {
+      logger.info('Backup sync completed: no new backups to sync');
+    }
   } catch (error) {
     logger.error('Failed to sync existing backups:', error);
   }

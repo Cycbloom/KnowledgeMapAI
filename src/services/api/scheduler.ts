@@ -636,4 +636,13 @@ export const schedulerApi = {
 
   updateNotes: (taskId: string, notes: string) =>
     request(`/scheduler/tasks/${taskId}/notes`, { method: 'PUT', body: JSON.stringify({ notes }) }),
+
+  getSmartRecommendation: () =>
+    request('/scheduler/smart-recommendation'),
+
+  getDynamicPriority: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/dynamic-priority`),
+
+  checkTaskDependencies: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/dependency-check`),
 };

@@ -531,6 +531,238 @@ export class TaskRecommendationService {
       .sort((a, b) => b.score - a.score)
       .map(item => item.task);
   }
+
+  async checkTaskDependencies(
+    client: SupabaseClient,
+    taskId: string,
+    _userId: string
+  ): Promise<{
+    canStart: boolean;
+    blockedBy: Array<{ id: string; title: string; status: string }>;
+    softBlockedBy: Array<{ id: string; title: string; status: string }>;
+  }> {
+    const { data: dependencies, error } = await client
+      .from('task_dependencies')
+      .select(`
+        dependency_type,
+        depends_on_task_id,
+        scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, status)
+      `)
+      .eq('task_id', taskId);
+
+    if (error || !dependencies) {
+      return { canStart: true, blockedBy: [], softBlockedBy: [] };
+    }
+
+    const blockedBy: Array<{ id: string; title: string; status: string }> = [];
+    const softBlockedBy: Array<{ id: string; title: string; status: string }> = [];
+
+    for (const dep of dependencies) {
+      const taskData = Array.isArray(dep.scheduled_tasks) ? dep.scheduled_tasks[0] : dep.scheduled_tasks;
+      if (taskData && taskData.status !== 'completed') {
+        const taskItem = { id: taskData.id, title: taskData.title, status: taskData.status };
+        if (dep.dependency_type === 'strict') {
+          blockedBy.push(taskItem);
+        } else {
+          softBlockedBy.push(taskItem);
+        }
+      }
+    }
+
+    return {
+      canStart: blockedBy.length === 0,
+      blockedBy,
+      softBlockedBy,
+    };
+  }
+
+  async getSmartRecommendation(
+    client: SupabaseClient,
+    userId: string,
+    context?: RecommendationContext
+  ): Promise<{
+    recommendedTask: TaskRecommendation | null;
+    alternativeTasks: TaskRecommendation[];
+    reasons: string[];
+    currentContext: {
+      timeSlot: TimeSlot;
+      isPeakHour: boolean;
+      efficiencyLevel: 'high' | 'medium' | 'low';
+    };
+  }> {
+    const now = context?.currentTime || new Date();
+    const recommendations = await this.getTaskRecommendations(client, userId, context);
+    const efficiencyData = await this.calculateEfficiencyData(client, userId);
+    const currentTimeSlot = this.getCurrentTimeSlot(now);
+    const currentHour = now.getHours();
+
+    const isPeakHour = efficiencyData.peakHours.includes(currentHour);
+    const efficiencyLevel: 'high' | 'medium' | 'low' = isPeakHour
+      ? 'high'
+      : efficiencyData.lowHours.includes(currentHour)
+        ? 'low'
+        : 'medium';
+
+    const reasons: string[] = [];
+    let recommendedTask: TaskRecommendation | null = null;
+    const alternativeTasks: TaskRecommendation[] = [];
+
+    for (const rec of recommendations) {
+      const depCheck = await this.checkTaskDependencies(client, rec.task.id, userId);
+
+      if (!depCheck.canStart) {
+        rec.reasons.push(`⚠️ 被阻塞: 需要先完成 "${depCheck.blockedBy[0].title}"`);
+        rec.score *= 0.3;
+        alternativeTasks.push(rec);
+        continue;
+      }
+
+      if (depCheck.softBlockedBy.length > 0) {
+        rec.reasons.push(`💡 建议: 先完成 "${depCheck.softBlockedBy[0].title}"`);
+        rec.score *= 0.8;
+      }
+
+      if (!recommendedTask) {
+        recommendedTask = rec;
+      } else {
+        alternativeTasks.push(rec);
+      }
+    }
+
+    if (recommendedTask) {
+      reasons.push(...this.generateRecommendationReasons(
+        recommendedTask,
+        currentTimeSlot,
+        isPeakHour,
+        efficiencyData
+      ));
+    }
+
+    return {
+      recommendedTask,
+      alternativeTasks: alternativeTasks.slice(0, 3),
+      reasons,
+      currentContext: {
+        timeSlot: currentTimeSlot,
+        isPeakHour,
+        efficiencyLevel,
+      },
+    };
+  }
+
+  private generateRecommendationReasons(
+    recommendation: TaskRecommendation,
+    timeSlot: TimeSlot,
+    isPeakHour: boolean,
+    efficiencyData: EfficiencyData
+  ): string[] {
+    const reasons: string[] = [];
+    const task = recommendation.task;
+
+    if (recommendation.urgencyLevel === 'critical') {
+      reasons.push('🚨 此任务非常紧急，建议立即处理');
+    } else if (recommendation.urgencyLevel === 'high') {
+      reasons.push('⚡ 此任务优先级较高');
+    }
+
+    if (task.deadline) {
+      const deadline = new Date(task.deadline);
+      const hoursUntil = Math.round((deadline.getTime() - Date.now()) / (1000 * 60 * 60));
+      if (hoursUntil > 0) {
+        if (hoursUntil < 24) {
+          reasons.push(`⏰ 截止时间: 今天 ${deadline.getHours()}:${String(deadline.getMinutes()).padStart(2, '0')}`);
+        } else {
+          reasons.push(`📅 截止时间: ${deadline.toLocaleDateString('zh-CN')}`);
+        }
+      }
+    }
+
+    const config = TIME_SLOT_CONFIG[timeSlot.type];
+    if (task.tags && task.tags.length > 0) {
+      const matchingTags = task.tags.filter(tag => config.recommendedTypes.includes(tag));
+      if (matchingTags.length > 0) {
+        reasons.push(`🎯 适合${timeSlot.label}时段 (${matchingTags.join('、')})`);
+      }
+    }
+
+    if (isPeakHour && task.priority >= 3) {
+      reasons.push('📈 当前是您的效率高峰期，适合处理重要任务');
+    }
+
+    if (task.estimated_duration) {
+      const duration = task.estimated_duration;
+      if (duration <= 30) {
+        reasons.push(`⏱️ 预计时长: ${duration}分钟 (快速完成)`);
+      } else if (duration <= 60) {
+        reasons.push(`⏱️ 预计时长: ${duration}分钟`);
+      } else {
+        reasons.push(`⏱️ 预计时长: ${Math.round(duration / 60)}小时`);
+      }
+    }
+
+    if (task.tags && task.tags.length > 0) {
+      const tagEfficiencies = task.tags
+        .map(tag => efficiencyData.tagEfficiency[tag]?.completionRate)
+        .filter(Boolean);
+
+      if (tagEfficiencies.length > 0) {
+        const avgRate = tagEfficiencies.reduce((a, b) => a + b, 0) / tagEfficiencies.length;
+        if (avgRate > 0.7) {
+          reasons.push('✨ 您在此类任务上表现优秀');
+        }
+      }
+    }
+
+    return reasons;
+  }
+
+  calculateDynamicPriority(
+    task: ScheduledTask,
+    now: Date = new Date()
+  ): {
+    score: number;
+    factors: Array<{ name: string; impact: number; description: string }>;
+  } {
+    const factors: Array<{ name: string; impact: number; description: string }> = [];
+    let totalScore = 50;
+
+    if (task.deadline) {
+      const deadline = new Date(task.deadline);
+      const hoursUntil = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+      if (hoursUntil < 0) {
+        totalScore += 40;
+        factors.push({ name: '已过期', impact: 40, description: '任务已超过截止日期' });
+      } else if (hoursUntil < 4) {
+        totalScore += 35;
+        factors.push({ name: '即将截止', impact: 35, description: `${Math.round(hoursUntil)}小时内截止` });
+      } else if (hoursUntil < 24) {
+        totalScore += 25;
+        factors.push({ name: '今日截止', impact: 25, description: '今天内需要完成' });
+      } else if (hoursUntil < 72) {
+        totalScore += 15;
+        factors.push({ name: '近期截止', impact: 15, description: `${Math.round(hoursUntil / 24)}天内截止` });
+      }
+    }
+
+    const priorityImpact = (task.priority || 1) * 8;
+    totalScore += priorityImpact;
+    factors.push({ name: '优先级', impact: priorityImpact, description: `优先级: ${task.priority}` });
+
+    const queueImpact = (3 - task.queue_level) * 5;
+    totalScore += queueImpact;
+    factors.push({ name: '队列', impact: queueImpact, description: `Q${task.queue_level}队列` });
+
+    if (task.estimated_duration && task.estimated_duration <= 30) {
+      totalScore += 10;
+      factors.push({ name: '快速任务', impact: 10, description: '可以在短时间内完成' });
+    }
+
+    return {
+      score: Math.min(100, Math.max(0, totalScore)),
+      factors,
+    };
+  }
 }
 
 export const taskRecommendationService = new TaskRecommendationService();

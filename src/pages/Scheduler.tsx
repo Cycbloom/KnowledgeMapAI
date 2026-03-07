@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -30,6 +30,7 @@ import { TimelineView } from '../components/Scheduler/TimelineView';
 import { TaskForm } from '../components/Scheduler/TaskForm';
 import { ActiveTaskPanel } from '../components/Scheduler/ActiveTaskPanel';
 import { TimeSlotSettings } from '../components/Scheduler/TimeSlotSettings';
+import { SmartRecommendationBar } from '../components/Scheduler/SmartRecommendationBar';
 import { ScheduledTask, CreateScheduledTaskData, QueueData } from '../services/api/scheduler';
 
 type ViewType = 'queue' | 'kanban' | 'list' | 'timeline';
@@ -105,6 +106,10 @@ export const Scheduler: React.FC = () => {
     const completed = allTasks.filter(t => t.status === 'completed').length;
     const totalEstimated = allTasks.reduce((sum, t) => sum + (t.estimated_duration || 0), 0);
     return { total: allTasks.length, pending, inProgress, completed, totalEstimated };
+  }, [allTasks]);
+
+  const findTaskById = useCallback((taskId: string): ScheduledTask | undefined => {
+    return allTasks.find(t => t.id === taskId);
   }, [allTasks]);
 
   const handleCreateTask = async (data: CreateScheduledTaskData) => {
@@ -320,6 +325,23 @@ export const Scheduler: React.FC = () => {
             </div>
           ) : (
             <>
+              {/* Smart Recommendation Bar - only show when no active task */}
+              {!activeTask && (
+                <div className="mb-6">
+                  <SmartRecommendationBar
+                    onStartTask={(taskId) => {
+                      const task = findTaskById(taskId);
+                      if (task) handleStartTask(task);
+                    }}
+                    onViewTask={(taskId) => {
+                      const task = findTaskById(taskId);
+                      if (task) handleViewTaskDetail(task);
+                    }}
+                    currentTaskId={null}
+                  />
+                </div>
+              )}
+
               {activeTask && (
                 <ActiveTaskPanel
                   task={activeTask}

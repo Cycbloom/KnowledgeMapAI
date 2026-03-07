@@ -19,6 +19,7 @@ import {
   taskScheduleParamsSchema,
 } from "../schemas/index.js";
 import { aiService } from "../services/ai/index.js";
+import { taskRecommendationService } from "../services/taskRecommendationService.js";
 import { logger } from "../utils/logger.js";
 
 const router = Router();
@@ -993,7 +994,6 @@ router.post(
   },
 );
 
-import { taskRecommendationService } from "../services/taskRecommendationService.js";
 import { schedulerService } from "../services/schedulerService.js";
 
 const createFocusSessionSchema = z.object({
@@ -3788,6 +3788,94 @@ router.put(
     }
 
     res.json({ success: true, data: task });
+  },
+);
+
+// =====================================================
+// SMART RECOMMENDATION API
+// =====================================================
+
+router.get(
+  "/smart-recommendation",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    try {
+      const recommendation =
+        await taskRecommendationService.getSmartRecommendation(
+          supabase,
+          req.user.id,
+          { currentTime: new Date() },
+        );
+
+      res.json({ success: true, data: recommendation });
+    } catch (error) {
+      logger.error("Get smart recommendation error:", error);
+      res.status(500).json({ error: "获取智能推荐失败" });
+    }
+  },
+);
+
+router.get(
+  "/tasks/:id/dynamic-priority",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task, error } = await supabase
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (error || !task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const dynamicPriority =
+      taskRecommendationService.calculateDynamicPriority(task);
+
+    res.json({ success: true, data: dynamicPriority });
+  },
+);
+
+router.get(
+  "/tasks/:id/dependency-check",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const depCheck = await taskRecommendationService.checkTaskDependencies(
+      supabase,
+      id,
+      req.user.id,
+    );
+
+    res.json({ success: true, data: depCheck });
   },
 );
 

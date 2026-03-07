@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, Calendar, Tag, Play, Pause, Check, Edit2, Trash2 } from 'lucide-react';
+import { Clock, Calendar, Tag, Play, Pause, Check, Edit2, Trash2, AlertCircle, Repeat, Info } from 'lucide-react';
 import { ScheduledTask } from '../../services/api/scheduler';
 
 interface TaskCardProps {
@@ -12,6 +12,7 @@ interface TaskCardProps {
   onStart?: () => void;
   onPause?: () => void;
   onComplete?: () => void;
+  onViewDetail?: () => void;
 }
 
 const QUEUE_COLORS = {
@@ -49,6 +50,25 @@ const STATUS_CONFIG = {
   cancelled: { label: '已取消', color: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' },
 };
 
+const getTaskTypeBadge = (taskType?: string) => {
+  if (!taskType || taskType === 'one_time') return null;
+  
+  const badges = {
+    long_term: { label: '长期', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' },
+    periodic: { label: '周期', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' },
+    learning: { label: '学习', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+  };
+  
+  const badge = badges[taskType as keyof typeof badges];
+  if (!badge) return null;
+  
+  return (
+    <span className={`px-1.5 py-0.5 rounded text-xs ${badge.color}`}>
+      {badge.label}
+    </span>
+  );
+};
+
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onEdit,
@@ -56,6 +76,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onStart,
   onPause,
   onComplete,
+  onViewDetail,
 }) => {
   const queueStyle = QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
@@ -153,10 +174,28 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             )}
           </div>
 
-          <h4 className="font-medium text-slate-900 dark:text-white mb-1 truncate pr-2">{task.title}</h4>
+          <h4 className="font-medium text-slate-900 dark:text-white mb-1 truncate pr-2 flex items-center gap-2">
+            {task.title}
+            {getTaskTypeBadge(task.task_type)}
+          </h4>
           
           {task.description && (
             <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">{task.description}</p>
+          )}
+
+          {task.task_type === 'long_term' && task.progress_percentage !== undefined && (
+            <div className="mt-2 mb-2">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>进度</span>
+                <span>{task.progress_percentage}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div
+                  className="bg-blue-500 h-1.5 rounded-full transition-all"
+                  style={{ width: `${task.progress_percentage}%` }}
+                />
+              </div>
+            </div>
           )}
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
@@ -181,6 +220,24 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               </div>
             )}
           </div>
+
+          {task.dependencies && task.dependencies.length > 0 && (
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+              <AlertCircle className="w-3 h-3" />
+              <span>
+                {task.dependencies.filter(d => d.depends_on_task?.status !== 'completed').length > 0
+                  ? `${task.dependencies.filter(d => d.depends_on_task?.status !== 'completed').length} 个前置任务待完成`
+                  : '所有前置任务已完成'}
+              </span>
+            </div>
+          )}
+
+          {task.task_type === 'periodic' && task.parent_task_id && (
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+              <Repeat className="w-3 h-3" />
+              <span>周期任务实例</span>
+            </div>
+          )}
         </div>
 
         {hasActions && (
@@ -221,6 +278,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 title="完成"
               >
                 <Check size={14} />
+              </button>
+            )}
+
+            {onViewDetail && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onViewDetail(); }}
+                className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:scale-110"
+                title="详情"
+              >
+                <Info size={14} />
               </button>
             )}
 

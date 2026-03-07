@@ -20,6 +20,7 @@ interface HorizontalQueueViewProps {
   onPauseTask?: (task: ScheduledTask) => void;
   onCompleteTask?: (task: ScheduledTask) => void;
   onAddTask?: (queueLevel: number) => void;
+  onViewTaskDetail?: (task: ScheduledTask) => void;
   currentView?: 'queue' | 'timeline' | 'kanban' | 'list';
   onViewChange?: (view: string) => void;
   children?: {
@@ -63,6 +64,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
   onPauseTask,
   onCompleteTask,
   onAddTask,
+  onViewTaskDetail,
   currentView = 'queue',
   onViewChange,
   children,
@@ -200,6 +202,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                   onPauseTask={onPauseTask}
                   onCompleteTask={onCompleteTask}
                   onAddTask={onAddTask ? () => onAddTask(level) : undefined}
+                  onViewTaskDetail={onViewTaskDetail}
                 />
               )}
             </motion.div>

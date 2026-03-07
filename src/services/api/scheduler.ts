@@ -19,6 +19,13 @@ export interface ScheduledTask {
   updated_at: string;
   deleted_at?: string;
   completed_at?: string;
+  task_type?: TaskType;
+  total_duration?: number;
+  progress_mode?: ProgressMode;
+  progress_percentage?: number;
+  parent_task_id?: string;
+  context?: string;
+  dependencies?: TaskDependency[];
 }
 
 export interface Queue {
@@ -54,6 +61,11 @@ export interface CreateScheduledTaskData {
   tags?: string[];
   knowledge_point_id?: string;
   priority?: number;
+  task_type?: TaskType;
+  total_duration?: number;
+  progress_mode?: ProgressMode;
+  context?: string;
+  parent_task_id?: string;
 }
 
 export interface UpdateScheduledTaskData {
@@ -63,6 +75,82 @@ export interface UpdateScheduledTaskData {
   deadline?: string;
   tags?: string[];
   priority?: number;
+  task_type?: TaskType;
+  total_duration?: number;
+  progress_mode?: ProgressMode;
+  progress_percentage?: number;
+  context?: string;
+  parent_task_id?: string;
+}
+
+export type TaskType = 'one_time' | 'long_term' | 'periodic' | 'learning';
+export type ProgressMode = 'average' | 'decreasing' | 'increasing' | 'custom';
+
+export interface TaskDependency {
+  id: string;
+  task_id: string;
+  depends_on_task_id: string;
+  dependency_type: 'strict' | 'soft';
+  created_at: string;
+  depends_on_task?: {
+    id: string;
+    title: string;
+    description?: string;
+    status: string;
+    queue_level: number;
+    priority: number;
+  };
+}
+
+export interface TaskSchedule {
+  id: string;
+  user_id: string;
+  task_template_id: string;
+  schedule_type: 'daily' | 'weekly' | 'custom' | 'smart';
+  schedule_config: Record<string, unknown>;
+  next_run_at?: string;
+  last_run_at?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  task_template?: {
+    id: string;
+    title: string;
+    description?: string;
+    queue_level: number;
+    priority: number;
+    tags: string[];
+  };
+}
+
+export interface TaskProgressPlan {
+  id: string;
+  task_id: string;
+  plan_date: string;
+  planned_percentage: number;
+  actual_percentage: number;
+  status: 'pending' | 'completed' | 'skipped';
+  notes?: string;
+  created_at: string;
+}
+
+export interface UserTimeSlot {
+  id: string;
+  user_id: string;
+  day_of_week: number | null;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  label?: string;
+  created_at: string;
+}
+
+export interface TaskDetail extends ScheduledTask {
+  dependencies: TaskDependency[];
+  dependents: TaskDependency[];
+  progress_plans: TaskProgressPlan[];
+  executions: TaskExecution[];
+  required_time_slots?: number;
 }
 
 export interface TaskExecution {
@@ -407,4 +495,77 @@ export const schedulerApi = {
   getUserAchievements: () => request('/scheduler/achievements/user'),
 
   checkAchievements: () => request('/scheduler/achievements/check', { method: 'POST' }),
+
+  getTaskDetail: (id: string) => request(`/scheduler/tasks/${id}/detail`),
+
+  addTaskDependency: (taskId: string, data: { depends_on_task_id: string; dependency_type?: 'strict' | 'soft' }) =>
+    request(`/scheduler/tasks/${taskId}/dependencies`, { method: 'POST', body: JSON.stringify(data) }),
+
+  removeTaskDependency: (taskId: string, dependencyId: string) =>
+    request(`/scheduler/tasks/${taskId}/dependencies/${dependencyId}`, { method: 'DELETE' }),
+
+  getTaskDependencies: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/dependencies`),
+
+  getTaskDependents: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/dependents`),
+
+  createSchedule: (data: {
+    task_template_id: string;
+    schedule_type: 'daily' | 'weekly' | 'custom' | 'smart';
+    schedule_config?: Record<string, unknown>;
+    is_active?: boolean;
+  }) => request('/scheduler/schedules', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateSchedule: (id: string, data: {
+    schedule_config?: Record<string, unknown>;
+    is_active?: boolean;
+  }) => request(`/scheduler/schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteSchedule: (id: string) =>
+    request(`/scheduler/schedules/${id}`, { method: 'DELETE' }),
+
+  getSchedules: () => request('/scheduler/schedules'),
+
+  createProgressPlan: (taskId: string, data: {
+    start_date: string;
+    end_date: string;
+    progress_mode: ProgressMode;
+    custom_allocations?: Array<{ date: string; percentage: number }>;
+  }) => request(`/scheduler/tasks/${taskId}/progress-plan`, { method: 'POST', body: JSON.stringify(data) }),
+
+  updateProgressPlan: (taskId: string, data: {
+    date?: string;
+    planned_percentage?: number;
+    notes?: string;
+  }) => request(`/scheduler/tasks/${taskId}/progress-plan`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  getProgressPlan: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/progress-plan`),
+
+  updateProgress: (taskId: string, data: {
+    date?: string;
+    percentage: number;
+    notes?: string;
+  }) => request(`/scheduler/tasks/${taskId}/progress`, { method: 'POST', body: JSON.stringify(data) }),
+
+  getTimeSlots: () => request('/scheduler/time-slots'),
+
+  createTimeSlot: (data: {
+    day_of_week?: number;
+    start_time: string;
+    end_time: string;
+    is_available?: boolean;
+    label?: string;
+  }) => request('/scheduler/time-slots', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateTimeSlot: (id: string, data: {
+    start_time?: string;
+    end_time?: string;
+    is_available?: boolean;
+    label?: string;
+  }) => request(`/scheduler/time-slots/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteTimeSlot: (id: string) =>
+    request(`/scheduler/time-slots/${id}`, { method: 'DELETE' }),
 };

@@ -1,13 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   RefreshCw, 
   Settings, 
   Clock, 
-  Target, 
   Zap, 
-  ListTodo,
   AlertCircle,
   Sparkles
 } from 'lucide-react';
@@ -30,6 +29,7 @@ import { ListView } from '../components/Scheduler/ListView';
 import { TimelineView } from '../components/Scheduler/TimelineView';
 import { TaskForm } from '../components/Scheduler/TaskForm';
 import { ActiveTaskPanel } from '../components/Scheduler/ActiveTaskPanel';
+import { TimeSlotSettings } from '../components/Scheduler/TimeSlotSettings';
 import { ScheduledTask, CreateScheduledTaskData, QueueData } from '../services/api/scheduler';
 
 type ViewType = 'queue' | 'kanban' | 'list' | 'timeline';
@@ -43,6 +43,7 @@ const DEFAULT_TIME_SLICES = {
 const QueueDataDefault: QueueData = { q0: [], q1: [], q2: [] };
 
 export const Scheduler: React.FC = () => {
+  const navigate = useNavigate();
   const { addMessage } = useMessageStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
@@ -122,6 +123,7 @@ export const Scheduler: React.FC = () => {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
       addMessage({ type: 'success', content: '任务更新成功' });
       setEditingTask(null);
+      setShowTaskForm(false);
     } catch (err: any) {
       addMessage({ type: 'error', content: err.message || '更新任务失败' });
     }
@@ -189,6 +191,10 @@ export const Scheduler: React.FC = () => {
   const openEditTaskForm = (task: ScheduledTask) => {
     setEditingTask(task);
     setShowTaskForm(true);
+  };
+
+  const handleViewTaskDetail = (task: ScheduledTask) => {
+    navigate(`/scheduler/task/${task.id}`);
   };
 
   const formatTotalTime = (minutes: number) => {
@@ -335,6 +341,7 @@ export const Scheduler: React.FC = () => {
                 onPauseTask={handlePauseTask}
                 onCompleteTask={handleCompleteTask}
                 onAddTask={openAddTaskForm}
+                onViewTaskDetail={handleViewTaskDetail}
               >
                 {{
                   timeline: (
@@ -368,35 +375,12 @@ export const Scheduler: React.FC = () => {
         <AnimatePresence>
           {showSettings && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl p-4"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl overflow-hidden"
             >
-              <div className="flex items-center gap-6">
-                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">时间片设置</h3>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Zap size={14} className="text-cyan-600 dark:text-cyan-400" />
-                    <span className="text-sm text-slate-500 dark:text-slate-400">Q0:</span>
-                    <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">{timeSlices.q0}分钟</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Target size={14} className="text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-sm text-slate-500 dark:text-slate-400">Q1:</span>
-                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{timeSlices.q1}分钟</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ListTodo size={14} className="text-amber-600 dark:text-amber-400" />
-                    <span className="text-sm text-slate-500 dark:text-slate-400">Q2:</span>
-                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{timeSlices.q2}分钟</span>
-                  </div>
-                </div>
-                <div className="ml-auto flex items-center gap-2">
-                  <span className="text-xs text-slate-400 dark:text-slate-500">休息时长:</span>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{settings?.break_duration || 5}分钟</span>
-                </div>
-              </div>
+              <TimeSlotSettings onClose={() => setShowSettings(false)} />
             </motion.div>
           )}
         </AnimatePresence>

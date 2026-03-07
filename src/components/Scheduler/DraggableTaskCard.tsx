@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { Clock, Play, Pause, Check, Edit2, Trash2, Lock } from 'lucide-react';
+import { Clock, Play, Pause, Check, Edit2, Trash2, Lock, Info } from 'lucide-react';
 import { ScheduledTask } from '../../services/api/scheduler';
 
 interface DraggableTaskCardProps {
@@ -11,6 +11,7 @@ interface DraggableTaskCardProps {
   onStart?: () => void;
   onPause?: () => void;
   onComplete?: () => void;
+  onViewDetail?: () => void;
 }
 
 const QUEUE_COLORS = {
@@ -59,6 +60,7 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   onStart,
   onPause,
   onComplete,
+  onViewDetail,
 }) => {
   const queueStyle = QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] || QUEUE_COLORS[0];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
@@ -188,6 +190,16 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
                   title="完成"
                 >
                   <Check size={12} />
+                </button>
+              )}
+
+              {onViewDetail && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onViewDetail(); }}
+                  className="p-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all hover:scale-110"
+                  title="详情"
+                >
+                  <Info size={12} />
                 </button>
               )}
 

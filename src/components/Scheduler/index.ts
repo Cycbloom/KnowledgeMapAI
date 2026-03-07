@@ -42,6 +42,8 @@ export { PomodoroSettings } from './PomodoroSettings';
 export { QueueSettings } from './QueueSettings';
 export type { Queue, QueueColor, CreateQueueData, UpdateQueueData } from './QueueSettings';
 export { DependencyGraph, DependencyIndicator } from './DependencyGraph';
+export { TaskDependencyGraph } from './TaskDependencyGraph';
+export { ProgressTimeline } from './ProgressTimeline';
 
 export { TaskRecommendation } from './TaskRecommendation';
 export { SmartSuggestion } from './SmartSuggestion';

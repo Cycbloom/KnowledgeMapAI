@@ -358,6 +358,12 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
   tags TEXT[] DEFAULT '{}',
   knowledge_point_id UUID,
   priority INTEGER DEFAULT 0,
+  task_type TEXT DEFAULT 'one_time' CHECK (task_type IN ('one_time', 'long_term', 'periodic', 'learning')),
+  total_duration INTEGER,
+  progress_mode TEXT CHECK (progress_mode IN ('average', 'decreasing', 'increasing', 'custom')),
+  progress_percentage INTEGER DEFAULT 0,
+  parent_task_id UUID REFERENCES scheduled_tasks(id),
+  context TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   deleted_at TIMESTAMPTZ,
@@ -371,6 +377,12 @@ COMMENT ON COLUMN scheduled_tasks.position IS 'Position within the queue for ord
 COMMENT ON COLUMN scheduled_tasks.estimated_duration IS 'Estimated duration in minutes';
 COMMENT ON COLUMN scheduled_tasks.actual_duration IS 'Actual duration in minutes';
 COMMENT ON COLUMN scheduled_tasks.status IS 'Task status: pending, in_progress, paused, completed, cancelled';
+COMMENT ON COLUMN scheduled_tasks.task_type IS 'Task type: one_time (一次性), long_term (长期), periodic (周期性), learning (学习)';
+COMMENT ON COLUMN scheduled_tasks.total_duration IS 'Total duration in minutes for long-term tasks';
+COMMENT ON COLUMN scheduled_tasks.progress_mode IS 'Progress distribution mode: average, decreasing, increasing, custom';
+COMMENT ON COLUMN scheduled_tasks.progress_percentage IS 'Current progress percentage (0-100)';
+COMMENT ON COLUMN scheduled_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
+COMMENT ON COLUMN scheduled_tasks.context IS 'Task context description for AI assistance';
 
 -- Task executions table (execution history)
 CREATE TABLE IF NOT EXISTS task_executions (
@@ -417,6 +429,84 @@ COMMENT ON COLUMN task_settings.q0_time_slice IS 'Q0 queue time slice in minutes
 COMMENT ON COLUMN task_settings.q1_time_slice IS 'Q1 queue time slice in minutes (standard tasks)';
 COMMENT ON COLUMN task_settings.q2_time_slice IS 'Q2 queue time slice in minutes (background tasks)';
 COMMENT ON COLUMN task_settings.break_duration IS 'Break duration between tasks in minutes';
+
+-- Task dependencies table
+CREATE TABLE IF NOT EXISTS task_dependencies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  depends_on_task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  dependency_type TEXT NOT NULL DEFAULT 'strict' CHECK (dependency_type IN ('strict', 'soft')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(task_id, depends_on_task_id)
+);
+
+COMMENT ON TABLE task_dependencies IS 'Task dependency relationships for task scheduling';
+COMMENT ON COLUMN task_dependencies.task_id IS 'The task that has the dependency';
+COMMENT ON COLUMN task_dependencies.depends_on_task_id IS 'The task that must be completed first';
+COMMENT ON COLUMN task_dependencies.dependency_type IS 'strict: must complete before starting, soft: recommended but not required';
+
+-- Task schedules table (periodic task configuration)
+CREATE TABLE IF NOT EXISTS task_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_template_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  schedule_type TEXT NOT NULL CHECK (schedule_type IN ('daily', 'weekly', 'custom', 'smart')),
+  schedule_config JSONB DEFAULT '{}',
+  next_run_at TIMESTAMPTZ,
+  last_run_at TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE task_schedules IS 'Periodic task schedule configuration';
+COMMENT ON COLUMN task_schedules.task_template_id IS 'Template task to create instances from';
+COMMENT ON COLUMN task_schedules.schedule_type IS 'Schedule type: daily, weekly, custom, smart';
+COMMENT ON COLUMN task_schedules.schedule_config IS 'JSON config for schedule (e.g., {"days": [1,3,5], "time": "09:00"})';
+COMMENT ON COLUMN task_schedules.next_run_at IS 'Next scheduled run time';
+COMMENT ON COLUMN task_schedules.last_run_at IS 'Last run time';
+COMMENT ON COLUMN task_schedules.is_active IS 'Whether the schedule is active';
+
+-- Task progress plans table
+CREATE TABLE IF NOT EXISTS task_progress_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  plan_date DATE NOT NULL,
+  planned_percentage INTEGER NOT NULL,
+  actual_percentage INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'skipped')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(task_id, plan_date)
+);
+
+COMMENT ON TABLE task_progress_plans IS 'Daily progress plans for long-term tasks';
+COMMENT ON COLUMN task_progress_plans.task_id IS 'Reference to the long-term task';
+COMMENT ON COLUMN task_progress_plans.plan_date IS 'Date for this progress plan';
+COMMENT ON COLUMN task_progress_plans.planned_percentage IS 'Planned progress percentage for this day';
+COMMENT ON COLUMN task_progress_plans.actual_percentage IS 'Actual progress percentage achieved';
+COMMENT ON COLUMN task_progress_plans.status IS 'Plan status: pending, completed, skipped';
+COMMENT ON COLUMN task_progress_plans.notes IS 'Notes for this progress entry';
+
+-- User time slots table
+CREATE TABLE IF NOT EXISTS user_time_slots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  day_of_week INTEGER CHECK (day_of_week BETWEEN 0 AND 6),
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  is_available BOOLEAN DEFAULT TRUE,
+  label TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, day_of_week, start_time)
+);
+
+COMMENT ON TABLE user_time_slots IS 'User available time slots for task scheduling';
+COMMENT ON COLUMN user_time_slots.day_of_week IS 'Day of week (0=Sunday, 6=Saturday), null for all days';
+COMMENT ON COLUMN user_time_slots.start_time IS 'Start time of the slot';
+COMMENT ON COLUMN user_time_slots.end_time IS 'End time of the slot';
+COMMENT ON COLUMN user_time_slots.is_available IS 'Whether this slot is available for tasks';
+COMMENT ON COLUMN user_time_slots.label IS 'Optional label for this time slot (e.g., "Morning Focus")';
 
 -- =====================================================
 -- RELATIONSHIP TYPES TABLE
@@ -724,6 +814,30 @@ CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deleted ON scheduled_tasks(u
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_user_deadline ON scheduled_tasks(user_id, deadline) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_knowledge_point ON scheduled_tasks(knowledge_point_id) WHERE knowledge_point_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_queue_id ON scheduled_tasks(queue_id) WHERE queue_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_task_type ON scheduled_tasks(user_id, task_type) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_parent_task ON scheduled_tasks(parent_task_id) WHERE parent_task_id IS NOT NULL;
+
+-- Task dependencies indexes
+CREATE INDEX IF NOT EXISTS idx_task_dependencies_task ON task_dependencies(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_dependencies_depends_on ON task_dependencies(depends_on_task_id);
+CREATE INDEX IF NOT EXISTS idx_task_dependencies_type ON task_dependencies(dependency_type);
+
+-- Task schedules indexes
+CREATE INDEX IF NOT EXISTS idx_task_schedules_user ON task_schedules(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_schedules_template ON task_schedules(task_template_id);
+CREATE INDEX IF NOT EXISTS idx_task_schedules_next_run ON task_schedules(next_run_at) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_task_schedules_active ON task_schedules(user_id, is_active);
+
+-- Task progress plans indexes
+CREATE INDEX IF NOT EXISTS idx_task_progress_plans_task ON task_progress_plans(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_progress_plans_date ON task_progress_plans(plan_date);
+CREATE INDEX IF NOT EXISTS idx_task_progress_plans_task_date ON task_progress_plans(task_id, plan_date);
+CREATE INDEX IF NOT EXISTS idx_task_progress_plans_status ON task_progress_plans(task_id, status);
+
+-- User time slots indexes
+CREATE INDEX IF NOT EXISTS idx_user_time_slots_user ON user_time_slots(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_time_slots_day ON user_time_slots(user_id, day_of_week);
+CREATE INDEX IF NOT EXISTS idx_user_time_slots_available ON user_time_slots(user_id, is_available) WHERE is_available = TRUE;
 
 -- Task executions indexes
 CREATE INDEX IF NOT EXISTS idx_task_executions_task ON task_executions(task_id);
@@ -1007,6 +1121,48 @@ ALTER TABLE user_pass_progress ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own pass progress" ON user_pass_progress FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own pass progress" ON user_pass_progress FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own pass progress" ON user_pass_progress FOR UPDATE USING (auth.uid() = user_id);
+
+-- Task dependencies RLS
+ALTER TABLE task_dependencies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task dependencies" ON task_dependencies FOR SELECT USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can insert own task dependencies" ON task_dependencies FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.task_id AND scheduled_tasks.user_id = auth.uid())
+  AND EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.depends_on_task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can delete own task dependencies" ON task_dependencies FOR DELETE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_dependencies.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+
+-- Task schedules RLS
+ALTER TABLE task_schedules ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task schedules" ON task_schedules FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own task schedules" ON task_schedules FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own task schedules" ON task_schedules FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own task schedules" ON task_schedules FOR DELETE USING (auth.uid() = user_id);
+
+-- Task progress plans RLS
+ALTER TABLE task_progress_plans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task progress plans" ON task_progress_plans FOR SELECT USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can insert own task progress plans" ON task_progress_plans FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can update own task progress plans" ON task_progress_plans FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can delete own task progress plans" ON task_progress_plans FOR DELETE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_progress_plans.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+
+-- User time slots RLS
+ALTER TABLE user_time_slots ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own time slots" ON user_time_slots FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own time slots" ON user_time_slots FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own time slots" ON user_time_slots FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own time slots" ON user_time_slots FOR DELETE USING (auth.uid() = user_id);
 
 -- =====================================================
 -- FUNCTIONS
@@ -1704,6 +1860,15 @@ GRANT SELECT ON periodic_tasks TO anon;
 GRANT SELECT ON periodic_passes TO anon;
 GRANT SELECT ON pass_rewards TO anon;
 GRANT SELECT ON user_pass_progress TO anon;
+
+GRANT ALL PRIVILEGES ON task_dependencies TO authenticated;
+GRANT ALL PRIVILEGES ON task_schedules TO authenticated;
+GRANT ALL PRIVILEGES ON task_progress_plans TO authenticated;
+GRANT ALL PRIVILEGES ON user_time_slots TO authenticated;
+GRANT SELECT ON task_dependencies TO anon;
+GRANT SELECT ON task_schedules TO anon;
+GRANT SELECT ON task_progress_plans TO anon;
+GRANT SELECT ON user_time_slots TO anon;
 
 -- Grant execute permissions on functions
 GRANT EXECUTE ON FUNCTION get_user_graphs_with_counts(UUID) TO authenticated;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, Clock, Tag, Link, Star, AlertCircle, Sparkles, Loader2, Zap } from 'lucide-react';
-import { ScheduledTask, CreateScheduledTaskData, schedulerApi } from '../../services/api/scheduler';
+import { X, Calendar, Clock, Tag, Link, Star, AlertCircle, Sparkles, Loader2, Zap, ChevronDown, Layers, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ScheduledTask, CreateScheduledTaskData, schedulerApi, TaskType, ProgressMode, TaskSettings } from '../../services/api/scheduler';
 import { taskRecommendationApi, PrioritySuggestion } from '../../services/api/taskRecommendation';
 
 interface TaskFormProps {
@@ -10,6 +10,8 @@ interface TaskFormProps {
   onCancel: () => void;
   knowledgePoints?: { id: string; title: string }[];
   defaultQueueLevel?: number;
+  availableTasks?: ScheduledTask[];
+  timeSliceSettings?: TaskSettings | null;
 }
 
 const DURATION_OPTIONS = [
@@ -45,6 +47,10 @@ interface TaskDraft {
   knowledgePointId: string;
   priority: number;
   queueLevel: number;
+  taskType: TaskType;
+  totalDuration: number;
+  progressMode: ProgressMode;
+  context: string;
 }
 
 const loadDraft = (): TaskDraft | null => {
@@ -81,6 +87,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   onCancel,
   knowledgePoints = [],
   defaultQueueLevel = 2,
+  availableTasks = [],
+  timeSliceSettings = null,
 }) => {
   const isEditing = !!task;
   
@@ -95,11 +103,21 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         knowledgePointId: task?.knowledge_point_id || '',
         priority: task?.priority || 2,
         queueLevel: task?.queue_level ?? defaultQueueLevel,
+        taskType: (task as any)?.task_type || 'one_time',
+        totalDuration: (task as any)?.total_duration || 0,
+        progressMode: (task as any)?.progress_mode || 'average',
+        context: (task as any)?.context || '',
       };
     }
     const draft = loadDraft();
     if (draft) {
-      return draft;
+      return {
+        ...draft,
+        taskType: draft.taskType || 'one_time',
+        totalDuration: draft.totalDuration || 0,
+        progressMode: draft.progressMode || 'average',
+        context: draft.context || '',
+      };
     }
     return {
       title: '',
@@ -110,6 +128,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       knowledgePointId: '',
       priority: 2,
       queueLevel: defaultQueueLevel,
+      taskType: 'one_time' as TaskType,
+      totalDuration: 0,
+      progressMode: 'average' as ProgressMode,
+      context: '',
     };
   };
 
@@ -128,6 +150,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [prioritySuggestion, setPrioritySuggestion] = useState<PrioritySuggestion | null>(null);
   const [showPrioritySuggestion, setShowPrioritySuggestion] = useState(false);
+  const [taskType, setTaskType] = useState<TaskType>(initialState.taskType);
+  const [totalDuration, setTotalDuration] = useState(initialState.totalDuration);
+  const [progressMode, setProgressMode] = useState<ProgressMode>(initialState.progressMode);
+  const [context, setContext] = useState(initialState.context);
+  const [selectedDependencies, setSelectedDependencies] = useState<string[]>([]);
+  const [showDependencySelector, setShowDependencySelector] = useState(false);
 
   const analyzePriority = useCallback(async (titleText: string, descriptionText?: string) => {
     if (!titleText.trim() || isEditing) return;
@@ -165,9 +193,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         knowledgePointId,
         priority,
         queueLevel,
+        taskType,
+        totalDuration,
+        progressMode,
+        context,
       });
     }
-  }, [title, description, estimatedDuration, deadline, tags, knowledgePointId, priority, queueLevel, isEditing]);
+  }, [title, description, estimatedDuration, deadline, tags, knowledgePointId, priority, queueLevel, taskType, totalDuration, progressMode, context, isEditing]);
 
   const applyPrioritySuggestion = () => {
     if (prioritySuggestion) {
@@ -250,7 +282,20 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       knowledge_point_id: knowledgePointId || undefined,
       priority,
       queue_level: queueLevel,
+      task_type: taskType,
+      total_duration: taskType === 'long_term' ? totalDuration : undefined,
+      progress_mode: taskType === 'long_term' ? progressMode : undefined,
+      context: context.trim() || undefined,
     });
+
+    if (selectedDependencies.length > 0) {
+      selectedDependencies.forEach(depId => {
+        schedulerApi.addTaskDependency(task?.id || '', {
+          depends_on_task_id: depId,
+          dependency_type: 'soft'
+        }).catch(err => console.error('Failed to add dependency:', err));
+      });
+    }
   };
 
   const handleCancel = () => {
@@ -274,6 +319,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       setErrors({});
       setPrioritySuggestion(null);
       setShowPrioritySuggestion(false);
+      setTaskType('one_time');
+      setTotalDuration(0);
+      setProgressMode('average');
+      setContext('');
+      setSelectedDependencies([]);
     }
   };
 
@@ -391,6 +441,201 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 resize-none
               "
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <Layers size={14} className="inline mr-1" />
+              任务类型
+            </label>
+            <select
+              value={taskType}
+              onChange={(e) => setTaskType(e.target.value as TaskType)}
+              className="
+                w-full px-4 py-2.5 rounded-xl
+                bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                text-slate-900 dark:text-white
+                focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+              "
+            >
+              <option value="one_time">一次性任务</option>
+              <option value="long_term">长期项目任务</option>
+              <option value="periodic">周期性任务</option>
+              <option value="learning">学习任务</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {taskType === 'one_time' && '单次完成的任务，如完成一份报告'}
+              {taskType === 'long_term' && '需要多天完成的长期任务，如完成一个项目'}
+              {taskType === 'periodic' && '按固定周期重复的任务，如每日阅读'}
+              {taskType === 'learning' && '学习相关的任务，如学习一门新技能'}
+            </p>
+          </div>
+
+          {taskType === 'long_term' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <Clock size={14} className="inline mr-1" />
+                任务总时长（分钟）
+              </label>
+              <input
+                type="number"
+                value={totalDuration || ''}
+                onChange={(e) => setTotalDuration(parseInt(e.target.value) || 0)}
+                placeholder="例如：180 表示3小时"
+                min={0}
+                className="
+                  w-full px-4 py-2.5 rounded-xl
+                  bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                  text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                "
+              />
+              {totalDuration > 0 && timeSliceSettings && (
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  预计需要约 {Math.ceil(totalDuration / timeSliceSettings.q0_time_slice)} 个时间片完成
+                </p>
+              )}
+            </div>
+          )}
+
+          {taskType === 'long_term' && totalDuration > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                进度分配模式
+              </label>
+              <select
+                value={progressMode}
+                onChange={(e) => setProgressMode(e.target.value as ProgressMode)}
+                className="
+                  w-full px-4 py-2.5 rounded-xl
+                  bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                  text-slate-900 dark:text-white
+                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                "
+              >
+                <option value="average">平均分配 - 每天完成相同进度</option>
+                <option value="decreasing">递减模式 - 前期多后期少</option>
+                <option value="increasing">递增模式 - 前期少后期多</option>
+                <option value="custom">自定义 - 手动设置每日进度</option>
+              </select>
+              <div className="mt-2 flex items-center gap-2">
+                {progressMode === 'average' && <Minus size={14} className="text-blue-500" />}
+                {progressMode === 'decreasing' && <TrendingDown size={14} className="text-amber-500" />}
+                {progressMode === 'increasing' && <TrendingUp size={14} className="text-emerald-500" />}
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {progressMode === 'average' && '每天完成相同的进度百分比'}
+                  {progressMode === 'decreasing' && '类似加速折旧，前期完成更多'}
+                  {progressMode === 'increasing' && '前期完成较少，后期逐渐增加'}
+                  {progressMode === 'custom' && '手动设置每天的进度目标'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              前置依赖任务（可选）
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowDependencySelector(!showDependencySelector)}
+                className="
+                  w-full px-4 py-2.5 rounded-xl
+                  bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                  text-slate-900 dark:text-white text-left
+                  flex items-center justify-between
+                  focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                "
+              >
+                <span className={selectedDependencies.length > 0 ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}>
+                  {selectedDependencies.length > 0
+                    ? `已选择 ${selectedDependencies.length} 个前置任务`
+                    : '选择前置任务'}
+                </span>
+                <ChevronDown size={16} className="text-slate-400" />
+              </button>
+              {showDependencySelector && (
+                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                  {availableTasks.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center">
+                      暂无可选任务
+                    </div>
+                  ) : (
+                    availableTasks
+                      .filter(t => t.id !== task?.id)
+                      .map((t) => (
+                        <label
+                          key={t.id}
+                          className="flex items-center gap-2 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedDependencies.includes(t.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedDependencies([...selectedDependencies, t.id]);
+                              } else {
+                                setSelectedDependencies(selectedDependencies.filter((id) => id !== t.id));
+                              }
+                            }}
+                            className="rounded border-slate-300 dark:border-slate-600 text-cyan-500 focus:ring-cyan-500/50"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{t.title}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Q{t.queue_level} · P{t.priority}</p>
+                          </div>
+                        </label>
+                      ))
+                  )}
+                </div>
+              )}
+            </div>
+            {selectedDependencies.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedDependencies.map((depId) => {
+                  const t = availableTasks.find((item) => item.id === depId);
+                  return t ? (
+                    <span
+                      key={depId}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 rounded-lg text-sm"
+                    >
+                      {t.title}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDependencies(selectedDependencies.filter((id) => id !== depId))}
+                        className="hover:text-cyan-900 dark:hover:text-cyan-100"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              任务上下文（可选）
+            </label>
+            <textarea
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              placeholder="描述任务的背景、目标、注意事项等..."
+              rows={3}
+              maxLength={2000}
+              className="
+                w-full px-4 py-2.5 rounded-xl
+                bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
+                text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+                focus:outline-none focus:ring-2 focus:ring-cyan-500/50
+                resize-none
+              "
+            />
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 text-right">
+              {context.length}/2000
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

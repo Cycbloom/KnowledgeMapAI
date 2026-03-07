@@ -829,6 +829,76 @@ export interface CrossGraphRelationData {
   exported_at: string;
 }
 
+export type TaskType = 'one_time' | 'long_term' | 'periodic' | 'learning';
+
+export type ProgressMode = 'average' | 'decreasing' | 'increasing' | 'custom';
+
+export interface TaskDependency {
+  id: string;
+  task_id: string;
+  depends_on_task_id: string;
+  dependency_type: 'strict' | 'soft';
+  created_at: string;
+  depends_on_task?: {
+    id: string;
+    title: string;
+    description?: string;
+    status: string;
+    queue_level: number;
+    priority: number;
+  };
+}
+
+export interface TaskSchedule {
+  id: string;
+  user_id: string;
+  task_template_id: string;
+  schedule_type: 'daily' | 'weekly' | 'custom' | 'smart';
+  schedule_config: {
+    time?: string;
+    days?: number[];
+    interval_days?: number;
+    base_interval?: number;
+    adjustment_factor?: number;
+    [key: string]: unknown;
+  };
+  next_run_at?: string;
+  last_run_at?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  task_template?: {
+    id: string;
+    title: string;
+    description?: string;
+    queue_level: number;
+    priority: number;
+    tags: string[];
+  };
+}
+
+export interface TaskProgressPlan {
+  id: string;
+  task_id: string;
+  plan_date: string;
+  planned_percentage: number;
+  actual_percentage: number;
+  status: 'pending' | 'completed' | 'skipped';
+  notes?: string;
+  created_at: string;
+}
+
+export interface UserTimeSlot {
+  id: string;
+  user_id: string;
+  day_of_week: number | null;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  label?: string;
+  created_at: string;
+}
+
 export interface ScheduledTask {
   id: string;
   user_id: string;
@@ -847,6 +917,24 @@ export interface ScheduledTask {
   updated_at: string;
   deleted_at?: string;
   completed_at?: string;
+  task_type?: TaskType;
+  total_duration?: number;
+  progress_mode?: ProgressMode;
+  progress_percentage?: number;
+  parent_task_id?: string;
+  context?: string;
+  dependencies?: TaskDependency[];
+  dependents?: TaskDependency[];
+  progress_plans?: TaskProgressPlan[];
+  parent_task?: ScheduledTask;
+}
+
+export interface TaskDetail extends ScheduledTask {
+  dependencies: TaskDependency[];
+  dependents: TaskDependency[];
+  progress_plans: TaskProgressPlan[];
+  executions: TaskExecution[];
+  required_time_slots?: number;
 }
 
 export interface TaskExecution {

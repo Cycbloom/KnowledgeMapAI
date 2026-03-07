@@ -81,6 +81,11 @@ const SchedulerStats = lazy(() =>
     default: module.SchedulerStats,
   }))
 );
+const TaskDetailPage = lazy(() =>
+  import("./pages/TaskDetailPage").then((module) => ({
+    default: module.default,
+  }))
+);
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -134,6 +139,7 @@ function App() {
             <Route path="scheduler" element={<Scheduler />} />
             <Route path="scheduler/current" element={<CurrentTask />} />
             <Route path="scheduler/stats" element={<SchedulerStats />} />
+            <Route path="scheduler/task/:taskId" element={<TaskDetailPage />} />
           </Route>
         </Routes>
       </Suspense>

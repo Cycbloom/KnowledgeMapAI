@@ -434,6 +434,11 @@ export const createScheduledTaskSchema = z.object({
   tags: z.array(z.string()).optional(),
   knowledge_point_id: z.string().uuid().optional(),
   priority: z.number().int().optional(),
+  task_type: z.enum(['one_time', 'long_term', 'periodic', 'learning']).optional(),
+  total_duration: z.number().int().positive().optional(),
+  progress_mode: z.enum(['average', 'decreasing', 'increasing', 'custom']).optional(),
+  context: z.string().max(2000).optional(),
+  parent_task_id: z.string().uuid().optional(),
 });
 
 export const updateScheduledTaskSchema = z.object({
@@ -448,6 +453,11 @@ export const updateScheduledTaskSchema = z.object({
   tags: z.array(z.string()).optional(),
   knowledge_point_id: z.string().uuid().nullable().optional(),
   priority: z.number().int().optional(),
+  task_type: z.enum(['one_time', 'long_term', 'periodic', 'learning']).optional(),
+  total_duration: z.number().int().positive().optional(),
+  progress_mode: z.enum(['average', 'decreasing', 'increasing', 'custom']).optional(),
+  context: z.string().max(2000).optional(),
+  parent_task_id: z.string().uuid().optional(),
 });
 
 export const moveTaskSchema = z.object({
@@ -486,4 +496,65 @@ export const updateRelationshipTypeSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, '颜色格式无效').optional(),
   line_style: edgeLineStyleSchema.optional(),
   show_arrow: z.union([z.boolean(), z.literal('auto')]).optional()
+});
+
+export const createTaskDependencySchema = z.object({
+  depends_on_task_id: z.string().uuid('无效的依赖任务ID'),
+  dependency_type: z.enum(['strict', 'soft']).default('strict'),
+});
+
+export const taskDependencyParamsSchema = z.object({
+  id: z.string().uuid('无效的任务ID'),
+  dependencyId: z.string().uuid('无效的依赖ID'),
+});
+
+export const createTaskScheduleSchema = z.object({
+  task_template_id: z.string().uuid('无效的任务模板ID'),
+  schedule_type: z.enum(['daily', 'weekly', 'custom', 'smart']),
+  schedule_config: z.record(z.any()).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export const updateTaskScheduleSchema = z.object({
+  schedule_config: z.record(z.any()).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export const taskScheduleParamsSchema = z.object({
+  id: z.string().uuid('无效的调度ID'),
+});
+
+export const createProgressPlanSchema = z.object({
+  start_date: z.string().datetime(),
+  end_date: z.string().datetime(),
+  progress_mode: z.enum(['average', 'decreasing', 'increasing', 'custom']),
+  custom_allocations: z.array(z.object({
+    date: z.string(),
+    percentage: z.number().min(0).max(100),
+  })).optional(),
+});
+
+export const updateProgressSchema = z.object({
+  date: z.string().optional(),
+  percentage: z.number().min(0).max(100),
+  notes: z.string().optional(),
+});
+
+export const createTimeSlotSchema = z.object({
+  day_of_week: z.number().int().min(0).max(6).optional(),
+  start_time: z.string().regex(/^\d{2}:\d{2}$/, '时间格式应为 HH:MM'),
+  end_time: z.string().regex(/^\d{2}:\d{2}$/, '时间格式应为 HH:MM'),
+  is_available: z.boolean().optional(),
+  label: z.string().max(50).optional(),
+});
+
+export const updateTimeSlotSchema = z.object({
+  start_time: z.string().regex(/^\d{2}:\d{2}$/, '时间格式应为 HH:MM').optional(),
+  end_time: z.string().regex(/^\d{2}:\d{2}$/, '时间格式应为 HH:MM').optional(),
+  is_available: z.boolean().optional(),
+  label: z.string().max(50).optional(),
+});
+
+export const timeSlotParamsSchema = z.object({
+  id: z.string().uuid('无效的时间段ID'),
 });

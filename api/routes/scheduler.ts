@@ -7,6 +7,16 @@ import {
   updateScheduledTaskSchema,
   moveTaskSchema,
   reorderTasksSchema,
+  createTimeSlotSchema,
+  updateTimeSlotSchema,
+  timeSlotParamsSchema,
+  createProgressPlanSchema,
+  updateProgressSchema,
+  createTaskDependencySchema,
+  taskDependencyParamsSchema,
+  createTaskScheduleSchema,
+  updateTaskScheduleSchema,
+  taskScheduleParamsSchema,
 } from "../schemas/index.js";
 import { aiService } from "../services/ai/index.js";
 import { logger } from "../utils/logger.js";
@@ -62,6 +72,11 @@ router.post(
       tags,
       knowledge_point_id,
       priority,
+      task_type,
+      total_duration,
+      progress_mode,
+      context,
+      parent_task_id,
     } = req.body;
 
     const { count } = await supabase
@@ -85,6 +100,12 @@ router.post(
         knowledge_point_id,
         priority: priority ?? 0,
         status: "pending",
+        task_type: task_type ?? "one_time",
+        total_duration,
+        progress_mode: progress_mode ?? "average",
+        progress_percentage: 0,
+        context,
+        parent_task_id,
       })
       .select()
       .single();
@@ -202,6 +223,112 @@ router.get(
     }
 
     res.json({ success: true, data: task });
+  },
+);
+
+router.get(
+  "/tasks/:id/detail",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (taskError || !task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: dependencies } = await supabase
+      .from("task_dependencies")
+      .select(
+        "id, dependency_type, created_at, depends_on_task_id, scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
+      )
+      .eq("task_id", id)
+      .eq("user_id", req.user.id);
+
+    const formattedDependencies = (dependencies || []).map((dep) => ({
+      id: dep.id,
+      dependency_type: dep.dependency_type,
+      created_at: dep.created_at,
+      task: dep.scheduled_tasks,
+    }));
+
+    const { data: dependents } = await supabase
+      .from("task_dependencies")
+      .select(
+        "id, dependency_type, created_at, task_id, scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
+      )
+      .eq("depends_on_task_id", id)
+      .eq("user_id", req.user.id);
+
+    const formattedDependents = (dependents || []).map((dep) => ({
+      id: dep.id,
+      dependency_type: dep.dependency_type,
+      created_at: dep.created_at,
+      task: dep.scheduled_tasks,
+    }));
+
+    let progressPlans: unknown[] = [];
+    if (task.task_type === "long_term" || task.progress_mode) {
+      const { data: plans } = await supabase
+        .from("task_progress_plans")
+        .select("*")
+        .eq("task_id", id)
+        .order("plan_date", { ascending: true });
+
+      progressPlans = plans || [];
+    }
+
+    const { data: executions } = await supabase
+      .from("task_executions")
+      .select("*")
+      .eq("task_id", id)
+      .eq("user_id", req.user.id)
+      .order("started_at", { ascending: false })
+      .limit(20);
+
+    const { data: settings } = await supabase
+      .from("task_settings")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .maybeSingle();
+
+    let requiredTimeSlots: number | null = null;
+    if (task.total_duration && settings) {
+      requiredTimeSlots = calculateRequiredTimeSlots(
+        task.total_duration,
+        task.queue_level,
+        settings,
+      );
+    }
+
+    res.json({
+      success: true,
+      data: {
+        task,
+        dependencies: formattedDependencies,
+        dependents: formattedDependents,
+        progress_plans: progressPlans,
+        executions: executions || [],
+        calculated: {
+          required_time_slots: requiredTimeSlots,
+        },
+      },
+    });
   },
 );
 
@@ -1770,6 +1897,1187 @@ router.post(
     }
 
     res.json({ success: true, data: updated });
+  },
+);
+
+router.get(
+  "/time-slots",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { data: timeSlots, error } = await supabase
+      .from("user_time_slots")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("day_of_week", { ascending: true, nullsFirst: true })
+      .order("start_time", { ascending: true });
+
+    if (error) {
+      logger.error("Get time slots error:", error);
+      return res.status(500).json({ error: "获取时间段设置失败" });
+    }
+
+    const weekViewData: Record<number, typeof timeSlots> = {
+      0: [],
+      1: [],
+      2: [],
+      3: [],
+      4: [],
+      5: [],
+      6: [],
+    };
+
+    const globalSlots: typeof timeSlots = [];
+
+    for (const slot of timeSlots ?? []) {
+      if (slot.day_of_week === null) {
+        globalSlots.push(slot);
+      } else {
+        weekViewData[slot.day_of_week].push(slot);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        slots: timeSlots,
+        weekView: weekViewData,
+        globalSlots,
+      },
+    });
+  },
+);
+
+router.post(
+  "/time-slots",
+  requireAuth,
+  validate({ body: createTimeSlotSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { day_of_week, start_time, end_time, is_available, label } = req.body;
+
+    const startTimeParts = start_time.split(":").map(Number);
+    const endTimeParts = end_time.split(":").map(Number);
+    const startMinutes = startTimeParts[0] * 60 + startTimeParts[1];
+    const endMinutes = endTimeParts[0] * 60 + endTimeParts[1];
+
+    if (endMinutes <= startMinutes) {
+      return res.status(400).json({ error: "结束时间必须晚于开始时间" });
+    }
+
+    let existingSlots = await supabase
+      .from("user_time_slots")
+      .select("*")
+      .eq("user_id", req.user.id);
+
+    if (day_of_week !== null && day_of_week !== undefined) {
+      existingSlots = await supabase
+        .from("user_time_slots")
+        .select("*")
+        .eq("user_id", req.user.id)
+        .eq("day_of_week", day_of_week);
+    }
+
+    if (existingSlots.data && existingSlots.data.length > 0) {
+      for (const slot of existingSlots.data) {
+        const existingStart = slot.start_time.split(":").map(Number);
+        const existingEnd = slot.end_time.split(":").map(Number);
+        const existingStartMinutes = existingStart[0] * 60 + existingStart[1];
+        const existingEndMinutes = existingEnd[0] * 60 + existingEnd[1];
+
+        const hasOverlap =
+          startMinutes < existingEndMinutes &&
+          endMinutes > existingStartMinutes;
+
+        if (hasOverlap) {
+          return res.status(400).json({
+            error: "时间段与现有时间段冲突",
+            conflictingSlot: slot,
+          });
+        }
+      }
+    }
+
+    const { data: timeSlot, error } = await supabase
+      .from("user_time_slots")
+      .insert({
+        user_id: req.user.id,
+        day_of_week: day_of_week ?? null,
+        start_time,
+        end_time,
+        is_available: is_available ?? true,
+        label,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Create time slot error:", error);
+      return res.status(500).json({ error: "创建时间段失败" });
+    }
+
+    res.status(201).json({ success: true, data: timeSlot });
+  },
+);
+
+router.put(
+  "/time-slots/:id",
+  requireAuth,
+  validate({ params: timeSlotParamsSchema, body: updateTimeSlotSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { start_time, end_time, is_available, label } = req.body;
+
+    const { data: existingSlot, error: fetchError } = await supabase
+      .from("user_time_slots")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .single();
+
+    if (fetchError || !existingSlot) {
+      return res.status(404).json({ error: "时间段不存在" });
+    }
+
+    const finalStartTime = start_time ?? existingSlot.start_time;
+    const finalEndTime = end_time ?? existingSlot.end_time;
+
+    const startTimeParts = finalStartTime.split(":").map(Number);
+    const endTimeParts = finalEndTime.split(":").map(Number);
+    const startMinutes = startTimeParts[0] * 60 + startTimeParts[1];
+    const endMinutes = endTimeParts[0] * 60 + endTimeParts[1];
+
+    if (endMinutes <= startMinutes) {
+      return res.status(400).json({ error: "结束时间必须晚于开始时间" });
+    }
+
+    if (start_time || end_time) {
+      const { data: otherSlots } = await supabase
+        .from("user_time_slots")
+        .select("*")
+        .eq("user_id", req.user.id)
+        .neq("id", id);
+
+      const slotsToCheck =
+        existingSlot.day_of_week !== null
+          ? otherSlots?.filter(
+              (s) => s.day_of_week === existingSlot.day_of_week,
+            )
+          : otherSlots?.filter((s) => s.day_of_week === null);
+
+      for (const slot of slotsToCheck ?? []) {
+        const existingStart = slot.start_time.split(":").map(Number);
+        const existingEnd = slot.end_time.split(":").map(Number);
+        const existingStartMinutes = existingStart[0] * 60 + existingStart[1];
+        const existingEndMinutes = existingEnd[0] * 60 + existingEnd[1];
+
+        const hasOverlap =
+          startMinutes < existingEndMinutes &&
+          endMinutes > existingStartMinutes;
+
+        if (hasOverlap) {
+          return res.status(400).json({
+            error: "时间段与现有时间段冲突",
+            conflictingSlot: slot,
+          });
+        }
+      }
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (start_time !== undefined) updateData.start_time = start_time;
+    if (end_time !== undefined) updateData.end_time = end_time;
+    if (is_available !== undefined) updateData.is_available = is_available;
+    if (label !== undefined) updateData.label = label;
+
+    const { data: timeSlot, error } = await supabase
+      .from("user_time_slots")
+      .update(updateData)
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Update time slot error:", error);
+      return res.status(500).json({ error: "更新时间段失败" });
+    }
+
+    res.json({ success: true, data: timeSlot });
+  },
+);
+
+router.delete(
+  "/time-slots/:id",
+  requireAuth,
+  validate({ params: timeSlotParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from("user_time_slots")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", req.user.id);
+
+    if (error) {
+      logger.error("Delete time slot error:", error);
+      return res.status(500).json({ error: "删除时间段失败" });
+    }
+
+    res.json({ success: true });
+  },
+);
+
+interface TaskSettings {
+  q0_time_slice: number;
+  q1_time_slice: number;
+  q2_time_slice: number;
+  break_duration: number;
+  sound_enabled: boolean;
+  notification_enabled: boolean;
+}
+
+function calculateRequiredTimeSlots(
+  totalDurationMinutes: number,
+  queueLevel: number,
+  taskSettings: TaskSettings,
+): number {
+  const timeSlice =
+    queueLevel === 0
+      ? taskSettings.q0_time_slice
+      : queueLevel === 1
+        ? taskSettings.q1_time_slice
+        : taskSettings.q2_time_slice;
+
+  return Math.ceil(totalDurationMinutes / timeSlice);
+}
+
+async function checkCircularDependency(
+  supabase: any,
+  taskId: string,
+  dependsOnTaskId: string,
+  userId: string,
+): Promise<boolean> {
+  const visited = new Set<string>();
+  const queue: string[] = [dependsOnTaskId];
+
+  while (queue.length > 0) {
+    const currentTaskId = queue.shift()!;
+
+    if (currentTaskId === taskId) {
+      return true;
+    }
+
+    if (visited.has(currentTaskId)) {
+      continue;
+    }
+    visited.add(currentTaskId);
+
+    const { data: dependencies } = await supabase
+      .from("task_dependencies")
+      .select("depends_on_task_id")
+      .eq("task_id", currentTaskId)
+      .eq("user_id", userId);
+
+    for (const dep of dependencies || []) {
+      if (!visited.has(dep.depends_on_task_id)) {
+        queue.push(dep.depends_on_task_id);
+      }
+    }
+  }
+
+  return false;
+}
+
+router.post(
+  "/tasks/:id/dependencies",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: createTaskDependencySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { depends_on_task_id, dependency_type } = req.body;
+
+    if (id === depends_on_task_id) {
+      return res.status(400).json({ error: "任务不能依赖自身" });
+    }
+
+    const { data: tasks, error: tasksError } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .in("id", [id, depends_on_task_id])
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null);
+
+    if (tasksError) {
+      return res.status(500).json({ error: "查询任务失败" });
+    }
+
+    if (!tasks || tasks.length !== 2) {
+      return res.status(404).json({ error: "一个或多个任务不存在" });
+    }
+
+    const { data: existingDep } = await supabase
+      .from("task_dependencies")
+      .select("id")
+      .eq("task_id", id)
+      .eq("depends_on_task_id", depends_on_task_id)
+      .eq("user_id", req.user.id)
+      .maybeSingle();
+
+    if (existingDep) {
+      return res.status(400).json({ error: "该依赖关系已存在" });
+    }
+
+    const hasCircular = await checkCircularDependency(
+      supabase,
+      id,
+      depends_on_task_id,
+      req.user.id,
+    );
+
+    if (hasCircular) {
+      return res.status(400).json({ error: "添加此依赖会形成循环依赖" });
+    }
+
+    const { data: dependency, error } = await supabase
+      .from("task_dependencies")
+      .insert({
+        task_id: id,
+        depends_on_task_id,
+        dependency_type: dependency_type ?? "strict",
+        user_id: req.user.id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Create dependency error:", error);
+      return res.status(500).json({ error: "创建依赖关系失败" });
+    }
+
+    res.status(201).json({ success: true, data: dependency });
+  },
+);
+
+router.delete(
+  "/tasks/:id/dependencies/:dependencyId",
+  requireAuth,
+  validate({ params: taskDependencyParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id, dependencyId } = req.params;
+
+    const { error } = await supabase
+      .from("task_dependencies")
+      .delete()
+      .eq("id", dependencyId)
+      .eq("task_id", id)
+      .eq("user_id", req.user.id);
+
+    if (error) {
+      return res.status(500).json({ error: "删除依赖关系失败" });
+    }
+
+    res.json({ success: true });
+  },
+);
+
+router.get(
+  "/tasks/:id/dependencies",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: dependencies, error } = await supabase
+      .from("task_dependencies")
+      .select(
+        "id, dependency_type, created_at, depends_on_task_id, scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
+      )
+      .eq("task_id", id)
+      .eq("user_id", req.user.id);
+
+    if (error) {
+      console.error("Get dependencies error:", error);
+      return res.status(500).json({ error: "获取依赖列表失败" });
+    }
+
+    const formattedDeps = (dependencies || []).map((dep) => ({
+      id: dep.id,
+      dependency_type: dep.dependency_type,
+      created_at: dep.created_at,
+      task: dep.scheduled_tasks,
+    }));
+
+    res.json({ success: true, data: formattedDeps });
+  },
+);
+
+router.get(
+  "/tasks/:id/dependents",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: dependents, error } = await supabase
+      .from("task_dependencies")
+      .select(
+        "id, dependency_type, created_at, task_id, scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
+      )
+      .eq("depends_on_task_id", id)
+      .eq("user_id", req.user.id);
+
+    if (error) {
+      console.error("Get dependents error:", error);
+      return res.status(500).json({ error: "获取后置任务列表失败" });
+    }
+
+    const formattedDeps = (dependents || []).map((dep) => ({
+      id: dep.id,
+      dependency_type: dep.dependency_type,
+      created_at: dep.created_at,
+      task: dep.scheduled_tasks,
+    }));
+
+    res.json({ success: true, data: formattedDeps });
+  },
+);
+
+function calculateDaysBetween(startDate: Date, endDate: Date): number {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays + 1;
+}
+
+function generateAverageAllocations(
+  days: number,
+): Array<{ percentage: number }> {
+  const basePercentage = 100 / days;
+  const allocations: Array<{ percentage: number }> = [];
+  let remaining = 100;
+
+  for (let i = 0; i < days; i++) {
+    if (i === days - 1) {
+      allocations.push({ percentage: Math.round(remaining * 100) / 100 });
+    } else {
+      const percentage = Math.round(basePercentage * 100) / 100;
+      allocations.push({ percentage });
+      remaining -= percentage;
+    }
+  }
+
+  return allocations;
+}
+
+function generateDecreasingAllocations(
+  days: number,
+): Array<{ percentage: number }> {
+  const allocations: Array<{ percentage: number }> = [];
+  const totalWeight = (days * (days + 1)) / 2;
+  let remaining = 100;
+
+  for (let i = 0; i < days; i++) {
+    let percentage: number;
+    if (i === days - 1) {
+      percentage = Math.round(remaining * 100) / 100;
+    } else {
+      const weight = days - i;
+      percentage = Math.round((weight / totalWeight) * 100 * 100) / 100;
+      remaining -= percentage;
+    }
+    allocations.push({ percentage: Math.max(0, percentage) });
+  }
+
+  const total = allocations.reduce((sum, a) => sum + a.percentage, 0);
+  if (Math.abs(total - 100) > 0.01 && allocations.length > 0) {
+    allocations[allocations.length - 1].percentage =
+      Math.round(
+        (allocations[allocations.length - 1].percentage + (100 - total)) * 100,
+      ) / 100;
+  }
+
+  return allocations;
+}
+
+function generateIncreasingAllocations(
+  days: number,
+): Array<{ percentage: number }> {
+  const decreasing = generateDecreasingAllocations(days);
+  return decreasing.reverse();
+}
+
+function generateProgressAllocations(
+  startDate: Date,
+  endDate: Date,
+  mode: "average" | "decreasing" | "increasing" | "custom",
+  customAllocations?: Array<{ date: string; percentage: number }>,
+): Array<{ date: string; percentage: number }> {
+  if (mode === "custom" && customAllocations && customAllocations.length > 0) {
+    const total = customAllocations.reduce((sum, a) => sum + a.percentage, 0);
+    if (Math.abs(total - 100) > 0.01) {
+      throw new Error("自定义进度分配百分比总和必须等于100");
+    }
+    return customAllocations.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+  }
+
+  const days = calculateDaysBetween(startDate, endDate);
+  let allocations: Array<{ percentage: number }>;
+
+  switch (mode) {
+    case "average":
+      allocations = generateAverageAllocations(days);
+      break;
+    case "decreasing":
+      allocations = generateDecreasingAllocations(days);
+      break;
+    case "increasing":
+      allocations = generateIncreasingAllocations(days);
+      break;
+    default:
+      allocations = generateAverageAllocations(days);
+  }
+
+  const result: Array<{ date: string; percentage: number }> = [];
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < days; i++) {
+    const date = new Date(start);
+    date.setDate(date.getDate() + i);
+    result.push({
+      date: date.toISOString().split("T")[0],
+      percentage: allocations[i].percentage,
+    });
+  }
+
+  return result;
+}
+
+router.post(
+  "/tasks/:id/progress-plan",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: createProgressPlanSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { start_date, end_date, progress_mode, custom_allocations } =
+      req.body;
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (taskError || !task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    try {
+      const allocations = generateProgressAllocations(
+        new Date(start_date),
+        new Date(end_date),
+        progress_mode,
+        custom_allocations,
+      );
+
+      const { error: deleteError } = await supabase
+        .from("task_progress_plans")
+        .delete()
+        .eq("task_id", id);
+
+      if (deleteError) {
+        logger.error("Delete existing progress plans error:", deleteError);
+      }
+
+      const plansToInsert = allocations.map((allocation) => ({
+        task_id: id,
+        user_id: req.user.id,
+        plan_date: allocation.date,
+        planned_percentage: allocation.percentage,
+        actual_percentage: 0,
+      }));
+
+      const { data: plans, error: insertError } = await supabase
+        .from("task_progress_plans")
+        .insert(plansToInsert)
+        .select();
+
+      if (insertError) {
+        logger.error("Insert progress plans error:", insertError);
+        return res.status(500).json({ error: "创建进度计划失败" });
+      }
+
+      await supabase
+        .from("scheduled_tasks")
+        .update({
+          progress_mode,
+          progress_percentage: 0,
+        })
+        .eq("id", id);
+
+      res.status(201).json({ success: true, data: plans });
+    } catch (error) {
+      const err = error as Error;
+      logger.error("Generate progress allocations error:", err);
+      res.status(400).json({ error: err.message || "生成进度计划失败" });
+    }
+  },
+);
+
+router.put(
+  "/tasks/:id/progress-plan",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { plan_date, planned_percentage, notes } = req.body;
+
+    if (!plan_date) {
+      return res.status(400).json({ error: "请提供计划日期" });
+    }
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (taskError || !task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (planned_percentage !== undefined) {
+      updateData.planned_percentage = planned_percentage;
+    }
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: "没有有效的更新字段" });
+    }
+
+    const { data: plan, error } = await supabase
+      .from("task_progress_plans")
+      .update(updateData)
+      .eq("task_id", id)
+      .eq("plan_date", plan_date)
+      .select()
+      .single();
+
+    if (error || !plan) {
+      return res.status(404).json({ error: "进度计划不存在或更新失败" });
+    }
+
+    res.json({ success: true, data: plan });
+  },
+);
+
+router.get(
+  "/tasks/:id/progress-plan",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .select("id, title, progress_mode, progress_percentage")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (taskError || !task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: plans, error } = await supabase
+      .from("task_progress_plans")
+      .select("*")
+      .eq("task_id", id)
+      .order("plan_date", { ascending: true });
+
+    if (error) {
+      logger.error("Get progress plans error:", error);
+      return res.status(500).json({ error: "获取进度计划失败" });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        task,
+        plans: plans || [],
+      },
+    });
+  },
+);
+
+router.post(
+  "/tasks/:id/progress",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: updateProgressSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { date, percentage, notes } = req.body;
+
+    const progressDate = date || new Date().toISOString().split("T")[0];
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (taskError || !task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: plan, error: planError } = await supabase
+      .from("task_progress_plans")
+      .select("*")
+      .eq("task_id", id)
+      .eq("plan_date", progressDate)
+      .single();
+
+    if (planError || !plan) {
+      return res.status(404).json({ error: "该日期没有进度计划" });
+    }
+
+    const { error: updatePlanError } = await supabase
+      .from("task_progress_plans")
+      .update({
+        actual_percentage: percentage,
+        notes: notes || plan.notes,
+      })
+      .eq("id", plan.id);
+
+    if (updatePlanError) {
+      logger.error("Update progress plan error:", updatePlanError);
+      return res.status(500).json({ error: "更新进度失败" });
+    }
+
+    const { data: allPlans, error: allPlansError } = await supabase
+      .from("task_progress_plans")
+      .select("actual_percentage, planned_percentage")
+      .eq("task_id", id);
+
+    if (allPlansError) {
+      logger.error("Get all plans error:", allPlansError);
+    }
+
+    let totalProgress = 0;
+    if (allPlans && allPlans.length > 0) {
+      const totalActual = allPlans.reduce(
+        (sum, p) => sum + (p.actual_percentage || 0),
+        0,
+      );
+      totalProgress = Math.min(100, Math.round(totalActual));
+    }
+
+    const taskUpdateData: Record<string, unknown> = {
+      progress_percentage: totalProgress,
+    };
+
+    if (totalProgress >= 100) {
+      taskUpdateData.status = "completed";
+      taskUpdateData.completed_at = new Date().toISOString();
+    }
+
+    const { data: updatedTask, error: updateTaskError } = await supabase
+      .from("scheduled_tasks")
+      .update(taskUpdateData)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (updateTaskError) {
+      logger.error("Update task progress error:", updateTaskError);
+      return res.status(500).json({ error: "更新任务进度失败" });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        task: updatedTask,
+        daily_progress: {
+          date: progressDate,
+          percentage,
+          notes,
+        },
+        total_progress: totalProgress,
+      },
+    });
+  },
+);
+
+function calculateNextRunAt(
+  scheduleType: "daily" | "weekly" | "custom" | "smart",
+  scheduleConfig: Record<string, unknown>,
+): Date {
+  const now = new Date();
+  const time = (scheduleConfig.time as string) || "09:00";
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const nextRun = new Date();
+  nextRun.setHours(hours, minutes, 0, 0);
+
+  switch (scheduleType) {
+    case "daily": {
+      if (nextRun <= now) {
+        nextRun.setDate(nextRun.getDate() + 1);
+      }
+      return nextRun;
+    }
+
+    case "weekly": {
+      const days = (scheduleConfig.days as number[]) || [1];
+      const currentDay = now.getDay();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+
+      let minDiff = 7;
+      for (const targetDay of days) {
+        let diff = targetDay - currentDay;
+        if (diff < 0) diff += 7;
+        if (diff === 0) {
+          const targetMinutes = hours * 60 + minutes;
+          const currentMinutes = currentHour * 60 + currentMinute;
+          if (targetMinutes <= currentMinutes) {
+            diff = 7;
+          }
+        }
+        if (diff < minDiff) {
+          minDiff = diff;
+        }
+      }
+
+      nextRun.setDate(nextRun.getDate() + minDiff);
+      return nextRun;
+    }
+
+    case "custom": {
+      const intervalDays = (scheduleConfig.interval_days as number) || 1;
+      if (nextRun <= now) {
+        nextRun.setDate(nextRun.getDate() + intervalDays);
+      }
+      return nextRun;
+    }
+
+    case "smart": {
+      const baseInterval = (scheduleConfig.base_interval as number) || 3;
+      if (nextRun <= now) {
+        nextRun.setDate(nextRun.getDate() + baseInterval);
+      }
+      return nextRun;
+    }
+
+    default:
+      return nextRun;
+  }
+}
+
+router.post(
+  "/schedules",
+  requireAuth,
+  validate({ body: createTaskScheduleSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { task_template_id, schedule_type, schedule_config, is_active } =
+      req.body;
+
+    const { data: taskTemplate, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .select("id, user_id")
+      .eq("id", task_template_id)
+      .eq("user_id", req.user.id)
+      .single();
+
+    if (taskError || !taskTemplate) {
+      return res.status(404).json({ error: "任务模板不存在或不属于当前用户" });
+    }
+
+    const nextRunAt = calculateNextRunAt(schedule_type, schedule_config || {});
+
+    const { data: schedule, error } = await supabase
+      .from("task_schedules")
+      .insert({
+        user_id: req.user.id,
+        task_template_id,
+        schedule_type,
+        schedule_config: schedule_config || {},
+        next_run_at: nextRunAt.toISOString(),
+        is_active: is_active ?? true,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Create schedule error:", error);
+      return res.status(500).json({ error: "创建周期性任务配置失败" });
+    }
+
+    res.status(201).json({ success: true, data: schedule });
+  },
+);
+
+router.put(
+  "/schedules/:id",
+  requireAuth,
+  validate({
+    params: taskScheduleParamsSchema,
+    body: updateTaskScheduleSchema,
+  }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { schedule_config, is_active } = req.body;
+
+    const { data: existingSchedule, error: fetchError } = await supabase
+      .from("task_schedules")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .single();
+
+    if (fetchError || !existingSchedule) {
+      return res.status(404).json({ error: "周期配置不存在" });
+    }
+
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (schedule_config !== undefined) {
+      updateData.schedule_config = schedule_config;
+      updateData.next_run_at = calculateNextRunAt(
+        existingSchedule.schedule_type as
+          | "daily"
+          | "weekly"
+          | "custom"
+          | "smart",
+        schedule_config,
+      ).toISOString();
+    }
+
+    if (is_active !== undefined) {
+      updateData.is_active = is_active;
+    }
+
+    const { data: schedule, error } = await supabase
+      .from("task_schedules")
+      .update(updateData)
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Update schedule error:", error);
+      return res.status(500).json({ error: "更新周期配置失败" });
+    }
+
+    res.json({ success: true, data: schedule });
+  },
+);
+
+router.delete(
+  "/schedules/:id",
+  requireAuth,
+  validate({ params: taskScheduleParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from("task_schedules")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", req.user.id);
+
+    if (error) {
+      logger.error("Delete schedule error:", error);
+      return res.status(500).json({ error: "删除周期配置失败" });
+    }
+
+    res.json({ success: true });
+  },
+);
+
+router.get(
+  "/schedules",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { data: schedules, error } = await supabase
+      .from("task_schedules")
+      .select(
+        `
+      *,
+      task_template:scheduled_tasks(
+        id,
+        title,
+        description,
+        queue_level,
+        estimated_duration,
+        tags,
+        priority
+      )
+    `,
+      )
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      logger.error("Get schedules error:", error);
+      return res.status(500).json({ error: "获取周期性任务列表失败" });
+    }
+
+    res.json({ success: true, data: schedules });
   },
 );
 

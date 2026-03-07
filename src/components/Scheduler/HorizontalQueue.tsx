@@ -17,6 +17,7 @@ interface HorizontalQueueProps {
   onPauseTask?: (task: ScheduledTask) => void;
   onCompleteTask?: (task: ScheduledTask) => void;
   onAddTask?: () => void;
+  onViewTaskDetail?: (task: ScheduledTask) => void;
 }
 
 const QUEUE_CONFIG = {
@@ -66,6 +67,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
   onPauseTask,
   onCompleteTask,
   onAddTask,
+  onViewTaskDetail,
 }) => {
   const config = QUEUE_CONFIG[level as keyof typeof QUEUE_CONFIG] || QUEUE_CONFIG[2];
   const IconComponent = config.icon;
@@ -250,6 +252,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                           onStart={onStartTask ? () => onStartTask(task) : undefined}
                           onPause={onPauseTask ? () => onPauseTask(task) : undefined}
                           onComplete={onCompleteTask ? () => onCompleteTask(task) : undefined}
+                          onViewDetail={onViewTaskDetail ? () => onViewTaskDetail(task) : undefined}
                         />
                         {index < visibleTasks.length - 1 && (
                           <svg width="24" height="24" viewBox="0 0 24 24" className="flex-shrink-0 text-slate-300 dark:text-slate-600">

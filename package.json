@@ -57,6 +57,7 @@
     "cors": "^2.8.5",
     "d3-force": "^3.0.0",
     "d3-hierarchy": "^3.1.2",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
     "event-source-polyfill": "^1.0.31",
     "express": "^4.22.1",

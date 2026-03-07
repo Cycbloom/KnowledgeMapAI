@@ -364,6 +364,7 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
   progress_percentage INTEGER DEFAULT 0,
   parent_task_id UUID REFERENCES scheduled_tasks(id),
   context TEXT,
+  notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   deleted_at TIMESTAMPTZ,
@@ -681,6 +682,73 @@ CREATE TABLE IF NOT EXISTS user_pass_progress (
 COMMENT ON TABLE user_pass_progress IS 'Track which rewards user has claimed';
 
 -- =====================================================
+-- TASK SUBTASKS TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS task_subtasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+  priority INTEGER DEFAULT 0,
+  position INTEGER DEFAULT 0,
+  estimated_duration INTEGER,
+  actual_duration INTEGER,
+  due_date TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE task_subtasks IS 'Subtasks for breaking down main tasks';
+COMMENT ON COLUMN task_subtasks.task_id IS 'Reference to the parent task';
+COMMENT ON COLUMN task_subtasks.status IS 'Subtask status: pending, in_progress, completed';
+COMMENT ON COLUMN task_subtasks.position IS 'Order position within the task';
+
+-- =====================================================
+-- TASK LINKS TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS task_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  link_type TEXT NOT NULL DEFAULT 'web' CHECK (link_type IN ('web', 'file', 'api')),
+  title TEXT,
+  url TEXT NOT NULL,
+  description TEXT,
+  icon TEXT,
+  metadata JSONB DEFAULT '{}',
+  position INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE task_links IS 'External links associated with tasks';
+COMMENT ON COLUMN task_links.link_type IS 'Type of link: web (URL), file (local path), api (API endpoint)';
+COMMENT ON COLUMN task_links.url IS 'URL or path for the link';
+COMMENT ON COLUMN task_links.metadata IS 'Additional metadata (e.g., file size, last modified)';
+
+-- =====================================================
+-- TASK KNOWLEDGE POINTS TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS task_knowledge_points (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
+  relevance_score INTEGER DEFAULT 100 CHECK (relevance_score BETWEEN 0 AND 100),
+  is_primary BOOLEAN DEFAULT FALSE,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(task_id, knowledge_point_id)
+);
+
+COMMENT ON TABLE task_knowledge_points IS 'Association between tasks and knowledge points';
+COMMENT ON COLUMN task_knowledge_points.relevance_score IS 'How relevant this knowledge point is to the task (0-100)';
+COMMENT ON COLUMN task_knowledge_points.is_primary IS 'Whether this is the primary knowledge point for the task';
+
+-- =====================================================
 -- INDEXES
 -- =====================================================
 
@@ -800,6 +868,21 @@ CREATE INDEX IF NOT EXISTS idx_graph_relations_type ON graph_relations(relation_
 
 -- Backup snapshots
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_id ON backup_snapshots(user_id);
+
+-- Task subtasks
+CREATE INDEX IF NOT EXISTS idx_task_subtasks_task_id ON task_subtasks(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_subtasks_status ON task_subtasks(status);
+CREATE INDEX IF NOT EXISTS idx_task_subtasks_position ON task_subtasks(task_id, position);
+
+-- Task links
+CREATE INDEX IF NOT EXISTS idx_task_links_task_id ON task_links(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_links_type ON task_links(link_type);
+CREATE INDEX IF NOT EXISTS idx_task_links_position ON task_links(task_id, position);
+
+-- Task knowledge points
+CREATE INDEX IF NOT EXISTS idx_task_kp_task_id ON task_knowledge_points(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_kp_kp_id ON task_knowledge_points(knowledge_point_id);
+CREATE INDEX IF NOT EXISTS idx_task_kp_primary ON task_knowledge_points(task_id) WHERE is_primary = true;
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_type ON backup_snapshots(type);
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_created ON backup_snapshots(user_id, created_at DESC);
 
@@ -1163,6 +1246,51 @@ CREATE POLICY "Users can view own time slots" ON user_time_slots FOR SELECT USIN
 CREATE POLICY "Users can insert own time slots" ON user_time_slots FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own time slots" ON user_time_slots FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own time slots" ON user_time_slots FOR DELETE USING (auth.uid() = user_id);
+
+-- Task subtasks RLS
+ALTER TABLE task_subtasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task subtasks" ON task_subtasks FOR SELECT USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can insert own task subtasks" ON task_subtasks FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can update own task subtasks" ON task_subtasks FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can delete own task subtasks" ON task_subtasks FOR DELETE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_subtasks.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+
+-- Task links RLS
+ALTER TABLE task_links ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task links" ON task_links FOR SELECT USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can insert own task links" ON task_links FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can update own task links" ON task_links FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can delete own task links" ON task_links FOR DELETE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_links.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+
+-- Task knowledge points RLS
+ALTER TABLE task_knowledge_points ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own task knowledge points" ON task_knowledge_points FOR SELECT USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can insert own task knowledge points" ON task_knowledge_points FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can update own task knowledge points" ON task_knowledge_points FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+);
+CREATE POLICY "Users can delete own task knowledge points" ON task_knowledge_points FOR DELETE USING (
+  EXISTS (SELECT 1 FROM scheduled_tasks WHERE scheduled_tasks.id = task_knowledge_points.task_id AND scheduled_tasks.user_id = auth.uid())
+);
 
 -- =====================================================
 -- FUNCTIONS

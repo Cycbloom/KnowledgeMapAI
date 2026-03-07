@@ -568,4 +568,72 @@ export const schedulerApi = {
 
   deleteTimeSlot: (id: string) =>
     request(`/scheduler/time-slots/${id}`, { method: 'DELETE' }),
+
+  getSubtasks: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/subtasks`),
+
+  createSubtask: (taskId: string, data: {
+    title: string;
+    description?: string;
+    priority?: number;
+    estimated_duration?: number;
+    due_date?: string;
+  }) => request(`/scheduler/tasks/${taskId}/subtasks`, { method: 'POST', body: JSON.stringify(data) }),
+
+  updateSubtask: (taskId: string, subtaskId: string, data: {
+    title?: string;
+    description?: string;
+    status?: 'pending' | 'in_progress' | 'completed';
+    priority?: number;
+    estimated_duration?: number;
+    actual_duration?: number;
+    due_date?: string | null;
+  }) => request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteSubtask: (taskId: string, subtaskId: string) =>
+    request(`/scheduler/tasks/${taskId}/subtasks/${subtaskId}`, { method: 'DELETE' }),
+
+  getLinks: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/links`),
+
+  createLink: (taskId: string, data: {
+    link_type?: 'web' | 'file' | 'api';
+    title?: string;
+    url: string;
+    description?: string;
+    icon?: string;
+    metadata?: Record<string, unknown>;
+  }) => request(`/scheduler/tasks/${taskId}/links`, { method: 'POST', body: JSON.stringify(data) }),
+
+  updateLink: (taskId: string, linkId: string, data: {
+    title?: string;
+    description?: string;
+    icon?: string;
+    metadata?: Record<string, unknown>;
+  }) => request(`/scheduler/tasks/${taskId}/links/${linkId}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteLink: (taskId: string, linkId: string) =>
+    request(`/scheduler/tasks/${taskId}/links/${linkId}`, { method: 'DELETE' }),
+
+  getTaskKnowledgePoints: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/knowledge-points`),
+
+  addTaskKnowledgePoint: (taskId: string, data: {
+    knowledge_point_id: string;
+    relevance_score?: number;
+    is_primary?: boolean;
+    notes?: string;
+  }) => request(`/scheduler/tasks/${taskId}/knowledge-points`, { method: 'POST', body: JSON.stringify(data) }),
+
+  updateTaskKnowledgePoint: (taskId: string, kpId: string, data: {
+    relevance_score?: number;
+    is_primary?: boolean;
+    notes?: string;
+  }) => request(`/scheduler/tasks/${taskId}/knowledge-points/${kpId}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  removeTaskKnowledgePoint: (taskId: string, kpId: string) =>
+    request(`/scheduler/tasks/${taskId}/knowledge-points/${kpId}`, { method: 'DELETE' }),
+
+  updateNotes: (taskId: string, notes: string) =>
+    request(`/scheduler/tasks/${taskId}/notes`, { method: 'PUT', body: JSON.stringify({ notes }) }),
 };

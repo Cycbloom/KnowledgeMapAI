@@ -935,6 +935,57 @@ export interface TaskDetail extends ScheduledTask {
   progress_plans: TaskProgressPlan[];
   executions: TaskExecution[];
   required_time_slots?: number;
+  subtasks?: TaskSubtask[];
+  links?: TaskLink[];
+  knowledge_points?: TaskKnowledgePoint[];
+  notes?: string;
+}
+
+export interface TaskSubtask {
+  id: string;
+  task_id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  priority: number;
+  position: number;
+  estimated_duration?: number;
+  actual_duration?: number;
+  due_date?: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskLink {
+  id: string;
+  task_id: string;
+  link_type: 'web' | 'file' | 'api';
+  title?: string;
+  url: string;
+  description?: string;
+  icon?: string;
+  metadata?: Record<string, unknown>;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskKnowledgePoint {
+  id: string;
+  task_id: string;
+  knowledge_point_id: string;
+  relevance_score: number;
+  is_primary: boolean;
+  notes?: string;
+  created_at: string;
+  knowledge_point?: {
+    id: string;
+    title: string;
+    content?: string;
+    visibility?: string;
+    owner_id?: string;
+  };
 }
 
 export interface TaskExecution {

@@ -319,14 +319,12 @@ router.get(
     res.json({
       success: true,
       data: {
-        task,
+        ...task,
         dependencies: formattedDependencies,
         dependents: formattedDependents,
         progress_plans: progressPlans,
         executions: executions || [],
-        calculated: {
-          required_time_slots: requiredTimeSlots,
-        },
+        required_time_slots: requiredTimeSlots,
       },
     });
   },
@@ -3078,6 +3076,718 @@ router.get(
     }
 
     res.json({ success: true, data: schedules });
+  },
+);
+
+// =====================================================
+// SUBTASKS API
+// =====================================================
+
+const createSubtaskSchema = z.object({
+  body: z.object({
+    title: z.string().min(1, "标题不能为空"),
+    description: z.string().optional(),
+    priority: z.number().int().min(0).optional(),
+    estimated_duration: z.number().int().min(0).optional(),
+    due_date: z.string().datetime().optional(),
+  }),
+  params: z.object({
+    id: z.string().uuid("无效的任务ID"),
+  }),
+});
+
+const updateSubtaskSchema = z.object({
+  body: z.object({
+    title: z.string().min(1, "标题不能为空").optional(),
+    description: z.string().optional(),
+    status: z.enum(["pending", "in_progress", "completed"]).optional(),
+    priority: z.number().int().min(0).optional(),
+    estimated_duration: z.number().int().min(0).optional(),
+    actual_duration: z.number().int().min(0).optional(),
+    due_date: z.string().datetime().optional().nullable(),
+  }),
+  params: z.object({
+    id: z.string().uuid("无效的任务ID"),
+    subtaskId: z.string().uuid("无效的子任务ID"),
+  }),
+});
+
+const subtaskParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+  subtaskId: z.string().uuid("无效的子任务ID"),
+});
+
+router.post(
+  "/tasks/:id/subtasks",
+  requireAuth,
+  validate(createSubtaskSchema),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { title, description, priority, estimated_duration, due_date } =
+      req.body;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { count } = await supabase
+      .from("task_subtasks")
+      .select("*", { count: "exact", head: true })
+      .eq("task_id", id);
+
+    const { data: subtask, error } = await supabase
+      .from("task_subtasks")
+      .insert({
+        task_id: id,
+        title,
+        description,
+        priority: priority ?? 0,
+        position: count ?? 0,
+        estimated_duration,
+        due_date,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Create subtask error:", error);
+      return res.status(500).json({ error: "创建子任务失败" });
+    }
+
+    res.status(201).json({ success: true, data: subtask });
+  },
+);
+
+router.get(
+  "/tasks/:id/subtasks",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: subtasks, error } = await supabase
+      .from("task_subtasks")
+      .select("*")
+      .eq("task_id", id)
+      .order("position", { ascending: true });
+
+    if (error) {
+      logger.error("Get subtasks error:", error);
+      return res.status(500).json({ error: "获取子任务列表失败" });
+    }
+
+    res.json({ success: true, data: subtasks });
+  },
+);
+
+router.put(
+  "/tasks/:id/subtasks/:subtaskId",
+  requireAuth,
+  validate(updateSubtaskSchema),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id, subtaskId } = req.params;
+    const updates = req.body;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    if (updates.status === "completed") {
+      updates.completed_at = new Date().toISOString();
+    }
+
+    const { data: subtask, error } = await supabase
+      .from("task_subtasks")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", subtaskId)
+      .eq("task_id", id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Update subtask error:", error);
+      return res.status(500).json({ error: "更新子任务失败" });
+    }
+
+    if (!subtask) {
+      return res.status(404).json({ error: "子任务不存在" });
+    }
+
+    res.json({ success: true, data: subtask });
+  },
+);
+
+router.delete(
+  "/tasks/:id/subtasks/:subtaskId",
+  requireAuth,
+  validate({ params: subtaskParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id, subtaskId } = req.params;
+
+    const { error } = await supabase
+      .from("task_subtasks")
+      .delete()
+      .eq("id", subtaskId)
+      .eq("task_id", id);
+
+    if (error) {
+      logger.error("Delete subtask error:", error);
+      return res.status(500).json({ error: "删除子任务失败" });
+    }
+
+    res.json({ success: true });
+  },
+);
+
+// =====================================================
+// TASK LINKS API
+// =====================================================
+
+const createLinkSchema = z.object({
+  body: z.object({
+    link_type: z.enum(["web", "file", "api"]).default("web"),
+    title: z.string().optional(),
+    url: z.string().min(1, "链接地址不能为空"),
+    description: z.string().optional(),
+    icon: z.string().optional(),
+    metadata: z.record(z.any()).optional(),
+  }),
+  params: z.object({
+    id: z.string().uuid("无效的任务ID"),
+  }),
+});
+
+const updateLinkSchema = z.object({
+  body: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    icon: z.string().optional(),
+    metadata: z.record(z.any()).optional(),
+  }),
+  params: z.object({
+    id: z.string().uuid("无效的任务ID"),
+    linkId: z.string().uuid("无效的链接ID"),
+  }),
+});
+
+const linkParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+  linkId: z.string().uuid("无效的链接ID"),
+});
+
+router.post(
+  "/tasks/:id/links",
+  requireAuth,
+  validate(createLinkSchema),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { link_type, title, url, description, icon, metadata } = req.body;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { count } = await supabase
+      .from("task_links")
+      .select("*", { count: "exact", head: true })
+      .eq("task_id", id);
+
+    const { data: link, error } = await supabase
+      .from("task_links")
+      .insert({
+        task_id: id,
+        link_type,
+        title: title || url,
+        url,
+        description,
+        icon,
+        metadata: metadata || {},
+        position: count ?? 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Create link error:", error);
+      return res.status(500).json({ error: "创建链接失败" });
+    }
+
+    res.status(201).json({ success: true, data: link });
+  },
+);
+
+router.get(
+  "/tasks/:id/links",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: links, error } = await supabase
+      .from("task_links")
+      .select("*")
+      .eq("task_id", id)
+      .order("position", { ascending: true });
+
+    if (error) {
+      logger.error("Get links error:", error);
+      return res.status(500).json({ error: "获取链接列表失败" });
+    }
+
+    res.json({ success: true, data: links });
+  },
+);
+
+router.put(
+  "/tasks/:id/links/:linkId",
+  requireAuth,
+  validate(updateLinkSchema),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id, linkId } = req.params;
+    const updates = req.body;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: link, error } = await supabase
+      .from("task_links")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", linkId)
+      .eq("task_id", id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Update link error:", error);
+      return res.status(500).json({ error: "更新链接失败" });
+    }
+
+    if (!link) {
+      return res.status(404).json({ error: "链接不存在" });
+    }
+
+    res.json({ success: true, data: link });
+  },
+);
+
+router.delete(
+  "/tasks/:id/links/:linkId",
+  requireAuth,
+  validate({ params: linkParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id, linkId } = req.params;
+
+    const { error } = await supabase
+      .from("task_links")
+      .delete()
+      .eq("id", linkId)
+      .eq("task_id", id);
+
+    if (error) {
+      logger.error("Delete link error:", error);
+      return res.status(500).json({ error: "删除链接失败" });
+    }
+
+    res.json({ success: true });
+  },
+);
+
+// =====================================================
+// TASK KNOWLEDGE POINTS API
+// =====================================================
+
+const createTaskKPSchema = z.object({
+  body: z.object({
+    knowledge_point_id: z.string().uuid("无效的知识点ID"),
+    relevance_score: z.number().int().min(0).max(100).optional(),
+    is_primary: z.boolean().optional(),
+    notes: z.string().optional(),
+  }),
+  params: z.object({
+    id: z.string().uuid("无效的任务ID"),
+  }),
+});
+
+const updateTaskKPSchema = z.object({
+  body: z.object({
+    relevance_score: z.number().int().min(0).max(100).optional(),
+    is_primary: z.boolean().optional(),
+    notes: z.string().optional(),
+  }),
+  params: z.object({
+    id: z.string().uuid("无效的任务ID"),
+    kpId: z.string().uuid("无效的知识点关联ID"),
+  }),
+});
+
+const taskKPParamsSchema = z.object({
+  id: z.string().uuid("无效的任务ID"),
+  kpId: z.string().uuid("无效的知识点关联ID"),
+});
+
+router.post(
+  "/tasks/:id/knowledge-points",
+  requireAuth,
+  validate(createTaskKPSchema),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { knowledge_point_id, relevance_score, is_primary, notes } = req.body;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: kp } = await supabase
+      .from("knowledge_points")
+      .select("id, title, content")
+      .eq("id", knowledge_point_id)
+      .or(`visibility.eq.public,owner_id.eq.${req.user.id}`)
+      .single();
+
+    if (!kp) {
+      return res.status(404).json({ error: "知识点不存在或无权访问" });
+    }
+
+    if (is_primary) {
+      await supabase
+        .from("task_knowledge_points")
+        .update({ is_primary: false })
+        .eq("task_id", id);
+    }
+
+    const { data: taskKP, error } = await supabase
+      .from("task_knowledge_points")
+      .insert({
+        task_id: id,
+        knowledge_point_id,
+        relevance_score: relevance_score ?? 100,
+        is_primary: is_primary ?? false,
+        notes,
+      })
+      .select(
+        `
+        *,
+        knowledge_point:knowledge_points(id, title, content, visibility)
+      `,
+      )
+      .single();
+
+    if (error) {
+      logger.error("Create task KP error:", error);
+      return res.status(500).json({ error: "关联知识点失败" });
+    }
+
+    res.status(201).json({ success: true, data: taskKP });
+  },
+);
+
+router.get(
+  "/tasks/:id/knowledge-points",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: taskKPs, error } = await supabase
+      .from("task_knowledge_points")
+      .select(
+        `
+        *,
+        knowledge_point:knowledge_points(id, title, content, visibility, owner_id)
+      `,
+      )
+      .eq("task_id", id)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      logger.error("Get task KPs error:", error);
+      return res.status(500).json({ error: "获取知识点关联失败" });
+    }
+
+    res.json({ success: true, data: taskKPs });
+  },
+);
+
+router.put(
+  "/tasks/:id/knowledge-points/:kpId",
+  requireAuth,
+  validate(updateTaskKPSchema),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id, kpId } = req.params;
+    const updates = req.body;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    if (updates.is_primary) {
+      await supabase
+        .from("task_knowledge_points")
+        .update({ is_primary: false })
+        .eq("task_id", id);
+    }
+
+    const { data: taskKP, error } = await supabase
+      .from("task_knowledge_points")
+      .update(updates)
+      .eq("id", kpId)
+      .eq("task_id", id)
+      .select(
+        `
+        *,
+        knowledge_point:knowledge_points(id, title, content, visibility)
+      `,
+      )
+      .single();
+
+    if (error) {
+      logger.error("Update task KP error:", error);
+      return res.status(500).json({ error: "更新知识点关联失败" });
+    }
+
+    if (!taskKP) {
+      return res.status(404).json({ error: "知识点关联不存在" });
+    }
+
+    res.json({ success: true, data: taskKP });
+  },
+);
+
+router.delete(
+  "/tasks/:id/knowledge-points/:kpId",
+  requireAuth,
+  validate({ params: taskKPParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id, kpId } = req.params;
+
+    const { error } = await supabase
+      .from("task_knowledge_points")
+      .delete()
+      .eq("id", kpId)
+      .eq("task_id", id);
+
+    if (error) {
+      logger.error("Delete task KP error:", error);
+      return res.status(500).json({ error: "取消知识点关联失败" });
+    }
+
+    res.json({ success: true });
+  },
+);
+
+// =====================================================
+// TASK NOTES API
+// =====================================================
+
+const updateNotesBodySchema = z.object({
+  notes: z.string(),
+});
+
+router.put(
+  "/tasks/:id/notes",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: updateNotesBodySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+    const { notes } = req.body;
+
+    const { data: task, error } = await supabase
+      .from("scheduled_tasks")
+      .update({ notes, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Update notes error:", error);
+      return res.status(500).json({ error: "更新笔记失败" });
+    }
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    res.json({ success: true, data: task });
   },
 );
 

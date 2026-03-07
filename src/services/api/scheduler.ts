@@ -420,6 +420,9 @@ export const schedulerApi = {
     return request(`/scheduler/executions${queryString ? `?${queryString}` : ''}`);
   },
 
+  getTaskExecutions: (taskId: string) =>
+    request(`/scheduler/tasks/${taskId}/executions`),
+
   getSettings: () => request('/scheduler/settings'),
 
   updateSettings: (data: UpdateTaskSettingsData) =>
@@ -535,8 +538,11 @@ export const schedulerApi = {
   }) => request(`/scheduler/tasks/${taskId}/progress-plan`, { method: 'POST', body: JSON.stringify(data) }),
 
   updateProgressPlan: (taskId: string, data: {
+    planId?: string;
     date?: string;
     planned_percentage?: number;
+    actual_percentage?: number;
+    status?: 'pending' | 'completed' | 'skipped';
     notes?: string;
   }) => request(`/scheduler/tasks/${taskId}/progress-plan`, { method: 'PUT', body: JSON.stringify(data) }),
 

@@ -534,6 +534,33 @@ router.post(
           status: "completed",
         })
         .eq("id", execution.id);
+    } else {
+      const { data: lastExecution } = await supabase
+        .from("task_executions")
+        .select("*")
+        .eq("task_id", id)
+        .eq("user_id", req.user.id)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastExecution) {
+        await supabase
+          .from("task_executions")
+          .update({
+            status: "completed",
+          })
+          .eq("id", lastExecution.id);
+      } else {
+        await supabase.from("task_executions").insert({
+          task_id: id,
+          user_id: req.user.id,
+          started_at: new Date().toISOString(),
+          ended_at: new Date().toISOString(),
+          duration: 0,
+          status: "completed",
+        });
+      }
     }
 
     const { data: task, error: taskError } = await supabase
@@ -681,6 +708,46 @@ router.put(
     }
 
     res.json({ success: true, data: task });
+  },
+);
+
+router.get(
+  "/tasks/:id/executions",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task } = await supabase
+      .from("scheduled_tasks")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: executions, error } = await supabase
+      .from("task_executions")
+      .select("*")
+      .eq("task_id", id)
+      .order("started_at", { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: "获取执行记录失败" });
+    }
+
+    res.json({ success: true, data: executions });
   },
 );
 

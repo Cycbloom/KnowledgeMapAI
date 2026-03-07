@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Calendar,
 } from 'lucide-react';
+import { schedulerApi } from '../../../services/api/scheduler';
 import { TaskExecution } from '../../../types';
 
 interface ExecutionRecordsProps {
@@ -35,10 +36,9 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   const loadExecutions = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/scheduler/tasks/${taskId}/executions`);
-      const data = await response.json();
-      if (data.success) {
-        setExecutions(data.data || []);
+      const response = await schedulerApi.getTaskExecutions(taskId);
+      if (response.success) {
+        setExecutions(response.data || []);
       }
     } catch (error) {
       console.error('Failed to load executions:', error);

@@ -21,6 +21,8 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { SubtaskList } from './SubtaskList';
 import { TaskLinks } from './TaskLinks';
 import { KnowledgePointAssociation } from './KnowledgePointAssociation';
+import { ExecutionRecords } from './ExecutionRecords';
+import { ProgressDetail } from './ProgressDetail';
 
 type WorkTab = 'notes' | 'subtasks' | 'executions' | 'progress';
 
@@ -415,17 +417,15 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
             )}
 
             {activeTab === 'executions' && (
-              <div className="text-center py-12 text-slate-400 dark:text-slate-500">
-                <Clock size={48} className="mx-auto mb-4 opacity-50" />
-                <p>执行记录功能开发中...</p>
-              </div>
+              <ExecutionRecords taskId={task.id} />
             )}
 
             {activeTab === 'progress' && (
-              <div className="text-center py-12 text-slate-400 dark:text-slate-500">
-                <BarChart3 size={48} className="mx-auto mb-4 opacity-50" />
-                <p>进度详情功能开发中...</p>
-              </div>
+              <ProgressDetail
+                taskId={task.id}
+                taskType={task.task_type}
+                progressPercentage={task.progress_percentage}
+              />
             )}
           </div>
         </div>

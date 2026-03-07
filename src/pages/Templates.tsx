@@ -18,9 +18,12 @@ import {
   Briefcase,
   PieChart,
   Sparkles,
+  Network,
+  CheckSquare,
 } from "lucide-react";
 import { useMessageStore } from "../store/useMessageStore";
 import { useTheme } from "../hooks/useTheme";
+import { TaskTemplates } from "../components/Templates/TaskTemplates";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   learning: <BookOpen size={20} />,
@@ -38,6 +41,8 @@ const categoryLabels: Record<TemplateCategory, string> = {
   custom: "自定义",
 };
 
+type TemplateTab = 'knowledge' | 'task';
+
 export const Templates = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -47,6 +52,7 @@ export const Templates = () => {
   const deleteTemplateMutation = useDeleteTemplateMutation();
   const { addMessage } = useMessageStore();
 
+  const [activeTab, setActiveTab] = useState<TemplateTab>('knowledge');
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<
     TemplateCategory | "all"
@@ -160,7 +166,7 @@ export const Templates = () => {
   return (
     <div className={`h-full overflow-y-auto ${isDark ? "bg-slate-900" : "bg-gray-50"}`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <h1
             className={`text-3xl font-bold ${
               isDark ? "text-white" : "text-gray-900"
@@ -168,38 +174,76 @@ export const Templates = () => {
           >
             模板管理
           </h1>
+        </div>
+
+        {/* Tab 切换 */}
+        <div className="flex gap-2 mb-6">
           <button
-            onClick={() => {
-              setNewTemplateName("");
-              setNewTemplateDescription("");
-              setNewTemplateCategory("learning");
-              setIsCreating(true);
-            }}
-            className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
+            onClick={() => setActiveTab('knowledge')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
+              activeTab === 'knowledge'
+                ? 'bg-blue-600 text-white shadow-md'
+                : isDark
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
           >
-            <Plus size={20} />
-            <span>新建模板</span>
+            <Network size={18} />
+            <span>知识图谱模板</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('task')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
+              activeTab === 'task'
+                ? 'bg-blue-600 text-white shadow-md'
+                : isDark
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <CheckSquare size={18} />
+            <span>任务模板</span>
           </button>
         </div>
 
-        <div className="flex gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="搜索模板..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
-                isDark
-                  ? "bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  : "bg-white border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              }`}
-            />
-          </div>
+        {/* 根据选中的 Tab 显示不同内容 */}
+        {activeTab === 'task' ? (
+          <TaskTemplates />
+        ) : (
+          <>
+            <div className="flex items-center justify-end mb-6">
+              <button
+                onClick={() => {
+                  setNewTemplateName("");
+                  setNewTemplateDescription("");
+                  setNewTemplateCategory("learning");
+                  setIsCreating(true);
+                }}
+                className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
+              >
+                <Plus size={20} />
+                <span>新建模板</span>
+              </button>
+            </div>
+
+            <div className="flex gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="搜索模板..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
+                    isDark
+                      ? "bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      : "bg-white border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  }`}
+                />
+              </div>
 
           <div className="flex gap-2">
             {(
@@ -333,6 +377,8 @@ export const Templates = () => {
               </div>
             ))}
           </div>
+        )}
+          </>
         )}
       </div>
 

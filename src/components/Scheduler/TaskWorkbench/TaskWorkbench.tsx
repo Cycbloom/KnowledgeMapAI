@@ -13,6 +13,7 @@ import {
   Timer,
   BarChart3,
   FileText,
+  Bookmark,
 } from 'lucide-react';
 import { schedulerApi } from '../../../services/api/scheduler';
 import { TaskDetail } from '../../../types';
@@ -23,6 +24,7 @@ import { TaskLinks } from './TaskLinks';
 import { KnowledgePointAssociation } from './KnowledgePointAssociation';
 import { ExecutionRecords } from './ExecutionRecords';
 import { ProgressDetail } from './ProgressDetail';
+import { SaveAsTemplateModal } from '../SaveAsTemplateModal';
 
 type WorkTab = 'notes' | 'subtasks' | 'executions' | 'progress';
 
@@ -41,6 +43,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<WorkTab>('notes');
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
 
   useEffect(() => {
     loadTaskDetail();
@@ -241,6 +244,13 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                   编辑
                 </button>
               )}
+              <button
+                onClick={() => setShowSaveAsTemplate(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+              >
+                <Bookmark className="w-4 h-4" />
+                保存为模板
+              </button>
               <button
                 onClick={handleDeleteTask}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
@@ -472,6 +482,24 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           )}
         </div>
       </div>
+
+      {/* Save as Template Modal */}
+      {showSaveAsTemplate && task && (
+        <SaveAsTemplateModal
+          task={{
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            estimated_duration: task.estimated_duration,
+            tags: task.tags,
+            priority: task.priority,
+          }}
+          onClose={() => setShowSaveAsTemplate(false)}
+          onSuccess={() => {
+            addMessage({ type: 'success', content: '模板保存成功!' });
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { X, Calendar, Clock, Tag, Link, Star, AlertCircle, Sparkles, Loader2, Zap, ChevronDown, Layers, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Calendar, Clock, Tag, Link, Star, AlertCircle, Sparkles, Loader2, Zap, ChevronDown, Layers, TrendingUp, TrendingDown, Minus, FileText } from 'lucide-react';
 import { ScheduledTask, CreateScheduledTaskData, schedulerApi, TaskType, ProgressMode, TaskSettings } from '../../services/api/scheduler';
 import { taskRecommendationApi, PrioritySuggestion } from '../../services/api/taskRecommendation';
+import { TemplateSelector } from './TemplateSelector';
 
 interface TaskFormProps {
   task?: ScheduledTask;
@@ -156,6 +157,21 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [context, setContext] = useState(initialState.context);
   const [selectedDependencies, setSelectedDependencies] = useState<string[]>([]);
   const [showDependencySelector, setShowDependencySelector] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+
+  const handleTemplateSelect = (data: {
+    title: string;
+    description?: string;
+    estimated_duration: number;
+    tags: string[];
+    priority: number;
+  }) => {
+    setTitle(data.title);
+    if (data.description) setDescription(data.description);
+    setEstimatedDuration(data.estimated_duration);
+    setTags(data.tags);
+    setPriority(data.priority);
+  };
 
   const analyzePriority = useCallback(async (titleText: string, descriptionText?: string) => {
     if (!titleText.trim() || isEditing) return;
@@ -377,6 +393,17 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={() => setShowTemplateSelector(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            >
+              <FileText size={18} />
+              <span>从模板创建</span>
+            </button>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               任务标题 <span className="text-red-500 dark:text-red-400">*</span>
@@ -872,6 +899,16 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           </button>
         </div>
       </motion.div>
+
+      {/* Template Selector Modal */}
+      <AnimatePresence>
+        {showTemplateSelector && (
+          <TemplateSelector
+            onSelect={handleTemplateSelect}
+            onClose={() => setShowTemplateSelector(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

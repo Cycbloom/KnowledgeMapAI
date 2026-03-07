@@ -1,26 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, ExternalLink, Star, ChevronDown, ChevronRight, Search, BookOpen } from 'lucide-react';
-import { schedulerApi } from '../../../services/api/scheduler';
-import { TaskKnowledgePoint } from '../../../types';
-import { useMessageStore } from '../../../store/useMessageStore';
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Plus,
+  Trash2,
+  ExternalLink,
+  Star,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  BookOpen,
+} from "lucide-react";
+import { schedulerApi } from "../../../services/api/scheduler";
+import { TaskKnowledgePoint } from "../../../types";
+import { useMessageStore } from "../../../store/useMessageStore";
 
 interface KnowledgePointAssociationProps {
   taskId: string;
   className?: string;
 }
 
-export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps> = ({
-  taskId,
-  className = '',
-}) => {
+export const KnowledgePointAssociation: React.FC<
+  KnowledgePointAssociationProps
+> = ({ taskId, className = "" }) => {
   const navigate = useNavigate();
   const { addMessage } = useMessageStore();
   const [associations, setAssociations] = useState<TaskKnowledgePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -35,7 +43,7 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
         setAssociations(response.data || []);
       }
     } catch (error) {
-        console.error('Failed to load knowledge point associations:', error);
+      console.error("Failed to load knowledge point associations:", error);
     } finally {
       setLoading(false);
     }
@@ -49,13 +57,15 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
 
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/knowledge-points?search=${encodeURIComponent(query)}&limit=10`);
+      const response = await fetch(
+        `/api/knowledge-points?search=${encodeURIComponent(query)}&limit=10`,
+      );
       const data = await response.json();
       if (data.success) {
         setSearchResults(data.data || []);
       }
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
     } finally {
       setIsSearching(false);
     }
@@ -79,39 +89,48 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
       if (response.success) {
         setAssociations([...associations, response.data]);
         setIsAdding(false);
-        setSearchQuery('');
+        setSearchQuery("");
         setSearchResults([]);
-        addMessage({ type: 'success', content: '知识点已关联' });
+        addMessage({ type: "success", content: "知识点已关联" });
       }
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '关联知识点失败' });
+      addMessage({ type: "error", content: error.message || "关联知识点失败" });
     }
   };
 
   const handleRemoveAssociation = async (kpId: string) => {
     try {
-      const response = await schedulerApi.removeTaskKnowledgePoint(taskId, kpId);
+      const response = await schedulerApi.removeTaskKnowledgePoint(
+        taskId,
+        kpId,
+      );
       if (response.success) {
-        setAssociations(associations.filter(a => a.id !== kpId));
-        addMessage({ type: 'success', content: '已取消关联' });
+        setAssociations(associations.filter((a) => a.id !== kpId));
+        addMessage({ type: "success", content: "已取消关联" });
       }
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '取消关联失败' });
+      addMessage({ type: "error", content: error.message || "取消关联失败" });
     }
   };
 
   const handleSetPrimary = async (kpId: string) => {
     try {
-      const response = await schedulerApi.updateTaskKnowledgePoint(taskId, kpId, { is_primary: true });
+      const response = await schedulerApi.updateTaskKnowledgePoint(
+        taskId,
+        kpId,
+        { is_primary: true },
+      );
       if (response.success) {
-        setAssociations(associations.map(a => ({
-          ...a,
-          is_primary: a.id === kpId,
-        })));
-        addMessage({ type: 'success', content: '已设为主要知识点' });
+        setAssociations(
+          associations.map((a) => ({
+            ...a,
+            is_primary: a.id === kpId,
+          })),
+        );
+        addMessage({ type: "success", content: "已设为主要知识点" });
       }
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '设置失败' });
+      addMessage({ type: "error", content: error.message || "设置失败" });
     }
   };
 
@@ -124,8 +143,11 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
       <div className={`animate-pulse ${className}`}>
         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-40 mb-4" />
         <div className="space-y-2">
-          {[1, 2].map(i => (
-            <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded" />
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-16 bg-slate-200 dark:bg-slate-700 rounded"
+            />
           ))}
         </div>
       </div>
@@ -141,7 +163,9 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
         <div className="flex items-center gap-2">
           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           <BookOpen size={18} className="text-cyan-500" />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">关联知识点</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            关联知识点
+          </h3>
           <span className="text-sm text-slate-500 dark:text-slate-400">
             {associations.length} 个
           </span>
@@ -163,7 +187,10 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
           {isAdding && (
             <div className="mb-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
                 <input
                   type="text"
                   value={searchQuery}
@@ -187,7 +214,10 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
                       onClick={() => handleAddAssociation(kp.id)}
                       className="w-full flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-slate-700 text-left transition-colors"
                     >
-                      <BookOpen size={16} className="text-cyan-500 flex-shrink-0" />
+                      <BookOpen
+                        size={16}
+                        className="text-cyan-500 flex-shrink-0"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-slate-900 dark:text-white truncate">
                           {kp.title}
@@ -213,7 +243,7 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
                 <button
                   onClick={() => {
                     setIsAdding(false);
-                    setSearchQuery('');
+                    setSearchQuery("");
                     setSearchResults([]);
                   }}
                   className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -230,15 +260,15 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
                 key={association.id}
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                   association.is_primary
-                    ? 'bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                    ? "bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30"
+                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                 }`}
               >
                 <BookOpen size={18} className="text-cyan-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-slate-900 dark:text-white truncate">
-                      {association.knowledge_point?.title || '未知知识点'}
+                      {association.knowledge_point?.title || "未知知识点"}
                     </p>
                     {association.is_primary && (
                       <span className="px-1.5 py-0.5 text-xs bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 rounded">
@@ -268,7 +298,9 @@ export const KnowledgePointAssociation: React.FC<KnowledgePointAssociationProps>
                     </button>
                   )}
                   <button
-                    onClick={() => handleViewInGraph(association.knowledge_point_id)}
+                    onClick={() =>
+                      handleViewInGraph(association.knowledge_point_id)
+                    }
                     className="p-1.5 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
                     title="在图谱中查看"
                   >

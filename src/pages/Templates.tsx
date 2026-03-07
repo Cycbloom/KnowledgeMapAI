@@ -41,7 +41,7 @@ const categoryLabels: Record<TemplateCategory, string> = {
   custom: "自定义",
 };
 
-type TemplateTab = 'knowledge' | 'task';
+type TemplateTab = "knowledge" | "task";
 
 export const Templates = () => {
   const { isDark } = useTheme();
@@ -52,7 +52,7 @@ export const Templates = () => {
   const deleteTemplateMutation = useDeleteTemplateMutation();
   const { addMessage } = useMessageStore();
 
-  const [activeTab, setActiveTab] = useState<TemplateTab>('knowledge');
+  const [activeTab, setActiveTab] = useState<TemplateTab>("knowledge");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<
     TemplateCategory | "all"
@@ -164,7 +164,9 @@ export const Templates = () => {
   };
 
   return (
-    <div className={`h-full overflow-y-auto ${isDark ? "bg-slate-900" : "bg-gray-50"}`}>
+    <div
+      className={`h-full overflow-y-auto ${isDark ? "bg-slate-900" : "bg-gray-50"}`}
+    >
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1
@@ -179,26 +181,26 @@ export const Templates = () => {
         {/* Tab 切换 */}
         <div className="flex gap-2 mb-6">
           <button
-            onClick={() => setActiveTab('knowledge')}
+            onClick={() => setActiveTab("knowledge")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
-              activeTab === 'knowledge'
-                ? 'bg-blue-600 text-white shadow-md'
+              activeTab === "knowledge"
+                ? "bg-blue-600 text-white shadow-md"
                 : isDark
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
             }`}
           >
             <Network size={18} />
             <span>知识图谱模板</span>
           </button>
           <button
-            onClick={() => setActiveTab('task')}
+            onClick={() => setActiveTab("task")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
-              activeTab === 'task'
-                ? 'bg-blue-600 text-white shadow-md'
+              activeTab === "task"
+                ? "bg-blue-600 text-white shadow-md"
                 : isDark
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
             }`}
           >
             <CheckSquare size={18} />
@@ -207,7 +209,7 @@ export const Templates = () => {
         </div>
 
         {/* 根据选中的 Tab 显示不同内容 */}
-        {activeTab === 'task' ? (
+        {activeTab === "task" ? (
           <TaskTemplates />
         ) : (
           <>
@@ -245,139 +247,143 @@ export const Templates = () => {
                 />
               </div>
 
-          <div className="flex gap-2">
-            {(
-              [
-                "all",
-                "learning",
-                "story",
-                "project",
-                "analysis",
-                "custom",
-              ] as const
-            ).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2.5 rounded-xl font-medium transition-all ${
-                  selectedCategory === cat
-                    ? "bg-blue-600 text-white"
-                    : isDark
-                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    : "bg-white text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                {cat === "all" ? "全部" : categoryLabels[cat]}
-              </button>
-            ))}
-          </div>
-        </div>
+              <div className="flex gap-2">
+                {(
+                  [
+                    "all",
+                    "learning",
+                    "story",
+                    "project",
+                    "analysis",
+                    "custom",
+                  ] as const
+                ).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2.5 rounded-xl font-medium transition-all ${
+                      selectedCategory === cat
+                        ? "bg-blue-600 text-white"
+                        : isDark
+                          ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {cat === "all" ? "全部" : categoryLabels[cat]}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        ) : filteredTemplates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <p className="text-lg mb-2">未找到匹配的模板</p>
-            <p className="text-sm">尝试更换搜索关键词或分类</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map((template: Template) => (
-              <div
-                key={template.id}
-                className={`rounded-2xl border-2 p-5 transition-all hover:shadow-lg ${
-                  isDark
-                    ? "bg-slate-800 border-slate-700"
-                    : "bg-white border-gray-200"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-2.5 rounded-xl ${
-                        template.category === "learning"
-                          ? "bg-blue-50 text-blue-600"
-                          : template.category === "story"
-                          ? "bg-purple-50 text-purple-600"
-                          : template.category === "project"
-                          ? "bg-green-50 text-green-600"
-                          : template.category === "analysis"
-                          ? "bg-orange-50 text-orange-600"
-                          : "bg-pink-50 text-pink-600"
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            ) : filteredTemplates.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+                <p className="text-lg mb-2">未找到匹配的模板</p>
+                <p className="text-sm">尝试更换搜索关键词或分类</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTemplates.map((template: Template) => (
+                  <div
+                    key={template.id}
+                    className={`rounded-2xl border-2 p-5 transition-all hover:shadow-lg ${
+                      isDark
+                        ? "bg-slate-800 border-slate-700"
+                        : "bg-white border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`p-2.5 rounded-xl ${
+                            template.category === "learning"
+                              ? "bg-blue-50 text-blue-600"
+                              : template.category === "story"
+                                ? "bg-purple-50 text-purple-600"
+                                : template.category === "project"
+                                  ? "bg-green-50 text-green-600"
+                                  : template.category === "analysis"
+                                    ? "bg-orange-50 text-orange-600"
+                                    : "bg-pink-50 text-pink-600"
+                          }`}
+                        >
+                          {categoryIcons[template.category as TemplateCategory]}
+                        </div>
+                        <div>
+                          <h3
+                            className={`font-bold ${
+                              isDark ? "text-white" : "text-gray-900"
+                            }`}
+                          >
+                            {template.name}
+                          </h3>
+                          <span className="text-xs text-gray-500">
+                            {
+                              categoryLabels[
+                                template.category as TemplateCategory
+                              ]
+                            }
+                            模板
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {!template.is_system && (
+                          <>
+                            <button
+                              onClick={() => handleEditTemplate(template)}
+                              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                              title="编辑"
+                            >
+                              <Pencil size={16} className="text-gray-500" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTemplate(template)}
+                              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="删除"
+                            >
+                              <Trash2 size={16} className="text-red-500" />
+                            </button>
+                          </>
+                        )}
+                        {template.is_system && (
+                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                            系统预设
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <p
+                      className={`text-sm mb-4 line-clamp-2 ${
+                        isDark ? "text-slate-300" : "text-gray-600"
                       }`}
                     >
-                      {categoryIcons[template.category as TemplateCategory]}
+                      {template.description || "暂无描述"}
+                    </p>
+
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                      <span>{template.nodes?.length ?? 0} 个节点</span>
+                      {template.layout && (
+                        <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700">
+                          {template.layout.type}
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <h3
-                        className={`font-bold ${
-                          isDark ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        {template.name}
-                      </h3>
-                      <span className="text-xs text-gray-500">
-                        {categoryLabels[template.category as TemplateCategory]}
-                        模板
-                      </span>
-                    </div>
+
+                    <button
+                      onClick={() => handleUseTemplate(template)}
+                      className="w-full px-4 py-2.5 rounded-xl font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                    >
+                      使用此模板
+                    </button>
                   </div>
-                  <div className="flex gap-2">
-                    {!template.is_system && (
-                      <>
-                        <button
-                          onClick={() => handleEditTemplate(template)}
-                          className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                          title="编辑"
-                        >
-                          <Pencil size={16} className="text-gray-500" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTemplate(template)}
-                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="删除"
-                        >
-                          <Trash2 size={16} className="text-red-500" />
-                        </button>
-                      </>
-                    )}
-                    {template.is_system && (
-                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                        系统预设
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <p
-                  className={`text-sm mb-4 line-clamp-2 ${
-                    isDark ? "text-slate-300" : "text-gray-600"
-                  }`}
-                >
-                  {template.description || "暂无描述"}
-                </p>
-
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <span>{template.nodes?.length ?? 0} 个节点</span>
-                  {template.layout && (
-                    <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700">
-                      {template.layout.type}
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => handleUseTemplate(template)}
-                  className="w-full px-4 py-2.5 rounded-xl font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                >
-                  使用此模板
-                </button>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
           </>
         )}
       </div>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Save, Eye, Edit3, Maximize2, Minimize2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { Save, Eye, Edit3, Maximize2, Minimize2 } from "lucide-react";
 
 interface MarkdownEditorProps {
   value: string;
@@ -13,8 +13,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value,
   onChange,
   onSave,
-  placeholder = '在这里记录任务笔记...',
-  className = '',
+  placeholder = "在这里记录任务笔记...",
+  className = "",
 }) => {
   const [isEditing, setIsEditing] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -25,11 +25,14 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     setLocalValue(value);
   }, [value]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    onChange(newValue);
-  }, [onChange]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      setLocalValue(newValue);
+      onChange(newValue);
+    },
+    [onChange],
+  );
 
   const handleSave = useCallback(async () => {
     if (onSave) {
@@ -42,66 +45,103 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     }
   }, [onSave, localValue]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      handleSave();
-    }
-  }, [handleSave]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    },
+    [handleSave],
+  );
 
   const renderPreview = () => {
-    const lines = localValue.split('\n');
+    const lines = localValue.split("\n");
     return (
       <div className="prose prose-slate dark:prose-invert max-w-none">
         {lines.map((line, index) => {
-          if (line.startsWith('### ')) {
-            return <h3 key={index} className="text-lg font-semibold mt-4 mb-2">{line.slice(4)}</h3>;
+          if (line.startsWith("### ")) {
+            return (
+              <h3 key={index} className="text-lg font-semibold mt-4 mb-2">
+                {line.slice(4)}
+              </h3>
+            );
           }
-          if (line.startsWith('## ')) {
-            return <h2 key={index} className="text-xl font-bold mt-4 mb-2">{line.slice(3)}</h2>;
+          if (line.startsWith("## ")) {
+            return (
+              <h2 key={index} className="text-xl font-bold mt-4 mb-2">
+                {line.slice(3)}
+              </h2>
+            );
           }
-          if (line.startsWith('# ')) {
-            return <h1 key={index} className="text-2xl font-bold mt-4 mb-2">{line.slice(2)}</h1>;
+          if (line.startsWith("# ")) {
+            return (
+              <h1 key={index} className="text-2xl font-bold mt-4 mb-2">
+                {line.slice(2)}
+              </h1>
+            );
           }
-          if (line.startsWith('- ')) {
-            return <li key={index} className="ml-4">{line.slice(2)}</li>;
+          if (line.startsWith("- ")) {
+            return (
+              <li key={index} className="ml-4">
+                {line.slice(2)}
+              </li>
+            );
           }
-          if (line.startsWith('* ') || line.startsWith('- ')) {
-            return <li key={index} className="ml-4">{line.slice(2)}</li>;
+          if (line.startsWith("* ") || line.startsWith("- ")) {
+            return (
+              <li key={index} className="ml-4">
+                {line.slice(2)}
+              </li>
+            );
           }
-          if (line.startsWith('```')) {
+          if (line.startsWith("```")) {
             return null;
           }
-          if (line.trim() === '') {
+          if (line.trim() === "") {
             return <br key={index} />;
           }
           let processedLine = line;
-          processedLine = processedLine.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-          processedLine = processedLine.replace(/\*(.+?)\*/g, '<em>$1</em>');
-          processedLine = processedLine.replace(/`(.+?)`/g, '<code class="bg-slate-200 dark:bg-slate-700 px-1 rounded">$1</code>');
-          processedLine = processedLine.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" class="text-cyan-500 hover:underline" target="_blank">$1</a>');
-          
-          return <p key={index} dangerouslySetInnerHTML={{ __html: processedLine }} />;
+          processedLine = processedLine.replace(
+            /\*\*(.+?)\*\*/g,
+            "<strong>$1</strong>",
+          );
+          processedLine = processedLine.replace(/\*(.+?)\*/g, "<em>$1</em>");
+          processedLine = processedLine.replace(
+            /`(.+?)`/g,
+            '<code class="bg-slate-200 dark:bg-slate-700 px-1 rounded">$1</code>',
+          );
+          processedLine = processedLine.replace(
+            /\[(.+?)\]\((.+?)\)/g,
+            '<a href="$2" class="text-cyan-500 hover:underline" target="_blank">$1</a>',
+          );
+
+          return (
+            <p
+              key={index}
+              dangerouslySetInnerHTML={{ __html: processedLine }}
+            />
+          );
         })}
       </div>
     );
   };
 
   const containerClass = isFullscreen
-    ? 'fixed inset-0 z-50 bg-white dark:bg-slate-900'
-    : '';
+    ? "fixed inset-0 z-50 bg-white dark:bg-slate-900"
+    : "";
 
   return (
     <div className={`flex flex-col h-full ${containerClass} ${className}`}>
-      <div className={`flex flex-col h-full ${isFullscreen ? 'p-4' : ''}`}>
+      <div className={`flex flex-col h-full ${isFullscreen ? "p-4" : ""}`}>
         <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsEditing(true)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 isEditing
-                  ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
+                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               <Edit3 size={14} className="inline mr-1" />
@@ -111,8 +151,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
               onClick={() => setIsEditing(false)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 !isEditing
-                  ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
+                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               <Eye size={14} className="inline mr-1" />
@@ -127,7 +167,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 transition-all"
               >
                 <Save size={14} />
-                {isSaving ? '保存中...' : '保存'}
+                {isSaving ? "保存中..." : "保存"}
               </button>
             )}
             <button
@@ -150,8 +190,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             />
           ) : (
             <div className="h-full overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
-              {localValue ? renderPreview() : (
-                <p className="text-slate-400 dark:text-slate-500 italic">暂无内容</p>
+              {localValue ? (
+                renderPreview()
+              ) : (
+                <p className="text-slate-400 dark:text-slate-500 italic">
+                  暂无内容
+                </p>
               )}
             </div>
           )}

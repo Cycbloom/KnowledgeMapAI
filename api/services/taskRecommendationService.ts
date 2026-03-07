@@ -1,12 +1,12 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { ScheduledTask } from './schedulerService.js';
-import { logger } from '../utils/logger.js';
+import { SupabaseClient } from "@supabase/supabase-js";
+import { ScheduledTask } from "./schedulerService.js";
+import { logger } from "../utils/logger.js";
 
 export interface TaskRecommendation {
   task: ScheduledTask;
   score: number;
   reasons: string[];
-  urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
+  urgencyLevel: "low" | "medium" | "high" | "critical";
   suggestedTimeSlot?: TimeSlot;
 }
 
@@ -14,13 +14,19 @@ export interface TimeSlot {
   start: Date;
   end: Date;
   label: string;
-  type: 'morning' | 'afternoon' | 'evening' | 'night';
+  type: "morning" | "afternoon" | "evening" | "night";
 }
 
 export interface EfficiencyData {
   hourlyEfficiency: Record<number, number>;
-  tagEfficiency: Record<string, { avgDuration: number; completionRate: number }>;
-  queueEfficiency: Record<number, { avgDuration: number; completionRate: number }>;
+  tagEfficiency: Record<
+    string,
+    { avgDuration: number; completionRate: number }
+  >;
+  queueEfficiency: Record<
+    number,
+    { avgDuration: number; completionRate: number }
+  >;
   peakHours: number[];
   lowHours: number[];
 }
@@ -43,30 +49,73 @@ export interface PrioritySuggestion {
 }
 
 const TIME_SLOT_CONFIG = {
-  morning: { start: 6, end: 12, label: '上午', recommendedTypes: ['学习', '编程', '写作', '阅读'] },
-  afternoon: { start: 12, end: 18, label: '下午', recommendedTypes: ['工作', '会议', '项目', '复习'] },
-  evening: { start: 18, end: 22, label: '傍晚', recommendedTypes: ['复习', '阅读', '运动', '休息'] },
-  night: { start: 22, end: 6, label: '夜间', recommendedTypes: ['休息', '阅读', '学习'] },
+  morning: {
+    start: 6,
+    end: 12,
+    label: "上午",
+    recommendedTypes: ["学习", "编程", "写作", "阅读"],
+  },
+  afternoon: {
+    start: 12,
+    end: 18,
+    label: "下午",
+    recommendedTypes: ["工作", "会议", "项目", "复习"],
+  },
+  evening: {
+    start: 18,
+    end: 22,
+    label: "傍晚",
+    recommendedTypes: ["复习", "阅读", "运动", "休息"],
+  },
+  night: {
+    start: 22,
+    end: 6,
+    label: "夜间",
+    recommendedTypes: ["休息", "阅读", "学习"],
+  },
 };
 
 const PRIORITY_KEYWORDS = {
   critical: {
-    keywords: ['紧急', 'urgent', 'asap', '立即', '马上', '紧急处理', '紧急修复', 'critical', '火急', '急'],
+    keywords: [
+      "紧急",
+      "urgent",
+      "asap",
+      "立即",
+      "马上",
+      "紧急处理",
+      "紧急修复",
+      "critical",
+      "火急",
+      "急",
+    ],
     priority: 4,
     queue: 0,
   },
   high: {
-    keywords: ['重要', 'important', '优先', '关键', '核心', '必须', 'high', '今天', '今日', 'deadline', '截止'],
+    keywords: [
+      "重要",
+      "important",
+      "优先",
+      "关键",
+      "核心",
+      "必须",
+      "high",
+      "今天",
+      "今日",
+      "deadline",
+      "截止",
+    ],
     priority: 3,
     queue: 0,
   },
   medium: {
-    keywords: ['需要', '待办', '计划', '本周', '安排', 'medium', '中等'],
+    keywords: ["需要", "待办", "计划", "本周", "安排", "medium", "中等"],
     priority: 2,
     queue: 1,
   },
   low: {
-    keywords: ['有空', '闲时', '不急', '慢慢', 'low', '以后', '稍后', '可选'],
+    keywords: ["有空", "闲时", "不急", "慢慢", "low", "以后", "稍后", "可选"],
     priority: 1,
     queue: 2,
   },
@@ -115,39 +164,47 @@ export class TaskRecommendationService {
     return Math.min(100, score);
   }
 
-  getUrgencyLevel(score: number): 'low' | 'medium' | 'high' | 'critical' {
-    if (score >= 80) return 'critical';
-    if (score >= 60) return 'high';
-    if (score >= 40) return 'medium';
-    return 'low';
+  getUrgencyLevel(score: number): "low" | "medium" | "high" | "critical" {
+    if (score >= 80) return "critical";
+    if (score >= 60) return "high";
+    if (score >= 40) return "medium";
+    return "low";
   }
 
   async calculateEfficiencyData(
     client: SupabaseClient,
     userId: string,
-    days: number = 30
+    days: number = 30,
   ): Promise<EfficiencyData> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
     const { data: executions, error } = await client
-      .from('task_executions')
-      .select(`
+      .from("task_executions")
+      .select(
+        `
         *,
         scheduled_tasks!inner(tags, queue_level)
-      `)
-      .eq('user_id', userId)
-      .gte('started_at', startDate.toISOString())
-      .not('duration', 'is', null);
+      `,
+      )
+      .eq("user_id", userId)
+      .gte("started_at", startDate.toISOString())
+      .not("duration", "is", null);
 
     if (error) {
-      logger.error('Failed to fetch executions for efficiency data:', error);
+      logger.error("Failed to fetch executions for efficiency data:", error);
       return this.getDefaultEfficiencyData();
     }
 
     const hourlyEfficiency: Record<number, number[]> = {};
-    const tagEfficiency: Record<string, { durations: number[]; completed: number; total: number }> = {};
-    const queueEfficiency: Record<number, { durations: number[]; completed: number; total: number }> = {};
+    const tagEfficiency: Record<
+      string,
+      { durations: number[]; completed: number; total: number }
+    > = {};
+    const queueEfficiency: Record<
+      number,
+      { durations: number[]; completed: number; total: number }
+    > = {};
 
     for (let i = 0; i < 24; i++) {
       hourlyEfficiency[i] = [];
@@ -159,7 +216,10 @@ export class TaskRecommendationService {
 
       hourlyEfficiency[hour].push(duration);
 
-      const task = exec.scheduled_tasks as { tags?: string[]; queue_level?: number };
+      const task = exec.scheduled_tasks as {
+        tags?: string[];
+        queue_level?: number;
+      };
       if (task?.tags) {
         for (const tag of task.tags) {
           if (!tagEfficiency[tag]) {
@@ -167,7 +227,7 @@ export class TaskRecommendationService {
           }
           tagEfficiency[tag].durations.push(duration);
           tagEfficiency[tag].total++;
-          if (exec.status === 'completed') {
+          if (exec.status === "completed") {
             tagEfficiency[tag].completed++;
           }
         }
@@ -180,7 +240,7 @@ export class TaskRecommendationService {
         }
         queueEfficiency[qLevel].durations.push(duration);
         queueEfficiency[qLevel].total++;
-        if (exec.status === 'completed') {
+        if (exec.status === "completed") {
           queueEfficiency[qLevel].completed++;
         }
       }
@@ -189,33 +249,43 @@ export class TaskRecommendationService {
     const avgHourlyEfficiency: Record<number, number> = {};
     for (let i = 0; i < 24; i++) {
       const durations = hourlyEfficiency[i];
-      avgHourlyEfficiency[i] = durations.length > 0
-        ? durations.reduce((a, b) => a + b, 0) / durations.length
-        : 0;
+      avgHourlyEfficiency[i] =
+        durations.length > 0
+          ? durations.reduce((a, b) => a + b, 0) / durations.length
+          : 0;
     }
 
-    const processedTagEfficiency: Record<string, { avgDuration: number; completionRate: number }> = {};
+    const processedTagEfficiency: Record<
+      string,
+      { avgDuration: number; completionRate: number }
+    > = {};
     for (const [tag, data] of Object.entries(tagEfficiency)) {
       processedTagEfficiency[tag] = {
-        avgDuration: data.durations.length > 0
-          ? data.durations.reduce((a, b) => a + b, 0) / data.durations.length
-          : 0,
+        avgDuration:
+          data.durations.length > 0
+            ? data.durations.reduce((a, b) => a + b, 0) / data.durations.length
+            : 0,
         completionRate: data.total > 0 ? data.completed / data.total : 0,
       };
     }
 
-    const processedQueueEfficiency: Record<number, { avgDuration: number; completionRate: number }> = {};
+    const processedQueueEfficiency: Record<
+      number,
+      { avgDuration: number; completionRate: number }
+    > = {};
     for (const [level, data] of Object.entries(queueEfficiency)) {
       processedQueueEfficiency[Number(level)] = {
-        avgDuration: data.durations.length > 0
-          ? data.durations.reduce((a, b) => a + b, 0) / data.durations.length
-          : 0,
+        avgDuration:
+          data.durations.length > 0
+            ? data.durations.reduce((a, b) => a + b, 0) / data.durations.length
+            : 0,
         completionRate: data.total > 0 ? data.completed / data.total : 0,
       };
     }
 
-    const sortedHours = Object.entries(avgHourlyEfficiency)
-      .sort(([, a], [, b]) => b - a);
+    const sortedHours = Object.entries(avgHourlyEfficiency).sort(
+      ([, a], [, b]) => b - a,
+    );
 
     const peakHours = sortedHours.slice(0, 4).map(([h]) => Number(h));
     const lowHours = sortedHours.slice(-4).map(([h]) => Number(h));
@@ -247,13 +317,13 @@ export class TaskRecommendationService {
     const hour = now.getHours();
 
     for (const [type, config] of Object.entries(TIME_SLOT_CONFIG)) {
-      if (type === 'night') {
+      if (type === "night") {
         if (hour >= config.start || hour < config.end) {
           return {
             start: new Date(now),
             end: new Date(now),
             label: config.label,
-            type: type as TimeSlot['type'],
+            type: type as TimeSlot["type"],
           };
         }
       } else {
@@ -262,7 +332,7 @@ export class TaskRecommendationService {
             start: new Date(now),
             end: new Date(now),
             label: config.label,
-            type: type as TimeSlot['type'],
+            type: type as TimeSlot["type"],
           };
         }
       }
@@ -271,14 +341,14 @@ export class TaskRecommendationService {
     return {
       start: new Date(now),
       end: new Date(now),
-      label: '上午',
-      type: 'morning',
+      label: "上午",
+      type: "morning",
     };
   }
 
   getTimeSlotRecommendations(
     tasks: ScheduledTask[],
-    timeSlot: TimeSlot
+    timeSlot: TimeSlot,
   ): ScheduledTask[] {
     const config = TIME_SLOT_CONFIG[timeSlot.type];
     if (!config) return tasks;
@@ -287,8 +357,12 @@ export class TaskRecommendationService {
       const aTags = a.tags || [];
       const bTags = b.tags || [];
 
-      const aMatch = aTags.some(tag => config.recommendedTypes.includes(tag)) ? 1 : 0;
-      const bMatch = bTags.some(tag => config.recommendedTypes.includes(tag)) ? 1 : 0;
+      const aMatch = aTags.some((tag) => config.recommendedTypes.includes(tag))
+        ? 1
+        : 0;
+      const bMatch = bTags.some((tag) => config.recommendedTypes.includes(tag))
+        ? 1
+        : 0;
 
       return bMatch - aMatch;
     });
@@ -297,17 +371,17 @@ export class TaskRecommendationService {
   async getTaskRecommendations(
     client: SupabaseClient,
     userId: string,
-    context?: RecommendationContext
+    context?: RecommendationContext,
   ): Promise<TaskRecommendation[]> {
     const now = context?.currentTime || new Date();
 
     const { data: tasks, error } = await client
-      .from('scheduled_tasks')
-      .select('*')
-      .eq('user_id', userId)
-      .in('status', ['pending', 'paused'])
-      .is('deleted_at', null)
-      .order('priority', { ascending: false });
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("user_id", userId)
+      .in("status", ["pending", "paused"])
+      .is("deleted_at", null)
+      .order("priority", { ascending: false });
 
     if (error || !tasks) {
       return [];
@@ -316,16 +390,18 @@ export class TaskRecommendationService {
     const efficiencyData = await this.calculateEfficiencyData(client, userId);
     const currentTimeSlot = this.getCurrentTimeSlot(now);
 
-    const recommendations: TaskRecommendation[] = tasks.map(task => {
+    const recommendations: TaskRecommendation[] = tasks.map((task) => {
       const urgencyScore = this.calculateUrgencyScore(task, now);
       const urgencyLevel = this.getUrgencyLevel(urgencyScore);
       const reasons: string[] = [];
 
       if (task.deadline) {
         const deadline = new Date(task.deadline);
-        const hoursUntil = Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60));
+        const hoursUntil = Math.round(
+          (deadline.getTime() - now.getTime()) / (1000 * 60 * 60),
+        );
         if (hoursUntil < 0) {
-          reasons.push('已超过截止日期');
+          reasons.push("已超过截止日期");
         } else if (hoursUntil < 24) {
           reasons.push(`截止日期临近 (${hoursUntil}小时)`);
         } else if (hoursUntil < 72) {
@@ -334,30 +410,37 @@ export class TaskRecommendationService {
       }
 
       if (task.priority >= 3) {
-        reasons.push('高优先级任务');
+        reasons.push("高优先级任务");
       }
 
       if (task.queue_level === 0) {
-        reasons.push('位于高优先级队列 Q0');
+        reasons.push("位于高优先级队列 Q0");
       }
 
       if (task.tags && task.tags.length > 0) {
         const matchingTags = task.tags.filter((tag: string) =>
-          TIME_SLOT_CONFIG[currentTimeSlot.type].recommendedTypes.includes(tag)
+          TIME_SLOT_CONFIG[currentTimeSlot.type].recommendedTypes.includes(tag),
         );
         if (matchingTags.length > 0) {
-          reasons.push(`适合${currentTimeSlot.label}时段 (${matchingTags.join(', ')})`);
+          reasons.push(
+            `适合${currentTimeSlot.label}时段 (${matchingTags.join(", ")})`,
+          );
         }
       }
 
       const tagEfficiencies = (task.tags || [])
-        .map((tag: string) => efficiencyData.tagEfficiency[tag]?.completionRate || 0)
+        .map(
+          (tag: string) =>
+            efficiencyData.tagEfficiency[tag]?.completionRate || 0,
+        )
         .filter((rate: number) => rate > 0);
 
       if (tagEfficiencies.length > 0) {
-        const avgEfficiency = tagEfficiencies.reduce((a: number, b: number) => a + b, 0) / tagEfficiencies.length;
+        const avgEfficiency =
+          tagEfficiencies.reduce((a: number, b: number) => a + b, 0) /
+          tagEfficiencies.length;
         if (avgEfficiency > 0.7) {
-          reasons.push('历史完成率较高');
+          reasons.push("历史完成率较高");
         }
       }
 
@@ -379,17 +462,20 @@ export class TaskRecommendationService {
     return recommendations.sort((a, b) => b.score - a.score);
   }
 
-  analyzePriorityFromText(title: string, description?: string): PrioritySuggestion {
-    const text = `${title} ${description || ''}`.toLowerCase();
+  analyzePriorityFromText(
+    title: string,
+    description?: string,
+  ): PrioritySuggestion {
+    const text = `${title} ${description || ""}`.toLowerCase();
     const foundKeywords: string[] = [];
-    let matchedLevel: 'critical' | 'high' | 'medium' | 'low' | null = null;
+    let matchedLevel: "critical" | "high" | "medium" | "low" | null = null;
 
     for (const [level, config] of Object.entries(PRIORITY_KEYWORDS)) {
       for (const keyword of config.keywords) {
         if (text.includes(keyword.toLowerCase())) {
           foundKeywords.push(keyword);
-          if (!matchedLevel || level === 'critical') {
-            matchedLevel = level as 'critical' | 'high' | 'medium' | 'low';
+          if (!matchedLevel || level === "critical") {
+            matchedLevel = level as "critical" | "high" | "medium" | "low";
           }
         }
       }
@@ -399,18 +485,18 @@ export class TaskRecommendationService {
       const config = PRIORITY_KEYWORDS[matchedLevel];
       const reasons: string[] = [];
 
-      if (matchedLevel === 'critical') {
-        reasons.push('检测到紧急关键词');
-      } else if (matchedLevel === 'high') {
-        reasons.push('检测到重要关键词');
-      } else if (matchedLevel === 'medium') {
-        reasons.push('检测到中等优先级关键词');
+      if (matchedLevel === "critical") {
+        reasons.push("检测到紧急关键词");
+      } else if (matchedLevel === "high") {
+        reasons.push("检测到重要关键词");
+      } else if (matchedLevel === "medium") {
+        reasons.push("检测到中等优先级关键词");
       } else {
-        reasons.push('检测到低优先级关键词');
+        reasons.push("检测到低优先级关键词");
       }
 
       if (foundKeywords.length > 0) {
-        reasons.push(`匹配关键词: ${foundKeywords.slice(0, 3).join(', ')}`);
+        reasons.push(`匹配关键词: ${foundKeywords.slice(0, 3).join(", ")}`);
       }
 
       return {
@@ -426,7 +512,7 @@ export class TaskRecommendationService {
       suggestedPriority: 2,
       suggestedQueue: 1,
       confidence: 0.5,
-      reasons: ['未检测到优先级关键词，使用默认中等优先级'],
+      reasons: ["未检测到优先级关键词，使用默认中等优先级"],
       keywords: [],
     };
   }
@@ -434,13 +520,17 @@ export class TaskRecommendationService {
   async getSmartSuggestions(
     client: SupabaseClient,
     userId: string,
-    context?: RecommendationContext
+    context?: RecommendationContext,
   ): Promise<{
     topTasks: TaskRecommendation[];
     timeBasedSuggestions: string[];
     efficiencyTips: string[];
   }> {
-    const recommendations = await this.getTaskRecommendations(client, userId, context);
+    const recommendations = await this.getTaskRecommendations(
+      client,
+      userId,
+      context,
+    );
     const efficiencyData = await this.calculateEfficiencyData(client, userId);
     const now = context?.currentTime || new Date();
     const currentHour = now.getHours();
@@ -458,15 +548,20 @@ export class TaskRecommendationService {
 
     const config = TIME_SLOT_CONFIG[currentTimeSlot.type];
     if (config) {
-      timeBasedSuggestions.push(`${config.label}适合处理: ${config.recommendedTypes.join('、')}`);
+      timeBasedSuggestions.push(
+        `${config.label}适合处理: ${config.recommendedTypes.join("、")}`,
+      );
     }
 
     const efficiencyTips: string[] = [];
 
-    const bestQueue = Object.entries(efficiencyData.queueEfficiency)
-      .sort(([, a], [, b]) => b.completionRate - a.completionRate)[0];
+    const bestQueue = Object.entries(efficiencyData.queueEfficiency).sort(
+      ([, a], [, b]) => b.completionRate - a.completionRate,
+    )[0];
     if (bestQueue && bestQueue[1].completionRate > 0.7) {
-      efficiencyTips.push(`Q${bestQueue[0]}队列任务完成率最高 (${Math.round(bestQueue[1].completionRate * 100)}%)`);
+      efficiencyTips.push(
+        `Q${bestQueue[0]}队列任务完成率最高 (${Math.round(bestQueue[1].completionRate * 100)}%)`,
+      );
     }
 
     const bestTags = Object.entries(efficiencyData.tagEfficiency)
@@ -476,14 +571,14 @@ export class TaskRecommendationService {
 
     if (bestTags.length > 0) {
       efficiencyTips.push(
-        `您在以下类型任务表现较好: ${bestTags.map(([tag]) => tag).join('、')}`
+        `您在以下类型任务表现较好: ${bestTags.map(([tag]) => tag).join("、")}`,
       );
     }
 
     if (efficiencyData.peakHours.length > 0) {
       const formatHour = (h: number) => `${h}:00`;
       efficiencyTips.push(
-        `您的效率高峰时段: ${efficiencyData.peakHours.map(formatHour).join('、')}`
+        `您的效率高峰时段: ${efficiencyData.peakHours.map(formatHour).join("、")}`,
       );
     }
 
@@ -497,18 +592,21 @@ export class TaskRecommendationService {
   calculateOptimalTaskOrder(
     tasks: ScheduledTask[],
     efficiencyData: EfficiencyData,
-    now: Date = new Date()
+    now: Date = new Date(),
   ): ScheduledTask[] {
-    const scoredTasks = tasks.map(task => {
+    const scoredTasks = tasks.map((task) => {
       let score = 0;
 
       const urgencyScore = this.calculateUrgencyScore(task, now);
       score += urgencyScore * 0.4;
 
       if (task.tags && task.tags.length > 0) {
-        const avgTagEfficiency = task.tags
-          .map(tag => efficiencyData.tagEfficiency[tag]?.completionRate || 0.5)
-          .reduce((a, b) => a + b, 0) / task.tags.length;
+        const avgTagEfficiency =
+          task.tags
+            .map(
+              (tag) => efficiencyData.tagEfficiency[tag]?.completionRate || 0.5,
+            )
+            .reduce((a, b) => a + b, 0) / task.tags.length;
         score += avgTagEfficiency * 20;
       }
 
@@ -518,9 +616,15 @@ export class TaskRecommendationService {
       }
 
       const currentHour = now.getHours();
-      if (efficiencyData.peakHours.includes(currentHour) && task.priority >= 3) {
+      if (
+        efficiencyData.peakHours.includes(currentHour) &&
+        task.priority >= 3
+      ) {
         score += 15;
-      } else if (efficiencyData.lowHours.includes(currentHour) && task.priority < 3) {
+      } else if (
+        efficiencyData.lowHours.includes(currentHour) &&
+        task.priority < 3
+      ) {
         score += 10;
       }
 
@@ -529,39 +633,48 @@ export class TaskRecommendationService {
 
     return scoredTasks
       .sort((a, b) => b.score - a.score)
-      .map(item => item.task);
+      .map((item) => item.task);
   }
 
   async checkTaskDependencies(
     client: SupabaseClient,
     taskId: string,
-    _userId: string
+    _userId: string,
   ): Promise<{
     canStart: boolean;
     blockedBy: Array<{ id: string; title: string; status: string }>;
     softBlockedBy: Array<{ id: string; title: string; status: string }>;
   }> {
     const { data: dependencies, error } = await client
-      .from('task_dependencies')
-      .select(`
+      .from("task_dependencies")
+      .select(
+        `
         dependency_type,
         depends_on_task_id,
         scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, status)
-      `)
-      .eq('task_id', taskId);
+      `,
+      )
+      .eq("task_id", taskId);
 
     if (error || !dependencies) {
       return { canStart: true, blockedBy: [], softBlockedBy: [] };
     }
 
     const blockedBy: Array<{ id: string; title: string; status: string }> = [];
-    const softBlockedBy: Array<{ id: string; title: string; status: string }> = [];
+    const softBlockedBy: Array<{ id: string; title: string; status: string }> =
+      [];
 
     for (const dep of dependencies) {
-      const taskData = Array.isArray(dep.scheduled_tasks) ? dep.scheduled_tasks[0] : dep.scheduled_tasks;
-      if (taskData && taskData.status !== 'completed') {
-        const taskItem = { id: taskData.id, title: taskData.title, status: taskData.status };
-        if (dep.dependency_type === 'strict') {
+      const taskData = Array.isArray(dep.scheduled_tasks)
+        ? dep.scheduled_tasks[0]
+        : dep.scheduled_tasks;
+      if (taskData && taskData.status !== "completed") {
+        const taskItem = {
+          id: taskData.id,
+          title: taskData.title,
+          status: taskData.status,
+        };
+        if (dep.dependency_type === "strict") {
           blockedBy.push(taskItem);
         } else {
           softBlockedBy.push(taskItem);
@@ -579,7 +692,7 @@ export class TaskRecommendationService {
   async getSmartRecommendation(
     client: SupabaseClient,
     userId: string,
-    context?: RecommendationContext
+    context?: RecommendationContext,
   ): Promise<{
     recommendedTask: TaskRecommendation | null;
     alternativeTasks: TaskRecommendation[];
@@ -587,38 +700,50 @@ export class TaskRecommendationService {
     currentContext: {
       timeSlot: TimeSlot;
       isPeakHour: boolean;
-      efficiencyLevel: 'high' | 'medium' | 'low';
+      efficiencyLevel: "high" | "medium" | "low";
     };
   }> {
     const now = context?.currentTime || new Date();
-    const recommendations = await this.getTaskRecommendations(client, userId, context);
+    const recommendations = await this.getTaskRecommendations(
+      client,
+      userId,
+      context,
+    );
     const efficiencyData = await this.calculateEfficiencyData(client, userId);
     const currentTimeSlot = this.getCurrentTimeSlot(now);
     const currentHour = now.getHours();
 
     const isPeakHour = efficiencyData.peakHours.includes(currentHour);
-    const efficiencyLevel: 'high' | 'medium' | 'low' = isPeakHour
-      ? 'high'
+    const efficiencyLevel: "high" | "medium" | "low" = isPeakHour
+      ? "high"
       : efficiencyData.lowHours.includes(currentHour)
-        ? 'low'
-        : 'medium';
+        ? "low"
+        : "medium";
 
     const reasons: string[] = [];
     let recommendedTask: TaskRecommendation | null = null;
     const alternativeTasks: TaskRecommendation[] = [];
 
     for (const rec of recommendations) {
-      const depCheck = await this.checkTaskDependencies(client, rec.task.id, userId);
+      const depCheck = await this.checkTaskDependencies(
+        client,
+        rec.task.id,
+        userId,
+      );
 
       if (!depCheck.canStart) {
-        rec.reasons.push(`⚠️ 被阻塞: 需要先完成 "${depCheck.blockedBy[0].title}"`);
+        rec.reasons.push(
+          `⚠️ 被阻塞: 需要先完成 "${depCheck.blockedBy[0].title}"`,
+        );
         rec.score *= 0.3;
         alternativeTasks.push(rec);
         continue;
       }
 
       if (depCheck.softBlockedBy.length > 0) {
-        rec.reasons.push(`💡 建议: 先完成 "${depCheck.softBlockedBy[0].title}"`);
+        rec.reasons.push(
+          `💡 建议: 先完成 "${depCheck.softBlockedBy[0].title}"`,
+        );
         rec.score *= 0.8;
       }
 
@@ -630,12 +755,14 @@ export class TaskRecommendationService {
     }
 
     if (recommendedTask) {
-      reasons.push(...this.generateRecommendationReasons(
-        recommendedTask,
-        currentTimeSlot,
-        isPeakHour,
-        efficiencyData
-      ));
+      reasons.push(
+        ...this.generateRecommendationReasons(
+          recommendedTask,
+          currentTimeSlot,
+          isPeakHour,
+          efficiencyData,
+        ),
+      );
     }
 
     return {
@@ -654,39 +781,47 @@ export class TaskRecommendationService {
     recommendation: TaskRecommendation,
     timeSlot: TimeSlot,
     isPeakHour: boolean,
-    efficiencyData: EfficiencyData
+    efficiencyData: EfficiencyData,
   ): string[] {
     const reasons: string[] = [];
     const task = recommendation.task;
 
-    if (recommendation.urgencyLevel === 'critical') {
-      reasons.push('🚨 此任务非常紧急，建议立即处理');
-    } else if (recommendation.urgencyLevel === 'high') {
-      reasons.push('⚡ 此任务优先级较高');
+    if (recommendation.urgencyLevel === "critical") {
+      reasons.push("🚨 此任务非常紧急，建议立即处理");
+    } else if (recommendation.urgencyLevel === "high") {
+      reasons.push("⚡ 此任务优先级较高");
     }
 
     if (task.deadline) {
       const deadline = new Date(task.deadline);
-      const hoursUntil = Math.round((deadline.getTime() - Date.now()) / (1000 * 60 * 60));
+      const hoursUntil = Math.round(
+        (deadline.getTime() - Date.now()) / (1000 * 60 * 60),
+      );
       if (hoursUntil > 0) {
         if (hoursUntil < 24) {
-          reasons.push(`⏰ 截止时间: 今天 ${deadline.getHours()}:${String(deadline.getMinutes()).padStart(2, '0')}`);
+          reasons.push(
+            `⏰ 截止时间: 今天 ${deadline.getHours()}:${String(deadline.getMinutes()).padStart(2, "0")}`,
+          );
         } else {
-          reasons.push(`📅 截止时间: ${deadline.toLocaleDateString('zh-CN')}`);
+          reasons.push(`📅 截止时间: ${deadline.toLocaleDateString("zh-CN")}`);
         }
       }
     }
 
     const config = TIME_SLOT_CONFIG[timeSlot.type];
     if (task.tags && task.tags.length > 0) {
-      const matchingTags = task.tags.filter(tag => config.recommendedTypes.includes(tag));
+      const matchingTags = task.tags.filter((tag) =>
+        config.recommendedTypes.includes(tag),
+      );
       if (matchingTags.length > 0) {
-        reasons.push(`🎯 适合${timeSlot.label}时段 (${matchingTags.join('、')})`);
+        reasons.push(
+          `🎯 适合${timeSlot.label}时段 (${matchingTags.join("、")})`,
+        );
       }
     }
 
     if (isPeakHour && task.priority >= 3) {
-      reasons.push('📈 当前是您的效率高峰期，适合处理重要任务');
+      reasons.push("📈 当前是您的效率高峰期，适合处理重要任务");
     }
 
     if (task.estimated_duration) {
@@ -702,13 +837,14 @@ export class TaskRecommendationService {
 
     if (task.tags && task.tags.length > 0) {
       const tagEfficiencies = task.tags
-        .map(tag => efficiencyData.tagEfficiency[tag]?.completionRate)
+        .map((tag) => efficiencyData.tagEfficiency[tag]?.completionRate)
         .filter(Boolean);
 
       if (tagEfficiencies.length > 0) {
-        const avgRate = tagEfficiencies.reduce((a, b) => a + b, 0) / tagEfficiencies.length;
+        const avgRate =
+          tagEfficiencies.reduce((a, b) => a + b, 0) / tagEfficiencies.length;
         if (avgRate > 0.7) {
-          reasons.push('✨ 您在此类任务上表现优秀');
+          reasons.push("✨ 您在此类任务上表现优秀");
         }
       }
     }
@@ -718,44 +854,77 @@ export class TaskRecommendationService {
 
   calculateDynamicPriority(
     task: ScheduledTask,
-    now: Date = new Date()
+    now: Date = new Date(),
   ): {
     score: number;
     factors: Array<{ name: string; impact: number; description: string }>;
   } {
-    const factors: Array<{ name: string; impact: number; description: string }> = [];
+    const factors: Array<{
+      name: string;
+      impact: number;
+      description: string;
+    }> = [];
     let totalScore = 50;
 
     if (task.deadline) {
       const deadline = new Date(task.deadline);
-      const hoursUntil = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+      const hoursUntil =
+        (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
 
       if (hoursUntil < 0) {
         totalScore += 40;
-        factors.push({ name: '已过期', impact: 40, description: '任务已超过截止日期' });
+        factors.push({
+          name: "已过期",
+          impact: 40,
+          description: "任务已超过截止日期",
+        });
       } else if (hoursUntil < 4) {
         totalScore += 35;
-        factors.push({ name: '即将截止', impact: 35, description: `${Math.round(hoursUntil)}小时内截止` });
+        factors.push({
+          name: "即将截止",
+          impact: 35,
+          description: `${Math.round(hoursUntil)}小时内截止`,
+        });
       } else if (hoursUntil < 24) {
         totalScore += 25;
-        factors.push({ name: '今日截止', impact: 25, description: '今天内需要完成' });
+        factors.push({
+          name: "今日截止",
+          impact: 25,
+          description: "今天内需要完成",
+        });
       } else if (hoursUntil < 72) {
         totalScore += 15;
-        factors.push({ name: '近期截止', impact: 15, description: `${Math.round(hoursUntil / 24)}天内截止` });
+        factors.push({
+          name: "近期截止",
+          impact: 15,
+          description: `${Math.round(hoursUntil / 24)}天内截止`,
+        });
       }
     }
 
     const priorityImpact = (task.priority || 1) * 8;
     totalScore += priorityImpact;
-    factors.push({ name: '优先级', impact: priorityImpact, description: `优先级: ${task.priority}` });
+    factors.push({
+      name: "优先级",
+      impact: priorityImpact,
+      description: `优先级: ${task.priority}`,
+    });
 
     const queueImpact = (3 - task.queue_level) * 5;
     totalScore += queueImpact;
-    factors.push({ name: '队列', impact: queueImpact, description: `Q${task.queue_level}队列` });
+    factors.push({
+      name: "队列",
+      impact: queueImpact,
+      description: `Q${task.queue_level}队列`,
+    });
 
     if (task.estimated_duration && task.estimated_duration <= 30) {
       totalScore += 10;
-      factors.push({ name: '快速任务', impact: 10, description: '可以在短时间内完成' });
+      factors.push({
+        name: "快速任务",
+        impact: 10,
+        description: "可以在短时间内完成",
+      });
     }
 
     return {

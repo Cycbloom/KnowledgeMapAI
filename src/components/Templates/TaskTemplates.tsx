@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Pencil,
@@ -15,10 +15,15 @@ import {
   Tag,
   Copy,
   Check,
-} from 'lucide-react';
-import { templateApi, TaskTemplate, extractPlaceholders, applyTemplatePlaceholders } from '../../services/api/template';
-import { useMessageStore } from '../../store/useMessageStore';
-import { useTheme } from '../../hooks/useTheme';
+} from "lucide-react";
+import {
+  templateApi,
+  TaskTemplate,
+  extractPlaceholders,
+  applyTemplatePlaceholders,
+} from "../../services/api/template";
+import { useMessageStore } from "../../store/useMessageStore";
+import { useTheme } from "../../hooks/useTheme";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   study: <BookOpen size={20} />,
@@ -29,43 +34,51 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 const categoryLabels: Record<string, string> = {
-  study: '学习',
-  work: '工作',
-  life: '生活',
-  health: '健康',
-  custom: '自定义',
+  study: "学习",
+  work: "工作",
+  life: "生活",
+  health: "健康",
+  custom: "自定义",
 };
 
 interface TaskTemplatesProps {
   onSelectTemplate?: (template: TaskTemplate) => void;
 }
 
-export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }) => {
+export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
+  onSelectTemplate,
+}) => {
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<TaskTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<TaskTemplate | null>(
+    null,
+  );
   const [isApplying, setIsApplying] = useState(false);
-  const [applyingTemplate, setApplyingTemplate] = useState<TaskTemplate | null>(null);
+  const [applyingTemplate, setApplyingTemplate] = useState<TaskTemplate | null>(
+    null,
+  );
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'study' as string,
-    title_template: '',
-    description_template: '',
+    name: "",
+    description: "",
+    category: "study" as string,
+    title_template: "",
+    description_template: "",
     estimated_duration: 25,
     tags: [] as string[],
     priority: 2,
   });
 
-  const [placeholderValues, setPlaceholderValues] = useState<Record<string, string>>({});
-  const [newTag, setNewTag] = useState('');
+  const [placeholderValues, setPlaceholderValues] = useState<
+    Record<string, string>
+  >({});
+  const [newTag, setNewTag] = useState("");
 
   useEffect(() => {
     loadTemplates();
@@ -79,23 +92,26 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
         setTemplates(response.data || []);
       }
     } catch (error) {
-      console.error('Failed to load templates:', error);
+      console.error("Failed to load templates:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredTemplates = templates.filter(t => {
-    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
+  const filteredTemplates = templates.filter((t) => {
+    const matchesSearch =
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.description &&
+        t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCategory =
+      selectedCategory === "all" || t.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const handleCreateTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.title_template) {
-      addMessage({ type: 'error', content: '请填写模板名称和标题模板' });
+      addMessage({ type: "error", content: "请填写模板名称和标题模板" });
       return;
     }
 
@@ -110,12 +126,12 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
         tags: formData.tags,
         priority: formData.priority,
       });
-      addMessage({ type: 'success', content: '模板创建成功!' });
+      addMessage({ type: "success", content: "模板创建成功!" });
       setIsCreating(false);
       resetForm();
       loadTemplates();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '创建模板失败' });
+      addMessage({ type: "error", content: error.message || "创建模板失败" });
     }
   };
 
@@ -134,19 +150,19 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
         tags: formData.tags,
         priority: formData.priority,
       });
-      addMessage({ type: 'success', content: '模板更新成功!' });
+      addMessage({ type: "success", content: "模板更新成功!" });
       setIsEditing(false);
       setEditingTemplate(null);
       resetForm();
       loadTemplates();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '更新模板失败' });
+      addMessage({ type: "error", content: error.message || "更新模板失败" });
     }
   };
 
   const handleDeleteTemplate = async (template: TaskTemplate) => {
     if (template.is_system) {
-      addMessage({ type: 'error', content: '系统预设模板不能删除' });
+      addMessage({ type: "error", content: "系统预设模板不能删除" });
       return;
     }
 
@@ -154,20 +170,23 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
 
     try {
       await templateApi.deleteTemplate(template.id);
-      addMessage({ type: 'success', content: '模板已删除' });
+      addMessage({ type: "success", content: "模板已删除" });
       loadTemplates();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '删除模板失败' });
+      addMessage({ type: "error", content: error.message || "删除模板失败" });
     }
   };
 
   const handleDuplicateTemplate = async (template: TaskTemplate) => {
     try {
-      await templateApi.duplicateTemplate(template.id, `${template.name} (副本)`);
-      addMessage({ type: 'success', content: '模板已复制' });
+      await templateApi.duplicateTemplate(
+        template.id,
+        `${template.name} (副本)`,
+      );
+      addMessage({ type: "success", content: "模板已复制" });
       loadTemplates();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '复制模板失败' });
+      addMessage({ type: "error", content: error.message || "复制模板失败" });
     }
   };
 
@@ -178,7 +197,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
       await templateApi.applyTemplate(applyingTemplate.id, {
         placeholders: placeholderValues,
       });
-      addMessage({ type: 'success', content: '任务已创建!' });
+      addMessage({ type: "success", content: "任务已创建!" });
       setIsApplying(false);
       setApplyingTemplate(null);
       setPlaceholderValues({});
@@ -186,7 +205,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
         onSelectTemplate(applyingTemplate);
       }
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '应用模板失败' });
+      addMessage({ type: "error", content: error.message || "应用模板失败" });
     }
   };
 
@@ -195,7 +214,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
     const placeholders = extractPlaceholders(template);
     const initialValues: Record<string, string> = {};
     placeholders.forEach((p: string) => {
-      initialValues[p] = '';
+      initialValues[p] = "";
     });
     setPlaceholderValues(initialValues);
     setIsApplying(true);
@@ -203,16 +222,16 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
 
   const openEditModal = (template: TaskTemplate) => {
     if (template.is_system) {
-      addMessage({ type: 'error', content: '系统预设模板不能编辑' });
+      addMessage({ type: "error", content: "系统预设模板不能编辑" });
       return;
     }
     setEditingTemplate(template);
     setFormData({
       name: template.name,
-      description: template.description || '',
+      description: template.description || "",
       category: template.category,
       title_template: template.title_template,
-      description_template: template.description_template || '',
+      description_template: template.description_template || "",
       estimated_duration: template.estimated_duration,
       tags: template.tags || [],
       priority: template.priority,
@@ -222,38 +241,40 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: '',
-      category: 'study',
-      title_template: '',
-      description_template: '',
+      name: "",
+      description: "",
+      category: "study",
+      title_template: "",
+      description_template: "",
       estimated_duration: 25,
       tags: [],
       priority: 2,
     });
-    setNewTag('');
+    setNewTag("");
   };
 
   const addTag = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
       setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
-      setNewTag('');
+      setNewTag("");
     }
   };
 
   const removeTag = (tag: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
+    setFormData({ ...formData, tags: formData.tags.filter((t) => t !== tag) });
   };
 
   const getPreview = () => {
-    if (!applyingTemplate) return { title: '', description: '' };
+    if (!applyingTemplate) return { title: "", description: "" };
     return applyTemplatePlaceholders(applyingTemplate, placeholderValues);
   };
 
   return (
     <div className="h-full">
       <div className="flex items-center justify-between mb-6">
-        <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <h2
+          className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+        >
           任务模板
         </h2>
         <button
@@ -270,7 +291,10 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
 
       <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="搜索任务模板..."
@@ -278,26 +302,26 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
             onChange={(e) => setSearchQuery(e.target.value)}
             className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
               isDark
-                ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                : 'bg-white border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                ? "bg-slate-800 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                : "bg-white border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             }`}
           />
         </div>
 
         <div className="flex gap-2">
-          {['all', 'study', 'work', 'life', 'health', 'custom'].map((cat) => (
+          {["all", "study", "work", "life", "health", "custom"].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-2 rounded-xl font-medium transition-all text-sm ${
                 selectedCategory === cat
-                  ? 'bg-blue-600 text-white'
+                  ? "bg-blue-600 text-white"
                   : isDark
-                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
-              {cat === 'all' ? '全部' : categoryLabels[cat]}
+              {cat === "all" ? "全部" : categoryLabels[cat]}
             </button>
           ))}
         </div>
@@ -321,23 +345,31 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
               animate={{ opacity: 1, y: 0 }}
               className={`rounded-xl border p-4 transition-all hover:shadow-lg ${
                 isDark
-                  ? 'bg-slate-800 border-slate-700'
-                  : 'bg-white border-gray-200'
+                  ? "bg-slate-800 border-slate-700"
+                  : "bg-white border-gray-200"
               }`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    template.category === 'study' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
-                    template.category === 'work' ? 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' :
-                    template.category === 'life' ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400' :
-                    template.category === 'health' ? 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' :
-                    'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
-                  }`}>
+                  <div
+                    className={`p-2 rounded-lg ${
+                      template.category === "study"
+                        ? "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                        : template.category === "work"
+                          ? "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400"
+                          : template.category === "life"
+                            ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
+                            : template.category === "health"
+                              ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400"
+                              : "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400"
+                    }`}
+                  >
                     {categoryIcons[template.category]}
                   </div>
                   <div>
-                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    <h3
+                      className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                    >
                       {template.name}
                     </h3>
                     <span className="text-xs text-gray-500">
@@ -354,7 +386,9 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                 </div>
               </div>
 
-              <p className={`text-sm mb-3 line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+              <p
+                className={`text-sm mb-3 line-clamp-2 ${isDark ? "text-slate-400" : "text-gray-600"}`}
+              >
                 {template.description || template.title_template}
               </p>
 
@@ -426,12 +460,12 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className={`w-full max-w-lg rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto ${
-                isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white'
+                isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
               }`}
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold">
-                  {isEditing ? '编辑模板' : '创建任务模板'}
+                  {isEditing ? "编辑模板" : "创建任务模板"}
                 </h3>
                 <button
                   onClick={() => {
@@ -441,121 +475,168 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                     resetForm();
                   }}
                   className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${
-                    isDark ? 'hover:bg-white text-slate-400' : 'hover:bg-black text-gray-400'
+                    isDark
+                      ? "hover:bg-white text-slate-400"
+                      : "hover:bg-black text-gray-400"
                   }`}
                 >
                   <X size={24} />
                 </button>
               </div>
 
-              <form onSubmit={isEditing ? handleUpdateTemplate : handleCreateTemplate} className="space-y-4">
+              <form
+                onSubmit={
+                  isEditing ? handleUpdateTemplate : handleCreateTemplate
+                }
+                className="space-y-4"
+              >
                 <div>
-                  <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <label
+                    className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  >
                     模板名称 *
                   </label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="例如：每日学习"
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
-                        ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                        : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                     }`}
                   />
                 </div>
 
                 <div>
-                  <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <label
+                    className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  >
                     描述
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     placeholder="模板描述..."
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
                       isDark
-                        ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                        : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                     }`}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <label
+                      className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                    >
                       分类
                     </label>
                     <select
                       value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, category: e.target.value })
+                      }
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
-                          ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                          : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
+                          ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                       }`}
                     >
                       {Object.entries(categoryLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <label
+                      className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                    >
                       预计时长（分钟）
                     </label>
                     <input
                       type="number"
                       value={formData.estimated_duration}
-                      onChange={(e) => setFormData({ ...formData, estimated_duration: parseInt(e.target.value) || 25 })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          estimated_duration: parseInt(e.target.value) || 25,
+                        })
+                      }
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
-                          ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                          : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
+                          ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                       }`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                    标题模板 * <span className="text-xs text-gray-400">(支持 {'{{topic}}'} 等变量)</span>
+                  <label
+                    className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  >
+                    标题模板 *{" "}
+                    <span className="text-xs text-gray-400">
+                      (支持 {"{{topic}}"} 等变量)
+                    </span>
                   </label>
                   <input
                     type="text"
                     value={formData.title_template}
-                    onChange={(e) => setFormData({ ...formData, title_template: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        title_template: e.target.value,
+                      })
+                    }
                     placeholder="例如：学习：{{topic}}"
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
-                        ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                        : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                     }`}
                   />
                 </div>
 
                 <div>
-                  <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <label
+                    className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  >
                     描述模板
                   </label>
                   <textarea
                     value={formData.description_template}
-                    onChange={(e) => setFormData({ ...formData, description_template: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        description_template: e.target.value,
+                      })
+                    }
                     placeholder="例如：深入学习 {{topic}}，理解核心概念..."
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
                       isDark
-                        ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                        : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
+                        ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                        : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                     }`}
                   />
                 </div>
 
                 <div>
-                  <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <label
+                    className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  >
                     标签
                   </label>
                   <div className="flex gap-2 mt-1">
@@ -563,12 +644,14 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                       type="text"
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && (e.preventDefault(), addTag())
+                      }
                       placeholder="添加标签"
                       className={`flex-1 px-4 py-2 rounded-xl border outline-none transition-all ${
                         isDark
-                          ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                          : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
+                          ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                       }`}
                     />
                     <button
@@ -585,11 +668,17 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                         <span
                           key={tag}
                           className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${
-                            isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'
+                            isDark
+                              ? "bg-slate-700 text-slate-300"
+                              : "bg-gray-100 text-gray-700"
                           }`}
                         >
                           {tag}
-                          <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            className="hover:text-red-500"
+                          >
                             <X size={12} />
                           </button>
                         </span>
@@ -608,7 +697,9 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                       resetForm();
                     }}
                     className={`px-4 py-2 rounded-xl font-medium ${
-                      isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      isDark
+                        ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     取消
@@ -617,7 +708,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
                   >
-                    {isEditing ? '更新' : '创建'}
+                    {isEditing ? "更新" : "创建"}
                   </button>
                 </div>
               </form>
@@ -640,11 +731,13 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className={`w-full max-w-lg rounded-2xl shadow-2xl p-6 ${
-                isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white'
+                isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
               }`}
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">使用模板：{applyingTemplate.name}</h3>
+                <h3 className="text-xl font-bold">
+                  使用模板：{applyingTemplate.name}
+                </h3>
                 <button
                   onClick={() => {
                     setIsApplying(false);
@@ -652,7 +745,9 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                     setPlaceholderValues({});
                   }}
                   className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${
-                    isDark ? 'hover:bg-white text-slate-400' : 'hover:bg-black text-gray-400'
+                    isDark
+                      ? "hover:bg-white text-slate-400"
+                      : "hover:bg-black text-gray-400"
                   }`}
                 >
                   <X size={24} />
@@ -661,44 +756,60 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
 
               {extractPlaceholders(applyingTemplate).length > 0 && (
                 <div className="mb-6">
-                  <h4 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <h4
+                    className={`text-sm font-medium mb-3 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                  >
                     填写变量
                   </h4>
                   <div className="space-y-3">
-                    {extractPlaceholders(applyingTemplate).map((placeholder: string) => (
-                      <div key={placeholder}>
-                        <label className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-                          {placeholder}
-                        </label>
-                        <input
-                          type="text"
-                          value={placeholderValues[placeholder] || ''}
-                          onChange={(e) => setPlaceholderValues({
-                            ...placeholderValues,
-                            [placeholder]: e.target.value,
-                          })}
-                          placeholder={`输入 ${placeholder}`}
-                          className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
-                            isDark
-                              ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                              : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
-                          }`}
-                        />
-                      </div>
-                    ))}
+                    {extractPlaceholders(applyingTemplate).map(
+                      (placeholder: string) => (
+                        <div key={placeholder}>
+                          <label
+                            className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}
+                          >
+                            {placeholder}
+                          </label>
+                          <input
+                            type="text"
+                            value={placeholderValues[placeholder] || ""}
+                            onChange={(e) =>
+                              setPlaceholderValues({
+                                ...placeholderValues,
+                                [placeholder]: e.target.value,
+                              })
+                            }
+                            placeholder={`输入 ${placeholder}`}
+                            className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
+                              isDark
+                                ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                                : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
+                            }`}
+                          />
+                        </div>
+                      ),
+                    )}
                   </div>
                 </div>
               )}
 
-              <div className={`p-4 rounded-xl mb-6 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                <h4 className={`text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+              <div
+                className={`p-4 rounded-xl mb-6 ${isDark ? "bg-slate-900" : "bg-gray-50"}`}
+              >
+                <h4
+                  className={`text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                >
                   预览
                 </h4>
-                <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <p
+                  className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}
+                >
                   {getPreview().title}
                 </p>
                 {getPreview().description && (
-                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+                  <p
+                    className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}
+                  >
                     {getPreview().description}
                   </p>
                 )}
@@ -719,7 +830,9 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({ onSelectTemplate }
                     setPlaceholderValues({});
                   }}
                   className={`px-4 py-2 rounded-xl font-medium ${
-                    isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    isDark
+                      ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   取消

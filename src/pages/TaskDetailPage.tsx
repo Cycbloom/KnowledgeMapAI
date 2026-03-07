@@ -1,17 +1,17 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { TaskWorkbench } from '../components/Scheduler/TaskWorkbench';
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { TaskWorkbench } from "../components/Scheduler/TaskWorkbench";
 
 const TaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate('/scheduler');
+    navigate("/scheduler");
   };
 
   const handleEdit = () => {
-    navigate('/scheduler', { state: { editTaskId: taskId } });
+    navigate("/scheduler", { state: { editTaskId: taskId } });
   };
 
   if (!taskId) {
@@ -24,11 +24,7 @@ const TaskDetailPage: React.FC = () => {
 
   return (
     <div className="h-screen">
-      <TaskWorkbench
-        taskId={taskId}
-        onBack={handleBack}
-        onEdit={handleEdit}
-      />
+      <TaskWorkbench taskId={taskId} onBack={handleBack} onEdit={handleEdit} />
     </div>
   );
 };

@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Save, BookOpen, Briefcase, Home, Heart, Star, Clock, Tag } from 'lucide-react';
-import { templateApi } from '../../services/api/template';
-import { useMessageStore } from '../../store/useMessageStore';
-import { useTheme } from '../../hooks/useTheme';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  X,
+  Save,
+  BookOpen,
+  Briefcase,
+  Home,
+  Heart,
+  Star,
+  Clock,
+  Tag,
+} from "lucide-react";
+import { templateApi } from "../../services/api/template";
+import { useMessageStore } from "../../store/useMessageStore";
+import { useTheme } from "../../hooks/useTheme";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   study: <BookOpen size={18} />,
@@ -14,11 +24,11 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 const categoryLabels: Record<string, string> = {
-  study: '学习',
-  work: '工作',
-  life: '生活',
-  health: '健康',
-  custom: '自定义',
+  study: "学习",
+  work: "工作",
+  life: "生活",
+  health: "健康",
+  custom: "自定义",
 };
 
 interface SaveAsTemplateModalProps {
@@ -44,25 +54,34 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState(task.title);
-  const [description, setDescription] = useState(task.description || '');
-  const [category, setCategory] = useState<'study' | 'work' | 'life' | 'health' | 'custom'>('custom');
+  const [description, setDescription] = useState(task.description || "");
+  const [category, setCategory] = useState<
+    "study" | "work" | "life" | "health" | "custom"
+  >("custom");
   const [titleTemplate, setTitleTemplate] = useState(task.title);
-  const [descriptionTemplate, setDescriptionTemplate] = useState(task.description || '');
-  const [estimatedDuration, setEstimatedDuration] = useState(task.estimated_duration || 25);
+  const [descriptionTemplate, setDescriptionTemplate] = useState(
+    task.description || "",
+  );
+  const [estimatedDuration, setEstimatedDuration] = useState(
+    task.estimated_duration || 25,
+  );
   const [tags, setTags] = useState<string[]>(task.tags || []);
   const [priority, setPriority] = useState(task.priority || 2);
-  const [newTag, setNewTag] = useState('');
+  const [newTag, setNewTag] = useState("");
 
   const extractVariables = (text: string): string[] => {
     const matches = text.match(/\{\{([^}]+)\}\}/g) || [];
-    return matches.map(m => m.slice(2, -2).trim());
+    return matches.map((m) => m.slice(2, -2).trim());
   };
 
   const suggestVariables = () => {
-    const words = task.title.split(/\s+/).filter(w => w.length > 2);
+    const words = task.title.split(/\s+/).filter((w) => w.length > 2);
     let suggestedTitle = task.title;
     words.slice(0, 2).forEach((word, index) => {
-      suggestedTitle = suggestedTitle.replace(word, `{{topic${index > 0 ? index : ''}}}`);
+      suggestedTitle = suggestedTitle.replace(
+        word,
+        `{{topic${index > 0 ? index : ""}}}`,
+      );
     });
     setTitleTemplate(suggestedTitle);
   };
@@ -70,7 +89,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !titleTemplate) {
-      addMessage({ type: 'error', content: '请填写模板名称和标题模板' });
+      addMessage({ type: "error", content: "请填写模板名称和标题模板" });
       return;
     }
 
@@ -86,11 +105,11 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         tags,
         priority,
       });
-      addMessage({ type: 'success', content: '模板保存成功!' });
+      addMessage({ type: "success", content: "模板保存成功!" });
       onSuccess?.();
       onClose();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '保存模板失败' });
+      addMessage({ type: "error", content: error.message || "保存模板失败" });
     } finally {
       setLoading(false);
     }
@@ -99,12 +118,12 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
       setTags([...tags, newTag.trim()]);
-      setNewTag('');
+      setNewTag("");
     }
   };
 
   const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
+    setTags(tags.filter((t) => t !== tag));
   };
 
   return (
@@ -121,7 +140,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
         className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden ${
-          isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white'
+          isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
@@ -136,7 +155,10 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+        <form
+          onSubmit={handleSubmit}
+          className="p-4 space-y-4 max-h-[70vh] overflow-y-auto"
+        >
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               模板名称 <span className="text-red-500">*</span>
@@ -148,8 +170,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               placeholder="模板名称"
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
-                  ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                  : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
               }`}
             />
           </div>
@@ -165,8 +187,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
                 isDark
-                  ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                  : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
               }`}
             />
           </div>
@@ -176,23 +198,25 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               分类
             </label>
             <div className="flex gap-2">
-              {(['study', 'work', 'life', 'health', 'custom'] as const).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setCategory(cat)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    category === cat
-                      ? 'bg-blue-600 text-white'
-                      : isDark
-                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {categoryIcons[cat]}
-                  {categoryLabels[cat]}
-                </button>
-              ))}
+              {(["study", "work", "life", "health", "custom"] as const).map(
+                (cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      category === cat
+                        ? "bg-blue-600 text-white"
+                        : isDark
+                          ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {categoryIcons[cat]}
+                    {categoryLabels[cat]}
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -216,12 +240,13 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               placeholder="例如：学习：{{topic}}"
               className={`w-full px-3 py-2 rounded-lg border text-sm ${
                 isDark
-                  ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                  : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
               }`}
             />
             <p className="text-xs text-slate-400 mt-1">
-              使用 {'{{变量名}}'} 创建可替换的变量，如 {'{{topic}}'}、{'{{date}}'}
+              使用 {"{{变量名}}"} 创建可替换的变量，如 {"{{topic}}"}、
+              {"{{date}}"}
             </p>
           </div>
 
@@ -236,8 +261,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               rows={2}
               className={`w-full px-3 py-2 rounded-lg border text-sm resize-none ${
                 isDark
-                  ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                  : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'
+                  ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                  : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
               }`}
             />
           </div>
@@ -251,11 +276,13 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
               <input
                 type="number"
                 value={estimatedDuration}
-                onChange={(e) => setEstimatedDuration(parseInt(e.target.value) || 25)}
+                onChange={(e) =>
+                  setEstimatedDuration(parseInt(e.target.value) || 25)
+                }
                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                   isDark
-                    ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'
+                    ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
                 }`}
               />
             </div>
@@ -268,8 +295,8 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 onChange={(e) => setPriority(parseInt(e.target.value))}
                 className={`w-full px-3 py-2 rounded-lg border text-sm ${
                   isDark
-                    ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'
+                    ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
                 }`}
               >
                 <option value={1}>低</option>
@@ -290,12 +317,14 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                 type="text"
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addTag())
+                }
                 placeholder="添加标签"
                 className={`flex-1 px-3 py-2 rounded-lg border text-sm ${
                   isDark
-                    ? 'bg-slate-900 border-slate-700 text-white focus:border-blue-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500'
+                    ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
+                    : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-500"
                 }`}
               />
               <button
@@ -312,11 +341,17 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
                   <span
                     key={tag}
                     className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
-                      isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-700'
+                      isDark
+                        ? "bg-slate-700 text-slate-300"
+                        : "bg-slate-100 text-slate-700"
                     }`}
                   >
                     {tag}
-                    <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      className="hover:text-red-500"
+                    >
                       <X size={10} />
                     </button>
                   </span>
@@ -325,22 +360,33 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             )}
           </div>
 
-          <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-            <h5 className={`text-xs font-medium mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <div
+            className={`p-3 rounded-lg ${isDark ? "bg-slate-900" : "bg-slate-50"}`}
+          >
+            <h5
+              className={`text-xs font-medium mb-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}
+            >
               预览
             </h5>
-            <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <p
+              className={`font-medium ${isDark ? "text-white" : "text-slate-900"}`}
+            >
               {titleTemplate}
             </p>
             {descriptionTemplate && (
-              <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              <p
+                className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}
+              >
                 {descriptionTemplate}
               </p>
             )}
             {extractVariables(titleTemplate).length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {extractVariables(titleTemplate).map((v) => (
-                  <span key={v} className="px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-xs">
+                  <span
+                    key={v}
+                    className="px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-xs"
+                  >
                     {v}
                   </span>
                 ))}
@@ -354,7 +400,9 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
             type="button"
             onClick={onClose}
             className={`px-4 py-2 rounded-xl font-medium ${
-              isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              isDark
+                ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
             取消

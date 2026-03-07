@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
   CheckCircle,
@@ -8,9 +8,9 @@ import {
   ChevronDown,
   ChevronRight,
   Calendar,
-} from 'lucide-react';
-import { schedulerApi } from '../../../services/api/scheduler';
-import { TaskExecution } from '../../../types';
+} from "lucide-react";
+import { schedulerApi } from "../../../services/api/scheduler";
+import { TaskExecution } from "../../../types";
 
 interface ExecutionRecordsProps {
   taskId: string;
@@ -23,7 +23,7 @@ interface GroupedExecutions {
 
 export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   taskId,
-  className = '',
+  className = "",
 }) => {
   const [executions, setExecutions] = useState<TaskExecution[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +41,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
         setExecutions(response.data || []);
       }
     } catch (error) {
-      console.error('Failed to load executions:', error);
+      console.error("Failed to load executions:", error);
     } finally {
       setLoading(false);
     }
@@ -49,8 +49,8 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
 
   const groupByDate = (execs: TaskExecution[]): GroupedExecutions => {
     const grouped: GroupedExecutions = {};
-    execs.forEach(exec => {
-      const date = new Date(exec.started_at).toLocaleDateString('zh-CN');
+    execs.forEach((exec) => {
+      const date = new Date(exec.started_at).toLocaleDateString("zh-CN");
       if (!grouped[date]) {
         grouped[date] = [];
       }
@@ -66,22 +66,22 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return '今日';
+      return "今日";
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return '昨日';
+      return "昨日";
     }
-    return date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+    return date.toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
   };
 
   const formatTime = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateStr).toLocaleTimeString("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const formatDuration = (seconds?: number): string => {
-    if (!seconds) return '未知';
+    if (!seconds) return "未知";
     const minutes = Math.round(seconds / 60);
     if (minutes < 60) return `${minutes}分钟`;
     const hours = Math.floor(minutes / 60);
@@ -91,11 +91,11 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'interrupted':
+      case "interrupted":
         return <PauseCircle className="w-4 h-4 text-yellow-500" />;
-      case 'time_slice_ended':
+      case "time_slice_ended":
         return <Timer className="w-4 h-4 text-blue-500" />;
       default:
         return <Clock className="w-4 h-4 text-slate-400" />;
@@ -104,14 +104,14 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
 
   const getStatusLabel = (status: string): string => {
     switch (status) {
-      case 'completed':
-        return '已完成';
-      case 'interrupted':
-        return '中断';
-      case 'time_slice_ended':
-        return '时间片结束';
+      case "completed":
+        return "已完成";
+      case "interrupted":
+        return "中断";
+      case "time_slice_ended":
+        return "时间片结束";
       default:
-        return '未知';
+        return "未知";
     }
   };
 
@@ -126,16 +126,24 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
   };
 
   const groupedExecutions = groupByDate(executions);
-  const totalDuration = executions.reduce((sum, e) => sum + (e.duration || 0), 0);
-  const completedCount = executions.filter(e => e.status === 'completed').length;
+  const totalDuration = executions.reduce(
+    (sum, e) => sum + (e.duration || 0),
+    0,
+  );
+  const completedCount = executions.filter(
+    (e) => e.status === "completed",
+  ).length;
 
   if (loading) {
     return (
       <div className={`animate-pulse ${className}`}>
         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-4" />
         <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded" />
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-16 bg-slate-200 dark:bg-slate-700 rounded"
+            />
           ))}
         </div>
       </div>
@@ -170,7 +178,10 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
         </div>
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-green-500">
-            {executions.length > 0 ? Math.round((completedCount / executions.length) * 100) : 0}%
+            {executions.length > 0
+              ? Math.round((completedCount / executions.length) * 100)
+              : 0}
+            %
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400">完成率</p>
         </div>
@@ -186,7 +197,10 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
       ) : (
         <div className="space-y-3">
           {Object.entries(groupedExecutions).map(([date, execs]) => (
-            <div key={date} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div
+              key={date}
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+            >
               <button
                 onClick={() => toggleGroup(date)}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
@@ -211,7 +225,7 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                 {expandedGroups.has(date) && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
+                    animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
@@ -220,17 +234,23 @@ export const ExecutionRecords: React.FC<ExecutionRecordsProps> = ({
                         <div
                           key={exec.id}
                           className={`flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${
-                            index > 0 ? 'border-t border-slate-100 dark:border-slate-700/50' : ''
+                            index > 0
+                              ? "border-t border-slate-100 dark:border-slate-700/50"
+                              : ""
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             {getStatusIcon(exec.status)}
                             <div>
                               <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                {formatTime(exec.started_at)} - {exec.ended_at ? formatTime(exec.ended_at) : '进行中'}
+                                {formatTime(exec.started_at)} -{" "}
+                                {exec.ended_at
+                                  ? formatTime(exec.ended_at)
+                                  : "进行中"}
                               </p>
                               <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Q{exec.queue_level} · {getStatusLabel(exec.status)}
+                                Q{exec.queue_level} ·{" "}
+                                {getStatusLabel(exec.status)}
                               </p>
                             </div>
                           </div>

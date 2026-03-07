@@ -28,14 +28,9 @@ const LearningMode = lazy(() =>
     default: module.LearningMode,
   }))
 );
-const Statistics = lazy(() =>
-  import("./pages/Statistics").then((module) => ({
-    default: module.Statistics,
-  }))
-);
-const LearningStatsCenter = lazy(() =>
-  import("./pages/LearningStatsCenter").then((module) => ({
-    default: module.LearningStatsCenter,
+const StatisticsCenter = lazy(() =>
+  import("./pages/StatisticsCenter").then((module) => ({
+    default: module.StatisticsCenter,
   }))
 );
 const Tasks = lazy(() =>
@@ -127,8 +122,7 @@ function App() {
             />
             <Route path="study" element={<Study />} />
             <Route path="learning" element={<LearningMode />} />
-            <Route path="statistics" element={<Statistics />} />
-            <Route path="learning-stats" element={<LearningStatsCenter />} />
+            <Route path="statistics" element={<StatisticsCenter />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />

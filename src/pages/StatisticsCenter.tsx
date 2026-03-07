@@ -1,0 +1,68 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, CheckSquare } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
+import { LearningStatsTab } from '../components/Statistics/LearningStatsTab';
+import { TaskStatsTab } from '../components/Statistics/TaskStatsTab';
+
+type StatsTab = 'learning' | 'tasks';
+
+const tabs: { id: StatsTab; label: string; icon: React.ReactNode }[] = [
+  { id: 'learning', label: '学习统计', icon: <BookOpen size={20} /> },
+  { id: 'tasks', label: '任务统计', icon: <CheckSquare size={20} /> },
+];
+
+export const StatisticsCenter: React.FC = () => {
+  const { isDark } = useTheme();
+  const [activeTab, setActiveTab] = useState<StatsTab>('learning');
+
+  return (
+    <div className={`h-full overflow-y-auto ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            统计中心
+          </h1>
+          <p className={`mt-2 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+            全面分析您的学习和任务完成情况
+          </p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-8">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                  : isDark
+                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'learning' && <LearningStatsTab />}
+            {activeTab === 'tasks' && <TaskStatsTab />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};

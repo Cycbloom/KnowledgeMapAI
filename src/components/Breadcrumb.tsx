@@ -8,7 +8,7 @@ const routeMap: Record<string, string> = {
   '/graph-map': '图谱地图',
   '/study': '学习中心',
   '/learning': '学习模式',
-  '/learning-stats': '学习统计',
+  '/statistics': '统计中心',
   '/achievements': '成就系统',
   '/templates': '模板管理',
   '/tasks': '任务中心',

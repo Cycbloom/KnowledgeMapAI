@@ -324,7 +324,7 @@ export const Dashboard = () => {
                   </p>
                 </div>
                 <Link 
-                  to="/learning-stats" 
+                  to="/statistics" 
                   className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 sm:gap-1.5 flex-shrink-0 ${
                     isDark 
                       ? 'bg-blue-600 text-white hover:bg-blue-500' 

@@ -651,4 +651,10 @@ export const schedulerApi = {
 
   checkTaskDependencies: (taskId: string) =>
     request(`/scheduler/tasks/${taskId}/dependency-check`),
+
+  getTaskAnalytics: () =>
+    request('/scheduler/analytics'),
+
+  generateInsights: () =>
+    request('/scheduler/analytics/insights'),
 };

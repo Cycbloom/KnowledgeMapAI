@@ -3946,4 +3946,54 @@ router.get(
   },
 );
 
+import { taskAnalyticsService } from "../services/taskAnalyticsService.js";
+
+router.get(
+  "/analytics",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    try {
+      const analytics = await taskAnalyticsService.getAnalytics(
+        supabase,
+        req.user.id,
+      );
+      res.json({ success: true, data: analytics });
+    } catch (error) {
+      logger.error("Get task analytics error:", error);
+      res.status(500).json({ error: "获取任务分析数据失败" });
+    }
+  },
+);
+
+router.post(
+  "/analytics/insights",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    try {
+      const insights = await taskAnalyticsService.generateInsights(
+        supabase,
+        req.user.id,
+      );
+      res.json({ success: true, data: insights });
+    } catch (error) {
+      logger.error("Generate insights error:", error);
+      res.status(500).json({ error: "生成洞察失败" });
+    }
+  },
+);
+
 export default router;

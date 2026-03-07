@@ -183,7 +183,7 @@ export const Layout = () => {
               <SidebarLink to="/" icon={BookOpen} label="我的图谱" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/graph-map" icon={Network} label="图谱地图" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/study" icon={GraduationCap} label="学习中心" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
-              <SidebarLink to="/learning-stats" icon={BarChart3} label="学习统计" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
+              <SidebarLink to="/statistics" icon={BarChart3} label="统计中心" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/achievements" icon={Trophy} label="成就系统" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/templates" icon={Sparkles} label="模板管理" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />
               <SidebarLink to="/tasks" icon={ListChecks} label="任务中心" isCollapsed={isCollapsed} isMobileMenuOpen={isMobileMenuOpen} isDark={isDark} onClick={handleMobileNavClick} />

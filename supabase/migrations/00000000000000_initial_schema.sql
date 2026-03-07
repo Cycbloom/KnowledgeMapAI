@@ -1293,6 +1293,78 @@ CREATE POLICY "Users can delete own task knowledge points" ON task_knowledge_poi
 );
 
 -- =====================================================
+-- NOTIFICATIONS TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  data JSONB DEFAULT '{}',
+  read_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  expires_at TIMESTAMP WITH TIME ZONE
+);
+
+COMMENT ON TABLE notifications IS 'User notifications for task reminders and alerts';
+COMMENT ON COLUMN notifications.type IS 'Notification type: task_start, task_complete, time_slice_end, deadline, break_start, break_end, daily_summary, system';
+COMMENT ON COLUMN notifications.data IS 'Additional data (e.g., taskId, taskTitle)';
+COMMENT ON COLUMN notifications.expires_at IS 'When this notification should be auto-deleted';
+
+-- Notification settings table
+CREATE TABLE IF NOT EXISTS notification_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  browser_enabled BOOLEAN DEFAULT TRUE,
+  sound_enabled BOOLEAN DEFAULT TRUE,
+  sound_volume INTEGER DEFAULT 50,
+  task_start_enabled BOOLEAN DEFAULT TRUE,
+  task_complete_enabled BOOLEAN DEFAULT TRUE,
+  time_slice_end_enabled BOOLEAN DEFAULT FALSE,
+  deadline_enabled BOOLEAN DEFAULT TRUE,
+  break_enabled BOOLEAN DEFAULT TRUE,
+  daily_summary_enabled BOOLEAN DEFAULT FALSE,
+  deadline_reminder_minutes INTEGER[] DEFAULT ARRAY[30, 60],
+  do_not_disturb_enabled BOOLEAN DEFAULT FALSE,
+  do_not_disturb_start TIME DEFAULT '22:00',
+  do_not_disturb_end TIME DEFAULT '08:00',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+COMMENT ON TABLE notification_settings IS 'User preferences for notifications';
+COMMENT ON COLUMN notification_settings.deadline_reminder_minutes IS 'Minutes before deadline to send reminder (e.g., 30, 60, 1440)';
+
+-- =====================================================
+-- INDEXES (continued)
+-- =====================================================
+
+-- Notifications
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications(read_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notification_settings_user_id ON notification_settings(user_id);
+
+-- =====================================================
+-- RLS POLICIES (continued)
+-- =====================================================
+
+-- Notifications
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own notifications" ON notifications FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own notifications" ON notifications FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own notification settings" ON notification_settings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own notification settings" ON notification_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own notification settings" ON notification_settings FOR UPDATE USING (auth.uid() = user_id);
+
+-- =====================================================
 -- FUNCTIONS
 -- =====================================================
 
@@ -1309,6 +1381,12 @@ BEGIN
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
     name = COALESCE(EXCLUDED.name, users.name);
+  
+  -- Create default notification settings for new user
+  INSERT INTO public.notification_settings (user_id)
+  VALUES (new.id)
+  ON CONFLICT (user_id) DO NOTHING;
+  
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -1,23 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, CheckCircle, Circle, Trash2, Clock, ChevronDown, ChevronRight } from 'lucide-react';
-import { schedulerApi } from '../../../services/api/scheduler';
-import { TaskSubtask } from '../../../types';
-import { useMessageStore } from '../../../store/useMessageStore';
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  CheckCircle,
+  Circle,
+  Trash2,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
+import { schedulerApi } from "../../../services/api/scheduler";
+import { TaskSubtask } from "../../../types";
+import { useMessageStore } from "../../../store/useMessageStore";
 
 interface SubtaskListProps {
   taskId: string;
   className?: string;
 }
 
-export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = '' }) => {
+export const SubtaskList: React.FC<SubtaskListProps> = ({
+  taskId,
+  className = "",
+}) => {
   const { addMessage } = useMessageStore();
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [newSubtask, setNewSubtask] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     estimated_duration: undefined as number | undefined,
   });
 
@@ -32,7 +43,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
         setSubtasks(response.data || []);
       }
     } catch (error) {
-      console.error('Failed to load subtasks:', error);
+      console.error("Failed to load subtasks:", error);
     } finally {
       setLoading(false);
     }
@@ -40,7 +51,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
 
   const handleAddSubtask = async () => {
     if (!newSubtask.title.trim()) {
-      addMessage({ type: 'error', content: '请输入子任务标题' });
+      addMessage({ type: "error", content: "请输入子任务标题" });
       return;
     }
 
@@ -52,24 +63,32 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
       });
       if (response.success) {
         setSubtasks([...subtasks, response.data]);
-        setNewSubtask({ title: '', description: '', estimated_duration: undefined });
+        setNewSubtask({
+          title: "",
+          description: "",
+          estimated_duration: undefined,
+        });
         setIsAdding(false);
-        addMessage({ type: 'success', content: '子任务已添加' });
+        addMessage({ type: "success", content: "子任务已添加" });
       }
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '添加子任务失败' });
+      addMessage({ type: "error", content: error.message || "添加子任务失败" });
     }
   };
 
   const handleToggleStatus = async (subtask: TaskSubtask) => {
-    const newStatus = subtask.status === 'completed' ? 'pending' : 'completed';
+    const newStatus = subtask.status === "completed" ? "pending" : "completed";
     try {
-      const response = await schedulerApi.updateSubtask(taskId, subtask.id, { status: newStatus });
+      const response = await schedulerApi.updateSubtask(taskId, subtask.id, {
+        status: newStatus,
+      });
       if (response.success) {
-        setSubtasks(subtasks.map(st => st.id === subtask.id ? response.data : st));
+        setSubtasks(
+          subtasks.map((st) => (st.id === subtask.id ? response.data : st)),
+        );
       }
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '更新状态失败' });
+      addMessage({ type: "error", content: error.message || "更新状态失败" });
     }
   };
 
@@ -77,24 +96,32 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
     try {
       const response = await schedulerApi.deleteSubtask(taskId, subtaskId);
       if (response.success) {
-        setSubtasks(subtasks.filter(st => st.id !== subtaskId));
-        addMessage({ type: 'success', content: '子任务已删除' });
+        setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
+        addMessage({ type: "success", content: "子任务已删除" });
       }
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '删除子任务失败' });
+      addMessage({ type: "error", content: error.message || "删除子任务失败" });
     }
   };
 
-  const completedCount = subtasks.filter(st => st.status === 'completed').length;
-  const progress = subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
+  const completedCount = subtasks.filter(
+    (st) => st.status === "completed",
+  ).length;
+  const progress =
+    subtasks.length > 0
+      ? Math.round((completedCount / subtasks.length) * 100)
+      : 0;
 
   if (loading) {
     return (
       <div className={`animate-pulse ${className}`}>
         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-4" />
         <div className="space-y-2">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-10 bg-slate-200 dark:bg-slate-700 rounded" />
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-10 bg-slate-200 dark:bg-slate-700 rounded"
+            />
           ))}
         </div>
       </div>
@@ -109,7 +136,9 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
       >
         <div className="flex items-center gap-2">
           {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">子任务</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            子任务
+          </h3>
           <span className="text-sm text-slate-500 dark:text-slate-400">
             {completedCount}/{subtasks.length} 完成
           </span>
@@ -137,7 +166,9 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{progress}%</span>
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {progress}%
+                </span>
               </div>
             </div>
           )}
@@ -147,14 +178,18 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
               <input
                 type="text"
                 value={newSubtask.title}
-                onChange={(e) => setNewSubtask({ ...newSubtask, title: e.target.value })}
+                onChange={(e) =>
+                  setNewSubtask({ ...newSubtask, title: e.target.value })
+                }
                 placeholder="子任务标题"
                 className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 autoFocus
               />
               <textarea
                 value={newSubtask.description}
-                onChange={(e) => setNewSubtask({ ...newSubtask, description: e.target.value })}
+                onChange={(e) =>
+                  setNewSubtask({ ...newSubtask, description: e.target.value })
+                }
                 placeholder="描述（可选）"
                 className="w-full px-3 py-2 mb-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
                 rows={2}
@@ -163,8 +198,15 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
                 <Clock size={14} className="text-slate-400" />
                 <input
                   type="number"
-                  value={newSubtask.estimated_duration || ''}
-                  onChange={(e) => setNewSubtask({ ...newSubtask, estimated_duration: e.target.value ? parseInt(e.target.value) : undefined })}
+                  value={newSubtask.estimated_duration || ""}
+                  onChange={(e) =>
+                    setNewSubtask({
+                      ...newSubtask,
+                      estimated_duration: e.target.value
+                        ? parseInt(e.target.value)
+                        : undefined,
+                    })
+                  }
                   placeholder="预计时长（分钟）"
                   className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
@@ -173,7 +215,11 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
                 <button
                   onClick={() => {
                     setIsAdding(false);
-                    setNewSubtask({ title: '', description: '', estimated_duration: undefined });
+                    setNewSubtask({
+                      title: "",
+                      description: "",
+                      estimated_duration: undefined,
+                    });
                   }}
                   className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
@@ -194,27 +240,29 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({ taskId, className = ''
               <div
                 key={subtask.id}
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                  subtask.status === 'completed'
-                    ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                  subtask.status === "completed"
+                    ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30"
+                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                 }`}
               >
                 <button
                   onClick={() => handleToggleStatus(subtask)}
                   className="flex-shrink-0"
                 >
-                  {subtask.status === 'completed' ? (
+                  {subtask.status === "completed" ? (
                     <CheckCircle className="w-5 h-5 text-green-500" />
                   ) : (
                     <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600 hover:text-cyan-500 transition-colors" />
                   )}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-medium ${
-                    subtask.status === 'completed'
-                      ? 'text-slate-500 dark:text-slate-400 line-through'
-                      : 'text-slate-900 dark:text-white'
-                  }`}>
+                  <p
+                    className={`font-medium ${
+                      subtask.status === "completed"
+                        ? "text-slate-500 dark:text-slate-400 line-through"
+                        : "text-slate-900 dark:text-white"
+                    }`}
+                  >
                     {subtask.title}
                   </p>
                   {subtask.description && (

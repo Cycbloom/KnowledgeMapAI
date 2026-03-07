@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ArrowLeft,
   Edit,
@@ -14,19 +14,19 @@ import {
   BarChart3,
   FileText,
   Bookmark,
-} from 'lucide-react';
-import { schedulerApi } from '../../../services/api/scheduler';
-import { TaskDetail } from '../../../types';
-import { useMessageStore } from '../../../store/useMessageStore';
-import { MarkdownEditor } from './MarkdownEditor';
-import { SubtaskList } from './SubtaskList';
-import { TaskLinks } from './TaskLinks';
-import { KnowledgePointAssociation } from './KnowledgePointAssociation';
-import { ExecutionRecords } from './ExecutionRecords';
-import { ProgressDetail } from './ProgressDetail';
-import { SaveAsTemplateModal } from '../SaveAsTemplateModal';
+} from "lucide-react";
+import { schedulerApi } from "../../../services/api/scheduler";
+import { TaskDetail } from "../../../types";
+import { useMessageStore } from "../../../store/useMessageStore";
+import { MarkdownEditor } from "./MarkdownEditor";
+import { SubtaskList } from "./SubtaskList";
+import { TaskLinks } from "./TaskLinks";
+import { KnowledgePointAssociation } from "./KnowledgePointAssociation";
+import { ExecutionRecords } from "./ExecutionRecords";
+import { ProgressDetail } from "./ProgressDetail";
+import { SaveAsTemplateModal } from "../SaveAsTemplateModal";
 
-type WorkTab = 'notes' | 'subtasks' | 'executions' | 'progress';
+type WorkTab = "notes" | "subtasks" | "executions" | "progress";
 
 interface TaskWorkbenchProps {
   taskId: string;
@@ -42,7 +42,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const { addMessage } = useMessageStore();
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<WorkTab>('notes');
+  const [activeTab, setActiveTab] = useState<WorkTab>("notes");
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
 
   useEffect(() => {
@@ -57,8 +57,8 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
         setTask(response.data);
       }
     } catch (error) {
-      console.error('Failed to load task detail:', error);
-      addMessage({ type: 'error', content: '加载任务详情失败' });
+      console.error("Failed to load task detail:", error);
+      addMessage({ type: "error", content: "加载任务详情失败" });
     } finally {
       setLoading(false);
     }
@@ -68,10 +68,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await schedulerApi.startTask(task.id);
-      addMessage({ type: 'success', content: '任务已开始' });
+      addMessage({ type: "success", content: "任务已开始" });
       loadTaskDetail();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '开始任务失败' });
+      addMessage({ type: "error", content: error.message || "开始任务失败" });
     }
   };
 
@@ -79,10 +79,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await schedulerApi.pauseTask(task.id);
-      addMessage({ type: 'success', content: '任务已暂停' });
+      addMessage({ type: "success", content: "任务已暂停" });
       loadTaskDetail();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '暂停任务失败' });
+      addMessage({ type: "error", content: error.message || "暂停任务失败" });
     }
   };
 
@@ -90,82 +90,118 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await schedulerApi.completeTask(task.id);
-      addMessage({ type: 'success', content: '任务已完成' });
+      addMessage({ type: "success", content: "任务已完成" });
       loadTaskDetail();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '完成任务失败' });
+      addMessage({ type: "error", content: error.message || "完成任务失败" });
     }
   };
 
   const handleDeleteTask = async () => {
     if (!task) return;
-    if (!window.confirm('确定要删除这个任务吗？此操作不可撤销。')) return;
+    if (!window.confirm("确定要删除这个任务吗？此操作不可撤销。")) return;
     try {
       await schedulerApi.deleteTask(task.id);
-      addMessage({ type: 'success', content: '任务已删除' });
+      addMessage({ type: "success", content: "任务已删除" });
       onBack();
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '删除任务失败' });
+      addMessage({ type: "error", content: error.message || "删除任务失败" });
     }
   };
 
-  const handleSaveNotes = useCallback(async (notes: string) => {
-    if (!task) return;
-    try {
-      await schedulerApi.updateNotes(task.id, notes);
-      setTask({ ...task, notes });
-    } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '保存笔记失败' });
-    }
-  }, [task, addMessage]);
+  const handleSaveNotes = useCallback(
+    async (notes: string) => {
+      if (!task) return;
+      try {
+        await schedulerApi.updateNotes(task.id, notes);
+        setTask({ ...task, notes });
+      } catch (error: any) {
+        addMessage({ type: "error", content: error.message || "保存笔记失败" });
+      }
+    },
+    [task, addMessage],
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400';
-      case 'in_progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400';
-      case 'paused': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400';
-      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400';
-      default: return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
+      case "completed":
+        return "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400";
+      case "in_progress":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400";
+      case "paused":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400";
+      case "cancelled":
+        return "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400";
+      default:
+        return "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
-      case 'in_progress': return <Play className="w-4 h-4" />;
-      case 'paused': return <Pause className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case "completed":
+        return <CheckCircle className="w-4 h-4" />;
+      case "in_progress":
+        return <Play className="w-4 h-4" />;
+      case "paused":
+        return <Pause className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'completed': return '已完成';
-      case 'in_progress': return '进行中';
-      case 'paused': return '已暂停';
-      case 'cancelled': return '已取消';
-      default: return '待处理';
+      case "completed":
+        return "已完成";
+      case "in_progress":
+        return "进行中";
+      case "paused":
+        return "已暂停";
+      case "cancelled":
+        return "已取消";
+      default:
+        return "待处理";
     }
   };
 
   const getTaskTypeLabel = (type?: string) => {
     switch (type) {
-      case 'one_time': return '一次性任务';
-      case 'long_term': return '长期项目';
-      case 'periodic': return '周期任务';
-      case 'learning': return '学习任务';
-      default: return '普通任务';
+      case "one_time":
+        return "一次性任务";
+      case "long_term":
+        return "长期项目";
+      case "periodic":
+        return "周期任务";
+      case "learning":
+        return "学习任务";
+      default:
+        return "普通任务";
     }
   };
 
   const getPriorityInfo = (priority: number) => {
-    if (priority >= 4) return { label: '高优先级', color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-500/20' };
-    if (priority >= 2) return { label: '中优先级', color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-500/20' };
-    return { label: '低优先级', color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-500/20' };
+    if (priority >= 4)
+      return {
+        label: "高优先级",
+        color: "text-red-500",
+        bg: "bg-red-100 dark:bg-red-500/20",
+      };
+    if (priority >= 2)
+      return {
+        label: "中优先级",
+        color: "text-yellow-500",
+        bg: "bg-yellow-100 dark:bg-yellow-500/20",
+      };
+    return {
+      label: "低优先级",
+      color: "text-green-500",
+      bg: "bg-green-100 dark:bg-green-500/20",
+    };
   };
 
   const formatDuration = (minutes?: number) => {
-    if (!minutes) return '未设置';
+    if (!minutes) return "未设置";
     if (minutes < 60) return `${minutes} 分钟`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -173,21 +209,21 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   };
 
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '未设置';
-    return new Date(dateStr).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!dateStr) return "未设置";
+    return new Date(dateStr).toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const tabs: { id: WorkTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'notes', label: '笔记', icon: <FileText size={16} /> },
-    { id: 'subtasks', label: '子任务', icon: <CheckCircle size={16} /> },
-    { id: 'executions', label: '执行记录', icon: <Clock size={16} /> },
-    { id: 'progress', label: '进度', icon: <BarChart3 size={16} /> },
+    { id: "notes", label: "笔记", icon: <FileText size={16} /> },
+    { id: "subtasks", label: "子任务", icon: <CheckCircle size={16} /> },
+    { id: "executions", label: "执行记录", icon: <Clock size={16} /> },
+    { id: "progress", label: "进度", icon: <BarChart3 size={16} /> },
   ];
 
   if (loading) {
@@ -202,7 +238,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">任务不存在</h2>
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+          任务不存在
+        </h2>
         <button
           onClick={onBack}
           className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600"
@@ -263,7 +301,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
           {/* Status and meta info */}
           <div className="flex flex-wrap items-center gap-3 mt-3">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(task.status)}`}>
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(task.status)}`}
+            >
               {getStatusIcon(task.status)}
               {getStatusLabel(task.status)}
             </span>
@@ -271,7 +311,9 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               <Tag className="w-4 h-4" />
               {getTaskTypeLabel(task.task_type)}
             </span>
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityInfo.bg} ${priorityInfo.color}`}>
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityInfo.bg} ${priorityInfo.color}`}
+            >
               <AlertTriangle className="w-4 h-4" />
               {priorityInfo.label}
             </span>
@@ -289,8 +331,12 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           {/* Description */}
           {task.description && (
             <div>
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">描述</h3>
-              <p className="text-slate-900 dark:text-white whitespace-pre-wrap">{task.description}</p>
+              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                描述
+              </h3>
+              <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
+                {task.description}
+              </p>
             </div>
           )}
 
@@ -332,31 +378,36 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                 <span className="text-xs">截止日期</span>
               </div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                {task.deadline ? formatDate(task.deadline) : '未设置'}
+                {task.deadline ? formatDate(task.deadline) : "未设置"}
               </p>
             </div>
           </div>
 
           {/* Progress for long-term tasks */}
-          {task.task_type === 'long_term' && task.progress_percentage !== undefined && (
-            <div>
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">进度</h3>
-              <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-300"
-                  style={{ width: `${task.progress_percentage}%` }}
-                />
+          {task.task_type === "long_term" &&
+            task.progress_percentage !== undefined && (
+              <div>
+                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                  进度
+                </h3>
+                <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-300"
+                    style={{ width: `${task.progress_percentage}%` }}
+                  />
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  {task.progress_percentage}% 完成
+                </p>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                {task.progress_percentage}% 完成
-              </p>
-            </div>
-          )}
+            )}
 
           {/* Tags */}
           {task.tags && task.tags.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">标签</h3>
+              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                标签
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {task.tags.map((tag, index) => (
                   <span
@@ -397,8 +448,8 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${
                     activeTab === tab.id
-                      ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                      : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? "border-cyan-500 text-cyan-600 dark:text-cyan-400"
+                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   {tab.icon}
@@ -410,10 +461,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
 
           {/* Tab content */}
           <div className="flex-1 overflow-hidden p-6">
-            {activeTab === 'notes' && (
+            {activeTab === "notes" && (
               <div className="h-full">
                 <MarkdownEditor
-                  value={task.notes || ''}
+                  value={task.notes || ""}
                   onChange={(notes) => setTask({ ...task, notes })}
                   onSave={handleSaveNotes}
                   placeholder="在这里记录任务笔记...&#10;&#10;支持 Markdown 语法：&#10;- **粗体** *斜体*&#10;- # 标题&#10;- 列表项&#10;- [链接](url)"
@@ -422,15 +473,13 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               </div>
             )}
 
-            {activeTab === 'subtasks' && (
-              <SubtaskList taskId={task.id} />
-            )}
+            {activeTab === "subtasks" && <SubtaskList taskId={task.id} />}
 
-            {activeTab === 'executions' && (
+            {activeTab === "executions" && (
               <ExecutionRecords taskId={task.id} />
             )}
 
-            {activeTab === 'progress' && (
+            {activeTab === "progress" && (
               <ProgressDetail
                 taskId={task.id}
                 taskType={task.task_type}
@@ -444,7 +493,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       {/* Footer - Action buttons */}
       <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-4">
         <div className="flex items-center gap-3">
-          {task.status === 'pending' && (
+          {task.status === "pending" && (
             <button
               onClick={handleStartTask}
               className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-medium hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
@@ -453,7 +502,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               开始任务
             </button>
           )}
-          {task.status === 'in_progress' && (
+          {task.status === "in_progress" && (
             <>
               <button
                 onClick={handlePauseTask}
@@ -471,7 +520,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
               </button>
             </>
           )}
-          {task.status === 'paused' && (
+          {task.status === "paused" && (
             <button
               onClick={handleStartTask}
               className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-medium hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
@@ -496,7 +545,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           }}
           onClose={() => setShowSaveAsTemplate(false)}
           onSuccess={() => {
-            addMessage({ type: 'success', content: '模板保存成功!' });
+            addMessage({ type: "success", content: "模板保存成功!" });
           }}
         />
       )}

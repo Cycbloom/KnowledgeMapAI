@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   ChevronRight,
@@ -7,8 +7,8 @@ import {
   CheckCircle,
   RefreshCw,
   Brain,
-} from 'lucide-react';
-import { schedulerApi } from '../../services/api/scheduler';
+} from "lucide-react";
+import { schedulerApi } from "../../services/api/scheduler";
 
 interface SmartRecommendation {
   recommendedTask: {
@@ -24,7 +24,7 @@ interface SmartRecommendation {
     };
     score: number;
     reasons: string[];
-    urgencyLevel: 'low' | 'medium' | 'high' | 'critical';
+    urgencyLevel: "low" | "medium" | "high" | "critical";
   } | null;
   alternativeTasks: Array<{
     task: {
@@ -40,10 +40,10 @@ interface SmartRecommendation {
   currentContext: {
     timeSlot: {
       label: string;
-      type: 'morning' | 'afternoon' | 'evening' | 'night';
+      type: "morning" | "afternoon" | "evening" | "night";
     };
     isPeakHour: boolean;
-    efficiencyLevel: 'high' | 'medium' | 'low';
+    efficiencyLevel: "high" | "medium" | "low";
   };
 }
 
@@ -58,7 +58,8 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
   onViewTask,
   currentTaskId,
 }) => {
-  const [recommendation, setRecommendation] = useState<SmartRecommendation | null>(null);
+  const [recommendation, setRecommendation] =
+    useState<SmartRecommendation | null>(null);
   const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [showAlternatives, setShowAlternatives] = useState(false);
@@ -71,7 +72,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
         setRecommendation(response.data);
       }
     } catch (error: any) {
-      console.error('Failed to load recommendation:', error);
+      console.error("Failed to load recommendation:", error);
     } finally {
       setLoading(false);
     }
@@ -95,25 +96,34 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
 
   const getUrgencyColor = (level: string) => {
     switch (level) {
-      case 'critical':
-        return 'bg-red-500';
-      case 'high':
-        return 'bg-orange-500';
-      case 'medium':
-        return 'bg-yellow-500';
+      case "critical":
+        return "bg-red-500";
+      case "high":
+        return "bg-orange-500";
+      case "medium":
+        return "bg-yellow-500";
       default:
-        return 'bg-green-500';
+        return "bg-green-500";
     }
   };
 
   const getEfficiencyBadge = (level: string) => {
     switch (level) {
-      case 'high':
-        return { label: '效率高峰', color: 'text-green-500 bg-green-100 dark:bg-green-500/20' };
-      case 'low':
-        return { label: '效率低谷', color: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-500/20' };
+      case "high":
+        return {
+          label: "效率高峰",
+          color: "text-green-500 bg-green-100 dark:bg-green-500/20",
+        };
+      case "low":
+        return {
+          label: "效率低谷",
+          color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-500/20",
+        };
       default:
-        return { label: '效率正常', color: 'text-blue-500 bg-blue-100 dark:bg-blue-500/20' };
+        return {
+          label: "效率正常",
+          color: "text-blue-500 bg-blue-100 dark:bg-blue-500/20",
+        };
     }
   };
 
@@ -149,7 +159,8 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     );
   }
 
-  const { recommendedTask, currentContext, reasons, alternativeTasks } = recommendation;
+  const { recommendedTask, currentContext, reasons, alternativeTasks } =
+    recommendation;
   const efficiencyBadge = getEfficiencyBadge(currentContext.efficiencyLevel);
 
   return (
@@ -165,7 +176,9 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">智能推荐</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              智能推荐
+            </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {currentContext.timeSlot.label} · {efficiencyBadge.label}
             </p>
@@ -194,15 +207,17 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
             {/* Recommended Task */}
             <div className="p-4">
               <div className="flex items-start gap-4">
-                <div className={`w-2 h-full min-h-[80px] rounded-full ${getUrgencyColor(recommendedTask.urgencyLevel)}`} />
-                
+                <div
+                  className={`w-2 h-full min-h-[80px] rounded-full ${getUrgencyColor(recommendedTask.urgencyLevel)}`}
+                />
+
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -261,7 +276,9 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     onClick={() => setShowAlternatives(!showAlternatives)}
                     className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                   >
-                    <ChevronRight className={`w-4 h-4 transition-transform ${showAlternatives ? 'rotate-90' : ''}`} />
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${showAlternatives ? "rotate-90" : ""}`}
+                    />
                     其他推荐 ({alternativeTasks.length})
                   </button>
 
@@ -269,7 +286,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                     {showAlternatives && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
+                        animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         className="mt-2 space-y-2"
                       >
@@ -279,7 +296,9 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                             className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="text-sm text-slate-400">#{index + 1}</span>
+                              <span className="text-sm text-slate-400">
+                                #{index + 1}
+                              </span>
                               <div>
                                 <p className="font-medium text-slate-900 dark:text-white">
                                   {alt.task.title}

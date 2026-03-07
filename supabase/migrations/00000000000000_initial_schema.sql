@@ -364,6 +364,8 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
   progress_percentage INTEGER DEFAULT 0,
   parent_task_id UUID REFERENCES scheduled_tasks(id),
   context TEXT,
+  scheduled_start TIMESTAMPTZ,
+  scheduled_end TIMESTAMPTZ,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -384,6 +386,8 @@ COMMENT ON COLUMN scheduled_tasks.progress_mode IS 'Progress distribution mode: 
 COMMENT ON COLUMN scheduled_tasks.progress_percentage IS 'Current progress percentage (0-100)';
 COMMENT ON COLUMN scheduled_tasks.parent_task_id IS 'Parent task ID for periodic task instances';
 COMMENT ON COLUMN scheduled_tasks.context IS 'Task context description for AI assistance';
+COMMENT ON COLUMN scheduled_tasks.scheduled_start IS 'Scheduled start time for the task';
+COMMENT ON COLUMN scheduled_tasks.scheduled_end IS 'Scheduled end time for the task';
 
 -- Task executions table (execution history)
 CREATE TABLE IF NOT EXISTS task_executions (
@@ -899,6 +903,7 @@ CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_knowledge_point ON scheduled_task
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_queue_id ON scheduled_tasks(queue_id) WHERE queue_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_task_type ON scheduled_tasks(user_id, task_type) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_parent_task ON scheduled_tasks(parent_task_id) WHERE parent_task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_scheduled_start ON scheduled_tasks(user_id, scheduled_start) WHERE deleted_at IS NULL;
 
 -- Task dependencies indexes
 CREATE INDEX IF NOT EXISTS idx_task_dependencies_task ON task_dependencies(task_id);

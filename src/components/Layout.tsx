@@ -24,6 +24,7 @@ import {
   Moon,
   LucideIcon,
   Zap,
+  Calendar,
 } from "lucide-react";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { MessageBar } from "./MessageBar";
@@ -255,6 +256,15 @@ export const Layout = () => {
                 to="/statistics"
                 icon={BarChart3}
                 label="统计中心"
+                isCollapsed={isCollapsed}
+                isMobileMenuOpen={isMobileMenuOpen}
+                isDark={isDark}
+                onClick={handleMobileNavClick}
+              />
+              <SidebarLink
+                to="/calendar"
+                icon={Calendar}
+                label="日历"
                 isCollapsed={isCollapsed}
                 isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}

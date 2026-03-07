@@ -81,6 +81,8 @@ export interface UpdateScheduledTaskData {
   progress_percentage?: number;
   context?: string;
   parent_task_id?: string;
+  scheduled_start?: string;
+  scheduled_end?: string;
 }
 
 export type TaskType = "one_time" | "long_term" | "periodic" | "learning";

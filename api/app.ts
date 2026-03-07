@@ -42,6 +42,7 @@ import knowledgePointRoutes from "./routes/knowledgePoints.js";
 import schedulerRoutes from "./routes/scheduler.js";
 import notificationRoutes from "./routes/notifications.js";
 import relationshipTypesRoutes from "./routes/relationshipTypes.js";
+import calendarRoutes from "./routes/calendar.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger.js";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler.js";
@@ -154,6 +155,7 @@ app.use("/api/combined-view", knowledgePointRoutes);
 app.use("/api/scheduler", schedulerRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/relationship-types", relationshipTypesRoutes);
+app.use("/api/calendar", calendarRoutes);
 
 /**
  * health

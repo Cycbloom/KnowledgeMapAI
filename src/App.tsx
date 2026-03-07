@@ -7,79 +7,84 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Lazy Load Pages
 const Login = lazy(() =>
-  import("./pages/Login").then((module) => ({ default: module.Login }))
+  import("./pages/Login").then((module) => ({ default: module.Login })),
 );
 const Register = lazy(() =>
-  import("./pages/Register").then((module) => ({ default: module.Register }))
+  import("./pages/Register").then((module) => ({ default: module.Register })),
 );
 const Dashboard = lazy(() =>
-  import("./pages/Dashboard").then((module) => ({ default: module.Dashboard }))
+  import("./pages/Dashboard").then((module) => ({ default: module.Dashboard })),
 );
 const GraphEditor = lazy(() =>
   import("./pages/GraphEditor").then((module) => ({
     default: module.GraphEditor,
-  }))
+  })),
 );
 const Study = lazy(() =>
-  import("./pages/Study").then((module) => ({ default: module.Study }))
+  import("./pages/Study").then((module) => ({ default: module.Study })),
 );
 const LearningMode = lazy(() =>
   import("./pages/LearningMode").then((module) => ({
     default: module.LearningMode,
-  }))
+  })),
 );
 const StatisticsCenter = lazy(() =>
   import("./pages/StatisticsCenter").then((module) => ({
     default: module.StatisticsCenter,
-  }))
+  })),
 );
 const Tasks = lazy(() =>
-  import("./pages/Tasks").then((module) => ({ default: module.Tasks }))
+  import("./pages/Tasks").then((module) => ({ default: module.Tasks })),
 );
 const Profile = lazy(() =>
-  import("./pages/Profile").then((module) => ({ default: module.Profile }))
+  import("./pages/Profile").then((module) => ({ default: module.Profile })),
 );
 const Settings = lazy(() =>
-  import("./pages/Settings").then((module) => ({ default: module.Settings }))
+  import("./pages/Settings").then((module) => ({ default: module.Settings })),
 );
 const RecycleBin = lazy(() =>
   import("./pages/RecycleBin").then((module) => ({
     default: module.RecycleBin,
-  }))
+  })),
 );
 const Templates = lazy(() =>
-  import("./pages/Templates").then((module) => ({ default: module.Templates }))
+  import("./pages/Templates").then((module) => ({ default: module.Templates })),
 );
 const Achievements = lazy(() =>
   import("./pages/Achievements").then((module) => ({
     default: module.Achievements,
-  }))
+  })),
 );
 const GraphMap = lazy(() =>
-  import("./pages/GraphMap").then((module) => ({ default: module.GraphMap }))
+  import("./pages/GraphMap").then((module) => ({ default: module.GraphMap })),
 );
 const CombinedGraphView = lazy(() =>
   import("./pages/CombinedGraphView").then((module) => ({
     default: module.CombinedGraphView,
-  }))
+  })),
 );
 const Scheduler = lazy(() =>
-  import("./pages/Scheduler").then((module) => ({ default: module.Scheduler }))
+  import("./pages/Scheduler").then((module) => ({ default: module.Scheduler })),
 );
 const CurrentTask = lazy(() =>
   import("./pages/CurrentTask").then((module) => ({
     default: module.CurrentTask,
-  }))
+  })),
 );
 const SchedulerStats = lazy(() =>
   import("./pages/SchedulerStats").then((module) => ({
     default: module.SchedulerStats,
-  }))
+  })),
 );
 const TaskDetailPage = lazy(() =>
   import("./pages/TaskDetailPage").then((module) => ({
     default: module.default,
-  }))
+  })),
+);
+const CalendarPage = lazy(() =>
+  import("./pages/CalendarPage").then((module) => ({
+    default: module.CalendarPage,
+  })),
 );
 
 const LoadingFallback = () => (
@@ -134,6 +139,7 @@ function App() {
             <Route path="scheduler/current" element={<CurrentTask />} />
             <Route path="scheduler/stats" element={<SchedulerStats />} />
             <Route path="scheduler/task/:taskId" element={<TaskDetailPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
           </Route>
         </Routes>
       </Suspense>

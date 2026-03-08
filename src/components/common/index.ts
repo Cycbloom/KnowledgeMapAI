@@ -20,3 +20,4 @@ export { TagCloud, TagFilter, TagSuggestions, TagInput } from "./TagSystem.js";
 export { TermTooltip } from "./TermTooltip.js";
 export { GlobalSearch } from "./GlobalSearch.js";
 export { ShortcutHelpPanel } from "./ShortcutHelpPanel.js";
+export { SearchResults } from "./SearchResults.js";

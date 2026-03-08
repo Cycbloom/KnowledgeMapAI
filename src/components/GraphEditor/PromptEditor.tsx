@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Save, Variable } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 
 interface PromptEditorProps {
   initialContent: string;

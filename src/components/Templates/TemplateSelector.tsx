@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Template, TemplateCategory } from '../types';
+import { Template, TemplateCategory } from '../../types';
 import { TemplateCard } from './TemplateCard';
 import { TemplatePreview } from './TemplatePreview';
 import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useTemplates } from '../hooks/useQueries';
-import { useTheme } from '../hooks/useTheme';
+import { useTemplates } from '../../hooks/useQueries';
+import { useTheme } from '../../hooks/useTheme';
 
 interface TemplateSelectorProps {
   onSelectTemplate: (template: Template | null) => void;

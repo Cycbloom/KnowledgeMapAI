@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import { PromptEditor } from './PromptEditor';
 import { Edit, RotateCcw, Network, Layers, MessageSquare, Wrench, ChevronDown } from 'lucide-react';
 

@@ -3,8 +3,8 @@ import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gau
 import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
 import { useMessageStore } from '../../store/useMessageStore';
 import { usePerformanceStore } from '../../store/usePerformanceStore';
-import { PromptSettingsPanel } from '../PromptSettingsPanel';
-import { AIActionSettingsPanel } from '../AIActionSettingsPanel';
+import { PromptSettingsPanel } from './PromptSettingsPanel';
+import { AIActionSettingsPanel } from './AIActionSettingsPanel';
 
 interface GraphSettingsModalProps {
   isOpen: boolean;

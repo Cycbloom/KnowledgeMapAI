@@ -10,7 +10,7 @@ import { CreateRelationPanel } from '../components/GraphMap/CreateRelationPanel'
 import { QuickCreateGraphPanel } from '../components/GraphMap/QuickCreateGraphPanel';
 import { MapAnalysisPanel } from '../components/GraphMap/MapAnalysisPanel';
 import { AIExpansionPanel } from '../components/GraphMap/AIExpansionPanel';
-import { PromptEditor } from '../components/PromptEditor';
+import { PromptEditor } from '../components/GraphEditor/PromptEditor';
 import type { Graph, GraphRelation, GraphMapFilterMode, GraphRelationType, QuickCreateGraphRequest, MapAnalysisResult, InfiniteExpansionProgress } from '../types';
 
 export const GraphMap = () => {

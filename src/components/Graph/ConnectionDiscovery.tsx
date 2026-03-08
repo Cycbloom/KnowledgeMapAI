@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link2, Sparkles, Loader2, Check, X, RefreshCw, Network } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
-import { Node, Edge } from '../types';
+import { useTheme } from '../../hooks/useTheme';
+import { Node, Edge } from '../../types';
 
 interface SuggestedConnection {
   sourceId: string;

@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
-import { Template, TemplateNode } from '../types';
+import { Template, TemplateNode } from '../../types';
 import { ChevronRight } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface TemplatePreviewProps {
   template: Template;

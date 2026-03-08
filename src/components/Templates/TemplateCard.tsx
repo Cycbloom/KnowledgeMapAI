@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
-import { Template, TemplateCategory } from '../types';
+import { Template, TemplateCategory } from '../../types';
 import { BookOpen, FileText, Briefcase, PieChart, Sparkles } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface TemplateCardProps {
   template: Template;

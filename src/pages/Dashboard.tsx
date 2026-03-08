@@ -34,8 +34,8 @@ import {
 import { useMessageStore } from "../store/useMessageStore";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
-import { ConfirmationModal } from "../components/common";
-import { TemplateSelector } from "../components/TemplateSelector";
+import { ConfirmationModal, SearchResults } from "../components/common";
+import { TemplateSelector } from "../components/Templates/TemplateSelector";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { Template } from "../types";
 import { useTheme } from "../hooks/useTheme";
@@ -43,7 +43,6 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { api } from "../services/api";
 import { useTopicCheck } from "../hooks/useTopicCheck";
 import { useSearch } from "../hooks/useSearch";
-import { SearchResults } from "../components/SearchResults";
 
 export const Dashboard = () => {
   const { isDark } = useTheme();

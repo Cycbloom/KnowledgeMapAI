@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { useStatistics, useUser, useGraphs } from '../hooks/useQueries';
-import { ActivityHeatmap } from '../components/ActivityHeatmap';
-import { 
-  KnowledgeHeatmap, 
-  MasteryDistributionChart, 
+import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
+import {
+  KnowledgeHeatmap,
+  MasteryDistributionChart,
   WeakPointsAnalysis,
   QuickStatsCards
-} from '../components/LearningStatsEnhanced';
+} from '../components/Statistics/LearningStatsEnhanced';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, ReferenceLine

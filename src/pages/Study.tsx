@@ -6,7 +6,7 @@ import { QuestionBank } from '../components/Study/QuestionBank';
 import { StudyCardPreview } from '../components/Study/StudyCardPreview';
 import { StudyCardDetailModal } from '../components/Study/StudyCardDetailModal';
 import { FocusStats } from '../components/Study/FocusStats';
-import { StatsOverview } from '../components/StatsOverview';
+import { StatsOverview } from '../components/Statistics/StatsOverview';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Search, ArrowLeft, Play, LayoutGrid, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Activity, Flame, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';

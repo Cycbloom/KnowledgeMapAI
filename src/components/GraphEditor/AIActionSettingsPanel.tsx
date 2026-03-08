@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api, AIAction } from '../services/api';
+import { api, AIAction } from '../../services/api';
 import { PromptEditor } from './PromptEditor';
 import { Edit, Trash2, Plus, Zap, Copy } from 'lucide-react';
 

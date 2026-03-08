@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SimilarKnowledgePoint } from '../types';
+import type { SimilarKnowledgePoint } from '../../types';
 
 interface KnowledgePointReuseDialogProps {
   isOpen: boolean;

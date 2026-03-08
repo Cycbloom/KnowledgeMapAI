@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Network, FileText, Sparkles, ChevronRight, Clock, Layers } from 'lucide-react';
-import type { SearchResult } from '../services/api/search';
+import type { SearchResult } from '../../services/api/search';
 
 interface SearchResultsProps {
   results: SearchResult | null;

@@ -4,8 +4,8 @@ import { useLogoutMutation, useUser } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X, Database, Download, Upload, AlertTriangle, Trash2, RotateCcw, Clock, Plus, RefreshCw } from 'lucide-react';
-import { PromptSettingsPanel } from '../components/PromptSettingsPanel';
-import { AIActionSettingsPanel } from '../components/AIActionSettingsPanel';
+import { PromptSettingsPanel } from '../components/GraphEditor/PromptSettingsPanel';
+import { AIActionSettingsPanel } from '../components/GraphEditor/AIActionSettingsPanel';
 import { backupApi, BackupSnapshot } from '../services/api/backup';
 
 export const Profile = () => {

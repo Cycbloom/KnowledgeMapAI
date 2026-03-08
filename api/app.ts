@@ -39,7 +39,7 @@ import alertsRoutes from "./routes/alerts.js";
 import systemMonitorRoutes from "./routes/systemMonitor.js";
 import backupRoutes from "./routes/backup.js";
 import knowledgePointRoutes from "./routes/knowledgePoints.js";
-import schedulerRoutes from "./routes/scheduler.js";
+import schedulerRoutes from "./routes/scheduler/index.js";
 import notificationRoutes from "./routes/notifications.js";
 import relationshipTypesRoutes from "./routes/relationshipTypes.js";
 import calendarRoutes from "./routes/calendar.js";
@@ -81,7 +81,7 @@ app.use(
       // fallback to standard filter function
       return compression.filter(req, res);
     },
-  })
+  }),
 );
 
 // Trust Proxy (Required for correct IP rate limiting behind proxies like Vercel/Nginx)
@@ -110,7 +110,7 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
 
 app.use(csrfProtection);
@@ -167,7 +167,7 @@ app.use(
       success: true,
       message: "ok",
     });
-  }
+  },
 );
 
 startAutoBackupScheduler();

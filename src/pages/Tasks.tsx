@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTasks, useRetryTaskMutation, useDeleteTaskMutation } from '../hooks/useQueries';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { ConfirmationModal } from '../components/ConfirmationModal';
+import { ConfirmationModal } from '../components/common';
 import { CheckCircle2, XCircle, Loader2, Clock, RefreshCw, ArrowRight, Trash2, RotateCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const getStringOrUnknown = (value: unknown, fallback: string = ''): string => {

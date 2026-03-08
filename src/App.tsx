@@ -2,8 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
-import { LoadingBar } from "./components/LoadingBar";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { LoadingBar, ErrorBoundary } from "./components/common";
 
 // Lazy Load Pages
 const Login = lazy(() =>

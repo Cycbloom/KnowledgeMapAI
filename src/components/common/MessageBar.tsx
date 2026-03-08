@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useMessageStore } from '../store/useMessageStore';
-import { useTheme } from '../hooks/useTheme';
+import { useMessageStore } from '../../store/useMessageStore';
+import { useTheme } from '../../hooks/useTheme';
 import { CheckCircle, AlertTriangle, Info, AlertCircle, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 

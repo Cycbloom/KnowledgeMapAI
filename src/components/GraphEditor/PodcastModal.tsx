@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, RefreshCw, Volume2, StopCircle, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { CodeBlock } from '../CodeBlock';
+import { CodeBlock } from '../common';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
 import { useTheme } from '../../hooks/useTheme';
 import { api } from '../../services/api';

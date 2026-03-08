@@ -5,7 +5,7 @@ import { getLearningStatus, getStatusColors } from '../../config/learningStatusC
 import { getLevel } from '../../lib/graphUtils';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
 import { TermTooltip } from '../TermTooltip';
-import { CodeBlock } from '../CodeBlock';
+import { CodeBlock, Mermaid } from '../common';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { Mermaid } from '../Mermaid';
 
 interface NodeDetailSidebarProps {
   node: Node;

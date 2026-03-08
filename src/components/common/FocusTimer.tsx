@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useFocusStore, TimerMode } from '../store/useFocusStore';
+import { useFocusStore, TimerMode } from '../../store/useFocusStore';
 import { Play, Pause, RotateCcw, Coffee, Brain, Settings2, Minimize2, Volume2, VolumeX, SkipForward } from 'lucide-react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 

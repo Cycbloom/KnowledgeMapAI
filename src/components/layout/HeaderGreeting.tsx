@@ -1,7 +1,7 @@
 import React from 'react';
-import { useTheme } from '../hooks/useTheme';
-import { useStatistics } from '../hooks/useQueries';
-import { useStore } from '../store/useStore';
+import { useTheme } from '../../hooks/useTheme';
+import { useStatistics } from '../../hooks/useQueries';
+import { useStore } from '../../store/useStore';
 import { Flame, BookOpen } from 'lucide-react';
 
 export const HeaderGreeting: React.FC = () => {

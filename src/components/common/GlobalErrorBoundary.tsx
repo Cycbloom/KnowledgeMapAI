@@ -1,7 +1,7 @@
 import { Component, ErrorInfo, ReactNode, useState, useCallback } from 'react';
 import { RefreshCcw, AlertTriangle, Home, Bug, Copy, Check, Send } from 'lucide-react';
-import { AppError, isAppError, wrapUnknownError, ErrorCode } from '../utils/errors';
-import { captureException } from '../utils/errorReporter';
+import { AppError, isAppError, wrapUnknownError, ErrorCode } from '../../utils/errors';
+import { captureException } from '../../utils/errorReporter';
 
 interface Props {
   children: ReactNode;

@@ -1,3 +1,3 @@
-export { Layout } from "../Layout.js";
-export { Breadcrumb } from "../Breadcrumb.js";
-export { HeaderGreeting } from "../HeaderGreeting.js";
+export { Layout } from "./Layout.js";
+export { Breadcrumb } from "./Breadcrumb.js";
+export { HeaderGreeting } from "./HeaderGreeting.js";

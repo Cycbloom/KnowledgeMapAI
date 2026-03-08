@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTrashGraphs, useRestoreGraphMutation, usePermanentDeleteGraphMutation, useBatchRestoreGraphsMutation, useBatchPermanentDeleteGraphsMutation } from '../hooks/useQueries';
 import { Trash2, RefreshCw, Search, AlertTriangle, ArrowLeft, CheckSquare, Square, X } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
-import { ConfirmationModal } from '../components/ConfirmationModal';
+import { ConfirmationModal } from '../components/common';
 import { useTheme } from '../hooks/useTheme';
 import { useNavigate } from 'react-router-dom';
 

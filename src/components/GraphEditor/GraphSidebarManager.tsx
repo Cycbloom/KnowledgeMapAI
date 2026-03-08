@@ -7,7 +7,7 @@ import { getFocusedNodes, getFocusedLinks, getDirectChildren } from '../../lib/g
 import { NodeDetailSidebar } from './NodeDetailSidebar';
 import { NodeEditSidebar } from './NodeEditSidebar';
 import { GraphOutline } from './GraphOutline';
-import { ErrorBoundary } from '../ErrorBoundary';
+import { ErrorBoundary } from '../common';
 import { X, GripHorizontal } from 'lucide-react';
 
 interface GraphSidebarManagerProps {

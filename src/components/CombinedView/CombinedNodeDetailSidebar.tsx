@@ -4,7 +4,7 @@ import { levelLabels } from '../../config/graphConfig';
 import { getLevel } from '../../lib/graphUtils';
 import { preprocessMarkdown } from '../../utils/markdownUtils';
 import { TermTooltip } from '../TermTooltip';
-import { CodeBlock } from '../CodeBlock';
+import { CodeBlock, Mermaid } from '../common';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -15,7 +15,6 @@ import {
   Link as LinkIcon, ChevronRight
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import { Mermaid } from '../Mermaid';
 
 interface CombinedNodeDetailSidebarProps {
   node: Node;

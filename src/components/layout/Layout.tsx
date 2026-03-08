@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { useStore } from "../store/useStore";
-import { useUser, useLogoutMutation, useTasks } from "../hooks/useQueries";
-import { useTaskEvents } from "../hooks/useTaskEvents";
-import { useMessageStore } from "../store/useMessageStore";
+import { useStore } from "../../store/useStore";
+import { useUser, useLogoutMutation, useTasks } from "../../hooks/useQueries";
+import { useTaskEvents } from "../../hooks/useTaskEvents";
+import { useMessageStore } from "../../store/useMessageStore";
 import {
   LogOut,
   BookOpen,
@@ -26,17 +26,19 @@ import {
   Zap,
   Calendar,
 } from "lucide-react";
-import { ErrorBoundary } from "./ErrorBoundary";
-import { MessageBar } from "./MessageBar";
-import { HelpModal } from "./HelpModal";
-import { SSEStatusIndicator } from "./SSEStatusIndicator";
-import { OfflineIndicator } from "./OfflineIndicator";
-import { FocusTimer } from "./FocusTimer";
+import {
+  ErrorBoundary,
+  MessageBar,
+  OfflineIndicator,
+  FocusTimer,
+} from "../common";
+import { HelpModal } from "../HelpModal";
+import { SSEStatusIndicator } from "../SSEStatusIndicator";
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
-import { NotificationCenter } from "./Notifications/NotificationCenter";
-import { useTheme } from "../hooks/useTheme";
-import { api } from "../services/api";
+import { NotificationCenter } from "../Notifications/NotificationCenter";
+import { useTheme } from "../../hooks/useTheme";
+import { api } from "../../services/api";
 
 interface SidebarLinkProps {
   to: string;

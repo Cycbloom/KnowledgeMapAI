@@ -2,7 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { TermTooltip } from '../TermTooltip';
-import { CodeBlock } from '../CodeBlock';
+import { CodeBlock } from '../common';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';

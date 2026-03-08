@@ -22,10 +22,10 @@ import {
 import {
   useSchedulerTasks,
   useSchedulerSettings,
-  usePauseTaskMutation,
-  useCompleteTaskMutation,
-  useDemoteTaskMutation,
-  useStartTaskMutation,
+  usePauseScheduledTaskMutation,
+  useCompleteScheduledTaskMutation,
+  useDemoteScheduledTaskMutation,
+  useStartScheduledTaskMutation,
 } from '../hooks/useScheduler';
 import { useMessageStore } from '../store/useMessageStore';
 import type { ScheduledTask, TaskSettings } from '../services/api/scheduler';
@@ -91,10 +91,10 @@ const getTimeSlice = (queueLevel: number, settings: TaskSettings | undefined): n
 export const CurrentTask: React.FC = () => {
   const { data: tasksData, isLoading, refetch } = useSchedulerTasks({ status: 'in_progress' });
   const { data: settings } = useSchedulerSettings();
-  const pauseMutation = usePauseTaskMutation();
-  const completeMutation = useCompleteTaskMutation();
-  const demoteMutation = useDemoteTaskMutation();
-  const startMutation = useStartTaskMutation();
+  const pauseMutation = usePauseScheduledTaskMutation();
+  const completeMutation = useCompleteScheduledTaskMutation();
+  const demoteMutation = useDemoteScheduledTaskMutation();
+  const startMutation = useStartScheduledTaskMutation();
   const { addMessage } = useMessageStore();
 
   const currentTask = useMemo(() => {

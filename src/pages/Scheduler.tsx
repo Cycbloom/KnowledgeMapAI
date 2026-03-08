@@ -12,17 +12,17 @@ import {
   Calendar,
 } from "lucide-react";
 import {
-  useQueues,
+  useSchedulerQueues,
   useCreateScheduledTaskMutation,
   useUpdateScheduledTaskMutation,
   useDeleteScheduledTaskMutation,
-  useMoveTaskMutation,
-  useReorderTasksMutation,
-  useStartTaskMutation,
-  usePauseTaskMutation,
-  useCompleteTaskMutation,
-  useTaskSettings,
-} from "../hooks/useQueries";
+  useMoveScheduledTaskMutation,
+  useReorderScheduledTasksMutation,
+  useStartScheduledTaskMutation,
+  usePauseScheduledTaskMutation,
+  useCompleteScheduledTaskMutation,
+  useSchedulerSettings,
+} from "../hooks/useScheduler";
 import { useMessageStore } from "../store/useMessageStore";
 import { HorizontalQueueView } from "../components/Scheduler/HorizontalQueueView";
 import { KanbanView } from "../components/Scheduler/KanbanView";
@@ -65,17 +65,17 @@ export const Scheduler: React.FC = () => {
     error,
     refetch,
     isFetching,
-  } = useQueues();
-  const { data: settings } = useTaskSettings();
+  } = useSchedulerQueues();
+  const { data: settings } = useSchedulerSettings();
 
   const createTaskMutation = useCreateScheduledTaskMutation();
   const updateTaskMutation = useUpdateScheduledTaskMutation();
   const deleteTaskMutation = useDeleteScheduledTaskMutation();
-  const moveTaskMutation = useMoveTaskMutation();
-  const reorderMutation = useReorderTasksMutation();
-  const startTaskMutation = useStartTaskMutation();
-  const pauseTaskMutation = usePauseTaskMutation();
-  const completeTaskMutation = useCompleteTaskMutation();
+  const moveTaskMutation = useMoveScheduledTaskMutation();
+  const reorderMutation = useReorderScheduledTasksMutation();
+  const startTaskMutation = useStartScheduledTaskMutation();
+  const pauseTaskMutation = usePauseScheduledTaskMutation();
+  const completeTaskMutation = useCompleteScheduledTaskMutation();
 
   useEffect(() => {
     localStorage.setItem("scheduler-view", currentView);
@@ -173,7 +173,7 @@ export const Scheduler: React.FC = () => {
 
   const handleMoveTask = async (taskId: string, targetQueue: number) => {
     try {
-      await moveTaskMutation.mutateAsync({ taskId, targetQueue });
+      await moveTaskMutation.mutateAsync({ id: taskId, targetQueue });
       addMessage({ type: "success", content: `任务已移动到 Q${targetQueue}` });
     } catch (err: any) {
       addMessage({ type: "error", content: err.message || "移动任务失败" });

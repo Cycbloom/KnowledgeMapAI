@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
 import { validate } from "../../middleware/validate.js";
 import { z } from "zod";
-import { schedulerService } from "../../services/schedulerService.js";
+import { focusService } from "../../services/scheduler/focusService.js";
 import { logger } from "../../utils/logger.js";
 
 const router = Router();
@@ -47,7 +47,7 @@ router.post(
     }
 
     try {
-      const session = await schedulerService.createFocusSession(
+      const session = await focusService.createFocusSession(
         supabase,
         req.user.id,
         req.body,
@@ -77,7 +77,7 @@ router.put(
     const updates = req.body;
 
     try {
-      const session = await schedulerService.updateFocusSession(
+      const session = await focusService.updateFocusSession(
         supabase,
         id,
         req.user.id,
@@ -107,7 +107,7 @@ router.get(
       req.query as unknown as z.infer<typeof getFocusSessionsQuerySchema>;
 
     try {
-      const sessions = await schedulerService.getFocusSessions(
+      const sessions = await focusService.getFocusSessions(
         supabase,
         req.user.id,
         {
@@ -138,7 +138,7 @@ router.get(
     }
 
     try {
-      const stats = await schedulerService.getUserFocusStats(
+      const stats = await focusService.getUserFocusStats(
         supabase,
         req.user.id,
       );
@@ -167,7 +167,7 @@ router.get(
     >;
 
     try {
-      const stats = await schedulerService.getMonthlyFocusStats(
+      const stats = await focusService.getMonthlyFocusStats(
         supabase,
         req.user.id,
         year,

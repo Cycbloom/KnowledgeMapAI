@@ -56,7 +56,7 @@ export function useSchedulerTask(id: string) {
   });
 }
 
-export function useQueues() {
+export function useSchedulerQueues() {
   return useQuery({
     queryKey: schedulerKeys.queues(),
     queryFn: () => api.scheduler.getQueues() as Promise<QueueData>,
@@ -96,7 +96,7 @@ export function useHeatmap(year?: number, month?: number) {
   });
 }
 
-export function useCreateTaskMutation() {
+export function useCreateScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateScheduledTaskData) => api.scheduler.createTask(data) as Promise<ScheduledTask>,
@@ -107,7 +107,7 @@ export function useCreateTaskMutation() {
   });
 }
 
-export function useUpdateTaskMutation() {
+export function useUpdateScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateScheduledTaskData }) =>
@@ -120,7 +120,7 @@ export function useUpdateTaskMutation() {
   });
 }
 
-export function useDeleteTaskMutation() {
+export function useDeleteScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.scheduler.deleteTask(id),
@@ -131,7 +131,7 @@ export function useDeleteTaskMutation() {
   });
 }
 
-export function useStartTaskMutation() {
+export function useStartScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.scheduler.startTask(id) as Promise<ScheduledTask>,
@@ -143,7 +143,7 @@ export function useStartTaskMutation() {
   });
 }
 
-export function usePauseTaskMutation() {
+export function usePauseScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.scheduler.pauseTask(id) as Promise<ScheduledTask>,
@@ -155,7 +155,7 @@ export function usePauseTaskMutation() {
   });
 }
 
-export function useCompleteTaskMutation() {
+export function useCompleteScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.scheduler.completeTask(id) as Promise<ScheduledTask>,
@@ -169,7 +169,7 @@ export function useCompleteTaskMutation() {
   });
 }
 
-export function useDemoteTaskMutation() {
+export function useDemoteScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.scheduler.demoteTask(id) as Promise<ScheduledTask>,
@@ -181,7 +181,7 @@ export function useDemoteTaskMutation() {
   });
 }
 
-export function useMoveTaskMutation() {
+export function useMoveScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, targetQueue }: { id: string; targetQueue: number }) =>
@@ -194,7 +194,7 @@ export function useMoveTaskMutation() {
   });
 }
 
-export function useReorderTasksMutation() {
+export function useReorderScheduledTasksMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ queueLevel, taskIds }: { queueLevel: number; taskIds: string[] }) =>
@@ -206,7 +206,7 @@ export function useReorderTasksMutation() {
   });
 }
 
-export function useUpdateSettingsMutation() {
+export function useUpdateSchedulerSettingsMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: UpdateTaskSettingsData) => api.scheduler.updateSettings(data) as Promise<TaskSettings>,

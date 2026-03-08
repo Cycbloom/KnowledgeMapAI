@@ -1,65 +1,14 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getPaginationParams, PaginationOptions } from '../../utils/pagination.js';
+import type {
+  ScheduledTask,
+  TaskExecution,
+  TaskSettings,
+  CreateTaskData,
+  TaskFilters,
+} from '../../../shared/types/index.js';
 
-export interface ScheduledTask {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string;
-  queue_level: number;
-  position: number;
-  estimated_duration?: number;
-  actual_duration?: number;
-  deadline?: string;
-  status: 'pending' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
-  tags: string[];
-  knowledge_point_id?: string;
-  priority: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  completed_at?: string;
-}
-
-export interface TaskExecution {
-  id: string;
-  task_id: string;
-  user_id: string;
-  started_at: string;
-  ended_at?: string;
-  duration?: number;
-  queue_level: number;
-  status: 'completed' | 'interrupted' | 'time_slice_ended';
-}
-
-export interface TaskSettings {
-  id: string;
-  user_id: string;
-  q0_time_slice: number;
-  q1_time_slice: number;
-  q2_time_slice: number;
-  break_duration: number;
-  sound_enabled: boolean;
-  notification_enabled: boolean;
-}
-
-export interface CreateTaskData {
-  title: string;
-  description?: string;
-  estimated_duration?: number;
-  deadline?: string;
-  tags?: string[];
-  knowledge_point_id?: string;
-  priority?: number;
-}
-
-export interface TaskFilters {
-  status?: string;
-  queue_level?: number;
-  tags?: string[];
-  from_date?: string;
-  to_date?: string;
-}
+export type { ScheduledTask, TaskExecution, TaskSettings, CreateTaskData, TaskFilters };
 
 export class TaskService {
   async createTask(
@@ -176,7 +125,7 @@ export class TaskService {
       .order('position', { ascending: true })
       .range(offset, end);
 
-    if (filters?.status && filters.status !== 'all') {
+    if (filters?.status) {
       query = query.eq('status', filters.status);
     }
     if (filters?.queue_level !== undefined) {
@@ -185,16 +134,11 @@ export class TaskService {
     if (filters?.tags && filters.tags.length > 0) {
       query = query.contains('tags', filters.tags);
     }
-    if (filters?.from_date) {
-      query = query.gte('created_at', filters.from_date);
-    }
-    if (filters?.to_date) {
-      query = query.lte('created_at', filters.to_date);
-    }
 
     const { data, error, count } = await query;
+
     if (error) throw new Error(`Failed to fetch tasks: ${error.message}`);
-    return { tasks: data as ScheduledTask[], total: count || 0 };
+    return { tasks: data as ScheduledTask[], total: count ?? 0 };
   }
 
   async getTasksByQueue(
@@ -221,13 +165,17 @@ export class TaskService {
   ): Promise<{ task: ScheduledTask; execution: TaskExecution }> {
     const { data: task, error: taskError } = await client
       .from('scheduled_tasks')
-      .select('*')
+      .update({
+        status: 'in_progress',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', taskId)
       .eq('user_id', userId)
       .is('deleted_at', null)
+      .select()
       .single();
 
-    if (taskError || !task) throw new Error('Task not found');
+    if (taskError) throw new Error(`Failed to start task: ${taskError.message}`);
 
     const { data: execution, error: execError } = await client
       .from('task_executions')
@@ -236,29 +184,14 @@ export class TaskService {
         user_id: userId,
         started_at: new Date().toISOString(),
         queue_level: task.queue_level,
-        status: 'time_slice_ended',
+        status: 'completed',
       })
       .select()
       .single();
 
     if (execError) throw new Error(`Failed to create execution: ${execError.message}`);
 
-    const { data: updatedTask, error: updateError } = await client
-      .from('scheduled_tasks')
-      .update({
-        status: 'in_progress',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', taskId)
-      .select()
-      .single();
-
-    if (updateError) throw new Error(`Failed to update task: ${updateError.message}`);
-
-    return {
-      task: updatedTask as ScheduledTask,
-      execution: execution as TaskExecution,
-    };
+    return { task: task as ScheduledTask, execution: execution as TaskExecution };
   }
 
   async pauseTask(
@@ -266,36 +199,7 @@ export class TaskService {
     taskId: string,
     userId: string
   ): Promise<ScheduledTask> {
-    const { data: execution, error: execError } = await client
-      .from('task_executions')
-      .select('*')
-      .eq('task_id', taskId)
-      .eq('user_id', userId)
-      .is('ended_at', null)
-      .order('started_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (execError && execError.code !== 'PGRST116') {
-      throw new Error(`Failed to find active execution: ${execError.message}`);
-    }
-
-    if (execution) {
-      const endedAt = new Date();
-      const startedAt = new Date(execution.started_at);
-      const duration = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
-
-      await client
-        .from('task_executions')
-        .update({
-          ended_at: endedAt.toISOString(),
-          duration,
-          status: 'interrupted',
-        })
-        .eq('id', execution.id);
-    }
-
-    const { data, error } = await client
+    const { data: task, error: taskError } = await client
       .from('scheduled_tasks')
       .update({
         status: 'paused',
@@ -303,11 +207,12 @@ export class TaskService {
       })
       .eq('id', taskId)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to pause task: ${error.message}`);
-    return data as ScheduledTask;
+    if (taskError) throw new Error(`Failed to pause task: ${taskError.message}`);
+    return task as ScheduledTask;
   }
 
   async completeTask(
@@ -315,21 +220,18 @@ export class TaskService {
     taskId: string,
     userId: string
   ): Promise<ScheduledTask> {
-    const { data: execution, error: execError } = await client
+    const { data: executions, error: execError } = await client
       .from('task_executions')
       .select('*')
       .eq('task_id', taskId)
-      .eq('user_id', userId)
       .is('ended_at', null)
       .order('started_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
 
-    if (execError) {
-      throw new Error(`Failed to find active execution: ${execError.message}`);
-    }
+    if (execError) throw new Error(`Failed to fetch executions: ${execError.message}`);
 
-    if (execution) {
+    if (executions && executions.length > 0) {
+      const execution = executions[0];
       const endedAt = new Date();
       const startedAt = new Date(execution.started_at);
       const duration = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
@@ -339,46 +241,25 @@ export class TaskService {
         .update({
           ended_at: endedAt.toISOString(),
           duration,
-          status: 'completed',
         })
         .eq('id', execution.id);
     }
 
-    const { data: _task, error: taskError } = await client
-      .from('scheduled_tasks')
-      .select('actual_duration')
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .single();
-
-    if (taskError) throw new Error('Task not found');
-
-    const { data: allExecutions, error: sumError } = await client
-      .from('task_executions')
-      .select('duration')
-      .eq('task_id', taskId)
-      .eq('user_id', userId)
-      .not('duration', 'is', null);
-
-    if (sumError) throw new Error(`Failed to calculate total duration: ${sumError.message}`);
-
-    const totalDuration = allExecutions?.reduce((sum, e) => sum + (e.duration || 0), 0) || 0;
-
-    const { data, error } = await client
+    const { data: task, error: taskError } = await client
       .from('scheduled_tasks')
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        actual_duration: Math.floor(totalDuration / 60),
         updated_at: new Date().toISOString(),
       })
       .eq('id', taskId)
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to complete task: ${error.message}`);
-    return data as ScheduledTask;
+    if (taskError) throw new Error(`Failed to complete task: ${taskError.message}`);
+    return task as ScheduledTask;
   }
 
   async moveTaskToQueue(
@@ -387,10 +268,6 @@ export class TaskService {
     userId: string,
     targetQueue: number
   ): Promise<ScheduledTask> {
-    if (targetQueue < 0 || targetQueue > 2) {
-      throw new Error('Invalid queue level. Must be 0, 1, or 2.');
-    }
-
     const { data: maxPosResult } = await client
       .from('scheduled_tasks')
       .select('position')
@@ -399,7 +276,7 @@ export class TaskService {
       .is('deleted_at', null)
       .order('position', { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .single();
 
     const nextPosition = (maxPosResult?.position ?? -1) + 1;
 
@@ -417,7 +294,6 @@ export class TaskService {
       .single();
 
     if (error) throw new Error(`Failed to move task: ${error.message}`);
-    if (!data) throw new Error('Task not found');
     return data as ScheduledTask;
   }
 
@@ -426,36 +302,20 @@ export class TaskService {
     userId: string,
     queueLevel: number,
     taskIds: string[]
-  ): Promise<ScheduledTask[]> {
-    const updates = taskIds.map((id, index) => ({
-      id,
-      position: index,
-      updated_at: new Date().toISOString(),
-    }));
-
-    const results: ScheduledTask[] = [];
-
-    for (const update of updates) {
-      const { data, error } = await client
+  ): Promise<void> {
+    for (let i = 0; i < taskIds.length; i++) {
+      const { error } = await client
         .from('scheduled_tasks')
         .update({
-          position: update.position,
-          updated_at: update.updated_at,
+          position: i,
+          queue_level: queueLevel,
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', update.id)
-        .eq('user_id', userId)
-        .eq('queue_level', queueLevel)
-        .is('deleted_at', null)
-        .select()
-        .single();
+        .eq('id', taskIds[i])
+        .eq('user_id', userId);
 
-      if (error) {
-        throw new Error(`Failed to reorder task ${update.id}: ${error.message}`);
-      }
-      results.push(data as ScheduledTask);
+      if (error) throw new Error(`Failed to reorder tasks: ${error.message}`);
     }
-
-    return results;
   }
 
   async demoteTask(
@@ -463,25 +323,34 @@ export class TaskService {
     taskId: string,
     userId: string
   ): Promise<ScheduledTask> {
-    const { data: task, error: fetchError } = await client
+    const { data: task } = await client
       .from('scheduled_tasks')
       .select('queue_level')
       .eq('id', taskId)
       .eq('user_id', userId)
-      .is('deleted_at', null)
       .single();
 
-    if (fetchError || !task) throw new Error('Task not found');
+    if (!task) throw new Error('Task not found');
 
-    const currentQueue = task.queue_level;
-    if (currentQueue >= 2) {
-      throw new Error('Task is already in the lowest priority queue (Q2)');
-    }
-
-    return this.moveTaskToQueue(client, taskId, userId, currentQueue + 1);
+    const newQueue = Math.min(task.queue_level + 1, 2);
+    return this.moveTaskToQueue(client, taskId, userId, newQueue);
   }
 
-  getTimeSlice(settings: TaskSettings, queueLevel: number): number {
+  async getTimeSlice(
+    client: SupabaseClient,
+    userId: string,
+    queueLevel: number
+  ): Promise<number> {
+    const { data: settings, error } = await client
+      .from('task_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !settings) {
+      return 25 * 60;
+    }
+
     switch (queueLevel) {
       case 0:
         return settings.q0_time_slice;

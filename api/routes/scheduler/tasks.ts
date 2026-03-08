@@ -199,6 +199,76 @@ router.get(
   },
 );
 
+router.get(
+  "/tasks/:id/detail",
+  requireAuth,
+  validate({ params: uuidParamsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const supabase = req.supabase;
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Database connection not available" });
+    }
+
+    const { id } = req.params;
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", req.user.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (taskError || !task) {
+      return res.status(404).json({ error: "任务不存在" });
+    }
+
+    const { data: dependencies } = await supabase
+      .from("task_dependencies")
+      .select(
+        "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)"
+      )
+      .eq("task_id", id);
+
+    const { data: dependents } = await supabase
+      .from("task_dependencies")
+      .select(
+        "id, task_id, depends_on_task_id, dependency_type, created_at, task:scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)"
+      )
+      .eq("depends_on_task_id", id);
+
+    const { data: progressPlans } = await supabase
+      .from("task_progress_plans")
+      .select("*")
+      .eq("task_id", id)
+      .order("plan_date", { ascending: true });
+
+    const { data: executions } = await supabase
+      .from("task_executions")
+      .select("*")
+      .eq("task_id", id)
+      .order("started_at", { ascending: false })
+      .limit(20);
+
+    const requiredTimeSlots = task.estimated_duration
+      ? Math.ceil(task.estimated_duration / 25)
+      : undefined;
+
+    const taskDetail = {
+      ...task,
+      dependencies: dependencies || [],
+      dependents: dependents || [],
+      progress_plans: progressPlans || [],
+      executions: executions || [],
+      required_time_slots: requiredTimeSlots,
+    };
+
+    res.json({ success: true, data: taskDetail });
+  },
+);
+
 router.put(
   "/tasks/:id",
   requireAuth,

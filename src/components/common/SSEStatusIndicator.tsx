@@ -1,4 +1,4 @@
-import { useStore } from '../store/useStore';
+import { useStore } from '../../store/useStore';
 import { Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
 
 export const SSEStatusIndicator = () => {

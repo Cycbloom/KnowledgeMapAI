@@ -228,14 +228,14 @@ router.get(
     const { data: dependencies } = await supabase
       .from("task_dependencies")
       .select(
-        "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)"
+        "id, task_id, depends_on_task_id, dependency_type, created_at, depends_on_task:scheduled_tasks!task_dependencies_depends_on_task_id_fkey(id, title, description, status, queue_level, priority)",
       )
       .eq("task_id", id);
 
     const { data: dependents } = await supabase
       .from("task_dependencies")
       .select(
-        "id, task_id, depends_on_task_id, dependency_type, created_at, task:scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)"
+        "id, task_id, depends_on_task_id, dependency_type, created_at, task:scheduled_tasks!task_dependencies_task_id_fkey(id, title, description, status, queue_level, priority)",
       )
       .eq("depends_on_task_id", id);
 

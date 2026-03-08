@@ -3,11 +3,7 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -29,24 +25,11 @@
     "strictNullChecks": true,
     "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@shared/*": [
-        "./shared/*"
-      ]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./shared/*"]
     },
-    "types": [
-      "node",
-      "express"
-    ]
+    "types": ["node", "express"]
   },
-  "include": [
-    "src",
-    "api",
-    "shared"
-  ],
-  "exclude": [
-    "**/*.test.ts"
-  ]
+  "include": ["src", "api", "shared"],
+  "exclude": ["**/*.test.ts"]
 }

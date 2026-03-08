@@ -138,10 +138,7 @@ router.get(
     }
 
     try {
-      const stats = await focusService.getUserFocusStats(
-        supabase,
-        req.user.id,
-      );
+      const stats = await focusService.getUserFocusStats(supabase, req.user.id);
       res.json({ success: true, data: stats });
     } catch (error) {
       const err = error as Error;

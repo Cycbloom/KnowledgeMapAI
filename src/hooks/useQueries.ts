@@ -150,7 +150,7 @@ export const useGraphNodeStatus = (id: string) => {
 
 export const useBatchGraphStatus = (
   graphIds: string[],
-  enabled: boolean = true
+  enabled: boolean = true,
 ) => {
   const queries = useQueries({
     queries: graphIds.map((id) => ({
@@ -164,10 +164,13 @@ export const useBatchGraphStatus = (
   const isLoading = queries.some((q) => q.isLoading);
   const isPending = queries.some((q) => q.isPending);
 
-  const data = graphIds.reduce((acc, id, index) => {
-    acc[id] = queries[index].data;
-    return acc;
-  }, {} as Record<string, unknown>);
+  const data = graphIds.reduce(
+    (acc, id, index) => {
+      acc[id] = queries[index].data;
+      return acc;
+    },
+    {} as Record<string, unknown>,
+  );
 
   return {
     data,
@@ -185,7 +188,7 @@ export const useStudyCards = (
     node_ids?: string;
     due?: boolean;
   },
-  enabled: boolean = true
+  enabled: boolean = true,
 ) => {
   return useQuery({
     queryKey: queryKeys.studyCards(params),
@@ -199,7 +202,7 @@ export const useTasks = (
   enabled: boolean = true,
   status?: string,
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
 ) => {
   return useQuery({
     queryKey: queryKeys.tasks(status, limit, offset),
@@ -374,7 +377,7 @@ export const useToggleFavoriteMutation = () => {
       queryClient.setQueryData(queryKeys.graphs, (old: any[] | undefined) => {
         if (!old) return old;
         return old.map((graph) =>
-          graph.id === id ? { ...graph, is_favorite } : graph
+          graph.id === id ? { ...graph, is_favorite } : graph,
         );
       });
 
@@ -411,7 +414,7 @@ export const useCreateNodeMutation = () => {
       });
 
       const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId)
+        queryKeys.graphData(graphId),
       );
 
       queryClient.setQueryData(
@@ -433,7 +436,7 @@ export const useCreateNodeMutation = () => {
             ...old,
             nodes: [...old.nodes, tempNode],
           };
-        }
+        },
       );
 
       return { previousData };
@@ -442,7 +445,7 @@ export const useCreateNodeMutation = () => {
       if (data && (data as any)._reused) {
         console.info(
           "Node reused existing knowledge point:",
-          (data as any).knowledge_point_id
+          (data as any).knowledge_point_id,
         );
       }
     },
@@ -450,7 +453,7 @@ export const useCreateNodeMutation = () => {
       if (context?.previousData) {
         queryClient.setQueryData(
           queryKeys.graphData(newNode.graph_id),
-          context.previousData
+          context.previousData,
         );
       }
     },
@@ -514,7 +517,7 @@ export const useUpdateNodeOptimisticMutation = () => {
         queryKey: queryKeys.graphData(graphId),
       });
       const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId)
+        queryKeys.graphData(graphId),
       );
 
       queryClient.setQueryData(
@@ -524,10 +527,10 @@ export const useUpdateNodeOptimisticMutation = () => {
           return {
             ...old,
             nodes: old.nodes.map((node) =>
-              node.id === id ? { ...node, ...data } : node
+              node.id === id ? { ...node, ...data } : node,
             ),
           };
-        }
+        },
       );
 
       return { previousData };
@@ -536,7 +539,7 @@ export const useUpdateNodeOptimisticMutation = () => {
       if (context?.previousData) {
         queryClient.setQueryData(
           queryKeys.graphData(variables.graphId),
-          context.previousData
+          context.previousData,
         );
       }
     },
@@ -566,7 +569,7 @@ export const useDeleteNodeMutation = () => {
         queryKey: queryKeys.graphData(graphId),
       });
       const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId)
+        queryKeys.graphData(graphId),
       );
 
       queryClient.setQueryData(
@@ -579,10 +582,10 @@ export const useDeleteNodeMutation = () => {
             edges: old.edges.filter(
               (edge) =>
                 edge.source_knowledge_point_id !== id &&
-                edge.target_knowledge_point_id !== id
+                edge.target_knowledge_point_id !== id,
             ),
           };
-        }
+        },
       );
 
       return { previousData };
@@ -600,7 +603,7 @@ export const useDeleteNodeMutation = () => {
       if (context?.previousData) {
         queryClient.setQueryData(
           queryKeys.graphData(variables.graphId),
-          context.previousData
+          context.previousData,
         );
       }
     },
@@ -628,7 +631,7 @@ export const useBatchDeleteNodesMutation = () => {
         queryKey: queryKeys.graphData(graphId),
       });
       const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId)
+        queryKeys.graphData(graphId),
       );
 
       queryClient.setQueryData(
@@ -641,10 +644,10 @@ export const useBatchDeleteNodesMutation = () => {
             edges: old.edges.filter(
               (edge) =>
                 !nodeIds.includes(edge.source_knowledge_point_id) &&
-                !nodeIds.includes(edge.target_knowledge_point_id)
+                !nodeIds.includes(edge.target_knowledge_point_id),
             ),
           };
-        }
+        },
       );
 
       return { previousData };
@@ -653,7 +656,7 @@ export const useBatchDeleteNodesMutation = () => {
       if (context?.previousData) {
         queryClient.setQueryData(
           queryKeys.graphData(variables.graphId),
-          context.previousData
+          context.previousData,
         );
       }
     },
@@ -690,7 +693,7 @@ export const useCreateEdgeMutation = () => {
         queryKey: queryKeys.graphData(graphId),
       });
       const previousData = queryClient.getQueryData(
-        queryKeys.graphData(graphId)
+        queryKeys.graphData(graphId),
       );
 
       queryClient.setQueryData(
@@ -708,7 +711,7 @@ export const useCreateEdgeMutation = () => {
             ...old,
             edges: [...old.edges, tempEdge],
           };
-        }
+        },
       );
 
       return { previousData };
@@ -717,7 +720,7 @@ export const useCreateEdgeMutation = () => {
       if (context?.previousData && variables.graphId) {
         queryClient.setQueryData(
           queryKeys.graphData(variables.graphId),
-          context.previousData
+          context.previousData,
         );
       }
     },
@@ -982,7 +985,7 @@ export const usePrefetchGraph = () => {
         ...defaultQueryConfig,
       });
     },
-    [queryClient]
+    [queryClient],
   );
 };
 
@@ -997,7 +1000,7 @@ export const usePrefetchStudyCards = () => {
         ...realtimeQueryConfig,
       });
     },
-    [queryClient]
+    [queryClient],
   );
 };
 
@@ -1012,7 +1015,6 @@ export const usePrefetchTemplates = () => {
         staleTime: 1000 * 60 * 30,
       });
     },
-    [queryClient]
+    [queryClient],
   );
 };
-

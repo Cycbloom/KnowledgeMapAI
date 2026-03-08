@@ -41,7 +41,7 @@ import { PresentationControls } from '../components/GraphEditor/PresentationCont
 import { ActionResultModal } from '../components/GraphEditor/ActionResultModal';
 import { NodeContextMenu } from '../components/GraphEditor/NodeContextMenu';
 import { CommandPalette, CommandItem } from '../components/GraphEditor/CommandPalette';
-import { ShortcutHelpPanel } from '../components/ShortcutHelpPanel';
+import { ShortcutHelpPanel } from "../components/common";
 import { RAGChatButton } from '../components/GraphEditor/RAGChatPanel';
 import { api, AIAction } from '../services/api';
 import { useQueryClient } from '@tanstack/react-query';

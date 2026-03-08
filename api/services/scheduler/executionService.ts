@@ -1,5 +1,8 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { getPaginationParams, PaginationOptions } from '../../utils/pagination.js';
+import { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getPaginationParams,
+  PaginationOptions,
+} from "../../utils/pagination.js";
 
 export interface TaskExecution {
   id: string;
@@ -9,7 +12,7 @@ export interface TaskExecution {
   ended_at?: string;
   duration?: number;
   queue_level: number;
-  status: 'completed' | 'interrupted' | 'time_slice_ended';
+  status: "completed" | "interrupted" | "time_slice_ended";
 }
 
 export interface ExecutionFilters {
@@ -22,10 +25,10 @@ export interface ExecutionFilters {
 export class ExecutionService {
   async createExecution(
     client: SupabaseClient,
-    executionData: Omit<TaskExecution, 'id'>
+    executionData: Omit<TaskExecution, "id">,
   ): Promise<TaskExecution> {
     const { data, error } = await client
-      .from('task_executions')
+      .from("task_executions")
       .insert(executionData)
       .select()
       .single();
@@ -37,17 +40,17 @@ export class ExecutionService {
   async updateExecution(
     client: SupabaseClient,
     executionId: string,
-    updates: Partial<Omit<TaskExecution, 'id' | 'task_id' | 'user_id'>>
+    updates: Partial<Omit<TaskExecution, "id" | "task_id" | "user_id">>,
   ): Promise<TaskExecution> {
     const { data, error } = await client
-      .from('task_executions')
+      .from("task_executions")
       .update(updates)
-      .eq('id', executionId)
+      .eq("id", executionId)
       .select()
       .single();
 
     if (error) throw new Error(`Failed to update execution: ${error.message}`);
-    if (!data) throw new Error('Execution not found');
+    if (!data) throw new Error("Execution not found");
     return data as TaskExecution;
   }
 
@@ -55,27 +58,27 @@ export class ExecutionService {
     client: SupabaseClient,
     userId: string,
     filters?: ExecutionFilters,
-    options?: PaginationOptions
+    options?: PaginationOptions,
   ): Promise<{ executions: TaskExecution[]; total: number }> {
     const { offset, end } = getPaginationParams(options);
     let query = client
-      .from('task_executions')
-      .select('*', { count: 'exact' })
-      .eq('user_id', userId)
-      .order('started_at', { ascending: false })
+      .from("task_executions")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .order("started_at", { ascending: false })
       .range(offset, end);
 
     if (filters?.task_id) {
-      query = query.eq('task_id', filters.task_id);
+      query = query.eq("task_id", filters.task_id);
     }
     if (filters?.status) {
-      query = query.eq('status', filters.status);
+      query = query.eq("status", filters.status);
     }
     if (filters?.from_date) {
-      query = query.gte('started_at', filters.from_date);
+      query = query.gte("started_at", filters.from_date);
     }
     if (filters?.to_date) {
-      query = query.lte('started_at', filters.to_date);
+      query = query.lte("started_at", filters.to_date);
     }
 
     const { data, error, count } = await query;

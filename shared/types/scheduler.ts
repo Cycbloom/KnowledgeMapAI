@@ -2,7 +2,12 @@ export type TaskType = "one_time" | "long_term" | "periodic" | "learning";
 
 export type ProgressMode = "average" | "decreasing" | "increasing" | "custom";
 
-export type TaskStatus = "pending" | "in_progress" | "paused" | "completed" | "cancelled";
+export type TaskStatus =
+  | "pending"
+  | "in_progress"
+  | "paused"
+  | "completed"
+  | "cancelled";
 
 export type ExecutionStatus = "completed" | "interrupted" | "time_slice_ended";
 

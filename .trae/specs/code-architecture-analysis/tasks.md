@@ -86,10 +86,10 @@
 
 # Task Dependencies
 
-- [Task 2] depends on [Task 1]  # 路由拆分依赖类型定义
-- [Task 3] depends on [Task 1]  # 服务拆分依赖类型定义
-- [Task 4] depends on [Task 1]  # API 客户端依赖类型定义
-- [Task 5] depends on [Task 4]  # Hooks 依赖 API 客户端
-- [Task 6] depends on [Task 5]  # 组件依赖 Hooks
+- [Task 2] depends on [Task 1] # 路由拆分依赖类型定义
+- [Task 3] depends on [Task 1] # 服务拆分依赖类型定义
+- [Task 4] depends on [Task 1] # API 客户端依赖类型定义
+- [Task 5] depends on [Task 4] # Hooks 依赖 API 客户端
+- [Task 6] depends on [Task 5] # 组件依赖 Hooks
 - [Task 7] can run in parallel with other tasks
-- [Task 8] depends on [Task 1-7]  # 文档更新依赖所有重构完成
+- [Task 8] depends on [Task 1-7] # 文档更新依赖所有重构完成

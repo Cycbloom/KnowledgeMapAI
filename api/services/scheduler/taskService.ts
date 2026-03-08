@@ -1,35 +1,44 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { getPaginationParams, PaginationOptions } from '../../utils/pagination.js';
+import { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getPaginationParams,
+  PaginationOptions,
+} from "../../utils/pagination.js";
 import type {
   ScheduledTask,
   TaskExecution,
   TaskSettings,
   CreateTaskData,
   TaskFilters,
-} from '../../../shared/types/index.js';
+} from "../../../shared/types/index.js";
 
-export type { ScheduledTask, TaskExecution, TaskSettings, CreateTaskData, TaskFilters };
+export type {
+  ScheduledTask,
+  TaskExecution,
+  TaskSettings,
+  CreateTaskData,
+  TaskFilters,
+};
 
 export class TaskService {
   async createTask(
     client: SupabaseClient,
     userId: string,
-    taskData: CreateTaskData
+    taskData: CreateTaskData,
   ): Promise<ScheduledTask> {
     const { data: maxPosResult } = await client
-      .from('scheduled_tasks')
-      .select('position')
-      .eq('user_id', userId)
-      .eq('queue_level', 0)
-      .is('deleted_at', null)
-      .order('position', { ascending: false })
+      .from("scheduled_tasks")
+      .select("position")
+      .eq("user_id", userId)
+      .eq("queue_level", 0)
+      .is("deleted_at", null)
+      .order("position", { ascending: false })
       .limit(1)
       .single();
 
     const nextPosition = (maxPosResult?.position ?? -1) + 1;
 
     const { data, error } = await client
-      .from('scheduled_tasks')
+      .from("scheduled_tasks")
       .insert({
         user_id: userId,
         title: taskData.title,
@@ -41,7 +50,7 @@ export class TaskService {
         tags: taskData.tags || [],
         knowledge_point_id: taskData.knowledge_point_id,
         priority: taskData.priority ?? 0,
-        status: 'pending',
+        status: "pending",
       })
       .select()
       .single();
@@ -54,38 +63,40 @@ export class TaskService {
     client: SupabaseClient,
     taskId: string,
     userId: string,
-    updates: Partial<Omit<ScheduledTask, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+    updates: Partial<
+      Omit<ScheduledTask, "id" | "user_id" | "created_at" | "updated_at">
+    >,
   ): Promise<ScheduledTask> {
     const { data, error } = await client
-      .from('scheduled_tasks')
+      .from("scheduled_tasks")
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .is('deleted_at', null)
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
       .select()
       .single();
 
     if (error) throw new Error(`Failed to update task: ${error.message}`);
-    if (!data) throw new Error('Task not found');
+    if (!data) throw new Error("Task not found");
     return data as ScheduledTask;
   }
 
   async deleteTask(
     client: SupabaseClient,
     taskId: string,
-    userId: string
+    userId: string,
   ): Promise<void> {
     const { error } = await client
-      .from('scheduled_tasks')
+      .from("scheduled_tasks")
       .update({
         deleted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', taskId)
-      .eq('user_id', userId);
+      .eq("id", taskId)
+      .eq("user_id", userId);
 
     if (error) throw new Error(`Failed to delete task: ${error.message}`);
   }
@@ -93,17 +104,17 @@ export class TaskService {
   async getTask(
     client: SupabaseClient,
     taskId: string,
-    userId: string
+    userId: string,
   ): Promise<ScheduledTask | null> {
     const { data, error } = await client
-      .from('scheduled_tasks')
-      .select('*')
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .is('deleted_at', null)
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && error.code !== "PGRST116") {
       throw new Error(`Failed to fetch task: ${error.message}`);
     }
     return data as ScheduledTask | null;
@@ -113,26 +124,26 @@ export class TaskService {
     client: SupabaseClient,
     userId: string,
     filters?: TaskFilters,
-    options?: PaginationOptions
+    options?: PaginationOptions,
   ): Promise<{ tasks: ScheduledTask[]; total: number }> {
     const { offset, end } = getPaginationParams(options);
     let query = client
-      .from('scheduled_tasks')
-      .select('*', { count: 'exact' })
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .order('queue_level', { ascending: true })
-      .order('position', { ascending: true })
+      .from("scheduled_tasks")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("queue_level", { ascending: true })
+      .order("position", { ascending: true })
       .range(offset, end);
 
     if (filters?.status) {
-      query = query.eq('status', filters.status);
+      query = query.eq("status", filters.status);
     }
     if (filters?.queue_level !== undefined) {
-      query = query.eq('queue_level', filters.queue_level);
+      query = query.eq("queue_level", filters.queue_level);
     }
     if (filters?.tags && filters.tags.length > 0) {
-      query = query.contains('tags', filters.tags);
+      query = query.contains("tags", filters.tags);
     }
 
     const { data, error, count } = await query;
@@ -144,121 +155,132 @@ export class TaskService {
   async getTasksByQueue(
     client: SupabaseClient,
     userId: string,
-    queueLevel: number
+    queueLevel: number,
   ): Promise<ScheduledTask[]> {
     const { data, error } = await client
-      .from('scheduled_tasks')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('queue_level', queueLevel)
-      .is('deleted_at', null)
-      .order('position', { ascending: true });
+      .from("scheduled_tasks")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("queue_level", queueLevel)
+      .is("deleted_at", null)
+      .order("position", { ascending: true });
 
-    if (error) throw new Error(`Failed to fetch tasks by queue: ${error.message}`);
+    if (error)
+      throw new Error(`Failed to fetch tasks by queue: ${error.message}`);
     return data as ScheduledTask[];
   }
 
   async startTask(
     client: SupabaseClient,
     taskId: string,
-    userId: string
+    userId: string,
   ): Promise<{ task: ScheduledTask; execution: TaskExecution }> {
     const { data: task, error: taskError } = await client
-      .from('scheduled_tasks')
+      .from("scheduled_tasks")
       .update({
-        status: 'in_progress',
+        status: "in_progress",
         updated_at: new Date().toISOString(),
       })
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .is('deleted_at', null)
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
       .select()
       .single();
 
-    if (taskError) throw new Error(`Failed to start task: ${taskError.message}`);
+    if (taskError)
+      throw new Error(`Failed to start task: ${taskError.message}`);
 
     const { data: execution, error: execError } = await client
-      .from('task_executions')
+      .from("task_executions")
       .insert({
         task_id: taskId,
         user_id: userId,
         started_at: new Date().toISOString(),
         queue_level: task.queue_level,
-        status: 'completed',
+        status: "completed",
       })
       .select()
       .single();
 
-    if (execError) throw new Error(`Failed to create execution: ${execError.message}`);
+    if (execError)
+      throw new Error(`Failed to create execution: ${execError.message}`);
 
-    return { task: task as ScheduledTask, execution: execution as TaskExecution };
+    return {
+      task: task as ScheduledTask,
+      execution: execution as TaskExecution,
+    };
   }
 
   async pauseTask(
     client: SupabaseClient,
     taskId: string,
-    userId: string
+    userId: string,
   ): Promise<ScheduledTask> {
     const { data: task, error: taskError } = await client
-      .from('scheduled_tasks')
+      .from("scheduled_tasks")
       .update({
-        status: 'paused',
+        status: "paused",
         updated_at: new Date().toISOString(),
       })
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .is('deleted_at', null)
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
       .select()
       .single();
 
-    if (taskError) throw new Error(`Failed to pause task: ${taskError.message}`);
+    if (taskError)
+      throw new Error(`Failed to pause task: ${taskError.message}`);
     return task as ScheduledTask;
   }
 
   async completeTask(
     client: SupabaseClient,
     taskId: string,
-    userId: string
+    userId: string,
   ): Promise<ScheduledTask> {
     const { data: executions, error: execError } = await client
-      .from('task_executions')
-      .select('*')
-      .eq('task_id', taskId)
-      .is('ended_at', null)
-      .order('started_at', { ascending: false })
+      .from("task_executions")
+      .select("*")
+      .eq("task_id", taskId)
+      .is("ended_at", null)
+      .order("started_at", { ascending: false })
       .limit(1);
 
-    if (execError) throw new Error(`Failed to fetch executions: ${execError.message}`);
+    if (execError)
+      throw new Error(`Failed to fetch executions: ${execError.message}`);
 
     if (executions && executions.length > 0) {
       const execution = executions[0];
       const endedAt = new Date();
       const startedAt = new Date(execution.started_at);
-      const duration = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
+      const duration = Math.floor(
+        (endedAt.getTime() - startedAt.getTime()) / 1000,
+      );
 
       await client
-        .from('task_executions')
+        .from("task_executions")
         .update({
           ended_at: endedAt.toISOString(),
           duration,
         })
-        .eq('id', execution.id);
+        .eq("id", execution.id);
     }
 
     const { data: task, error: taskError } = await client
-      .from('scheduled_tasks')
+      .from("scheduled_tasks")
       .update({
-        status: 'completed',
+        status: "completed",
         completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .is('deleted_at', null)
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
       .select()
       .single();
 
-    if (taskError) throw new Error(`Failed to complete task: ${taskError.message}`);
+    if (taskError)
+      throw new Error(`Failed to complete task: ${taskError.message}`);
     return task as ScheduledTask;
   }
 
@@ -266,30 +288,30 @@ export class TaskService {
     client: SupabaseClient,
     taskId: string,
     userId: string,
-    targetQueue: number
+    targetQueue: number,
   ): Promise<ScheduledTask> {
     const { data: maxPosResult } = await client
-      .from('scheduled_tasks')
-      .select('position')
-      .eq('user_id', userId)
-      .eq('queue_level', targetQueue)
-      .is('deleted_at', null)
-      .order('position', { ascending: false })
+      .from("scheduled_tasks")
+      .select("position")
+      .eq("user_id", userId)
+      .eq("queue_level", targetQueue)
+      .is("deleted_at", null)
+      .order("position", { ascending: false })
       .limit(1)
       .single();
 
     const nextPosition = (maxPosResult?.position ?? -1) + 1;
 
     const { data, error } = await client
-      .from('scheduled_tasks')
+      .from("scheduled_tasks")
       .update({
         queue_level: targetQueue,
         position: nextPosition,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .is('deleted_at', null)
+      .eq("id", taskId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
       .select()
       .single();
 
@@ -301,18 +323,18 @@ export class TaskService {
     client: SupabaseClient,
     userId: string,
     queueLevel: number,
-    taskIds: string[]
+    taskIds: string[],
   ): Promise<void> {
     for (let i = 0; i < taskIds.length; i++) {
       const { error } = await client
-        .from('scheduled_tasks')
+        .from("scheduled_tasks")
         .update({
           position: i,
           queue_level: queueLevel,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', taskIds[i])
-        .eq('user_id', userId);
+        .eq("id", taskIds[i])
+        .eq("user_id", userId);
 
       if (error) throw new Error(`Failed to reorder tasks: ${error.message}`);
     }
@@ -321,16 +343,16 @@ export class TaskService {
   async demoteTask(
     client: SupabaseClient,
     taskId: string,
-    userId: string
+    userId: string,
   ): Promise<ScheduledTask> {
     const { data: task } = await client
-      .from('scheduled_tasks')
-      .select('queue_level')
-      .eq('id', taskId)
-      .eq('user_id', userId)
+      .from("scheduled_tasks")
+      .select("queue_level")
+      .eq("id", taskId)
+      .eq("user_id", userId)
       .single();
 
-    if (!task) throw new Error('Task not found');
+    if (!task) throw new Error("Task not found");
 
     const newQueue = Math.min(task.queue_level + 1, 2);
     return this.moveTaskToQueue(client, taskId, userId, newQueue);
@@ -339,12 +361,12 @@ export class TaskService {
   async getTimeSlice(
     client: SupabaseClient,
     userId: string,
-    queueLevel: number
+    queueLevel: number,
   ): Promise<number> {
     const { data: settings, error } = await client
-      .from('task_settings')
-      .select('*')
-      .eq('user_id', userId)
+      .from("task_settings")
+      .select("*")
+      .eq("user_id", userId)
       .single();
 
     if (error || !settings) {

@@ -1,7 +1,20 @@
-import { Component, ErrorInfo, ReactNode, useState, useCallback } from 'react';
-import { RefreshCcw, AlertTriangle, Home, Bug, Copy, Check, Send } from 'lucide-react';
-import { AppError, isAppError, wrapUnknownError, ErrorCode } from '../../utils/errors';
-import { captureException } from '../../utils/errorReporter';
+import { Component, ErrorInfo, ReactNode, useState, useCallback } from "react";
+import {
+  RefreshCcw,
+  AlertTriangle,
+  Home,
+  Bug,
+  Copy,
+  Check,
+  Send,
+} from "lucide-react";
+import {
+  AppError,
+  isAppError,
+  wrapUnknownError,
+  ErrorCode,
+} from "../../utils/errors";
+import { captureException } from "../../utils/errorReporter";
 
 interface Props {
   children: ReactNode;
@@ -27,7 +40,7 @@ function CopyButton({ text }: { text: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      console.error('Failed to copy');
+      console.error("Failed to copy");
     }
   };
 
@@ -37,24 +50,31 @@ function CopyButton({ text }: { text: string }) {
       className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500 transition-colors"
       title="复制错误信息"
     >
-      {copied ? <Check className="w-4 h-4 text-green-600 dark:text-green-400" /> : <Copy className="w-4 h-4 text-gray-600 dark:text-gray-300" />}
+      {copied ? (
+        <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+      ) : (
+        <Copy className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+      )}
     </button>
   );
 }
 
-function getErrorTypeDisplay(code?: ErrorCode): { label: string; color: string } {
+function getErrorTypeDisplay(code?: ErrorCode): {
+  label: string;
+  color: string;
+} {
   switch (code) {
-    case 'NETWORK_ERROR':
-      return { label: '网络错误', color: 'text-orange-500' };
-    case 'AUTH_ERROR':
-    case 'TOKEN_EXPIRED':
-      return { label: '认证错误', color: 'text-yellow-500' };
-    case 'VALIDATION_ERROR':
-      return { label: '验证错误', color: 'text-blue-500' };
-    case 'SERVER_ERROR':
-      return { label: '服务器错误', color: 'text-red-500' };
+    case "NETWORK_ERROR":
+      return { label: "网络错误", color: "text-orange-500" };
+    case "AUTH_ERROR":
+    case "TOKEN_EXPIRED":
+      return { label: "认证错误", color: "text-yellow-500" };
+    case "VALIDATION_ERROR":
+      return { label: "验证错误", color: "text-blue-500" };
+    case "SERVER_ERROR":
+      return { label: "服务器错误", color: "text-red-500" };
     default:
-      return { label: '应用错误', color: 'text-red-500' };
+      return { label: "应用错误", color: "text-red-500" };
   }
 }
 
@@ -74,10 +94,13 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     this.setState({ errorInfo });
 
     const appError = wrapUnknownError(error);
-    captureException(error instanceof Error ? error : new Error(appError.message), {
-      componentStack: errorInfo.componentStack,
-      errorBoundary: 'GlobalErrorBoundary',
-    });
+    captureException(
+      error instanceof Error ? error : new Error(appError.message),
+      {
+        componentStack: errorInfo.componentStack,
+        errorBoundary: "GlobalErrorBoundary",
+      },
+    );
 
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -91,7 +114,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     if (hasError && prevProps.resetKeys !== resetKeys) {
       if (resetKeys && resetKeys.length > 0) {
         const hasKeyChanged = resetKeys.some(
-          (key, index) => key !== prevProps.resetKeys?.[index]
+          (key, index) => key !== prevProps.resetKeys?.[index],
         );
         if (hasKeyChanged) {
           this.reset();
@@ -101,7 +124,12 @@ export class GlobalErrorBoundary extends Component<Props, State> {
   }
 
   reset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null, errorReported: false });
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      errorReported: false,
+    });
   };
 
   handleRetry = () => {
@@ -113,7 +141,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
   };
 
   handleGoHome = () => {
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   handleReportError = () => {
@@ -126,16 +154,18 @@ export class GlobalErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      const appError = isAppError(this.state.error) 
-        ? this.state.error 
+      const appError = isAppError(this.state.error)
+        ? this.state.error
         : wrapUnknownError(this.state.error);
       const errorType = getErrorTypeDisplay(appError.code);
       const errorDetails = [
         `[${errorType.label}] ${appError.message}`,
         `错误码: ${appError.code}`,
         `状态码: ${appError.statusCode}`,
-        this.state.error?.stack?.split('\n').slice(0, 3).join('\n') || '',
-      ].filter(Boolean).join('\n');
+        this.state.error?.stack?.split("\n").slice(0, 3).join("\n") || "",
+      ]
+        .filter(Boolean)
+        .join("\n");
 
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900 p-4">
@@ -143,7 +173,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-6">
               <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               {errorType.label}
             </h2>
@@ -153,10 +183,12 @@ export class GlobalErrorBoundary extends Component<Props, State> {
             <p className="text-gray-500 dark:text-gray-400 mb-6">
               {appError.message}
             </p>
-            
+
             <div className="relative bg-gray-50 dark:bg-slate-700 p-4 rounded-lg text-left text-xs font-mono mb-8 overflow-auto max-h-48 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-300">
               <CopyButton text={errorDetails} />
-              <pre className="whitespace-pre-wrap break-all">{errorDetails}</pre>
+              <pre className="whitespace-pre-wrap break-all">
+                {errorDetails}
+              </pre>
               {this.state.errorInfo?.componentStack && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
@@ -168,7 +200,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 </details>
               )}
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={this.handleRetry}
@@ -177,7 +209,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 <RefreshCcw className="w-4 h-4 mr-2" />
                 重试
               </button>
-              
+
               <button
                 onClick={this.handleReload}
                 className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -185,7 +217,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                 <Bug className="w-4 h-4 mr-2" />
                 刷新页面
               </button>
-              
+
               <button
                 onClick={this.handleGoHome}
                 className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -201,7 +233,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                   className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  {this.state.errorReported ? '已上报' : '上报错误'}
+                  {this.state.errorReported ? "已上报" : "上报错误"}
                 </button>
               )}
             </div>
@@ -216,7 +248,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
 export function withGlobalErrorBoundary<P extends object>(
   WrappedComponent: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
+  errorBoundaryProps?: Omit<Props, "children">,
 ) {
   return function WithGlobalErrorBoundaryWrapper(props: P) {
     return (

@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../services/api";
 import type {
   ScheduledTask,
   CreateScheduledTaskData,
@@ -11,7 +11,7 @@ import type {
   TaskFilters,
   ExecutionFilters,
   QueueData,
-} from '../services/api/scheduler';
+} from "../services/api/scheduler";
 
 const DEFAULT_STALE_TIME = 1000 * 60 * 5;
 const GC_TIME = 1000 * 60 * 60;
@@ -20,7 +20,8 @@ const defaultQueryConfig = {
   staleTime: DEFAULT_STALE_TIME,
   gcTime: GC_TIME,
   retry: 2,
-  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  retryDelay: (attemptIndex: number) =>
+    Math.min(1000 * 2 ** attemptIndex, 30000),
 };
 
 const realtimeQueryConfig = {
@@ -30,13 +31,15 @@ const realtimeQueryConfig = {
 };
 
 export const schedulerKeys = {
-  tasks: (filters?: TaskFilters) => ['scheduler', 'tasks', filters] as const,
-  task: (id: string) => ['scheduler', 'task', id] as const,
-  queues: () => ['scheduler', 'queues'] as const,
-  executions: (filters?: ExecutionFilters) => ['scheduler', 'executions', filters] as const,
-  settings: () => ['scheduler', 'settings'] as const,
-  stats: (period: string) => ['scheduler', 'stats', period] as const,
-  heatmap: (year?: number, month?: number) => ['scheduler', 'heatmap', year, month] as const,
+  tasks: (filters?: TaskFilters) => ["scheduler", "tasks", filters] as const,
+  task: (id: string) => ["scheduler", "task", id] as const,
+  queues: () => ["scheduler", "queues"] as const,
+  executions: (filters?: ExecutionFilters) =>
+    ["scheduler", "executions", filters] as const,
+  settings: () => ["scheduler", "settings"] as const,
+  stats: (period: string) => ["scheduler", "stats", period] as const,
+  heatmap: (year?: number, month?: number) =>
+    ["scheduler", "heatmap", year, month] as const,
 };
 
 export function useSchedulerTasks(filters?: TaskFilters) {
@@ -80,7 +83,9 @@ export function useSchedulerSettings() {
   });
 }
 
-export function useSchedulerStats(period: 'day' | 'week' | 'month' | 'year' = 'week') {
+export function useSchedulerStats(
+  period: "day" | "week" | "month" | "year" = "week",
+) {
   return useQuery({
     queryKey: schedulerKeys.stats(period),
     queryFn: () => api.scheduler.getStats(period) as Promise<TaskStats>,
@@ -91,7 +96,8 @@ export function useSchedulerStats(period: 'day' | 'week' | 'month' | 'year' = 'w
 export function useHeatmap(year?: number, month?: number) {
   return useQuery({
     queryKey: schedulerKeys.heatmap(year, month),
-    queryFn: () => api.scheduler.getHeatmap(year, month) as Promise<HeatmapData[]>,
+    queryFn: () =>
+      api.scheduler.getHeatmap(year, month) as Promise<HeatmapData[]>,
     ...defaultQueryConfig,
   });
 }
@@ -99,10 +105,11 @@ export function useHeatmap(year?: number, month?: number) {
 export function useCreateScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateScheduledTaskData) => api.scheduler.createTask(data) as Promise<ScheduledTask>,
+    mutationFn: (data: CreateScheduledTaskData) =>
+      api.scheduler.createTask(data) as Promise<ScheduledTask>,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -113,9 +120,11 @@ export function useUpdateScheduledTaskMutation() {
     mutationFn: ({ id, data }: { id: string; data: UpdateScheduledTaskData }) =>
       api.scheduler.updateTask(id, data) as Promise<ScheduledTask>,
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
-      queryClient.invalidateQueries({ queryKey: schedulerKeys.task(variables.id) });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
+      queryClient.invalidateQueries({
+        queryKey: schedulerKeys.task(variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -125,8 +134,8 @@ export function useDeleteScheduledTaskMutation() {
   return useMutation({
     mutationFn: (id: string) => api.scheduler.deleteTask(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -134,11 +143,12 @@ export function useDeleteScheduledTaskMutation() {
 export function useStartScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.scheduler.startTask(id) as Promise<ScheduledTask>,
+    mutationFn: (id: string) =>
+      api.scheduler.startTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
       queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -146,11 +156,12 @@ export function useStartScheduledTaskMutation() {
 export function usePauseScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.scheduler.pauseTask(id) as Promise<ScheduledTask>,
+    mutationFn: (id: string) =>
+      api.scheduler.pauseTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
       queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -158,13 +169,14 @@ export function usePauseScheduledTaskMutation() {
 export function useCompleteScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.scheduler.completeTask(id) as Promise<ScheduledTask>,
+    mutationFn: (id: string) =>
+      api.scheduler.completeTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
       queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'stats'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'heatmap'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "heatmap"] });
     },
   });
 }
@@ -172,11 +184,12 @@ export function useCompleteScheduledTaskMutation() {
 export function useDemoteScheduledTaskMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.scheduler.demoteTask(id) as Promise<ScheduledTask>,
+    mutationFn: (id: string) =>
+      api.scheduler.demoteTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
       queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -187,9 +200,11 @@ export function useMoveScheduledTaskMutation() {
     mutationFn: ({ id, targetQueue }: { id: string; targetQueue: number }) =>
       api.scheduler.moveTask(id, targetQueue) as Promise<ScheduledTask>,
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
-      queryClient.invalidateQueries({ queryKey: schedulerKeys.task(variables.id) });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
+      queryClient.invalidateQueries({
+        queryKey: schedulerKeys.task(variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -197,11 +212,16 @@ export function useMoveScheduledTaskMutation() {
 export function useReorderScheduledTasksMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ queueLevel, taskIds }: { queueLevel: number; taskIds: string[] }) =>
-      api.scheduler.reorderTasks(queueLevel, taskIds),
+    mutationFn: ({
+      queueLevel,
+      taskIds,
+    }: {
+      queueLevel: number;
+      taskIds: string[];
+    }) => api.scheduler.reorderTasks(queueLevel, taskIds),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduler', 'queues'] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
     },
   });
 }
@@ -209,7 +229,8 @@ export function useReorderScheduledTasksMutation() {
 export function useUpdateSchedulerSettingsMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateTaskSettingsData) => api.scheduler.updateSettings(data) as Promise<TaskSettings>,
+    mutationFn: (data: UpdateTaskSettingsData) =>
+      api.scheduler.updateSettings(data) as Promise<TaskSettings>,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: schedulerKeys.settings() });
     },

@@ -1,12 +1,12 @@
 export type NotificationType =
-  | 'task_start'
-  | 'task_complete'
-  | 'time_slice_end'
-  | 'deadline'
-  | 'break_start'
-  | 'break_end'
-  | 'daily_summary'
-  | 'system';
+  | "task_start"
+  | "task_complete"
+  | "time_slice_end"
+  | "deadline"
+  | "break_start"
+  | "break_end"
+  | "daily_summary"
+  | "system";
 
 export interface Notification {
   id: string;
@@ -212,7 +212,7 @@ export interface LearningPathNodeRef {
   id: string;
   path_id: string;
   node_id: string;
-  node?: import('./graph.js').Node;
+  node?: import("./graph.js").Node;
   status: LearningPathNodeStatus;
   user_notes?: string;
   estimated_minutes: number;
@@ -339,7 +339,7 @@ export interface QuickCreateGraphRequest {
   description?: string;
   relation_to?: {
     graph_id: string;
-    type: import('./graph.js').GraphRelationType;
+    type: import("./graph.js").GraphRelationType;
   };
   auto_generate_content?: boolean;
 }
@@ -347,7 +347,7 @@ export interface QuickCreateGraphRequest {
 export interface InfiniteExpansionRequest {
   max_depth?: number;
   max_graphs_per_level?: number;
-  relation_types?: import('./graph.js').GraphRelationType[];
+  relation_types?: import("./graph.js").GraphRelationType[];
   auto_generate_nodes?: boolean;
   node_depth?: number;
 }
@@ -361,7 +361,7 @@ export interface InfiniteExpansionProgress {
   created_graphs: Array<{
     id: string;
     title: string;
-    relation_type: import('./graph.js').GraphRelationType;
+    relation_type: import("./graph.js").GraphRelationType;
     depth: number;
     node_count?: number;
   }>;
@@ -376,7 +376,7 @@ export interface InfiniteExpansionResult {
   created_graphs: Array<{
     id: string;
     title: string;
-    relation_type: import('./graph.js').GraphRelationType;
+    relation_type: import("./graph.js").GraphRelationType;
     depth: number;
     node_count: number;
   }>;

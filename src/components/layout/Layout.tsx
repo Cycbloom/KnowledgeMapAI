@@ -31,9 +31,9 @@ import {
   MessageBar,
   OfflineIndicator,
   FocusTimer,
+  HelpModal,
+  SSEStatusIndicator,
 } from "../common";
-import { HelpModal } from "../HelpModal";
-import { SSEStatusIndicator } from "../SSEStatusIndicator";
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";

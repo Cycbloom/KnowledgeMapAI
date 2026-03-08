@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw, Search, Keyboard } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
-import { useShortcutStore } from '../store/useShortcutStore';
-import { 
-  DEFAULT_SHORTCUTS, 
-  CATEGORY_LABELS, 
+import { useTheme } from '../../hooks/useTheme';
+import { useShortcutStore } from '../../store/useShortcutStore';
+import {
+  DEFAULT_SHORTCUTS,
+  CATEGORY_LABELS,
   CATEGORY_ORDER,
   formatShortcutKey,
   ShortcutDefinition,
   ShortcutKey
-} from '../config/shortcuts';
+} from '../../config/shortcuts';
 
 interface ShortcutHelpPanelProps {
   isOpen: boolean;

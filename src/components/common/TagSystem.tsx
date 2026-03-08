@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { Tag, X, Plus, Hash, Filter, Sparkles, Loader2 } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
-import { Node } from '../types';
+import { useTheme } from '../../hooks/useTheme';
+import { Node } from '../../types';
 
 interface TagData {
   name: string;

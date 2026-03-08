@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { SchedulerService } from '../schedulerService.js';
+import { focusService } from './focusService.js';
 
 export interface Achievement {
   id: string;
@@ -50,7 +50,7 @@ export interface FocusSession {
 }
 
 export class AchievementService {
-  constructor(private schedulerService: SchedulerService) {}
+  constructor(private focusSvc: typeof focusService) {}
 
   async getAllAchievements(client: SupabaseClient): Promise<Achievement[]> {
     const { data, error } = await client
@@ -81,7 +81,7 @@ export class AchievementService {
     client: SupabaseClient,
     userId: string
   ): Promise<AchievementCheckResult> {
-    const stats = await this.schedulerService.getUserFocusStats(client, userId);
+    const stats = await this.focusSvc.getUserFocusStats(client, userId);
     const allAchievements = await this.getAllAchievements(client);
     const userAchievements = await this.getUserAchievements(client, userId);
     const unlockedCodes = new Set(userAchievements.map(ua => ua.achievement.code));
@@ -110,7 +110,7 @@ export class AchievementService {
           current = stats.total_pomodoros;
           break;
         case 'daily_focus_hours': {
-          const todayStats = await this.schedulerService.getDailyFocusStats(client, userId);
+          const todayStats = await this.focusSvc.getDailyFocusStats(client, userId);
           current = Math.floor(todayStats.total_duration / 3600);
           break;
         }
@@ -169,7 +169,7 @@ export class AchievementService {
 
     const dayOfWeek = new Date(session.started_at).getDay();
     if (!unlockedCodes.has('weekend_warrior') && (dayOfWeek === 0 || dayOfWeek === 6)) {
-      const dailyStats = await this.schedulerService.getDailyFocusStats(client, userId);
+      const dailyStats = await this.focusSvc.getDailyFocusStats(client, userId);
       if (dailyStats.total_duration >= 4 * 3600) {
         const achievement = await this.unlockSpecialAchievement(client, userId, 'weekend_warrior');
         if (achievement) unlocked.push(achievement);
@@ -206,6 +206,4 @@ export class AchievementService {
   }
 }
 
-import { schedulerService } from '../schedulerService.js';
-
-export const achievementService = new AchievementService(schedulerService);
+export const achievementService = new AchievementService(focusService);

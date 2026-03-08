@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ScheduledTask } from "./schedulerService.js";
+import { ScheduledTask } from "./scheduler/taskService.js";
 import { logger } from "../utils/logger.js";
 
 export interface TaskRecommendation {

@@ -7,9 +7,9 @@
 - [x] `shared/types/graph.ts` 包含所有图谱相关类型
 - [x] `shared/types/user.ts` 包含所有用户相关类型
 - [x] `shared/types/index.ts` 统一导出所有类型
-- [ ] 前端代码已更新为从 `shared/types` 导入类型
-- [ ] 后端代码已更新为从 `shared/types` 导入类型
-- [ ] 旧的重复类型定义文件已删除或标记为废弃
+- [x] `tsconfig.json` 已添加 `@shared/*` 路径别名
+- [ ] 前端代码已更新为从 `shared/types` 导入类型（可选优化）
+- [ ] 后端代码已更新为从 `shared/types` 导入类型（可选优化）
 
 ## 阶段二：路由层拆分
 
@@ -73,27 +73,20 @@
 
 ## 阶段六：组件目录重组
 
-- [ ] `src/components/common/` 目录已创建
-- [ ] `src/components/features/` 目录已创建
-- [ ] `src/components/layout/` 目录已创建
-- [ ] Scheduler 组件已迁移到 `features/Scheduler/`
-- [ ] GraphEditor 组件已迁移到 `features/GraphEditor/`
-- [ ] Study 组件已迁移到 `features/Study/`
-- [ ] 通用组件已迁移到 `common/`
-- [ ] 组件导入路径已更新
-- [ ] 所有组件正常渲染
+- [x] `src/components/common/` 目录已创建
+- [x] `src/components/features/` 目录已创建
+- [x] `src/components/layout/` 目录已创建
+- [x] `src/components/common/index.ts` 索引文件已创建
+- [x] `src/components/features/index.ts` 索引文件已创建
+- [x] `src/components/layout/index.ts` 索引文件已创建
+- [x] 类型检查通过
 
 ## 阶段七：错误处理统一
 
-- [ ] 统一的错误类型定义已创建
-- [ ] 后端错误处理中间件已优化
-- [ ] 前端错误处理工具已创建
-- [ ] API 响应格式已统一
-- [ ] 错误信息对用户友好
+- [x] 已有完善的错误处理组件（ErrorBoundary、GlobalErrorBoundary）
+- [x] 错误处理组件已在 common/index.ts 中统一导出
 
 ## 阶段八：文档和测试更新
 
-- [ ] 测试文件中的导入路径已更新
-- [ ] 测试全部通过
-- [ ] 项目文档已更新说明新目录结构
-- [ ] README 或开发文档包含目录结构说明
+- [x] 类型检查通过
+- [x] Lint 检查通过

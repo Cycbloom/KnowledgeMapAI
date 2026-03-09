@@ -1,4 +1,4 @@
-import { ScheduledTask } from '../services/api/scheduler';
+import type { ScheduledTask } from '@shared/types';
 
 class SchedulerNotificationService {
   private permissionGranted: boolean = false;

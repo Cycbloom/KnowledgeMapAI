@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { PieChart, Tag } from 'lucide-react';
-import { schedulerApi, ScheduledTask } from '../../services/api/scheduler';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { PieChart, Tag } from "lucide-react";
+import { api } from '../../services/api';
+import type {ScheduledTask} from '@shared/types';
 
 interface TaskDistributionProps {
   className?: string;
@@ -16,12 +17,20 @@ interface TagDistribution {
 }
 
 const TAG_COLORS = [
-  '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#84cc16',
+  "#06b6d4",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#6366f1",
+  "#14b8a6",
+  "#f97316",
+  "#84cc16",
 ];
 
 export const TaskDistribution: React.FC<TaskDistributionProps> = ({
-  className = '',
+  className = "",
 }) => {
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,10 +43,12 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
   const loadData = async () => {
     setLoading(true);
     try {
-      const { tasks: allTasks } = await schedulerApi.getTasks({ status: 'all' });
+      const { tasks: allTasks } = await api.scheduler.getTasks({
+        status: "all",
+      });
       setTasks(allTasks);
     } catch (error) {
-      console.error('Failed to load task distribution:', error);
+      console.error("Failed to load task distribution:", error);
     } finally {
       setLoading(false);
     }
@@ -46,9 +57,9 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
   const getDistribution = (): TagDistribution[] => {
     const tagMap = new Map<string, { count: number; duration: number }>();
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       if (task.tags && task.tags.length > 0) {
-        task.tags.forEach(tag => {
+        task.tags.forEach((tag) => {
           const existing = tagMap.get(tag) || { count: 0, duration: 0 };
           tagMap.set(tag, {
             count: existing.count + 1,
@@ -56,16 +67,19 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
           });
         });
       } else {
-        const existing = tagMap.get('未分类') || { count: 0, duration: 0 };
-        tagMap.set('未分类', {
+        const existing = tagMap.get("未分类") || { count: 0, duration: 0 };
+        tagMap.set("未分类", {
           count: existing.count + 1,
           duration: existing.duration + (task.actual_duration || 0),
         });
       }
     });
 
-    const total = Array.from(tagMap.values()).reduce((sum, v) => sum + v.count, 0);
-    
+    const total = Array.from(tagMap.values()).reduce(
+      (sum, v) => sum + v.count,
+      0,
+    );
+
     return Array.from(tagMap.entries())
       .map(([tag, data], index) => ({
         tag,
@@ -109,9 +123,10 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
 
           const largeArc = angle > 180 ? 1 : 0;
 
-          const pathD = item.percentage === 100
-            ? `M ${center} ${center - radius} A ${radius} ${radius} 0 1 1 ${center - 0.01} ${center - radius} Z`
-            : `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+          const pathD =
+            item.percentage === 100
+              ? `M ${center} ${center - radius} A ${radius} ${radius} 0 1 1 ${center - 0.01} ${center - radius} Z`
+              : `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
           return (
             <motion.path
@@ -122,23 +137,35 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               className="cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setSelectedTag(item.tag === selectedTag ? null : item.tag)}
+              onClick={() =>
+                setSelectedTag(item.tag === selectedTag ? null : item.tag)
+              }
             />
           );
         })}
-        <circle cx={center} cy={center} r="40" fill="white" className="dark:fill-slate-900" />
+        <circle
+          cx={center}
+          cy={center}
+          r="40"
+          fill="white"
+          className="dark:fill-slate-900"
+        />
       </svg>
     );
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}>
+    <div
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}
+    >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
           <PieChart size={20} className="text-purple-500" />
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">任务分布</h3>
+          <h3 className="font-semibold text-slate-900 dark:text-white">
+            任务分布
+          </h3>
           <p className="text-xs text-slate-500">按标签分类统计</p>
         </div>
       </div>
@@ -156,9 +183,7 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
         </div>
       ) : (
         <div className="flex items-center gap-6">
-          <div className="flex-shrink-0">
-            {renderPieChart()}
-          </div>
+          <div className="flex-shrink-0">{renderPieChart()}</div>
 
           <div className="flex-1 space-y-2">
             {distribution.map((item, index) => (
@@ -168,9 +193,13 @@ export const TaskDistribution: React.FC<TaskDistributionProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
-                  selectedTag === item.tag ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  selectedTag === item.tag
+                    ? "bg-slate-100 dark:bg-slate-800"
+                    : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 }`}
-                onClick={() => setSelectedTag(item.tag === selectedTag ? null : item.tag)}
+                onClick={() =>
+                  setSelectedTag(item.tag === selectedTag ? null : item.tag)
+                }
               >
                 <div
                   className="w-3 h-3 rounded-full flex-shrink-0"

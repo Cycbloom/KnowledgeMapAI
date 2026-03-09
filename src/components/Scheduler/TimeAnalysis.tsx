@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Sun, Moon, Coffee, Sunset } from 'lucide-react';
-import { schedulerApi, TaskExecution } from '../../services/api/scheduler';
+import { api } from '../../services/api';
+import type {TaskExecution} from '@shared/types';
 
 interface TimeAnalysisProps {
   className?: string;
@@ -34,7 +35,7 @@ export const TimeAnalysis: React.FC<TimeAnalysisProps> = ({
   const loadData = async () => {
     setLoading(true);
     try {
-      const { executions: data } = await schedulerApi.getExecutions({});
+      const { executions: data } = await api.scheduler.getExecutions({});
       setExecutions(data);
     } catch (error) {
       console.error('Failed to load time analysis:', error);

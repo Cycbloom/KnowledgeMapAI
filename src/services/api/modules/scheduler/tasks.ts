@@ -1,18 +1,8 @@
 import { request } from "../../client.js";
 import type {
-  ScheduledTask,
-  TaskType,
-  ProgressMode,
-  TaskStatus,
-  TaskDependency,
-  TaskExecution,
-  TaskDetail,
   CreateScheduledTaskData,
   UpdateScheduledTaskData,
   TaskFilters,
-  ExecutionFilters,
-  QueueData,
-  GenerateTaskDetailsResult,
 } from "@shared/types";
 
 export type {
@@ -29,7 +19,7 @@ export type {
   ExecutionFilters,
   QueueData,
   GenerateTaskDetailsResult,
-};
+} from "@shared/types";
 
 export const tasksApi = {
   createTask: (data: CreateScheduledTaskData) =>

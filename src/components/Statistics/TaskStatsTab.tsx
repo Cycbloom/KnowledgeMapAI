@@ -23,7 +23,7 @@ import {
   Target,
 } from "lucide-react";
 import { useTheme } from "../../hooks/useTheme";
-import { schedulerApi } from "../../services/api/scheduler";
+import { api } from '../../services/api';
 
 interface TaskAnalyticsResponse {
   overview: {
@@ -659,7 +659,7 @@ export const TaskStatsTab: React.FC = () => {
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const response = await schedulerApi.getTaskAnalytics();
+      const response = await api.scheduler.getTaskAnalytics();
       if (response.success) {
         setAnalytics(response.data);
       }
@@ -675,7 +675,7 @@ export const TaskStatsTab: React.FC = () => {
 
     setInsightsLoading(true);
     try {
-      const response = await schedulerApi.generateInsights();
+      const response = await api.scheduler.generateInsights();
       if (response.success) {
         setInsights(response.data);
       }

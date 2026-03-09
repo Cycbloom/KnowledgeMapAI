@@ -1,14 +1,14 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Lock, Sparkles } from 'lucide-react';
-import { Achievement } from '../../services/api/scheduler';
+import React from "react";
+import { motion } from "framer-motion";
+import { Lock, Sparkles } from "lucide-react";
+import { Achievement } from "@shared/types";
 
 interface AchievementBadgeProps {
   achievement: Achievement;
   unlocked?: boolean;
   progress?: number;
   unlockedAt?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   showProgress?: boolean;
   onClick?: () => void;
   animate?: boolean;
@@ -16,37 +16,41 @@ interface AchievementBadgeProps {
 
 const SIZE_CONFIG = {
   sm: {
-    container: 'w-16 h-16',
-    icon: 'text-2xl',
-    ring: 'w-20 h-20',
-    glow: 'w-24 h-24',
+    container: "w-16 h-16",
+    icon: "text-2xl",
+    ring: "w-20 h-20",
+    glow: "w-24 h-24",
   },
   md: {
-    container: 'w-24 h-24',
-    icon: 'text-4xl',
-    ring: 'w-28 h-28',
-    glow: 'w-32 h-32',
+    container: "w-24 h-24",
+    icon: "text-4xl",
+    ring: "w-28 h-28",
+    glow: "w-32 h-32",
   },
   lg: {
-    container: 'w-32 h-32',
-    icon: 'text-5xl',
-    ring: 'w-36 h-36',
-    glow: 'w-40 h-40',
+    container: "w-32 h-32",
+    icon: "text-5xl",
+    ring: "w-36 h-36",
+    glow: "w-40 h-40",
   },
 };
 
 const CATEGORY_COLORS = {
-  focus: 'from-cyan-500 to-blue-500',
-  tasks: 'from-emerald-500 to-teal-500',
-  streak: 'from-amber-500 to-orange-500',
-  special: 'from-violet-500 to-pink-500',
+  focus: "from-cyan-500 to-blue-500",
+  tasks: "from-emerald-500 to-teal-500",
+  streak: "from-amber-500 to-orange-500",
+  special: "from-violet-500 to-pink-500",
+  study: "from-indigo-500 to-purple-500",
+  creation: "from-rose-500 to-red-500",
 };
 
 const CATEGORY_GLOW = {
-  focus: 'shadow-cyan-500/50',
-  tasks: 'shadow-emerald-500/50',
-  streak: 'shadow-amber-500/50',
-  special: 'shadow-violet-500/50',
+  focus: "shadow-cyan-500/50",
+  tasks: "shadow-emerald-500/50",
+  streak: "shadow-amber-500/50",
+  special: "shadow-violet-500/50",
+  study: "shadow-indigo-500/50",
+  creation: "shadow-rose-500/50",
 };
 
 export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
@@ -54,7 +58,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   unlocked = false,
   progress = 0,
   unlockedAt,
-  size = 'md',
+  size = "md",
   showProgress = false,
   onClick,
   animate = true,
@@ -64,16 +68,16 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   const categoryGlow = CATEGORY_GLOW[achievement.category];
 
   const formatUnlockedDate = (date: string) => {
-    return new Date(date).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(date).toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   return (
     <motion.div
-      className={`relative inline-flex flex-col items-center ${onClick ? 'cursor-pointer' : ''}`}
+      className={`relative inline-flex flex-col items-center ${onClick ? "cursor-pointer" : ""}`}
       onClick={onClick}
       whileHover={animate ? { scale: 1.05 } : undefined}
       whileTap={animate && onClick ? { scale: 0.95 } : undefined}
@@ -89,49 +93,56 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
             transition={{
               duration: 2,
               repeat: Infinity,
-              ease: 'easeInOut',
+              ease: "easeInOut",
             }}
           />
         )}
 
         <motion.div
           className={`absolute inset-0 m-auto ${sizeConfig.ring} rounded-full border-2 ${
-            unlocked 
-              ? `border-gradient-to-r ${categoryGradient}` 
-              : 'border-slate-300 dark:border-slate-600'
+            unlocked
+              ? `border-gradient-to-r ${categoryGradient}`
+              : "border-slate-300 dark:border-slate-600"
           }`}
           style={{
-            borderImage: unlocked 
-              ? `linear-gradient(135deg, ${achievement.color}, ${achievement.color}80)` 
+            borderImage: unlocked
+              ? `linear-gradient(135deg, ${achievement.color}, ${achievement.color}80)`
               : undefined,
             borderImageSlice: 1,
           }}
           initial={animate ? { rotate: 0 } : undefined}
           animate={animate && unlocked ? { rotate: 360 } : undefined}
-          transition={animate && unlocked ? { duration: 20, repeat: Infinity, ease: 'linear' } : undefined}
+          transition={
+            animate && unlocked
+              ? { duration: 20, repeat: Infinity, ease: "linear" }
+              : undefined
+          }
         />
 
         <div
           className={`
             relative ${sizeConfig.container} rounded-full flex items-center justify-center
-            ${unlocked 
-              ? `bg-gradient-to-br ${categoryGradient}` 
-              : 'bg-slate-200 dark:bg-slate-700'
+            ${
+              unlocked
+                ? `bg-gradient-to-br ${categoryGradient}`
+                : "bg-slate-200 dark:bg-slate-700"
             }
-            shadow-lg ${unlocked ? categoryGlow : ''}
+            shadow-lg ${unlocked ? categoryGlow : ""}
           `}
         >
           {unlocked ? (
-            <motion.span 
+            <motion.span
               className={sizeConfig.icon}
               initial={animate ? { scale: 0, rotate: -180 } : undefined}
               animate={animate ? { scale: 1, rotate: 0 } : undefined}
-              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
             >
               {achievement.icon}
             </motion.span>
           ) : (
-            <Lock className={`${sizeConfig.icon} text-slate-400 dark:text-slate-500`} />
+            <Lock
+              className={`${sizeConfig.icon} text-slate-400 dark:text-slate-500`}
+            />
           )}
 
           {unlocked && achievement.xp_reward > 0 && (
@@ -147,7 +158,10 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         </div>
 
         {showProgress && !unlocked && progress > 0 && (
-          <svg className={`absolute inset-0 m-auto ${sizeConfig.ring}`} viewBox="0 0 100 100">
+          <svg
+            className={`absolute inset-0 m-auto ${sizeConfig.ring}`}
+            viewBox="0 0 100 100"
+          >
             <circle
               cx="50"
               cy="50"
@@ -167,9 +181,13 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
               strokeLinecap="round"
               strokeDasharray={`${progress * 3.01} 301.59`}
               transform="rotate(-90 50 50)"
-              initial={animate ? { strokeDasharray: '0 301.59' } : undefined}
-              animate={animate ? { strokeDasharray: `${progress * 3.01} 301.59` } : undefined}
-              transition={{ duration: 1, ease: 'easeOut' }}
+              initial={animate ? { strokeDasharray: "0 301.59" } : undefined}
+              animate={
+                animate
+                  ? { strokeDasharray: `${progress * 3.01} 301.59` }
+                  : undefined
+              }
+              transition={{ duration: 1, ease: "easeOut" }}
             />
           </svg>
         )}
@@ -179,10 +197,10 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         <p
           className={`
             text-sm font-medium
-            ${unlocked ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}
+            ${unlocked ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}
           `}
         >
-          {unlocked ? achievement.name : '???'}
+          {unlocked ? achievement.name : "???"}
         </p>
         {unlocked && unlockedAt && (
           <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -204,10 +222,9 @@ interface AchievementBadgeNotificationProps {
   onClose?: () => void;
 }
 
-export const AchievementBadgeNotification: React.FC<AchievementBadgeNotificationProps> = ({
-  achievement,
-  onClose,
-}) => {
+export const AchievementBadgeNotification: React.FC<
+  AchievementBadgeNotificationProps
+> = ({ achievement, onClose }) => {
   const categoryGradient = CATEGORY_COLORS[achievement.category];
 
   return (
@@ -230,7 +247,7 @@ export const AchievementBadgeNotification: React.FC<AchievementBadgeNotification
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         />
       </motion.div>
@@ -238,7 +255,7 @@ export const AchievementBadgeNotification: React.FC<AchievementBadgeNotification
       <motion.div
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
         className="relative"
       >
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
@@ -252,9 +269,15 @@ export const AchievementBadgeNotification: React.FC<AchievementBadgeNotification
         transition={{ delay: 0.4 }}
         className="relative mt-4 text-center"
       >
-        <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">成就解锁!</p>
-        <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">{achievement.name}</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{achievement.description}</p>
+        <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+          成就解锁!
+        </p>
+        <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+          {achievement.name}
+        </p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          {achievement.description}
+        </p>
       </motion.div>
 
       <motion.div
@@ -264,7 +287,9 @@ export const AchievementBadgeNotification: React.FC<AchievementBadgeNotification
         className="relative mt-4 flex items-center gap-2 bg-amber-100 dark:bg-amber-500/20 px-4 py-2 rounded-full"
       >
         <span className="text-lg">{achievement.icon}</span>
-        <span className="text-amber-700 dark:text-amber-300 font-bold">+{achievement.xp_reward} XP</span>
+        <span className="text-amber-700 dark:text-amber-300 font-bold">
+          +{achievement.xp_reward} XP
+        </span>
       </motion.div>
 
       {onClose && (

@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { schedulerApi, WeeklyFocusStats } from '../../services/api/scheduler';
+import { api } from '../../services/api';
+import type {WeeklyFocusStats} from '@shared/types';
 
 interface WeeklyReportProps {
   weekStart?: string;
@@ -38,7 +39,7 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ weekStart, className
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await schedulerApi.getWeeklyFocusStats(currentWeekStart);
+        const response = await api.scheduler.getWeeklyFocusStats(currentWeekStart);
         setStats(response.data);
         setError(null);
       } catch (err) {

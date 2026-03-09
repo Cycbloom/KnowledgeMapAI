@@ -8,7 +8,7 @@ import {
   RefreshCw,
   Brain,
 } from "lucide-react";
-import { schedulerApi } from "../../services/api/scheduler";
+import { api } from '../../services/api';
 
 interface SmartRecommendation {
   recommendedTask: {
@@ -67,7 +67,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
   const loadRecommendation = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await schedulerApi.getSmartRecommendation();
+      const response = await api.scheduler.getSmartRecommendation();
       if (response.success) {
         setRecommendation(response.data);
       }

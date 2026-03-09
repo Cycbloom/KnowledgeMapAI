@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Clock, Calendar, Info } from "lucide-react";
-import { schedulerApi, UserTimeSlot } from "../../services/api/scheduler";
+import { api } from '../../services/api';
+import type {UserTimeSlot} from '@shared/types';
 
 const DAYS_OF_WEEK = [
   { value: 0, label: "周日" },
@@ -40,7 +41,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
   const fetchTimeSlots = async () => {
     try {
-      const response = await schedulerApi.getTimeSlots();
+      const response = await api.scheduler.getTimeSlots();
       if (response.success) {
         setTimeSlots(response.data.slots || []);
       }
@@ -53,7 +54,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
   const handleAddSlot = async () => {
     try {
-      const response = await schedulerApi.createTimeSlot({
+      const response = await api.scheduler.createTimeSlot({
         ...newSlot,
         day_of_week: newSlot.day_of_week ?? undefined,
       });
@@ -75,7 +76,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
   const handleDeleteSlot = async (id: string) => {
     try {
-      const response = await schedulerApi.deleteTimeSlot(id);
+      const response = await api.scheduler.deleteTimeSlot(id);
       if (response.success) {
         setTimeSlots(timeSlots.filter((slot) => slot.id !== id));
       }

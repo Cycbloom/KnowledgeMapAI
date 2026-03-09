@@ -1,9 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Lightbulb, TrendingUp, Clock, Sparkles, ChevronDown, ChevronUp, RefreshCw, Zap } from 'lucide-react';
-import { taskRecommendationApi, SmartSuggestions, PrioritySuggestion } from '../../services/api/taskRecommendation';
-import { TaskRecommendation } from './TaskRecommendation';
-import { ScheduledTask } from '../../services/api/scheduler';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Lightbulb,
+  TrendingUp,
+  Clock,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  Zap,
+} from "lucide-react";
+import {
+  taskRecommendationApi,
+  SmartSuggestions,
+  PrioritySuggestion,
+} from "../../services/api/taskRecommendation";
+import { TaskRecommendation } from "./TaskRecommendation";
+import { ScheduledTask } from "@shared/types";
 
 interface SmartSuggestionProps {
   onSelectTask?: (task: ScheduledTask) => void;
@@ -21,10 +34,13 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
   taskDescription,
 }) => {
   const [suggestions, setSuggestions] = useState<SmartSuggestions | null>(null);
-  const [prioritySuggestion, setPrioritySuggestion] = useState<PrioritySuggestion | null>(null);
+  const [prioritySuggestion, setPrioritySuggestion] =
+    useState<PrioritySuggestion | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [activeTab, setActiveTab] = useState<'recommendations' | 'tips'>('recommendations');
+  const [activeTab, setActiveTab] = useState<"recommendations" | "tips">(
+    "recommendations",
+  );
 
   useEffect(() => {
     loadSuggestions();
@@ -42,7 +58,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
       const result = await taskRecommendationApi.getSmartSuggestions();
       setSuggestions(result.data);
     } catch (error) {
-      console.error('Failed to load suggestions:', error);
+      console.error("Failed to load suggestions:", error);
     } finally {
       setIsLoading(false);
     }
@@ -50,20 +66,23 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
 
   const analyzeTaskPriority = async (title: string, description?: string) => {
     try {
-      const result = await taskRecommendationApi.analyzePriority(title, description);
+      const result = await taskRecommendationApi.analyzePriority(
+        title,
+        description,
+      );
       setPrioritySuggestion(result.data);
       onPrioritySuggestion?.(result.data);
     } catch (error) {
-      console.error('Failed to analyze priority:', error);
+      console.error("Failed to analyze priority:", error);
     }
   };
 
   const getCurrentTimeInfo = () => {
     const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return { period: '上午', icon: '🌅' };
-    if (hour >= 12 && hour < 18) return { period: '下午', icon: '☀️' };
-    if (hour >= 18 && hour < 22) return { period: '傍晚', icon: '🌆' };
-    return { period: '夜间', icon: '🌙' };
+    if (hour >= 6 && hour < 12) return { period: "上午", icon: "🌅" };
+    if (hour >= 12 && hour < 18) return { period: "下午", icon: "☀️" };
+    if (hour >= 18 && hour < 22) return { period: "傍晚", icon: "🌆" };
+    return { period: "夜间", icon: "🌙" };
   };
 
   const timeInfo = getCurrentTimeInfo();
@@ -79,7 +98,9 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">智能建议</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              智能建议
+            </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {timeInfo.icon} {timeInfo.period}好 · 基于您的效率数据
             </p>
@@ -94,7 +115,9 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
             title="刷新建议"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </button>
           {isExpanded ? (
             <ChevronUp className="w-5 h-5 text-slate-400" />
@@ -108,7 +131,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
@@ -128,18 +151,25 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                       </h4>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs text-slate-600 dark:text-slate-400">
-                          建议优先级: <strong className="text-purple-600 dark:text-purple-400">P{prioritySuggestion.suggestedPriority}</strong>
+                          建议优先级:{" "}
+                          <strong className="text-purple-600 dark:text-purple-400">
+                            P{prioritySuggestion.suggestedPriority}
+                          </strong>
                         </span>
                         <span className="text-xs text-slate-600 dark:text-slate-400">
-                          队列: <strong className="text-purple-600 dark:text-purple-400">Q{prioritySuggestion.suggestedQueue}</strong>
+                          队列:{" "}
+                          <strong className="text-purple-600 dark:text-purple-400">
+                            Q{prioritySuggestion.suggestedQueue}
+                          </strong>
                         </span>
                         <span className="text-xs text-slate-400 dark:text-slate-500">
-                          置信度: {Math.round(prioritySuggestion.confidence * 100)}%
+                          置信度:{" "}
+                          {Math.round(prioritySuggestion.confidence * 100)}%
                         </span>
                       </div>
                       {prioritySuggestion.reasons.length > 0 && (
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {prioritySuggestion.reasons.join(' · ')}
+                          {prioritySuggestion.reasons.join(" · ")}
                         </p>
                       )}
                     </div>
@@ -149,43 +179,53 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
 
               <div className="flex gap-2 mb-4">
                 <button
-                  onClick={() => setActiveTab('recommendations')}
+                  onClick={() => setActiveTab("recommendations")}
                   className={`
                     flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
-                    ${activeTab === 'recommendations'
-                      ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}
+                    ${
+                      activeTab === "recommendations"
+                        ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    }
                   `}
                 >
                   任务推荐
                 </button>
                 <button
-                  onClick={() => setActiveTab('tips')}
+                  onClick={() => setActiveTab("tips")}
                   className={`
                     flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
-                    ${activeTab === 'tips'
-                      ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}
+                    ${
+                      activeTab === "tips"
+                        ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    }
                   `}
                 >
                   效率提示
                 </button>
               </div>
 
-              {activeTab === 'recommendations' && (
+              {activeTab === "recommendations" && (
                 <>
-                  {suggestions?.timeBasedSuggestions && suggestions.timeBasedSuggestions.length > 0 && (
-                    <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30">
-                      <div className="flex items-start gap-2">
-                        <Clock className="w-4 h-4 text-blue-500 dark:text-blue-400 mt-0.5" />
-                        <div>
-                          {suggestions.timeBasedSuggestions.map((tip, i) => (
-                            <p key={i} className="text-sm text-blue-700 dark:text-blue-300">{tip}</p>
-                          ))}
+                  {suggestions?.timeBasedSuggestions &&
+                    suggestions.timeBasedSuggestions.length > 0 && (
+                      <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30">
+                        <div className="flex items-start gap-2">
+                          <Clock className="w-4 h-4 text-blue-500 dark:text-blue-400 mt-0.5" />
+                          <div>
+                            {suggestions.timeBasedSuggestions.map((tip, i) => (
+                              <p
+                                key={i}
+                                className="text-sm text-blue-700 dark:text-blue-300"
+                              >
+                                {tip}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   <TaskRecommendation
                     recommendations={suggestions?.topTasks || []}
@@ -196,9 +236,10 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                 </>
               )}
 
-              {activeTab === 'tips' && (
+              {activeTab === "tips" && (
                 <div className="space-y-3">
-                  {suggestions?.efficiencyTips && suggestions.efficiencyTips.length > 0 ? (
+                  {suggestions?.efficiencyTips &&
+                  suggestions.efficiencyTips.length > 0 ? (
                     suggestions.efficiencyTips.map((tip, i) => (
                       <motion.div
                         key={i}
@@ -210,7 +251,9 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                         <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20">
                           <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">{tip}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">
+                          {tip}
+                        </p>
                       </motion.div>
                     ))
                   ) : (

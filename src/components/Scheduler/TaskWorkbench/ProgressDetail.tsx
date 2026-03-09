@@ -11,7 +11,7 @@ import {
   Edit3,
   Trash2,
 } from "lucide-react";
-import { schedulerApi } from "../../../services/api/scheduler";
+import { api } from "../../../services/api";
 import { TaskProgressPlan } from "../../../types";
 
 interface ProgressDetailProps {
@@ -51,7 +51,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
   const loadProgressPlans = async () => {
     setLoading(true);
     try {
-      const response = await schedulerApi.getProgressPlan(taskId);
+      const response = await api.scheduler.getProgressPlan(taskId);
       if (response.success) {
         const plansData = response.data?.plans || response.data || [];
         setPlans(Array.isArray(plansData) ? plansData : []);
@@ -131,7 +131,7 @@ export const ProgressDetail: React.FC<ProgressDetailProps> = ({
     updates: Partial<TaskProgressPlan>,
   ) => {
     try {
-      const response = await schedulerApi.updateProgressPlan(taskId, {
+      const response = await api.scheduler.updateProgressPlan(taskId, {
         planId,
         ...updates,
       });
@@ -582,12 +582,14 @@ const ProgressChart: React.FC<{
     (a, b) => new Date(a.plan_date).getTime() - new Date(b.plan_date).getTime(),
   );
 
-  const dataPoints = sortedPlans.reduce<Array<{
-    date: string;
-    planned: number;
-    actual: number;
-    plan: TaskProgressPlan;
-  }>>((acc, plan, index) => {
+  const dataPoints = sortedPlans.reduce<
+    Array<{
+      date: string;
+      planned: number;
+      actual: number;
+      plan: TaskProgressPlan;
+    }>
+  >((acc, plan, index) => {
     const prevPlanned = index > 0 ? acc[index - 1].planned : 0;
     const prevActual = index > 0 ? acc[index - 1].actual : 0;
     acc.push({

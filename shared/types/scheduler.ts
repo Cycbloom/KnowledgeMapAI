@@ -33,6 +33,7 @@ export interface ScheduledTask {
   tags: string[];
   knowledge_point_id?: string;
   priority: number;
+  queue_id?: string;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -43,6 +44,31 @@ export interface ScheduledTask {
   progress_percentage?: number;
   parent_task_id?: string;
   context?: string;
+  dependencies?: TaskDependency[];
+}
+
+export interface Queue {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  time_slice: number;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateQueueData {
+  name: string;
+  color?: string;
+  time_slice?: number;
+  priority: number;
+}
+
+export interface UpdateQueueData {
+  name?: string;
+  color?: string;
+  time_slice?: number;
 }
 
 export interface TaskDependency {
@@ -181,6 +207,15 @@ export interface TaskSettings {
   notification_enabled: boolean;
 }
 
+export interface UpdateTaskSettingsData {
+  q0_time_slice?: number;
+  q1_time_slice?: number;
+  q2_time_slice?: number;
+  break_duration?: number;
+  sound_enabled?: boolean;
+  notification_enabled?: boolean;
+}
+
 export interface TaskStats {
   total_tasks: number;
   completed_tasks: number;
@@ -300,4 +335,114 @@ export interface GenerateTaskDetailsResult {
   estimated_duration: number;
   priority: number;
   suggested_queue: number;
+}
+
+export interface FocusSession {
+  id: string;
+  user_id: string;
+  task_id?: string;
+  started_at: string;
+  ended_at?: string;
+  duration?: number;
+  pomodoro_count: number;
+  white_noise_type?: string;
+  is_break: boolean;
+  created_at: string;
+}
+
+export interface CreateFocusSessionData {
+  task_id?: string;
+  started_at: string;
+  ended_at?: string;
+  duration?: number;
+  pomodoro_count?: number;
+  white_noise_type?: string;
+  is_break?: boolean;
+}
+
+export interface UserFocusStats {
+  id: string;
+  user_id: string;
+  total_focus_seconds: number;
+  total_sessions: number;
+  total_pomodoros: number;
+  total_tasks_completed: number;
+  current_streak: number;
+  longest_streak: number;
+  last_focus_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DailyFocusStats {
+  date: string;
+  total_duration: number;
+  session_count: number;
+  pomodoro_count: number;
+  tasks_completed: number;
+  avg_session_duration: number;
+}
+
+export interface WeeklyFocusStats {
+  week_start: string;
+  week_end: string;
+  total_duration: number;
+  total_sessions: number;
+  total_pomodoros: number;
+  tasks_completed: number;
+  daily_average: number;
+  best_day: { date: string; duration: number };
+  streak_days: number;
+}
+
+export interface MonthlyFocusStats {
+  month: string;
+  total_duration: number;
+  total_sessions: number;
+  total_pomodoros: number;
+  tasks_completed: number;
+  daily_average: number;
+  active_days: number;
+  best_day: { date: string; duration: number };
+  streak_longest: number;
+  weekly_breakdown: Array<{
+    week: number;
+    duration: number;
+    sessions: number;
+  }>;
+}
+
+export interface Achievement {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  category: "focus" | "tasks" | "streak" | "special" | "study" | "creation";
+  icon: string;
+  color: string;
+  xp_reward: number;
+  condition_type: string;
+  condition_value: number;
+  is_hidden: boolean;
+  created_at: string;
+}
+
+export interface UserAchievement {
+  id: string;
+  user_id: string;
+  achievement_id: string;
+  achievement?: Achievement;
+  unlocked_at: string;
+  progress: number;
+  metadata: Record<string, unknown>;
+}
+
+export interface AchievementCheckResult {
+  unlocked: Achievement[];
+  progress: Array<{
+    achievement: Achievement;
+    current: number;
+    target: number;
+    percentage: number;
+  }>;
 }

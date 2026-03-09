@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Node, Edge } from '../../types';
 import { useMessageStore } from '../../store/useMessageStore';
 import { api } from '../../services/api';
-import { handleError, isNetworkError } from '../../services/errorService';
+import { isNetworkError, wrapUnknownError } from '../../utils/errors';
 import { queryKeys } from '../queries/config';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -81,8 +81,9 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
       state.setAiPrompt('');
       addMessage({ content: 'AI 内容生成完成', type: 'success' });
     } catch (err) {
+      const appError = wrapUnknownError(err);
+      console.error('[handleAIGenerate]', appError);
       const errorMsg = isNetworkError(err) ? '网络连接失败，请检查网络' : 'AI 生成失败';
-      handleError(err, 'handleAIGenerate');
       addMessage({ content: errorMsg, type: 'error' });
     } finally {
       state.setLoading(false);

@@ -1,41 +1,82 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Award, 
-  Lock, 
-  Search, 
-  Trophy, 
-  Target, 
-  Flame, 
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Award,
+  Lock,
+  Search,
+  Trophy,
+  Target,
+  Flame,
   Sparkles,
-  X
-} from 'lucide-react';
-import { schedulerApi, Achievement, UserAchievement } from '../../services/api/scheduler';
-import { AchievementBadge, AchievementBadgeNotification } from './AchievementBadge';
+  X,
+} from "lucide-react";
+import { api } from "../../services/api";
+import type { Achievement, UserAchievement } from "@shared/types";
+import {
+  AchievementBadge,
+  AchievementBadgeNotification,
+} from "./AchievementBadge";
 
 interface AchievementGalleryProps {
   className?: string;
 }
 
-type CategoryFilter = 'all' | 'focus' | 'tasks' | 'streak' | 'special';
-type StatusFilter = 'all' | 'unlocked' | 'locked';
+type CategoryFilter = "all" | "focus" | "tasks" | "streak" | "special";
+type StatusFilter = "all" | "unlocked" | "locked";
 
 const CATEGORY_INFO = {
-  focus: { label: '专注', icon: Target, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-  tasks: { label: '任务', icon: Trophy, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  streak: { label: '连续', icon: Flame, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-  special: { label: '特殊', icon: Sparkles, color: 'text-violet-500', bg: 'bg-violet-500/10' },
+  focus: {
+    label: "专注",
+    icon: Target,
+    color: "text-cyan-500",
+    bg: "bg-cyan-500/10",
+  },
+  tasks: {
+    label: "任务",
+    icon: Trophy,
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
+  },
+  streak: {
+    label: "连续",
+    icon: Flame,
+    color: "text-amber-500",
+    bg: "bg-amber-500/10",
+  },
+  special: {
+    label: "特殊",
+    icon: Sparkles,
+    color: "text-violet-500",
+    bg: "bg-violet-500/10",
+  },
+  study: {
+    label: "学习",
+    icon: Award,
+    color: "text-indigo-500",
+    bg: "bg-indigo-500/10",
+  },
+  creation: {
+    label: "创作",
+    icon: Sparkles,
+    color: "text-rose-500",
+    bg: "bg-rose-500/10",
+  },
 };
 
-export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ className = '' }) => {
+export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
+  className = "",
+}) => {
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
-  const [userAchievements, setUserAchievements] = useState<(UserAchievement & { achievement: Achievement })[]>([]);
+  const [userAchievements, setUserAchievements] = useState<
+    (UserAchievement & { achievement: Achievement })[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAchievement, setSelectedAchievement] =
+    useState<Achievement | null>(null);
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement | null>(null);
 
   useEffect(() => {
@@ -43,15 +84,15 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
       try {
         setLoading(true);
         const [achievementsRes, userAchievementsRes] = await Promise.all([
-          schedulerApi.getAllAchievements(),
-          schedulerApi.getUserAchievements(),
+          api.scheduler.getAllAchievements(),
+          api.scheduler.getUserAchievements(),
         ]);
         setAllAchievements(achievementsRes.data || []);
         setUserAchievements(userAchievementsRes.data || []);
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch achievements:', err);
-        setError('加载成就数据失败');
+        console.error("Failed to fetch achievements:", err);
+        setError("加载成就数据失败");
       } finally {
         setLoading(false);
       }
@@ -61,17 +102,17 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
   }, []);
 
   const userAchievementMap = new Map(
-    userAchievements.map(ua => [ua.achievement_id, ua])
+    userAchievements.map((ua) => [ua.achievement_id, ua]),
   );
 
-  const filteredAchievements = allAchievements.filter(achievement => {
-    if (categoryFilter !== 'all' && achievement.category !== categoryFilter) {
+  const filteredAchievements = allAchievements.filter((achievement) => {
+    if (categoryFilter !== "all" && achievement.category !== categoryFilter) {
       return false;
     }
 
     const isUnlocked = userAchievementMap.has(achievement.id);
-    if (statusFilter === 'unlocked' && !isUnlocked) return false;
-    if (statusFilter === 'locked' && isUnlocked) return false;
+    if (statusFilter === "unlocked" && !isUnlocked) return false;
+    if (statusFilter === "locked" && isUnlocked) return false;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -87,23 +128,29 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
   const stats = {
     total: allAchievements.length,
     unlocked: userAchievements.length,
-    totalXp: userAchievements.reduce((sum, ua) => sum + (ua.achievement?.xp_reward || 0), 0),
+    totalXp: userAchievements.reduce(
+      (sum, ua) => sum + (ua.achievement?.xp_reward || 0),
+      0,
+    ),
     byCategory: {
       focus: { total: 0, unlocked: 0 },
       tasks: { total: 0, unlocked: 0 },
       streak: { total: 0, unlocked: 0 },
       special: { total: 0, unlocked: 0 },
+      study: { total: 0, unlocked: 0 },
+      creation: { total: 0, unlocked: 0 },
     },
   };
 
-  allAchievements.forEach(a => {
+  allAchievements.forEach((a) => {
     stats.byCategory[a.category].total++;
     if (userAchievementMap.has(a.id)) {
       stats.byCategory[a.category].unlocked++;
     }
   });
 
-  const completionPercentage = stats.total > 0 ? Math.round((stats.unlocked / stats.total) * 100) : 0;
+  const completionPercentage =
+    stats.total > 0 ? Math.round((stats.unlocked / stats.total) * 100) : 0;
 
   if (loading) {
     return (
@@ -112,7 +159,10 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
           <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+              <div
+                key={i}
+                className="h-32 bg-slate-200 dark:bg-slate-700 rounded-xl"
+              />
             ))}
           </div>
         </div>
@@ -158,14 +208,18 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
               <Trophy size={20} className="text-white" />
             </div>
             <div>
-              <p className="text-sm text-slate-600 dark:text-slate-300">总体进度</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                总体进度
+              </p>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {completionPercentage}%
               </p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-500 dark:text-slate-400">获得经验</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              获得经验
+            </p>
             <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
               +{stats.totalXp} XP
             </p>
@@ -185,8 +239,12 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {Object.entries(CATEGORY_INFO).map(([category, info], index) => {
           const Icon = info.icon;
-          const catStats = stats.byCategory[category as keyof typeof stats.byCategory];
-          const percentage = catStats.total > 0 ? Math.round((catStats.unlocked / catStats.total) * 100) : 0;
+          const catStats =
+            stats.byCategory[category as keyof typeof stats.byCategory];
+          const percentage =
+            catStats.total > 0
+              ? Math.round((catStats.unlocked / catStats.total) * 100)
+              : 0;
 
           return (
             <motion.button
@@ -194,18 +252,27 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + index * 0.1 }}
-              onClick={() => setCategoryFilter(categoryFilter === category ? 'all' : category as CategoryFilter)}
+              onClick={() =>
+                setCategoryFilter(
+                  categoryFilter === category
+                    ? "all"
+                    : (category as CategoryFilter),
+                )
+              }
               className={`
                 p-3 rounded-xl border transition-all text-left
-                ${categoryFilter === category 
-                  ? `${info.bg} border-current` 
-                  : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600'
+                ${
+                  categoryFilter === category
+                    ? `${info.bg} border-current`
+                    : "bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600"
                 }
               `}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Icon size={16} className={info.color} />
-                <span className={`text-sm font-medium ${categoryFilter === category ? info.color : 'text-slate-700 dark:text-slate-300'}`}>
+                <span
+                  className={`text-sm font-medium ${categoryFilter === category ? info.color : "text-slate-700 dark:text-slate-300"}`}
+                >
                   {info.label}
                 </span>
               </div>
@@ -213,8 +280,8 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
                 {catStats.unlocked}/{catStats.total}
               </p>
               <div className="mt-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full ${info.bg.replace('/10', '')}`}
+                <div
+                  className={`h-full rounded-full ${info.bg.replace("/10", "")}`}
                   style={{ width: `${percentage}%` }}
                 />
               </div>
@@ -225,7 +292,10 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
           <input
             type="text"
             placeholder="搜索成就..."
@@ -236,19 +306,24 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
         </div>
 
         <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-          {(['all', 'unlocked', 'locked'] as StatusFilter[]).map((status) => (
+          {(["all", "unlocked", "locked"] as StatusFilter[]).map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
               className={`
                 px-3 py-1.5 rounded-md text-sm font-medium transition-all
-                ${statusFilter === status 
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ${
+                  statusFilter === status
+                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }
               `}
             >
-              {status === 'all' ? '全部' : status === 'unlocked' ? '已解锁' : '未解锁'}
+              {status === "all"
+                ? "全部"
+                : status === "unlocked"
+                  ? "已解锁"
+                  : "未解锁"}
             </button>
           ))}
         </div>
@@ -280,7 +355,11 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
                   progress={userAchievement?.progress || 0}
                 />
                 <p className="mt-2 text-xs text-center text-slate-500 dark:text-slate-400 line-clamp-2">
-                  {isUnlocked ? achievement.description : (achievement.is_hidden ? '???' : achievement.description)}
+                  {isUnlocked
+                    ? achievement.description
+                    : achievement.is_hidden
+                      ? "???"
+                      : achievement.description}
                 </p>
               </motion.div>
             );
@@ -323,7 +402,9 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
                     return (
                       <>
                         <Icon size={16} className={info.color} />
-                        <span className={`text-sm ${info.color}`}>{info.label}</span>
+                        <span className={`text-sm ${info.color}`}>
+                          {info.label}
+                        </span>
                       </>
                     );
                   })()}
@@ -340,15 +421,22 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
                 <AchievementBadge
                   achievement={selectedAchievement}
                   unlocked={userAchievementMap.has(selectedAchievement.id)}
-                  unlockedAt={userAchievementMap.get(selectedAchievement.id)?.unlocked_at}
+                  unlockedAt={
+                    userAchievementMap.get(selectedAchievement.id)?.unlocked_at
+                  }
                   size="lg"
                   showProgress
-                  progress={userAchievementMap.get(selectedAchievement.id)?.progress || 0}
+                  progress={
+                    userAchievementMap.get(selectedAchievement.id)?.progress ||
+                    0
+                  }
                   animate={false}
                 />
 
                 <h4 className="mt-4 text-lg font-bold text-slate-900 dark:text-white text-center">
-                  {userAchievementMap.has(selectedAchievement.id) ? selectedAchievement.name : '???'}
+                  {userAchievementMap.has(selectedAchievement.id)
+                    ? selectedAchievement.name
+                    : "???"}
                 </h4>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 text-center">
                   {selectedAchievement.description}
@@ -364,10 +452,14 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({ classNam
 
                 {userAchievementMap.has(selectedAchievement.id) && (
                   <p className="mt-4 text-xs text-slate-400">
-                    解锁于 {new Date(userAchievementMap.get(selectedAchievement.id)!.unlocked_at).toLocaleDateString('zh-CN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
+                    解锁于{" "}
+                    {new Date(
+                      userAchievementMap.get(selectedAchievement.id)!
+                        .unlocked_at,
+                    ).toLocaleDateString("zh-CN", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
                     })}
                   </p>
                 )}

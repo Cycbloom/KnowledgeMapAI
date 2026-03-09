@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useMessageStore } from '../store/useMessageStore';
-import { schedulerApi } from '../services/api/scheduler';
+import { api } from '../services/api';
 import { CalendarMonthView } from '../components/Calendar/CalendarMonthView';
 import { CalendarWeekView } from '../components/Calendar/CalendarWeekView';
 import { CalendarDayView } from '../components/Calendar/CalendarDayView';
@@ -67,8 +67,8 @@ export const CalendarPage: React.FC = () => {
     setLoading(true);
     try {
       const [tasksRes, executionsRes] = await Promise.all([
-        schedulerApi.getTasks({}),
-        schedulerApi.getExecutions({}),
+        api.scheduler.getTasks({}),
+        api.scheduler.getExecutions({}),
       ]);
 
       if (tasksRes.success) {
@@ -141,7 +141,7 @@ export const CalendarPage: React.FC = () => {
 
     setSaving(true);
     try {
-      await schedulerApi.createTask({
+      await api.scheduler.createTask({
         title: taskForm.title,
         description: taskForm.description,
         deadline: taskForm.deadline.toISOString(),
@@ -182,7 +182,7 @@ export const CalendarPage: React.FC = () => {
         updateData.scheduled_end = dropInfo.newEnd.toISOString();
       }
       
-      await schedulerApi.updateTask(dropInfo.eventId, updateData);
+      await api.scheduler.updateTask(dropInfo.eventId, updateData);
       addMessage({ type: 'success', content: '任务时间已更新!' });
       loadData();
     } catch (error: any) {

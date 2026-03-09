@@ -1,8 +1,15 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Circle, PlayCircle, CheckCircle2, XCircle, PauseCircle, Clock } from 'lucide-react';
-import { ScheduledTask } from '../../services/api/scheduler';
-import { TaskCard } from './TaskCard';
+import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
+import {
+  Circle,
+  PlayCircle,
+  CheckCircle2,
+  XCircle,
+  PauseCircle,
+  Clock,
+} from "lucide-react";
+import { ScheduledTask } from "@shared/types";
+import { TaskCard } from "./TaskCard";
 
 interface KanbanViewProps {
   tasks: ScheduledTask[];
@@ -12,54 +19,57 @@ interface KanbanViewProps {
 
 const KANBAN_COLUMNS = [
   {
-    id: 'pending',
-    title: '待办',
+    id: "pending",
+    title: "待办",
     icon: Circle,
-    color: 'slate',
-    gradient: 'from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600',
-    border: 'border-slate-300 dark:border-slate-500/30',
-    bg: 'bg-slate-100 dark:bg-slate-500/10',
-    text: 'text-slate-600 dark:text-slate-400',
+    color: "slate",
+    gradient:
+      "from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600",
+    border: "border-slate-300 dark:border-slate-500/30",
+    bg: "bg-slate-100 dark:bg-slate-500/10",
+    text: "text-slate-600 dark:text-slate-400",
   },
   {
-    id: 'in_progress',
-    title: '进行中',
+    id: "in_progress",
+    title: "进行中",
     icon: PlayCircle,
-    color: 'blue',
-    gradient: 'from-blue-400 to-cyan-400 dark:from-blue-500 dark:to-cyan-500',
-    border: 'border-blue-300 dark:border-blue-500/30',
-    bg: 'bg-blue-100 dark:bg-blue-500/10',
-    text: 'text-blue-600 dark:text-blue-400',
+    color: "blue",
+    gradient: "from-blue-400 to-cyan-400 dark:from-blue-500 dark:to-cyan-500",
+    border: "border-blue-300 dark:border-blue-500/30",
+    bg: "bg-blue-100 dark:bg-blue-500/10",
+    text: "text-blue-600 dark:text-blue-400",
   },
   {
-    id: 'paused',
-    title: '已暂停',
+    id: "paused",
+    title: "已暂停",
     icon: PauseCircle,
-    color: 'amber',
-    gradient: 'from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500',
-    border: 'border-amber-300 dark:border-amber-500/30',
-    bg: 'bg-amber-100 dark:bg-amber-500/10',
-    text: 'text-amber-600 dark:text-amber-400',
+    color: "amber",
+    gradient:
+      "from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500",
+    border: "border-amber-300 dark:border-amber-500/30",
+    bg: "bg-amber-100 dark:bg-amber-500/10",
+    text: "text-amber-600 dark:text-amber-400",
   },
   {
-    id: 'completed',
-    title: '已完成',
+    id: "completed",
+    title: "已完成",
     icon: CheckCircle2,
-    color: 'emerald',
-    gradient: 'from-emerald-400 to-teal-400 dark:from-emerald-500 dark:to-teal-500',
-    border: 'border-emerald-300 dark:border-emerald-500/30',
-    bg: 'bg-emerald-100 dark:bg-emerald-500/10',
-    text: 'text-emerald-600 dark:text-emerald-400',
+    color: "emerald",
+    gradient:
+      "from-emerald-400 to-teal-400 dark:from-emerald-500 dark:to-teal-500",
+    border: "border-emerald-300 dark:border-emerald-500/30",
+    bg: "bg-emerald-100 dark:bg-emerald-500/10",
+    text: "text-emerald-600 dark:text-emerald-400",
   },
   {
-    id: 'cancelled',
-    title: '已取消',
+    id: "cancelled",
+    title: "已取消",
     icon: XCircle,
-    color: 'red',
-    gradient: 'from-red-400 to-rose-400 dark:from-red-500 dark:to-rose-500',
-    border: 'border-red-300 dark:border-red-500/30',
-    bg: 'bg-red-100 dark:bg-red-500/10',
-    text: 'text-red-600 dark:text-red-400',
+    color: "red",
+    gradient: "from-red-400 to-rose-400 dark:from-red-500 dark:to-rose-500",
+    border: "border-red-300 dark:border-red-500/30",
+    bg: "bg-red-100 dark:bg-red-500/10",
+    text: "text-red-600 dark:text-red-400",
   },
 ];
 
@@ -68,7 +78,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   onTaskMove,
   onTaskClick,
 }) => {
-  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
+  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(
+    null,
+  );
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
 
   const columnsData = useMemo(() => {
@@ -78,9 +90,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
     }));
   }, [tasks]);
 
-  const handleDragStart = (e: React.DragEvent, taskId: string, currentStatus: string) => {
-    e.dataTransfer.setData('taskId', taskId);
-    e.dataTransfer.setData('currentStatus', currentStatus);
+  const handleDragStart = (
+    e: React.DragEvent,
+    taskId: string,
+    currentStatus: string,
+  ) => {
+    e.dataTransfer.setData("taskId", taskId);
+    e.dataTransfer.setData("currentStatus", currentStatus);
     setDraggedTask(taskId);
   };
 
@@ -100,13 +116,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
   const handleDrop = (e: React.DragEvent, targetStatus: string) => {
     e.preventDefault();
-    const taskId = e.dataTransfer.getData('taskId');
-    const currentStatus = e.dataTransfer.getData('currentStatus');
-    
+    const taskId = e.dataTransfer.getData("taskId");
+    const currentStatus = e.dataTransfer.getData("currentStatus");
+
     if (taskId && currentStatus !== targetStatus && onTaskMove) {
       onTaskMove(taskId, targetStatus);
     }
-    
+
     setDraggedTask(null);
     setDraggedOverColumn(null);
   };
@@ -116,7 +132,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   const formatDuration = (minutes: number) => {
-    if (minutes === 0) return '0h';
+    if (minutes === 0) return "0h";
     if (minutes < 60) return `${minutes}m`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -141,41 +157,57 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                 transition={{ delay: index * 0.1 }}
                 className={`
                   flex flex-col w-80 flex-shrink-0 rounded-2xl border transition-all duration-300
-                  ${isOver ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-[1.02]' : ''}
+                  ${isOver ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-[1.02]" : ""}
                   ${column.border}
                   bg-white dark:bg-slate-900/60 backdrop-blur-sm
                 `}
                 style={{
-                  boxShadow: isOver 
-                    ? `0 0 30px ${column.color === 'blue' ? 'rgba(59, 130, 246, 0.3)' : 
-                       column.color === 'emerald' ? 'rgba(16, 185, 129, 0.3)' : 
-                       column.color === 'amber' ? 'rgba(245, 158, 11, 0.3)' : 
-                       column.color === 'red' ? 'rgba(239, 68, 68, 0.3)' : 
-                       'rgba(100, 116, 139, 0.3)'}`
+                  boxShadow: isOver
+                    ? `0 0 30px ${
+                        column.color === "blue"
+                          ? "rgba(59, 130, 246, 0.3)"
+                          : column.color === "emerald"
+                            ? "rgba(16, 185, 129, 0.3)"
+                            : column.color === "amber"
+                              ? "rgba(245, 158, 11, 0.3)"
+                              : column.color === "red"
+                                ? "rgba(239, 68, 68, 0.3)"
+                                : "rgba(100, 116, 139, 0.3)"
+                      }`
                     : undefined,
                 }}
                 onDragOver={(e) => handleDragOver(e, column.id)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, column.id)}
               >
-                <div className={`
+                <div
+                  className={`
                   p-4 rounded-t-2xl border-b
                   ${column.bg} ${column.border}
-                `}>
+                `}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${column.gradient} shadow-lg`}>
+                      <div
+                        className={`p-2 rounded-lg bg-gradient-to-br ${column.gradient} shadow-lg`}
+                      >
                         <IconComponent size={18} className="text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-800 dark:text-white">{column.title}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{column.tasks.length} 个任务</p>
+                        <h3 className="font-bold text-slate-800 dark:text-white">
+                          {column.title}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {column.tasks.length} 个任务
+                        </p>
                       </div>
                     </div>
-                    <div className={`
+                    <div
+                      className={`
                       px-2.5 py-1 rounded-full text-sm font-bold
                       ${column.bg} ${column.text}
-                    `}>
+                    `}
+                    >
                       {column.tasks.length}
                     </div>
                   </div>
@@ -183,7 +215,12 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   {estimatedTime > 0 && (
                     <div className="flex items-center gap-2 mt-3 text-xs text-slate-500 dark:text-slate-400">
                       <Clock size={12} className={column.text} />
-                      <span>预计: <span className="text-slate-800 dark:text-white font-medium">{formatDuration(estimatedTime)}</span></span>
+                      <span>
+                        预计:{" "}
+                        <span className="text-slate-800 dark:text-white font-medium">
+                          {formatDuration(estimatedTime)}
+                        </span>
+                      </span>
                     </div>
                   )}
                 </div>
@@ -191,10 +228,15 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                 <div className="flex-1 p-3 overflow-y-auto custom-scrollbar max-h-[calc(100vh-280px)]">
                   {column.tasks.length === 0 ? (
                     <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-                      <IconComponent size={32} className="mx-auto mb-2 opacity-30" />
+                      <IconComponent
+                        size={32}
+                        className="mx-auto mb-2 opacity-30"
+                      />
                       <p className="text-sm">暂无任务</p>
                       {draggedTask && (
-                        <p className="text-xs mt-1 text-slate-400 dark:text-slate-600">拖拽任务到此处</p>
+                        <p className="text-xs mt-1 text-slate-400 dark:text-slate-600">
+                          拖拽任务到此处
+                        </p>
                       )}
                     </div>
                   ) : (
@@ -210,16 +252,26 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                             key={task.id}
                             value={task}
                             draggable
-                            onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, task.id, task.status)}
+                            onDragStart={(e) =>
+                              handleDragStart(
+                                e as unknown as React.DragEvent,
+                                task.id,
+                                task.status,
+                              )
+                            }
                             onDragEnd={handleDragEnd}
                             className={`
                               cursor-grab active:cursor-grabbing
-                              ${draggedTask === task.id ? 'opacity-50 scale-95' : ''}
+                              ${draggedTask === task.id ? "opacity-50 scale-95" : ""}
                             `}
                           >
                             <TaskCard
                               task={task}
-                              onEdit={onTaskClick ? () => onTaskClick(task) : undefined}
+                              onEdit={
+                                onTaskClick
+                                  ? () => onTaskClick(task)
+                                  : undefined
+                              }
                             />
                           </Reorder.Item>
                         ))}

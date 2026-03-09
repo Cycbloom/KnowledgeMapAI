@@ -1,5 +1,5 @@
 import { useMessageStore } from '../store/useMessageStore';
-import { isNetworkError } from '../services/errorService';
+import { isNetworkError } from './errors';
 
 export interface AsyncOperationOptions {
   loadingSetter?: (loading: boolean) => void;

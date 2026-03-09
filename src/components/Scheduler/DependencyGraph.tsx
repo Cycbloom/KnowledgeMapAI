@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  GitBranch, CheckCircle, 
-  Lock, Unlock
-} from 'lucide-react';
-import { ScheduledTask } from '../../services/api/scheduler';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { GitBranch, CheckCircle, Lock, Unlock } from "lucide-react";
+import { ScheduledTask } from "@shared/types";
 
 interface DependencyGraphProps {
   tasks: ScheduledTask[];
@@ -22,22 +19,22 @@ interface TaskNode {
 
 export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   tasks,
-  className = '',
+  className = "",
   onTaskClick,
 }) => {
   const [nodes, setNodes] = useState<TaskNode[]>([]);
 
   const calculateLayout = () => {
     const taskMap = new Map<string, ScheduledTask>();
-    tasks.forEach(t => taskMap.set(t.id, t));
+    tasks.forEach((t) => taskMap.set(t.id, t));
 
     const nodesWithPositions: TaskNode[] = tasks.map((task, index) => {
       const dependsOn = (task as any).depends_on || [];
       const blockingTasks = dependsOn
         .map((id: string) => taskMap.get(id))
         .filter(Boolean) as ScheduledTask[];
-      
-      const isBlocked = blockingTasks.some(t => t.status !== 'completed');
+
+      const isBlocked = blockingTasks.some((t) => t.status !== "completed");
 
       const row = Math.floor(index / 3);
       const col = index % 3;
@@ -59,18 +56,18 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   }, [tasks]);
 
   const getNodeColor = (node: TaskNode) => {
-    if (node.task.status === 'completed') return '#10b981';
-    if (node.isBlocked) return '#f59e0b';
-    if (node.task.status === 'in_progress') return '#06b6d4';
-    return '#64748b';
+    if (node.task.status === "completed") return "#10b981";
+    if (node.isBlocked) return "#f59e0b";
+    if (node.task.status === "in_progress") return "#06b6d4";
+    return "#64748b";
   };
 
   const renderConnections = () => {
     const connections: JSX.Element[] = [];
-    
-    nodes.forEach(node => {
-      node.blockingTasks.forEach(blockingTask => {
-        const blockingNode = nodes.find(n => n.task.id === blockingTask.id);
+
+    nodes.forEach((node) => {
+      node.blockingTasks.forEach((blockingTask) => {
+        const blockingNode = nodes.find((n) => n.task.id === blockingTask.id);
         if (blockingNode) {
           connections.push(
             <line
@@ -79,11 +76,15 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
               y1={blockingNode.y + 25}
               x2={node.x}
               y2={node.y + 25}
-              stroke={blockingTask.status === 'completed' ? '#10b981' : '#f59e0b'}
+              stroke={
+                blockingTask.status === "completed" ? "#10b981" : "#f59e0b"
+              }
               strokeWidth="2"
-              strokeDasharray={blockingTask.status === 'completed' ? '0' : '5,5'}
+              strokeDasharray={
+                blockingTask.status === "completed" ? "0" : "5,5"
+              }
               markerEnd="url(#arrowhead)"
-            />
+            />,
           );
         }
       });
@@ -93,13 +94,17 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}>
+    <div
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}
+    >
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl">
           <GitBranch size={20} className="text-indigo-500" />
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">任务依赖关系</h3>
+          <h3 className="font-semibold text-slate-900 dark:text-white">
+            任务依赖关系
+          </h3>
           <p className="text-xs text-slate-500">可视化任务之间的依赖</p>
         </div>
       </div>
@@ -113,8 +118,8 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
         </div>
       ) : (
         <div className="relative overflow-x-auto">
-          <svg 
-            width="100%" 
+          <svg
+            width="100%"
             height={Math.max(200, Math.ceil(nodes.length / 3) * 120 + 40)}
             viewBox="0 0 700 400"
             className="min-w-[600px]"
@@ -135,7 +140,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
             {renderConnections()}
 
             {nodes.map((node, index) => (
-              <g 
+              <g
                 key={node.task.id}
                 className="cursor-pointer"
                 onClick={() => {
@@ -154,18 +159,32 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
                   transition={{ delay: index * 0.05 }}
                   className="hover:opacity-90 transition-opacity"
                 />
-                
+
                 {node.isBlocked && (
                   <g transform={`translate(${node.x + 95}, ${node.y + 5})`}>
                     <circle r="10" fill="#f59e0b" />
-                    <Lock size={12} fill="white" stroke="white" strokeWidth="1" x="-6" y="-6" />
+                    <Lock
+                      size={12}
+                      fill="white"
+                      stroke="white"
+                      strokeWidth="1"
+                      x="-6"
+                      y="-6"
+                    />
                   </g>
                 )}
 
-                {node.task.status === 'completed' && (
+                {node.task.status === "completed" && (
                   <g transform={`translate(${node.x + 95}, ${node.y + 5})`}>
                     <circle r="10" fill="#10b981" />
-                    <CheckCircle size={12} fill="white" stroke="white" strokeWidth="1" x="-6" y="-6" />
+                    <CheckCircle
+                      size={12}
+                      fill="white"
+                      stroke="white"
+                      strokeWidth="1"
+                      x="-6"
+                      y="-6"
+                    />
                   </g>
                 )}
 
@@ -178,8 +197,8 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
                   fontWeight="500"
                   className="pointer-events-none"
                 >
-                  {node.task.title.length > 12 
-                    ? `${node.task.title.slice(0, 12)}...` 
+                  {node.task.title.length > 12
+                    ? `${node.task.title.slice(0, 12)}...`
                     : node.task.title}
                 </text>
               </g>
@@ -217,10 +236,10 @@ interface DependencyIndicatorProps {
 
 export const DependencyIndicator: React.FC<DependencyIndicatorProps> = ({
   blockingTasks = [],
-  className = '',
+  className = "",
 }) => {
-  const isBlocked = blockingTasks.some(t => t.status !== 'completed');
-  const pendingBlockers = blockingTasks.filter(t => t.status !== 'completed');
+  const isBlocked = blockingTasks.some((t) => t.status !== "completed");
+  const pendingBlockers = blockingTasks.filter((t) => t.status !== "completed");
 
   if (blockingTasks.length === 0) return null;
 

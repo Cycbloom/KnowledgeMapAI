@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSchedulerStats, useHeatmap, useExecutions } from '../hooks/useScheduler';
-import type { ExecutionFilters, TaskExecution } from '../services/api/scheduler';
+import type { ExecutionFilters, TaskExecution } from '@shared/types';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell, LineChart, Line

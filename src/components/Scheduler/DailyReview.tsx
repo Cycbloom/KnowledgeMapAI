@@ -1,12 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sun, Moon, CloudRain,
-  Smile, Meh, Zap, Brain, Lightbulb,
-  Calendar, CheckCircle, X, Save
-} from 'lucide-react';
-import { reviewApi, TaskReview, Mood } from '../../services/api/review';
-import { schedulerApi, ScheduledTask } from '../../services/api/scheduler';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sun,
+  Moon,
+  CloudRain,
+  Smile,
+  Meh,
+  Zap,
+  Brain,
+  Lightbulb,
+  Calendar,
+  CheckCircle,
+  X,
+  Save,
+} from "lucide-react";
+import { reviewApi, TaskReview, Mood } from "../../services/api/review";
+import { api } from "../../services/api";
+import type { ScheduledTask } from "@shared/types";
 
 interface DailyReviewProps {
   isOpen: boolean;
@@ -15,36 +25,39 @@ interface DailyReviewProps {
   onSave?: (review: TaskReview) => void;
 }
 
-const MOOD_CONFIG: Record<Mood, { icon: React.ReactNode; label: string; color: string; bg: string }> = {
-  great: { 
-    icon: <Smile size={24} />, 
-    label: '很棒', 
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/50'
+const MOOD_CONFIG: Record<
+  Mood,
+  { icon: React.ReactNode; label: string; color: string; bg: string }
+> = {
+  great: {
+    icon: <Smile size={24} />,
+    label: "很棒",
+    color: "text-emerald-500",
+    bg: "bg-emerald-100 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/50",
   },
-  good: { 
-    icon: <Sun size={24} />, 
-    label: '不错', 
-    color: 'text-blue-500',
-    bg: 'bg-blue-100 dark:bg-blue-500/20 border-blue-300 dark:border-blue-500/50'
+  good: {
+    icon: <Sun size={24} />,
+    label: "不错",
+    color: "text-blue-500",
+    bg: "bg-blue-100 dark:bg-blue-500/20 border-blue-300 dark:border-blue-500/50",
   },
-  neutral: { 
-    icon: <Meh size={24} />, 
-    label: '一般', 
-    color: 'text-slate-500',
-    bg: 'bg-slate-100 dark:bg-slate-500/20 border-slate-300 dark:border-slate-500/50'
+  neutral: {
+    icon: <Meh size={24} />,
+    label: "一般",
+    color: "text-slate-500",
+    bg: "bg-slate-100 dark:bg-slate-500/20 border-slate-300 dark:border-slate-500/50",
   },
-  tired: { 
-    icon: <Moon size={24} />, 
-    label: '疲惫', 
-    color: 'text-amber-500',
-    bg: 'bg-amber-100 dark:bg-amber-500/20 border-amber-300 dark:border-amber-500/50'
+  tired: {
+    icon: <Moon size={24} />,
+    label: "疲惫",
+    color: "text-amber-500",
+    bg: "bg-amber-100 dark:bg-amber-500/20 border-amber-300 dark:border-amber-500/50",
   },
-  stressed: { 
-    icon: <CloudRain size={24} />, 
-    label: '压力大', 
-    color: 'text-red-500',
-    bg: 'bg-red-100 dark:bg-red-500/20 border-red-300 dark:border-red-500/50'
+  stressed: {
+    icon: <CloudRain size={24} />,
+    label: "压力大",
+    color: "text-red-500",
+    bg: "bg-red-100 dark:bg-red-500/20 border-red-300 dark:border-red-500/50",
   },
 };
 
@@ -55,16 +68,16 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
   onSave,
 }) => {
   const [mood, setMood] = useState<Mood | null>(null);
-  const [content, setContent] = useState('');
-  const [difficulties, setDifficulties] = useState('');
-  const [improvements, setImprovements] = useState('');
-  const [learnings, setLearnings] = useState('');
+  const [content, setContent] = useState("");
+  const [difficulties, setDifficulties] = useState("");
+  const [improvements, setImprovements] = useState("");
+  const [learnings, setLearnings] = useState("");
   const [completedTasks, setCompletedTasks] = useState<ScheduledTask[]>([]);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const targetDate = date || new Date().toISOString().split('T')[0];
+  const targetDate = date || new Date().toISOString().split("T")[0];
 
   useEffect(() => {
     if (isOpen) {
@@ -77,26 +90,28 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
     try {
       const [review, tasks] = await Promise.all([
         reviewApi.getDailyReview(targetDate),
-        schedulerApi.getTasks({ status: 'completed' }),
+        api.scheduler.getTasks({ status: "completed" }),
       ]);
 
       if (review) {
         setExistingReview(review);
         setMood(review.mood || null);
-        setContent(review.content || '');
-        setDifficulties(review.difficulties || '');
-        setImprovements(review.improvements || '');
-        setLearnings(review.learnings || '');
+        setContent(review.content || "");
+        setDifficulties(review.difficulties || "");
+        setImprovements(review.improvements || "");
+        setLearnings(review.learnings || "");
       }
 
       const todayTasks = tasks.filter((t: ScheduledTask) => {
         if (!t.completed_at) return false;
-        const completedDate = new Date(t.completed_at).toISOString().split('T')[0];
+        const completedDate = new Date(t.completed_at)
+          .toISOString()
+          .split("T")[0];
         return completedDate === targetDate;
       });
       setCompletedTasks(todayTasks);
     } catch (error) {
-      console.error('Failed to load daily review data:', error);
+      console.error("Failed to load daily review data:", error);
     } finally {
       setLoading(false);
     }
@@ -106,7 +121,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
     setSaving(true);
     try {
       const reviewData = {
-        review_type: 'daily' as const,
+        review_type: "daily" as const,
         mood: mood || undefined,
         content: content || undefined,
         difficulties: difficulties || undefined,
@@ -124,21 +139,24 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
       setExistingReview(review);
       onSave?.(review);
     } catch (error) {
-      console.error('Failed to save daily review:', error);
+      console.error("Failed to save daily review:", error);
     } finally {
       setSaving(false);
     }
   };
 
   const formatDuration = (minutes?: number) => {
-    if (!minutes) return '--';
+    if (!minutes) return "--";
     if (minutes < 60) return `${minutes}分钟`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
   };
 
-  const totalDuration = completedTasks.reduce((sum, t) => sum + (t.actual_duration || 0), 0);
+  const totalDuration = completedTasks.reduce(
+    (sum, t) => sum + (t.actual_duration || 0),
+    0,
+  );
 
   return (
     <AnimatePresence>
@@ -155,7 +173,7 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 p-6 flex items-center justify-between">
               <div>
@@ -164,11 +182,11 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   每日回顾
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {new Date(targetDate).toLocaleDateString('zh-CN', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    weekday: 'long'
+                  {new Date(targetDate).toLocaleDateString("zh-CN", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long",
                   })}
                 </p>
               </div>
@@ -193,11 +211,15 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
-                      <div className="text-2xl font-bold text-cyan-500">{completedTasks.length}</div>
+                      <div className="text-2xl font-bold text-cyan-500">
+                        {completedTasks.length}
+                      </div>
                       <div className="text-xs text-slate-500">任务</div>
                     </div>
                     <div className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg">
-                      <div className="text-2xl font-bold text-emerald-500">{formatDuration(totalDuration)}</div>
+                      <div className="text-2xl font-bold text-emerald-500">
+                        {formatDuration(totalDuration)}
+                      </div>
                       <div className="text-xs text-slate-500">专注时长</div>
                     </div>
                   </div>
@@ -217,15 +239,23 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                           key={moodKey}
                           onClick={() => setMood(moodKey)}
                           className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
-                            isSelected ? config.bg : 'border-slate-200 dark:border-slate-700'
+                            isSelected
+                              ? config.bg
+                              : "border-slate-200 dark:border-slate-700"
                           }`}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <span className={isSelected ? config.color : 'text-slate-400'}>
+                          <span
+                            className={
+                              isSelected ? config.color : "text-slate-400"
+                            }
+                          >
                             {config.icon}
                           </span>
-                          <span className={`text-sm font-medium ${isSelected ? config.color : 'text-slate-500'}`}>
+                          <span
+                            className={`text-sm font-medium ${isSelected ? config.color : "text-slate-500"}`}
+                          >
                             {config.label}
                           </span>
                         </motion.button>
@@ -304,7 +334,11 @@ export const DailyReview: React.FC<DailyReviewProps> = ({
                     whileTap={{ scale: 0.98 }}
                   >
                     <Save size={18} />
-                    {saving ? '保存中...' : existingReview ? '更新回顾' : '保存回顾'}
+                    {saving
+                      ? "保存中..."
+                      : existingReview
+                        ? "更新回顾"
+                        : "保存回顾"}
                   </motion.button>
                 </div>
               </div>

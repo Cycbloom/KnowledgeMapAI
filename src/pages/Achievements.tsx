@@ -2,7 +2,11 @@ import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { Achievement, DailyTask } from '../types';
+import { Achievement as BaseAchievement, DailyTask } from '../types';
+
+interface Achievement extends BaseAchievement {
+  unlocked_at?: string;
+}
 import { 
   Trophy, Medal, Target, Flame, Zap, Crown, Timer, Brain, 
   GraduationCap, BookOpen, Star, Lock, CheckCircle2, Award, Calendar, Ticket

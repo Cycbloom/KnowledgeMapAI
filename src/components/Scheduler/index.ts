@@ -48,7 +48,7 @@ export { ProgressTimeline } from './ProgressTimeline';
 export { TaskRecommendation } from './TaskRecommendation';
 export { SmartSuggestion } from './SmartSuggestion';
 
-export type { ScheduledTask, CreateScheduledTaskData, TaskExecution } from '../../services/api/scheduler';
+export type { ScheduledTask, CreateScheduledTaskData, TaskExecution } from '@shared/types';
 export type { TaskTemplate, CreateTemplateData, UpdateTemplateData, TemplateFilters, ApplyTemplateData, TemplateCategory as TemplateCategoryType } from '../../services/api/template';
 export type { 
   FocusSession, 
@@ -60,4 +60,4 @@ export type {
   WeeklyFocusStats,
   MonthlyFocusStats,
   AchievementCheckResult 
-} from '../../services/api/scheduler';
+} from '@shared/types';

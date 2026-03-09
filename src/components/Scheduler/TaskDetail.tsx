@@ -1,10 +1,22 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Clock, Calendar, Tag, Play, Pause, Check, Edit2, Trash2,
-  History, Link, Star, Timer, TrendingUp
-} from 'lucide-react';
-import { ScheduledTask, TaskExecution } from '../../services/api/scheduler';
+  X,
+  Clock,
+  Calendar,
+  Tag,
+  Play,
+  Pause,
+  Check,
+  Edit2,
+  Trash2,
+  History,
+  Link,
+  Star,
+  Timer,
+  TrendingUp,
+} from "lucide-react";
+import { ScheduledTask, TaskExecution } from "@shared/types";
 
 interface TaskDetailProps {
   task: ScheduledTask;
@@ -18,23 +30,58 @@ interface TaskDetailProps {
 }
 
 const QUEUE_CONFIG = {
-  0: { label: 'Q0 紧急队列', color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/30' },
-  1: { label: 'Q1 重要队列', color: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30' },
-  2: { label: 'Q2 待办队列', color: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/30' },
+  0: {
+    label: "Q0 紧急队列",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/20",
+    border: "border-cyan-500/30",
+  },
+  1: {
+    label: "Q1 重要队列",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/20",
+    border: "border-emerald-500/30",
+  },
+  2: {
+    label: "Q2 待办队列",
+    color: "text-amber-400",
+    bg: "bg-amber-500/20",
+    border: "border-amber-500/30",
+  },
 };
 
 const STATUS_CONFIG = {
-  pending: { label: '待处理', color: 'text-slate-400', bg: 'bg-slate-500/20' },
-  in_progress: { label: '进行中', color: 'text-blue-400', bg: 'bg-blue-500/20' },
-  paused: { label: '已暂停', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-  completed: { label: '已完成', color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
-  cancelled: { label: '已取消', color: 'text-red-400', bg: 'bg-red-500/20' },
+  pending: { label: "待处理", color: "text-slate-400", bg: "bg-slate-500/20" },
+  in_progress: {
+    label: "进行中",
+    color: "text-blue-400",
+    bg: "bg-blue-500/20",
+  },
+  paused: { label: "已暂停", color: "text-amber-400", bg: "bg-amber-500/20" },
+  completed: {
+    label: "已完成",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/20",
+  },
+  cancelled: { label: "已取消", color: "text-red-400", bg: "bg-red-500/20" },
 };
 
 const EXECUTION_STATUS_CONFIG = {
-  completed: { label: '已完成', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  interrupted: { label: '中断', color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  time_slice_ended: { label: '时间片结束', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  completed: {
+    label: "已完成",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+  },
+  interrupted: {
+    label: "中断",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+  },
+  time_slice_ended: {
+    label: "时间片结束",
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
+  },
 };
 
 export const TaskDetail: React.FC<TaskDetailProps> = ({
@@ -47,11 +94,13 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
   onComplete,
   onClose,
 }) => {
-  const queueConfig = QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] || QUEUE_CONFIG[2];
+  const queueConfig =
+    QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
+    QUEUE_CONFIG[2];
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
 
   const formatDuration = (minutes?: number) => {
-    if (!minutes) return '--';
+    if (!minutes) return "--";
     if (minutes < 60) return `${minutes} 分钟`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -59,25 +108,28 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
   };
 
   const formatDateTime = (dateStr?: string) => {
-    if (!dateStr) return '--';
+    if (!dateStr) return "--";
     const date = new Date(dateStr);
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const formatExecutionDuration = (seconds?: number) => {
-    if (!seconds) return '--';
+    if (!seconds) return "--";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return mins > 0 ? `${mins}分${secs}秒` : `${secs}秒`;
   };
 
-  const totalExecutionTime = executions.reduce((sum, e) => sum + (e.duration || 0), 0);
+  const totalExecutionTime = executions.reduce(
+    (sum, e) => sum + (e.duration || 0),
+    0,
+  );
 
   return (
     <AnimatePresence>
@@ -99,10 +151,14 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${queueConfig.bg} ${queueConfig.color} border ${queueConfig.border}`}>
+                  <span
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold ${queueConfig.bg} ${queueConfig.color} border ${queueConfig.border}`}
+                  >
                     {queueConfig.label}
                   </span>
-                  <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
+                  <span
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}
+                  >
                     {statusConfig.label}
                   </span>
                   {task.priority >= 3 && (
@@ -126,7 +182,9 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {task.description && (
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                <p className="text-slate-300 whitespace-pre-wrap">{task.description}</p>
+                <p className="text-slate-300 whitespace-pre-wrap">
+                  {task.description}
+                </p>
               </div>
             )}
 
@@ -157,7 +215,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   <span className="text-sm">截止日期</span>
                 </div>
                 <p className="text-lg font-semibold text-white">
-                  {task.deadline ? formatDateTime(task.deadline) : '未设置'}
+                  {task.deadline ? formatDateTime(task.deadline) : "未设置"}
                 </p>
               </div>
 
@@ -179,7 +237,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                   <span className="text-sm">标签</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {task.tags.map(tag => (
+                  {task.tags.map((tag) => (
                     <span
                       key={tag}
                       className="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-sm"
@@ -205,26 +263,36 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
               <div className="flex items-center gap-2 text-slate-400 mb-3">
                 <History size={16} />
                 <span className="text-sm">执行历史</span>
-                <span className="text-xs text-slate-500">({executions.length} 次)</span>
+                <span className="text-xs text-slate-500">
+                  ({executions.length} 次)
+                </span>
               </div>
-              
+
               {executions.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center py-4">暂无执行记录</p>
+                <p className="text-slate-500 text-sm text-center py-4">
+                  暂无执行记录
+                </p>
               ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {executions.map((execution, index) => {
-                    const execStatus = EXECUTION_STATUS_CONFIG[execution.status] || EXECUTION_STATUS_CONFIG.completed;
+                    const execStatus =
+                      EXECUTION_STATUS_CONFIG[execution.status] ||
+                      EXECUTION_STATUS_CONFIG.completed;
                     return (
                       <div
                         key={execution.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-slate-500">#{index + 1}</span>
+                          <span className="text-xs text-slate-500">
+                            #{index + 1}
+                          </span>
                           <span className="text-sm text-white">
                             {formatDateTime(execution.started_at)}
                           </span>
-                          <span className={`px-2 py-0.5 rounded text-xs ${execStatus.bg} ${execStatus.color}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs ${execStatus.bg} ${execStatus.color}`}
+                          >
                             {execStatus.label}
                           </span>
                         </div>
@@ -270,7 +338,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {task.status === 'pending' && onStart && (
+              {task.status === "pending" && onStart && (
                 <button
                   onClick={onStart}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
@@ -280,7 +348,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                 </button>
               )}
 
-              {task.status === 'in_progress' && onPause && (
+              {task.status === "in_progress" && onPause && (
                 <button
                   onClick={onPause}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
@@ -290,15 +358,18 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({
                 </button>
               )}
 
-              {(task.status === 'pending' || task.status === 'in_progress' || task.status === 'paused') && onComplete && (
-                <button
-                  onClick={onComplete}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
-                >
-                  <Check size={16} />
-                  完成
-                </button>
-              )}
+              {(task.status === "pending" ||
+                task.status === "in_progress" ||
+                task.status === "paused") &&
+                onComplete && (
+                  <button
+                    onClick={onComplete}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                  >
+                    <Check size={16} />
+                    完成
+                  </button>
+                )}
             </div>
           </div>
         </motion.div>

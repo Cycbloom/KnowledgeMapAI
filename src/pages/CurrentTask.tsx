@@ -34,7 +34,7 @@ import {
   useStartScheduledTaskMutation,
 } from "../hooks/useScheduler";
 import { useMessageStore } from "../store/useMessageStore";
-import type { ScheduledTask, TaskSettings } from "../services/api/scheduler";
+import type { ScheduledTask, TaskSettings } from "@shared/types";
 
 const QUEUE_CONFIG = {
   0: {

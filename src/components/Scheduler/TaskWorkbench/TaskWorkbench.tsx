@@ -15,7 +15,7 @@ import {
   FileText,
   Bookmark,
 } from "lucide-react";
-import { schedulerApi } from "../../../services/api/scheduler";
+import { api } from "../../../services/api";
 import { TaskDetail } from "../../../types";
 import { useMessageStore } from "../../../store/useMessageStore";
 import { MarkdownEditor } from "./MarkdownEditor";
@@ -52,7 +52,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const loadTaskDetail = async () => {
     setLoading(true);
     try {
-      const response = await schedulerApi.getTaskDetail(taskId);
+      const response = await api.scheduler.getTaskDetail(taskId);
       if (response.success) {
         setTask(response.data);
       }
@@ -67,7 +67,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const handleStartTask = async () => {
     if (!task) return;
     try {
-      await schedulerApi.startTask(task.id);
+      await api.scheduler.startTask(task.id);
       addMessage({ type: "success", content: "任务已开始" });
       loadTaskDetail();
     } catch (error: any) {
@@ -78,7 +78,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const handlePauseTask = async () => {
     if (!task) return;
     try {
-      await schedulerApi.pauseTask(task.id);
+      await api.scheduler.pauseTask(task.id);
       addMessage({ type: "success", content: "任务已暂停" });
       loadTaskDetail();
     } catch (error: any) {
@@ -89,7 +89,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   const handleCompleteTask = async () => {
     if (!task) return;
     try {
-      await schedulerApi.completeTask(task.id);
+      await api.scheduler.completeTask(task.id);
       addMessage({ type: "success", content: "任务已完成" });
       loadTaskDetail();
     } catch (error: any) {
@@ -101,7 +101,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     if (!window.confirm("确定要删除这个任务吗？此操作不可撤销。")) return;
     try {
-      await schedulerApi.deleteTask(task.id);
+      await api.scheduler.deleteTask(task.id);
       addMessage({ type: "success", content: "任务已删除" });
       onBack();
     } catch (error: any) {
@@ -113,7 +113,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     async (notes: string) => {
       if (!task) return;
       try {
-        await schedulerApi.updateNotes(task.id, notes);
+        await api.scheduler.updateNotes(task.id, notes);
         setTask({ ...task, notes });
       } catch (error: any) {
         addMessage({ type: "error", content: error.message || "保存笔记失败" });

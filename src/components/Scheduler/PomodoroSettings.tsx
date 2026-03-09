@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Clock, Coffee, Timer, Zap, X, Save,
-  RefreshCw
-} from 'lucide-react';
-import { schedulerApi, TaskSettings } from '../../services/api/scheduler';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Clock, Coffee, Timer, Zap, X, Save, RefreshCw } from "lucide-react";
+import { api } from '../../services/api';
+import type {TaskSettings} from '@shared/types';
 
 interface PomodoroSettingsProps {
   isOpen: boolean;
@@ -38,13 +36,13 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const data = await schedulerApi.getSettings();
+      const data = await api.scheduler.getSettings();
       setFocusDuration(data.q0_time_slice);
       setShortBreakDuration(data.break_duration);
       setSoundEnabled(data.sound_enabled);
       setNotificationEnabled(data.notification_enabled);
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      console.error("Failed to load settings:", error);
     } finally {
       setLoading(false);
     }
@@ -53,7 +51,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const updated = await schedulerApi.updateSettings({
+      const updated = await api.scheduler.updateSettings({
         q0_time_slice: focusDuration,
         q1_time_slice: focusDuration * 2,
         q2_time_slice: focusDuration * 4,
@@ -64,7 +62,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
       onSave?.(updated);
       onClose();
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      console.error("Failed to save settings:", error);
     } finally {
       setSaving(false);
     }
@@ -80,7 +78,17 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
     unit?: string;
     icon?: React.ReactNode;
     color?: string;
-  }> = ({ label, value, onChange, min, max, step = 1, unit = '分钟', icon, color = 'cyan' }) => (
+  }> = ({
+    label,
+    value,
+    onChange,
+    min,
+    max,
+    step = 1,
+    unit = "分钟",
+    icon,
+    color = "cyan",
+  }) => (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -112,8 +120,12 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
         `}
       />
       <div className="flex justify-between text-xs text-slate-400">
-        <span>{min} {unit}</span>
-        <span>{max} {unit}</span>
+        <span>
+          {min} {unit}
+        </span>
+        <span>
+          {max} {unit}
+        </span>
       </div>
     </div>
   );
@@ -133,7 +145,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-gradient-to-r from-cyan-500 to-blue-500 p-6 text-white">
               <div className="flex items-center justify-between">
@@ -258,7 +270,9 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                       <input
                         type="checkbox"
                         checked={notificationEnabled}
-                        onChange={(e) => setNotificationEnabled(e.target.checked)}
+                        onChange={(e) =>
+                          setNotificationEnabled(e.target.checked)
+                        }
                         className="w-5 h-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500"
                       />
                     </label>
@@ -282,7 +296,7 @@ export const PomodoroSettings: React.FC<PomodoroSettingsProps> = ({
                     whileTap={{ scale: 0.98 }}
                   >
                     <Save size={18} />
-                    {saving ? '保存中...' : '保存设置'}
+                    {saving ? "保存中..." : "保存设置"}
                   </motion.button>
                 </div>
               </div>

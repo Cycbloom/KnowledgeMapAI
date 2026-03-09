@@ -51,18 +51,7 @@ export interface UserProfile extends User {
   quarterly_streak?: number;
 }
 
-export interface Achievement {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  category: "study" | "focus" | "creation";
-  icon: string;
-  xp_reward: number;
-  condition_type: string;
-  condition_value: number;
-  unlocked_at?: string;
-}
+
 
 export interface DailyTask {
   id: string;

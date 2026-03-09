@@ -36,7 +36,7 @@ import {
   ScheduledTask,
   CreateScheduledTaskData,
   QueueData,
-} from "../services/api/scheduler";
+} from "@shared/types";
 
 type ViewType = "queue" | "kanban" | "list" | "timeline";
 

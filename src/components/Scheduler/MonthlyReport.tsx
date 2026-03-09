@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Calendar, 
-  Clock, 
-  Target, 
-  TrendingUp, 
-  Flame, 
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Calendar,
+  Clock,
+  Target,
+  TrendingUp,
+  Flame,
   Award,
   ChevronLeft,
   ChevronRight,
-  BarChart3
-} from 'lucide-react';
-import { schedulerApi, MonthlyFocusStats } from '../../services/api/scheduler';
+  BarChart3,
+} from "lucide-react";
+import { api } from '../../services/api';
+import type {MonthlyFocusStats} from '@shared/types';
 
 interface MonthlyReportProps {
   year?: number;
@@ -28,25 +29,49 @@ const formatDuration = (seconds: number): string => {
   return `${minutes}m`;
 };
 
-const MONTHS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+const MONTHS = [
+  "一月",
+  "二月",
+  "三月",
+  "四月",
+  "五月",
+  "六月",
+  "七月",
+  "八月",
+  "九月",
+  "十月",
+  "十一月",
+  "十二月",
+];
 
-export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, className = '' }) => {
+export const MonthlyReport: React.FC<MonthlyReportProps> = ({
+  year,
+  month,
+  className = "",
+}) => {
   const [stats, setStats] = useState<MonthlyFocusStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentYear, setCurrentYear] = useState(year ?? new Date().getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(month ?? new Date().getMonth() + 1);
+  const [currentYear, setCurrentYear] = useState(
+    year ?? new Date().getFullYear(),
+  );
+  const [currentMonth, setCurrentMonth] = useState(
+    month ?? new Date().getMonth() + 1,
+  );
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await schedulerApi.getMonthlyFocusStats(currentYear, currentMonth);
+        const response = await api.scheduler.getMonthlyFocusStats(
+          currentYear,
+          currentMonth,
+        );
         setStats(response.data);
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch monthly stats:', err);
-        setError('加载月报数据失败');
+        console.error("Failed to fetch monthly stats:", err);
+        setError("加载月报数据失败");
       } finally {
         setLoading(false);
       }
@@ -55,8 +80,8 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
     fetchStats();
   }, [currentYear, currentMonth]);
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
+  const navigateMonth = (direction: "prev" | "next") => {
+    if (direction === "prev") {
       if (currentMonth === 1) {
         setCurrentMonth(12);
         setCurrentYear(currentYear - 1);
@@ -80,7 +105,10 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
           <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+              <div
+                key={i}
+                className="h-24 bg-slate-200 dark:bg-slate-700 rounded-xl"
+              />
             ))}
           </div>
         </div>
@@ -121,13 +149,13 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigateMonth('prev')}
+            onClick={() => navigateMonth("prev")}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <ChevronLeft size={20} />
           </button>
           <button
-            onClick={() => navigateMonth('next')}
+            onClick={() => navigateMonth("next")}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           >
             <ChevronRight size={20} />
@@ -144,11 +172,15 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
         >
           <div className="flex items-center gap-2 mb-2">
             <Clock size={16} className="text-cyan-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-300">总专注时长</span>
+            <span className="text-xs text-slate-600 dark:text-slate-300">
+              总专注时长
+            </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {totalHours.toFixed(1)}
-            <span className="text-sm font-normal text-slate-500 ml-1">小时</span>
+            <span className="text-sm font-normal text-slate-500 ml-1">
+              小时
+            </span>
           </p>
         </motion.div>
 
@@ -160,7 +192,9 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
         >
           <div className="flex items-center gap-2 mb-2">
             <Target size={16} className="text-emerald-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-300">完成任务</span>
+            <span className="text-xs text-slate-600 dark:text-slate-300">
+              完成任务
+            </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {stats.tasks_completed}
@@ -176,7 +210,9 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
         >
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={16} className="text-violet-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-300">活跃天数</span>
+            <span className="text-xs text-slate-600 dark:text-slate-300">
+              活跃天数
+            </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {stats.active_days}
@@ -192,7 +228,9 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
         >
           <div className="flex items-center gap-2 mb-2">
             <Flame size={16} className="text-amber-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-300">最长连续</span>
+            <span className="text-xs text-slate-600 dark:text-slate-300">
+              最长连续
+            </span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {stats.streak_longest}
@@ -214,9 +252,14 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
                 <Award size={20} className="text-white" />
               </div>
               <div>
-                <p className="text-sm text-slate-600 dark:text-slate-300">最佳表现日</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  最佳表现日
+                </p>
                 <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                  {new Date(stats.best_day.date).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}
+                  {new Date(stats.best_day.date).toLocaleDateString("zh-CN", {
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </p>
               </div>
             </div>
@@ -224,7 +267,9 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
               <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
                 {formatDuration(stats.best_day.duration)}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">专注时长</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                专注时长
+              </p>
             </div>
           </div>
         </motion.div>
@@ -238,13 +283,18 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
       >
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 size={18} className="text-slate-500" />
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">每周分布</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            每周分布
+          </span>
         </div>
-        
+
         <div className="space-y-3">
           {stats.weekly_breakdown.map((week, index) => {
             const weekHours = week.duration / 3600;
-            const maxWeekHours = Math.max(...stats.weekly_breakdown.map(w => w.duration / 3600), 1);
+            const maxWeekHours = Math.max(
+              ...stats.weekly_breakdown.map((w) => w.duration / 3600),
+              1,
+            );
             const percentage = (weekHours / maxWeekHours) * 100;
 
             return (
@@ -280,16 +330,26 @@ export const MonthlyReport: React.FC<MonthlyReportProps> = ({ year, month, class
       >
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">日均时长</p>
-            <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">{avgHoursPerDay.toFixed(1)}h</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              日均时长
+            </p>
+            <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+              {avgHoursPerDay.toFixed(1)}h
+            </p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">总番茄钟</p>
-            <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">{stats.total_pomodoros}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              总番茄钟
+            </p>
+            <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+              {stats.total_pomodoros}
+            </p>
           </div>
           <div>
             <p className="text-xs text-slate-500 dark:text-slate-400">总会话</p>
-            <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">{stats.total_sessions}</p>
+            <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+              {stats.total_sessions}
+            </p>
           </div>
         </div>
       </motion.div>

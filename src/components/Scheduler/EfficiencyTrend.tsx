@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { TrendingUp, Calendar } from 'lucide-react';
-import { schedulerApi, TaskStats } from '../../services/api/scheduler';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { TrendingUp, Calendar } from "lucide-react";
+import { api } from '../../services/api';
+import type {TaskStats} from '@shared/types';
 
 interface EfficiencyTrendProps {
-  period?: '7d' | '30d' | '90d';
+  period?: "7d" | "30d" | "90d";
   className?: string;
 }
 
 export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
-  period = '7d',
-  className = '',
+  period = "7d",
+  className = "",
 }) => {
   const [stats, setStats] = useState<TaskStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,14 +24,14 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
     setLoading(true);
     try {
       const periodMap = {
-        '7d': 'week' as const,
-        '30d': 'month' as const,
-        '90d': 'month' as const,
+        "7d": "week" as const,
+        "30d": "month" as const,
+        "90d": "month" as const,
       };
-      const data = await schedulerApi.getStats(periodMap[period]);
+      const data = await api.scheduler.getStats(periodMap[period]);
       setStats(data);
     } catch (error) {
-      console.error('Failed to load efficiency trend:', error);
+      console.error("Failed to load efficiency trend:", error);
     } finally {
       setLoading(false);
     }
@@ -44,42 +45,58 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
 
   const getChartData = () => {
     if (!stats?.daily) return [];
-    return stats.daily.map((day: { duration: number; completed: number; date: string }, index: number) => ({
-      day: index,
-      duration: day.duration,
-      completed: day.completed,
-      date: day.date,
-    }));
+    return stats.daily.map(
+      (
+        day: { duration: number; completed: number; date: string },
+        index: number,
+      ) => ({
+        day: index,
+        duration: day.duration,
+        completed: day.completed,
+        date: day.date,
+      }),
+    );
   };
 
   const chartData = getChartData();
-  const maxDuration = Math.max(...chartData.map((d: { duration: number }) => d.duration), 1);
-  const avgDuration = chartData.reduce((sum: number, d: { duration: number }) => sum + d.duration, 0) / chartData.length;
+  const maxDuration = Math.max(
+    ...chartData.map((d: { duration: number }) => d.duration),
+    1,
+  );
+  const avgDuration =
+    chartData.reduce(
+      (sum: number, d: { duration: number }) => sum + d.duration,
+      0,
+    ) / chartData.length;
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}>
+    <div
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 ${className}`}
+    >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-cyan-100 dark:bg-cyan-500/20 rounded-xl">
             <TrendingUp size={20} className="text-cyan-500" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">效率趋势</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              效率趋势
+            </h3>
             <p className="text-xs text-slate-500">专注时长变化</p>
           </div>
         </div>
         <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-          {(['7d', '30d', '90d'] as const).map((p) => (
+          {(["7d", "30d", "90d"] as const).map((p) => (
             <button
               key={p}
               onClick={() => {}}
               className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                 period === p
-                  ? 'bg-white dark:bg-slate-700 text-cyan-500 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? "bg-white dark:bg-slate-700 text-cyan-500 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               }`}
             >
-              {p === '7d' ? '7天' : p === '30d' ? '30天' : '90天'}
+              {p === "7d" ? "7天" : p === "30d" ? "30天" : "90天"}
             </button>
           ))}
         </div>
@@ -99,7 +116,7 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
                   key={i}
                   className="flex-1 flex flex-col items-center justify-end"
                   initial={{ height: 0 }}
-                  animate={{ height: '100%' }}
+                  animate={{ height: "100%" }}
                   transition={{ delay: i * 0.03 }}
                 >
                   <motion.div
@@ -116,10 +133,16 @@ export const EfficiencyTrend: React.FC<EfficiencyTrendProps> = ({
 
           <div className="flex items-center justify-between text-sm">
             <div className="text-slate-500">
-              平均: <span className="font-medium text-cyan-500">{formatDuration(avgDuration)}</span>
+              平均:{" "}
+              <span className="font-medium text-cyan-500">
+                {formatDuration(avgDuration)}
+              </span>
             </div>
             <div className="text-slate-500">
-              总计: <span className="font-medium text-emerald-500">{formatDuration(stats?.total_duration || 0)}</span>
+              总计:{" "}
+              <span className="font-medium text-emerald-500">
+                {formatDuration(stats?.total_duration || 0)}
+              </span>
             </div>
           </div>
 

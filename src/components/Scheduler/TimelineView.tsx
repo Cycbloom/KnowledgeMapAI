@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Clock, Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
-import { ScheduledTask } from '../../services/api/scheduler';
+import { ScheduledTask } from '@shared/types';
 import { TaskCard } from './TaskCard';
 
 interface TimelineViewProps {

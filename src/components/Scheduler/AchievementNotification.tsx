@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles } from 'lucide-react';
-import { Achievement } from '../../services/api/scheduler';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Sparkles } from "lucide-react";
+import { Achievement } from "@shared/types";
 
 interface AchievementNotification {
   id: string;
@@ -15,12 +21,15 @@ interface AchievementNotificationContextType {
   clearNotifications: () => void;
 }
 
-const AchievementNotificationContext = createContext<AchievementNotificationContextType | null>(null);
+const AchievementNotificationContext =
+  createContext<AchievementNotificationContextType | null>(null);
 
 export const useAchievementNotification = () => {
   const context = useContext(AchievementNotificationContext);
   if (!context) {
-    throw new Error('useAchievementNotification must be used within AchievementNotificationProvider');
+    throw new Error(
+      "useAchievementNotification must be used within AchievementNotificationProvider",
+    );
   }
   return context;
 };
@@ -32,10 +41,12 @@ interface AchievementNotificationProviderProps {
 }
 
 const CATEGORY_COLORS = {
-  focus: 'from-cyan-500 to-blue-500',
-  tasks: 'from-emerald-500 to-teal-500',
-  streak: 'from-amber-500 to-orange-500',
-  special: 'from-violet-500 to-pink-500',
+  focus: "from-cyan-500 to-blue-500",
+  tasks: "from-emerald-500 to-teal-500",
+  streak: "from-amber-500 to-orange-500",
+  special: "from-violet-500 to-pink-500",
+  study: "from-indigo-500 to-purple-500",
+  creation: "from-rose-500 to-red-500",
 };
 
 const SingleNotification: React.FC<{
@@ -50,11 +61,13 @@ const SingleNotification: React.FC<{
       initial={{ opacity: 0, x: 100, scale: 0.8 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 100, scale: 0.8 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className="relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-sm"
     >
-      <div className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-5`} />
-      
+      <div
+        className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-5`}
+      />
+
       <div className="relative p-4">
         <button
           onClick={() => onDismiss(notification.id)}
@@ -67,7 +80,12 @@ const SingleNotification: React.FC<{
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 20,
+              delay: 0.1,
+            }}
             className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-lg"
           >
             <Sparkles size={20} className="text-white" />
@@ -108,40 +126,46 @@ const SingleNotification: React.FC<{
       <motion.div
         initial={{ scaleX: 1 }}
         animate={{ scaleX: 0 }}
-        transition={{ duration: 5, ease: 'linear' }}
+        transition={{ duration: 5, ease: "linear" }}
         className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${gradient} origin-left`}
       />
     </motion.div>
   );
 };
 
-export const AchievementNotificationProvider: React.FC<AchievementNotificationProviderProps> = ({
-  children,
-  maxVisible = 3,
-  autoDismissMs = 5000,
-}) => {
-  const [notifications, setNotifications] = useState<AchievementNotification[]>([]);
+export const AchievementNotificationProvider: React.FC<
+  AchievementNotificationProviderProps
+> = ({ children, maxVisible = 3, autoDismissMs = 5000 }) => {
+  const [notifications, setNotifications] = useState<AchievementNotification[]>(
+    [],
+  );
 
-  const showNotification = useCallback((achievement: Achievement) => {
-    const notification: AchievementNotification = {
-      id: `${achievement.id}-${Date.now()}`,
-      achievement,
-      timestamp: new Date(),
-    };
+  const showNotification = useCallback(
+    (achievement: Achievement) => {
+      const notification: AchievementNotification = {
+        id: `${achievement.id}-${Date.now()}`,
+        achievement,
+        timestamp: new Date(),
+      };
 
-    setNotifications((prev) => {
-      const newNotifications = [...prev, notification];
-      return newNotifications.slice(-maxVisible);
-    });
-  }, [maxVisible]);
+      setNotifications((prev) => {
+        const newNotifications = [...prev, notification];
+        return newNotifications.slice(-maxVisible);
+      });
+    },
+    [maxVisible],
+  );
 
-  const showMultipleNotifications = useCallback((achievements: Achievement[]) => {
-    achievements.forEach((achievement, index) => {
-      setTimeout(() => {
-        showNotification(achievement);
-      }, index * 500);
-    });
-  }, [showNotification]);
+  const showMultipleNotifications = useCallback(
+    (achievements: Achievement[]) => {
+      achievements.forEach((achievement, index) => {
+        setTimeout(() => {
+          showNotification(achievement);
+        }, index * 500);
+      });
+    },
+    [showNotification],
+  );
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
@@ -163,10 +187,14 @@ export const AchievementNotificationProvider: React.FC<AchievementNotificationPr
 
   return (
     <AchievementNotificationContext.Provider
-      value={{ showNotification, showMultipleNotifications, clearNotifications }}
+      value={{
+        showNotification,
+        showMultipleNotifications,
+        clearNotifications,
+      }}
     >
       {children}
-      
+
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         <AnimatePresence mode="popLayout">
           {notifications.map((notification) => (
@@ -239,7 +267,9 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
             onClick={(e) => e.stopPropagation()}
             className="relative bg-white dark:bg-slate-800 rounded-2xl p-8 max-w-md w-full shadow-2xl overflow-hidden"
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-5`} />
+            <div
+              className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-5`}
+            />
 
             <div className="relative">
               {achievements.length > 1 && (
@@ -249,8 +279,8 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                       key={index}
                       className={`w-2 h-2 rounded-full transition-all ${
                         index === currentIndex
-                          ? 'bg-amber-500 w-4'
-                          : 'bg-slate-300 dark:bg-slate-600'
+                          ? "bg-amber-500 w-4"
+                          : "bg-slate-300 dark:bg-slate-600"
                       }`}
                     />
                   ))}
@@ -266,7 +296,7 @@ export const AchievementUnlockModal: React.FC<AchievementUnlockModalProps> = ({
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
                   className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30 mb-4"
                 >
                   <Sparkles className="w-10 h-10 text-white" />

@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CheckCircle, X, Save, MessageSquare, AlertTriangle,
-  Lightbulb, Clock, Tag, Brain
-} from 'lucide-react';
-import { reviewApi, TaskReview } from '../../services/api/review';
-import { ScheduledTask } from '../../services/api/scheduler';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  CheckCircle,
+  X,
+  Save,
+  MessageSquare,
+  AlertTriangle,
+  Lightbulb,
+  Clock,
+  Tag,
+  Brain,
+} from "lucide-react";
+import { reviewApi, TaskReview } from "../../services/api/review";
+import { ScheduledTask } from "@shared/types";
 
 interface TaskRetrospectProps {
   isOpen: boolean;
@@ -22,10 +29,10 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
   onSave,
   onSkip,
 }) => {
-  const [content, setContent] = useState('');
-  const [difficulties, setDifficulties] = useState('');
-  const [improvements, setImprovements] = useState('');
-  const [learnings, setLearnings] = useState('');
+  const [content, setContent] = useState("");
+  const [difficulties, setDifficulties] = useState("");
+  const [improvements, setImprovements] = useState("");
+  const [learnings, setLearnings] = useState("");
   const [saving, setSaving] = useState(false);
   const [existingReview, setExistingReview] = useState<TaskReview | null>(null);
 
@@ -41,19 +48,19 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
       const review = await reviewApi.getTaskReview(task.id);
       if (review) {
         setExistingReview(review);
-        setContent(review.content || '');
-        setDifficulties(review.difficulties || '');
-        setImprovements(review.improvements || '');
-        setLearnings(review.learnings || '');
+        setContent(review.content || "");
+        setDifficulties(review.difficulties || "");
+        setImprovements(review.improvements || "");
+        setLearnings(review.learnings || "");
       } else {
-        setContent('');
-        setDifficulties('');
-        setImprovements('');
-        setLearnings('');
+        setContent("");
+        setDifficulties("");
+        setImprovements("");
+        setLearnings("");
         setExistingReview(null);
       }
     } catch (error) {
-      console.error('Failed to load task review:', error);
+      console.error("Failed to load task review:", error);
     }
   };
 
@@ -63,7 +70,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
     try {
       const reviewData = {
         task_id: task.id,
-        review_type: 'task' as const,
+        review_type: "task" as const,
         content: content || undefined,
         difficulties: difficulties || undefined,
         improvements: improvements || undefined,
@@ -81,14 +88,14 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
       onSave?.(review);
       onClose();
     } catch (error) {
-      console.error('Failed to save task review:', error);
+      console.error("Failed to save task review:", error);
     } finally {
       setSaving(false);
     }
   };
 
   const formatDuration = (minutes?: number) => {
-    if (!minutes) return '--';
+    if (!minutes) return "--";
     if (minutes < 60) return `${minutes}分钟`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -112,7 +119,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 p-6 text-white">
               <div className="flex items-center justify-between">
@@ -136,16 +143,20 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
 
             <div className="p-6 space-y-5">
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">{task.title}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                  {task.title}
+                </h3>
                 <div className="flex flex-wrap gap-3 text-sm text-slate-500">
                   <div className="flex items-center gap-1">
                     <Clock size={14} />
-                    <span>实际用时: {formatDuration(task.actual_duration)}</span>
+                    <span>
+                      实际用时: {formatDuration(task.actual_duration)}
+                    </span>
                   </div>
                   {task.tags && task.tags.length > 0 && (
                     <div className="flex items-center gap-1">
                       <Tag size={14} />
-                      <span>{task.tags.join(', ')}</span>
+                      <span>{task.tags.join(", ")}</span>
                     </div>
                   )}
                 </div>
@@ -224,7 +235,7 @@ export const TaskRetrospect: React.FC<TaskRetrospectProps> = ({
                   whileTap={{ scale: 0.98 }}
                 >
                   <Save size={18} />
-                  {saving ? '保存中...' : '保存复盘'}
+                  {saving ? "保存中..." : "保存复盘"}
                 </motion.button>
               </div>
             </div>

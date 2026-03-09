@@ -8,7 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { schedulerApi } from "../../../services/api/scheduler";
+import { api } from "../../../services/api";
 import { TaskSubtask } from "../../../types";
 import { useMessageStore } from "../../../store/useMessageStore";
 
@@ -38,7 +38,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const loadSubtasks = async () => {
     try {
-      const response = await schedulerApi.getSubtasks(taskId);
+      const response = await api.scheduler.getSubtasks(taskId);
       if (response.success) {
         setSubtasks(response.data || []);
       }
@@ -56,7 +56,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
     }
 
     try {
-      const response = await schedulerApi.createSubtask(taskId, {
+      const response = await api.scheduler.createSubtask(taskId, {
         title: newSubtask.title,
         description: newSubtask.description || undefined,
         estimated_duration: newSubtask.estimated_duration,
@@ -79,7 +79,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   const handleToggleStatus = async (subtask: TaskSubtask) => {
     const newStatus = subtask.status === "completed" ? "pending" : "completed";
     try {
-      const response = await schedulerApi.updateSubtask(taskId, subtask.id, {
+      const response = await api.scheduler.updateSubtask(taskId, subtask.id, {
         status: newStatus,
       });
       if (response.success) {
@@ -94,7 +94,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const handleDeleteSubtask = async (subtaskId: string) => {
     try {
-      const response = await schedulerApi.deleteSubtask(taskId, subtaskId);
+      const response = await api.scheduler.deleteSubtask(taskId, subtaskId);
       if (response.success) {
         setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
         addMessage({ type: "success", content: "子任务已删除" });

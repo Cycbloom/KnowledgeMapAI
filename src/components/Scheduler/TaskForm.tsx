@@ -18,14 +18,14 @@ import {
   Minus,
   FileText,
 } from "lucide-react";
-import {
+import { api } from "../../services/api";
+import type {
   ScheduledTask,
   CreateScheduledTaskData,
-  schedulerApi,
   TaskType,
   ProgressMode,
   TaskSettings,
-} from "../../services/api/scheduler";
+} from "@shared/types";
 import {
   taskRecommendationApi,
   PrioritySuggestion,
@@ -312,7 +312,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     setIsGenerating(true);
     try {
-      const response = await schedulerApi.generateTaskDetails(
+      const response = await api.scheduler.generateTaskDetails(
         title.trim(),
         description || undefined,
       );
@@ -377,12 +377,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
     if (selectedDependencies.length > 0) {
       selectedDependencies.forEach((depId) => {
-        schedulerApi
+        api.scheduler
           .addTaskDependency(task?.id || "", {
             depends_on_task_id: depId,
             dependency_type: "soft",
           })
-          .catch((err) => console.error("Failed to add dependency:", err));
+          .catch((err: unknown) =>
+            console.error("Failed to add dependency:", err),
+          );
       });
     }
   };

@@ -1,5 +1,5 @@
 import { request } from './client';
-import { ScheduledTask } from './scheduler';
+import type { ScheduledTask } from '@shared/types';
 
 export interface TaskRecommendation {
   task: ScheduledTask;

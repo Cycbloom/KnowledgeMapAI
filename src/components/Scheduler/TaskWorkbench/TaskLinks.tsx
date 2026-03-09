@@ -9,7 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { schedulerApi } from "../../../services/api/scheduler";
+import { api } from "../../../services/api";
 import { TaskLink } from "../../../types";
 import { useMessageStore } from "../../../store/useMessageStore";
 
@@ -66,7 +66,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
 
   const loadLinks = async () => {
     try {
-      const response = await schedulerApi.getLinks(taskId);
+      const response = await api.scheduler.getLinks(taskId);
       if (response.success) {
         setLinks(response.data || []);
       }
@@ -84,7 +84,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
     }
 
     try {
-      const response = await schedulerApi.createLink(taskId, {
+      const response = await api.scheduler.createLink(taskId, {
         link_type: newLink.link_type,
         title: newLink.title || undefined,
         url: newLink.url,
@@ -103,7 +103,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
 
   const handleDeleteLink = async (linkId: string) => {
     try {
-      const response = await schedulerApi.deleteLink(taskId, linkId);
+      const response = await api.scheduler.deleteLink(taskId, linkId);
       if (response.success) {
         setLinks(links.filter((l) => l.id !== linkId));
         addMessage({ type: "success", content: "链接已删除" });

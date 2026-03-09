@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertTriangle, CheckCircle, Zap, TrendingUp, Calendar, Tag } from 'lucide-react';
 import { TaskRecommendation as TaskRecommendationType } from '../../services/api/taskRecommendation';
-import { ScheduledTask } from '../../services/api/scheduler';
+import { ScheduledTask } from '@shared/types';
 
 interface TaskRecommendationProps {
   recommendations: TaskRecommendationType[];

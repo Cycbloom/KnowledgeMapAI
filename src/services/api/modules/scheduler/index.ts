@@ -15,6 +15,9 @@ export type {
   GenerateTaskDetailsResult,
 } from "./tasks.js";
 
+export { queuesApi } from "./queues.js";
+export type { Queue, CreateQueueData, UpdateQueueData } from "./queues.js";
+
 export { executionsApi } from "./executions.js";
 
 export { dependenciesApi } from "./dependencies.js";
@@ -59,6 +62,7 @@ export type {
 } from "./achievements.js";
 
 import { tasksApi } from "./tasks.js";
+import { queuesApi } from "./queues.js";
 import { executionsApi } from "./executions.js";
 import { dependenciesApi } from "./dependencies.js";
 import { focusApi } from "./focus.js";
@@ -72,6 +76,7 @@ import { achievementsApi } from "./achievements.js";
 
 export const schedulerApi = {
   ...tasksApi,
+  ...queuesApi,
   ...executionsApi,
   ...dependenciesApi,
   ...focusApi,

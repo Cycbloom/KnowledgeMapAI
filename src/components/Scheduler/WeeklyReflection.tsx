@@ -6,7 +6,8 @@ import {
   ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { reviewApi, TaskReview, Mood } from '../../services/api/review';
-import { schedulerApi, TaskStats } from '../../services/api/scheduler';
+import { api } from '../../services/api';
+import type {TaskStats} from '@shared/types';
 
 interface WeeklyReflectionProps {
   isOpen: boolean;
@@ -65,8 +66,8 @@ export const WeeklyReflection: React.FC<WeeklyReflectionProps> = ({
     setLoading(true);
     try {
       const [stats, _tasks, reviews, existingReview] = await Promise.all([
-        schedulerApi.getStats('week'),
-        schedulerApi.getTasks({ status: 'completed' }),
+        api.scheduler.getStats('week'),
+        api.scheduler.getTasks({ status: 'completed' }),
         reviewApi.getReviews({ 
           review_type: 'daily',
           from_date: weekRange.start,

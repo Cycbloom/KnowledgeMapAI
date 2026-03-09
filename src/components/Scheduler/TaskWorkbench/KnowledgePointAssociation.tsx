@@ -10,7 +10,7 @@ import {
   Search,
   BookOpen,
 } from "lucide-react";
-import { schedulerApi } from "../../../services/api/scheduler";
+import { api } from "../../../services/api";
 import { TaskKnowledgePoint } from "../../../types";
 import { useMessageStore } from "../../../store/useMessageStore";
 
@@ -38,7 +38,7 @@ export const KnowledgePointAssociation: React.FC<
 
   const loadAssociations = async () => {
     try {
-      const response = await schedulerApi.getTaskKnowledgePoints(taskId);
+      const response = await api.scheduler.getTaskKnowledgePoints(taskId);
       if (response.success) {
         setAssociations(response.data || []);
       }
@@ -82,7 +82,7 @@ export const KnowledgePointAssociation: React.FC<
 
   const handleAddAssociation = async (knowledgePointId: string) => {
     try {
-      const response = await schedulerApi.addTaskKnowledgePoint(taskId, {
+      const response = await api.scheduler.addTaskKnowledgePoint(taskId, {
         knowledge_point_id: knowledgePointId,
         is_primary: associations.length === 0,
       });
@@ -100,7 +100,7 @@ export const KnowledgePointAssociation: React.FC<
 
   const handleRemoveAssociation = async (kpId: string) => {
     try {
-      const response = await schedulerApi.removeTaskKnowledgePoint(
+      const response = await api.scheduler.removeTaskKnowledgePoint(
         taskId,
         kpId,
       );
@@ -115,7 +115,7 @@ export const KnowledgePointAssociation: React.FC<
 
   const handleSetPrimary = async (kpId: string) => {
     try {
-      const response = await schedulerApi.updateTaskKnowledgePoint(
+      const response = await api.scheduler.updateTaskKnowledgePoint(
         taskId,
         kpId,
         { is_primary: true },

@@ -11,7 +11,7 @@ import type {
   TaskFilters,
   ExecutionFilters,
   QueueData,
-} from "../services/api/scheduler";
+} from "@shared/types";
 
 const DEFAULT_STALE_TIME = 1000 * 60 * 5;
 const GC_TIME = 1000 * 60 * 60;

@@ -1,248 +1,225 @@
 # 代码组织架构分析 Spec
 
 ## Why
-项目经过长期迭代开发，代码组织架构存在多处可优化点，包括类型定义重复、服务层架构不清晰、组件组织缺乏统一规范等问题。通过全面的架构分析，识别当前存在的问题和可优化点，为后续重构提供指导。
+项目经过长期迭代，代码组织架构存在一些问题，包括类型定义分散、服务层职责不清晰、组件分类混乱等。通过全面分析识别问题点，为后续重构提供依据。
 
 ## What Changes
-- 识别类型定义重复和不一致问题
-- 分析服务层架构存在的问题
-- 评估组件组织结构的合理性
-- 检查路由组织方式的可优化点
-- 分析状态管理策略的一致性
-- 评估测试覆盖和测试组织
-- 检查配置管理方式
-- 识别代码重复问题
-- 分析依赖管理问题
-- 评估架构层次清晰度
+- 识别并记录当前架构中存在的问题
+- 提出优化建议和改进方向
+- 不涉及代码修改，仅做分析和记录
 
 ## Impact
-- Affected specs: 整体代码架构
-- Affected code: 全项目范围
+- Affected specs: 整体项目架构
+- Affected code: 全部代码目录
 
----
+## 发现的问题
 
-## 分析结果摘要
+### 1. 类型定义分散问题
 
-### 1. 类型定义问题 (严重程度: 高)
+**问题描述**：
+- `shared/types/` 定义了共享类型（graph.ts, scheduler.ts, user.ts, common.ts, styles.ts）
+- `src/types/index.ts` 也有类型定义
+- 类型导入路径不一致，部分从 `@shared/*` 导入，部分从本地导入
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| AppError 重复定义 | `src/utils/errors.ts` vs `api/middleware/errorHandler.ts` vs `src/services/errorService.ts` | 类型不一致，错误处理混乱 |
-| 错误码定义不一致 | 前端 `ErrorCode` (联合类型) vs 后端 `ErrorCodes` (对象常量) | 两端错误码不匹配 |
-| 类型分散 | `src/services/api/scheduler.ts` 内联定义 53 个类型 | 未利用 shared/types 目录 |
-| 前后端类型不同步 | 多处 | API 契约风险 |
+**影响**：
+- 类型维护困难，容易出现不同步
+- 新开发者难以确定类型定义位置
+- 可能存在重复定义
 
-**详细发现**：
-- 存在 3 个不同的 AppError 定义（2 个 class，1 个 interface）
-- Achievement 类型在 `shared/types/user.ts` 和 `src/services/api/scheduler.ts` 中定义不同
-- `shared/types/scheduler.ts` 缺少 12+ 个类型定义
+**优化建议**：
+- 统一类型定义位置
+- 明确 shared 类型与本地类型的边界
+- 建立类型导入规范
 
-### 2. 服务层架构问题 (严重程度: 高)
+### 2. 服务层架构问题
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| API 服务重复 | `src/services/api/scheduler.ts` (794行) vs `modules/scheduler/` (12文件) | 维护成本高 |
-| 服务命名冲突 | `api/services/taskService.ts` vs `api/services/scheduler/taskService.ts` | 可读性差 |
-| 服务职责过重 | `graphService.ts` (762行), `ai/index.ts` (1200+行) | 难以维护和测试 |
-| 服务导出不一致 | `api/services/index.ts` | 导入路径混乱 |
+**问题描述**：
+后端 `api/services/` 目录下存在约 40 个服务文件，组织方式：
+- 根目录：约 30 个服务文件
+- `ai/` 子目录：AI 相关服务
+- `scheduler/` 子目录：调度相关服务
+- `taskProcessors/` 子目录：任务处理器
 
-**详细发现**：
-- `scheduler.ts` 单体文件定义所有类型和 API，而 `modules/scheduler/` 已模块化
-- 两个 TaskService 功能完全不同（异步任务 vs 日程任务）
-- AI 服务包含 13+ 个独立功能
+**问题点**：
+- 根目录服务文件过多，缺乏分类
+- 服务命名不一致（如 `graphService.ts` vs `focusService.ts`）
+- 部分服务职责重叠（如 `focusService.ts` 在根目录和 `scheduler/` 都有）
 
-### 3. 架构层次问题 (严重程度: 高)
+**优化建议**：
+- 按业务领域划分子目录
+- 统一服务命名规范
+- 合并职责重叠的服务
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| 缺乏独立的数据访问层 | 服务直接使用 Supabase 客户端 | 难以测试和维护 |
-| 路由层包含业务逻辑 | `api/routes/scheduler/tasks.ts` | 代码组织混乱 |
-| 缺乏领域模型 | 只有接口定义 | 业务逻辑分散 |
-| 错误处理不一致 | 4 种不同的错误处理方式 | 调试困难 |
+### 3. 前端 API 层组织问题
 
-**详细发现**：
-- SQL 查询逻辑散布在服务中
-- 路由层直接包含业务逻辑（如任务启动、完成逻辑）
-- 缺乏封装行为的实体类
+**问题描述**：
+`src/services/api/` 目录结构：
+- 根目录有多个 API 模块文件
+- `modules/scheduler/` 子目录有调度相关 API
+- 文件命名不一致（`graphs.ts` vs `auth.ts` vs `ai.ts`）
 
-### 4. 状态管理问题 (严重程度: 中)
+**问题点**：
+- API 模块组织方式与后端路由不完全对应
+- `api.ts` 和 `index.ts` 职责重叠
+- 类型定义 `types.ts` 与 `shared/types` 可能重复
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| 用户状态双重存储 | Zustand 和 React Query 同时存储 | 状态同步复杂 |
-| 状态同步问题 | 12 处直接调用 `setUser` | 数据一致性风险 |
-| 配置文件重复 | `config.ts` vs `queryConfig.ts` | 维护困难 |
-| Store 命名不清晰 | `useStore.ts` 仅管理认证状态 | 开发者困惑 |
+**优化建议**：
+- 统一 API 模块命名规范
+- 与后端路由结构对齐
+- 类型定义统一使用 shared 类型
 
-**详细发现**：
-- 登录时需要同时更新 Zustand 和 React Query
-- Token 刷新逻辑未同步 React Query 缓存
-- 退出登录流程分散在多处
+### 4. 组件组织问题
 
-### 5. 组件组织问题 (严重程度: 中)
+**问题描述**：
+`src/components/` 目录下有约 20 个组件目录：
+- 按功能域划分（GraphEditor, Scheduler, Study 等）
+- `common/` 存放通用组件
+- `features/` 目录几乎为空（只导出 Scheduler）
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| 组件分类不清晰 | `features` 目录仅重新导出 Scheduler | 无实际价值 |
-| 导出方式不一致 | 仅 35% 目录有 index.ts | 使用不便 |
-| 代码重复 | `formatTime` 在 12 个文件中重复 | 维护成本 |
-| 组件粒度不统一 | `GlobalSearch.tsx` (489行), `RAGChat/index.tsx` (685行) | 复用性差 |
+**问题点**：
+- `features/` 目录定位不清晰
+- 部分组件目录过大（GraphEditor 有 40+ 文件）
+- 组件层级过深，查找困难
 
-**详细发现**：
-- 4 个功能重叠的计时器组件
-- `common/FocusTimer.tsx` 依赖特定 Store，不够通用
-- `common/GlobalSearch.tsx` 包含业务逻辑
+**优化建议**：
+- 明确 `features/` 目录用途或移除
+- 对大组件目录进行拆分
+- 考虑按功能域进一步细分
 
-### 6. 路由组织问题 (严重程度: 中)
+### 5. 状态管理问题
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| 路由文件过多 | 30+ 个路由文件在根目录 | 维护困难 |
-| 命名冲突 | `focus.ts`, `templates.ts`, `analytics.ts`, `tasks.ts` 存在于不同层级 | 容易混淆 |
-| 重复定义 | `/api/health` 路由被定义两次 | 功能覆盖 |
-| 重复挂载 | `knowledgePointRoutes` 挂载到 3 个不同路径 | 文档混乱 |
+**问题描述**：
+当前使用 Zustand 进行状态管理：
+- `src/store/useStore.ts` - 主要认证状态
+- `src/store/useFocusStore.ts` - 专注模式状态
+- `src/store/useMessageStore.ts` - 消息状态
+- `src/store/usePerformanceStore.ts` - 性能状态
+- `src/store/useShortcutStore.ts` - 快捷键状态
 
-**详细发现**：
-- `scheduler/` 子目录组织良好，可作为参考
-- `knowledgePoints.ts` 包含 405 行，混合多套 API
+**问题点**：
+- Store 划分不够系统化
+- 部分状态分散在组件 hooks 中
+- 缺乏统一的状态管理规范
 
-### 7. 测试覆盖问题 (严重程度: 中)
+**优化建议**：
+- 建立状态管理规范文档
+- 按业务域划分 Store
+- 考虑将分散状态统一管理
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| 覆盖率极低 | 整体覆盖率 < 5% | 质量风险 |
-| E2E 配置缺失 | 多个 playwright.config.*.ts 文件不存在 | 无法运行专项测试 |
-| 关键模块无测试 | 认证、路由、中间件、核心组件 | 回归风险 |
-| 测试文件分散 | `api/__tests__/` 和 `src/__tests__/` | 管理困难 |
+### 6. Repository 模式不完整
 
-**详细发现**：
-- `api/services/` 40+ 服务文件，仅 2 个有测试
-- `api/routes/` 50+ 路由文件，无任何测试
-- `src/hooks/` 40+ Hook，无任何测试
-- `tests/` 目录（POM 模式）不存在
+**问题描述**：
+`api/repositories/` 目录：
+- `baseRepository.ts` - 基础 Repository 类
+- `index.ts` - 仅导出 BaseRepository
 
-### 8. 代码重复问题 (严重程度: 中)
+**问题点**：
+- 定义了 Repository 模式但未实际使用
+- 服务层直接使用 Supabase client
+- 数据访问逻辑分散在服务中
 
-| 问题 | 位置 | 重复行数 |
-|------|------|----------|
-| Logger 工具重复 | `api/utils/logger.ts` vs `src/utils/logger.ts` | ~80 行 |
-| Markdown 解析器重复 | `api/utils/markdownParser.ts` vs `src/utils/markdownParser.ts` | ~120 行 |
-| Level 工具函数重复 | `api/utils/levelUtils.ts` vs `src/lib/graph/levelUtils.ts` | ~30 行 |
-| 重试逻辑重复 | `api/utils/retry.ts` vs `src/utils/retryFetch.ts` | ~60 行 |
-| 错误处理类重复 | 4 个文件定义不同错误类 | ~100 行 |
-| 颜色常量重复 | 4 个文件定义 Level 颜色 | ~40 行 |
+**优化建议**：
+- 完善 Repository 层实现
+- 或移除未使用的 Repository 代码
+- 统一数据访问方式
 
-**总计**：约 430 行重复代码
+### 7. Hooks 组织问题
 
-### 9. 配置管理问题 (严重程度: 低)
+**问题描述**：
+`src/hooks/` 目录结构：
+- 根目录约 35 个 hook 文件
+- `queries/` - React Query 查询 hooks
+- `mutations/` - React Query 变更 hooks
+- `graphAI/` - 图谱 AI 相关 hooks
+- `graphEditor/` - 图谱编辑器状态 hooks
+- `utils/` - 工具类 hooks
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| 双重环境验证器 | `env.ts` vs `envValidator.ts` | 功能重复 |
-| 环境变量命名不一致 | `VITE_` 前缀混乱 | 配置混乱 |
-| `.env.example` 缺少必需变量 | 缺少 `DATABASE_URL` 等 | 新开发者配置困难 |
-| ESLint 缺少路径解析 | `eslint.config.js` | 开发体验差 |
+**问题点**：
+- 根目录 hooks 过多，缺乏分类
+- 部分 hooks 职责不清晰
+- 命名不够一致
 
-**详细发现**：
-- `envValidator.ts` 提供完整验证但未被使用
-- `taskService.ts` 尝试兼容两种命名方式
+**优化建议**：
+- 按业务域划分子目录
+- 统一 hook 命名规范
+- 考虑合并相关 hooks
 
-### 10. 依赖管理问题 (严重程度: 低)
+### 8. 路由定义问题
 
-| 问题 | 位置 | 影响 |
-|------|------|------|
-| 错误分类 | `@playwright/test` 等在 dependencies | 包体积增大 |
-| 未使用依赖 | `rate-limit-redis` | 冗余 |
-| 重复功能 | `@dnd-kit` 和 `@hello-pangea/dnd` | 包体积增大 |
-| 类型版本不匹配 | `@types/three` vs `three` | 类型不兼容 |
+**问题描述**：
+后端 `api/routes/` 目录：
+- 根目录约 30 个路由文件
+- `ai/` 子目录 - AI 相关路由
+- `scheduler/` 子目录 - 调度相关路由
 
-**详细发现**：
-- 6 个依赖分类错误
-- 1 个完全未使用的依赖
-- 2 个功能重叠的拖拽库
+**问题点**：
+- 根目录路由文件过多
+- 与服务层组织不完全对应
+- 部分路由文件职责重叠
 
----
+**优化建议**：
+- 按业务域划分子目录
+- 与服务层结构对齐
+- 统一路由命名规范
 
-## 优化建议优先级
+### 9. 配置文件分散问题
 
-### P0 - 立即处理
+**问题描述**：
+配置文件位置：
+- `src/config/` - 前端配置
+- `api/constants/` - 后端常量
+- `api/docs/` - API 文档配置
+- 根目录各种配置文件
 
-1. **统一 AppError 类型定义**
-   - 创建 `shared/utils/errors.ts`
-   - 合并前后端错误码到 `shared/constants/errorCodes.ts`
-   - 前后端分别导入并实现具体类
+**问题点**：
+- 配置文件分散
+- 缺乏统一的配置管理
+- 环境变量管理不够集中
 
-2. **合并重复的 API 服务定义**
-   - 删除 `src/services/api/scheduler.ts` 单体文件
-   - 统一使用 `modules/scheduler/` 模块化结构
-   - 类型定义迁移到 `shared/types/scheduler.ts`
+**优化建议**：
+- 集中管理配置文件
+- 建立配置管理规范
+- 统一环境变量命名
 
-3. **明确架构分层**
-   - 创建 `api/repositories/` 数据访问层
-   - 将路由层业务逻辑移至服务层
-   - 重命名冲突的服务文件
+### 10. 测试组织问题
 
-### P1 - 短期处理
+**问题描述**：
+测试文件位置：
+- `api/__tests__/` - 后端单元测试
+- `src/__tests__/` - 前端单元测试
+- `e2e/` - 端到端测试
 
-1. **整理 shared/types 目录**
-   - 补全缺失的类型定义（Queue, FocusSession, Achievement 等）
-   - 消除重复的类型定义
-   - 统一 Achievement 类型定义
+**问题点**：
+- 测试文件与源文件分离
+- 测试覆盖不完整
+- 缺乏统一的测试规范
 
-2. **统一组件导出方式**
-   - 为所有组件目录添加 index.ts
-   - 统一导出风格（建议使用命名导出 + .js 后缀）
-   - 提取 `formatTime` 为通用工具函数
+**优化建议**：
+- 考虑测试文件与源文件同目录
+- 补充测试覆盖
+- 建立测试规范文档
 
-3. **规范路由组织**
-   - 按功能域创建子目录（graph/, analytics/, system/）
-   - 删除重复的 `/api/health` 定义
-   - 拆分过大的路由文件
+## 架构优化建议总结
 
-4. **修复状态管理问题**
-   - 统一用户状态管理策略（建议 Zustand 为主）
-   - 合并 `config.ts` 和 `queryConfig.ts`
-   - 创建统一的认证状态同步 Hook
+### 短期优化（低风险）
+1. 统一命名规范
+2. 整理配置文件
+3. 补充文档说明
 
-### P2 - 中期处理
+### 中期优化（中等风险）
+1. 重组服务层目录结构
+2. 完善 Repository 模式或移除
+3. 统一类型定义位置
 
-1. **完善测试覆盖**
-   - 创建缺失的 Playwright 配置文件
-   - 补充核心服务单元测试（authService, graphService）
-   - 实现 Page Object Model
+### 长期优化（高风险）
+1. 重构组件组织结构
+2. 统一状态管理方案
+3. 完善测试覆盖
 
-2. **消除代码重复**
-   - 创建 `shared/utils/` 共享工具函数
-   - 统一颜色常量到 `shared/constants/colors.ts`
-   - 使用平台适配器模式处理 Logger
+## 当前架构优点
 
-3. **优化依赖管理**
-   - 修正依赖分类（移测试依赖到 devDependencies）
-   - 移除未使用依赖
-   - 统一拖拽库（建议使用 @dnd-kit）
-
-### P3 - 长期优化
-
-1. **完善配置管理**
-   - 统一环境变量验证器
-   - 更新 `.env.example`
-   - 为 ESLint 添加路径解析
-
-2. **建立领域模型**
-   - 创建 `api/domain/` 目录
-   - 为核心实体创建领域类
-   - 封装业务规则和验证逻辑
-
----
-
-## 分析统计
-
-| 指标 | 数值 |
-|------|------|
-| 分析文件总数 | 100+ |
-| 发现问题总数 | 47 |
-| 高严重程度问题 | 12 |
-| 中严重程度问题 | 25 |
-| 低严重程度问题 | 10 |
-| 重复代码行数 | ~430行 |
-| 测试覆盖率估算 | <5% |
+1. **前后端分离清晰**：`api/` 和 `src/` 目录职责明确
+2. **共享类型机制**：`shared/types/` 提供类型共享
+3. **React Query 使用规范**：queries/mutations 分离良好
+4. **按功能域划分组件**：主要组件目录按业务域组织
+5. **完善的中间件**：认证、CSRF、限流等中间件齐全

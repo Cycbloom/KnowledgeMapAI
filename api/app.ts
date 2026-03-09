@@ -46,7 +46,7 @@ import calendarRoutes from "./routes/calendar.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger.js";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler.js";
-import { syncExistingBackups } from "./services/backupSync.js";
+import { syncExistingBackups } from "./services/backupSyncService.js";
 
 // load env
 dotenv.config();

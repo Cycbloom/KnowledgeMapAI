@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { ConfirmationModal } from "./common";
+import { ConfirmationModal } from "../../components/common";
 
 describe("ConfirmationModal", () => {
   const defaultProps = {
@@ -52,7 +52,6 @@ describe("ConfirmationModal", () => {
   it("should render dangerous style when isDangerous is true", () => {
     render(<ConfirmationModal {...defaultProps} isDangerous={true} />);
     const confirmButton = screen.getByText("确定");
-    // Check for red background class
     expect(confirmButton.className).toContain("bg-red-600");
   });
 });

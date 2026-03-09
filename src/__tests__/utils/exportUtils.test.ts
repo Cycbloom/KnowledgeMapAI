@@ -1,5 +1,5 @@
-import { generateMarkdown } from './exportUtils';
-import { Graph, Node, Edge } from '../types';
+import { generateMarkdown } from '../../utils/exportUtils';
+import { Graph, Node, Edge } from '@shared/types';
 
 describe('exportUtils', () => {
   const mockGraph: Graph = {
@@ -38,7 +38,6 @@ describe('exportUtils', () => {
     ];
     
     const md = generateMarkdown(mockGraph, disconnectedNodes, mockEdges);
-    // Should appear as another root
     expect(md).toContain('## Lonely Node');
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseMarkdownToGraph } from '../utils/markdownParser';
+import { parseMarkdownToGraph } from '../../utils/markdownParser';
 
 describe('markdownParser', () => {
   it('should parse simple markdown with headers', () => {
@@ -62,13 +62,7 @@ Content B
     const result = parseMarkdownToGraph(markdown);
     
     expect(result.nodes).toHaveLength(2);
-    // 1 edge for hierarchy (A is implicitly parent of B if B is same level? No, B is H1 too)
-    // Wait, in my parser logic:
-    // H1 Node A -> depth 1.
-    // H1 Node B -> depth 1. Parent stack[0] is null. 
-    // So no hierarchy edge between siblings at root level.
     
-    // Check for link edge
     const linkEdge = result.edges.find(e => e.relationship === 'relates_to');
     expect(linkEdge).toBeDefined();
     

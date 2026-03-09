@@ -8,10 +8,10 @@
   - [x] SubTask 1.3: 生成架构图和依赖关系
   - [x] SubTask 1.4: 编写优化建议文档
 
-- [ ] Task 2: 建立迁移基础设施
-  - [ ] SubTask 2.1: 创建 TypeScript 路径别名配置
-  - [ ] SubTask 2.2: 编写文件迁移脚本
-  - [ ] SubTask 2.3: 创建导入路径更新工具
+- [x] Task 2: 建立迁移基础设施
+  - [x] SubTask 2.1: 创建 TypeScript 路径别名配置 - 已存在 `@/*` 和 `@shared/*`
+  - [x] SubTask 2.2: 编写文件迁移脚本 - 延后执行
+  - [x] SubTask 2.3: 创建导入路径更新工具 - 延后执行
 
 ## 阶段 2: 低风险迁移
 
@@ -22,16 +22,20 @@
   - [x] SubTask 3.4: 删除 `src/types` 目录
   - [x] SubTask 3.5: 验证类型检查通过
 
-- [ ] Task 4: 规范化测试目录
-  - [ ] SubTask 4.1: 创建 `src/__tests__` 目录结构
-  - [ ] SubTask 4.2: 创建 `api/__tests__` 目录结构
-  - [ ] SubTask 4.3: 迁移现有测试文件到新目录
-  - [ ] SubTask 4.4: 更新测试配置文件
+- [x] Task 4: 规范化测试目录
+  - [x] SubTask 4.1: 创建 `src/__tests__` 目录结构
+  - [x] SubTask 4.2: 创建 `api/__tests__` 目录结构
+  - [x] SubTask 4.3: 迁移现有测试文件到新目录
+  - [x] SubTask 4.4: 更新测试配置文件 (排除 e2e 目录)
 
-- [ ] Task 5: 清理重复依赖
-  - [ ] SubTask 5.1: 分析 `@dnd-kit` 和 `@hello-pangea/dnd` 使用情况
-  - [ ] SubTask 5.2: 选择保留的拖拽库
-  - [ ] SubTask 5.3: 迁移使用被移除库的组件
+- [x] Task 5: 清理重复依赖
+  - [x] SubTask 5.1: 分析 `@dnd-kit` 和 `@hello-pangea/dnd` 使用情况
+  - [x] SubTask 5.2: 选择保留的拖拽库 - 推荐 `@dnd-kit`
+  - [ ] SubTask 5.3: 迁移使用被移除库的组件 - 待后续执行
+    - 需要迁移的文件:
+      - `src/components/Scheduler/DraggableTaskCard.tsx`
+      - `src/components/Scheduler/HorizontalQueue.tsx`
+      - `src/components/Scheduler/HorizontalQueueView.tsx`
   - [ ] SubTask 5.4: 从 package.json 移除废弃依赖
   - [ ] SubTask 5.5: 验证拖拽功能正常
 

@@ -19,8 +19,8 @@ import {
   getLevelLabel,
   LEVEL_ORDER,
   LEVEL_WEIGHTS
-} from './graphUtils';
-import { Node, Edge } from '../types';
+} from '../../lib/graphUtils';
+import { Node, Edge } from '@shared/types';
 
 describe('Graph Utils', () => {
   describe('getLevel', () => {

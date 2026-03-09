@@ -26,7 +26,7 @@ import {
   assertNever,
   USER_FRIENDLY_MESSAGES,
   type ErrorCode,
-} from './errors';
+} from '../../utils/errors';
 
 describe('errors utilities', () => {
   describe('AppError', () => {

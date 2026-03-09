@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { registerSchema, loginSchema, createNodeSchema } from './index';
+import { registerSchema, loginSchema, createNodeSchema } from '../../schemas/index';
 
 describe('API Schemas', () => {
   describe('Auth Schemas', () => {
     it('should validate correct register data', () => {
       const data = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123',
         name: 'Test User'
       };
       expect(registerSchema.safeParse(data).success).toBe(true);
@@ -15,13 +15,26 @@ describe('API Schemas', () => {
     it('should fail invalid register email', () => {
       const data = {
         email: 'invalid-email',
-        password: 'password123',
+        password: 'Password123',
         name: 'Test User'
       };
       const result = registerSchema.safeParse(data);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toBe('邮箱格式不正确');
+      }
+    });
+
+    it('should fail password without uppercase', () => {
+      const data = {
+        email: 'test@example.com',
+        password: 'password123',
+        name: 'Test User'
+      };
+      const result = registerSchema.safeParse(data);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues.some(issue => issue.message === '密码需要包含大写字母')).toBe(true);
       }
     });
 

@@ -38,7 +38,7 @@ const getInitialConnectionInfo = () => {
   };
 };
 
-export const useNetworkStatus = (options: NetworkStatusOptions = {}) => {
+export const useNetworkStatusEnhanced = (options: NetworkStatusOptions = {}) => {
   const { onOnline, onOffline, onSlowConnection, slowThreshold = 500 } = options;
 
   const [status, setStatus] = useState<NetworkStatus>({
@@ -143,7 +143,7 @@ export const useRetryOnReconnect = <T>(
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  const { isOnline } = useNetworkStatus({
+  const { isOnline } = useNetworkStatusEnhanced({
     onOnline: async () => {
       if (retryCount < maxRetries) {
         setIsRetrying(true);

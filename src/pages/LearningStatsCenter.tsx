@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useStatistics, useUser, useGraphs } from '../hooks/useQueries';
+import { useStatistics, useUser, useGraphs } from '../hooks/queries';
 import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
   KnowledgeHeatmap,

@@ -582,18 +582,22 @@ const ProgressChart: React.FC<{
     (a, b) => new Date(a.plan_date).getTime() - new Date(b.plan_date).getTime(),
   );
 
-  let cumulativePlanned = 0;
-  let cumulativeActual = 0;
-  const dataPoints = sortedPlans.map((plan) => {
-    cumulativePlanned += plan.planned_percentage;
-    cumulativeActual += plan.actual_percentage;
-    return {
+  const dataPoints = sortedPlans.reduce<Array<{
+    date: string;
+    planned: number;
+    actual: number;
+    plan: TaskProgressPlan;
+  }>>((acc, plan, index) => {
+    const prevPlanned = index > 0 ? acc[index - 1].planned : 0;
+    const prevActual = index > 0 ? acc[index - 1].actual : 0;
+    acc.push({
       date: plan.plan_date,
-      planned: cumulativePlanned,
-      actual: cumulativeActual,
+      planned: prevPlanned + plan.planned_percentage,
+      actual: prevActual + plan.actual_percentage,
       plan,
-    };
-  });
+    });
+    return acc;
+  }, []);
 
   const maxValue = Math.max(
     100,

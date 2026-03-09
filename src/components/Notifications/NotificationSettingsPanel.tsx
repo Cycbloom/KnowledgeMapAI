@@ -15,7 +15,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
-import { NotificationSettings } from '../../types/notification';
+import { NotificationSettings } from '@shared/types';
 import { useMessageStore } from '../../store/useMessageStore';
 import { useTheme } from '../../hooks/useTheme';
 

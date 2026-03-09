@@ -1,7 +1,7 @@
 import {
   NotificationSettings,
   CreateNotificationData,
-} from "../../types/notification";
+} from "@shared/types";
 import { request } from "./client.js";
 
 export const notificationApi = {

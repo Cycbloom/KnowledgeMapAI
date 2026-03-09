@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLogoutMutation, useUser } from '../hooks/useQueries';
+import { useUser } from '../hooks/queries';
+import { useLogoutMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { LogOut, User, Settings as SettingsIcon, ExternalLink, MessageSquare, X, Database, Download, Upload, AlertTriangle, Trash2, RotateCcw, Clock, Plus, RefreshCw } from 'lucide-react';

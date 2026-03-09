@@ -3,7 +3,7 @@ import { Node, Edge } from '../../types';
 import { useMessageStore } from '../../store/useMessageStore';
 import { api } from '../../services/api';
 import { handleError, isNetworkError } from '../../services/errorService';
-import { queryKeys } from '../useQueries';
+import { queryKeys } from '../queries/config';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface UseContentGenerationOptions {

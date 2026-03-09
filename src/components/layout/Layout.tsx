@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useStore } from "../../store/useStore";
-import { useUser, useLogoutMutation, useTasks } from "../../hooks/useQueries";
+import { useUser, useTasks } from "../../hooks/queries";
+import { useLogoutMutation } from "../../hooks/mutations";
 import { useTaskEvents } from "../../hooks/useTaskEvents";
 import { useMessageStore } from "../../store/useMessageStore";
 import {

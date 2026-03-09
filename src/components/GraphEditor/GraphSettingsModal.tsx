@@ -1,6 +1,7 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gauge, MessageSquare } from 'lucide-react';
-import { useGraph, useUpdateGraphMutation } from '../../hooks/useQueries';
+import { useGraph } from '../../hooks/queries';
+import { useUpdateGraphMutation } from '../../hooks/mutations';
 import { useMessageStore } from '../../store/useMessageStore';
 import { usePerformanceStore } from '../../store/usePerformanceStore';
 import { PromptSettingsPanel } from './PromptSettingsPanel';

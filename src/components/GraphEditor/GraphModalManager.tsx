@@ -6,7 +6,7 @@ import { ExportDialog } from "./ExportDialog";
 import { ShareModal } from "./ShareModal";
 import { PodcastModal } from "./PodcastModal";
 import { ConfirmationModal } from "../common";
-import { queryKeys } from "../../hooks/useQueries";
+import { queryKeys } from "../../hooks/queries/config";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMessageStore } from "../../store/useMessageStore";
 

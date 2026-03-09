@@ -254,3 +254,50 @@ export interface SchedulerStats {
     duration: number;
   }>;
 }
+
+export interface CreateScheduledTaskData {
+  title: string;
+  description?: string;
+  queue_level?: number;
+  estimated_duration?: number;
+  deadline?: string;
+  tags?: string[];
+  knowledge_point_id?: string;
+  priority?: number;
+  task_type?: TaskType;
+  total_duration?: number;
+  progress_mode?: ProgressMode;
+  context?: string;
+  parent_task_id?: string;
+}
+
+export interface UpdateScheduledTaskData {
+  title?: string;
+  description?: string;
+  estimated_duration?: number;
+  deadline?: string;
+  tags?: string[];
+  priority?: number;
+  task_type?: TaskType;
+  total_duration?: number;
+  progress_mode?: ProgressMode;
+  progress_percentage?: number;
+  context?: string;
+  parent_task_id?: string;
+  scheduled_start?: string;
+  scheduled_end?: string;
+}
+
+export interface QueueData {
+  q0: ScheduledTask[];
+  q1: ScheduledTask[];
+  q2: ScheduledTask[];
+}
+
+export interface GenerateTaskDetailsResult {
+  description: string;
+  tags: string[];
+  estimated_duration: number;
+  priority: number;
+  suggested_queue: number;
+}

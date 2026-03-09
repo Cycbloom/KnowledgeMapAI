@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, Link, Image as ImageIcon, WifiOff } from 'lucide-react';
 import { parseMarkdownToGraph } from '../../utils/markdownParser';
 import { parseOpmlToGraph } from '../../utils/opmlParser';
-import { useTextToGraphMutation, useDocumentToGraphMutation, useImageToGraphMutation } from '../../hooks/useQueries';
+import { useTextToGraphMutation, useDocumentToGraphMutation, useImageToGraphMutation } from '../../hooks/mutations';
 import { useMessageStore } from '../../store/useMessageStore';
 import { api } from '../../services/api';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useStudyCards, useUpdateCardProgressMutation } from '../hooks/useQueries';
+import { useStudyCards } from '../hooks/queries';
+import { useUpdateCardProgressMutation } from '../hooks/mutations';
 import { StudyCard } from '../types';
 import { QuestionBank } from '../components/Study/QuestionBank';
 import { StudyCardPreview } from '../components/Study/StudyCardPreview';

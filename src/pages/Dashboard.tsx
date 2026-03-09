@@ -2,15 +2,17 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   useGraphs,
+  useDashboardStats,
+  queryKeys,
+} from "../hooks/queries";
+import {
   useCreateGraphMutation,
   useImportGraphMutation,
   useDeleteGraphMutation,
-  useDashboardStats,
   useCreateGraphFromTemplateMutation,
   useToggleFavoriteMutation,
   usePrefetchGraph,
-  queryKeys,
-} from "../hooks/useQueries";
+} from "../hooks/mutations";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Plus,

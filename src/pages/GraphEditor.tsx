@@ -21,11 +21,11 @@ import { MobileNodeActionMenu } from '../components/GraphEditor/MobileNodeAction
 import { useGraph, 
   useGraphData, 
   useGraphNodeStatus, 
-  useAIStatus, 
-} from '../hooks/useQueries';
+  useAIStatus,
+} from '../hooks/queries';
 
 import { useGraphEditorState } from '../hooks/useGraphEditorState';
-import { useGraphMutations } from '../hooks/useGraphMutations';
+import { useGraphMutations } from '../hooks/mutations';
 import { useGraphHistoryHandlers } from '../hooks/useGraphHistoryHandlers';
 import { useGraphNodeOperations } from '../hooks/useGraphNodeOperations';
 import { useGraphAIOperations } from '../hooks/useGraphAIOperations';

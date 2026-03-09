@@ -36,7 +36,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
 import { useTheme } from "../hooks/useTheme";
-import { useGraphData, useGraphNodeStatus } from "../hooks/useQueries";
+import { useGraphData, useGraphNodeStatus } from "../hooks/queries";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { preprocessMarkdown } from "../utils/markdownUtils";

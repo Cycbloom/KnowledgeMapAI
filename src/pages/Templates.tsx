@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTemplates } from "../hooks/queries";
 import {
-  useTemplates,
   useCreateTemplateMutation,
   useUpdateTemplateMutation,
   useDeleteTemplateMutation,
-} from "../hooks/useQueries";
+} from "../hooks/mutations";
 import { Template, TemplateCategory } from "../types";
 import {
   Plus,

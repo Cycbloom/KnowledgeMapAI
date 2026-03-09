@@ -3,7 +3,8 @@ import { getLevel } from '../lib/graphUtils';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { queryKeys, useAIExpandMutation, useAIGenerateCardsMutation, useCreateCardsBatchMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from './useQueries';
+import { queryKeys } from './queries/config';
+import { useAIExpandMutation, useAIGenerateCardsMutation, useCreateCardsBatchMutation, useCreateNodeMutation, useCreateEdgeMutation, useUpdateNodeMutation } from './mutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { createAsyncHandler } from '../utils/asyncHandler';
 import {

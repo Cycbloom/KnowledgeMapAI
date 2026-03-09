@@ -5,7 +5,7 @@ import { GraphEditorState } from './useGraphEditorState';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
-import { queryKeys } from './useQueries';
+import { queryKeys } from './queries/config';
 import { useQueryClient } from '@tanstack/react-query';
 import { createAsyncHandler } from '../utils/asyncHandler';
 import {

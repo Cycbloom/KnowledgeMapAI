@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTasks } from "../hooks/queries";
 import {
-  useTasks,
   useRetryTaskMutation,
   useDeleteTaskMutation,
-} from "../hooks/useQueries";
+} from "../hooks/mutations";
 import { useStore } from "../store/useStore";
 import { useMessageStore } from "../store/useMessageStore";
 import { ConfirmationModal } from "../components/common";

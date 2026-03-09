@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
+import { useTrashGraphs } from "../hooks/queries";
 import {
-  useTrashGraphs,
   useRestoreGraphMutation,
   usePermanentDeleteGraphMutation,
   useBatchRestoreGraphsMutation,
   useBatchPermanentDeleteGraphsMutation,
-} from "../hooks/useQueries";
+} from "../hooks/mutations";
 import {
   Trash2,
   RefreshCw,

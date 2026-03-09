@@ -1,6 +1,7 @@
 import { useState, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAIStatus, useUpdateProfileMutation, useUser } from '../hooks/useQueries';
+import { useAIStatus, useUser } from '../hooks/queries';
+import { useUpdateProfileMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useLoginMutation } from '../hooks/useQueries';
+import { useLoginMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../hooks/useTheme';
 import { Sun, Moon } from 'lucide-react';

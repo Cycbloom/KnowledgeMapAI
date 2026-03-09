@@ -1,255 +1,14 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  useQueries,
-} from "@tanstack/react-query";
 import { useCallback } from "react";
-import { api } from "../services/api";
-import { useStore } from "../store/useStore";
-import { Node, Edge, Task, NodeLevel } from "../types";
-
-const DEFAULT_STALE_TIME = 1000 * 60 * 5;
-const LONG_STALE_TIME = 1000 * 60 * 30;
-const GC_TIME = 1000 * 60 * 60;
-
-const defaultQueryConfig = {
-  staleTime: DEFAULT_STALE_TIME,
-  gcTime: GC_TIME,
-  retry: 2,
-  retryDelay: (attemptIndex: number) =>
-    Math.min(1000 * 2 ** attemptIndex, 30000),
-};
-
-const staticQueryConfig = {
-  staleTime: LONG_STALE_TIME,
-  gcTime: GC_TIME,
-  retry: 1,
-};
-
-const realtimeQueryConfig = {
-  staleTime: 0,
-  gcTime: GC_TIME,
-  retry: 1,
-};
-
-// Query Keys
-export const queryKeys = {
-  graphs: ["graphs"] as const,
-  graph: (id: string) => ["graph", id] as const,
-  graphData: (id: string) => ["graphData", id] as const,
-  graphNodeStatus: (id: string) => ["graphNodeStatus", id] as const,
-  studyCards: (params?: {
-    graph_id?: string;
-    node_id?: string;
-    node_ids?: string;
-    due?: boolean;
-  }) =>
-    [
-      "studyCards",
-      params?.graph_id || "all",
-      params?.node_id || "all",
-      params?.node_ids || "none",
-      params?.due ? "due" : "all",
-    ] as const,
-  user: ["user"] as const,
-  dashboardStats: ["dashboardStats"] as const,
-  tasks: (status?: string, limit?: number, offset?: number) =>
-    ["tasks", status || "all", limit || 20, offset || 0] as const,
-  aiStatus: ["aiStatus"] as const,
-  statistics: ["statistics"] as const,
-  templates: (category?: string) => ["templates", category || "all"] as const,
-  template: (id: string) => ["template", id] as const,
-};
-
-// --- Queries ---
-
-export const useDashboardStats = () => {
-  return useQuery({
-    queryKey: queryKeys.dashboardStats,
-    queryFn: api.dashboard.getStats,
-    ...defaultQueryConfig,
-  });
-};
-
-export const useStatistics = () => {
-  return useQuery({
-    queryKey: queryKeys.statistics,
-    queryFn: api.statistics.getStats,
-    ...defaultQueryConfig,
-  });
-};
-
-export const useUser = (enabled: boolean = true) => {
-  return useQuery({
-    queryKey: queryKeys.user,
-    queryFn: api.auth.getUser,
-    enabled,
-    ...staticQueryConfig,
-    retry: false,
-  });
-};
-
-export const useGraphs = () => {
-  return useQuery({
-    queryKey: queryKeys.graphs,
-    queryFn: api.graphs.list,
-    ...defaultQueryConfig,
-  });
-};
-
-export const useTrashGraphs = () => {
-  return useQuery({
-    queryKey: ["graphs", "trash"],
-    queryFn: api.graphs.listTrash,
-    ...defaultQueryConfig,
-  });
-};
-
-export const useGraph = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.graph(id),
-    queryFn: () => api.graphs.get(id),
-    enabled: !!id,
-    ...defaultQueryConfig,
-  });
-};
-
-export const useGraphLearningPath = (id: string) => {
-  return useQuery({
-    queryKey: ["graphLearningPath", id],
-    queryFn: () => api.graphs.getLearningPath(id),
-    enabled: !!id,
-    ...staticQueryConfig,
-  });
-};
-
-export const useGraphData = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.graphData(id),
-    queryFn: async () => {
-      const data = await api.graphs.getNodes(id);
-      return {
-        nodes: (data.nodes || []) as Node[],
-        edges: (data.edges || []) as Edge[],
-      };
-    },
-    enabled: !!id,
-    ...defaultQueryConfig,
-  });
-};
-
-export const useGraphNodeStatus = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.graphNodeStatus(id),
-    queryFn: () => api.graphs.getNodeStatus(id),
-    enabled: !!id,
-    ...realtimeQueryConfig,
-  });
-};
-
-export const useBatchGraphStatus = (
-  graphIds: string[],
-  enabled: boolean = true,
-) => {
-  const queries = useQueries({
-    queries: graphIds.map((id) => ({
-      queryKey: queryKeys.graphNodeStatus(id),
-      queryFn: () => api.graphs.getNodeStatus(id),
-      enabled: enabled && !!id,
-      ...realtimeQueryConfig,
-    })),
-  });
-
-  const isLoading = queries.some((q) => q.isLoading);
-  const isPending = queries.some((q) => q.isPending);
-
-  const data = graphIds.reduce(
-    (acc, id, index) => {
-      acc[id] = queries[index].data;
-      return acc;
-    },
-    {} as Record<string, unknown>,
-  );
-
-  return {
-    data,
-    queries,
-    isLoading,
-    isPending,
-    isAllSuccess: queries.every((q) => q.isSuccess),
-  };
-};
-
-export const useStudyCards = (
-  params?: {
-    graph_id?: string;
-    node_id?: string;
-    node_ids?: string;
-    due?: boolean;
-  },
-  enabled: boolean = true,
-) => {
-  return useQuery({
-    queryKey: queryKeys.studyCards(params),
-    queryFn: () => api.study.getCards(params),
-    enabled,
-    ...realtimeQueryConfig,
-  });
-};
-
-export const useTasks = (
-  enabled: boolean = true,
-  status?: string,
-  limit: number = 20,
-  offset: number = 0,
-) => {
-  return useQuery({
-    queryKey: queryKeys.tasks(status, limit, offset),
-    queryFn: async () =>
-      (await api.tasks.list(status, limit, offset)) as {
-        tasks: Task[];
-        total: number;
-      },
-    enabled,
-    ...realtimeQueryConfig,
-  });
-};
-
-export const useRetryTaskMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.tasks.retry,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-};
-
-export const useDeleteTaskMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.tasks.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-};
-
-export const useAIStatus = (enabled: boolean = true) => {
-  return useQuery({
-    queryKey: queryKeys.aiStatus,
-    queryFn: api.ai.status,
-    enabled,
-    retry: false,
-    staleTime: 0,
-    gcTime: GC_TIME,
-    refetchInterval: enabled ? 60_000 : false,
-    meta: { silent: true },
-  });
-};
-
-// --- Mutations ---
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../services/api";
+import { Node, Edge, NodeLevel } from "../../types";
+import {
+  queryKeys,
+  defaultQueryConfig,
+  realtimeQueryConfig,
+} from "../queries/config";
+import { useCreateCardsBatchMutation } from "./useStudyMutations";
+import { useCreateTaskMutation } from "./useTaskMutations";
 
 export const useCreateGraphMutation = () => {
   const queryClient = useQueryClient();
@@ -498,7 +257,6 @@ export const useUpdateNodeMutation = () => {
   });
 };
 
-// Improved Update Node Mutation requiring graphId for Optimistic UI
 export const useUpdateNodeOptimisticMutation = () => {
   const queryClient = useQueryClient();
 
@@ -747,50 +505,6 @@ export const useDeleteEdgeMutation = () => {
   });
 };
 
-export const useUpdateCardProgressMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, quality }: { id: string; quality: number }) =>
-      api.study.updateProgress(id, quality),
-    onSuccess: () => {
-      // Invalidate both cards and node status as progress affects both
-      queryClient.invalidateQueries({ queryKey: ["studyCards"] });
-      queryClient.invalidateQueries({ queryKey: ["graphNodeStatus"] });
-    },
-  });
-};
-
-export const useUpdateCardMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      api.study.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["studyCards"] });
-    },
-  });
-};
-
-export const useDeleteCardMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.study.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["studyCards"] });
-    },
-  });
-};
-
-export const useDeleteCardsBatchMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (ids: string[]) => api.study.deleteBatch(ids),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["studyCards"] });
-    },
-  });
-};
-
 export const useAIGenerateMutation = () => {
   return useMutation({ mutationFn: api.ai.generateContent });
 };
@@ -836,133 +550,6 @@ export const useRecommendConnectionsMutation = () => {
   });
 };
 
-export const useCreateCardsBatchMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.study.createCardsBatch,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["studyCards"] });
-    },
-  });
-};
-
-export const useCreateTaskMutation = () => {
-  return useMutation({
-    mutationFn: api.tasks.create,
-  });
-};
-
-export const useLoginMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.auth.login,
-    onSuccess: (data) => {
-      if (data.user) {
-        queryClient.setQueryData(queryKeys.user, { user: data.user });
-      }
-    },
-  });
-};
-
-export const useRegisterMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.auth.register,
-    onSuccess: (data) => {
-      if (data.user) {
-        queryClient.setQueryData(queryKeys.user, { user: data.user });
-      }
-    },
-  });
-};
-
-export const useLogoutMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.auth.logout,
-    onSuccess: () => {
-      queryClient.setQueryData(queryKeys.user, null);
-      queryClient.clear();
-    },
-  });
-};
-
-export const useUpdateProfileMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.auth.updateProfile,
-    onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.user, data);
-      queryClient.invalidateQueries({ queryKey: queryKeys.user });
-
-      // Update global store to ensure api.ts uses latest config
-      const { setUser, token } = useStore.getState();
-      if (data.user) {
-        setUser(data.user, token);
-      }
-    },
-  });
-};
-
-// Template Queries & Mutations
-
-export const useTemplates = (category?: string) => {
-  return useQuery({
-    queryKey: queryKeys.templates(category),
-    queryFn: async () => {
-      const result = await api.templates.list(category);
-      if (result && typeof result === "object" && "templates" in result) {
-        return result.templates;
-      }
-      return Array.isArray(result) ? result : [];
-    },
-    staleTime: 1000 * 60 * 30,
-  });
-};
-
-export const useTemplate = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.template(id),
-    queryFn: () => api.templates.get(id),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 30, // 30 mins
-  });
-};
-
-export const useCreateTemplateMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.templates.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
-};
-
-export const useUpdateTemplateMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      api.templates.update(id, data),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.template(variables.id),
-      });
-    },
-  });
-};
-
-export const useDeleteTemplateMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: api.templates.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
-};
-
 export const usePrefetchGraph = () => {
   const queryClient = useQueryClient();
 
@@ -1004,17 +591,36 @@ export const usePrefetchStudyCards = () => {
   );
 };
 
-export const usePrefetchTemplates = () => {
-  const queryClient = useQueryClient();
+export const useGraphMutations = () => {
+  const createNodeMutation = useCreateNodeMutation();
+  const updateNodeMutation = useUpdateNodeMutation();
+  const updateNodeOptimisticMutation = useUpdateNodeOptimisticMutation();
+  const deleteNodeMutation = useDeleteNodeMutation();
+  const batchDeleteNodesMutation = useBatchDeleteNodesMutation();
+  const createEdgeMutation = useCreateEdgeMutation();
+  const deleteEdgeMutation = useDeleteEdgeMutation();
+  const aiGenerateMutation = useAIGenerateMutation();
+  const aiExpandMutation = useAIExpandMutation();
+  const aiGenerateCardsMutation = useAIGenerateCardsMutation();
+  const createCardsBatchMutation = useCreateCardsBatchMutation();
+  const recommendConnectionsMutation = useRecommendConnectionsMutation();
+  const deleteGraphMutation = useDeleteGraphMutation();
+  const createTaskMutation = useCreateTaskMutation();
 
-  return useCallback(
-    (category?: string) => {
-      queryClient.prefetchQuery({
-        queryKey: queryKeys.templates(category),
-        queryFn: () => api.templates.list(category),
-        staleTime: 1000 * 60 * 30,
-      });
-    },
-    [queryClient],
-  );
+  return {
+    createNodeMutation,
+    updateNodeMutation,
+    updateNodeOptimisticMutation,
+    deleteNodeMutation,
+    batchDeleteNodesMutation,
+    createEdgeMutation,
+    deleteEdgeMutation,
+    aiGenerateMutation,
+    aiExpandMutation,
+    aiGenerateCardsMutation,
+    createCardsBatchMutation,
+    recommendConnectionsMutation,
+    deleteGraphMutation,
+    createTaskMutation,
+  };
 };

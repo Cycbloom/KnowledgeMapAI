@@ -105,7 +105,6 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   >("sequential");
   const [dailyTime, setDailyTime] = useState(30);
   const [showSettings, setShowSettings] = useState(false);
-  const [expandedPathId, setExpandedPathId] = useState<string | null>(null);
 
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
@@ -570,18 +569,18 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
           </AnimatePresence>
 
           {graphPaths.length > 0 ? (
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-2 pr-1">
-              {graphPaths.map((path) => {
-                const isExpanded = expandedPathId === path.id;
-                const isSelected = selectedPathId === path.id;
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-1">
+              <div className="space-y-2">
+                {graphPaths.map((path) => {
+                  const isSelected = selectedPathId === path.id;
 
-                return (
-                  <div
-                    key={path.id}
-                    className={`bg-white dark:bg-slate-700 rounded-lg overflow-hidden transition-all ${
-                      isSelected ? "ring-2 ring-indigo-500" : ""
-                    }`}
-                  >
+                  return (
+                    <div
+                      key={path.id}
+                      className={`bg-white dark:bg-slate-700 rounded-lg transition-all ${
+                        isSelected ? "ring-2 ring-indigo-500" : ""
+                      }`}
+                    >
                     <div className="p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -629,17 +628,20 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => {
-                            onPathSelect?.(path.id);
-                            setExpandedPathId(isExpanded ? null : path.id);
+                            if (isSelected) {
+                              onPathSelect?.(null as any);
+                            } else {
+                              onPathSelect?.(path.id);
+                            }
                           }}
                           className={`flex-1 py-1.5 text-xs rounded flex items-center justify-center gap-1 transition-colors ${
                             isSelected
-                              ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                              ? "bg-gray-500 text-white hover:bg-gray-600"
                               : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
                           }`}
                         >
                           <Route className="w-3 h-3" />
-                          {isSelected ? "当前路径" : "切换到此路径"}
+                          {isSelected ? "取消选择" : "切换到此路径"}
                         </button>
                         <button
                           onClick={() =>
@@ -724,6 +726,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                   </div>
                 );
               })}
+              </div>
             </div>
           ) : (
             <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center py-8">

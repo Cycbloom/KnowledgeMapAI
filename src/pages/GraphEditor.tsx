@@ -881,7 +881,9 @@ export const GraphEditor = () => {
               onOpenDetail={() => setSidebarMode("detail")}
               learningPathNodeIds={learningPathNodeIds}
               learningPathOrderMap={learningPathOrderMap}
-              highlightedPathNodeId={focusedNodeId}
+              highlightedPathNodeId={
+                selectedLearningPathId ? focusedNodeId : null
+              }
             />
           )}
           {viewMode === "timeline" && (

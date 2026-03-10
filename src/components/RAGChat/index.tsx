@@ -46,7 +46,7 @@ interface RAGChatPanelProps {
   width?: number;
   onWidthChange?: (width: number) => void;
   selectedLearningPathId?: string | null;
-  onPathSelect?: (pathId: string) => void;
+  onPathSelect?: (pathId: string | null) => void;
   onLearningPathNodeClick?: (nodeId: string) => void;
 }
 

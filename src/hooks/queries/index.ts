@@ -4,3 +4,4 @@ export * from "./useStudyQueries";
 export * from "./useUserQueries";
 export * from "./useTemplateQueries";
 export * from "./useTaskQueries";
+export * from "./useLearningPathQueries";

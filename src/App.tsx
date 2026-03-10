@@ -85,6 +85,16 @@ const CalendarPage = lazy(() =>
     default: module.CalendarPage,
   })),
 );
+const LearningPaths = lazy(() =>
+  import("./pages/LearningPaths").then((module) => ({
+    default: module.LearningPaths,
+  })),
+);
+const LearningPathDetail = lazy(() =>
+  import("./pages/LearningPathDetail").then((module) => ({
+    default: module.default,
+  })),
+);
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -139,6 +149,8 @@ function App() {
             <Route path="scheduler/stats" element={<SchedulerStats />} />
             <Route path="scheduler/task/:taskId" element={<TaskDetailPage />} />
             <Route path="calendar" element={<CalendarPage />} />
+            <Route path="learning-paths" element={<LearningPaths />} />
+            <Route path="learning-paths/:id" element={<LearningPathDetail />} />
           </Route>
         </Routes>
       </Suspense>

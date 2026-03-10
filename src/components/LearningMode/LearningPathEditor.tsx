@@ -321,21 +321,22 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       });
       
       if (result.stages && result.stages.length > 0) {
-        const learningPathCreate = await api.learningPaths.create({
+        const nodes = result.stages.map((stage: any, index: number) => ({
+          knowledge_point_id: stage.nodeId,
+          order_index: index,
+          title: stage.nodeTitle,
+          estimated_time: stage.estimatedTime,
+          is_milestone: stage.priority === 'high',
+        }));
+        
+        await api.learningPaths.create({
           title: `学习路径 - ${result.graphTitle}`,
           description: result.targetGoal || 'AI 生成的学习路径',
-          goal_type: 'graph_node',
-          target_knowledge_point_id: result.stages[0]?.nodeId,
-          daily_minutes_target: 30
+          goal: result.targetGoal,
+          daily_minutes_target: 30,
+          ai_generated: true,
+          nodes,
         });
-        
-        for (const stage of result.stages) {
-          await api.learningPaths.addNode(learningPathCreate.id, {
-            node_id: stage.nodeId,
-            estimated_minutes: stage.estimatedTime,
-            difficulty_level: stage.priority === 'high' ? 4 : stage.priority === 'medium' ? 3 : 2
-          });
-        }
         
         addMessage({ type: 'success', content: 'AI 学习路径已生成！' });
         onRefresh();

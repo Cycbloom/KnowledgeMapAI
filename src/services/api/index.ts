@@ -11,6 +11,7 @@ export { studyApi, dashboardApi, statisticsApi } from './study';
 export { tasksApi, searchApi, dataApi } from './tasks';
 export { templatesApi, promptsApi, focusApi, achievementsApi, periodicTasksApi } from './templates';
 export { learningPathsApi, learningPathApi } from './learningPaths';
+export type { LearningPathStatus, NodeStatus, GoalType } from './learningPaths';
 export { ragApi } from './rag';
 export { autoGraphApi } from './autoGraph';
 export { healthApi } from './health';

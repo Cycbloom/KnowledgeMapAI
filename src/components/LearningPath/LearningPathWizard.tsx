@@ -175,6 +175,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     }
 
     setIsGenerating(true);
+    addMessage({ type: 'info', content: '已收到请求，AI 正在为您规划学习路径，请稍候...' });
     try {
       onComplete({
         targetGoal: finalGoal,

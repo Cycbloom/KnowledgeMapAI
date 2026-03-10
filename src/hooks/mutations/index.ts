@@ -3,3 +3,4 @@ export * from "./useStudyMutations";
 export * from "./useAuthMutations";
 export * from "./useTemplateMutations";
 export * from "./useTaskMutations";
+export * from "./useLearningPathMutations";

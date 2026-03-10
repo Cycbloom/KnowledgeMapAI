@@ -26,6 +26,7 @@ import {
   LucideIcon,
   Zap,
   Calendar,
+  Route,
 } from "lucide-react";
 import {
   ErrorBoundary,
@@ -250,6 +251,15 @@ export const Layout = () => {
                 to="/study"
                 icon={GraduationCap}
                 label="学习中心"
+                isCollapsed={isCollapsed}
+                isMobileMenuOpen={isMobileMenuOpen}
+                isDark={isDark}
+                onClick={handleMobileNavClick}
+              />
+              <SidebarLink
+                to="/learning-paths"
+                icon={Route}
+                label="学习路径"
                 isCollapsed={isCollapsed}
                 isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}

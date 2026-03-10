@@ -43,6 +43,7 @@ import { preprocessMarkdown } from "../utils/markdownUtils";
 import { GraphOutline } from "../components/GraphEditor/GraphOutline";
 import { GenerateCardsModal } from "../components/LearningMode/GenerateCardsModal";
 import { LearningPathPanel } from "../components/LearningPath/LearningPathPanel";
+import { LearningPathOutline } from "../components/LearningPath/LearningPathOutline";
 import { NodeLevel } from "../types";
 
 type Message = {
@@ -51,6 +52,8 @@ type Message = {
   content: string;
   isStreaming?: boolean;
 };
+
+type OutlineMode = 'graph' | 'learning-path';
 
 export const LearningMode = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -81,7 +84,20 @@ export const LearningMode = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
     new Set(),
   );
+  const [outlineMode, setOutlineMode] = useState<OutlineMode>('graph');
+  const [selectedLearningPathId, setSelectedLearningPathId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const handleSelectLearningPath = (pathId: string) => {
+    setSelectedLearningPathId(pathId);
+    setOutlineMode('learning-path');
+    setSelectedNodeIds(new Set());
+  };
+
+  const handleBackToGraphOutline = () => {
+    setOutlineMode('graph');
+    setSelectedLearningPathId(null);
+  };
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -775,7 +791,17 @@ export const LearningMode = () => {
           } transition-all duration-300 ease-in-out border-r dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 relative`}
         >
           <div className={`absolute inset-0 ${isMobile ? "w-full" : "w-80"}`}>
-            {graphData ? (
+            {outlineMode === 'learning-path' && selectedLearningPathId ? (
+              <LearningPathOutline
+                learningPathId={selectedLearningPathId}
+                currentNodeId={nodeId || undefined}
+                onNodeClick={(nodeId) =>
+                  navigate(`/learning?graph_id=${graphId}&node_id=${nodeId}`)
+                }
+                onBackToGraph={handleBackToGraphOutline}
+                className="h-full border-none"
+              />
+            ) : graphData ? (
               <GraphOutline
                 nodes={graphData.nodes}
                 edges={graphData.edges}
@@ -1001,6 +1027,8 @@ export const LearningMode = () => {
                                   `/learning?graph_id=${graphId}&node_id=${nodeId}`,
                                 );
                               }}
+                              onPathSelect={handleSelectLearningPath}
+                              selectedPathId={selectedLearningPathId}
                             />
                           </div>
                         ) : (

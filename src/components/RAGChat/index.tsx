@@ -45,6 +45,9 @@ interface RAGChatPanelProps {
   onTutorChat?: (message: string, history: any[], onChunk: (content: string) => void) => void;
   width?: number;
   onWidthChange?: (width: number) => void;
+  selectedLearningPathId?: string | null;
+  onPathSelect?: (pathId: string) => void;
+  onLearningPathNodeClick?: (nodeId: string) => void;
 }
 
 export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
@@ -68,7 +71,10 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   suggestedNextTopics = [],
   onTutorChat,
   width = 420,
-  onWidthChange
+  onWidthChange,
+  selectedLearningPathId,
+  onPathSelect,
+  onLearningPathNodeClick
 }) => {
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
@@ -401,7 +407,9 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
         {isTutorMode && tutorMode === 'learning-path' && graphId ? (
           <LearningPathPanel
             graphId={graphId}
-            onNodeSelect={onNodeClick}
+            onNodeSelect={onLearningPathNodeClick || onNodeClick}
+            onPathSelect={onPathSelect}
+            selectedPathId={selectedLearningPathId}
           />
         ) : (
           <>
@@ -617,7 +625,9 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
   onTutorChat,
   width = 420,
   onWidthChange,
-  isMobilePreviewMode
+  isMobilePreviewMode,
+  selectedLearningPathId,
+  onPathSelect
 }) => {
   const { isDark } = useTheme();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -673,6 +683,8 @@ export const RAGChatButtonWrapper: React.FC<RAGChatButtonWrapperProps> = ({
                 onTutorChat={onTutorChat}
                 width={width}
                 onWidthChange={onWidthChange}
+                selectedLearningPathId={selectedLearningPathId}
+                onPathSelect={onPathSelect}
               />
             </motion.div>
           </div>

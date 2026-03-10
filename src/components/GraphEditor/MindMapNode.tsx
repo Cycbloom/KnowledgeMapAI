@@ -39,6 +39,9 @@ interface MindMapNodeProps {
   isExcludedAsParent?: boolean;
   isSelectedAsParent?: boolean;
   isTouchPressed?: boolean;
+  learningOrder?: number;
+  isInLearningPath?: boolean;
+  learningPathHighlighted?: boolean;
 }
 
 const getTextVisibility = (level: NodeLevel, zoomLevel: number, forceShowText: boolean = false): { visible: boolean; opacity: number } => {
@@ -88,7 +91,10 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   isSelectableAsParent = false,
   isExcludedAsParent = false,
   isSelectedAsParent = false,
-  isTouchPressed = false
+  isTouchPressed = false,
+  learningOrder,
+  isInLearningPath = false,
+  learningPathHighlighted = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const level = getLevel(node, edges);
@@ -130,7 +136,9 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   
   const textVisibility = getTextVisibility(level, zoomLevel, forceShowText);
   
-  const nodeOpacity = !hasFocusMode ?1 : (focused ?1 : 0.3);
+  const nodeOpacity = !hasFocusMode ? 1 : (focused ? 1 : 0.3);
+  const learningPathOpacity = isInLearningPath ? 1 : (learningPathHighlighted ? 0.4 : 1);
+  const finalOpacity = learningPathHighlighted ? learningPathOpacity : nodeOpacity;
   const isAccepted = node.is_accepted !== false;
   const hoverScale = isHovered || isTouchPressed ? styleConfig.animation.hoverScale : 1;
   const showHoverGlow = isHovered && styleConfig.animation.hoverGlow;
@@ -143,7 +151,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   }, [isNew]);
 
   const currentScale = isNew ? hoverScale : animationTransform.scale;
-  const currentOpacity = isNew ? (isAccepted ? nodeOpacity : nodeOpacity * 0.5) : nodeOpacity;
+  const currentOpacity = isNew ? (isAccepted ? finalOpacity : finalOpacity * 0.5) : finalOpacity;
 
   const rings = useMemo(() => {
     const result = [];
@@ -182,6 +190,12 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
         <stop offset="0%" stopColor="#3b82f6" stopOpacity="1" />
         <stop offset="50%" stopColor="#8b5cf6" stopOpacity="1" />
         <stop offset="100%" stopColor="#ec4899" stopOpacity="1" />
+      </linearGradient>
+    );
+    defs.push(
+      <linearGradient key="learningOrderGradient" id="learningOrderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#6366f1" stopOpacity="1" />
+        <stop offset="100%" stopColor="#a855f7" stopOpacity="1" />
       </linearGradient>
     );
     for (let i = 0; i < styleConfig.rings; i++) {
@@ -318,6 +332,31 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           opacity={0.6}
           className="animate-pulse"
         />
+      )}
+      {learningPathHighlighted && (
+        <circle
+          r={styleConfig.baseRadius + 8}
+          fill="none"
+          stroke="#a855f7"
+          strokeWidth={3}
+          opacity={0.8}
+          style={{
+            filter: `drop-shadow(0 0 12px rgba(168, 85, 247, 0.6)) drop-shadow(0 0 24px rgba(168, 85, 247, 0.4))`
+          }}
+        >
+          <animate
+            attributeName="r"
+            values={`${styleConfig.baseRadius + 6};${styleConfig.baseRadius + 10};${styleConfig.baseRadius + 6}`}
+            dur="2s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0.6;0.9;0.6"
+            dur="2s"
+            repeatCount="indefinite"
+          />
+        </circle>
       )}
       <g
         style={{
@@ -465,6 +504,39 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
           {tags.slice(0, 3).join(', ') + (tags.length > 3 ? '...' : '')}
         </text>
       )}
+      
+      {learningOrder !== undefined && learningOrder > 0 && (
+        <g transform={`translate(${styleConfig.baseRadius * 0.7}, ${-styleConfig.baseRadius * 0.7})`}>
+          <circle
+            r={10}
+            fill="url(#learningOrderGradient)"
+            style={{
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+            }}
+          />
+          {status === 'mastered' ? (
+            <path
+              d="M-4 0 L-1 3 L4 -3"
+              fill="none"
+              stroke="white"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ) : (
+            <text
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={10}
+              fontWeight={700}
+              fill="white"
+              style={{ pointerEvents: 'none' }}
+            >
+              {learningOrder}
+            </text>
+          )}
+        </g>
+      )}
     </g>
   );
 };
@@ -489,6 +561,8 @@ export const MindMapNode = React.memo(MindMapNodeComponent, (prevProps, nextProp
     prevProps.isExcludedAsParent === nextProps.isExcludedAsParent &&
     prevProps.isSelectedAsParent === nextProps.isSelectedAsParent &&
     prevProps.isTouchPressed === nextProps.isTouchPressed &&
+    prevProps.learningOrder === nextProps.learningOrder &&
+    prevProps.learningPathHighlighted === nextProps.learningPathHighlighted &&
     prevProps.node.x === nextProps.node.x &&
     prevProps.node.y === nextProps.node.y &&
     prevProps.node.title === nextProps.node.title &&

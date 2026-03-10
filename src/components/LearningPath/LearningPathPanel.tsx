@@ -19,7 +19,7 @@ import { api } from "../../services/api";
 import { useMessageStore } from "../../store/useMessageStore";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { LearningPathWizard } from "./LearningPathWizard";
-import { useLearningPaths } from "../../hooks/queries/useLearningPathQueries";
+import { useLearningPaths, useLearningPath } from "../../hooks/queries/useLearningPathQueries";
 import {
   useCreateLearningPathMutation,
   useDeleteLearningPathMutation,
@@ -112,6 +112,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
   const { data: savedPaths = [], isLoading: isLoadingPaths } =
     useLearningPaths();
+  const { data: selectedPathDetail } = useLearningPath(selectedPathId || "");
   const createMutation = useCreateLearningPathMutation();
   const deleteMutation = useDeleteLearningPathMutation();
   const updateMutation = useUpdateLearningPathMutation();
@@ -339,7 +340,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   }
 
   return (
-    <div className="learning-path-panel space-y-4 relative">
+    <div className="learning-path-panel h-full flex flex-col space-y-4 relative overflow-hidden">
       {isGenerating && (
         <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
           <div className="flex flex-col items-center gap-4">
@@ -379,8 +380,8 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
           onCancel={() => setViewMode("list")}
         />
       ) : viewMode === "create" && tempPath ? (
-        <>
-          <div className="flex items-center justify-between">
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
                 <Sparkles className="w-5 h-5 text-white" />
@@ -395,7 +396,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
           </div>
 
           {tempPath.aiGenerated && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex-shrink-0">
               <Sparkles size={14} className="text-purple-500" />
               <span className="text-xs text-purple-600 dark:text-purple-400">
                 AI 生成 · 目标：{tempPath.targetGoal}
@@ -403,7 +404,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 flex-shrink-0">
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-blue-500">
                 {tempPath.totalNodes}
@@ -424,7 +425,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             </div>
           </div>
 
-          <div className="max-h-48 overflow-y-auto space-y-2">
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-2 pr-1">
             {tempPath.stages.slice(0, 8).map((stage, index) => (
               <div
                 key={stage.nodeId}
@@ -450,7 +451,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <button
               onClick={() => setViewMode("wizard")}
               className="flex-1 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600"
@@ -475,10 +476,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               )}
             </button>
           </div>
-        </>
+        </div>
       ) : (
-        <>
-          <div className="flex items-center justify-between">
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg">
                 <Route className="w-5 h-5 text-white" />
@@ -517,7 +518,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 space-y-4 overflow-hidden"
+                className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 space-y-4 overflow-hidden flex-shrink-0"
               >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -569,7 +570,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
           </AnimatePresence>
 
           {graphPaths.length > 0 ? (
-            <div className="space-y-2">
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-2 pr-1">
               {graphPaths.map((path) => {
                 const isExpanded = expandedPathId === path.id;
                 const isSelected = selectedPathId === path.id;
@@ -668,13 +669,64 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
+                      
+                      {isSelected && selectedPathDetail?.nodes && selectedPathDetail.nodes.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
+                            学习顺序
+                          </div>
+                          <div className="space-y-1 max-h-48 overflow-y-auto">
+                            {selectedPathDetail.nodes.map((node: any, index: number) => {
+                              const nodeStatus = node.status || "pending";
+                              const isCompleted = nodeStatus === "completed";
+                              const isInProgress = nodeStatus === "in_progress";
+                              
+                              return (
+                                <div
+                                  key={node.id}
+                                  onClick={() => {
+                                    const nodeId = node.knowledge_point_id || node.id;
+                                    if (nodeId) onNodeSelect?.(nodeId);
+                                  }}
+                                  className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                  <div
+                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                                      isCompleted
+                                        ? "bg-green-500 text-white"
+                                        : isInProgress
+                                          ? "bg-blue-500 text-white"
+                                          : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                                    }`}
+                                  >
+                                    {isCompleted ? (
+                                      <CheckCircle2 className="w-3 h-3" />
+                                    ) : (
+                                      index + 1
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-gray-700 dark:text-gray-200 truncate flex-1">
+                                    {node.title}
+                                  </span>
+                                  {node.estimated_time && (
+                                    <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                                      <Clock className="w-2.5 h-2.5" />
+                                      {node.estimated_time}分
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="text-center py-8">
+            <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center py-8">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
                 <Route className="w-8 h-8 text-gray-400" />
               </div>
@@ -695,7 +747,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
           )}
 
           {tempPath && (
-            <div className="border-t dark:border-slate-700 pt-4">
+            <div className="border-t dark:border-slate-700 pt-4 flex-shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   预览路径
@@ -730,7 +782,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

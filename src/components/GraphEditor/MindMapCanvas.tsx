@@ -84,6 +84,9 @@ interface MindMapCanvasProps {
   onNodeLongPress?: (node: GraphNode) => void;
   isMobilePreviewMode?: boolean;
   onOpenDetail?: () => void;
+  learningPathNodeIds?: Set<string>;
+  learningPathOrderMap?: Map<string, number>;
+  highlightedPathNodeId?: string | null;
 }
 
 interface Transform {
@@ -137,7 +140,10 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
   previewDelay = 500,
   onNodeLongPress,
   isMobilePreviewMode = false,
-  onOpenDetail
+  onOpenDetail,
+  learningPathNodeIds = new Set(),
+  learningPathOrderMap = new Map(),
+  highlightedPathNodeId = null
 }, ref) => {
   const { isDark } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -970,6 +976,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
           {visibleNodes.map(node => {
             const isSelectableAsParent = isSelectingParent && node.id !== currentNodeId;
             const isSelectedAsParent = selectedParentIds.includes(node.id);
+            const isInLearningPath = learningPathNodeIds.has(node.id);
+            const learningOrder = learningPathOrderMap.get(node.id);
+            const hasLearningPathHighlight = highlightedPathNodeId !== null && learningPathNodeIds.size > 0;
+            const learningPathHighlighted = highlightedPathNodeId === node.id || 
+              (hasLearningPathHighlight && isInLearningPath);
             return (
               <MindMapNode
                 key={node.id}
@@ -1029,6 +1040,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(({
                 isExcludedAsParent={isSelectingParent && node.id === currentNodeId}
                 isSelectedAsParent={isSelectedAsParent}
                 isTouchPressed={touchPressedNodeId === node.id}
+                isInLearningPath={isInLearningPath}
+                learningOrder={learningOrder}
+                learningPathHighlighted={learningPathHighlighted}
               />
             );
           })}

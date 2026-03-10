@@ -312,29 +312,25 @@ async function generateAIPath(
       nodesCount: nodes.length,
       isSequential: learningStyle === 'sequential',
       isExploratory: learningStyle === 'exploratory',
-      isFocused: learningStyle === 'focused'
+      isFocused: learningStyle === 'focused',
+      targetGoalProvided: !!targetGoal
     },
     userId,
     graphId
   );
 
   const userMessage = `图谱标题：${graphTitle}
-
 目标：${targetGoal}
 
 学习风格：${learningStyle === 'sequential' ? '顺序学习' : learningStyle === 'exploratory' ? '探索学习' : learningStyle === 'focused' ? '专注学习' : '自定义'}
-
 每日学习时间：${dailyTimeMinutes} 分钟
-
 ${currentKnowledge ? `当前知识背景：${currentKnowledge}` : ''}
 
 知识点列表（共 ${nodes.length} 个）：
 ${JSON.stringify(nodesInfo, null, 2)}
-
 知识点关系：
 ${JSON.stringify(edgesInfo, null, 2)}
-
-请根据以上信息，规划一条最优的学习路径。`;
+请根据以上信息，规划一条最优的学习路径。注意：如果有明确的学习目标，只需要选择与目标直接相关的核心节点（5-15个），不需要包含图谱中的所有节点。`;
 
   try {
     const completion = await provider.client.chat.completions.create({
@@ -349,7 +345,6 @@ ${JSON.stringify(edgesInfo, null, 2)}
 
     const content = completion.choices[0].message.content;
     const parsed = JSON.parse(content || '{"path": [], "suggestions": []}');
-
     const stages: LearningPathStage[] = (parsed.path || []).map((item: any, index: number) => {
       const node = nodes.find(n => n.id === item.nodeId || n.title === item.nodeTitle);
       const progress = node ? progressMap.get(node.id) : null;
@@ -374,7 +369,6 @@ ${JSON.stringify(edgesInfo, null, 2)}
       stages,
       suggestions: parsed.suggestions || []
     };
-
   } catch (error) {
     logger.error('AI Learning Path Error:', error);
     return generateRulePath(nodes, progressMap, parentMap, childMap, undefined, dailyTimeMinutes);

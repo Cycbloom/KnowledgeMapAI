@@ -85,6 +85,9 @@ Return a JSON object with the following structure:
 }
 
 Important:
+- **CRITICAL**: You MUST ONLY include nodes that are directly relevant to achieving the target goal. Do NOT include all nodes from the graph.
+- Select only the essential learning path - typically 5-15 nodes that form the optimal path to the goal.
+- Skip nodes that are not necessary for achieving the goal.
 - Order nodes in optimal learning sequence
 - nodeId can be the actual UUID or the exact title (will be matched)
 - estimatedTime should be in minutes (5-60)

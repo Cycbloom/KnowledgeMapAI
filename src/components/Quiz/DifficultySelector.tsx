@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smile, Meh, Frown, Shuffle } from 'lucide-react';
+import { GraduationCap, BookOpen, Mountain, Layers } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 
 interface DifficultySelectorProps {
@@ -23,30 +23,30 @@ const difficultyOptions: DifficultyOption[] = [
   {
     id: 'easy',
     label: '简单',
-    description: '基础概念和定义，适合初学者',
-    icon: <Smile size={20} />,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-500',
-    darkBgColor: 'dark:bg-emerald-900/20',
-    darkBorderColor: 'dark:border-emerald-500',
+    description: '基础概念题，直接考查知识点记忆',
+    icon: <GraduationCap size={20} />,
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-500',
+    darkBgColor: 'dark:bg-green-900/20',
+    darkBorderColor: 'dark:border-green-500',
   },
   {
     id: 'medium',
     label: '中等',
-    description: '需要理解和应用，适合进阶学习',
-    icon: <Meh size={20} />,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-500',
-    darkBgColor: 'dark:bg-amber-900/20',
-    darkBorderColor: 'dark:border-amber-500',
+    description: '应用理解题，考查理解能力和应用',
+    icon: <BookOpen size={20} />,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-500',
+    darkBgColor: 'dark:bg-orange-900/20',
+    darkBorderColor: 'dark:border-orange-500',
   },
   {
     id: 'hard',
     label: '困难',
-    description: '深入分析和综合运用，挑战自我',
-    icon: <Frown size={20} />,
+    description: '综合分析题，考查深度理解和分析',
+    icon: <Mountain size={20} />,
     color: 'text-red-600',
     bgColor: 'bg-red-50',
     borderColor: 'border-red-500',
@@ -56,13 +56,13 @@ const difficultyOptions: DifficultyOption[] = [
   {
     id: 'mixed',
     label: '混合',
-    description: '自动分配不同难度的题目',
-    icon: <Shuffle size={20} />,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-500',
-    darkBgColor: 'dark:bg-indigo-900/20',
-    darkBorderColor: 'dark:border-indigo-500',
+    description: '综合各难度层次的题目',
+    icon: <Layers size={20} />,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-500',
+    darkBgColor: 'dark:bg-purple-900/20',
+    darkBorderColor: 'dark:border-purple-500',
   },
 ];
 
@@ -122,9 +122,9 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
                     </span>
                     {isSelected && (
                       <div className={`w-2 h-2 rounded-full ${
-                        option.id === 'easy' ? 'bg-emerald-500' :
-                        option.id === 'medium' ? 'bg-amber-500' :
-                        option.id === 'hard' ? 'bg-red-500' : 'bg-indigo-500'
+                        option.id === 'easy' ? 'bg-green-500' :
+                        option.id === 'medium' ? 'bg-orange-500' :
+                        option.id === 'hard' ? 'bg-red-500' : 'bg-purple-500'
                       }`} />
                     )}
                   </div>
@@ -141,9 +141,9 @@ export const DifficultySelector: React.FC<DifficultySelectorProps> = ({
               {isSelected && (
                 <div
                   className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center ${
-                    option.id === 'easy' ? 'bg-emerald-500' :
-                    option.id === 'medium' ? 'bg-amber-500' :
-                    option.id === 'hard' ? 'bg-red-500' : 'bg-indigo-500'
+                    option.id === 'easy' ? 'bg-green-500' :
+                    option.id === 'medium' ? 'bg-orange-500' :
+                    option.id === 'hard' ? 'bg-red-500' : 'bg-purple-500'
                   }`}
                 >
                   <svg

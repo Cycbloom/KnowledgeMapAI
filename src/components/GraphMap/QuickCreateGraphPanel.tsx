@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
+import { X, Loader2, Sparkles, ArrowRight, AlertCircle, Settings } from 'lucide-react';
 import type { GraphRelationType, QuickCreateGraphRequest } from '../../types';
 import { useTopicCheck } from '../../hooks/useTopicCheck';
+import { PromptConfigPanel } from '../PromptConfig';
 
 interface QuickCreateGraphPanelProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   const [relationType, setRelationType] = useState<GraphRelationType>(defaultRelationType);
   const [autoGenerate, setAutoGenerate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPromptConfig, setShowPromptConfig] = useState(false);
 
   const { isChecking, isDuplicate, similarGraphs, checkTopic, reset: resetTopicCheck } = useTopicCheck({ debounceMs: 500 });
 
@@ -100,12 +102,21 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               创建新图谱
             </h2>
-            <button
-              onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowPromptConfig(true)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
+                title="Prompt 配置管理"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="p-4 space-y-4">
@@ -228,6 +239,12 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
           </div>
         </motion.div>
       </motion.div>
+
+      <PromptConfigPanel
+        isOpen={showPromptConfig}
+        onClose={() => setShowPromptConfig(false)}
+        initialScenarioId="graph_creation"
+      />
     </AnimatePresence>
   );
 };

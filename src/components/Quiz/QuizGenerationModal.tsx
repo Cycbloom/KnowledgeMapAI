@@ -3,11 +3,12 @@ import {
   X,
   Sparkles,
   Loader2,
-  Settings2,
-  ChevronDown,
-  ChevronUp,
   BrainCircuit,
   AlertCircle,
+  PenLine,
+  Route,
+  Settings,
+  ArrowLeft,
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import {
@@ -15,11 +16,15 @@ import {
   useGenerateQuizMutation,
   useQuizGenerationProgress,
   useAIStatus,
+  useGraphLearningPath,
+  useUser,
 } from '../../hooks/queries';
 import { useMessageStore } from '../../store/useMessageStore';
+import { useStore } from '../../store/useStore';
 import { KnowledgePointSelector } from './KnowledgePointSelector';
 import { QuizTypeConfig } from './QuizTypeConfig';
 import { DifficultySelector } from './DifficultySelector';
+import { PromptConfigContent } from '../PromptConfig';
 import type { QuizSetConfig } from '@shared/types/quiz';
 
 interface QuizGenerationModalProps {
@@ -28,14 +33,6 @@ interface QuizGenerationModalProps {
   graphId?: string;
   onComplete: (quizSetId: string) => void;
 }
-
-const aiProviders = [
-  { id: 'openai', name: 'OpenAI', description: 'GPT-4 / GPT-3.5' },
-  { id: 'anthropic', name: 'Anthropic', description: 'Claude 系列' },
-  { id: 'aliyun', name: '阿里云', description: '通义千问' },
-  { id: 'volcengine', name: '火山引擎', description: '豆包大模型' },
-  { id: 'deepseek', name: 'DeepSeek', description: 'DeepSeek 系列' },
-];
 
 const defaultConfig: QuizSetConfig = {
   cardTypes: ['qa', 'choice', 'true_false'],
@@ -54,25 +51,34 @@ const defaultConfig: QuizSetConfig = {
 export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   open,
   onClose,
-  graphId,
+  graphId: initialGraphId,
   onComplete,
 }) => {
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
+  const { token } = useStore();
+  const { data: userData } = useUser(!!token);
 
+  const [selectedGraphId, setSelectedGraphId] = useState<string | null>(initialGraphId || null);
+  const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [config, setConfig] = useState<QuizSetConfig>(defaultConfig);
   const [selectedKnowledgePoints, setSelectedKnowledgePoints] = useState<string[]>([]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
-  const [aiProvider, setAiProvider] = useState('');
   const [taskId, setTaskId] = useState<string | null>(null);
   const [createdQuizSetId, setCreatedQuizSetId] = useState<string | null>(null);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [showPromptConfig, setShowPromptConfig] = useState(false);
+
+  const profile = (userData as any)?.user?.profile;
+  const settings = profile?.settings;
+  const promptConfigs = settings?.prompt_configs || {};
 
   const createMutation = useCreateQuizSetMutation();
   const generateMutation = useGenerateQuizMutation();
   const { data: aiStatus } = useAIStatus(open);
+  const { data: learningPath } = useGraphLearningPath(selectedGraphId || '');
 
   const { data: progress } = useQuizGenerationProgress(taskId, !!taskId);
 
@@ -95,16 +101,18 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   }, [title, config.cardTypes, selectedKnowledgePoints, totalQuestions]);
 
   const resetForm = useCallback(() => {
+    setSelectedGraphId(initialGraphId || null);
+    setSelectedPathId(null);
     setTitle('');
     setDescription('');
     setConfig(defaultConfig);
     setSelectedKnowledgePoints([]);
-    setShowAdvanced(false);
     setCustomPrompt('');
-    setAiProvider('');
     setTaskId(null);
     setCreatedQuizSetId(null);
-  }, []);
+    setIsGeneratingTitle(false);
+    setShowPromptConfig(false);
+  }, [initialGraphId]);
 
   const handleClose = useCallback(() => {
     if (isGenerating) {
@@ -122,6 +130,12 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   }, [open, resetForm]);
 
   useEffect(() => {
+    if (open && promptConfigs.quiz_generation) {
+      setCustomPrompt(promptConfigs.quiz_generation);
+    }
+  }, [open, promptConfigs.quiz_generation]);
+
+  useEffect(() => {
     if (progress?.status === 'completed' && createdQuizSetId) {
       addMessage({ type: 'success', content: '测验生成完成！' });
       onComplete(createdQuizSetId);
@@ -132,8 +146,22 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
     }
   }, [progress, createdQuizSetId, addMessage, onComplete, handleClose]);
 
+  const handleGraphChange = (graphId: string) => {
+    setSelectedGraphId(graphId || null);
+    setSelectedPathId(null);
+    setSelectedKnowledgePoints([]);
+  };
+
+  const handlePathSelect = (pathId: string) => {
+    setSelectedPathId(pathId);
+  };
+
   const handleConfigChange = (partialConfig: Partial<QuizSetConfig>) => {
     setConfig((prev) => ({ ...prev, ...partialConfig }));
+  };
+
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
   };
 
   const handleGenerate = async () => {
@@ -144,13 +172,12 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
         ...config,
         knowledgePointIds: selectedKnowledgePoints,
         customPrompt: customPrompt || undefined,
-        aiProvider: aiProvider || undefined,
       };
 
       const quizSet = await createMutation.mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
-        graph_id: graphId,
+        graph_id: selectedGraphId || undefined,
         config: fullConfig,
       });
 
@@ -159,7 +186,7 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       const result = await generateMutation.mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
-        graph_id: graphId,
+        graph_id: selectedGraphId || undefined,
         config: fullConfig,
       });
 
@@ -182,9 +209,9 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
       <div
-        className={`rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 ${
-          isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white'
-        }`}
+        className={`rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 ${
+          showPromptConfig ? 'max-w-5xl' : 'max-w-2xl'
+        } ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white'}`}
       >
         <div
           className={`p-6 border-b ${
@@ -193,164 +220,182 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
         >
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-xl ${
-                  isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-100 text-indigo-600'
-                }`}
-              >
-                <BrainCircuit size={24} />
-              </div>
+              {showPromptConfig ? (
+                <button
+                  onClick={() => setShowPromptConfig(false)}
+                  className={`p-2 rounded-xl transition-colors ${
+                    isDark
+                      ? 'bg-indigo-900/50 text-indigo-400 hover:bg-indigo-900/70'
+                      : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                  }`}
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              ) : (
+                <div
+                  className={`p-2 rounded-xl ${
+                    isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-100 text-indigo-600'
+                  }`}
+                >
+                  <BrainCircuit size={24} />
+                </div>
+              )}
               <div>
                 <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  创建测验
+                  {showPromptConfig ? 'Prompt 配置管理' : '创建测验'}
                 </h3>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  AI 自动生成测验题目
+                  {showPromptConfig ? '管理测验生成的提示词模板' : 'AI 自动生成测验题目'}
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleClose}
-              className={`p-2 rounded-full transition-colors ${
-                isDark
-                  ? 'text-slate-400 hover:bg-slate-800'
-                  : 'text-gray-400 hover:bg-gray-100'
-              }`}
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              {!showPromptConfig && (
+                <button
+                  onClick={() => setShowPromptConfig(true)}
+                  className={`p-2 rounded-full transition-colors ${
+                    isDark
+                      ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                      : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                  }`}
+                  title="Prompt 配置管理"
+                >
+                  <Settings size={18} />
+                </button>
+              )}
+              <button
+                onClick={handleClose}
+                className={`p-2 rounded-full transition-colors ${
+                  isDark
+                    ? 'text-slate-400 hover:bg-slate-800'
+                    : 'text-gray-400 hover:bg-gray-100'
+                }`}
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-          <div className="space-y-4">
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDark ? 'text-slate-300' : 'text-gray-700'
-                }`}
-              >
-                测验标题 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="例如：第一章基础概念测验"
-                disabled={isGenerating}
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-colors ${
-                  isDark
-                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
-                    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
-                } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-              />
-            </div>
-
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDark ? 'text-slate-300' : 'text-gray-700'
-                }`}
-              >
-                描述（可选）
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="测验的简要描述..."
-                disabled={isGenerating}
-                rows={2}
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm resize-none transition-colors ${
-                  isDark
-                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
-                    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
-                } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-              />
-            </div>
+        {showPromptConfig ? (
+          <div className={`flex-1 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <PromptConfigContent initialScenarioId="quiz_generation" />
           </div>
-
-          <div
-            className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
-          >
-            <KnowledgePointSelector
-              graphId={graphId}
-              selectedIds={selectedKnowledgePoints}
-              onChange={setSelectedKnowledgePoints}
-            />
-          </div>
-
-          <div
-            className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
-          >
-            <QuizTypeConfig config={config} onChange={handleConfigChange} />
-          </div>
-
-          <div
-            className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
-          >
-            <DifficultySelector
-              difficulty={config.difficulty}
-              onChange={(difficulty) => handleConfigChange({ difficulty })}
-            />
-          </div>
-
-          <div
-            className={`rounded-xl overflow-hidden ${
-              isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'
-            }`}
-          >
-            <button
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              disabled={isGenerating}
-              className={`w-full flex items-center justify-between p-4 text-left transition-colors ${
-                isGenerating ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Settings2
-                  size={18}
-                  className={isDark ? 'text-slate-400' : 'text-gray-500'}
-                />
-                <span
-                  className={`font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
+        ) : (
+          <>
+            <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+              {selectedGraphId && learningPath && learningPath.stages && learningPath.stages.length > 0 && (
+                <div
+                  className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
                 >
-                  高级配置
-                </span>
-              </div>
-              {showAdvanced ? (
-                <ChevronUp size={18} className={isDark ? 'text-slate-400' : 'text-gray-500'} />
-              ) : (
-                <ChevronDown size={18} className={isDark ? 'text-slate-400' : 'text-gray-500'} />
+                  <div className="flex items-center gap-2 mb-3">
+                    <Route size={18} className={isDark ? 'text-indigo-400' : 'text-indigo-600'} />
+                    <label
+                      className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
+                    >
+                      选择测验方向（学习路径）
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    {learningPath.stages.map((stage: any, index: number) => {
+                      const isSelected = selectedPathId === stage.id;
+                      const stageKnowledgePoints = stage.nodes?.map((n: any) => n.knowledge_point_id).filter(Boolean) || [];
+                      
+                      return (
+                        <button
+                          key={stage.id || index}
+                          onClick={() => {
+                            handlePathSelect(isSelected ? null : stage.id);
+                            if (!isSelected) {
+                              setSelectedKnowledgePoints(stageKnowledgePoints);
+                            } else {
+                              setSelectedKnowledgePoints([]);
+                            }
+                          }}
+                          disabled={isGenerating}
+                          className={`w-full p-3 rounded-lg border text-left transition-all ${
+                            isSelected
+                              ? isDark
+                                ? 'border-indigo-500 bg-indigo-900/30'
+                                : 'border-indigo-500 bg-indigo-50'
+                              : isDark
+                                ? 'border-slate-700 hover:border-slate-600'
+                                : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {stage.title || `阶段 ${index + 1}`}
+                              </span>
+                              <span className={`ml-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                                {stageKnowledgePoints.length} 个知识点
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <span className={`text-xs font-medium ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                                已选择
+                              </span>
+                            )}
+                          </div>
+                          {stage.description && (
+                            <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
+                              {stage.description}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-            </button>
 
-            {showAdvanced && (
-              <div className={`px-4 pb-4 space-y-4 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-                <div className="pt-4">
-                  <label
-                    className={`block text-sm font-medium mb-2 ${
-                      isDark ? 'text-slate-300' : 'text-gray-700'
-                    }`}
-                  >
-                    AI 提供者
-                  </label>
-                  <select
-                    value={aiProvider}
-                    onChange={(e) => setAiProvider(e.target.value)}
-                    disabled={isGenerating}
-                    className={`w-full px-4 py-2.5 rounded-xl border text-sm ${
-                      isDark
-                        ? 'bg-slate-800 border-slate-700 text-white'
-                        : 'bg-white border-gray-200 text-gray-900'
-                    } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <option value="">使用默认配置</option>
-                    {aiProviders.map((provider) => (
-                      <option key={provider.id} value={provider.id}>
-                        {provider.name} - {provider.description}
-                      </option>
-                    ))}
-                  </select>
+              <div
+                className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
+              >
+                <KnowledgePointSelector
+                  graphId={selectedGraphId || undefined}
+                  selectedIds={selectedKnowledgePoints}
+                  onChange={setSelectedKnowledgePoints}
+                  onGraphChange={handleGraphChange}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
+                    >
+                      测验标题 <span className="text-red-500">*</span>
+                    </label>
+                    {isGeneratingTitle && (
+                      <span className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                        <Loader2 size={12} className="animate-spin" />
+                        AI 生成中...
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => handleTitleChange(e.target.value)}
+                      placeholder="例如：第一章基础概念测验"
+                      disabled={isGenerating}
+                      className={`w-full px-4 py-2.5 pr-10 rounded-xl border text-sm transition-colors ${
+                        isDark
+                          ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                          : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
+                      } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    />
+                    <PenLine
+                      size={16}
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 ${
+                        isDark ? 'text-slate-500' : 'text-gray-400'
+                      }`}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -359,131 +404,146 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
                       isDark ? 'text-slate-300' : 'text-gray-700'
                     }`}
                   >
-                    自定义提示词
+                    描述（可选）
                   </label>
                   <textarea
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="添加自定义要求，例如：侧重于实际应用场景..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="测验的简要描述..."
                     disabled={isGenerating}
-                    rows={3}
-                    className={`w-full px-4 py-2.5 rounded-xl border text-sm resize-none ${
+                    rows={2}
+                    className={`w-full px-4 py-2.5 rounded-xl border text-sm resize-none transition-colors ${
                       isDark
-                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
+                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500'
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
                     } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
                 </div>
               </div>
-            )}
-          </div>
 
-          {aiStatus && !aiStatus.configured && (
-            <div
-              className={`flex items-center gap-3 p-4 rounded-xl ${
-                isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-700'
-              }`}
-            >
-              <AlertCircle size={20} />
-              <div>
-                <p className="font-medium">AI 未配置</p>
-                <p className="text-sm opacity-80">请在设置中配置 AI API Key 以使用测验生成功能</p>
-              </div>
-            </div>
-          )}
-
-          {isGenerating && progress && (
-            <div
-              className={`p-4 rounded-xl ${
-                isDark ? 'bg-indigo-900/30' : 'bg-indigo-50'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Loader2 size={18} className="animate-spin text-indigo-600" />
-                  <span className={`font-medium ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>
-                    正在生成测验...
-                  </span>
-                </div>
-                <span className={`text-sm font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
-                  {progressPercent}%
-                </span>
+              <div
+                className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
+              >
+                <QuizTypeConfig config={config} onChange={handleConfigChange} />
               </div>
 
-              <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-indigo-100'}`}>
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
+              <div
+                className={`p-4 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-white border border-gray-200'}`}
+              >
+                <DifficultySelector
+                  difficulty={config.difficulty}
+                  onChange={(difficulty) => handleConfigChange({ difficulty })}
                 />
               </div>
 
-              {progress.current && (
-                <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  正在处理：{progress.current}
-                </p>
+              {aiStatus && !aiStatus.enabled && (
+                <div
+                  className={`flex items-center gap-3 p-4 rounded-xl ${
+                    isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  <AlertCircle size={20} />
+                  <div>
+                    <p className="font-medium">AI 未配置</p>
+                    <p className="text-sm opacity-80">请在设置中配置 AI API Key 以使用测验生成功能</p>
+                  </div>
+                </div>
               )}
 
-              <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                已完成 {progress.completed} / {progress.total} 题
-              </p>
+              {isGenerating && progress && (
+                <div
+                  className={`p-4 rounded-xl ${
+                    isDark ? 'bg-indigo-900/30' : 'bg-indigo-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Loader2 size={18} className="animate-spin text-indigo-600" />
+                      <span className={`font-medium ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>
+                        正在生成测验...
+                      </span>
+                    </div>
+                    <span className={`text-sm font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                      {progressPercent}%
+                    </span>
+                  </div>
+
+                  <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-indigo-100'}`}>
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-300"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+
+                  {progress.current && (
+                    <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                      正在处理：{progress.current}
+                    </p>
+                  )}
+
+                  <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                    已完成 {progress.completed} / {progress.total} 题
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div
-          className={`p-4 border-t flex justify-between items-center ${
-            isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'
-          }`}
-        >
-          <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            {selectedKnowledgePoints.length > 0 ? (
-              <span>
-                已选择 <span className="font-bold text-indigo-600">{selectedKnowledgePoints.length}</span> 个知识点，
-                预计生成 <span className="font-bold text-indigo-600">{totalQuestions}</span> 道题目
-              </span>
-            ) : (
-              <span>请选择知识点</span>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={handleClose}
-              disabled={isGenerating}
-              className={`px-6 py-2.5 rounded-xl font-medium transition-colors ${
-                isDark
-                  ? 'text-slate-400 hover:bg-slate-800'
-                  : 'text-gray-600 hover:bg-gray-100'
-              } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              取消
-            </button>
-
-            <button
-              onClick={handleGenerate}
-              disabled={!canGenerate || isGenerating || (aiStatus && !aiStatus.configured)}
-              className={`flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all ${
-                canGenerate && !isGenerating && aiStatus?.configured
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]'
-                  : isDark
-                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            <div
+              className={`p-4 border-t flex justify-between items-center ${
+                isDark ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'
               }`}
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  生成中...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={18} />
-                  开始生成
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+              <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                {selectedKnowledgePoints.length > 0 ? (
+                  <span>
+                    已选择 <span className="font-bold text-indigo-600">{selectedKnowledgePoints.length}</span> 个知识点，
+                    预计生成 <span className="font-bold text-indigo-600">{totalQuestions}</span> 道题目
+                  </span>
+                ) : (
+                  <span>请选择知识点</span>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleClose}
+                  disabled={isGenerating}
+                  className={`px-6 py-2.5 rounded-xl font-medium transition-colors ${
+                    isDark
+                      ? 'text-slate-400 hover:bg-slate-800'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  取消
+                </button>
+
+                <button
+                  onClick={handleGenerate}
+                  disabled={!canGenerate || isGenerating || (aiStatus && !aiStatus.enabled)}
+                  className={`flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all ${
+                    canGenerate && !isGenerating && aiStatus?.enabled
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]'
+                      : isDark
+                        ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      生成中...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={18} />
+                      开始生成
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

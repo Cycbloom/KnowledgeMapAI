@@ -8,7 +8,7 @@ import { StudyCardPreview } from '../components/Study/StudyCardPreview';
 import { StudyCardDetailModal } from '../components/Study/StudyCardDetailModal';
 import { FocusStats } from '../components/Study/FocusStats';
 import { StatsOverview } from '../components/Statistics/StatsOverview';
-import { QuizList } from '../components/Quiz';
+import { QuizList, QuizGenerationModal } from '../components/Quiz';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Search, ArrowLeft, Play, LayoutGrid, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Activity, Flame, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
 import { useTheme } from '../hooks/useTheme';
@@ -83,6 +83,9 @@ export const Study = () => {
   const [dragDirection, setDragDirection] = useState<'left' | 'right' | null>(null);
   const [cardKey, setCardKey] = useState(0); // Force re-mount card on change
   const [cardRotation, setCardRotation] = useState(0); // 卡片旋转角度
+
+  // Quiz generation modal state
+  const [showQuizModal, setShowQuizModal] = useState(false);
 
   // Reset state when params change
   useLayoutEffect(() => {
@@ -388,7 +391,7 @@ export const Study = () => {
           ) : viewState === 'quizzes' ? (
             <QuizList
               onCreateQuiz={() => {
-                addMessage({ content: '测验创建功能开发中...', type: 'info' });
+                setShowQuizModal(true);
               }}
               onEditQuiz={(quiz) => {
                 navigate(`/quiz/${quiz.id}`);
@@ -801,6 +804,17 @@ export const Study = () => {
             setCurrentCardIndex(0);
             setFinished(false);
             setViewState('quiz');
+          }}
+        />
+
+        {/* Quiz Generation Modal */}
+        <QuizGenerationModal
+          open={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          graphId={graphId || undefined}
+          onComplete={(quizSetId) => {
+            setShowQuizModal(false);
+            navigate(`/quiz/${quizSetId}`);
           }}
         />
       </div>

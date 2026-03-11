@@ -8,6 +8,7 @@ interface KnowledgePointSelectorProps {
   graphId?: string;
   selectedIds: string[];
   onChange: (ids: string[]) => void;
+  onGraphChange?: (graphId: string) => void;
 }
 
 interface TreeNode {
@@ -38,6 +39,7 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
   graphId: initialGraphId,
   selectedIds,
   onChange,
+  onGraphChange,
 }) => {
   const { isDark } = useTheme();
   const [selectedGraphId, setSelectedGraphId] = useState<string>(initialGraphId || '');
@@ -293,15 +295,18 @@ export const KnowledgePointSelector: React.FC<KnowledgePointSelectorProps> = ({
         <select
           value={selectedGraphId}
           onChange={(e) => {
-            setSelectedGraphId(e.target.value);
+            const newGraphId = e.target.value;
+            setSelectedGraphId(newGraphId);
             onChange([]);
+            if (onGraphChange) {
+              onGraphChange(newGraphId);
+            }
           }}
-          disabled={!!initialGraphId}
           className={`w-full px-3 py-2 rounded-lg border text-sm ${
             isDark
               ? 'bg-slate-800 border-slate-700 text-white'
               : 'bg-white border-gray-200 text-gray-900'
-          } ${initialGraphId ? 'opacity-50 cursor-not-allowed' : ''}`}
+          }`}
         >
           <option value="">请选择图谱</option>
           {graphs?.map((graph: Graph) => (

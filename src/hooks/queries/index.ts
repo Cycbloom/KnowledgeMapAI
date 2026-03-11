@@ -5,3 +5,4 @@ export * from "./useUserQueries";
 export * from "./useTemplateQueries";
 export * from "./useTaskQueries";
 export * from "./useLearningPathQueries";
+export * from "./useQuizQueries";

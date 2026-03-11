@@ -113,6 +113,24 @@ COMMENT ON COLUMN edges.custom_color IS '自定义颜色，覆盖关系类型默
 COMMENT ON COLUMN edges.custom_line_style IS '线型：solid, dashed, dotted, double';
 COMMENT ON COLUMN edges.show_arrow IS '是否显示箭头，null表示根据关系类型自动判断';
 
+-- Quiz sets table (must be before study_cards due to foreign key)
+CREATE TABLE IF NOT EXISTS quiz_sets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  config JSONB DEFAULT '{}',
+  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'generating', 'ready')),
+  card_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE quiz_sets IS '测验集合，存储用户创建的测验';
+COMMENT ON COLUMN quiz_sets.config IS '测验生成配置：题型、难度、知识点范围等';
+COMMENT ON COLUMN quiz_sets.status IS '测验状态：draft(草稿), generating(生成中), ready(就绪)';
+
 -- Study cards table
 CREATE TABLE IF NOT EXISTS study_cards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -136,8 +154,21 @@ CREATE TABLE IF NOT EXISTS study_cards (
   fsrs_scheduled_days DOUBLE PRECISION DEFAULT 0,
   fsrs_retrievability DOUBLE PRECISION DEFAULT 0,
   fsrs_last_review TIMESTAMP WITH TIME ZONE,
+  quiz_set_id UUID REFERENCES quiz_sets(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Quiz set cards table (测验集合与卡片关联)
+CREATE TABLE IF NOT EXISTS quiz_set_cards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_set_id UUID NOT NULL REFERENCES quiz_sets(id) ON DELETE CASCADE,
+  card_id UUID NOT NULL REFERENCES study_cards(id) ON DELETE CASCADE,
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(quiz_set_id, card_id)
+);
+
+COMMENT ON TABLE quiz_set_cards IS '测验集合与学习卡片的关联表';
 
 -- Study progress table
 CREATE TABLE IF NOT EXISTS study_progress (
@@ -908,6 +939,18 @@ CREATE INDEX IF NOT EXISTS idx_study_cards_user_id ON study_cards(user_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_source_graph_id ON study_cards(source_graph_id);
 CREATE INDEX IF NOT EXISTS idx_study_cards_next_review_filtered ON study_cards(next_review) WHERE next_review IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_study_cards_user_review ON study_cards(user_id, next_review) WHERE next_review IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_study_cards_quiz_set_id ON study_cards(quiz_set_id) WHERE quiz_set_id IS NOT NULL;
+
+-- Quiz sets
+CREATE INDEX IF NOT EXISTS idx_quiz_sets_user_id ON quiz_sets(user_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_sets_graph_id ON quiz_sets(graph_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_sets_status ON quiz_sets(status);
+CREATE INDEX IF NOT EXISTS idx_quiz_sets_user_status ON quiz_sets(user_id, status);
+
+-- Quiz set cards
+CREATE INDEX IF NOT EXISTS idx_quiz_set_cards_quiz_set_id ON quiz_set_cards(quiz_set_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_set_cards_card_id ON quiz_set_cards(card_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_set_cards_order ON quiz_set_cards(quiz_set_id, display_order);
 
 -- Study progress
 CREATE INDEX IF NOT EXISTS idx_study_progress_user ON study_progress(user_id);
@@ -1151,6 +1194,25 @@ CREATE POLICY "Users can view own study cards" ON study_cards FOR SELECT USING (
 CREATE POLICY "Users can insert own study cards" ON study_cards FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own study cards" ON study_cards FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own study cards" ON study_cards FOR DELETE USING (auth.uid() = user_id);
+
+-- Quiz Sets
+ALTER TABLE quiz_sets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own quiz sets" ON quiz_sets FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own quiz sets" ON quiz_sets FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own quiz sets" ON quiz_sets FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own quiz sets" ON quiz_sets FOR DELETE USING (auth.uid() = user_id);
+
+-- Quiz Set Cards
+ALTER TABLE quiz_set_cards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own quiz set cards" ON quiz_set_cards FOR SELECT USING (
+  EXISTS (SELECT 1 FROM quiz_sets WHERE quiz_sets.id = quiz_set_cards.quiz_set_id AND quiz_sets.user_id = auth.uid())
+);
+CREATE POLICY "Users can insert own quiz set cards" ON quiz_set_cards FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM quiz_sets WHERE quiz_sets.id = quiz_set_cards.quiz_set_id AND quiz_sets.user_id = auth.uid())
+);
+CREATE POLICY "Users can delete own quiz set cards" ON quiz_set_cards FOR DELETE USING (
+  EXISTS (SELECT 1 FROM quiz_sets WHERE quiz_sets.id = quiz_set_cards.quiz_set_id AND quiz_sets.user_id = auth.uid())
+);
 
 -- Study Progress
 ALTER TABLE study_progress ENABLE ROW LEVEL SECURITY;
@@ -2186,6 +2248,10 @@ GRANT SELECT ON edges TO anon;
 GRANT ALL PRIVILEGES ON edges TO authenticated;
 GRANT SELECT ON study_cards TO anon;
 GRANT ALL PRIVILEGES ON study_cards TO authenticated;
+GRANT ALL PRIVILEGES ON quiz_sets TO authenticated;
+GRANT ALL PRIVILEGES ON quiz_set_cards TO authenticated;
+GRANT SELECT ON quiz_sets TO anon;
+GRANT SELECT ON quiz_set_cards TO anon;
 GRANT SELECT ON study_progress TO anon;
 GRANT ALL PRIVILEGES ON study_progress TO authenticated;
 GRANT SELECT ON templates TO anon;

@@ -678,3 +678,45 @@ export const updateTimeSlotSchema = z.object({
 export const timeSlotParamsSchema = z.object({
   id: z.string().uuid("无效的时间段ID"),
 });
+
+export const createQuizSetSchema = z.object({
+  title: z.string().min(1, "标题不能为空").max(200, "标题最多200个字符"),
+  description: z.string().optional(),
+  config: z.record(z.any()).optional(),
+  graph_id: z.string().uuid("无效的图谱ID").optional(),
+});
+
+export const updateQuizSetSchema = z.object({
+  title: z.string().min(1, "标题不能为空").max(200, "标题最多200个字符").optional(),
+  description: z.string().optional(),
+  config: z.record(z.any()).optional(),
+});
+
+export const generateQuizSchema = z.object({
+  quiz_set_id: z.string().uuid("无效的测验集合ID"),
+  node_ids: z.array(z.string().uuid("无效的知识点ID")).min(1, "至少选择一个知识点"),
+  config: z
+    .object({
+      types: z
+        .array(
+          z.enum([
+            "qa",
+            "choice",
+            "true_false",
+            "multi_choice",
+            "fill_in_the_blank",
+            "essay",
+          ])
+        )
+        .optional(),
+      count_per_node: z.number().min(1).max(20).optional(),
+      provider: z.enum(["deepseek", "volcengine", "aliyun"]).optional(),
+      model: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const regenerateCardSchema = z.object({
+  id: z.string().uuid("无效的测验集合ID"),
+  cardId: z.string().uuid("无效的卡片ID"),
+});

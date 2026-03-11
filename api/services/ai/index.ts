@@ -48,6 +48,8 @@ function generateRequestKey(
   return `${operation}:${sortedParams}`;
 }
 
+export type CardDifficulty = 'easy' | 'medium' | 'hard' | 'mixed';
+
 export interface GenerateCardsOptions {
   type?: string;
   types?: string[];
@@ -58,6 +60,7 @@ export interface GenerateCardsOptions {
   userId?: string;
   graphId?: string;
   pack_type?: string;
+  difficulty?: CardDifficulty;
 }
 
 export class AIService {
@@ -293,6 +296,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       topic: topic.slice(0, 100),
       types: types.sort(),
       count,
+      difficulty: options.difficulty || 'medium',
       model: options.model || provider.model,
     });
 
@@ -310,6 +314,33 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
         "For 'essay' type: Create complex questions requiring a long-form structured answer.",
     };
 
+    const difficultyPrompts: Record<string, string> = {
+      easy: `Difficulty Level: EASY
+- Focus on basic concept recognition and memory recall
+- Questions should directly test knowledge point definitions and basic facts
+- Use straightforward language without complex scenarios
+- For choice questions: distractors should be clearly distinguishable from the correct answer
+- For QA questions: answers should be brief and directly stated in the source material`,
+      medium: `Difficulty Level: MEDIUM
+- Focus on understanding and application of concepts
+- Questions should require comprehension, not just memorization
+- Include simple scenarios or examples to test understanding
+- For choice questions: distractors should be plausible but distinguishable with good understanding
+- For QA questions: answers may require synthesizing information from multiple parts`,
+      hard: `Difficulty Level: HARD
+- Focus on analysis, synthesis, and complex problem-solving
+- Questions should require deep understanding and connecting multiple concepts
+- Include complex scenarios, edge cases, or require multi-step reasoning
+- For choice questions: all options should be plausible, requiring careful analysis
+- For QA questions: answers should demonstrate comprehensive understanding with examples`,
+      mixed: `Difficulty Level: MIXED
+- Generate questions with varying difficulty levels (easy, medium, hard)
+- Distribute difficulty evenly across the generated cards
+- Include a mix of memory recall, understanding, and analytical questions`,
+    };
+
+    const difficulty = options.difficulty || 'medium';
+
     try {
       return await dedupedRequest(requestKey, async () => {
         const promptParts = await Promise.all(
@@ -318,7 +349,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
             const rendered = await promptService.getRenderedPrompt(
               supabaseAdmin,
               code,
-              { count: Math.ceil(count / types.length) },
+              { count: Math.ceil(count / types.length), difficulty },
               options.userId,
               options.graphId
             );
@@ -335,6 +366,8 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
           .filter((p) => p.length > 0)
           .join("\n\n---\n\n");
 
+        const difficultyInstruction = difficultyPrompts[difficulty] || difficultyPrompts.medium;
+
         if (!systemPrompt.trim()) {
           systemPrompt = await promptService.getRenderedPrompt(
             supabaseAdmin,
@@ -343,12 +376,17 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
               count,
               allowedTypes: types.join(", "),
               context: context ? `Parent/Context Info: ${context}` : "",
+              difficulty,
             },
             options.userId,
             options.graphId
           );
         } else {
-          systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.\n\nContext: ${
+          systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
+
+${difficultyInstruction}
+
+Context: ${
             context || "None"
           }\n\n${systemPrompt}`;
         }

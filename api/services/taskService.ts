@@ -8,6 +8,7 @@ import './taskProcessors/batchGenerateCardsProcessor.js';
 import './taskProcessors/recursiveGraphProcessor.js';
 import './taskProcessors/infiniteExpansionProcessor.js';
 import './taskProcessors/embeddingGenerationProcessor.js';
+import './taskProcessors/quizGenerationProcessor.js';
 import dotenv from 'dotenv';
 
 dotenv.config();

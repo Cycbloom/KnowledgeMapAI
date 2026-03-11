@@ -95,6 +95,12 @@ const LearningPathDetail = lazy(() =>
     default: module.default,
   })),
 );
+const QuizPreview = lazy(() =>
+  import("./pages/QuizPreview").then((module) => ({ default: module.QuizPreview })),
+);
+const QuizPractice = lazy(() =>
+  import("./pages/QuizPractice").then((module) => ({ default: module.QuizPractice })),
+);
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -151,6 +157,8 @@ function App() {
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="learning-paths" element={<LearningPaths />} />
             <Route path="learning-paths/:id" element={<LearningPathDetail />} />
+            <Route path="quiz/:quizSetId" element={<QuizPreview />} />
+            <Route path="quiz/:quizSetId/practice" element={<QuizPractice />} />
           </Route>
         </Routes>
       </Suspense>

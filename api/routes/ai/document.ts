@@ -9,7 +9,7 @@ import { textToGraphSchema, urlToTextSchema } from '../../schemas/index.js';
 import { ErrorCodes } from '../../constants/errorCodes.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers.js';
-import { CacheKeys, cacheService } from '../../services/cache.js';
+import { cacheService, CacheKeys } from '../../services/cacheService.js';
 import { aiService } from '../../services/aiService.js';
 import { getAIProviderForTask, getAIProvider } from '../../services/ai/factory.js';
 import { edgeService } from '../../services/edgeService.js';

@@ -41,7 +41,7 @@
 
 - [x] 架构优化建议提出完成
 - [x] 业务逻辑优化建议提出完成
-- [x] 性能优化建议提出完成
+- [x] 性能优化优化建议提出完成
 - [x] 用户体验优化建议提出完成
 
 ## 文档生成
@@ -49,3 +49,15 @@
 - [x] spec.md 文档编写完成
 - [x] tasks.md 文档编写完成
 - [x] checklist.md 文档编写完成
+
+- [x] 统一命名规范实施完成
+
+## 命名规范实施
+
+- [x] 删除冗余重导出文件 cache.ts 完成
+- [x] 删除冗余重导出文件 queue.ts 完成
+- [x] 删除冗余重导出文件 backupSync.ts 完成
+- [x] 更新所有导入路径 cache.js → cacheService.js 完成
+- [x] 更新所有导入路径 queue.js → queueService.js 完成
+- [x] 类型检查通过 (npm run check)
+- [x] 代码检查通过 (npm run lint)

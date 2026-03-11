@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { fsrs, Card, Rating, State, createEmptyCard } from 'ts-fsrs';
 import type { StudyCard } from '@/types';
-import { cacheService, CacheKeys } from './cache.js';
+import { cacheService, CacheKeys } from './cacheService.js';
 import { logger } from '../utils/logger.js';
 
 interface GetCardsOptions {

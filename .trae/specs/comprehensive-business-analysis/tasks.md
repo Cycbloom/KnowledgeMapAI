@@ -119,6 +119,34 @@
 - [x] Task 21: 编写 checklist.md 文档
   - [x] 检查点列表
 
+## 阶段八：实施优化 - 统一命名规范
+
+- [x] Task 22: 删除冗余的重导出文件
+  - [x] 删除 api/services/cache.ts
+  - [x] 删除 api/services/queue.ts
+  - [x] 删除 api/services/backupSync.ts
+
+- [x] Task 23: 更新导入路径
+  - [x] 更新 routes/templates.ts
+  - [x] 更新 routes/study.ts
+  - [x] 更新 routes/nodes.ts
+  - [x] 更新 routes/knowledgePoints.ts
+  - [x] 更新 routes/graphs.ts
+  - [x] 更新 routes/data.ts
+  - [x] 更新 routes/autoGraph.ts
+  - [x] 更新 routes/backup.ts
+  - [x] 更新 routes/ai/document.ts
+  - [x] 更新 services/ai/index.ts
+  - [x] 更新 services/graphService.ts
+  - [x] 更新 services/promptService.ts
+  - [x] 更新 services/studyService.ts
+  - [x] 更新 services/taskService.ts
+  - [x] 更新 jobs/taskProcessor.ts
+
+- [x] Task 24: 验证修改
+  - [x] 运行类型检查 (npm run check)
+  - [x] 运行代码检查 (npm run lint)
+
 ---
 
 # Task Dependencies
@@ -128,3 +156,6 @@
 - Task 13-14 依赖 Task 11-12
 - Task 15-18 依赖 Task 13-14
 - Task 19-21 依赖 Task 15-18
+- Task 22-24 依赖 Task 19-21
+
+- [x] 统一命名规范实施完成

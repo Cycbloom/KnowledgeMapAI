@@ -2,7 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createNodeSchema, updateNodeSchema, createEdgeSchema, uuidParamsSchema, batchDeleteNodesSchema, batchUpdatePositionsSchema } from '../schemas/index.js';
-import { cacheService } from '../services/cache.js';
+import { cacheService } from '../services/cacheService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { aiService } from '../services/aiService.js';

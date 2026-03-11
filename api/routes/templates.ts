@@ -4,7 +4,7 @@ import { validate } from '../middleware/validate.js';
 import { uuidParamsSchema, createGraphFromTemplateSchema } from '../schemas/index.js';
 import { graphTemplateService } from '../services/graphTemplateService.js';
 import { graphService } from '../services/graphService.js';
-import { cacheService } from '../services/cache.js';
+import { cacheService } from '../services/cacheService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { achievementService } from '../services/achievementService.js';
 import { z } from 'zod';

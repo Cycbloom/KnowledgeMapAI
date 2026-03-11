@@ -5,7 +5,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { getAIProviderForTask, getAIProvider } from '../services/ai/factory.js';
 import { promptService } from '../services/promptService.js';
-import { cacheService, CacheKeys } from '../services/cache.js';
+import { cacheService, CacheKeys } from '../services/cacheService.js';
 import { logger } from '../utils/logger.js';
 import { scrapeUrl } from '../utils/scraper.js';
 import { autoGraphService } from '../services/autoGraphService.js';

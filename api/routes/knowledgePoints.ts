@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
-import { cacheService, CacheKeys } from '../services/cache.js';
+import { cacheService, CacheKeys } from '../services/cacheService.js';
 import { aiService } from '../services/aiService.js';
 import { knowledgePointService } from '../services/knowledgePointService.js';
 import { graphNodeService } from '../services/graphNodeService.js';

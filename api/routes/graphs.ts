@@ -15,7 +15,7 @@ import { graphService } from "../services/graphService.js";
 import { ErrorCodes } from "../constants/errorCodes.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { achievementService } from "../services/achievementService.js";
-import { cacheService } from "../services/cache.js";
+import { cacheService } from "../services/cacheService.js";
 import { logger } from "../utils/logger.js";
 import { z } from "zod";
 

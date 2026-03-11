@@ -2,7 +2,7 @@ import { supabaseAdmin } from '../supabase.js';
 import { taskService, Task } from '../services/taskService.js';
 import { aiService } from '../services/aiService.js';
 import { getNextLevel } from '../utils/graphUtils.js';
-import { cacheService, CacheKeys } from '../services/cache.js';
+import { cacheService, CacheKeys } from '../services/cacheService.js';
 import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
 import { logger } from '../utils/logger.js';
 

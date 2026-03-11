@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { cacheService, CacheKeys } from "./cache.js";
+import { cacheService, CacheKeys } from "./cacheService.js";
 import {
   buildNodeFromGraphNode,
   GRAPH_NODES_SELECT,

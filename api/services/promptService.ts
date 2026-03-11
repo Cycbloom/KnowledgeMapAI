@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TemplateEngine } from '../utils/templateEngine.js';
-import { cacheService, CacheKeys } from './cache.js';
+import { cacheService, CacheKeys } from './cacheService.js';
 import { logger } from '../utils/logger.js';
 
 export type PromptScope = 'system' | 'user' | 'graph';

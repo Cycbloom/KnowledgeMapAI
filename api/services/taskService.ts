@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { taskQueue } from './queue.js';
+import { taskQueue } from './queueService.js';
 import { sseService } from './sseService.js';
 import { logger } from '../utils/logger.js';
 import { getProcessor } from './taskProcessors/index.js';

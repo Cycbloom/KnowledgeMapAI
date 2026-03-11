@@ -1,6 +1,6 @@
 import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { cacheService, CacheKeys } from '../services/cache.js';
+import { cacheService, CacheKeys } from '../services/cacheService.js';
 import { logger } from '../utils/logger.js';
 import { createBackup, readBackupFile, backupService } from '../services/backupService.js';
 import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';

@@ -1,7 +1,7 @@
 import { getAIProviderForTask, getAIProvider } from "../ai/factory.js";
 import type { AIProviderType } from "../ai/types.js";
 import { promptService } from "../promptService.js";
-import { cacheService, CacheKeys } from "../cache.js";
+import { cacheService, CacheKeys } from "../cacheService.js";
 import { supabaseAdmin } from "../../supabase.js";
 import { logger } from "../../utils/logger.js";
 import { parseAIResponse, buildTutorContext } from "./utils.js";

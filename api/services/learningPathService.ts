@@ -1522,6 +1522,129 @@ export class LearningPathService {
     return recommendations.slice(0, 10);
   }
 
+  async createLearningPathMainTask(
+    supabase: SupabaseClient,
+    pathId: string,
+    userId: string,
+    options?: {
+      scheduled_start?: string;
+      scheduled_end?: string;
+    },
+  ): Promise<string> {
+    const { data: path, error: pathError } = await supabase
+      .from("learning_paths")
+      .select("*")
+      .eq("id", pathId)
+      .eq("user_id", userId)
+      .single();
+
+    if (pathError || !path) {
+      throw new AppError("学习路径不存在", 404, ErrorCodes.NOT_FOUND);
+    }
+
+    const { count } = await supabase
+      .from("scheduled_tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("queue_level", 0)
+      .is("deleted_at", null);
+
+    const { data: nodes } = await supabase
+      .from("learning_path_nodes")
+      .select("estimated_time")
+      .eq("path_id", pathId);
+
+    const totalEstimatedTime =
+      nodes?.reduce((sum, n) => sum + (n.estimated_time || 0), 0) || 0;
+
+    const { data: task, error: taskError } = await supabase
+      .from("scheduled_tasks")
+      .insert({
+        user_id: userId,
+        title: `[学习路径] ${path.title}`,
+        description: path.description || path.goal || "学习路径任务",
+        queue_level: 0,
+        position: count ?? 0,
+        estimated_duration: totalEstimatedTime,
+        task_type: "learning",
+        status: "pending",
+        scheduled_start: options?.scheduled_start,
+        scheduled_end: options?.scheduled_end,
+        context: JSON.stringify({
+          type: "learning_path",
+          path_id: pathId,
+          path_title: path.title,
+        }),
+      })
+      .select("id")
+      .single();
+
+    if (taskError) {
+      logger.error("createLearningPathMainTask error:", taskError);
+      throw new AppError("创建主任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    return task.id;
+  }
+
+  async convertNodeToSubtask(
+    supabase: SupabaseClient,
+    parentTaskId: string,
+    nodeId: string,
+    userId: string,
+    position: number,
+  ): Promise<string> {
+    const { data: node, error: nodeError } = await supabase
+      .from("learning_path_nodes")
+      .select(
+        `
+        id,
+        path_id,
+        title,
+        description,
+        estimated_time,
+        knowledge_point_id,
+        order_index,
+        learning_paths!inner(user_id)
+      `,
+      )
+      .eq("id", nodeId)
+      .single();
+
+    if (nodeError || !node) {
+      throw new AppError("节点不存在", 404, ErrorCodes.NOT_FOUND);
+    }
+
+    const pathData = Array.isArray(node.learning_paths)
+      ? node.learning_paths[0]
+      : node.learning_paths;
+    if (!pathData || pathData.user_id !== userId) {
+      throw new AppError("无权访问此节点", 403, ErrorCodes.FORBIDDEN);
+    }
+
+    const { data: subtask, error: subtaskError } = await supabase
+      .from("task_subtasks")
+      .insert({
+        task_id: parentTaskId,
+        title: node.title,
+        description: node.description,
+        status: "pending",
+        priority: node.order_index,
+        position: position,
+        estimated_duration: node.estimated_time,
+        learning_path_node_id: node.id,
+      })
+      .select("id")
+      .single();
+
+    if (subtaskError) {
+      logger.error("convertNodeToSubtask error:", subtaskError);
+      throw new AppError("创建子任务失败", 500, ErrorCodes.INTERNAL_ERROR);
+    }
+
+    return subtask.id;
+  }
+
   async convertNodeToTask(
     supabase: SupabaseClient,
     nodeId: string,
@@ -1610,13 +1733,8 @@ export class LearningPathService {
       daily_minutes?: number;
     },
   ): Promise<{
-    scheduled_tasks: Array<{
-      task_id: string;
-      node_id: string;
-      scheduled_date: string;
-      scheduled_start: string;
-      scheduled_end: string;
-    }>;
+    main_task_id: string;
+    subtask_ids: string[];
     total_tasks: number;
     estimated_days: number;
   }> {
@@ -1635,7 +1753,7 @@ export class LearningPathService {
       .from("learning_path_nodes")
       .select("*")
       .eq("path_id", pathId)
-      .eq("status", "pending")
+      .in("status", ["pending", "in_progress"])
       .order("order_index", { ascending: true });
 
     if (nodesError) {
@@ -1645,11 +1763,41 @@ export class LearningPathService {
 
     if (!nodes || nodes.length === 0) {
       return {
-        scheduled_tasks: [],
+        main_task_id: "",
+        subtask_ids: [],
         total_tasks: 0,
         estimated_days: 0,
       };
     }
+
+    const dailyMinutes =
+      options?.daily_minutes ?? path.daily_minutes_target ?? 30;
+    const startDate = options?.start_date
+      ? new Date(options.start_date)
+      : new Date();
+    startDate.setHours(0, 0, 0, 0);
+
+    const knowledgePointToNodeMap = new Map<string, string>();
+    nodes.forEach((node) => {
+      if (node.knowledge_point_id) {
+        knowledgePointToNodeMap.set(node.knowledge_point_id, node.id);
+      }
+    });
+
+    const nodeDependencies = new Map<string, string[]>();
+    nodes.forEach((node) => {
+      if (node.prerequisites && node.prerequisites.length > 0) {
+        const nodePrereqs = node.prerequisites
+          .map((kpId: string) => knowledgePointToNodeMap.get(kpId))
+          .filter((id: string | undefined): id is string => !!id);
+        if (nodePrereqs.length > 0) {
+          nodeDependencies.set(node.id, nodePrereqs);
+        }
+      }
+    });
+
+    const completedNodes = new Set<string>();
+    const scheduledNodes = new Set<string>();
 
     const { data: timeSlots, error: slotsError } = await supabase
       .from("user_time_slots")
@@ -1662,31 +1810,6 @@ export class LearningPathService {
     if (slotsError) {
       logger.error("autoSchedulePath time slots error:", slotsError);
     }
-
-    const dailyMinutes =
-      options?.daily_minutes ?? path.daily_minutes_target ?? 30;
-    const startDate = options?.start_date
-      ? new Date(options.start_date)
-      : new Date();
-    startDate.setHours(0, 0, 0, 0);
-
-    const scheduledTasks: Array<{
-      task_id: string;
-      node_id: string;
-      scheduled_date: string;
-      scheduled_start: string;
-      scheduled_end: string;
-    }> = [];
-
-    const nodeDependencies = new Map<string, string[]>();
-    nodes.forEach((node) => {
-      if (node.prerequisites && node.prerequisites.length > 0) {
-        nodeDependencies.set(node.id, node.prerequisites);
-      }
-    });
-
-    const completedNodes = new Set<string>();
-    const scheduledNodes = new Set<string>();
 
     const getAvailableSlots = (
       date: Date,
@@ -1744,12 +1867,41 @@ export class LearningPathService {
     let currentSlotIndex = 0;
     let currentSlots = getAvailableSlots(currentDate);
     let estimatedDays = 1;
+    let finalScheduledEnd: Date | null = null;
 
-    const sortedNodes = [...nodes].sort((a, b) => {
-      const aHasDeps = (a.prerequisites?.length ?? 0) > 0 ? 1 : 0;
-      const bHasDeps = (b.prerequisites?.length ?? 0) > 0 ? 1 : 0;
-      return aHasDeps - bHasDeps;
-    });
+    const topologicalSort = (
+      nodesToSort: LearningPathNode[],
+    ): LearningPathNode[] => {
+      const result: LearningPathNode[] = [];
+      const visited = new Set<string>();
+      const visiting = new Set<string>();
+      const nodeMap = new Map(nodesToSort.map((n) => [n.id, n]));
+
+      const visit = (nodeId: string): boolean => {
+        if (visited.has(nodeId)) return true;
+        if (visiting.has(nodeId)) return false;
+
+        visiting.add(nodeId);
+        const node = nodeMap.get(nodeId);
+        if (node && node.prerequisites) {
+          for (const depId of node.prerequisites) {
+            if (!visit(depId)) return false;
+          }
+        }
+        visiting.delete(nodeId);
+        visited.add(nodeId);
+        if (node) result.push(node);
+        return true;
+      };
+
+      for (const node of nodesToSort) {
+        visit(node.id);
+      }
+
+      return result;
+    };
+
+    const sortedNodes = topologicalSort(nodes);
 
     for (const node of sortedNodes) {
       if (!canScheduleNode(node.id)) {
@@ -1826,29 +1978,42 @@ export class LearningPathService {
       }
 
       if (scheduledStart && scheduledEnd) {
-        const taskId = await this.convertNodeToTask(supabase, node.id, userId, {
-          queue_level: 0,
-          scheduled_start: scheduledStart.toISOString(),
-          scheduled_end: scheduledEnd.toISOString(),
-        });
-
-        const scheduledDate = scheduledStart.toISOString().split("T")[0];
-
-        scheduledTasks.push({
-          task_id: taskId,
-          node_id: node.id,
-          scheduled_date: scheduledDate,
-          scheduled_start: scheduledStart.toISOString(),
-          scheduled_end: scheduledEnd.toISOString(),
-        });
-
+        finalScheduledEnd = scheduledEnd;
         scheduledNodes.add(node.id);
       }
     }
 
+    const mainTaskId = await this.createLearningPathMainTask(
+      supabase,
+      pathId,
+      userId,
+      {
+        scheduled_start: startDate.toISOString(),
+        scheduled_end: finalScheduledEnd?.toISOString(),
+      },
+    );
+
+    const subtaskIds: string[] = [];
+    let position = 0;
+
+    for (const node of sortedNodes) {
+      if (scheduledNodes.has(node.id)) {
+        const subtaskId = await this.convertNodeToSubtask(
+          supabase,
+          mainTaskId,
+          node.id,
+          userId,
+          position,
+        );
+        subtaskIds.push(subtaskId);
+        position++;
+      }
+    }
+
     return {
-      scheduled_tasks: scheduledTasks,
-      total_tasks: scheduledTasks.length,
+      main_task_id: mainTaskId,
+      subtask_ids: subtaskIds,
+      total_tasks: subtaskIds.length,
       estimated_days: estimatedDays,
     };
   }

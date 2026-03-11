@@ -294,22 +294,21 @@ const LearningPathDetailPage: React.FC = () => {
   };
 
   const handleAutoSchedule = async () => {
-    if (!pathDetail) return;
+    if (!pathId || !pathDetail) return;
 
     setIsUpdating(true);
     try {
-      const pendingNodes = pathDetail.nodes.filter(
-        (n) => n.status === "pending" || n.status === "in_progress",
-      );
-
-      for (const node of pendingNodes) {
-        await handleConvertToTask(node);
-      }
+      const result = await learningPathsApi.autoSchedule(pathId, {
+        start_date: new Date().toISOString(),
+        daily_minutes: pathDetail.daily_minutes_target || 30,
+      });
 
       addMessage({
         type: "success",
-        content: `已为 ${pendingNodes.length} 个节点创建任务`,
+        content: `已创建主任务，包含 ${result.total_tasks} 个学习节点，预计 ${result.estimated_days} 天完成`,
       });
+
+      await fetchPathDetail();
     } catch (error) {
       handleError(error, {
         context: "AutoSchedule",

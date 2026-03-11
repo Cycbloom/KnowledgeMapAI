@@ -186,6 +186,25 @@ router.put(
       return res.status(404).json({ error: "子任务不存在" });
     }
 
+    if (subtask.learning_path_node_id && updates.status === "completed") {
+      try {
+        await supabase
+          .from("learning_path_nodes")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", subtask.learning_path_node_id);
+
+        logger.info(
+          `Synced subtask ${subtaskId} completion with learning path node ${subtask.learning_path_node_id}`,
+        );
+      } catch (syncError) {
+        logger.error("Failed to sync with learning path node:", syncError);
+      }
+    }
+
     res.json({ success: true, data: subtask });
   },
 );

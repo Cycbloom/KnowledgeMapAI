@@ -878,6 +878,11 @@ COMMENT ON COLUMN learning_plans.planned_nodes IS 'Array of learning_path_node I
 COMMENT ON COLUMN learning_plans.planned_duration IS 'Planned duration in minutes';
 COMMENT ON COLUMN learning_plans.actual_duration IS 'Actual duration spent in minutes';
 
+ALTER TABLE task_subtasks 
+ADD COLUMN IF NOT EXISTS learning_path_node_id UUID REFERENCES learning_path_nodes(id) ON DELETE SET NULL;
+
+COMMENT ON COLUMN task_subtasks.learning_path_node_id IS 'Associated learning path node ID';
+
 -- =====================================================
 -- INDEXES
 -- =====================================================
@@ -1015,6 +1020,7 @@ CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_id ON backup_snapshots(user
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_task_id ON task_subtasks(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_status ON task_subtasks(status);
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_position ON task_subtasks(task_id, position);
+CREATE INDEX IF NOT EXISTS idx_task_subtasks_learning_path_node ON task_subtasks(learning_path_node_id);
 
 -- Task links
 CREATE INDEX IF NOT EXISTS idx_task_links_task_id ON task_links(task_id);

@@ -1142,4 +1142,48 @@ function calculateWeeklyProgress(
   return weeklyProgress;
 }
 
+const autoScheduleSchema = z.object({
+  start_date: z.string().datetime().optional(),
+  daily_minutes: z.number().min(5).max(240).optional(),
+});
+
+router.post(
+  "/:id/auto-schedule",
+  requireAuth,
+  validate({ body: autoScheduleSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { start_date, daily_minutes } = req.body;
+    const supabase = req.supabase!;
+
+    try {
+      const result = await learningPathService.autoSchedulePath(
+        supabase,
+        id,
+        req.user.id,
+        {
+          start_date,
+          daily_minutes,
+        },
+      );
+
+      res.json({
+        success: true,
+        main_task_id: result.main_task_id,
+        subtask_ids: result.subtask_ids,
+        total_tasks: result.total_tasks,
+        estimated_days: result.estimated_days,
+      });
+    } catch (error: any) {
+      logger.error("Auto Schedule Error:", error);
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        error.message || "自动排程失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  },
+);
+
 export default router;

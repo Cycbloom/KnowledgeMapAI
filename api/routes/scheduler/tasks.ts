@@ -133,6 +133,39 @@ router.get(
       return res.status(500).json({ error: "获取任务列表失败" });
     }
 
+    if (tasks && tasks.length > 0) {
+      const taskIds = tasks.map((t) => t.id);
+      const { data: subtaskStats } = await supabase
+        .from("task_subtasks")
+        .select("task_id, status")
+        .in("task_id", taskIds);
+
+      const subtaskCounts = new Map<
+        string,
+        { total: number; completed: number }
+      >();
+      if (subtaskStats) {
+        for (const st of subtaskStats) {
+          const existing = subtaskCounts.get(st.task_id) || {
+            total: 0,
+            completed: 0,
+          };
+          existing.total++;
+          if (st.status === "completed") {
+            existing.completed++;
+          }
+          subtaskCounts.set(st.task_id, existing);
+        }
+      }
+
+      for (const task of tasks) {
+        const stats = subtaskCounts.get(task.id);
+        (task as any).subtask_count = stats?.total || 0;
+        (task as any).subtask_completed = stats?.completed || 0;
+        (task as any).has_subtasks = (stats?.total || 0) > 0;
+      }
+    }
+
     res.json({ success: true, data: tasks, total: count });
   },
 );
@@ -252,9 +285,18 @@ router.get(
       .order("started_at", { ascending: false })
       .limit(20);
 
+    const { data: subtasks } = await supabase
+      .from("task_subtasks")
+      .select("*")
+      .eq("task_id", id)
+      .order("position", { ascending: true });
+
     const requiredTimeSlots = task.estimated_duration
       ? Math.ceil(task.estimated_duration / 25)
       : undefined;
+
+    const subtaskCount = subtasks?.length || 0;
+    const subtaskCompleted = subtasks?.filter((s) => s.status === "completed").length || 0;
 
     const taskDetail = {
       ...task,
@@ -262,7 +304,11 @@ router.get(
       dependents: dependents || [],
       progress_plans: progressPlans || [],
       executions: executions || [],
+      subtasks: subtasks || [],
       required_time_slots: requiredTimeSlots,
+      subtask_count: subtaskCount,
+      subtask_completed: subtaskCompleted,
+      has_subtasks: subtaskCount > 0,
     };
 
     res.json({ success: true, data: taskDetail });
@@ -539,6 +585,39 @@ router.get("/queues", requireAuth, async (req: AuthRequest, res: Response) => {
 
   if (error) {
     return res.status(500).json({ error: "获取队列失败" });
+  }
+
+  if (tasks && tasks.length > 0) {
+    const taskIds = tasks.map((t) => t.id);
+    const { data: subtaskStats } = await supabase
+      .from("task_subtasks")
+      .select("task_id, status")
+      .in("task_id", taskIds);
+
+    const subtaskCounts = new Map<
+      string,
+      { total: number; completed: number }
+    >();
+    if (subtaskStats) {
+      for (const st of subtaskStats) {
+        const existing = subtaskCounts.get(st.task_id) || {
+          total: 0,
+          completed: 0,
+        };
+        existing.total++;
+        if (st.status === "completed") {
+          existing.completed++;
+        }
+        subtaskCounts.set(st.task_id, existing);
+      }
+    }
+
+    for (const task of tasks) {
+      const stats = subtaskCounts.get(task.id);
+      (task as any).subtask_count = stats?.total || 0;
+      (task as any).subtask_completed = stats?.completed || 0;
+      (task as any).has_subtasks = (stats?.total || 0) > 0;
+    }
   }
 
   const queues = {

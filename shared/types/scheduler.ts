@@ -45,6 +45,9 @@ export interface ScheduledTask {
   parent_task_id?: string;
   context?: string;
   dependencies?: TaskDependency[];
+  subtask_count?: number;
+  subtask_completed?: number;
+  has_subtasks?: boolean;
 }
 
 export interface Queue {
@@ -149,6 +152,7 @@ export interface TaskSubtask {
   actual_duration?: number;
   due_date?: string;
   completed_at?: string;
+  learning_path_node_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -194,6 +198,9 @@ export interface TaskDetail extends ScheduledTask {
   links?: TaskLink[];
   knowledge_points?: TaskKnowledgePoint[];
   notes?: string;
+  subtask_count: number;
+  subtask_completed: number;
+  has_subtasks: boolean;
 }
 
 export interface TaskSettings {

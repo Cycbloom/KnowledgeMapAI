@@ -1,5 +1,5 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -14,8 +14,15 @@ import {
   AlertCircle,
   Repeat,
   Info,
+  ChevronDown,
+  ChevronRight,
+  BookOpen,
+  Circle,
+  CheckCircle,
 } from "lucide-react";
-import { ScheduledTask } from "@shared/types";
+import { ScheduledTask, TaskSubtask } from "@shared/types";
+import { api } from "../../services/api";
+import { useMessageStore } from "../../store/useMessageStore";
 
 interface TaskCardProps {
   task: ScheduledTask;
@@ -25,6 +32,7 @@ interface TaskCardProps {
   onPause?: () => void;
   onComplete?: () => void;
   onViewDetail?: () => void;
+  onSubtaskUpdate?: () => void;
 }
 
 const QUEUE_COLORS = {
@@ -85,7 +93,7 @@ const STATUS_CONFIG = {
 const getTaskTypeBadge = (taskType?: string) => {
   if (!taskType || taskType === "one_time") return null;
 
-  const badges = {
+  const badges: Record<string, { label: string; icon?: React.ComponentType<{ size?: number | string }>; color: string }> = {
     long_term: {
       label: "长期",
       color:
@@ -98,19 +106,36 @@ const getTaskTypeBadge = (taskType?: string) => {
     },
     learning: {
       label: "学习",
+      icon: BookOpen,
       color:
         "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
     },
   };
 
-  const badge = badges[taskType as keyof typeof badges];
+  const badge = badges[taskType];
   if (!badge) return null;
 
+  const Icon = badge.icon;
+
   return (
-    <span className={`px-1.5 py-0.5 rounded text-xs ${badge.color}`}>
+    <span className={`px-1.5 py-0.5 rounded text-xs flex items-center gap-1 ${badge.color}`}>
+      {Icon && <Icon size={10} />}
       {badge.label}
     </span>
   );
+};
+
+const parseLearningPathContext = (context?: string): { pathId?: string; pathTitle?: string } => {
+  if (!context) return {};
+  try {
+    const parsed = JSON.parse(context);
+    if (parsed.type === "learning_path") {
+      return { pathId: parsed.path_id, pathTitle: parsed.path_title };
+    }
+  } catch {
+    // ignore
+  }
+  return {};
 };
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -121,7 +146,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onPause,
   onComplete,
   onViewDetail,
+  onSubtaskUpdate,
 }) => {
+  const { addMessage } = useMessageStore();
+  const [showSubtasks, setShowSubtasks] = useState(false);
+  const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
+  const [loadingSubtasks, setLoadingSubtasks] = useState(false);
+
   const queueStyle =
     QUEUE_COLORS[task.queue_level as keyof typeof QUEUE_COLORS] ||
     QUEUE_COLORS[0];
@@ -178,6 +209,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   };
 
   const deadlineInfo = formatDeadline(task.deadline);
+  const learningPathInfo = parseLearningPathContext(task.context);
 
   const hasActions =
     (task.status === "pending" && onStart) ||
@@ -188,6 +220,56 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       onComplete) ||
     onEdit ||
     onDelete;
+
+  const hasSubtasks = task.has_subtasks || (task.subtask_count && task.subtask_count > 0);
+  const subtaskProgress = hasSubtasks && task.subtask_count
+    ? Math.round(((task.subtask_completed || 0) / task.subtask_count) * 100)
+    : 0;
+
+  const loadSubtasks = async () => {
+    if (!hasSubtasks || subtasks.length > 0) return;
+    setLoadingSubtasks(true);
+    try {
+      const response = await api.scheduler.getSubtasks(task.id);
+      if (response.success) {
+        setSubtasks(response.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to load subtasks:", error);
+    } finally {
+      setLoadingSubtasks(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showSubtasks && hasSubtasks) {
+      loadSubtasks();
+    }
+  }, [showSubtasks, hasSubtasks]);
+
+  const handleToggleSubtask = async (subtask: TaskSubtask) => {
+    const newStatus = subtask.status === "completed" ? "pending" : "completed";
+    try {
+      const response = await api.scheduler.updateSubtask(task.id, subtask.id, {
+        status: newStatus,
+      });
+      if (response.success) {
+        setSubtasks(
+          subtasks.map((st) => (st.id === subtask.id ? response.data : st))
+        );
+        onSubtaskUpdate?.();
+        addMessage({
+          type: "success",
+          content: newStatus === "completed" ? "子任务已完成" : "子任务已重新开启",
+        });
+      }
+    } catch (error: any) {
+      addMessage({
+        type: "error",
+        content: error.message || "更新子任务失败",
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -253,6 +335,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </p>
         )}
 
+        {learningPathInfo.pathTitle && (
+          <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 mb-2">
+            <BookOpen size={12} />
+            <span className="truncate">{learningPathInfo.pathTitle}</span>
+          </div>
+        )}
+
         {task.task_type === "long_term" &&
           task.progress_percentage !== undefined && (
             <div className="mt-2 mb-2">
@@ -268,6 +357,108 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               </div>
             </div>
           )}
+
+        {hasSubtasks && (
+          <div className="mt-2 mb-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSubtasks(!showSubtasks);
+              }}
+              className="flex items-center justify-between w-full text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                {showSubtasks ? (
+                  <ChevronDown size={14} />
+                ) : (
+                  <ChevronRight size={14} />
+                )}
+                <span>子任务</span>
+                <span className="text-slate-500 dark:text-slate-500">
+                  {task.subtask_completed || 0}/{task.subtask_count} 完成
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-1 ml-3">
+                <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${subtaskProgress}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400">{subtaskProgress}%</span>
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {showSubtasks && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                    {loadingSubtasks ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-500" />
+                      </div>
+                    ) : subtasks.length > 0 ? (
+                      subtasks.slice(0, 5).map((subtask) => (
+                        <div
+                          key={subtask.id}
+                          className={`flex items-center gap-2 p-2 rounded-lg text-xs transition-colors ${
+                            subtask.status === "completed"
+                              ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+                              : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSubtask(subtask);
+                            }}
+                            className="flex-shrink-0 hover:scale-110 transition-transform"
+                          >
+                            {subtask.status === "completed" ? (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 hover:text-cyan-500" />
+                            )}
+                          </button>
+                          <span
+                            className={`flex-1 truncate ${
+                              subtask.status === "completed" ? "line-through" : ""
+                            }`}
+                          >
+                            {subtask.title}
+                          </span>
+                          {subtask.estimated_duration && (
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Clock size={10} />
+                              {subtask.estimated_duration}分钟
+                            </span>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-2 text-slate-400 text-xs">
+                        暂无子任务
+                      </div>
+                    )}
+                    {subtasks.length > 5 && (
+                      <div className="text-center py-1 text-slate-400 text-xs">
+                        还有 {subtasks.length - 5} 个子任务...
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
           {task.estimated_duration && (

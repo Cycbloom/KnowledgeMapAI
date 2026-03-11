@@ -12,6 +12,7 @@ export interface TaskSubtask {
   actual_duration?: number;
   due_date?: string;
   completed_at?: string;
+  learning_path_node_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +29,7 @@ export const subtasksApi = {
       priority?: number;
       estimated_duration?: number;
       due_date?: string;
+      learning_path_node_id?: string;
     },
   ) =>
     request(`/scheduler/tasks/${taskId}/subtasks`, {

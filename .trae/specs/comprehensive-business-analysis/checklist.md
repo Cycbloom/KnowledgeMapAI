@@ -61,3 +61,12 @@
 - [x] 更新所有导入路径 queue.js → queueService.js 完成
 - [x] 类型检查通过 (npm run check)
 - [x] 代码检查通过 (npm run lint)
+
+## 配置文件整理实施
+
+- [x] 删除冗余环境变量验证文件 env.ts 完成
+- [x] 更新 server.ts 使用 envValidator.ts 完成
+- [x] 更新 .env.example 补充缺失环境变量完成
+- [x] 更新 ENV_SCHEMA 补充缺失定义完成
+- [x] 类型检查通过 (npm run check)
+- [x] 代码检查通过 (npm run lint)

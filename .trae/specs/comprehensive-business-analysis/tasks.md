@@ -159,3 +159,25 @@
 - Task 22-24 依赖 Task 19-21
 
 - [x] 统一命名规范实施完成
+
+## 阶段九：实施优化 - 整理配置文件
+
+- [x] Task 25: 删除冗余的环境变量验证文件
+  - [x] 删除 api/utils/env.ts
+
+- [x] Task 26: 统一环境变量验证
+  - [x] 更新 server.ts 使用 envValidator.ts
+
+- [x] Task 27: 更新 .env.example
+  - [x] 补充缺失的环境变量
+  - [x] 添加注释说明
+
+- [x] Task 28: 更新 ENV_SCHEMA
+  - [x] 补充缺失的环境变量定义
+  - [x] 移除不再使用的环境变量
+
+- [x] Task 29: 验证修改
+  - [x] 运行类型检查 (npm run check)
+  - [x] 运行代码检查 (npm run lint)
+
+- [x] 整理配置文件实施完成

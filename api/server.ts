@@ -5,12 +5,12 @@ import app from './app.js';
 import './jobs/worker.js'; // Initialize BullMQ Worker
 import { taskWorker } from './jobs/worker.js';
 import { logger } from './utils/logger.js';
-import { validateEnv } from './utils/env.js';
+import { checkEnvOnStartup } from './utils/envValidator.js';
 
 /**
  * Validate Environment
  */
-validateEnv();
+checkEnvOnStartup();
 
 /**
  * start server with port

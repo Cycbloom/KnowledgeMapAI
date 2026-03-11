@@ -27,42 +27,20 @@ const ENV_SCHEMA: Record<string, EnvConfig> = {
     type: 'url',
     description: 'Frontend URL for CORS',
   },
-  DATABASE_URL: {
-    required: true,
-    type: 'string',
-    description: 'PostgreSQL connection string',
-  },
-  SUPABASE_URL: {
+  VITE_SUPABASE_URL: {
     required: true,
     type: 'url',
-    description: 'Supabase project URL',
-  },
-  SUPABASE_ANON_KEY: {
-    required: true,
-    type: 'string',
-    description: 'Supabase anonymous key',
+    description: 'Supabase project URL (used by frontend)',
   },
   SUPABASE_SERVICE_ROLE_KEY: {
     required: true,
     type: 'string',
     description: 'Supabase service role key',
   },
-  JWT_SECRET: {
-    required: true,
-    type: 'string',
-    validate: (v) => v.length >= 32,
-    description: 'JWT secret key (min 32 chars)',
-  },
   REDIS_URL: {
     required: false,
     type: 'url',
     description: 'Redis connection URL',
-  },
-  OPENAI_API_KEY: {
-    required: false,
-    type: 'string',
-    validate: (v) => v.startsWith('sk-'),
-    description: 'OpenAI API key',
   },
   DEEPSEEK_API_KEY: {
     required: false,
@@ -78,6 +56,27 @@ const ENV_SCHEMA: Record<string, EnvConfig> = {
     required: false,
     type: 'string',
     description: 'Volcengine API key',
+  },
+  TTS_SERVICE_URL: {
+    required: false,
+    type: 'url',
+    description: 'TTS service URL',
+  },
+  TEST_USER_EMAIL: {
+    required: false,
+    type: 'string',
+    description: 'Test user email for E2E testing',
+  },
+  TEST_USER_PASSWORD: {
+    required: false,
+    type: 'string',
+    description: 'Test user password for E2E testing',
+  },
+  DISABLE_RATE_LIMIT: {
+    required: false,
+    type: 'boolean',
+    default: false,
+    description: 'Disable rate limiting (for testing)',
   },
 };
 
@@ -135,7 +134,6 @@ export const validateEnv = (): ValidationResult => {
   }
 
   const hasApiKey = 
-    process.env.OPENAI_API_KEY ||
     process.env.DEEPSEEK_API_KEY ||
     process.env.ALIYUN_API_KEY ||
     process.env.VOLCENGINE_API_KEY;

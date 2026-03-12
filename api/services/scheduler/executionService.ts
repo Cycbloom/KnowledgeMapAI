@@ -3,6 +3,8 @@ import {
   getPaginationParams,
   PaginationOptions,
 } from "../../utils/pagination.js";
+import { AppError } from "../../middleware/errorHandler.js";
+import { ErrorCodes } from "../../constants/errorCodes.js";
 
 export interface TaskExecution {
   id: string;
@@ -33,7 +35,7 @@ export class ExecutionService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to create execution: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     return data as TaskExecution;
   }
 
@@ -49,8 +51,8 @@ export class ExecutionService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to update execution: ${error.message}`);
-    if (!data) throw new Error("Execution not found");
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
+    if (!data) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     return data as TaskExecution;
   }
 
@@ -82,7 +84,7 @@ export class ExecutionService {
     }
 
     const { data, error, count } = await query;
-    if (error) throw new Error(`Failed to fetch executions: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     return { executions: data as TaskExecution[], total: count || 0 };
   }
 }

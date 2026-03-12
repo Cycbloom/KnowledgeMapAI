@@ -13,6 +13,7 @@ import {
   isAppError,
   wrapUnknownError,
   ErrorCode,
+  SharedErrorCodes,
 } from "../../utils/errors";
 import { captureException } from "../../utils/errorReporter";
 
@@ -66,12 +67,14 @@ function getErrorTypeDisplay(code?: ErrorCode): {
   switch (code) {
     case "NETWORK_ERROR":
       return { label: "网络错误", color: "text-orange-500" };
-    case "AUTH_ERROR":
-    case "TOKEN_EXPIRED":
+    case SharedErrorCodes.AUTH_UNAUTHORIZED:
+    case SharedErrorCodes.AUTH_TOKEN_EXPIRED:
+    case SharedErrorCodes.AUTH_TOKEN_INVALID:
+    case SharedErrorCodes.AUTH_TOKEN_REVOKED:
       return { label: "认证错误", color: "text-yellow-500" };
-    case "VALIDATION_ERROR":
+    case SharedErrorCodes.VALIDATION_ERROR:
       return { label: "验证错误", color: "text-blue-500" };
-    case "SERVER_ERROR":
+    case SharedErrorCodes.SYSTEM_INTERNAL_ERROR:
       return { label: "服务器错误", color: "text-red-500" };
     default:
       return { label: "应用错误", color: "text-red-500" };

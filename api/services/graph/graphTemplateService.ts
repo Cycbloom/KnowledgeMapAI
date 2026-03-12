@@ -1,5 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 
 export interface GraphTemplateNode {
   id: string;
@@ -94,7 +96,7 @@ export class GraphTemplateService {
 
     if (error) {
       logger.error('Failed to fetch graph templates:', error);
-      throw new Error(`Failed to fetch templates: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return { templates: (data || []) as GraphTemplate[] };
@@ -112,7 +114,7 @@ export class GraphTemplateService {
 
     if (error && error.code !== 'PGRST116') {
       logger.error('Failed to fetch graph template:', error);
-      throw new Error(`Failed to fetch template: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return data as GraphTemplate | null;
@@ -140,7 +142,7 @@ export class GraphTemplateService {
 
     if (error) {
       logger.error('Failed to create graph template:', error);
-      throw new Error(`Failed to create template: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return data as GraphTemplate;
@@ -166,11 +168,11 @@ export class GraphTemplateService {
 
     if (error) {
       logger.error('Failed to update graph template:', error);
-      throw new Error(`Failed to update template: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     if (!data) {
-      throw new Error('Template not found or is system template');
+      throw new AppError(ErrorCodes.RESOURCE_TEMPLATE_NOT_FOUND);
     }
 
     return data as GraphTemplate;
@@ -190,7 +192,7 @@ export class GraphTemplateService {
 
     if (error) {
       logger.error('Failed to delete graph template:', error);
-      throw new Error(`Failed to delete template: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
   }
 }

@@ -3,6 +3,7 @@ import {
   AppError,
   TokenExpiredError,
   createErrorFromResponse,
+  SharedErrorCodes,
 } from '../../utils/errors';
 
 const API_URL = '/api';
@@ -106,7 +107,12 @@ export const request = async <T = any>(url: string, options: RequestInit = {}): 
     return await doRequest();
   } catch (error: unknown) {
     const isTokenExpired = error instanceof TokenExpiredError || 
-      (error instanceof AppError && (error.code === 'TOKEN_EXPIRED' || error.code === 'AUTH_ERROR'));
+      (error instanceof AppError && (
+        error.code === SharedErrorCodes.AUTH_TOKEN_EXPIRED ||
+        error.code === SharedErrorCodes.AUTH_TOKEN_INVALID ||
+        error.code === SharedErrorCodes.AUTH_UNAUTHORIZED ||
+        error.code === SharedErrorCodes.AUTH_TOKEN_REVOKED
+      ));
     
     if (isTokenExpired && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
       const { refreshToken } = useStore.getState();

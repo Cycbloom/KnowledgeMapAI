@@ -3,6 +3,8 @@ import { AIService } from './aiService.js';
 import { getAIProviderForTask } from './factory.js';
 import { logger } from '../../utils/logger.js';
 import { buildNodeContext, buildNodesContext, NodeData } from './utils.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 
 export interface RAGContext {
   graphId: string;
@@ -290,7 +292,9 @@ ${context || '(暂无相关上下文)'}`;
       };
     } catch (error: any) {
       logger.error('RAG Chat Error:', error);
-      throw new Error(error.message || 'RAG chat failed');
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: error.message || 'RAG chat failed',
+      });
     }
   }
 
@@ -418,7 +422,9 @@ ${context || '(暂无相关上下文)'}`;
       return sources.slice(0, 5);
     } catch (error: any) {
       logger.error('RAG Stream Chat Error:', error);
-      throw new Error(error.message || 'RAG stream chat failed');
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: error.message || 'RAG stream chat failed',
+      });
     }
   }
 

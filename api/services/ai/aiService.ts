@@ -19,6 +19,8 @@ import {
   RetryError,
   DEFAULT_TIMEOUT,
 } from "../../utils/retry.js";
+import { AppError } from "../../middleware/errorHandler.js";
+import { ErrorCodes } from "../../constants/errorCodes.js";
 
 const pendingRequests = new Map<string, Promise<unknown>>();
 
@@ -188,12 +190,16 @@ export class AIService {
       logger.error("AI Chat Error:", error);
       
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
-      throw new Error(err.message || "AI chat failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI chat failed",
+      });
     }
   }
 
@@ -264,12 +270,16 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       logger.error("Generate Podcast Script Error:", error);
       
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
-      throw new Error(err.message || "Failed to generate podcast script");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "Failed to generate podcast script",
+      });
     }
   }
 
@@ -430,12 +440,16 @@ Context: ${
       logger.error("AI Error:", error);
       
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
-      throw new Error(err.message || "AI card generation failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI card generation failed",
+      });
     }
   }
 
@@ -556,10 +570,12 @@ Context: ${
       logger.error("AI Error:", error);
 
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
 
       if (err.message?.includes("parse") || err.message?.includes("JSON")) {
@@ -569,7 +585,9 @@ Context: ${
         };
       }
 
-      throw new Error(err.message || "AI expansion failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI expansion failed",
+      });
     }
   }
 
@@ -660,7 +678,9 @@ Context: ${
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
-      throw new Error(err.message || "AI branch suggestions failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI branch suggestions failed",
+      });
     }
   }
 
@@ -729,7 +749,9 @@ Your task:
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Image-to-Graph Error:", error);
-      throw new Error(err.message || "Image processing failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "Image processing failed",
+      });
     }
   }
 
@@ -790,7 +812,9 @@ Your task:
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Learning Material Error:", error);
-      throw new Error(err.message || "AI generation failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI generation failed",
+      });
     }
   }
 
@@ -864,7 +888,9 @@ Your task:
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
-      throw new Error(err.message || "AI suggestion failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI suggestion failed",
+      });
     }
   }
 
@@ -944,12 +970,16 @@ Instructions:
       logger.error("AI Tutor Chat Error:", error);
       
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
-      throw new Error(err.message || "AI tutor chat failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI tutor chat failed",
+      });
     }
   }
 
@@ -1041,12 +1071,16 @@ Please respond in Chinese.`,
       logger.error("AI Error:", error);
       
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
-      throw new Error(err.message || "AI concept extraction failed");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI concept extraction failed",
+      });
     }
   }
 
@@ -1163,12 +1197,16 @@ Please respond in Chinese.`,
       logger.error("AI Cross Graph Connections Error:", error);
       
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
-      throw new Error(err.message || "AI 跨图谱连接分析失败");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI 跨图谱连接分析失败",
+      });
     }
   }
 
@@ -1269,12 +1307,16 @@ Please respond in Chinese.`,
       logger.error("AI Generate Task Details Error:", error);
       
       if (err instanceof TimeoutError) {
-        throw new Error("AI 请求超时，请稍后重试");
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
       if (err instanceof RetryError) {
-        throw new Error(`AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
       }
-      throw new Error(err.message || "AI 任务详情生成失败");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI 任务详情生成失败",
+      });
     }
   }
 }

@@ -1,5 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getPaginationParams, PaginationOptions } from '../../utils/pagination.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 
 export type ReviewType = 'daily' | 'task' | 'weekly';
 export type Mood = 'great' | 'good' | 'neutral' | 'tired' | 'stressed';
@@ -59,7 +61,13 @@ export class ReviewService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to create review: ${error.message}`);
+    if (error) {
+      throw new AppError(
+        `创建复习记录失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return review as TaskReview;
   }
 
@@ -77,8 +85,16 @@ export class ReviewService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to update review: ${error.message}`);
-    if (!review) throw new Error('Review not found');
+    if (error) {
+      throw new AppError(
+        `更新复习记录失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
+    if (!review) {
+      throw new AppError('复习记录不存在', 404, ErrorCodes.NOT_FOUND);
+    }
     return review as TaskReview;
   }
 
@@ -93,7 +109,13 @@ export class ReviewService {
       .eq('id', reviewId)
       .eq('user_id', userId);
 
-    if (error) throw new Error(`Failed to delete review: ${error.message}`);
+    if (error) {
+      throw new AppError(
+        `删除复习记录失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
   }
 
   async getReview(
@@ -109,7 +131,11 @@ export class ReviewService {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      throw new Error(`Failed to fetch review: ${error.message}`);
+      throw new AppError(
+        `获取复习记录失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
     }
     return data as TaskReview | null;
   }
@@ -145,7 +171,13 @@ export class ReviewService {
     }
 
     const { data, error, count } = await query;
-    if (error) throw new Error(`Failed to fetch reviews: ${error.message}`);
+    if (error) {
+      throw new AppError(
+        `获取复习记录列表失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return { reviews: data as TaskReview[], total: count || 0 };
   }
 
@@ -167,7 +199,13 @@ export class ReviewService {
       .lte('created_at', endDate)
       .maybeSingle();
 
-    if (error) throw new Error(`Failed to fetch daily review: ${error.message}`);
+    if (error) {
+      throw new AppError(
+        `获取每日复习记录失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return data as TaskReview | null;
   }
 
@@ -188,7 +226,13 @@ export class ReviewService {
       .lte('created_at', `${weekEnd}T23:59:59.999Z`)
       .maybeSingle();
 
-    if (error) throw new Error(`Failed to fetch weekly review: ${error.message}`);
+    if (error) {
+      throw new AppError(
+        `获取每周复习记录失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return data as TaskReview | null;
   }
 
@@ -205,7 +249,13 @@ export class ReviewService {
       .eq('review_type', 'task')
       .maybeSingle();
 
-    if (error) throw new Error(`Failed to fetch task review: ${error.message}`);
+    if (error) {
+      throw new AppError(
+        `获取任务复习记录失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return data as TaskReview | null;
   }
 
@@ -239,7 +289,13 @@ export class ReviewService {
       .eq('user_id', userId)
       .gte('created_at', startDate.toISOString());
 
-    if (error) throw new Error(`Failed to fetch review stats: ${error.message}`);
+    if (error) {
+      throw new AppError(
+        `获取复习统计失败: ${error.message}`,
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
 
     const byType: Record<ReviewType, number> = { daily: 0, task: 0, weekly: 0 };
     const byMood: Record<Mood, number> = { great: 0, good: 0, neutral: 0, tired: 0, stressed: 0 };

@@ -1,4 +1,6 @@
 import { supabaseAdmin } from '../../supabase.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 
 export interface PeriodicTask {
   id: string;
@@ -204,7 +206,7 @@ export class PeriodicTaskService {
       .order('period_type')
       .order('task_type');
 
-    if (error) throw error;
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     return data || [];
   }
 

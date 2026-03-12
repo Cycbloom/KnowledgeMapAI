@@ -13,6 +13,7 @@ import { graphTemplateService, graphService } from "../services/graph/index.js";
 import { cacheService } from "../services/common/cacheService.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { achievementService } from "../services/achievementService.js";
+import { ErrorCodes } from "../constants/errorCodes.js";
 import { z } from "zod";
 
 const createTemplateSchema = z.object({
@@ -49,7 +50,7 @@ router.get(
     const { id } = req.params;
     const data = await graphTemplateService.getTemplate(req.supabase!, id);
     if (!data) {
-      throw new AppError("未找到该模板", 404, "TEMPLATE_NOT_FOUND");
+      throw new AppError("未找到该模板", 404, ErrorCodes.RESOURCE_TEMPLATE_NOT_FOUND);
     }
     res.json(data);
   },
@@ -111,7 +112,7 @@ router.post(
       template_id,
     );
     if (!template) {
-      throw new AppError("模板不存在", 404, "TEMPLATE_NOT_FOUND");
+      throw new AppError("模板不存在", 404, ErrorCodes.RESOURCE_TEMPLATE_NOT_FOUND);
     }
 
     const graph = await graphService.createGraph(

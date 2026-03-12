@@ -3,6 +3,8 @@ import type { GraphNode, GraphNodeWithKnowledgePoint, NodeLevel } from '@/types'
 import { buildNodeFromGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers.js';
 import { softDelete, softDeleteBatch } from '../../utils/softDelete.js';
 import { logger } from '../../utils/logger.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 
 interface AddToGraphData {
   graph_id: string;
@@ -38,7 +40,7 @@ export class GraphNodeService {
 
     if (error) {
       if (error.code === '23505') {
-        throw new Error('该知识点已存在于当前图谱中');
+        throw new AppError(ErrorCodes.DUPLICATE_TOPIC);
       }
       throw error;
     }
@@ -67,7 +69,7 @@ export class GraphNodeService {
 
     const result = await softDelete(supabase, 'graph_nodes', graphNodeId);
     if (!result.success) {
-      throw new Error(result.error || '删除节点失败');
+      throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
   }
 
@@ -211,7 +213,7 @@ export class GraphNodeService {
 
     const result = await softDeleteBatch(supabase, 'graph_nodes', graphNodeIds);
     if (!result.success) {
-      throw new Error(result.error || '批量删除节点失败');
+      throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     return graphNodeIds.length;

@@ -1,15 +1,23 @@
-export type ErrorCode =
+import {
+  ErrorCodes as SharedErrorCodes,
+  ErrorCode as SharedErrorCode,
+  ErrorCodeMessages as SharedErrorCodeMessages,
+} from '../../shared/types/errorCodes';
+
+export { SharedErrorCodes, SharedErrorCode, SharedErrorCodeMessages };
+
+export type FrontendErrorCode =
   | 'NETWORK_ERROR'
-  | 'AUTH_ERROR'
-  | 'TOKEN_EXPIRED'
-  | 'FORBIDDEN'
-  | 'NOT_FOUND'
-  | 'VALIDATION_ERROR'
-  | 'SERVER_ERROR'
-  | 'TIMEOUT_ERROR'
-  | 'RATE_LIMIT_ERROR'
   | 'CANCELLED_ERROR'
   | 'UNKNOWN_ERROR';
+
+export type ErrorCode = SharedErrorCode | FrontendErrorCode;
+
+export const FrontendErrorCodes = {
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  CANCELLED_ERROR: 'CANCELLED_ERROR',
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+} as const;
 
 export interface ErrorContext {
   [key: string]: unknown;
@@ -73,28 +81,28 @@ export class NetworkError extends AppError {
 
 export class AuthError extends AppError {
   constructor(message: string = '认证失败，请重新登录', context?: ErrorContext) {
-    super(message, 'AUTH_ERROR', 401, context);
+    super(message, SharedErrorCodes.AUTH_UNAUTHORIZED, 401, context);
     this.name = 'AuthError';
   }
 }
 
 export class TokenExpiredError extends AppError {
   constructor(message: string = '登录已过期，请重新登录', context?: ErrorContext) {
-    super(message, 'TOKEN_EXPIRED', 401, context);
+    super(message, SharedErrorCodes.AUTH_TOKEN_EXPIRED, 401, context);
     this.name = 'TokenExpiredError';
   }
 }
 
 export class ForbiddenError extends AppError {
   constructor(message: string = '没有权限执行此操作', context?: ErrorContext) {
-    super(message, 'FORBIDDEN', 403, context);
+    super(message, SharedErrorCodes.AUTH_FORBIDDEN, 403, context);
     this.name = 'ForbiddenError';
   }
 }
 
 export class NotFoundError extends AppError {
   constructor(message: string = '请求的资源不存在', context?: ErrorContext) {
-    super(message, 'NOT_FOUND', 404, context);
+    super(message, SharedErrorCodes.RESOURCE_NOT_FOUND, 404, context);
     this.name = 'NotFoundError';
   }
 }
@@ -107,7 +115,7 @@ export class ValidationError extends AppError {
     details?: Array<{ field: string; message: string }>,
     context?: ErrorContext
   ) {
-    super(message, 'VALIDATION_ERROR', 400, context);
+    super(message, SharedErrorCodes.VALIDATION_ERROR, 400, context);
     this.name = 'ValidationError';
     this.details = details;
   }
@@ -122,14 +130,14 @@ export class ValidationError extends AppError {
 
 export class ServerError extends AppError {
   constructor(message: string = '服务器错误，请稍后重试', context?: ErrorContext) {
-    super(message, 'SERVER_ERROR', 500, context);
+    super(message, SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500, context);
     this.name = 'ServerError';
   }
 }
 
 export class TimeoutError extends AppError {
   constructor(message: string = '请求超时，请稍后重试', context?: ErrorContext) {
-    super(message, 'TIMEOUT_ERROR', 408, context);
+    super(message, SharedErrorCodes.AI_TIMEOUT, 408, context);
     this.name = 'TimeoutError';
   }
 }
@@ -138,7 +146,7 @@ export class RateLimitError extends AppError {
   public readonly retryAfter?: number;
 
   constructor(message: string = '请求过于频繁，请稍后重试', retryAfter?: number, context?: ErrorContext) {
-    super(message, 'RATE_LIMIT_ERROR', 429, context);
+    super(message, SharedErrorCodes.AI_RATE_LIMIT_EXCEEDED, 429, context);
     this.name = 'RateLimitError';
     this.retryAfter = retryAfter;
   }
@@ -167,11 +175,39 @@ export function isNetworkError(error: unknown): error is NetworkError {
 }
 
 export function isAuthError(error: unknown): error is AuthError | TokenExpiredError {
-  return error instanceof AuthError || error instanceof TokenExpiredError;
+  if (error instanceof AuthError || error instanceof TokenExpiredError) {
+    return true;
+  }
+  if (isAppError(error)) {
+    const authCodes: readonly SharedErrorCode[] = [
+      SharedErrorCodes.AUTH_UNAUTHORIZED,
+      SharedErrorCodes.AUTH_TOKEN_EXPIRED,
+      SharedErrorCodes.AUTH_TOKEN_INVALID,
+      SharedErrorCodes.AUTH_TOKEN_REVOKED,
+      SharedErrorCodes.AUTH_HEADER_MISSING,
+      SharedErrorCodes.AUTH_TOKEN_MISSING,
+      SharedErrorCodes.AUTH_FORBIDDEN,
+    ];
+    return authCodes.includes(error.code as SharedErrorCode);
+  }
+  return false;
 }
 
 export function isValidationError(error: unknown): error is ValidationError {
-  return error instanceof ValidationError;
+  if (error instanceof ValidationError) {
+    return true;
+  }
+  if (isAppError(error)) {
+    const validationCodes: readonly SharedErrorCode[] = [
+      SharedErrorCodes.VALIDATION_ERROR,
+      SharedErrorCodes.VALIDATION_INVALID_JSON,
+      SharedErrorCodes.VALIDATION_INVALID_PARAMS,
+      SharedErrorCodes.VALIDATION_MISSING_FIELD,
+      SharedErrorCodes.VALIDATION_INVALID_FORMAT,
+    ];
+    return validationCodes.includes(error.code as SharedErrorCode);
+  }
+  return false;
 }
 
 export function getErrorMessage(error: unknown): string {
@@ -194,18 +230,15 @@ export function getErrorCode(error: unknown): ErrorCode {
   return 'UNKNOWN_ERROR';
 }
 
-export const USER_FRIENDLY_MESSAGES: Record<ErrorCode, string> = {
+export const FrontendErrorCodeMessages: Record<FrontendErrorCode, string> = {
   NETWORK_ERROR: '网络连接失败，请检查网络设置',
-  AUTH_ERROR: '认证失败，请重新登录',
-  TOKEN_EXPIRED: '登录已过期，请重新登录',
-  FORBIDDEN: '没有权限执行此操作',
-  NOT_FOUND: '请求的资源不存在',
-  VALIDATION_ERROR: '输入数据格式不正确',
-  SERVER_ERROR: '服务器错误，请稍后重试',
-  TIMEOUT_ERROR: '请求超时，请稍后重试',
-  RATE_LIMIT_ERROR: '请求过于频繁，请稍后重试',
   CANCELLED_ERROR: '请求已取消',
   UNKNOWN_ERROR: '操作失败，请稍后重试',
+};
+
+export const USER_FRIENDLY_MESSAGES: Record<ErrorCode, string> = {
+  ...SharedErrorCodeMessages,
+  ...FrontendErrorCodeMessages,
 };
 
 export function getUserFriendlyMessage(error: unknown): string {
@@ -331,7 +364,12 @@ export function handleApiError(
   let shouldRedirect = false;
   let redirectPath: string | undefined;
 
-  if (appError.code === 'AUTH_ERROR' || appError.code === 'TOKEN_EXPIRED') {
+  if (
+    appError.code === SharedErrorCodes.AUTH_UNAUTHORIZED ||
+    appError.code === SharedErrorCodes.AUTH_TOKEN_EXPIRED ||
+    appError.code === SharedErrorCodes.AUTH_TOKEN_INVALID ||
+    appError.code === SharedErrorCodes.AUTH_TOKEN_REVOKED
+  ) {
     shouldRedirect = true;
     redirectPath = '/login';
     onAuthError?.();

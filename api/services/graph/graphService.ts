@@ -380,7 +380,7 @@ export class GraphService {
   async deleteGraph(supabase: SupabaseClient, graphId: string, userId: string) {
     const result = await softDelete(supabase, "knowledge_graphs", graphId);
     if (!result.success) {
-      throw new Error(result.error || "删除图谱失败");
+      throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
@@ -682,7 +682,7 @@ export class GraphService {
     }
 
     if (!graphs || graphs.length !== graphIds.length) {
-      throw new Error("Some graphs not found or unauthorized");
+      throw new AppError(ErrorCodes.RESOURCE_GRAPH_NOT_FOUND);
     }
 
     const { data: graphNodes, error: nodesError } = await supabase

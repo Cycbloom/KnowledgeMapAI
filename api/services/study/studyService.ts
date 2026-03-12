@@ -3,6 +3,8 @@ import { fsrs, Card, Rating, State, createEmptyCard } from "ts-fsrs";
 import type { StudyCard } from "@/types";
 import { cacheService, CacheKeys } from "../common/cacheService.js";
 import { logger } from "../../utils/logger.js";
+import { AppError } from "../../middleware/errorHandler.js";
+import { ErrorCodes } from "../../constants/errorCodes.js";
 
 interface GetCardsOptions {
   userId: string;
@@ -250,7 +252,11 @@ export class StudyService {
 
     if (fetchError || !card) {
       logger.error("Error fetching card:", fetchError);
-      throw fetchError || new Error("Card not found");
+      throw new AppError(
+        "卡片不存在",
+        404,
+        ErrorCodes.RESOURCE_CARD_NOT_FOUND
+      );
     }
 
     const fsrsCard = dbCardToFSRS(card as StudyCard);
@@ -258,7 +264,17 @@ export class StudyService {
     const rating = mapQualityToRating(quality);
 
     const f = await getFSRS(userId, supabase);
-    const scheduling_cards = f.repeat(fsrsCard, now);
+    let scheduling_cards;
+    try {
+      scheduling_cards = f.repeat(fsrsCard, now);
+    } catch (fsrsError) {
+      logger.error("FSRS algorithm error:", fsrsError);
+      throw new AppError(
+        "学习算法计算错误",
+        500,
+        ErrorCodes.LEARNING_FSRS_ERROR
+      );
+    }
     const scheduledCard = (
       scheduling_cards as unknown as Record<Rating, { card: Card }>
     )[rating].card;

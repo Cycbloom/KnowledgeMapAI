@@ -1,4 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 
 export interface StudyProgress {
   id: string;
@@ -31,7 +33,13 @@ export class StudyProgressService {
       .eq('graph_id', graphId)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error && error.code !== 'PGRST116') {
+      throw new AppError(
+        '学习进度获取失败',
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return data;
   }
 
@@ -55,7 +63,13 @@ export class StudyProgressService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw new AppError(
+        '学习进度更新失败',
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return progress;
   }
 
@@ -70,7 +84,13 @@ export class StudyProgressService {
       .eq('graph_id', graphId)
       .is('deleted_at', null);
 
-    if (gnError) throw gnError;
+    if (gnError) {
+      throw new AppError(
+        '学习进度重算失败',
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
 
     const totalNodes = graphNodes?.length || 0;
 
@@ -91,7 +111,13 @@ export class StudyProgressService {
       .eq('graph_id', graphId)
       .in('knowledge_point_id', knowledgePointIds);
 
-    if (cardsError) throw cardsError;
+    if (cardsError) {
+      throw new AppError(
+        '学习进度重算失败',
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
 
     const masteredKnowledgePoints = new Set(
       cards
@@ -118,7 +144,13 @@ export class StudyProgressService {
       .select('*')
       .eq('user_id', userId);
 
-    if (error) throw error;
+    if (error) {
+      throw new AppError(
+        '学习进度获取失败',
+        500,
+        ErrorCodes.LEARNING_PROGRESS_ERROR
+      );
+    }
     return data || [];
   }
 

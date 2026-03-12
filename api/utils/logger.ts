@@ -5,6 +5,28 @@ export enum LogLevel {
   DEBUG = 'debug',
 }
 
+export interface StructuredLogData {
+  timestamp?: string;
+  level: LogLevel;
+  message: string;
+  code?: string;
+  requestId?: string;
+  userId?: string;
+  path?: string;
+  method?: string;
+  statusCode?: number;
+  duration?: number;
+  context?: Record<string, unknown>;
+  stack?: string;
+}
+
+export interface RequestContext {
+  requestId?: string;
+  userId?: string;
+  path?: string;
+  method?: string;
+}
+
 const COLORS = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
@@ -142,6 +164,16 @@ export class Logger {
   }
 
   request(method: string, path: string, status: number, duration: number) {
+    if (this.isProduction) {
+      this.logStructured(LogLevel.INFO, 'Request completed', {
+        method,
+        path,
+        statusCode: status,
+        duration,
+      });
+      return;
+    }
+
     const statusColor = status >= 400 ? COLORS.red : status >= 300 ? COLORS.yellow : COLORS.green;
     const methodColor = method === 'GET' ? COLORS.green : method === 'POST' ? COLORS.blue : method === 'DELETE' ? COLORS.red : COLORS.yellow;
     
@@ -152,6 +184,60 @@ export class Logger {
       `${statusColor}${status}${COLORS.reset} ` +
       `${COLORS.dim}${duration}ms${COLORS.reset}`
     );
+  }
+
+  logStructured(level: LogLevel, message: string, data?: Partial<Omit<StructuredLogData, 'timestamp' | 'level' | 'message'>>) {
+    const logData: StructuredLogData = {
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      ...data,
+    };
+
+    if (this.isProduction) {
+      console.log(JSON.stringify(logData));
+      return;
+    }
+
+    this[level](message, data);
+  }
+
+  errorWithRequest(
+    message: string,
+    error: Error | unknown,
+    requestContext: RequestContext,
+    additionalContext?: Record<string, unknown>
+  ) {
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    
+    const logData: Partial<StructuredLogData> = {
+      code: errorObj.constructor.name,
+      requestId: requestContext.requestId,
+      userId: requestContext.userId,
+      path: requestContext.path,
+      method: requestContext.method,
+      stack: errorObj.stack,
+      context: additionalContext,
+    };
+
+    if (this.isProduction) {
+      this.logStructured(LogLevel.ERROR, message, logData);
+      return;
+    }
+
+    const contextDisplay = [
+      requestContext.requestId ? `Request ID: ${requestContext.requestId}` : null,
+      requestContext.userId ? `User ID: ${requestContext.userId}` : null,
+      requestContext.method && requestContext.path ? `${requestContext.method} ${requestContext.path}` : null,
+    ].filter(Boolean).join(' | ');
+
+    const fullMessage = contextDisplay ? `${message}\n${COLORS.dim}${contextDisplay}${COLORS.reset}` : message;
+    
+    this.error(fullMessage, {
+      error: errorObj.message,
+      stack: errorObj.stack,
+      ...additionalContext,
+    });
   }
 }
 

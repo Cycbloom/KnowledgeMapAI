@@ -60,8 +60,11 @@ import {
   requestLogger,
   slowRequestLogger,
 } from "./middleware/requestLogger.js";
+import { requestIdMiddleware } from "./middleware/requestId.js";
 
 const app: express.Application = express();
+
+app.use(requestIdMiddleware);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));

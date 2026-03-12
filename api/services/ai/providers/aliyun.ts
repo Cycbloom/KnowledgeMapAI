@@ -1,6 +1,8 @@
 import { BaseAIProvider } from './base.js';
 import { AIProviderConfig } from '../../../types/ai.js';
 import { logger } from '../../../utils/logger.js';
+import { AppError } from '../../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../../constants/errorCodes.js';
 
 export class AliyunProvider extends BaseAIProvider {
   constructor(config: AIProviderConfig) {
@@ -9,7 +11,7 @@ export class AliyunProvider extends BaseAIProvider {
 
   async synthesizeSpeech(text: string, voice: string = 'Cherry', speed: number = 1.0, format: string = 'mp3'): Promise<Buffer> {
     if (!this.hasKey) {
-        throw new Error('Aliyun API Key is missing');
+        throw new AppError(ErrorCodes.AI_SERVICE_UNAVAILABLE);
     }
 
     // Split text if it's too long (> 300 chars)
@@ -133,7 +135,9 @@ export class AliyunProvider extends BaseAIProvider {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Aliyun TTS failed: ${response.status} ${response.statusText} - ${errorText}`);
+            throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+              message: `Aliyun TTS failed: ${response.status} ${response.statusText} - ${errorText}`,
+            });
         }
 
         const data = await response.json();
@@ -144,15 +148,15 @@ export class AliyunProvider extends BaseAIProvider {
         } else if (data.output && data.output.audio && data.output.audio.url) {
              audioUrl = data.output.audio.url;
         } else {
-             // Fallback/Error
              logger.error('Unexpected Aliyun TTS response format:', data);
-             throw new Error('Aliyun TTS response missing audio URL');
+             throw new AppError(ErrorCodes.AI_INVALID_RESPONSE);
         }
 
-        // Fetch the actual audio binary
         const audioResponse = await fetch(audioUrl);
         if (!audioResponse.ok) {
-            throw new Error(`Failed to download audio from URL: ${audioResponse.statusText}`);
+            throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+              message: `Failed to download audio from URL: ${audioResponse.statusText}`,
+            });
         }
         
         const arrayBuffer = await audioResponse.arrayBuffer();
@@ -160,7 +164,12 @@ export class AliyunProvider extends BaseAIProvider {
 
     } catch (error: any) {
         logger.error('Aliyun TTS Error:', error);
-        throw error;
+        if (error instanceof AppError) {
+          throw error;
+        }
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: error.message || 'Aliyun TTS error',
+        });
     }
   }
 }

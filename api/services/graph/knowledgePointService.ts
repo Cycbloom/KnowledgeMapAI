@@ -2,6 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../../utils/logger.js';
 import { searchSimilarKnowledgePoints } from '../../utils/similaritySearch.js';
 import { PaginationOptions, getPaginationParams } from '../../utils/pagination.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 import type { KnowledgePoint, KnowledgePointVisibility } from '../../../shared/types/index.js';
 
 export type { KnowledgePoint, KnowledgePointVisibility };
@@ -342,11 +344,11 @@ export class KnowledgePointService {
     const kp = await this.get(supabase, knowledge_point_id);
 
     if (!kp) {
-      throw new Error('Knowledge point not found');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (kp.owner_id !== userId) {
-      throw new Error('Permission denied');
+      throw new AppError(ErrorCodes.AUTH_FORBIDDEN);
     }
 
     const autoReviewResult: AutoReviewResult = {
@@ -456,7 +458,7 @@ export class KnowledgePointService {
     const kp = await this.get(supabase, knowledgePointId);
 
     if (!kp || kp.visibility !== 'pending') {
-      throw new Error('Knowledge point not found or not pending');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     const suggestedChanges = kp.properties?.suggested_changes as Record<string, unknown> | undefined;
@@ -489,7 +491,7 @@ export class KnowledgePointService {
     const kp = await this.get(supabase, knowledgePointId);
 
     if (!kp || kp.visibility !== 'pending') {
-      throw new Error('Knowledge point not found or not pending');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return this.update(supabase, knowledgePointId, {

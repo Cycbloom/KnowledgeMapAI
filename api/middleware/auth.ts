@@ -2,7 +2,7 @@ import { type Request, type Response, type NextFunction } from 'express';
 import { supabaseAdmin, supabaseAnon, createClientWithToken } from '../supabase.js';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from './errorHandler.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes, type ErrorCode } from '../constants/errorCodes.js';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -12,7 +12,7 @@ export interface AuthRequest extends Request {
 interface TokenError {
   message: string;
   status: number;
-  code: string;
+  code: ErrorCode;
 }
 
 const parseTokenError = (error: { message?: string }): TokenError => {

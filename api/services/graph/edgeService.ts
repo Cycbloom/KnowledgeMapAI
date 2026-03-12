@@ -2,6 +2,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import type { Edge, EdgeLineStyle } from '@/types';
 import { softDelete, softDeleteBatch } from '../../utils/softDelete.js';
 import { logger } from '../../utils/logger.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../constants/errorCodes.js';
 
 interface CreateEdgeData {
   graph_id: string;
@@ -48,11 +50,11 @@ export class EdgeService {
 
     if (sourceError) {
       logger.error('Find source node error:', sourceError);
-      throw new Error('查找源节点失败');
+      throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     if (!sourceGn) {
-      throw new Error('源知识点不在当前图谱中');
+      throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     const { data: targetGn, error: targetError } = await supabase
@@ -65,11 +67,11 @@ export class EdgeService {
 
     if (targetError) {
       logger.error('Find target node error:', targetError);
-      throw new Error('查找目标节点失败');
+      throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     if (!targetGn) {
-      throw new Error('目标知识点不在当前图谱中');
+      throw new AppError(ErrorCodes.RESOURCE_NODE_NOT_FOUND);
     }
 
     const { data: existingEdge } = await supabase
@@ -91,7 +93,7 @@ export class EdgeService {
 
         if (restoreError) {
           logger.error('Restore edge error:', restoreError);
-          throw new Error('恢复边失败');
+          throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
         }
 
         return this.mapEdge(restoredEdge);
@@ -124,7 +126,7 @@ export class EdgeService {
 
     if (createError) {
       logger.error('Create edge error:', createError);
-      throw new Error('创建边失败');
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return this.mapEdge(newEdge);
@@ -134,7 +136,7 @@ export class EdgeService {
     const result = await softDelete(supabase, 'edges', edgeId);
     if (!result.success) {
       logger.error('Delete edge error:', result.error);
-      throw new Error('删除边失败');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     }
   }
 
@@ -149,11 +151,11 @@ export class EdgeService {
 
     if (error) {
       logger.error('Update edge error:', error);
-      throw new Error('更新边失败');
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     if (!updatedEdge) {
-      throw new Error('边不存在或已被删除');
+      throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     return this.mapEdge(updatedEdge);
@@ -181,7 +183,7 @@ export class EdgeService {
 
     if (error) {
       logger.error('Get graph edges error:', error);
-      throw new Error('获取图谱边失败');
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return (edges || []).map(edge => this.mapEdge(edge));
@@ -201,7 +203,7 @@ export class EdgeService {
 
     if (findError) {
       logger.error('Find edges error:', findError);
-      throw new Error('查找边失败');
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     if (!edges || edges.length === 0) {
@@ -212,7 +214,7 @@ export class EdgeService {
     const result = await softDeleteBatch(supabase, 'edges', edgeIds);
     if (!result.success) {
       logger.error('Delete edges error:', result.error);
-      throw new Error('删除边失败');
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR);
     }
 
     return edgeIds.length;

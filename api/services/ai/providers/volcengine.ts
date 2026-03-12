@@ -1,6 +1,8 @@
 import { BaseAIProvider } from './base.js';
 import { AIProviderConfig } from '../../../types/ai.js';
 import { logger } from '../../../utils/logger.js';
+import { AppError } from '../../../middleware/errorHandler.js';
+import { ErrorCodes } from '../../../constants/errorCodes.js';
 
 export class VolcengineProvider extends BaseAIProvider {
   constructor(config: AIProviderConfig) {
@@ -26,8 +28,10 @@ export class VolcengineProvider extends BaseAIProvider {
       });
       return response.data[0].embedding;
     } catch (error) {
-      console.error('Volcengine embedding error:', error);
-      throw error;
+      logger.error('Volcengine embedding error:', error);
+      throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
+        message: error instanceof Error ? error.message : 'Volcengine embedding error',
+      });
     }
   }
 
@@ -68,26 +72,31 @@ export class VolcengineProvider extends BaseAIProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Volcengine API Error: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `Volcengine API Error: ${response.status} ${response.statusText} - ${errorText}`,
+        });
       }
 
       const data = await response.json();
       
-      // Volcengine multimodal format: data is an OBJECT with embedding field, not an array
       if (data && data.data && data.data.embedding) {
         return data.data.embedding;
       } 
-      // Fallback for array format if needed
       else if (data && data.data && Array.isArray(data.data) && data.data.length > 0 && data.data[0].embedding) {
         return data.data[0].embedding;
       }
       else {
         logger.error('Unexpected response format from Volcengine:', JSON.stringify(data, null, 2));
-        return null;
+        throw new AppError(ErrorCodes.AI_INVALID_RESPONSE);
       }
     } catch (error) {
       logger.error('Volcengine Multimodal embedding error:', error);
-      throw error;
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(ErrorCodes.AI_EMBEDDING_ERROR, {
+        message: error instanceof Error ? error.message : 'Volcengine multimodal embedding error',
+      });
     }
   }
 }

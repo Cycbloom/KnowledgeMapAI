@@ -10,6 +10,8 @@ import type {
   CreateTaskData,
   TaskFilters,
 } from "../../../shared/types/index.js";
+import { AppError } from "../../middleware/errorHandler.js";
+import { ErrorCodes } from "../../constants/errorCodes.js";
 
 export type {
   ScheduledTask,
@@ -55,7 +57,7 @@ export class TaskService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to create task: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_CREATION_FAILED, { details: { originalError: error.message } });
     return data as ScheduledTask;
   }
 
@@ -79,8 +81,8 @@ export class TaskService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to update task: ${error.message}`);
-    if (!data) throw new Error("Task not found");
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
+    if (!data) throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND);
     return data as ScheduledTask;
   }
 
@@ -98,7 +100,7 @@ export class TaskService {
       .eq("id", taskId)
       .eq("user_id", userId);
 
-    if (error) throw new Error(`Failed to delete task: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
   }
 
   async getTask(
@@ -115,7 +117,7 @@ export class TaskService {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      throw new Error(`Failed to fetch task: ${error.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     }
     return data as ScheduledTask | null;
   }
@@ -148,7 +150,7 @@ export class TaskService {
 
     const { data, error, count } = await query;
 
-    if (error) throw new Error(`Failed to fetch tasks: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
     return { tasks: data as ScheduledTask[], total: count ?? 0 };
   }
 
@@ -166,7 +168,7 @@ export class TaskService {
       .order("position", { ascending: true });
 
     if (error)
-      throw new Error(`Failed to fetch tasks by queue: ${error.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
     return data as ScheduledTask[];
   }
 
@@ -188,7 +190,7 @@ export class TaskService {
       .single();
 
     if (taskError)
-      throw new Error(`Failed to start task: ${taskError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
 
     const { data: execution, error: execError } = await client
       .from("task_executions")
@@ -203,7 +205,7 @@ export class TaskService {
       .single();
 
     if (execError)
-      throw new Error(`Failed to create execution: ${execError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: execError.message } });
 
     return {
       task: task as ScheduledTask,
@@ -229,7 +231,7 @@ export class TaskService {
       .single();
 
     if (taskError)
-      throw new Error(`Failed to pause task: ${taskError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
     return task as ScheduledTask;
   }
 
@@ -247,7 +249,7 @@ export class TaskService {
       .limit(1);
 
     if (execError)
-      throw new Error(`Failed to fetch executions: ${execError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: execError.message } });
 
     if (executions && executions.length > 0) {
       const execution = executions[0];
@@ -280,7 +282,7 @@ export class TaskService {
       .single();
 
     if (taskError)
-      throw new Error(`Failed to complete task: ${taskError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: taskError.message } });
     return task as ScheduledTask;
   }
 
@@ -315,7 +317,7 @@ export class TaskService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to move task: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
     return data as ScheduledTask;
   }
 
@@ -336,7 +338,7 @@ export class TaskService {
         .eq("id", taskIds[i])
         .eq("user_id", userId);
 
-      if (error) throw new Error(`Failed to reorder tasks: ${error.message}`);
+      if (error) throw new AppError(ErrorCodes.SCHEDULER_QUEUE_ERROR, { details: { originalError: error.message } });
     }
   }
 
@@ -352,7 +354,7 @@ export class TaskService {
       .eq("user_id", userId)
       .single();
 
-    if (!task) throw new Error("Task not found");
+    if (!task) throw new AppError(ErrorCodes.RESOURCE_TASK_NOT_FOUND);
 
     const newQueue = Math.min(task.queue_level + 1, 2);
     return this.moveTaskToQueue(client, taskId, userId, newQueue);

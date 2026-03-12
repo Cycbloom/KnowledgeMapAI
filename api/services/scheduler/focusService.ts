@@ -1,4 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { AppError } from "../../middleware/errorHandler.js";
+import { ErrorCodes } from "../../constants/errorCodes.js";
 
 export interface FocusSession {
   id: string;
@@ -103,7 +105,7 @@ export class FocusService {
       .single();
 
     if (error)
-      throw new Error(`Failed to create focus session: ${error.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     return session as FocusSession;
   }
 
@@ -122,8 +124,8 @@ export class FocusService {
       .single();
 
     if (error)
-      throw new Error(`Failed to update focus session: ${error.message}`);
-    if (!data) throw new Error("Focus session not found");
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
+    if (!data) throw new AppError(ErrorCodes.RESOURCE_NOT_FOUND);
     return data as FocusSession;
   }
 
@@ -162,7 +164,7 @@ export class FocusService {
 
     const { data, error } = await query;
     if (error)
-      throw new Error(`Failed to fetch focus sessions: ${error.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
     return data as FocusSession[];
   }
 
@@ -177,7 +179,7 @@ export class FocusService {
       .maybeSingle();
 
     if (error)
-      throw new Error(`Failed to fetch user focus stats: ${error.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
 
     if (!data) {
       return {
@@ -217,9 +219,7 @@ export class FocusService {
       .lt("started_at", endDate.toISOString());
 
     if (sessionsError)
-      throw new Error(
-        `Failed to fetch daily sessions: ${sessionsError.message}`,
-      );
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: sessionsError.message } });
 
     const { data: tasks, error: tasksError } = await client
       .from("scheduled_tasks")
@@ -230,7 +230,7 @@ export class FocusService {
       .lt("completed_at", endDate.toISOString());
 
     if (tasksError)
-      throw new Error(`Failed to fetch daily tasks: ${tasksError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: tasksError.message } });
 
     const totalDuration =
       sessions?.reduce((sum, s) => sum + (s.duration || 0), 0) || 0;
@@ -272,9 +272,7 @@ export class FocusService {
       .lt("started_at", end.toISOString());
 
     if (sessionsError)
-      throw new Error(
-        `Failed to fetch weekly sessions: ${sessionsError.message}`,
-      );
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: sessionsError.message } });
 
     const { data: tasks, error: tasksError } = await client
       .from("scheduled_tasks")
@@ -285,7 +283,7 @@ export class FocusService {
       .lt("completed_at", end.toISOString());
 
     if (tasksError)
-      throw new Error(`Failed to fetch weekly tasks: ${tasksError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: tasksError.message } });
 
     const stats = await this.getUserFocusStats(client, userId);
 
@@ -347,9 +345,7 @@ export class FocusService {
       .lte("started_at", endDate.toISOString());
 
     if (sessionsError)
-      throw new Error(
-        `Failed to fetch monthly sessions: ${sessionsError.message}`,
-      );
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: sessionsError.message } });
 
     const { data: tasks, error: tasksError } = await client
       .from("scheduled_tasks")
@@ -360,7 +356,7 @@ export class FocusService {
       .lte("completed_at", endDate.toISOString());
 
     if (tasksError)
-      throw new Error(`Failed to fetch monthly tasks: ${tasksError.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: tasksError.message } });
 
     const stats = await this.getUserFocusStats(client, userId);
 
@@ -438,7 +434,7 @@ export class FocusService {
       .lte("started_at", endDate.toISOString());
 
     if (error)
-      throw new Error(`Failed to fetch yearly heatmap: ${error.message}`);
+      throw new AppError(ErrorCodes.SCHEDULER_TASK_EXECUTION_FAILED, { details: { originalError: error.message } });
 
     const groupedByDate: Record<string, { count: number; duration: number }> =
       {};

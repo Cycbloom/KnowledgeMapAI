@@ -40,10 +40,10 @@ import { useGraphData, useGraphNodeStatus } from "../hooks/queries";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { preprocessMarkdown } from "../utils/markdownUtils";
-import { GraphOutline } from "../components/GraphEditor/GraphOutline";
-import { GenerateCardsModal } from "../components/LearningMode/GenerateCardsModal";
-import { LearningPathPanel } from "../components/LearningPath/LearningPathPanel";
-import { LearningPathOutline } from "../components/LearningPath/LearningPathOutline";
+import { GraphOutline } from "../components/GraphEditor/panels/GraphOutline";
+import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
+import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
+import { LearningPathOutline } from "../components/Learning/LearningPathOutline";
 import { NodeLevel } from "../types";
 
 type Message = {

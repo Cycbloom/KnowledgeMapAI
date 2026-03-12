@@ -12,20 +12,20 @@ import { useStore } from "../store/useStore";
 import { useMessageStore } from "../store/useMessageStore";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
-import { GraphToolbar } from "../components/GraphEditor/GraphToolbar";
-import { MindMapCanvas } from "../components/GraphEditor/MindMapCanvas";
-import { ExplorationTimeline } from "../components/GraphEditor/ExplorationTimeline";
-import { GraphStyleSettings } from "../components/GraphEditor/GraphStyleSettings";
-import { RelationshipTypeSettings } from "../components/GraphEditor/RelationshipTypeSettings";
+import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
+import { MindMapCanvas } from "../components/GraphEditor/canvas/MindMapCanvas";
+import { ExplorationTimeline } from "../components/GraphEditor/shared/ExplorationTimeline";
+import { GraphStyleSettings } from "../components/GraphEditor/shared/GraphStyleSettings";
+import { RelationshipTypeSettings } from "../components/GraphEditor/shared/RelationshipTypeSettings";
 
-import { GraphModalManager } from "../components/GraphEditor/GraphModalManager";
-import { GraphSidebarManager } from "../components/GraphEditor/GraphSidebarManager";
-import { GraphAnalysisPanel } from "../components/GraphEditor/GraphAnalysisPanel";
+import { GraphModalManager } from "../components/GraphEditor/modals/GraphModalManager";
+import { GraphSidebarManager } from "../components/GraphEditor/sidebar/GraphSidebarManager";
+import { GraphAnalysisPanel } from "../components/GraphEditor/panels/GraphAnalysisPanel";
 import { useGraphEffects } from "../hooks/useGraphEffects";
 
 import { useTheme } from "../hooks/useTheme";
 import { useIsMobile } from "../hooks/useIsMobile";
-import { MobileNodeActionMenu } from "../components/GraphEditor/MobileNodeActionMenu";
+import { MobileNodeActionMenu } from "../components/GraphEditor/mobile/MobileNodeActionMenu";
 import {
   useGraph,
   useGraphData,
@@ -58,15 +58,15 @@ import type {
   NodeSizeMode,
   EdgeWidthMode,
 } from "../types";
-import { PresentationControls } from "../components/GraphEditor/PresentationControls";
-import { ActionResultModal } from "../components/GraphEditor/ActionResultModal";
-import { NodeContextMenu } from "../components/GraphEditor/NodeContextMenu";
+import { PresentationControls } from "../components/GraphEditor/toolbar/PresentationControls";
+import { ActionResultModal } from "../components/GraphEditor/modals/ActionResultModal";
+import { NodeContextMenu } from "../components/GraphEditor/context-menu/NodeContextMenu";
 import {
   CommandPalette,
   CommandItem,
-} from "../components/GraphEditor/CommandPalette";
+} from "../components/GraphEditor/shared/CommandPalette";
 import { ShortcutHelpPanel } from "../components/common";
-import { RAGChatButton } from "../components/GraphEditor/RAGChatPanel";
+import { RAGChatButton } from "../components/GraphEditor/panels/RAGChatPanel";
 import { api, AIAction } from "../services/api";
 import { learningPathsApi } from "../services/api/learningPaths";
 import { useQueryClient } from "@tanstack/react-query";

@@ -9,10 +9,10 @@ import type {
   GraphMapFilterMode,
   Graph
 } from '../../types';
-import { MindMapNode } from '../GraphEditor/MindMapNode';
-import { MindMapLink } from '../GraphEditor/MindMapLink';
-import { CanvasLayout } from '../GraphEditor/CanvasLayout';
-import { MiniMap } from '../GraphEditor/MiniMap';
+import { MindMapNode } from '../GraphEditor/canvas/MindMapNode';
+import { MindMapLink } from '../GraphEditor/canvas/MindMapLink';
+import { CanvasLayout } from '../GraphEditor/canvas/CanvasLayout';
+import { MiniMap } from '../GraphEditor/canvas/MiniMap';
 import { createMindMapLayout } from '../../utils/mindmapLayout';
 import { 
   convertGraphsToNodes, 

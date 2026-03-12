@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Edit, Zap } from 'lucide-react';
-import { PromptEditor } from '../GraphEditor/PromptEditor';
+import { PromptEditor } from '../GraphEditor/panels/PromptEditor';
 import { PROMPT_SCENARIOS, getScenarioById, type PromptScenario } from './promptScenarios';
 import { useUpdateProfileMutation } from '../../hooks/mutations';
 import { useUser } from '../../hooks/queries';

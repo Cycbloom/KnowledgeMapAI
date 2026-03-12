@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useCallback, useState, useEffect } from 'react';
 import type { Node, Edge, ColorScheme, LinkStyle, LinkAnimation, GraphColorMode, BranchSuggestion, NodeSizeMode, EdgeWidthMode, Node as GraphNode } from '../../../types';
-import { MindMapNode } from '../MindMapNode';
-import { MindMapLink } from '../MindMapLink';
-import { AlternativeBranches } from '../AlternativeBranches';
+import { MindMapNode } from '../canvas/MindMapNode';
+import { MindMapLink } from '../canvas/MindMapLink';
+import { AlternativeBranches } from '../shared/AlternativeBranches';
 import { createTreeLayout } from '../../../utils/layouts/treeLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
 import { useTheme } from '../../../hooks/useTheme';

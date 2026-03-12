@@ -4,7 +4,7 @@ import {
   Home, Network, GitBranch, Clock, 
   Sun, Moon, Layout, Focus, LayoutList, Plus, Trash2 
 } from 'lucide-react';
-import type { CommandItem } from '../../components/GraphEditor/CommandPalette';
+import type { CommandItem } from '../../components/GraphEditor/shared/CommandPalette';
 import type { Node, GraphViewMode } from '../../types';
 import type { MessageType } from '../../store/useMessageStore';
 import type { SidebarMode } from '../../hooks/graphEditor/useSidebarState';

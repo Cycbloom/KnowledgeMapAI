@@ -20,7 +20,7 @@ import { ChatInput } from './ChatInput';
 import { VoiceSettings, VoiceControl } from './VoiceSettings';
 import { ConceptsPanel } from './ConceptsPanel';
 import { SuggestionsPanel } from './SuggestionsPanel';
-import { LearningPathPanel } from '../LearningPath/LearningPathPanel';
+import { LearningPathPanel } from '../Learning/LearningPathPanel';
 import 'katex/dist/katex.min.css';
 
 interface RAGChatPanelProps {

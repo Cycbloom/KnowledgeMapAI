@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useCombinedGraphAIOperations } from '../hooks/useCombinedGraphAIOperations';
-import { MindMapCanvas } from '../components/GraphEditor/MindMapCanvas';
+import { MindMapCanvas } from '../components/GraphEditor/canvas/MindMapCanvas';
 import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
 import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';
 import type { GraphRelation, Node, Edge, GraphColorMode, CrossGraphNodeConnection, CrossGraphRelationData } from '../types';

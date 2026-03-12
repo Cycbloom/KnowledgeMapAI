@@ -1,0 +1,615 @@
+import React, { useState, useEffect } from 'react';
+import {
+  RelationshipTypeConfig,
+  RelationshipCategory,
+  EdgeLineStyle,
+} from '../../../types';
+
+interface RelationshipTypeSettingsProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const CATEGORY_LABELS_CN: Record<RelationshipCategory | 'all', string> = {
+  all: '全部',
+  hierarchical: '层级关系',
+  dependency: '依赖关系',
+  semantic: '语义关系',
+  temporal: '时序关系',
+  interaction: '交互关系',
+  causal: '因果关系',
+  custom: '自定义',
+};
+
+const LINE_STYLE_OPTIONS: { value: EdgeLineStyle; label: string }[] = [
+  { value: 'solid', label: '实线' },
+  { value: 'dashed', label: '虚线' },
+  { value: 'dotted', label: '点线' },
+  { value: 'double', label: '双线' },
+];
+
+const ARROW_OPTIONS: { value: boolean | 'auto'; label: string }[] = [
+  { value: true, label: '显示' },
+  { value: false, label: '隐藏' },
+  { value: 'auto', label: '自动' },
+];
+
+const CATEGORY_OPTIONS: { value: RelationshipCategory; label: string }[] = [
+  { value: 'hierarchical', label: '层级关系' },
+  { value: 'dependency', label: '依赖关系' },
+  { value: 'semantic', label: '语义关系' },
+  { value: 'temporal', label: '时序关系' },
+  { value: 'interaction', label: '交互关系' },
+  { value: 'causal', label: '因果关系' },
+  { value: 'custom', label: '自定义' },
+];
+
+const DEFAULT_COLORS = [
+  '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+  '#06B6D4', '#EC4899', '#22C55E', '#6366F1', '#F97316',
+];
+
+interface FormData {
+  name: string;
+  display_name: string;
+  category: RelationshipCategory;
+  color: string;
+  line_style: EdgeLineStyle;
+  show_arrow: boolean | 'auto';
+}
+
+const initialFormData: FormData = {
+  name: '',
+  display_name: '',
+  category: 'custom',
+  color: '#3B82F6',
+  line_style: 'solid',
+  show_arrow: 'auto',
+};
+
+export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [relationshipTypes, setRelationshipTypes] = useState<RelationshipTypeConfig[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<RelationshipCategory | 'all'>('all');
+  const [editingType, setEditingType] = useState<RelationshipTypeConfig | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<RelationshipCategory>>(
+    new Set(['hierarchical', 'dependency', 'semantic'])
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchRelationshipTypes();
+    }
+  }, [isOpen]);
+
+  const getAuthHeaders = () => ({
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+  });
+
+  const fetchRelationshipTypes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/relationship-types', {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) throw new Error('获取关系类型失败');
+      const data = await response.json();
+      setRelationshipTypes(data.data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取关系类型失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createRelationshipType = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/relationship-types', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || '创建关系类型失败');
+      }
+      await fetchRelationshipTypes();
+      setIsCreating(false);
+      setFormData(initialFormData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '创建关系类型失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateRelationshipType = async () => {
+    if (!editingType) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/relationship-types/${editingType.id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          display_name: formData.display_name,
+          category: formData.category,
+          color: formData.color,
+          line_style: formData.line_style,
+          show_arrow: formData.show_arrow,
+        }),
+      });
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || '更新关系类型失败');
+      }
+      await fetchRelationshipTypes();
+      setEditingType(null);
+      setFormData(initialFormData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '更新关系类型失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteRelationshipType = async (id: string) => {
+    if (!confirm('确定要删除此关系类型吗？')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/relationship-types/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || '删除关系类型失败');
+      }
+      await fetchRelationshipTypes();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '删除关系类型失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (type: RelationshipTypeConfig) => {
+    setEditingType(type);
+    setIsCreating(false);
+    setFormData({
+      name: type.name,
+      display_name: type.display_name,
+      category: type.category,
+      color: type.color,
+      line_style: type.line_style,
+      show_arrow: type.show_arrow,
+    });
+  };
+
+  const handleCreate = () => {
+    setIsCreating(true);
+    setEditingType(null);
+    setFormData(initialFormData);
+  };
+
+  const handleCancel = () => {
+    setIsCreating(false);
+    setEditingType(null);
+    setFormData(initialFormData);
+    setError(null);
+  };
+
+  const toggleCategory = (category: RelationshipCategory) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(category)) {
+      newExpanded.delete(category);
+    } else {
+      newExpanded.add(category);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const filteredTypes = selectedCategory === 'all'
+    ? relationshipTypes
+    : relationshipTypes.filter(t => t.category === selectedCategory);
+
+  const groupedTypes = filteredTypes.reduce((acc, type) => {
+    const category = type.category;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(type);
+    return acc;
+  }, {} as Record<RelationshipCategory, RelationshipTypeConfig[]>);
+
+  const renderLineStylePreview = (style: EdgeLineStyle) => {
+    switch (style) {
+      case 'solid':
+        return <div className="w-full h-0.5 bg-current" />;
+      case 'dashed':
+        return <div className="w-full h-0.5 border-t-2 border-dashed border-current" />;
+      case 'dotted':
+        return <div className="w-full h-0.5 border-t-2 border-dotted border-current" />;
+      case 'double':
+        return (
+          <div className="w-full flex flex-col gap-0.5">
+            <div className="w-full h-0.5 bg-current" />
+            <div className="w-full h-0.5 bg-current" />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-[800px] max-h-[85vh] overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">关系类型设置</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex h-[calc(85vh-140px)]">
+          <div className="w-48 border-r border-gray-200 dark:border-slate-700 p-4 overflow-y-auto">
+            <div className="space-y-1">
+              {(Object.keys(CATEGORY_LABELS_CN) as (RelationshipCategory | 'all')[]).map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {CATEGORY_LABELS_CN[category]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 p-6 overflow-y-auto">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              </div>
+            )}
+
+            {loading && !isCreating && !editingType && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              </div>
+            )}
+
+            {!loading && !isCreating && !editingType && (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    共 {filteredTypes.length} 个关系类型
+                  </p>
+                  <button
+                    onClick={handleCreate}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    新建关系类型
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {(Object.keys(groupedTypes) as RelationshipCategory[]).map(category => (
+                    <div key={category} className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleCategory(category)}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {CATEGORY_LABELS_CN[category]}
+                        </span>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">
+                          {groupedTypes[category].length} 个
+                        </span>
+                      </button>
+
+                      {expandedCategories.has(category) && (
+                        <div className="divide-y divide-gray-200 dark:divide-slate-700">
+                          {groupedTypes[category].map(type => (
+                            <div
+                              key={type.id}
+                              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/30"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-6 h-6 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: type.color }}
+                                />
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-gray-900 dark:text-white">
+                                      {type.display_name}
+                                    </span>
+                                    {type.is_builtin && (
+                                      <span title="内置类型">
+                                        <svg
+                                          width="14"
+                                          height="14"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          className="text-gray-400"
+                                        >
+                                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <span>{type.name}</span>
+                                    <span className="w-8">{renderLineStylePreview(type.line_style)}</span>
+                                    <span>
+                                      {type.show_arrow === true ? '→' : type.show_arrow === false ? '—' : '↔'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {!type.is_builtin && (
+                                  <>
+                                    <button
+                                      onClick={() => handleEdit(type)}
+                                      className="p-1.5 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                      title="编辑"
+                                    >
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={() => deleteRelationshipType(type.id)}
+                                      className="p-1.5 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                      title="删除"
+                                    >
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                      </svg>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {(isCreating || editingType) && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  {isCreating ? '新建关系类型' : '编辑关系类型'}
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      名称（英文标识）
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      disabled={!!editingType}
+                      placeholder="例如：leads_to"
+                      className={`w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        editingType ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    />
+                    {editingType && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">名称创建后不可修改</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      显示名称
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.display_name}
+                      onChange={e => setFormData({ ...formData, display_name: e.target.value })}
+                      placeholder="例如：Leads To"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      分类
+                    </label>
+                    <select
+                      value={formData.category}
+                      onChange={e => setFormData({ ...formData, category: e.target.value as RelationshipCategory })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {CATEGORY_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      颜色
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={formData.color}
+                        onChange={e => setFormData({ ...formData, color: e.target.value })}
+                        className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-600"
+                      />
+                      <input
+                        type="text"
+                        value={formData.color}
+                        onChange={e => setFormData({ ...formData, color: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      {DEFAULT_COLORS.map(color => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, color })}
+                          className={`w-6 h-6 rounded-full border-2 ${
+                            formData.color === color
+                              ? 'border-blue-500 ring-2 ring-blue-200'
+                              : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      线型
+                    </label>
+                    <select
+                      value={formData.line_style}
+                      onChange={e => setFormData({ ...formData, line_style: e.target.value as EdgeLineStyle })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {LINE_STYLE_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      箭头
+                    </label>
+                    <select
+                      value={typeof formData.show_arrow === 'boolean' ? String(formData.show_arrow) : 'auto'}
+                      onChange={e => {
+                        const value = e.target.value;
+                        setFormData({
+                          ...formData,
+                          show_arrow: value === 'auto' ? 'auto' : value === 'true',
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {ARROW_OPTIONS.map(option => (
+                        <option
+                          key={String(option.value)}
+                          value={typeof option.value === 'boolean' ? String(option.value) : 'auto'}
+                        >
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">预览</p>
+                    <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                      <svg width="200" height="40" viewBox="0 0 200 40">
+                        <line
+                          x1="20"
+                          y1="20"
+                          x2="160"
+                          y2="20"
+                          stroke={formData.color}
+                          strokeWidth="2"
+                          strokeDasharray={
+                            formData.line_style === 'dashed'
+                              ? '8, 4'
+                              : formData.line_style === 'dotted'
+                              ? '2, 4'
+                              : formData.line_style === 'double'
+                              ? 'none'
+                              : 'none'
+                          }
+                        />
+                        {formData.line_style === 'double' && (
+                          <>
+                            <line x1="20" y1="17" x2="160" y2="17" stroke={formData.color} strokeWidth="2" />
+                            <line x1="20" y1="23" x2="160" y2="23" stroke={formData.color} strokeWidth="2" />
+                          </>
+                        )}
+                        {(formData.show_arrow === true || formData.show_arrow === 'auto') && (
+                          <polygon
+                            points="160,20 150,15 150,25"
+                            fill={formData.color}
+                          />
+                        )}
+                        <circle cx="20" cy="20" r="8" fill="#6B7280" />
+                        <circle cx="180" cy="20" r="8" fill="#6B7280" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    onClick={handleCancel}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={isCreating ? createRelationshipType : updateRelationshipType}
+                    disabled={loading || !formData.name || !formData.display_name}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? '保存中...' : '保存'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

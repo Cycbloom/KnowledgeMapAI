@@ -1,6 +1,6 @@
 import { request, getAIConfig, getApiUrl, handleResponse, injectAIConfig, getCookie } from './client';
 import { useStore } from '../../store/useStore';
-import type { AIAction } from './types';
+import type { AIAction } from '../../types/api';
 
 export const aiActionsApi = {
   list: (graphId?: string) => request(`/ai-actions${graphId ? `?graph_id=${graphId}` : ''}`),

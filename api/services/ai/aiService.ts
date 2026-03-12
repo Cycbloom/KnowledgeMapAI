@@ -1,5 +1,5 @@
 import { getAIProviderForTask, getAIProvider } from "./factory.js";
-import type { AIProviderType } from "./types.js";
+import type { AIProviderType } from "../../types/ai.js";
 import { promptService } from "./promptService.js";
 import { cacheService, CacheKeys } from "../common/cacheService.js";
 import { supabaseAdmin } from "../../supabase.js";

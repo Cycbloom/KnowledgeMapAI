@@ -18,7 +18,7 @@ import { CalendarMonthView } from '../components/Calendar/CalendarMonthView';
 import { CalendarWeekView } from '../components/Calendar/CalendarWeekView';
 import { CalendarDayView } from '../components/Calendar/CalendarDayView';
 import { CalendarScheduleView } from '../components/Calendar/CalendarScheduleView';
-import { CalendarEvent, ExecutionEvent, EventDropInfo } from '../components/Calendar/types';
+import { CalendarEvent, ExecutionEvent, EventDropInfo } from '../types/calendar';
 
 type ViewType = 'month' | 'week' | 'day' | 'schedule';
 

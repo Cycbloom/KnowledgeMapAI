@@ -1,5 +1,5 @@
 export { initCsrf, request, getAIConfig, getCookie, getHeaders, handleResponse } from './client';
-export type { AIAction, AIActionVariables } from './types';
+export type { AIAction, AIActionVariables } from '../../types/api';
 
 export { authApi } from './auth';
 export { graphsApi } from './graphs';

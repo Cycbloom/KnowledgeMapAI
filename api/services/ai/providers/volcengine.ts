@@ -1,5 +1,5 @@
 import { BaseAIProvider } from './base.js';
-import { AIProviderConfig } from '../types.js';
+import { AIProviderConfig } from '../../../types/ai.js';
 import { logger } from '../../../utils/logger.js';
 
 export class VolcengineProvider extends BaseAIProvider {

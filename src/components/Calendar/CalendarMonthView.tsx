@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
-import { CalendarEvent, ExecutionEvent } from './types';
+import { CalendarEvent, ExecutionEvent } from '../../types/calendar';
 
 interface CalendarMonthViewProps {
   currentDate: Date;

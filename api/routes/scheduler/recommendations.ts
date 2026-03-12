@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
 import { validate } from "../../middleware/validate.js";
 import { z } from "zod";
 import { aiService } from "../../services/ai/index.js";
-import { taskRecommendationService } from "../../services/taskRecommendationService.js";
+import { taskRecommendationService } from "../../services/scheduler/taskRecommendationService.js";
 import { logger } from "../../utils/logger.js";
 
 const router = Router();

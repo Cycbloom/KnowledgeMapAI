@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { periodicTaskService } from '../services/periodicTaskService.js';
+import { periodicTaskService } from '../services/scheduler/periodicTaskService.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 

@@ -2,7 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { taskService } from '../services/taskService.js';
 import { supabaseAdmin } from '../supabase.js';
-import { sseService } from '../services/sseService.js';
+import { sseService } from '../services/core/sseService.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();

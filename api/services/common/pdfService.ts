@@ -2,7 +2,7 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { logger } from '../utils/logger.js';
+import { logger } from '../../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,10 +22,8 @@ export class PDFService {
   }
 
   private initFontPath() {
-    // Font selection strategy
-    const projectFontDir = path.resolve(__dirname, '../../assets/fonts');
+    const projectFontDir = path.resolve(__dirname, '../../../assets/fonts');
     
-    // Helper to recursively find font
     const findFontFile = (dir: string): string | null => {
       if (!fs.existsSync(dir)) return null;
       
@@ -36,11 +34,9 @@ export class PDFService {
         return null;
       }
       
-      // 1. Check current directory for Noto Sans SC (Priority)
       const noto = files.find(f => f.isFile() && /noto.*sc.*\.ttf$/i.test(f.name));
       if (noto) return path.join(dir, noto.name);
 
-      // 2. Recurse into subdirectories
       for (const file of files) {
         if (file.isDirectory()) {
           const found = findFontFile(path.join(dir, file.name));
@@ -50,7 +46,6 @@ export class PDFService {
       return null;
     };
     
-    // 1. Try project assets
     if (fs.existsSync(projectFontDir)) {
       const found = findFontFile(projectFontDir);
       if (found) {
@@ -62,12 +57,10 @@ export class PDFService {
       }
     }
 
-    // 2. Try configured path
     if (!this.fontPath && process.env.PDF_FONT_PATH && fs.existsSync(process.env.PDF_FONT_PATH)) {
         this.fontPath = process.env.PDF_FONT_PATH;
     }
 
-    // 3. Try System fonts
     if (!this.fontPath) {
         const systemFonts = [
           'C:\\Windows\\Fonts\\simhei.ttf',
@@ -96,18 +89,14 @@ export class PDFService {
 
     doc.pipe(outputStream);
 
-    // Cover Page
     this.renderCover(doc, graph, options);
 
-    // Stats Section
     if (options.includeStats) {
       this.renderStats(doc, nodes, edges);
     }
 
-    // Table of Contents
     this.renderTOC(doc, nodes);
 
-    // Node Details
     if (options.includeDetails !== false) {
       this.renderNodeDetails(doc, nodes, edges);
     }
@@ -118,23 +107,19 @@ export class PDFService {
   private renderCover(doc: any, graph: any, options: PDFOptions) {
     const title = typeof graph.title === 'string' && graph.title.trim() ? graph.title.trim() : 'Knowledge Graph Report';
     
-    // Title
     doc.fontSize(28).fillColor('#111827').text(title, { align: 'center' });
     doc.moveDown(0.5);
     
-    // Description
     if (graph.description) {
       doc.fontSize(12).fillColor('#4B5563').text(String(graph.description), { align: 'center' });
     }
     doc.moveDown(2);
 
-    // Screenshot
     if (options.includeScreenshot && options.screenshotBase64) {
       try {
         const base64Data = options.screenshotBase64.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, 'base64');
         
-        // Fit image within margins (A4 width ~595pt, margins 48pt -> available ~500pt)
         doc.image(buffer, {
           fit: [500, 300],
           align: 'center'
@@ -146,7 +131,6 @@ export class PDFService {
       }
     }
 
-    // Date
     doc.moveDown(2);
     doc.fontSize(10).fillColor('#9CA3AF').text(`Generated on ${new Date().toLocaleDateString()}`, { align: 'center' });
     
@@ -182,7 +166,6 @@ export class PDFService {
   }
 
   private renderTOC(doc: any, nodes: any[]) {
-    // Simple TOC for Root/Core nodes
     doc.fontSize(16).fillColor('#111827').text('目录 (Contents)', { underline: true });
     doc.moveDown(1);
 
@@ -206,7 +189,6 @@ export class PDFService {
     doc.fontSize(16).fillColor('#111827').text('详细内容 (Detailed Content)', { underline: true });
     doc.moveDown(1.5);
 
-    // Sort nodes by level priority
     const levelOrder = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
     const sortedNodes = [...nodes].sort((a, b) => {
       const la = levelOrder[a.level as keyof typeof levelOrder] ?? 5;
@@ -214,7 +196,6 @@ export class PDFService {
       return la - lb;
     });
 
-    // Map for edge lookup
     const edgesBySource = new Map<string, any[]>();
     edges.forEach(e => {
         const list = edgesBySource.get(e.source_knowledge_point_id) || [];
@@ -224,7 +205,6 @@ export class PDFService {
     const nodeById = new Map(nodes.map(n => [n.id, n]));
 
     sortedNodes.forEach(node => {
-      // Header
       const color = node.level === 'root' ? '#7C3AED' : 
                     node.level === 'core' ? '#DC2626' : 
                     node.level === 'sub' ? '#D97706' : '#1F2937';
@@ -232,17 +212,14 @@ export class PDFService {
       doc.fontSize(14).fillColor(color).text(node.title);
       doc.moveDown(0.3);
 
-      // Meta
       doc.fontSize(9).fillColor('#9CA3AF').text(`Type: ${node.level} | ID: ${node.id.substring(0,8)}`);
       doc.moveDown(0.5);
 
-      // Content
       if (node.content) {
         doc.fontSize(10).fillColor('#374151').text(node.content, { align: 'justify' });
         doc.moveDown(0.8);
       }
 
-      // Relations
       const outgoing = edgesBySource.get(node.id);
       if (outgoing && outgoing.length > 0) {
         doc.fontSize(10).fillColor('#4B5563').text('关联 (Related):');
@@ -256,12 +233,10 @@ export class PDFService {
         doc.moveDown(0.5);
       }
 
-      // Separator
       doc.moveDown(1);
       doc.strokeColor('#E5E7EB').lineWidth(1).moveTo(48, doc.y).lineTo(547, doc.y).stroke();
       doc.moveDown(1.5);
       
-      // Page break check (approximate)
       if (doc.y > 700) {
         doc.addPage();
       }

@@ -1,169 +1,212 @@
-import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { cacheService, CacheKeys } from '../services/cacheService.js';
-import { logger } from '../utils/logger.js';
-import { createBackup, readBackupFile, backupService } from '../services/backupService.js';
-import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
-import { edgeService } from '../services/edgeService.js';
-import { studyService } from '../services/studyService.js';
-import fs from 'fs/promises';
+import { Router, type Response } from "express";
+import { requireAuth, type AuthRequest } from "../middleware/auth.js";
+import { cacheService, CacheKeys } from "../services/common/cacheService.js";
+import { logger } from "../utils/logger.js";
+import {
+  createBackup,
+  readBackupFile,
+  backupService,
+} from "../services/common/backupService.js";
+import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers.js";
+import { edgeService } from "../services/graph/index.js";
+import { studyService } from "../services/study/studyService.js";
+import fs from "fs/promises";
 
 const router = Router();
 
-router.get('/export', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get("/export", requireAuth, async (req: AuthRequest, res: Response) => {
   const userId = req.user.id;
 
   try {
-    const result = await createBackup(req.supabase!, userId, 'manual');
-    
+    const result = await createBackup(req.supabase!, userId, "manual");
+
     await backupService.createSnapshotRecord(req.supabase!, userId, {
-      type: 'manual',
+      type: "manual",
       file_path: result.filePath,
       file_size: result.fileSize,
       graphs_count: result.graphsCount,
       nodes_count: result.nodesCount,
     });
 
-    const content = await fs.readFile(result.filePath, 'utf-8');
-    
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="knowledgemap-backup-${new Date().toISOString().split('T')[0]}.json"`);
+    const content = await fs.readFile(result.filePath, "utf-8");
+
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="knowledgemap-backup-${new Date().toISOString().split("T")[0]}.json"`,
+    );
     res.send(content);
-
   } catch (error: any) {
-    logger.error('Export backup error:', error);
-    res.status(500).json({ error: error.message || '导出备份失败' });
+    logger.error("Export backup error:", error);
+    res.status(500).json({ error: error.message || "导出备份失败" });
   }
 });
 
-router.get('/snapshots', requireAuth, async (req: AuthRequest, res: Response) => {
-  const userId = req.user.id;
+router.get(
+  "/snapshots",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
 
-  try {
-    const snapshots = await backupService.getSnapshots(req.supabase!, userId);
-    res.json({ snapshots });
-  } catch (error: any) {
-    logger.error('Get snapshots error:', error);
-    res.status(500).json({ error: error.message || '获取快照列表失败' });
-  }
-});
+    try {
+      const snapshots = await backupService.getSnapshots(req.supabase!, userId);
+      res.json({ snapshots });
+    } catch (error: any) {
+      logger.error("Get snapshots error:", error);
+      res.status(500).json({ error: error.message || "获取快照列表失败" });
+    }
+  },
+);
 
-router.post('/snapshots', requireAuth, async (req: AuthRequest, res: Response) => {
-  const userId = req.user.id;
-  const { type = 'manual' } = req.body;
+router.post(
+  "/snapshots",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const { type = "manual" } = req.body;
 
-  try {
-    const result = await createBackup(req.supabase!, userId, type);
-    
-    await backupService.createSnapshotRecord(req.supabase!, userId, {
-      type,
-      file_path: result.filePath,
-      file_size: result.fileSize,
-      graphs_count: result.graphsCount,
-      nodes_count: result.nodesCount,
-    });
+    try {
+      const result = await createBackup(req.supabase!, userId, type);
 
-    res.json({
-      success: true,
-      message: '快照创建成功',
-      snapshot: {
+      await backupService.createSnapshotRecord(req.supabase!, userId, {
+        type,
+        file_path: result.filePath,
         file_size: result.fileSize,
         graphs_count: result.graphsCount,
         nodes_count: result.nodesCount,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Create snapshot error:', error);
-    res.status(500).json({ error: error.message || '创建快照失败' });
-  }
-});
+      });
 
-router.delete('/snapshots/:id', requireAuth, async (req: AuthRequest, res: Response) => {
-  const userId = req.user.id;
-  const { id } = req.params;
-
-  try {
-    await backupService.deleteSnapshot(req.supabase!, id, userId);
-    res.json({ success: true, message: '快照已删除' });
-  } catch (error: any) {
-    logger.error('Delete snapshot error:', error);
-    if (error.message === 'Snapshot not found') {
-      return res.status(404).json({ error: '快照不存在' });
+      res.json({
+        success: true,
+        message: "快照创建成功",
+        snapshot: {
+          file_size: result.fileSize,
+          graphs_count: result.graphsCount,
+          nodes_count: result.nodesCount,
+        },
+      });
+    } catch (error: any) {
+      logger.error("Create snapshot error:", error);
+      res.status(500).json({ error: error.message || "创建快照失败" });
     }
-    res.status(500).json({ error: error.message || '删除快照失败' });
-  }
-});
+  },
+);
 
-router.post('/restore/:id', requireAuth, async (req: AuthRequest, res: Response) => {
-  const userId = req.user.id;
-  const { id } = req.params;
+router.delete(
+  "/snapshots/:id",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const { id } = req.params;
 
-  try {
-    const snapshot = await backupService.getSnapshot(req.supabase!, id, userId);
-    if (!snapshot) {
-      return res.status(404).json({ error: '快照不存在' });
+    try {
+      await backupService.deleteSnapshot(req.supabase!, id, userId);
+      res.json({ success: true, message: "快照已删除" });
+    } catch (error: any) {
+      logger.error("Delete snapshot error:", error);
+      if (error.message === "Snapshot not found") {
+        return res.status(404).json({ error: "快照不存在" });
+      }
+      res.status(500).json({ error: error.message || "删除快照失败" });
     }
+  },
+);
 
-    const backupData = await readBackupFile(snapshot.file_path);
-    const { data } = backupData;
+router.post(
+  "/restore/:id",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const { id } = req.params;
 
-    const existingGraphs = await req.supabase!
-      .from('knowledge_graphs')
-      .select('id')
-      .eq('user_id', userId);
-    
-    if (existingGraphs.data && existingGraphs.data.length > 0) {
-      const graphIds = existingGraphs.data.map((g: any) => g.id);
-      
-      await req.supabase!.from('study_cards').delete().eq('user_id', userId);
-      await req.supabase!.from('study_progress').delete().eq('user_id', userId);
-      await req.supabase!.from('edges').delete().in('graph_id', graphIds);
-      await req.supabase!.from('graph_nodes').delete().in('graph_id', graphIds);
-      await req.supabase!.from('knowledge_graphs').delete().eq('user_id', userId);
+    try {
+      const snapshot = await backupService.getSnapshot(
+        req.supabase!,
+        id,
+        userId,
+      );
+      if (!snapshot) {
+        return res.status(404).json({ error: "快照不存在" });
+      }
+
+      const backupData = await readBackupFile(snapshot.file_path);
+      const { data } = backupData;
+
+      const existingGraphs = await req
+        .supabase!.from("knowledge_graphs")
+        .select("id")
+        .eq("user_id", userId);
+
+      if (existingGraphs.data && existingGraphs.data.length > 0) {
+        const graphIds = existingGraphs.data.map((g: any) => g.id);
+
+        await req.supabase!.from("study_cards").delete().eq("user_id", userId);
+        await req
+          .supabase!.from("study_progress")
+          .delete()
+          .eq("user_id", userId);
+        await req.supabase!.from("edges").delete().in("graph_id", graphIds);
+        await req
+          .supabase!.from("graph_nodes")
+          .delete()
+          .in("graph_id", graphIds);
+        await req
+          .supabase!.from("knowledge_graphs")
+          .delete()
+          .eq("user_id", userId);
+      }
+
+      const stats = await restoreBackupData(req.supabase!, userId, data);
+
+      await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+      res.json({
+        success: true,
+        message: "快照恢复成功",
+        stats,
+      });
+    } catch (error: any) {
+      logger.error("Restore snapshot error:", error);
+      res.status(500).json({ error: error.message || "恢复快照失败" });
     }
+  },
+);
 
-    const stats = await restoreBackupData(req.supabase!, userId, data);
-
-    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
-
-    res.json({
-      success: true,
-      message: '快照恢复成功',
-      stats,
-    });
-
-  } catch (error: any) {
-    logger.error('Restore snapshot error:', error);
-    res.status(500).json({ error: error.message || '恢复快照失败' });
-  }
-});
-
-router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
+router.post("/import", requireAuth, async (req: AuthRequest, res: Response) => {
   const userId = req.user.id;
   const backupData = req.body;
-  const mode = req.query.mode || 'merge';
+  const mode = req.query.mode || "merge";
 
   if (!backupData || !backupData.data) {
-    return res.status(400).json({ error: '无效的备份数据格式' });
+    return res.status(400).json({ error: "无效的备份数据格式" });
   }
 
   const { data } = backupData;
 
   try {
-    if (mode === 'replace') {
-      const existingGraphs = await req.supabase!
-        .from('knowledge_graphs')
-        .select('id')
-        .eq('user_id', userId);
-      
+    if (mode === "replace") {
+      const existingGraphs = await req
+        .supabase!.from("knowledge_graphs")
+        .select("id")
+        .eq("user_id", userId);
+
       if (existingGraphs.data && existingGraphs.data.length > 0) {
         const graphIds = existingGraphs.data.map((g: any) => g.id);
-        
-        await req.supabase!.from('study_cards').delete().eq('user_id', userId);
-        await req.supabase!.from('study_progress').delete().eq('user_id', userId);
-        await req.supabase!.from('edges').delete().in('graph_id', graphIds);
-        await req.supabase!.from('graph_nodes').delete().in('graph_id', graphIds);
-        await req.supabase!.from('knowledge_graphs').delete().eq('user_id', userId);
+
+        await req.supabase!.from("study_cards").delete().eq("user_id", userId);
+        await req
+          .supabase!.from("study_progress")
+          .delete()
+          .eq("user_id", userId);
+        await req.supabase!.from("edges").delete().in("graph_id", graphIds);
+        await req
+          .supabase!.from("graph_nodes")
+          .delete()
+          .in("graph_id", graphIds);
+        await req
+          .supabase!.from("knowledge_graphs")
+          .delete()
+          .eq("user_id", userId);
       }
     }
 
@@ -173,22 +216,26 @@ router.post('/import', requireAuth, async (req: AuthRequest, res: Response) => {
 
     res.json({
       success: true,
-      message: mode === 'replace' ? '快照恢复成功' : '备份导入成功',
+      message: mode === "replace" ? "快照恢复成功" : "备份导入成功",
       stats,
       mode,
     });
-
   } catch (error: any) {
-    logger.error('Import backup error:', error);
-    res.status(500).json({ error: error.message || '导入备份失败' });
+    logger.error("Import backup error:", error);
+    res.status(500).json({ error: error.message || "导入备份失败" });
   }
 });
 
 async function restoreBackupData(
   supabase: any,
   userId: string,
-  data: any
-): Promise<{ graphs: number; nodes: number; edges: number; study_cards: number }> {
+  data: any,
+): Promise<{
+  graphs: number;
+  nodes: number;
+  edges: number;
+  study_cards: number;
+}> {
   const stats = {
     graphs: 0,
     nodes: 0,
@@ -209,12 +256,12 @@ async function restoreBackupData(
     }));
 
     const { data: insertedGraphs, error: graphsError } = await supabase
-      .from('knowledge_graphs')
+      .from("knowledge_graphs")
       .insert(graphsToInsert)
       .select();
 
     if (graphsError) throw new Error(`导入图谱失败: ${graphsError.message}`);
-    
+
     insertedGraphs?.forEach((g: any, i: number) => {
       oldToNewGraphIds.set(data.graphs[i].id, g.id);
     });
@@ -225,23 +272,22 @@ async function restoreBackupData(
     for (const n of data.nodes) {
       const graphId = oldToNewGraphIds.get(n.graph_id);
       if (!graphId) continue;
-      
-      const result = await createKnowledgePointWithGraphNode(
-        supabase,
-        userId,
-        {
-          graph_id: graphId,
-          title: n.title,
-          content: n.content || '',
-          properties: n.properties || {},
-          x_position: n.x_position || 0,
-          y_position: n.y_position || 0,
-          level: n.level || 'normal',
-        }
-      );
-      
+
+      const result = await createKnowledgePointWithGraphNode(supabase, userId, {
+        graph_id: graphId,
+        title: n.title,
+        content: n.content || "",
+        properties: n.properties || {},
+        x_position: n.x_position || 0,
+        y_position: n.y_position || 0,
+        level: n.level || "normal",
+      });
+
       if (result) {
-        oldToNewKnowledgePointIds.set(n.id, result.knowledge_point_id || result.id);
+        oldToNewKnowledgePointIds.set(
+          n.id,
+          result.knowledge_point_id || result.id,
+        );
         stats.nodes++;
       }
     }
@@ -250,20 +296,24 @@ async function restoreBackupData(
   if (data.edges && data.edges.length > 0) {
     for (const e of data.edges) {
       const graphId = oldToNewGraphIds.get(e.graph_id);
-      const sourceKPId = oldToNewKnowledgePointIds.get(e.source_knowledge_point_id);
-      const targetKPId = oldToNewKnowledgePointIds.get(e.target_knowledge_point_id);
-      
+      const sourceKPId = oldToNewKnowledgePointIds.get(
+        e.source_knowledge_point_id,
+      );
+      const targetKPId = oldToNewKnowledgePointIds.get(
+        e.target_knowledge_point_id,
+      );
+
       if (graphId && sourceKPId && targetKPId) {
         try {
           await edgeService.create(supabase, {
             graph_id: graphId,
             source_knowledge_point_id: sourceKPId,
             target_knowledge_point_id: targetKPId,
-            relationship_type: e.relationship_type || 'related',
+            relationship_type: e.relationship_type || "related",
           });
           stats.edges++;
         } catch (err) {
-          logger.warn('Failed to restore edge:', err);
+          logger.warn("Failed to restore edge:", err);
         }
       }
     }
@@ -273,7 +323,7 @@ async function restoreBackupData(
     for (const c of data.study_cards) {
       const graphId = oldToNewGraphIds.get(c.graph_id);
       const kpId = oldToNewKnowledgePointIds.get(c.knowledge_point_id);
-      
+
       if (graphId && kpId) {
         try {
           await studyService.createCard(supabase, {
@@ -283,12 +333,12 @@ async function restoreBackupData(
             question: c.question,
             answer: c.answer,
             explanation: c.explanation,
-            cardType: c.card_type || 'qa',
+            cardType: c.card_type || "qa",
             options: c.options,
           });
           stats.study_cards++;
         } catch (err) {
-          logger.warn('Failed to restore study card:', err);
+          logger.warn("Failed to restore study card:", err);
         }
       }
     }

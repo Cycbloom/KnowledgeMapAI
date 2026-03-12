@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { aiService } from './ai/index.js';
-import { logger } from '../utils/logger.js';
+import { aiService } from './aiService.js';
+import { logger } from '../../utils/logger.js';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;

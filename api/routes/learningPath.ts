@@ -3,9 +3,9 @@ import { requireAuth, type AuthRequest } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { ErrorCodes } from "../constants/errorCodes.js";
-import { graphService } from "../services/graphService.js";
+import { graphService } from "../services/graph/index.js";
 import { getAIProviderForTask } from "../services/ai/factory.js";
-import { promptService } from "../services/promptService.js";
+import { promptService } from "../services/ai/promptService.js";
 import { logger } from "../utils/logger.js";
 import { z } from "zod";
 

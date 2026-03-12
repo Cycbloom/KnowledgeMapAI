@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { aiService } from '../services/aiService.js';
+import { aiService } from '../services/ai/aiService.js';
 import { logger } from './logger.js';
 
 export interface SimilaritySearchOptions {

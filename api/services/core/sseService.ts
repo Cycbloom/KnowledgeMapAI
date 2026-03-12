@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { logger } from '../utils/logger.js';
+import { logger } from '../../utils/logger.js';
 
 class SSEService {
   private clients: Map<string, Response[]> = new Map();

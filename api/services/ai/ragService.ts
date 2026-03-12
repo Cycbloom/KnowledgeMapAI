@@ -1,8 +1,8 @@
-import { supabaseAdmin } from '../supabase.js';
+import { supabaseAdmin } from '../../supabase.js';
 import { AIService } from './aiService.js';
-import { getAIProviderForTask } from './ai/factory.js';
-import { logger } from '../utils/logger.js';
-import { buildNodeContext, buildNodesContext, NodeData } from './ai/utils.js';
+import { getAIProviderForTask } from './factory.js';
+import { logger } from '../../utils/logger.js';
+import { buildNodeContext, buildNodesContext, NodeData } from './utils.js';
 
 export interface RAGContext {
   graphId: string;

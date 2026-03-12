@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor } from './index.js';
-import { aiService } from '../aiService.js';
+import { aiService } from '../ai/aiService.js';
 import { logger } from '../../utils/logger.js';
 
 const BATCH_SIZE = 20;

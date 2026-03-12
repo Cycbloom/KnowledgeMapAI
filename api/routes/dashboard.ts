@@ -2,7 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { dashboardService } from '../services/dashboardService.js';
+import { dashboardService } from '../services/common/dashboardService.js';
 
 const router = Router();
 

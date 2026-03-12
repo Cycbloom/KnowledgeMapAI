@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { getPaginationParams, PaginationOptions } from '../utils/pagination.js';
+import { getPaginationParams, PaginationOptions } from '../../utils/pagination.js';
 
 export type ReviewType = 'daily' | 'task' | 'weekly';
 export type Mood = 'great' | 'good' | 'neutral' | 'tired' | 'stressed';

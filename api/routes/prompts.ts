@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { AuthRequest, requireAuth } from '../middleware/auth.js';
 import { getAIProviderForTask } from '../services/ai/factory.js';
-import { promptService } from '../services/promptService.js';
+import { promptService } from '../services/ai/promptService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { logger } from '../utils/logger.js';

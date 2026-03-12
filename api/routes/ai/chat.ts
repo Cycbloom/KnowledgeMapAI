@@ -9,11 +9,12 @@ import {
   suggestNextTopicSchema
 } from '../../schemas/index.js';
 import { ErrorCodes } from '../../constants/errorCodes.js';
-import { getMockResponse, aiService } from '../../services/aiService.js';
+import { aiService } from '../../services/ai/aiService.js';
+import { getMockResponse } from '../../services/ai/mock.js';
 import { getAIProviderForTask, getAIProvider } from '../../services/ai/factory.js';
 import { logger } from '../../utils/logger.js';
-import { graphService } from '../../services/graphService.js';
-import { promptService } from '../../services/promptService.js';
+import { graphService } from '../../services/graph/index.js';
+import { promptService } from '../../services/ai/promptService.js';
 import { supabaseAdmin } from '../../supabase.js';
 import { setSSEHeaders, sendStreamChunk, sendStreamDone, sendStreamError } from './utils.js';
 

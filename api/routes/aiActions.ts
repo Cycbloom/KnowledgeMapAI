@@ -2,7 +2,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
-import { aiActionService } from '../services/aiActionService.js';
+import { aiActionService } from '../services/ai/aiActionService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 

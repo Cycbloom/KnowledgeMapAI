@@ -1,8 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { logger } from '../utils/logger.js';
-import { searchSimilarKnowledgePoints } from '../utils/similaritySearch.js';
-import { PaginationOptions, getPaginationParams } from '../utils/pagination.js';
-import type { KnowledgePoint, KnowledgePointVisibility } from '../../src/types/index.js';
+import { logger } from '../../utils/logger.js';
+import { searchSimilarKnowledgePoints } from '../../utils/similaritySearch.js';
+import { PaginationOptions, getPaginationParams } from '../../utils/pagination.js';
+import type { KnowledgePoint, KnowledgePointVisibility } from '../../../shared/types/index.js';
 
 export type { KnowledgePoint, KnowledgePointVisibility };
 

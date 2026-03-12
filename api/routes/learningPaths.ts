@@ -3,13 +3,13 @@ import { requireAuth, type AuthRequest } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { ErrorCodes } from "../constants/errorCodes.js";
-import { learningPathService } from "../services/learningPathService.js";
-import { graphService } from "../services/graphService.js";
+import { learningPathService } from "../services/study/learningPathService.js";
+import { graphService } from "../services/graph/index.js";
 import { getAIProviderForTask } from "../services/ai/factory.js";
-import { promptService } from "../services/promptService.js";
+import { promptService } from "../services/ai/promptService.js";
 import { logger } from "../utils/logger.js";
 import { z } from "zod";
-import type { LearningPath } from "../services/learningPathService.js";
+import type { LearningPath } from "../services/study/learningPathService.js";
 
 const router = Router();
 
@@ -581,9 +581,7 @@ router.post(
           supabase,
           req.user.id,
           {
-            title:
-              path_title ||
-              `${graphMeta?.title || "图谱"}学习路径`,
+            title: path_title || `${graphMeta?.title || "图谱"}学习路径`,
             goal: target_goal,
             source_graph_id: graph_id,
             total_estimated_time: totalEstimatedTime,
@@ -732,7 +730,9 @@ ${JSON.stringify(edgesInfo, null, 2)}
         reason: item.reason || "",
         estimatedTime: item.estimatedTime || 15,
         prerequisites: item.prerequisites || [],
-        isCompleted: progress?.masteryLevel ? progress.masteryLevel > 0.8 : false,
+        isCompleted: progress?.masteryLevel
+          ? progress.masteryLevel > 0.8
+          : false,
         masteryLevel: progress?.masteryLevel || 0,
         nextReviewDate: progress?.nextReviewDate?.toISOString() || null,
       };
@@ -891,9 +891,7 @@ function topologicalSort(
   });
 
   if (cycleNodes.size > 0) {
-    logger.info(
-      `检测到 ${cycleNodes.size} 个循环依赖节点，已按最优顺序排列`,
-    );
+    logger.info(`检测到 ${cycleNodes.size} 个循环依赖节点，已按最优顺序排列`);
   }
 
   return sortedNodes;
@@ -1042,7 +1040,10 @@ async function buildProgressMap(
           existing.reviewCount,
           p.review_count || 0,
         );
-        existing.stability = Math.max(existing.stability, p.fsrs_stability || 0);
+        existing.stability = Math.max(
+          existing.stability,
+          p.fsrs_stability || 0,
+        );
         existing.difficulty = p.fsrs_difficulty || 0;
 
         if (p.fsrs_last_review)

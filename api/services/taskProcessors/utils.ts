@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { promptService } from '../promptService.js';
+import { promptService } from '../ai/promptService.js';
 import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers.js';
 import { logger } from '../../utils/logger.js';
 import { getNextLevel } from '../../utils/levelUtils.js';

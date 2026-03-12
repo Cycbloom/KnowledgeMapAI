@@ -10,9 +10,9 @@ import {
 } from '../../schemas/index.js';
 import { ErrorCodes } from '../../constants/errorCodes.js';
 import { AppError } from '../../middleware/errorHandler.js';
-import { aiService } from '../../services/aiService.js';
+import { aiService } from '../../services/ai/aiService.js';
 import { taskService } from '../../services/taskService.js';
-import { graphNodeService } from '../../services/graphNodeService.js';
+import { graphNodeService } from '../../services/graph/index.js';
 import { logger } from '../../utils/logger.js';
 
 const router = Router();

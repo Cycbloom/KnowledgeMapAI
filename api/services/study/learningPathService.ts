@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "../utils/logger.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../constants/errorCodes.js";
+import { logger } from "../../utils/logger.js";
+import { AppError } from "../../middleware/errorHandler.js";
+import { ErrorCodes } from "../../constants/errorCodes.js";
 
 export interface LearningPath {
   id: string;

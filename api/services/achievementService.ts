@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../supabase.js';
-import { periodicTaskService } from './periodicTaskService.js';
+import { periodicTaskService } from './scheduler/periodicTaskService.js';
 
 export interface Achievement {
   id: string;

@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { logger } from '../utils/logger.js';
-import { healthService } from '../services/healthService.js';
+import { healthService } from '../services/core/healthService.js';
 import { supabaseAdmin } from '../supabase.js';
 
 const router = Router();

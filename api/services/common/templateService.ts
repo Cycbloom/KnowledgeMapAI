@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { getPaginationParams, PaginationOptions } from '../utils/pagination.js';
-import { logger } from '../utils/logger.js';
+import { getPaginationParams, PaginationOptions } from '../../utils/pagination.js';
+import { logger } from '../../utils/logger.js';
 
 export interface TaskTemplate {
   id: string;

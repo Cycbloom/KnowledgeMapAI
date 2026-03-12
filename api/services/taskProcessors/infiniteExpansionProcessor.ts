@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index.js';
 import { getAIProviderForTask } from '../ai/factory.js';
-import { promptService } from '../promptService.js';
+import { promptService } from '../ai/promptService.js';
 import { logger } from '../../utils/logger.js';
 import { generateNodesForGraph } from './utils.js';
 import { checkDuplicateGraphTopic } from '../../utils/similaritySearch.js';

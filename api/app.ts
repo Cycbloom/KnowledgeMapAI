@@ -48,7 +48,7 @@ import quizSetRoutes from "./routes/quizSets.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger.js";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler.js";
-import { syncExistingBackups } from "./services/backupSyncService.js";
+import { syncExistingBackups } from "./services/common/backupSyncService.js";
 
 // load env
 dotenv.config();

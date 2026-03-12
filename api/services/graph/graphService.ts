@@ -1,20 +1,20 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { cacheService, CacheKeys } from "./cacheService.js";
+import { cacheService, CacheKeys } from "../common/cacheService.js";
 import {
   buildNodeFromGraphNode,
   GRAPH_NODES_SELECT,
-} from "../utils/nodeHelpers.js";
-import { softDelete } from "../utils/softDelete.js";
-import { logger } from "../utils/logger.js";
-import { getLevelIndex } from "../utils/levelUtils.js";
-import { withRpcFallback } from "../utils/rpcFallback.js";
+} from "../../utils/nodeHelpers.js";
+import { softDelete } from "../../utils/softDelete.js";
+import { logger } from "../../utils/logger.js";
+import { getLevelIndex } from "../../utils/levelUtils.js";
+import { withRpcFallback } from "../../utils/rpcFallback.js";
 import {
   checkDuplicateGraphTopic,
   GraphTopicCheckResult,
-} from "../utils/similaritySearch.js";
-import { aiService } from "./ai/index.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../constants/errorCodes.js";
+} from "../../utils/similaritySearch.js";
+import { aiService } from "../ai/index.js";
+import { AppError } from "../../middleware/errorHandler.js";
+import { ErrorCodes } from "../../constants/errorCodes.js";
 
 interface GraphWithCount {
   id: string;

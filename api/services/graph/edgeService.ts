@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { Edge, EdgeLineStyle } from '@/types';
-import { softDelete, softDeleteBatch } from '../utils/softDelete.js';
-import { logger } from '../utils/logger.js';
+import { softDelete, softDeleteBatch } from '../../utils/softDelete.js';
+import { logger } from '../../utils/logger.js';
 
 interface CreateEdgeData {
   graph_id: string;

@@ -1,43 +1,59 @@
-export { achievementService } from './achievementService.js';
-export { aiActionService } from './aiActionService.js';
-export { aiService } from './aiService.js';
-export { authService } from './authService.js';
-export { autoGraphService } from './autoGraphService.js';
-export { backupService } from './backupService.js';
-export { syncExistingBackups } from './backupSyncService.js';
-export { cacheService } from './cacheService.js';
-export { dashboardService } from './dashboardService.js';
-export { edgeService } from './edgeService.js';
-export { embeddingService } from './embeddingService.js';
-export { focusService } from './focusService.js';
-export { graphNodeService } from './graphNodeService.js';
-export { graphRelationService } from './graphRelationService.js';
-export { graphService } from './graphService.js';
-export { healthService } from './healthService.js';
-export { knowledgePointService } from './knowledgePointService.js';
-export { pdfService } from './pdfService.js';
-export { promptService } from './promptService.js';
-export { taskQueue } from './queueService.js';
-export { ragService } from './ragService.js';
-export { searchService } from './searchService.js';
-export { settingsService } from './settingsService.js';
-export { sseService } from './sseService.js';
-export { studyProgressService } from './studyProgressService.js';
-export { studyService } from './studyService.js';
-export { taskService } from './taskService.js';
-export { templateService } from './templateService.js';
-export { relationshipTypeService } from './relationshipTypeService.js';
-export { graphTemplateService } from './graphTemplateService.js';
-export { reviewService } from './reviewService.js';
-export { periodicTaskService } from './periodicTaskService.js';
-export { taskAnalyticsService } from './taskAnalyticsService.js';
-export { taskRecommendationService } from './taskRecommendationService.js';
+export { achievementService } from "./achievementService.js";
+export {
+  aiActionService,
+  aiService,
+  embeddingService,
+  promptService,
+  ragService,
+  searchService,
+} from "./ai/index.js";
+export { focusService } from "./focusService.js";
+export { studyProgressService } from "./study/studyProgressService.js";
+export { studyService } from "./study/studyService.js";
+export { taskService } from "./taskService.js";
+export { reviewService } from "./study/reviewService.js";
+export { periodicTaskService } from "./scheduler/periodicTaskService.js";
+export { taskAnalyticsService } from "./scheduler/taskAnalyticsService.js";
+export { taskRecommendationService } from "./scheduler/taskRecommendationService.js";
 
-export { aiService as ai } from './ai/index.js';
-export { taskProcessors, registerProcessor, getProcessor } from './taskProcessors/index.js';
-export type { TaskProcessor, UpdateTaskStatusFunction } from './taskProcessors/index.js';
+export { aiService as ai } from "./ai/index.js";
+export {
+  taskProcessors,
+  registerProcessor,
+  getProcessor,
+} from "./taskProcessors/index.js";
+export type {
+  TaskProcessor,
+  UpdateTaskStatusFunction,
+} from "./taskProcessors/index.js";
 
-export * from './core/index.js';
-export * from './graph/index.js';
-export * from './study/index.js';
-export * from './common/index.js';
+export * from "./core/index.js";
+export * from "./graph/index.js";
+export * from "./study/index.js";
+export {
+  cacheService,
+  CacheKeys,
+  taskQueue,
+  backupService,
+  createBackup,
+  deleteBackupFile,
+  readBackupFile,
+  cleanupOldSnapshots,
+  runAutoBackup,
+  syncExistingBackups,
+  templateService,
+  TEMPLATE_CATEGORIES,
+  pdfService,
+  dashboardService,
+} from "./common/index.js";
+export type {
+  BackupSnapshot,
+  TaskTemplate,
+  CreateTemplateData,
+  UpdateTemplateData,
+  TemplateFilters,
+  ApplyTemplateData,
+  BlindSpot,
+  DistributionItem,
+  DashboardStats,
+} from "./common/index.js";

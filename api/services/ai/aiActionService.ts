@@ -1,10 +1,9 @@
-
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TemplateEngine } from '../utils/templateEngine.js';
-import { getAIProviderForTask } from './ai/factory.js';
-import { logger } from '../utils/logger.js';
-import { supabaseAdmin } from '../supabase.js';
-import { createKnowledgePointWithGraphNode, GRAPH_NODES_SELECT } from '../utils/nodeHelpers.js';
+import { TemplateEngine } from '../../utils/templateEngine.js';
+import { getAIProviderForTask } from './factory.js';
+import { logger } from '../../utils/logger.js';
+import { supabaseAdmin } from '../../supabase.js';
+import { createKnowledgePointWithGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers.js';
 
 export interface AIActionVariables {
   includeParent?: boolean;

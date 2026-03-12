@@ -11,11 +11,11 @@ import {
   uuidParamsSchema,
   shareGraphSchema,
 } from "../schemas/index.js";
-import { graphService } from "../services/graphService.js";
+import { graphService } from "../services/graph/index.js";
 import { ErrorCodes } from "../constants/errorCodes.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { achievementService } from "../services/achievementService.js";
-import { cacheService } from "../services/cacheService.js";
+import { cacheService } from "../services/common/cacheService.js";
 import { logger } from "../utils/logger.js";
 import { z } from "zod";
 
@@ -64,12 +64,12 @@ router.get("/map", requireAuth, async (req: AuthRequest, res: Response) => {
     supabase
       .from("graph_relations")
       .select(
-        "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at"
+        "id, source_graph_id, target_graph_id, relation_type, context, metadata, created_at",
       )
       .or(
         `source_graph_id.in.(${graphIds.join(
-          ","
-        )}),target_graph_id.in.(${graphIds.join(",")})`
+          ",",
+        )}),target_graph_id.in.(${graphIds.join(",")})`,
       ),
   ]);
 
@@ -115,7 +115,7 @@ router.get("/tags", requireAuth, async (req: AuthRequest, res: Response) => {
       knowledge_points (
         properties
       )
-    `
+    `,
     )
     .in("graph_id", graphIds)
     .is("deleted_at", null);
@@ -156,8 +156,8 @@ router.get(
       .select("source_graph_id, target_graph_id, relation_type")
       .or(
         `source_graph_id.in.(${graphIds.join(
-          ","
-        )}),target_graph_id.in.(${graphIds.join(",")})`
+          ",",
+        )}),target_graph_id.in.(${graphIds.join(",")})`,
       );
 
     const connectedGraphIds = new Set<string>();
@@ -174,11 +174,11 @@ router.get(
     (relations || []).forEach((r) => {
       graphRelationCount.set(
         r.source_graph_id,
-        (graphRelationCount.get(r.source_graph_id) || 0) + 1
+        (graphRelationCount.get(r.source_graph_id) || 0) + 1,
       );
       graphRelationCount.set(
         r.target_graph_id,
-        (graphRelationCount.get(r.target_graph_id) || 0) + 1
+        (graphRelationCount.get(r.target_graph_id) || 0) + 1,
       );
     });
 
@@ -186,7 +186,7 @@ router.get(
       .filter((g) => {
         const asTarget = (relations || []).filter(
           (r) =>
-            r.target_graph_id === g.id && r.relation_type === "prerequisite"
+            r.target_graph_id === g.id && r.relation_type === "prerequisite",
         );
         return asTarget.length === 0 && (graphRelationCount.get(g.id) || 0) > 0;
       })
@@ -252,7 +252,7 @@ router.get(
       suggested_paths: suggestedPaths,
       merge_suggestions: mergeSuggestions.slice(0, 3),
     });
-  }
+  },
 );
 
 // Check if a topic is duplicate (Auth Required)
@@ -267,14 +267,14 @@ router.post(
       req.supabase!,
       req.user.id,
       topic,
-      exclude_graph_id
+      exclude_graph_id,
     );
 
     res.json({
       is_duplicate: result.isDuplicate,
       similar_graphs: result.similarGraphs,
     });
-  }
+  },
 );
 
 // Create a new graph (Auth Required)
@@ -288,14 +288,14 @@ router.post(
       req.supabase!,
       req.user.id,
       title,
-      description
+      description,
     );
 
     // Update achievements
     achievementService.updateCreationStats(req.user.id).catch(console.error);
 
     res.status(201).json(data);
-  }
+  },
 );
 
 router.get(
@@ -315,7 +315,7 @@ router.get(
       throw new AppError("未找到该图谱", 404, ErrorCodes.GRAPH_NOT_FOUND);
     }
     res.json(data);
-  }
+  },
 );
 
 // Update a graph (Auth Required - Owner Only)
@@ -330,10 +330,10 @@ router.put(
       req.supabase!,
       id,
       req.user.id,
-      updates
+      updates,
     );
     res.json(data);
-  }
+  },
 );
 
 // Toggle Public Status
@@ -349,10 +349,10 @@ router.put(
       req.supabase!,
       id,
       req.user.id,
-      { is_public }
+      { is_public },
     );
     res.json(data);
-  }
+  },
 );
 
 // Toggle Favorite Status
@@ -368,7 +368,7 @@ router.put(
       throw new AppError(
         "is_favorite 必须是布尔值",
         400,
-        ErrorCodes.VALIDATION_ERROR
+        ErrorCodes.VALIDATION_ERROR,
       );
     }
 
@@ -376,10 +376,10 @@ router.put(
       req.supabase!,
       id,
       req.user.id,
-      is_favorite
+      is_favorite,
     );
     res.json(data);
-  }
+  },
 );
 
 // Delete a graph (Soft Delete)
@@ -395,7 +395,7 @@ router.delete(
     await cacheService.invalidateGraphCache(req.user.id, id);
 
     res.json({ message: "图谱已移至回收站" });
-  }
+  },
 );
 
 // Batch restore graphs (must be before /:id/restore)
@@ -408,10 +408,10 @@ router.post(
     const result = await graphService.restoreGraphs(
       req.supabase!,
       ids,
-      req.user.id
+      req.user.id,
     );
     res.json({ message: `已恢复 ${result.count} 个图谱`, count: result.count });
-  }
+  },
 );
 
 // Batch permanently delete graphs (must be before /:id/permanent)
@@ -424,13 +424,13 @@ router.delete(
     const result = await graphService.permanentDeleteGraphs(
       req.supabase!,
       ids,
-      req.user.id
+      req.user.id,
     );
     res.json({
       message: `已永久删除 ${result.count} 个图谱`,
       count: result.count,
     });
-  }
+  },
 );
 
 // Restore a graph
@@ -442,7 +442,7 @@ router.post(
     const { id } = req.params;
     await graphService.restoreGraph(req.supabase!, id, req.user.id);
     res.json({ message: "图谱已恢复" });
-  }
+  },
 );
 
 // Permanently Delete a graph
@@ -454,7 +454,7 @@ router.delete(
     const { id } = req.params;
     await graphService.permanentDeleteGraph(req.supabase!, id, req.user.id);
     res.json({ message: "图谱已永久删除" });
-  }
+  },
 );
 
 // Get nodes and edges for a graph (Optional Auth)
@@ -471,11 +471,11 @@ router.get(
     if (userId) {
       graphService
         .updateLastUsedAt(req.supabase!, id, userId)
-        .catch(err => logger.error('Update last used at failed:', err));
+        .catch((err) => logger.error("Update last used at failed:", err));
     }
 
     res.json(data);
-  }
+  },
 );
 
 // Get node status (Optional Auth - Public view has no status)
@@ -490,7 +490,7 @@ router.get(
       ? await graphService.getGraphNodeStatus(req.supabase!, userId, id)
       : [];
     res.json(data);
-  }
+  },
 );
 
 // Get learning path for a graph (Optional Auth)
@@ -505,7 +505,7 @@ router.get(
     // Reuse logic: users can see path if they can see the graph
     const data = await graphService.getLearningPath(req.supabase!, userId, id);
     res.json({ path: data });
-  }
+  },
 );
 
 // Analyze graph structure (Auth Required)
@@ -521,14 +521,14 @@ router.get(
       const analysis = await graphService.analyzeGraph(
         req.supabase!,
         userId,
-        id
+        id,
       );
       res.json(analysis);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "图谱分析失败";
       throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
-  }
+  },
 );
 
 // Get missing connection suggestions (Auth Required)
@@ -546,7 +546,7 @@ router.get(
         req.supabase!,
         userId,
         id,
-        maxSuggestions
+        maxSuggestions,
       );
       res.json({ suggestions });
     } catch (error: unknown) {
@@ -554,7 +554,7 @@ router.get(
         error instanceof Error ? error.message : "获取连接建议失败";
       throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
-  }
+  },
 );
 
 export default router;

@@ -2,10 +2,10 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } from '../schemas/index.js';
-import { cacheService, CacheKeys } from '../services/cacheService.js';
+import { cacheService, CacheKeys } from '../services/common/cacheService.js';
 import { ErrorCodes } from '../constants/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { studyService } from '../services/studyService.js';
+import { studyService } from '../services/study/studyService.js';
 import { achievementService } from '../services/achievementService.js';
 import { logger } from '../utils/logger.js';
 

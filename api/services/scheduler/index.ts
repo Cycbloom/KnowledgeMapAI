@@ -7,6 +7,18 @@ export {
 } from "./achievementService.js";
 export { statsService, StatsService } from "./statsService.js";
 export { settingsService, SettingsService } from "./settingsService.js";
+export {
+  periodicTaskService,
+  PeriodicTaskService,
+} from "./periodicTaskService.js";
+export {
+  taskAnalyticsService,
+  TaskAnalyticsService,
+} from "./taskAnalyticsService.js";
+export {
+  taskRecommendationService,
+  TaskRecommendationService,
+} from "./taskRecommendationService.js";
 
 export type {
   ScheduledTask,
@@ -34,3 +46,18 @@ export type {
 } from "./achievementService.js";
 
 export type { SchedulerStats } from "./statsService.js";
+
+export type {
+  PeriodicTask,
+  PeriodicPass,
+  PassReward,
+  UserPassProgress,
+} from "./periodicTaskService.js";
+
+export type {
+  TaskRecommendation,
+  TimeSlot,
+  EfficiencyData,
+  RecommendationContext,
+  PrioritySuggestion,
+} from "./taskRecommendationService.js";

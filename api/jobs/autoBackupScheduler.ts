@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../supabase.js';
-import { createBackup, cleanupOldSnapshots } from '../services/backupService.js';
+import { createBackup, cleanupOldSnapshots } from '../services/common/backupService.js';
 import { logger } from '../utils/logger.js';
 
 const THIRTY_MINUTES = 30 * 60 * 1000;

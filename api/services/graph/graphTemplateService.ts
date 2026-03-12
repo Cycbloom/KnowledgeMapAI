@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { logger } from '../utils/logger.js';
+import { logger } from '../../utils/logger.js';
 
 export interface GraphTemplateNode {
   id: string;

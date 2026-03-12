@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { supabaseAdmin } from '../supabase.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { authService } from '../services/authService.js';
+import { authService } from '../services/core/authService.js';
 import { validate } from '../middleware/validate.js';
 import { registerSchema, loginSchema, updateProfileSchema } from '../schemas/index.js';
 import { AppError } from '../middleware/errorHandler.js';

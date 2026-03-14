@@ -3,4 +3,3 @@ export * from "@shared/types";
 
 // 前端专用类型
 export * from "./calendar.js";
-export * from "./api.js";

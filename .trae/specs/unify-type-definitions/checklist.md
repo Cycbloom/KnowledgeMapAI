@@ -1,0 +1,10 @@
+- [x] `shared/types/ai.ts` 文件创建并包含所有 AI 相关类型
+- [x] `shared/types/index.ts` 正确导出 AI 类型
+- [x] `api/utils/nodeHelpers.ts` 从 `@shared/types` 导入类型
+- [x] 所有 API 层文件正确导入 AI 类型
+- [x] `src/types/index.ts` 正确重新导出 AI 类型
+- [x] `src/types/api.ts` 已删除
+- [x] `api/types/ai.ts` 和 `api/types/index.ts` 已删除
+- [x] `api/types/express.d.ts` 保留（Express 类型扩展）
+- [x] 类型检查通过 `npm run check`
+- [x] 代码检查通过 `npm run lint`

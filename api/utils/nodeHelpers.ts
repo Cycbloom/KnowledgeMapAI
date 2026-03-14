@@ -1,4 +1,4 @@
-import type { Node, KnowledgePoint, GraphNode } from "../../src/types";
+import type { Node, KnowledgePoint, GraphNode } from "@shared/types";
 import { logger } from "./logger.js";
 
 export type GraphNodeRaw = Omit<GraphNode, "knowledge_point_id"> & {

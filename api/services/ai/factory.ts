@@ -1,4 +1,4 @@
-import { AIProvider, AIProviderType } from '../../types/ai.js';
+import type { AIProvider, AIProviderType } from '@shared/types';
 import { DeepseekProvider } from './providers/deepseek.js';
 import { VolcengineProvider } from './providers/volcengine.js';
 import { AliyunProvider } from './providers/aliyun.js';

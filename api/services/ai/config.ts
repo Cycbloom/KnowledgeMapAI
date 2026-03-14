@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { AIProviderType, AIProviderConfig } from '../../types/ai.js';
+import type { AIProviderType, AIProviderConfig } from '@shared/types';
 import { settingsService } from '../core/settingsService.js';
 import { logger } from '../../utils/logger.js';
 

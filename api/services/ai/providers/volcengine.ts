@@ -1,5 +1,5 @@
 import { BaseAIProvider } from './base.js';
-import { AIProviderConfig } from '../../../types/ai.js';
+import type { AIProviderConfig } from '@shared/types';
 import { logger } from '../../../utils/logger.js';
 import { AppError } from '../../../middleware/errorHandler.js';
 import { ErrorCodes } from '../../../constants/errorCodes.js';

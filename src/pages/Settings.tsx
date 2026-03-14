@@ -4,7 +4,7 @@ import { useAIStatus, useUser } from '../hooks/queries';
 import { useUpdateProfileMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useMessageStore } from '../store/useMessageStore';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks';
 import { Cpu, KeyRound, Brain, Save, Palette, Sun, Moon, Monitor, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { AvailableModels } from '../types';
 

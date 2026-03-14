@@ -4,7 +4,7 @@ import { TemplateCard } from './TemplateCard';
 import { TemplatePreview } from './TemplatePreview';
 import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTemplates } from '../../hooks/queries';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 
 interface TemplateSelectorProps {
   onSelectTemplate: (template: Template | null) => void;

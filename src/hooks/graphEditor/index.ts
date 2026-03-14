@@ -19,6 +19,15 @@ export { useViewState } from './useViewState';
 export { usePresentationState } from './usePresentationState';
 export { useMiscState } from './useMiscState';
 
+export { useGraphComputed } from './useGraphComputed';
+export { useGraphEffects } from './useGraphEffects';
+export { useGraphExportOperations } from './useGraphExportOperations';
+export { useGraphHistoryHandlers } from './useGraphHistoryHandlers';
+export { useGraphInteraction } from './useGraphInteraction';
+export { useGraphNodeOperations } from './useGraphNodeOperations';
+export { useKnowledgePointOperations } from './useKnowledgePointOperations';
+export { useExplorationPath } from './useExplorationPath';
+
 export type GraphEditorState = {
   graphRef: React.RefObject<any>;
 } & SelectionState & SidebarState & ExplorationState & FocusState & ModalState & FormState & ViewState & PresentationState & MiscState;

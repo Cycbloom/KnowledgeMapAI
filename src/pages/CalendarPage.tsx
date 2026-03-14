@@ -11,7 +11,7 @@ import {
   Clock,
   Tag,
 } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks';
 import { useMessageStore } from '../store/useMessageStore';
 import { api } from '../services/api';
 import { CalendarMonthView } from '../components/Calendar/CalendarMonthView';

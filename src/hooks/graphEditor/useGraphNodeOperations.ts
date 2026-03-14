@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import type { Node, Edge, NodeLevel } from '../types';
-import { HistoryAction } from './useHistory';
-import { GraphEditorState } from './useGraphEditorState';
-import { useMessageStore } from '../store/useMessageStore';
-import { levelLabels } from '../config/graphConfig';
-import { createAsyncHandler } from '../utils/asyncHandler';
+import type { Node, Edge, NodeLevel } from '../../types';
+import { HistoryAction } from '../common/useHistory';
+import { GraphEditorState } from './index';
+import { useMessageStore } from '../../store/useMessageStore';
+import { levelLabels } from '../../config/graphConfig';
+import { createAsyncHandler } from '../../utils/asyncHandler';
 
 interface UseGraphNodeOperationsProps {
   id: string;

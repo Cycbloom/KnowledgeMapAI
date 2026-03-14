@@ -1,5 +1,5 @@
 import React from "react";
-import { GraphEditorState } from "../../../hooks/useGraphEditorState";
+import { GraphEditorState } from "../../../hooks";
 import { GraphSettingsModal } from "./GraphSettingsModal";
 import { HelpModal } from "../../common";
 import { ExportDialog } from "./ExportDialog";

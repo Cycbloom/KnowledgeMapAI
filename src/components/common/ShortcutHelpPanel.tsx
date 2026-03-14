@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, RotateCcw, Search, Keyboard } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { useShortcutStore } from '../../store/useShortcutStore';
 import {
   DEFAULT_SHORTCUTS,

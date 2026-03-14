@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 import { useMessageStore } from '../../../store/useMessageStore';
 import { api } from '../../../services/api';
 import { useQueryClient } from '@tanstack/react-query';

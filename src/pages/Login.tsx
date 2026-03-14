@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useLoginMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks';
 import { Sun, Moon } from 'lucide-react';
 
 export const Login = () => {

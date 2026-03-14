@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, CheckSquare } from "lucide-react";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../hooks";
 import { LearningStatsTab } from "../components/Statistics/LearningStatsTab";
 import { TaskStatsTab } from "../components/Statistics/TaskStatsTab";
 

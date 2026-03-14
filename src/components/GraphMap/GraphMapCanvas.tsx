@@ -21,7 +21,7 @@ import {
   getRelationColor,
 } from '../../utils/graphMapAdapter';
 import { THEME_COLORS } from '../../config/learningStatusColors';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 
 interface GraphMapCanvasProps {
   graphs: Array<Graph & { node_count?: number }>;

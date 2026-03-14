@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { Clock, Move } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { CalendarEvent, ExecutionEvent, EventDropInfo } from '../../types/calendar';
 
 interface CalendarWeekViewProps {

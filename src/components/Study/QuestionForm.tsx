@@ -1,7 +1,7 @@
 import React, { useState, useLayoutEffect, useRef } from 'react';
 import { StudyCard } from '../../types';
 import { CheckSquare, Plus, X } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 
 export interface QuestionFormData {
   question: string;

@@ -90,7 +90,7 @@ export const useGraphWorker = () => {
 
   useEffect(() => {
     workerRef.current = new Worker(
-      new URL('../workers/graphCalculator.worker.ts', import.meta.url),
+      new URL('../../workers/graphCalculator.worker.ts', import.meta.url),
       { type: 'module' }
     );
     proxyRef.current = Comlink.wrap<GraphWorkerApi>(workerRef.current);

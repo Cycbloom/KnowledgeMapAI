@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Settings, X, Clock, AlertCircle, CheckCircle, Timer, Coffee } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
 import { Notification, NotificationType } from '@shared/types';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { useNavigate } from 'react-router-dom';
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {

@@ -10,8 +10,8 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { useTheme } from '../../hooks/useTheme';
-import { useTextToSpeech } from '../../hooks/useTextToSpeech';
+import { useTheme } from "../../hooks";
+import { useTextToSpeech } from "../../hooks";
 import { useMessageStore } from '../../store/useMessageStore';
 import { ExtractedConcept, TutorMode, TTSEngine } from '../../types';
 import { useChatState, Message, Source } from './hooks/useChatState';

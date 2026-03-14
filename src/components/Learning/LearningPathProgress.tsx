@@ -9,7 +9,7 @@ import {
   TrendingUp,
   Zap
 } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 
 interface LearningPathNode {
   id: string;

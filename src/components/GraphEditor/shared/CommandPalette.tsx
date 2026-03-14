@@ -3,7 +3,7 @@ import {
   Search, Command,
   FileText
 } from 'lucide-react';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 import { Node } from '../../../types';
 
 export interface CommandItem {

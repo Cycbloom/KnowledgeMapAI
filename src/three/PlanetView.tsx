@@ -5,7 +5,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Node, Edge, ColorScheme, GraphColorMode, type Node as GraphNode } from '../types';
 import { create3DForceLayout, LayoutNode3D, LayoutLink3D } from './layout/forceLayout3D';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks';
 import { truncateText } from '../utils/textUtils';
 
 interface PlanetViewProps {

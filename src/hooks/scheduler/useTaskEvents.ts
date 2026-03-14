@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventSourcePolyfill } from 'event-source-polyfill';
-import { useStore } from '../store/useStore';
-import { Task } from '../types';
+import { useStore } from '../../store/useStore';
+import { Task } from '../../types';
 
 export const useTaskEvents = () => {
   const queryClient = useQueryClient();

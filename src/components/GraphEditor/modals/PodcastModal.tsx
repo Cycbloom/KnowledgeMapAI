@@ -11,8 +11,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { CodeBlock } from "../../common";
-import { useTextToSpeech } from "../../../hooks/useTextToSpeech";
-import { useTheme } from "../../../hooks/useTheme";
+import { useTextToSpeech } from "../../../hooks";
+import { useTheme } from "../../../hooks";
 import { api } from "../../../services/api";
 import { useMessageStore } from "../../../store/useMessageStore";
 import { Node } from "../../../types";

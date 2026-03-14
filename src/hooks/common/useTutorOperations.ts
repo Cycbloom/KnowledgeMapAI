@@ -1,9 +1,9 @@
-import type { Node, Edge, ExtractedConcept, TutorMode } from '../types';
-import { getNextLevel, getLevelColorHex } from '../lib/graphUtils';
+import type { Node, Edge, ExtractedConcept, TutorMode } from '../../types';
+import { getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from './useHistory';
-import { GraphEditorState } from './useGraphEditorState';
-import { useMessageStore } from '../store/useMessageStore';
-import { api } from '../services/api';
+import { GraphEditorState } from '../graphEditor';
+import { useMessageStore } from '../../store/useMessageStore';
+import { api } from '../../services/api';
 
 interface UseTutorOperationsProps {
   id: string;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useCombinedView } from '../hooks/useCombinedView';
+import { useCombinedView } from '../hooks';
 import { CombinedViewCanvas } from '../components/CombinedView/CombinedViewCanvas';
 import { api } from '../services/api';
 import type { Graph, CombinedViewLayoutMode, KnowledgePoint, GraphNodeWithKnowledgePoint, Edge } from '../types';

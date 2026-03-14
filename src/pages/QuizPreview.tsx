@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks';
 import { useQuizSet, useDeleteQuizSetMutation, useRegenerateCardMutation } from '../hooks/queries';
 import { QuestionList } from '../components/Quiz';
 import { QuestionForm, type QuestionFormData } from '../components/Study/QuestionForm';

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ExplorationPathItem } from '../types';
-import { api } from '../services/api';
+import { ExplorationPathItem } from '../../types';
+import { api } from '../../services/api';
 
 interface UseExplorationPathOptions {
   graphId?: string;

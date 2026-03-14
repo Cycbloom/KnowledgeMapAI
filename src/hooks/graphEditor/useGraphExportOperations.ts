@@ -1,8 +1,8 @@
-import type { Node, Edge, Graph } from '../types';
-import { GraphEditorState } from './useGraphEditorState';
-import { useMessageStore } from '../store/useMessageStore';
-import { api } from '../services/api';
-import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../utils/exportUtils';
+import type { Node, Edge, Graph } from '../../types';
+import { GraphEditorState } from './index';
+import { useMessageStore } from '../../store/useMessageStore';
+import { api } from '../../services/api';
+import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../../utils/exportUtils';
 
 interface UseGraphExportOperationsProps {
   id: string;
@@ -113,7 +113,6 @@ export const useGraphExportOperations = ({
           onSuccess: () => {
             addMessage({ content: '图谱已删除', type: 'success' });
             navigate('/dashboard');
-            // No need to close modal as we navigate away
           },
           onError: (err: any) => {
             console.error(err);

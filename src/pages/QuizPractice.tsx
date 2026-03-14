@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Loader2,
 } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks';
 import { useQuizSet } from '../hooks/queries';
 import { QuizProgressBar } from '../components/Quiz/QuizProgressBar';
 import { QuizResult } from '../components/Quiz/QuizResult';

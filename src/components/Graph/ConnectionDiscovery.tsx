@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link2, Sparkles, Loader2, Check, X, RefreshCw, Network } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { Node, Edge } from '../../types';
 
 interface SuggestedConnection {

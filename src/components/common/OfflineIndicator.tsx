@@ -1,7 +1,7 @@
 import React from "react";
 import { WifiOff } from "lucide-react";
-import { useNetworkStatus } from "../../hooks/useNetworkStatus";
-import { useTheme } from "../../hooks/useTheme";
+import { useNetworkStatus } from "../../hooks";
+import { useTheme } from "../../hooks";
 
 export const OfflineIndicator: React.FC = () => {
   const isOnline = useNetworkStatus();

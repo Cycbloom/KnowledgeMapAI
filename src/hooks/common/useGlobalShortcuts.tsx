@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { useShortcutStore } from '../store/useShortcutStore';
+import { useShortcutStore } from '../../store/useShortcutStore';
 import { 
   DEFAULT_SHORTCUTS, 
   matchesShortcut,
   ShortcutDefinition,
   ShortcutKey
-} from '../config/shortcuts';
+} from '../../config/shortcuts';
 
 type ActionHandler = () => void;
 

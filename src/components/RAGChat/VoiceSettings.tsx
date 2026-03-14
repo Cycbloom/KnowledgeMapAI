@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Volume2, VolumeX, Loader2, X, Globe, Cpu, Play, Pause } from 'lucide-react';
-import { useTextToSpeech } from '../../hooks/useTextToSpeech';
+import { useTextToSpeech } from "../../hooks";
 import { TTSEngine } from '../../types';
 
 interface VoiceSettingsProps {

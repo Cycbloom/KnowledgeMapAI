@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 
 interface MiniMapProps {
   nodes: { id: string; x: number; y: number }[];

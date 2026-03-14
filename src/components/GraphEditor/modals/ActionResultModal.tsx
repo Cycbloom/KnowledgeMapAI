@@ -6,7 +6,7 @@ import { CodeBlock } from "../../common";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { useTheme } from "../../../hooks/useTheme";
+import { useTheme } from "../../../hooks";
 
 interface ActionResultModalProps {
   isOpen: boolean;

@@ -34,7 +34,7 @@ import {
 } from '../shared/hooks/useVirtualization';
 import { createMindMapLayout } from '../../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
 import { PRESET_RELATIONSHIP_TYPES } from '../../../config/relationshipTypes';
 

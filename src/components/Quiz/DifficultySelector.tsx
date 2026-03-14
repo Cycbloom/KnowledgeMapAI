@@ -1,6 +1,6 @@
 import React from 'react';
 import { GraduationCap, BookOpen, Mountain, Layers } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 
 interface DifficultySelectorProps {
   difficulty: 'easy' | 'medium' | 'hard' | 'mixed';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { TTSEngine } from '../types';
-import { api } from '../services/api';
+import { TTSEngine } from '../../types';
+import { api } from '../../services/api';
 
 interface TextToSpeechOptions {
   rate?: number;

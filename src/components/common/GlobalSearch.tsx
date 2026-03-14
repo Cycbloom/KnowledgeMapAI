@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, LayoutGrid, FileText, Loader2, X, Sparkles, Clock, Filter, CheckCircle, Lock, Trash2 } from 'lucide-react';
 import { api } from '../../services/api';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 
 const SEARCH_HISTORY_KEY = 'knowledgeMap_searchHistory';
 const MAX_HISTORY_ITEMS = 10;

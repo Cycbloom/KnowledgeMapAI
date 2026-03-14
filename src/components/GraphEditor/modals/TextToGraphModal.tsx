@@ -5,7 +5,7 @@ import { parseOpmlToGraph } from '../../../utils/opmlParser';
 import { useTextToGraphMutation, useDocumentToGraphMutation, useImageToGraphMutation } from '../../../hooks/mutations';
 import { useMessageStore } from '../../../store/useMessageStore';
 import { api } from '../../../services/api';
-import { useNetworkStatus } from '../../../hooks/useNetworkStatus';
+import { useNetworkStatus } from "../../../hooks";
 
 interface TextToGraphModalProps {
   isOpen: boolean;

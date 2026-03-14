@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { useMessageStore } from '../store/useMessageStore';
+import { useMessageStore } from '../../store/useMessageStore';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../store/useStore';
-import { AppError, wrapUnknownError, getUserFriendlyMessage, isAuthError } from '../utils/errors';
+import { useStore } from '../../store/useStore';
+import { AppError, wrapUnknownError, getUserFriendlyMessage, isAuthError } from '../../utils/errors';
 
 export const useError = () => {
   const { addMessage } = useMessageStore();

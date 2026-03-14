@@ -10,7 +10,7 @@ import {
   Settings,
   ArrowLeft,
 } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import {
   useCreateQuizSetMutation,
   useGenerateQuizMutation,

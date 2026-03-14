@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { templateApi } from "../../services/api/template";
 import { useMessageStore } from "../../store/useMessageStore";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "../../hooks";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   study: <BookOpen size={18} />,

@@ -30,8 +30,8 @@ import {
   Link as LinkIcon,
   ChevronRight,
 } from "lucide-react";
-import { useTheme } from "../../../hooks/useTheme";
-import { useIsMobile } from "../../../hooks/useIsMobile";
+import { useTheme } from "../../../hooks";
+import { useIsMobile } from "../../../hooks";
 
 interface NodeDetailSidebarProps {
   node: Node;

@@ -31,7 +31,7 @@ import {
   Calendar,
   Timer
 } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
 

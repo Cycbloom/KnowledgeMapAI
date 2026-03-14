@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMessageStore } from '@/store/useMessageStore';
-import { Node, GraphViewMode } from '../types';
+import { Node, GraphViewMode } from '../../types';
 
 interface UseKeyboardShortcutsProps {
   undo: () => void;

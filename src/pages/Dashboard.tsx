@@ -40,11 +40,8 @@ import { ConfirmationModal, SearchResults } from "../components/common";
 import { TemplateSelector } from "../components/Templates/TemplateSelector";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
 import { Template } from "../types";
-import { useTheme } from "../hooks/useTheme";
-import { useIsMobile } from "../hooks/useIsMobile";
+import { useTheme, useIsMobile, useTopicCheck, useSearch } from "../hooks";
 import { api } from "../services/api";
-import { useTopicCheck } from "../hooks/useTopicCheck";
-import { useSearch } from "../hooks/useSearch";
 
 export const Dashboard = () => {
   const { isDark } = useTheme();

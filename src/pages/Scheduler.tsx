@@ -22,7 +22,7 @@ import {
   usePauseScheduledTaskMutation,
   useCompleteScheduledTaskMutation,
   useSchedulerSettings,
-} from "../hooks/useScheduler";
+} from "../hooks";
 import { useMessageStore } from "../store/useMessageStore";
 import { HorizontalQueueView } from "../components/Scheduler/HorizontalQueueView";
 import { KanbanView } from "../components/Scheduler/KanbanView";

@@ -1,19 +1,19 @@
-import { Node, Edge, BranchSuggestion } from '../types';
-import { getLevel, getNextLevel, getLevelColorHex } from '../lib/graphUtils';
-import { HistoryAction } from './useHistory';
-import { GraphEditorState } from './useGraphEditorState';
-import { useMessageStore } from '../store/useMessageStore';
-import { api } from '../services/api';
-import { useStore } from '../store/useStore';
-import { queryKeys } from './queries/config';
+import { Node, Edge, BranchSuggestion } from '../../types';
+import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
+import { HistoryAction } from '../common/useHistory';
+import { GraphEditorState } from '../graphEditor';
+import { useMessageStore } from '../../store/useMessageStore';
+import { api } from '../../services/api';
+import { useStore } from '../../store/useStore';
+import { queryKeys } from '../queries/config';
 import { useQueryClient } from '@tanstack/react-query';
-import { createAsyncHandler } from '../utils/asyncHandler';
+import { createAsyncHandler } from '../../utils/asyncHandler';
 import {
   processExpandSuggestions,
   getExistingTitles,
   getCurrentChildrenTitles,
   buildDefaultExpandPrompt
-} from './utils/nodeExpansionUtils';
+} from '../utils/nodeExpansionUtils';
 
 interface UseGraphAIOperationsProps {
   id: string;

@@ -2,7 +2,7 @@ import React from 'react';
 import type { Node, Edge } from '../../../types';
 import { getLearningStatus, getStatusColors } from '../../../config/learningStatusColors';
 import { getLevel, getLevelLabel } from '../../../lib/graphUtils';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 import { 
   Check, 
   Lock, 

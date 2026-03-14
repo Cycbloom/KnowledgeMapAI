@@ -1,7 +1,7 @@
-import { Node, Edge } from '../types';
-import { GraphEditorState } from './useGraphEditorState';
-import { useMessageStore } from '../store/useMessageStore';
-import { findShortestPath } from '../lib/graphUtils';
+import { Node, Edge } from '../../types';
+import { GraphEditorState } from './index';
+import { useMessageStore } from '../../store/useMessageStore';
+import { findShortestPath } from '../../lib/graphUtils';
 
 interface UseGraphInteractionProps {
   nodes: Node[];
@@ -57,7 +57,6 @@ export const useGraphInteraction = ({
           addMessage({ content: '未找到路径', type: 'error' });
         }
       } else {
-        // Reset and start over
         setPathStartNode(node);
         setPathEndNode(null);
         setHighlightedPath(null);
@@ -70,7 +69,6 @@ export const useGraphInteraction = ({
     setPrevSidebarMode(sidebarMode);
     setSidebarMode('detail');
     
-    // Center the view on the clicked node
     if (state.graphRef.current?.centerNode) {
       state.graphRef.current.centerNode(node.id, { forceRightPanelOpen: true });
     }

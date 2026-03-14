@@ -24,7 +24,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useMessageStore } from "../store/useMessageStore";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../hooks";
 
 type PathStatus = LearningPathStatus | "all";
 

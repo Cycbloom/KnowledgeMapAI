@@ -22,7 +22,7 @@ import {
   Calendar,
   Target,
 } from "lucide-react";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "../../hooks";
 import { api } from '../../services/api';
 
 interface TaskAnalyticsResponse {

@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useStore } from "../../store/useStore";
 import { useUser, useTasks } from "../../hooks/queries";
 import { useLogoutMutation } from "../../hooks/mutations";
-import { useTaskEvents } from "../../hooks/useTaskEvents";
+import { useTaskEvents } from "../../hooks";
 import { useMessageStore } from "../../store/useMessageStore";
 import {
   LogOut,
@@ -39,7 +39,7 @@ import {
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "../../hooks";
 import { api } from "../../services/api";
 
 interface SidebarLinkProps {

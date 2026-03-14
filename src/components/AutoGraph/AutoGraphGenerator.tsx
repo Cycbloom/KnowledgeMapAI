@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
-import { useErrorHandler } from '../../hooks/useErrorHandler';
-import { useTopicCheck } from '../../hooks/useTopicCheck';
+import { useErrorHandler } from "../../hooks";
+import { useTopicCheck } from "../../hooks";
 
 interface AutoGraphGeneratorProps {
   graphId?: string;

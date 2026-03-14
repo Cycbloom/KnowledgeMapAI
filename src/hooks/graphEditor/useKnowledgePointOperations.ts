@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { api } from '../services/api';
-import { useMessageStore } from '../store/useMessageStore';
-import { createAsyncHandler } from '../utils/asyncHandler';
+import { api } from '../../services/api';
+import { useMessageStore } from '../../store/useMessageStore';
+import { createAsyncHandler } from '../../utils/asyncHandler';
 import type { 
   SimilarKnowledgePoint, 
   KnowledgePointVisibility 
-} from '../types';
+} from '../../types';
 
 interface UseKnowledgePointOperationsProps {
   graphId: string;

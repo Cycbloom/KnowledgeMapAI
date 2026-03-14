@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useMessageStore } from "../store/useMessageStore";
 import { ConfirmationModal } from "../components/common";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
 
 export const RecycleBin = () => {

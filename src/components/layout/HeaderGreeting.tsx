@@ -1,5 +1,5 @@
 import React from "react";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "../../hooks";
 import { useStatistics } from "../../hooks/queries";
 import { useStore } from "../../store/useStore";
 import { Flame, BookOpen } from "lucide-react";

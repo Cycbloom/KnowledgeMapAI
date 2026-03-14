@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
-import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { useErrorHandler } from "../../hooks";
 
 interface PrerequisiteQuestion {
   topic: string;

@@ -21,29 +21,17 @@ import { RelationshipTypeSettings } from "../components/GraphEditor/shared/Relat
 import { GraphModalManager } from "../components/GraphEditor/modals/GraphModalManager";
 import { GraphSidebarManager } from "../components/GraphEditor/sidebar/GraphSidebarManager";
 import { GraphAnalysisPanel } from "../components/GraphEditor/panels/GraphAnalysisPanel";
-import { useGraphEffects } from "../hooks/useGraphEffects";
-
-import { useTheme } from "../hooks/useTheme";
-import { useIsMobile } from "../hooks/useIsMobile";
-import { MobileNodeActionMenu } from "../components/GraphEditor/mobile/MobileNodeActionMenu";
+import { useGraphEffects, useGraphEditorState, useGraphHistoryHandlers, useGraphNodeOperations, useGraphExportOperations, useGraphInteraction, useExplorationPath } from "../hooks/graphEditor";
+import { useGraphAIOperations } from "../hooks/graphAI";
+import { useTheme, useIsMobile, useKeyboardShortcuts, useGlobalShortcuts, useTutorOperations } from "../hooks";
 import {
   useGraph,
   useGraphData,
   useGraphNodeStatus,
   useAIStatus,
 } from "../hooks/queries";
-
-import { useGraphEditorState } from "../hooks/useGraphEditorState";
 import { useGraphMutations } from "../hooks/mutations";
-import { useGraphHistoryHandlers } from "../hooks/useGraphHistoryHandlers";
-import { useGraphNodeOperations } from "../hooks/useGraphNodeOperations";
-import { useGraphAIOperations } from "../hooks/useGraphAIOperations";
-import { useTutorOperations } from "../hooks/useTutorOperations";
-import { useGraphExportOperations } from "../hooks/useGraphExportOperations";
-import { useGraphInteraction } from "../hooks/useGraphInteraction";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts.tsx";
-import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
-import { useExplorationPath } from "../hooks/useExplorationPath";
+import { MobileNodeActionMenu } from "../components/GraphEditor/mobile/MobileNodeActionMenu";
 import {
   getFocusedNodes,
   getFocusedLinks,
@@ -438,14 +426,12 @@ export const GraphEditor = () => {
   // Effects Hook
   useGraphEffects({
     state,
-    nodes,
     undo,
     redo,
     canUndo,
     canRedo,
     aiEnabled,
     addMessage,
-    isGraphLoading,
   });
 
   // Auto-show timeline when entering exploration mode

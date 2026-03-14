@@ -3,7 +3,7 @@ import {
   ArrowLeft, Sun, Moon, 
   Download, List, Layers, Activity, FileJson, Image
 } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import type { GraphColorMode, Node } from '../../types';
 
 interface DividerProps {

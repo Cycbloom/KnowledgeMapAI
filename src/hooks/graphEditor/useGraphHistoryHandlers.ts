@@ -1,4 +1,4 @@
-import { useHistory } from './useHistory';
+import { useHistory } from '../common/useHistory';
 
 interface UseGraphHistoryHandlersProps {
   mutations: any;

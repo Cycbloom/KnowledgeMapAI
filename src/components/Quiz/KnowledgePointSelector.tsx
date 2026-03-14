@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Check, ChevronDown, ChevronRight, Layers, Loader2, Network } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { useGraphs, useGraphData } from '../../hooks/queries';
 import type { Node, Graph } from '../../types';
 

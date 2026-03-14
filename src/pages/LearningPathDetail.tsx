@@ -32,7 +32,7 @@ import {
 import { api } from "../services/api";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { useMessageStore } from "../store/useMessageStore";
-import { useErrorHandler } from "../hooks/useErrorHandler";
+import { useErrorHandler } from "../hooks";
 
 interface LearningPathNode {
   id: string;

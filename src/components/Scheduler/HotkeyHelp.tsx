@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Keyboard, X } from 'lucide-react';
-import { HOTKEY_LIST } from '../../hooks/useSchedulerHotkeys';
+import { HOTKEY_LIST } from "../../hooks";
 
 interface HotkeyHelpProps {
   isOpen: boolean;

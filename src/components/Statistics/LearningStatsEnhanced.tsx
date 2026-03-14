@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { CheckCircle, BookOpen, TrendingUp, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface KnowledgeHeatmapProps {

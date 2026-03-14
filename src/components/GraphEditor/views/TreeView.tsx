@@ -5,7 +5,7 @@ import { MindMapLink } from '../canvas/MindMapLink';
 import { AlternativeBranches } from '../shared/AlternativeBranches';
 import { createTreeLayout } from '../../../utils/layouts/treeLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
 
 interface TreeViewProps {

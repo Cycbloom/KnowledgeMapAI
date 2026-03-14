@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { searchApi, SearchResult } from '../services/api/search';
+import { searchApi, SearchResult } from '../../services/api/search';
 
 export type SearchMode = 'keyword' | 'semantic';
 

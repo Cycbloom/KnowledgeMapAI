@@ -10,7 +10,7 @@ import {
   Loader2,
   FileQuestion,
 } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import { useQuizSets, useDeleteQuizSetMutation } from '../../hooks/queries';
 import { QuizCard } from './QuizCard';
 import type { QuizSet, QuizSetStatus } from '@shared/types/quiz';

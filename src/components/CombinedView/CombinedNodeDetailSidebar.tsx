@@ -23,7 +23,7 @@ import {
   Link as LinkIcon,
   ChevronRight,
 } from "lucide-react";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "../../hooks";
 
 interface CombinedNodeDetailSidebarProps {
   node: Node;

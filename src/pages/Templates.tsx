@@ -22,7 +22,7 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { useMessageStore } from "../store/useMessageStore";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../hooks";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {

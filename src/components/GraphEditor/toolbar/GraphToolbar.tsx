@@ -7,8 +7,8 @@ import {
   Maximize, Minimize, Download, MoreHorizontal, ChevronDown, RefreshCw,
   HelpCircle, User, GraduationCap, Share2, Network, GitBranch, Clock, Palette, BookOpen, BarChart3, Layers, MonitorPlay, Headphones, Activity, ChevronRight, Globe, Keyboard, X, Eye, EyeOff
 } from 'lucide-react';
-import { useTheme } from '../../../hooks/useTheme';
-import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useTheme } from "../../../hooks";
+import { useIsMobile } from "../../../hooks";
 import { Node, ColorScheme, LinkStyle, LinkAnimation, GraphViewMode, GraphColorMode } from '../../../types';
 
 interface GraphToolbarProps {

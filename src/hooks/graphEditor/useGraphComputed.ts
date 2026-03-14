@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Node, Edge } from '../types';
+import { Node, Edge } from '../../types';
 
 interface UseGraphComputedProps {
   nodes: Node[];

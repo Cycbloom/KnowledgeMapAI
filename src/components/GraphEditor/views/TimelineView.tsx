@@ -4,7 +4,7 @@ import { MindMapNode } from '../canvas/MindMapNode';
 import { MindMapLink } from '../canvas/MindMapLink';
 import { createMindMapLayout, LayoutResult } from '../../../utils/mindmapLayout';
 import { THEME_COLORS } from '../../../config/learningStatusColors';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 import { calculateNodeImportance, calculateEdgeStrength } from '../../../lib/graphUtils';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 

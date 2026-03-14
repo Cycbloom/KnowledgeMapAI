@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import { useMessageStore } from "../../store/useMessageStore";
-import { useErrorHandler } from "../../hooks/useErrorHandler";
+import { useErrorHandler } from "../../hooks";
 import { LearningPathWizard } from "./LearningPathWizard";
 import { useLearningPaths, useLearningPath } from "../../hooks/queries/useLearningPathQueries";
 import {

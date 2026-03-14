@@ -1,22 +1,24 @@
 import {
   ErrorCodes as SharedErrorCodes,
-  ErrorCode as SharedErrorCode,
   ErrorCodeMessages as SharedErrorCodeMessages,
-} from '../../shared/types/errorCodes';
+} from "../../shared/types/errorCodes";
 
-export { SharedErrorCodes, SharedErrorCode, SharedErrorCodeMessages };
+import type { ErrorCode as SharedErrorCode } from "../../shared/types/errorCodes";
+
+export { SharedErrorCodes, SharedErrorCodeMessages };
+export type { SharedErrorCode };
 
 export type FrontendErrorCode =
-  | 'NETWORK_ERROR'
-  | 'CANCELLED_ERROR'
-  | 'UNKNOWN_ERROR';
+  | "NETWORK_ERROR"
+  | "CANCELLED_ERROR"
+  | "UNKNOWN_ERROR";
 
 export type ErrorCode = SharedErrorCode | FrontendErrorCode;
 
 export const FrontendErrorCodes = {
-  NETWORK_ERROR: 'NETWORK_ERROR',
-  CANCELLED_ERROR: 'CANCELLED_ERROR',
-  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+  NETWORK_ERROR: "NETWORK_ERROR",
+  CANCELLED_ERROR: "CANCELLED_ERROR",
+  UNKNOWN_ERROR: "UNKNOWN_ERROR",
 } as const;
 
 export interface ErrorContext {
@@ -32,13 +34,13 @@ export class AppError extends Error {
 
   constructor(
     message: string,
-    code: ErrorCode = 'UNKNOWN_ERROR',
+    code: ErrorCode = "UNKNOWN_ERROR",
     statusCode: number = 500,
     context?: ErrorContext,
-    isOperational: boolean = true
+    isOperational: boolean = true,
   ) {
     super(message);
-    this.name = 'AppError';
+    this.name = "AppError";
     this.code = code;
     this.statusCode = statusCode;
     this.context = context;
@@ -60,50 +62,59 @@ export class AppError extends Error {
     };
   }
 
-  static fromJSON(data: ReturnType<AppError['toJSON']>): AppError {
+  static fromJSON(data: ReturnType<AppError["toJSON"]>): AppError {
     const error = new AppError(
       data.message,
       data.code,
       data.statusCode,
       data.context,
-      data.isOperational
+      data.isOperational,
     );
     return error;
   }
 }
 
 export class NetworkError extends AppError {
-  constructor(message: string = '网络错误，请检查网络连接', context?: ErrorContext) {
-    super(message, 'NETWORK_ERROR', 0, context);
-    this.name = 'NetworkError';
+  constructor(
+    message: string = "网络错误，请检查网络连接",
+    context?: ErrorContext,
+  ) {
+    super(message, "NETWORK_ERROR", 0, context);
+    this.name = "NetworkError";
   }
 }
 
 export class AuthError extends AppError {
-  constructor(message: string = '认证失败，请重新登录', context?: ErrorContext) {
+  constructor(
+    message: string = "认证失败，请重新登录",
+    context?: ErrorContext,
+  ) {
     super(message, SharedErrorCodes.AUTH_UNAUTHORIZED, 401, context);
-    this.name = 'AuthError';
+    this.name = "AuthError";
   }
 }
 
 export class TokenExpiredError extends AppError {
-  constructor(message: string = '登录已过期，请重新登录', context?: ErrorContext) {
+  constructor(
+    message: string = "登录已过期，请重新登录",
+    context?: ErrorContext,
+  ) {
     super(message, SharedErrorCodes.AUTH_TOKEN_EXPIRED, 401, context);
-    this.name = 'TokenExpiredError';
+    this.name = "TokenExpiredError";
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message: string = '没有权限执行此操作', context?: ErrorContext) {
+  constructor(message: string = "没有权限执行此操作", context?: ErrorContext) {
     super(message, SharedErrorCodes.AUTH_FORBIDDEN, 403, context);
-    this.name = 'ForbiddenError';
+    this.name = "ForbiddenError";
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string = '请求的资源不存在', context?: ErrorContext) {
+  constructor(message: string = "请求的资源不存在", context?: ErrorContext) {
     super(message, SharedErrorCodes.RESOURCE_NOT_FOUND, 404, context);
-    this.name = 'NotFoundError';
+    this.name = "NotFoundError";
   }
 }
 
@@ -111,12 +122,12 @@ export class ValidationError extends AppError {
   public readonly details?: Array<{ field: string; message: string }>;
 
   constructor(
-    message: string = '输入数据格式不正确',
+    message: string = "输入数据格式不正确",
     details?: Array<{ field: string; message: string }>,
-    context?: ErrorContext
+    context?: ErrorContext,
   ) {
     super(message, SharedErrorCodes.VALIDATION_ERROR, 400, context);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
     this.details = details;
   }
 
@@ -129,25 +140,35 @@ export class ValidationError extends AppError {
 }
 
 export class ServerError extends AppError {
-  constructor(message: string = '服务器错误，请稍后重试', context?: ErrorContext) {
+  constructor(
+    message: string = "服务器错误，请稍后重试",
+    context?: ErrorContext,
+  ) {
     super(message, SharedErrorCodes.SYSTEM_INTERNAL_ERROR, 500, context);
-    this.name = 'ServerError';
+    this.name = "ServerError";
   }
 }
 
 export class TimeoutError extends AppError {
-  constructor(message: string = '请求超时，请稍后重试', context?: ErrorContext) {
+  constructor(
+    message: string = "请求超时，请稍后重试",
+    context?: ErrorContext,
+  ) {
     super(message, SharedErrorCodes.AI_TIMEOUT, 408, context);
-    this.name = 'TimeoutError';
+    this.name = "TimeoutError";
   }
 }
 
 export class RateLimitError extends AppError {
   public readonly retryAfter?: number;
 
-  constructor(message: string = '请求过于频繁，请稍后重试', retryAfter?: number, context?: ErrorContext) {
+  constructor(
+    message: string = "请求过于频繁，请稍后重试",
+    retryAfter?: number,
+    context?: ErrorContext,
+  ) {
     super(message, SharedErrorCodes.AI_RATE_LIMIT_EXCEEDED, 429, context);
-    this.name = 'RateLimitError';
+    this.name = "RateLimitError";
     this.retryAfter = retryAfter;
   }
 
@@ -160,9 +181,9 @@ export class RateLimitError extends AppError {
 }
 
 export class CancelledError extends AppError {
-  constructor(message: string = '请求已取消', context?: ErrorContext) {
-    super(message, 'CANCELLED_ERROR', 0, context);
-    this.name = 'CancelledError';
+  constructor(message: string = "请求已取消", context?: ErrorContext) {
+    super(message, "CANCELLED_ERROR", 0, context);
+    this.name = "CancelledError";
   }
 }
 
@@ -174,7 +195,9 @@ export function isNetworkError(error: unknown): error is NetworkError {
   return error instanceof NetworkError;
 }
 
-export function isAuthError(error: unknown): error is AuthError | TokenExpiredError {
+export function isAuthError(
+  error: unknown,
+): error is AuthError | TokenExpiredError {
   if (error instanceof AuthError || error instanceof TokenExpiredError) {
     return true;
   }
@@ -217,23 +240,23 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     return error;
   }
-  return '未知错误';
+  return "未知错误";
 }
 
 export function getErrorCode(error: unknown): ErrorCode {
   if (isAppError(error)) {
     return error.code;
   }
-  return 'UNKNOWN_ERROR';
+  return "UNKNOWN_ERROR";
 }
 
 export const FrontendErrorCodeMessages: Record<FrontendErrorCode, string> = {
-  NETWORK_ERROR: '网络连接失败，请检查网络设置',
-  CANCELLED_ERROR: '请求已取消',
-  UNKNOWN_ERROR: '操作失败，请稍后重试',
+  NETWORK_ERROR: "网络连接失败，请检查网络设置",
+  CANCELLED_ERROR: "请求已取消",
+  UNKNOWN_ERROR: "操作失败，请稍后重试",
 };
 
 export const USER_FRIENDLY_MESSAGES: Record<ErrorCode, string> = {
@@ -260,7 +283,7 @@ export function createErrorFromResponse(response: {
   };
 }): AppError {
   const { status, statusText, data } = response;
-  const message = data?.message || data?.error || statusText || '请求失败';
+  const message = data?.message || data?.error || statusText || "请求失败";
 
   switch (status) {
     case 0:
@@ -283,7 +306,7 @@ export function createErrorFromResponse(response: {
     case 504:
       return new ServerError(message);
     default:
-      return new AppError(message, 'UNKNOWN_ERROR', status);
+      return new AppError(message, "UNKNOWN_ERROR", status);
   }
 }
 
@@ -294,28 +317,28 @@ export function wrapUnknownError(error: unknown): AppError {
 
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
-    
+
     if (
-      message.includes('network') ||
-      message.includes('fetch') ||
-      message.includes('failed to fetch') ||
-      error.name === 'TypeError'
+      message.includes("network") ||
+      message.includes("fetch") ||
+      message.includes("failed to fetch") ||
+      error.name === "TypeError"
     ) {
       return new NetworkError(error.message);
     }
 
-    if (message.includes('timeout') || error.name === 'AbortError') {
+    if (message.includes("timeout") || error.name === "AbortError") {
       return new TimeoutError(error.message);
     }
 
-    return new AppError(error.message, 'UNKNOWN_ERROR', 500);
+    return new AppError(error.message, "UNKNOWN_ERROR", 500);
   }
 
-  if (typeof error === 'string') {
-    return new AppError(error, 'UNKNOWN_ERROR', 500);
+  if (typeof error === "string") {
+    return new AppError(error, "UNKNOWN_ERROR", 500);
   }
 
-  return new AppError('未知错误', 'UNKNOWN_ERROR', 500);
+  return new AppError("未知错误", "UNKNOWN_ERROR", 500);
 }
 
 export interface HandleApiErrorOptions {
@@ -336,7 +359,7 @@ export interface HandleApiErrorResult {
 
 export function handleApiError(
   error: unknown,
-  options: HandleApiErrorOptions = {}
+  options: HandleApiErrorOptions = {},
 ): HandleApiErrorResult {
   const {
     context,
@@ -347,12 +370,13 @@ export function handleApiError(
   } = options;
 
   const appError = wrapUnknownError(error);
-  const userMessage = fallbackMessage && appError.code === 'UNKNOWN_ERROR'
-    ? fallbackMessage
-    : getUserFriendlyMessage(appError);
+  const userMessage =
+    fallbackMessage && appError.code === "UNKNOWN_ERROR"
+      ? fallbackMessage
+      : getUserFriendlyMessage(appError);
 
   if (logToConsole) {
-    const prefix = context ? `[${context}]` : '[API Error]';
+    const prefix = context ? `[${context}]` : "[API Error]";
     console.error(prefix, {
       message: appError.message,
       code: appError.code,
@@ -371,11 +395,11 @@ export function handleApiError(
     appError.code === SharedErrorCodes.AUTH_TOKEN_REVOKED
   ) {
     shouldRedirect = true;
-    redirectPath = '/login';
+    redirectPath = "/login";
     onAuthError?.();
   }
 
-  if (appError.code === 'NETWORK_ERROR') {
+  if (appError.code === "NETWORK_ERROR") {
     onNetworkError?.();
   }
 
@@ -387,7 +411,9 @@ export function handleApiError(
   };
 }
 
-export function createApiErrorHandler(options: Omit<HandleApiErrorOptions, 'context'> = {}) {
+export function createApiErrorHandler(
+  options: Omit<HandleApiErrorOptions, "context"> = {},
+) {
   return (error: unknown, context?: string) => {
     return handleApiError(error, { ...options, context });
   };
@@ -395,7 +421,7 @@ export function createApiErrorHandler(options: Omit<HandleApiErrorOptions, 'cont
 
 export async function withErrorHandling<T>(
   fn: () => Promise<T>,
-  options: HandleApiErrorOptions = {}
+  options: HandleApiErrorOptions = {},
 ): Promise<{ data: T | null; error: AppError | null }> {
   try {
     const data = await fn();
@@ -407,5 +433,5 @@ export async function withErrorHandling<T>(
 }
 
 export function assertNever(value: never): never {
-  throw new AppError(`Unexpected value: ${value}`, 'UNKNOWN_ERROR', 500);
+  throw new AppError(`Unexpected value: ${value}`, "UNKNOWN_ERROR", 500);
 }

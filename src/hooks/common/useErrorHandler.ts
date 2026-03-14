@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
-import { useStore } from '../store/useStore';
-import { useMessageStore, MessageType } from '../store/useMessageStore';
+import { useStore } from '../../store/useStore';
+import { useMessageStore, MessageType } from '../../store/useMessageStore';
 import { useNavigate } from 'react-router-dom';
 import {
   isAuthError,
@@ -8,7 +8,7 @@ import {
   isValidationError,
   wrapUnknownError,
   ValidationError,
-} from '../utils/errors';
+} from '../../utils/errors';
 
 interface ErrorHandlerOptions {
   silent?: boolean;

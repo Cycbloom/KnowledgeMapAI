@@ -11,7 +11,7 @@ import { StatsOverview } from '../components/Statistics/StatsOverview';
 import { QuizList, QuizGenerationModal } from '../components/Quiz';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Search, ArrowLeft, Play, LayoutGrid, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Activity, Flame, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 

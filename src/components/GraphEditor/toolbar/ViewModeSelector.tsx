@@ -1,7 +1,7 @@
 import React from 'react';
 import { Network, Clock, GitBranch, Globe } from 'lucide-react';
 import { GraphViewMode } from '../../../types';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from "../../../hooks";
 
 interface ViewModeSelectorProps {
   currentMode: GraphViewMode;

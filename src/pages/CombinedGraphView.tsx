@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
-import { useCombinedGraphAIOperations } from '../hooks/useCombinedGraphAIOperations';
+import { useCombinedGraphAIOperations } from '../hooks/graphAI';
 import { MindMapCanvas } from '../components/GraphEditor/canvas/MindMapCanvas';
 import { CombinedGraphToolbar } from '../components/CombinedView/CombinedGraphToolbar';
 import { CombinedGraphSidebar } from '../components/CombinedView/CombinedGraphSidebar';

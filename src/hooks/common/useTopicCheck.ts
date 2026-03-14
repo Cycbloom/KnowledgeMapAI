@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { graphsApi, TopicCheckResult } from '../services/api/graphs';
+import { graphsApi, TopicCheckResult } from '../../services/api/graphs';
 
 interface UseTopicCheckOptions {
   debounceMs?: number;

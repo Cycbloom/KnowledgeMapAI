@@ -17,7 +17,7 @@ import {
 import { notificationApi } from '../../services/api/notification';
 import { NotificationSettings } from '@shared/types';
 import { useMessageStore } from '../../store/useMessageStore';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 
 export const NotificationSettingsPanel: React.FC = () => {
   const { isDark } = useTheme();

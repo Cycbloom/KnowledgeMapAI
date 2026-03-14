@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Node, Edge } from '../types';
+import { Node, Edge } from '../../types';
 
 const SNAPSHOT_PREFIX = 'km_snapshot_';
 

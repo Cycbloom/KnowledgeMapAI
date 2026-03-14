@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSchedulerStats, useHeatmap, useExecutions } from '../hooks/useScheduler';
+import { useSchedulerStats, useHeatmap, useExecutions } from '../hooks';
 import type { ExecutionFilters, TaskExecution } from '@shared/types';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,

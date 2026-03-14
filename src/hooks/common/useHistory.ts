@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Node, Edge } from '../types';
+import { Node, Edge } from '../../types';
 
 export type HistoryAction = 
   | { type: 'CREATE_NODE'; payload: Node }

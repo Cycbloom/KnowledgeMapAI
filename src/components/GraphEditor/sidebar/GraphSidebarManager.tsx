@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Node, Edge } from "../../../types";
-import { GraphEditorState } from "../../../hooks/useGraphEditorState";
-import { useIsMobile } from "../../../hooks/useIsMobile";
+import { GraphEditorState } from "../../../hooks";
+import { useIsMobile } from "../../../hooks";
 import {
   getFocusedNodes,
   getFocusedLinks,

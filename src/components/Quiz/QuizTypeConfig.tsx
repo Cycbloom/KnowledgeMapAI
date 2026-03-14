@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { HelpCircle, CheckCircle, ListChecks, ToggleLeft, FileText, MessageSquare, AlertCircle } from 'lucide-react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from "../../hooks";
 import type { QuizSetConfig, CardType } from '@shared/types/quiz';
 
 interface QuizTypeConfigProps {

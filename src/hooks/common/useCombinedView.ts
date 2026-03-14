@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import type { 
   CombinedViewData, 
   CombinedViewLayoutMode,
   GraphNodeWithKnowledgePoint,
   Edge,
   KnowledgePoint
-} from '../types';
+} from '../../types';
 
 interface UseCombinedViewProps {
   initialGraphIds?: string[];

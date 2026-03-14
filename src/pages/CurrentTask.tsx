@@ -32,7 +32,7 @@ import {
   useCompleteScheduledTaskMutation,
   useDemoteScheduledTaskMutation,
   useStartScheduledTaskMutation,
-} from "../hooks/useScheduler";
+} from "../hooks";
 import { useMessageStore } from "../store/useMessageStore";
 import type { ScheduledTask, TaskSettings } from "@shared/types";
 

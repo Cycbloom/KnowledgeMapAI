@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -19,11 +19,14 @@ import {
 import {
   templateApi,
   TaskTemplate,
-  extractPlaceholders,
   applyTemplatePlaceholders,
+  extractPlaceholders,
 } from "../../services/api/template";
 import { useMessageStore } from "../../store/useMessageStore";
 import { useTheme } from "../../hooks";
+import { useTemplateForm } from "../../hooks/templates/useTemplateForm";
+import { useTemplateList } from "../../hooks/templates/useTemplateList";
+import { useTemplateModals } from "../../hooks/templates/useTemplateModals";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   study: <BookOpen size={20} />,
@@ -50,63 +53,39 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
 }) => {
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
-  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [isCreating, setIsCreating] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<TaskTemplate | null>(
-    null,
-  );
-  const [isApplying, setIsApplying] = useState(false);
-  const [applyingTemplate, setApplyingTemplate] = useState<TaskTemplate | null>(
-    null,
-  );
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    category: "study" as string,
-    title_template: "",
-    description_template: "",
-    estimated_duration: 25,
-    tags: [] as string[],
-    priority: 2,
-  });
+  const {
+    loading,
+    searchQuery,
+    selectedCategory,
+    filteredTemplates,
+    loadTemplates,
+    setSearchQuery,
+    setSelectedCategory,
+  } = useTemplateList();
 
-  const [placeholderValues, setPlaceholderValues] = useState<
-    Record<string, string>
-  >({});
-  const [newTag, setNewTag] = useState("");
+  const {
+    formData,
+    updateField,
+    resetForm,
+    setFormDataForEdit,
+    addTag,
+    removeTag,
+    newTag,
+    setNewTag,
+  } = useTemplateForm();
 
-  useEffect(() => {
-    loadTemplates();
-  }, []);
+  const {
+    modalState,
+    placeholderValues,
+    openCreateModal,
+    openEditModal,
+    openApplyModal,
+    closeAllModals,
+    updatePlaceholderValue,
+  } = useTemplateModals();
 
-  const loadTemplates = async () => {
-    setLoading(true);
-    try {
-      const response = await templateApi.getTemplates();
-      if (response.success) {
-        setTemplates(response.data || []);
-      }
-    } catch (error) {
-      console.error("Failed to load templates:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredTemplates = templates.filter((t) => {
-    const matchesSearch =
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.description &&
-        t.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory =
-      selectedCategory === "all" || t.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const { isCreating, isEditing, isApplying, editingTemplate, applyingTemplate } = modalState;
 
   const handleCreateTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +106,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         priority: formData.priority,
       });
       addMessage({ type: "success", content: "模板创建成功!" });
-      setIsCreating(false);
+      closeAllModals();
       resetForm();
       loadTemplates();
     } catch (error: any) {
@@ -151,8 +130,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         priority: formData.priority,
       });
       addMessage({ type: "success", content: "模板更新成功!" });
-      setIsEditing(false);
-      setEditingTemplate(null);
+      closeAllModals();
       resetForm();
       loadTemplates();
     } catch (error: any) {
@@ -198,9 +176,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         placeholders: placeholderValues,
       });
       addMessage({ type: "success", content: "任务已创建!" });
-      setIsApplying(false);
-      setApplyingTemplate(null);
-      setPlaceholderValues({});
+      closeAllModals();
       if (onSelectTemplate) {
         onSelectTemplate(applyingTemplate);
       }
@@ -209,24 +185,12 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     }
   };
 
-  const openApplyModal = (template: TaskTemplate) => {
-    setApplyingTemplate(template);
-    const placeholders = extractPlaceholders(template);
-    const initialValues: Record<string, string> = {};
-    placeholders.forEach((p: string) => {
-      initialValues[p] = "";
-    });
-    setPlaceholderValues(initialValues);
-    setIsApplying(true);
-  };
-
-  const openEditModal = (template: TaskTemplate) => {
+  const handleOpenEditModal = (template: TaskTemplate) => {
     if (template.is_system) {
       addMessage({ type: "error", content: "系统预设模板不能编辑" });
       return;
     }
-    setEditingTemplate(template);
-    setFormData({
+    setFormDataForEdit({
       name: template.name,
       description: template.description || "",
       category: template.category,
@@ -236,32 +200,17 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       tags: template.tags || [],
       priority: template.priority,
     });
-    setIsEditing(true);
+    openEditModal(template);
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      category: "study",
-      title_template: "",
-      description_template: "",
-      estimated_duration: 25,
-      tags: [],
-      priority: 2,
-    });
-    setNewTag("");
+  const handleOpenCreateModal = () => {
+    resetForm();
+    openCreateModal();
   };
 
-  const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
-      setNewTag("");
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter((t) => t !== tag) });
+  const handleCloseModals = () => {
+    closeAllModals();
+    resetForm();
   };
 
   const getPreview = () => {
@@ -278,10 +227,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
           任务模板
         </h2>
         <button
-          onClick={() => {
-            resetForm();
-            setIsCreating(true);
-          }}
+          onClick={handleOpenCreateModal}
           className="px-4 py-2 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all font-medium text-sm"
         >
           <Plus size={18} />
@@ -425,7 +371,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 {!template.is_system && (
                   <>
                     <button
-                      onClick={() => openEditModal(template)}
+                      onClick={() => handleOpenEditModal(template)}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                       title="编辑"
                     >
@@ -468,12 +414,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   {isEditing ? "编辑模板" : "创建任务模板"}
                 </h3>
                 <button
-                  onClick={() => {
-                    setIsCreating(false);
-                    setIsEditing(false);
-                    setEditingTemplate(null);
-                    resetForm();
-                  }}
+                  onClick={handleCloseModals}
                   className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${
                     isDark
                       ? "hover:bg-white text-slate-400"
@@ -485,9 +426,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
               </div>
 
               <form
-                onSubmit={
-                  isEditing ? handleUpdateTemplate : handleCreateTemplate
-                }
+                onSubmit={isEditing ? handleUpdateTemplate : handleCreateTemplate}
                 className="space-y-4"
               >
                 <div>
@@ -499,9 +438,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => updateField("name", e.target.value)}
                     placeholder="例如：每日学习"
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
@@ -519,9 +456,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
+                    onChange={(e) => updateField("description", e.target.value)}
                     placeholder="模板描述..."
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
@@ -541,9 +476,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     </label>
                     <select
                       value={formData.category}
-                      onChange={(e) =>
-                        setFormData({ ...formData, category: e.target.value })
-                      }
+                      onChange={(e) => updateField("category", e.target.value)}
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
                           ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
@@ -568,10 +501,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       type="number"
                       value={formData.estimated_duration}
                       onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          estimated_duration: parseInt(e.target.value) || 25,
-                        })
+                        updateField("estimated_duration", parseInt(e.target.value) || 25)
                       }
                       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                         isDark
@@ -594,12 +524,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <input
                     type="text"
                     value={formData.title_template}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        title_template: e.target.value,
-                      })
-                    }
+                    onChange={(e) => updateField("title_template", e.target.value)}
                     placeholder="例如：学习：{{topic}}"
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
@@ -617,12 +542,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   </label>
                   <textarea
                     value={formData.description_template}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        description_template: e.target.value,
-                      })
-                    }
+                    onChange={(e) => updateField("description_template", e.target.value)}
                     placeholder="例如：深入学习 {{topic}}，理解核心概念..."
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
@@ -690,12 +610,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsCreating(false);
-                      setIsEditing(false);
-                      setEditingTemplate(null);
-                      resetForm();
-                    }}
+                    onClick={handleCloseModals}
                     className={`px-4 py-2 rounded-xl font-medium ${
                       isDark
                         ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
@@ -739,11 +654,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   使用模板：{applyingTemplate.name}
                 </h3>
                 <button
-                  onClick={() => {
-                    setIsApplying(false);
-                    setApplyingTemplate(null);
-                    setPlaceholderValues({});
-                  }}
+                  onClick={handleCloseModals}
                   className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${
                     isDark
                       ? "hover:bg-white text-slate-400"
@@ -774,10 +685,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                             type="text"
                             value={placeholderValues[placeholder] || ""}
                             onChange={(e) =>
-                              setPlaceholderValues({
-                                ...placeholderValues,
-                                [placeholder]: e.target.value,
-                              })
+                              updatePlaceholderValue(placeholder, e.target.value)
                             }
                             placeholder={`输入 ${placeholder}`}
                             className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
@@ -824,11 +732,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
 
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => {
-                    setIsApplying(false);
-                    setApplyingTemplate(null);
-                    setPlaceholderValues({});
-                  }}
+                  onClick={handleCloseModals}
                   className={`px-4 py-2 rounded-xl font-medium ${
                     isDark
                       ? "bg-slate-700 text-slate-300 hover:bg-slate-600"

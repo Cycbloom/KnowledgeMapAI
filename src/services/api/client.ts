@@ -1,34 +1,12 @@
 import { useStore } from '../../store/useStore';
-import {
-  AppError,
-  TokenExpiredError,
-  createErrorFromResponse,
-  SharedErrorCodes,
-} from '../../utils/errors';
+import { createErrorFromResponse } from '../../utils/errors';
+import { apiClient, getCookie } from './createApiClient';
 
 const API_URL = '/api';
 
-let isRefreshing = false;
-let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
 let csrfInitialized = false;
 
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token as string);
-    }
-  });
-  failedQueue = [];
-};
-
-export const getCookie = (name: string): string | null => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
-};
+export { getCookie };
 
 export const initCsrf = async (): Promise<void> => {
   if (csrfInitialized) return;
@@ -86,81 +64,21 @@ export const handleResponse = async <T = any>(res: Response): Promise<T> => {
 };
 
 export const request = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
-  const doRequest = async (tokenOverride?: string): Promise<T> => {
-    const headers: Record<string, string> = {
-      ...getHeaders(),
-      ...(options.headers as Record<string, string>),
-    };
-    
-    if (tokenOverride) {
-      headers['Authorization'] = `Bearer ${tokenOverride}`;
-    }
-
-    return fetch(`${API_URL}${url}`, {
-      ...options,
-      headers,
-      credentials: 'include',
-    }).then(res => handleResponse<T>(res));
-  };
-
-  try {
-    return await doRequest();
-  } catch (error: unknown) {
-    const isTokenExpired = error instanceof TokenExpiredError || 
-      (error instanceof AppError && (
-        error.code === SharedErrorCodes.AUTH_TOKEN_EXPIRED ||
-        error.code === SharedErrorCodes.AUTH_TOKEN_INVALID ||
-        error.code === SharedErrorCodes.AUTH_UNAUTHORIZED ||
-        error.code === SharedErrorCodes.AUTH_TOKEN_REVOKED
-      ));
-    
-    if (isTokenExpired && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
-      const { refreshToken } = useStore.getState();
-
-      if (!refreshToken) {
-        useStore.getState().setUser(null, null);
-        throw error;
-      }
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          return doRequest(token as string);
-        });
-      }
-
-      isRefreshing = true;
-
-      try {
-        const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        if (!refreshRes.ok) {
-          throw new TokenExpiredError('Token refresh failed');
-        }
-
-        const data = await refreshRes.json();
-        const { session, user } = data;
-        
-        useStore.getState().setUser(user, session.access_token, session.refresh_token);
-        processQueue(null, session.access_token);
-        
-        return await doRequest(session.access_token);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        useStore.getState().setUser(null, null);
-        throw refreshError;
-      } finally {
-        isRefreshing = false;
-      }
-    }
-    
-    throw error;
+  const method = (options.method?.toUpperCase() || 'GET') as any;
+  const data = options.body ? JSON.parse(options.body as string) : undefined;
+  
+  const headers: Record<string, string> = {};
+  if (options.headers) {
+    const headersObj = options.headers as Record<string, string>;
+    Object.assign(headers, headersObj);
   }
+
+  return apiClient.request<T, T>({
+    url,
+    method,
+    data,
+    headers,
+  });
 };
 
 export type AITaskType = 'text' | 'embedding' | 'reasoning';

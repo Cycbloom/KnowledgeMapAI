@@ -241,6 +241,9 @@ export const getRingRadius = (baseRadius: number, ringIndex: number, totalRings:
 };
 
 export const getRingOpacity = (ringIndex: number, totalRings: number): number => {
+  if (totalRings <= 1) {
+    return 0.9;
+  }
   const progress = ringIndex / (totalRings - 1);
   const easeOut = 1 - Math.pow(1 - progress, 2);
   return 0.9 - (easeOut * 0.4);

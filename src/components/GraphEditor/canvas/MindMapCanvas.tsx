@@ -656,6 +656,8 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
     const hasUserInteracted = useRef(false);
     const prevNodeCount = useRef(0);
 
+    const handleWheelRef = useRef<((e: WheelEvent) => void) | null>(null);
+
     // Reset interaction state when nodes are first loaded
     useEffect(() => {
       if (nodes.length > 0 && prevNodeCount.current === 0) {
@@ -664,50 +666,46 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       prevNodeCount.current = nodes.length;
     }, [nodes.length]);
 
-    const handleWheel = useCallback(
-      (e: WheelEvent) => {
-        hasUserInteracted.current = true;
-        e.preventDefault();
-        const scaleFactor = 1.1;
-        const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
+    handleWheelRef.current = (e: WheelEvent) => {
+      hasUserInteracted.current = true;
+      e.preventDefault();
+      const scaleFactor = 1.1;
+      const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
 
-        const prev = transformRef.current;
-        const newK = Math.max(0.1, Math.min(5, prev.k * delta));
+      const prev = transformRef.current;
+      const newK = Math.max(0.1, Math.min(5, prev.k * delta));
 
-        const rect = svgRef.current?.getBoundingClientRect();
-        if (!rect) return;
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
 
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-        const newX = mouseX - (mouseX - prev.x) * delta;
-        const newY = mouseY - (mouseY - prev.y) * delta;
+      const newX = mouseX - (mouseX - prev.x) * delta;
+      const newY = mouseY - (mouseY - prev.y) * delta;
 
-        const newTransform = { x: newX, y: newY, k: newK };
+      const newTransform = { x: newX, y: newY, k: newK };
 
-        // Update Ref and DOM immediately
-        transformRef.current = newTransform;
-        updateTransformDOM(newTransform);
-
-        // Schedule viewport update for real-time culling
-        scheduleViewportUpdate();
-
-        // Debounce state update
-        updateTransformState(newTransform);
-      },
-      [updateTransformDOM, updateTransformState, scheduleViewportUpdate],
-    );
+      transformRef.current = newTransform;
+      updateTransformDOM(newTransform);
+      scheduleViewportUpdate();
+      updateTransformState(newTransform);
+    };
 
     useEffect(() => {
       const svg = svgRef.current;
       if (!svg) return;
 
-      svg.addEventListener("wheel", handleWheel, { passive: false });
+      const wheelHandler = (e: WheelEvent) => {
+        handleWheelRef.current?.(e);
+      };
+
+      svg.addEventListener("wheel", wheelHandler, { passive: false });
 
       return () => {
-        svg.removeEventListener("wheel", handleWheel);
+        svg.removeEventListener("wheel", wheelHandler);
       };
-    }, [handleWheel]);
+    }, [layout]);
 
     const handleMouseDown = useCallback(
       (e: React.MouseEvent<SVGSVGElement>) => {
@@ -1131,7 +1129,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           style={{
             backgroundColor: colors.background,
             cursor: isDragging ? "grabbing" : "grab",
-            touchAction: "none",
+            touchAction: "pan-y",
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}

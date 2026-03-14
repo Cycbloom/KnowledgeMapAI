@@ -1,10 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
-import {
-  useGraphs,
-  useDashboardStats,
-  queryKeys,
-} from "../hooks/queries";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useGraphs, useDashboardStats, queryKeys } from "../hooks/queries";
 import {
   useCreateGraphMutation,
   useImportGraphMutation,
@@ -47,6 +43,7 @@ export const Dashboard = () => {
   const { isDark } = useTheme();
   const { isMobile, isTablet } = useIsMobile();
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: graphsData, isLoading, error } = useGraphs();
   const { data: statsData } = useDashboardStats();
@@ -898,9 +895,16 @@ export const Dashboard = () => {
                 }`}
               >
                 {/* Card Content */}
-                <Link
-                  to={`/learning?graph_id=${graph.id}`}
-                  className="block p-4 sm:p-6 h-full flex flex-col"
+                <div
+                  onClick={() => navigate(`/learning?graph_id=${graph.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      navigate(`/learning?graph_id=${graph.id}`);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  className="block p-4 sm:p-6 h-full flex flex-col cursor-pointer"
                 >
                   <div className="flex items-start justify-between mb-3 sm:mb-4">
                     <div
@@ -1060,7 +1064,7 @@ export const Dashboard = () => {
                       />
                     </div>
                   </div>
-                </Link>
+                </div>
               </div>
             ))
           )}

@@ -15,6 +15,8 @@ import {
 import { aiService } from "../ai/index.js";
 import { AppError } from "../../middleware/errorHandler.js";
 import { ErrorCodes } from "../../constants/errorCodes.js";
+import { supabaseAdmin } from "../../supabase.js";
+import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
 
 interface GraphWithCount {
   id: string;
@@ -762,3 +764,145 @@ export class GraphService {
 }
 
 export const graphService = new GraphService();
+
+export async function getUserAccessibleGraphs(userId: string): Promise<GraphWithCollaborators[]> {
+  const { data: ownedGraphs, error: ownedError } = await supabaseAdmin
+    .from("knowledge_graphs")
+    .select("*")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .order("last_used_at", { ascending: false });
+
+  if (ownedError) {
+    throw new Error(ownedError.message);
+  }
+
+  const { data: collaboratedGraphs, error: collabError } = await supabaseAdmin
+    .from("graph_collaborators")
+    .select(
+      `
+      role,
+      graph:knowledge_graphs (*)
+    `
+    )
+    .eq("user_id", userId)
+    .not("accepted_at", "is", null);
+
+  if (collabError) {
+    throw new Error(collabError.message);
+  }
+
+  const ownedResults = (ownedGraphs || []).map((g) => ({
+    ...g,
+    user_role: "owner" as CollaboratorRole,
+  }));
+
+  const collabResults = (collaboratedGraphs || [])
+    .filter((c) => {
+      const graphData = Array.isArray(c.graph) ? c.graph[0] : c.graph;
+      return graphData && !graphData.deleted_at;
+    })
+    .map((c) => {
+      const graphData = Array.isArray(c.graph) ? c.graph[0] : c.graph;
+      return {
+        ...graphData,
+        user_role: c.role as CollaboratorRole,
+      };
+    });
+
+  const allGraphs = [...ownedResults, ...collabResults];
+  const uniqueGraphs = allGraphs.filter(
+    (graph, index, self) => index === self.findIndex((g) => g.id === graph.id)
+  );
+
+  return uniqueGraphs as GraphWithCollaborators[];
+}
+
+export async function getGraphWithUserRole(
+  graphId: string,
+  userId: string
+): Promise<{ graph: GraphWithCollaborators | null; error?: string }> {
+  const { data: graph, error } = await supabaseAdmin
+    .from("knowledge_graphs")
+    .select("*")
+    .eq("id", graphId)
+    .single();
+
+  if (error) {
+    return { graph: null, error: error.message };
+  }
+
+  if (!graph) {
+    return { graph: null, error: "图谱不存在" };
+  }
+
+  let userRole: CollaboratorRole | undefined;
+
+  if (graph.user_id === userId) {
+    userRole = "owner";
+  } else {
+    const { data: collaborator } = await supabaseAdmin
+      .from("graph_collaborators")
+      .select("role")
+      .eq("graph_id", graphId)
+      .eq("user_id", userId)
+      .not("accepted_at", "is", null)
+      .single();
+
+    userRole = collaborator?.role as CollaboratorRole;
+  }
+
+  return {
+    graph: {
+      ...graph,
+      user_role: userRole,
+    } as GraphWithCollaborators,
+  };
+}
+
+export async function checkGraphAccess(
+  graphId: string,
+  userId: string,
+  requiredRole: "viewer" | "editor" | "owner" = "viewer"
+): Promise<{ hasAccess: boolean; role?: CollaboratorRole; error?: string }> {
+  const { data: graph, error } = await supabaseAdmin
+    .from("knowledge_graphs")
+    .select("user_id, is_public")
+    .eq("id", graphId)
+    .single();
+
+  if (error || !graph) {
+    return { hasAccess: false, error: "图谱不存在" };
+  }
+
+  if (graph.user_id === userId) {
+    return { hasAccess: true, role: "owner" };
+  }
+
+  if (graph.is_public && requiredRole === "viewer") {
+    return { hasAccess: true, role: undefined };
+  }
+
+  const { data: collaborator } = await supabaseAdmin
+    .from("graph_collaborators")
+    .select("role")
+    .eq("graph_id", graphId)
+    .eq("user_id", userId)
+    .not("accepted_at", "is", null)
+    .single();
+
+  if (!collaborator) {
+    return { hasAccess: false, error: "无权访问此图谱" };
+  }
+
+  const role = collaborator.role as CollaboratorRole;
+  const roleHierarchy: Record<CollaboratorRole, number> = {
+    owner: 3,
+    editor: 2,
+    viewer: 1,
+  };
+
+  const hasAccess = roleHierarchy[role] >= roleHierarchy[requiredRole];
+
+  return { hasAccess, role };
+}

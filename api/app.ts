@@ -45,6 +45,7 @@ import notificationRoutes from "./routes/notifications.js";
 import relationshipTypesRoutes from "./routes/relationshipTypes.js";
 import calendarRoutes from "./routes/calendar.js";
 import quizSetRoutes from "./routes/quizSets.js";
+import collaboratorRoutes from "./routes/collaborators.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger.js";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler.js";
@@ -162,6 +163,7 @@ app.use("/api/scheduler", schedulerRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/relationship-types", relationshipTypesRoutes);
 app.use("/api/calendar", calendarRoutes);
+app.use("/api/collaborations", collaboratorRoutes);
 app.use("/api", quizSetRoutes);
 
 /**

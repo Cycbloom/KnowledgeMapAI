@@ -370,3 +370,57 @@ export interface CombinedGraphViewData {
   graph2: Graph;
   relations: GraphRelation[];
 }
+
+export type CollaboratorRole = "owner" | "editor" | "viewer";
+
+export interface GraphCollaborator {
+  id: string;
+  graph_id: string;
+  user_id: string;
+  role: CollaboratorRole;
+  invited_by?: string;
+  invitation_token: string;
+  invited_at: string;
+  accepted_at?: string;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+}
+
+export interface InviteCollaboratorRequest {
+  email: string;
+  role: CollaboratorRole;
+}
+
+export interface UpdateCollaboratorRoleRequest {
+  role: CollaboratorRole;
+}
+
+export interface CollaboratorWithUser extends GraphCollaborator {
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+}
+
+export interface GraphWithCollaborators extends Graph {
+  collaborators?: CollaboratorWithUser[];
+  user_role?: CollaboratorRole;
+}
+
+export const COLLABORATOR_ROLE_LABELS: Record<CollaboratorRole, string> = {
+  owner: "所有者",
+  editor: "编辑者",
+  viewer: "查看者",
+};
+
+export const COLLABORATOR_ROLE_COLORS: Record<CollaboratorRole, string> = {
+  owner: "#EF4444",
+  editor: "#3B82F6",
+  viewer: "#6B7280",
+};

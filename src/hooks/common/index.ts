@@ -18,3 +18,4 @@ export * from './useTopicCheck';
 export * from './useTutorOperations';
 export * from './useWorker';
 export * from './useCombinedView';
+export * from './useCollaborators';

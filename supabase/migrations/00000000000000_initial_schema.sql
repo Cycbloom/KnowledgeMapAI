@@ -11,6 +11,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TYPE prompt_scope AS ENUM ('system', 'user', 'graph');
 CREATE TYPE knowledge_point_visibility AS ENUM ('private', 'public', 'pending');
 CREATE TYPE user_role AS ENUM ('user', 'admin');
+CREATE TYPE collaborator_role AS ENUM ('owner', 'editor', 'viewer');
 
 -- =====================================================
 -- TABLES
@@ -340,6 +341,26 @@ CREATE TABLE IF NOT EXISTS backup_snapshots (
   nodes_count INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Graph collaborators table
+CREATE TABLE IF NOT EXISTS graph_collaborators (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  graph_id UUID NOT NULL REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role collaborator_role NOT NULL DEFAULT 'viewer',
+  invited_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  invitation_token UUID DEFAULT gen_random_uuid(),
+  invited_at TIMESTAMPTZ DEFAULT NOW(),
+  accepted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(graph_id, user_id)
+);
+
+COMMENT ON TABLE graph_collaborators IS '图谱协作者关系表，存储图谱与用户的协作权限';
+COMMENT ON COLUMN graph_collaborators.role IS '协作者角色：owner(所有者), editor(编辑者), viewer(查看者)';
+COMMENT ON COLUMN graph_collaborators.invitation_token IS '邀请令牌，用于分享链接';
+COMMENT ON COLUMN graph_collaborators.accepted_at IS '接受邀请的时间，null表示待接受';
 
 -- Add comments
 COMMENT ON TABLE graph_relations IS 'Stores relationships between knowledge graphs (prerequisite, extension, related)';
@@ -1016,6 +1037,14 @@ CREATE INDEX IF NOT EXISTS idx_graph_relations_type ON graph_relations(relation_
 -- Backup snapshots
 CREATE INDEX IF NOT EXISTS idx_backup_snapshots_user_id ON backup_snapshots(user_id);
 
+-- Graph collaborators indexes
+CREATE INDEX IF NOT EXISTS idx_graph_collaborators_graph_id ON graph_collaborators(graph_id);
+CREATE INDEX IF NOT EXISTS idx_graph_collaborators_user_id ON graph_collaborators(user_id);
+CREATE INDEX IF NOT EXISTS idx_graph_collaborators_role ON graph_collaborators(role);
+CREATE INDEX IF NOT EXISTS idx_graph_collaborators_invitation_token ON graph_collaborators(invitation_token);
+CREATE INDEX IF NOT EXISTS idx_graph_collaborators_accepted ON graph_collaborators(graph_id, user_id) WHERE accepted_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_graph_collaborators_pending ON graph_collaborators(invitation_token) WHERE accepted_at IS NULL;
+
 -- Task subtasks
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_task_id ON task_subtasks(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_subtasks_status ON task_subtasks(status);
@@ -1151,7 +1180,12 @@ CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid
 
 -- Knowledge Graphs
 ALTER TABLE knowledge_graphs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own graphs" ON knowledge_graphs FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view own graphs" ON knowledge_graphs;
+CREATE POLICY "Users can view accessible graphs" ON knowledge_graphs FOR SELECT USING (
+  user_id = auth.uid() 
+  OR is_public = true
+  OR EXISTS (SELECT 1 FROM graph_collaborators WHERE graph_collaborators.graph_id = knowledge_graphs.id AND graph_collaborators.user_id = auth.uid() AND graph_collaborators.accepted_at IS NOT NULL)
+);
 CREATE POLICY "Users can insert own graphs" ON knowledge_graphs FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own graphs" ON knowledge_graphs FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own graphs" ON knowledge_graphs FOR DELETE USING (auth.uid() = user_id);
@@ -1166,33 +1200,90 @@ CREATE POLICY "Users can delete own knowledge points" ON knowledge_points FOR DE
 
 -- Graph Nodes
 ALTER TABLE graph_nodes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view graph_nodes of own graphs" ON graph_nodes FOR SELECT USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
-CREATE POLICY "Users can insert graph_nodes to own graphs" ON graph_nodes FOR INSERT WITH CHECK (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
-CREATE POLICY "Users can update graph_nodes of own graphs" ON graph_nodes FOR UPDATE USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
-CREATE POLICY "Users can delete graph_nodes of own graphs" ON graph_nodes FOR DELETE USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = graph_nodes.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
+DROP POLICY IF EXISTS "Users can view graph_nodes of own graphs" ON graph_nodes;
+CREATE POLICY "Users can view graph_nodes of accessible graphs" ON graph_nodes FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs 
+    WHERE knowledge_graphs.id = graph_nodes.graph_id 
+    AND (
+      knowledge_graphs.user_id = auth.uid() 
+      OR knowledge_graphs.is_public = true
+      OR EXISTS (SELECT 1 FROM graph_collaborators WHERE graph_collaborators.graph_id = knowledge_graphs.id AND graph_collaborators.user_id = auth.uid() AND graph_collaborators.accepted_at IS NOT NULL)
+    )
+  )
+);
+DROP POLICY IF EXISTS "Users can insert graph_nodes to own graphs" ON graph_nodes;
+CREATE POLICY "Editors can insert graph_nodes" ON graph_nodes FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs kg
+    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
+    WHERE kg.id = graph_nodes.graph_id 
+    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+  )
+);
+DROP POLICY IF EXISTS "Users can update graph_nodes of own graphs" ON graph_nodes;
+CREATE POLICY "Editors can update graph_nodes" ON graph_nodes FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs kg
+    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
+    WHERE kg.id = graph_nodes.graph_id 
+    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+  )
+);
+DROP POLICY IF EXISTS "Users can delete graph_nodes of own graphs" ON graph_nodes;
+CREATE POLICY "Editors can delete graph_nodes" ON graph_nodes FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs kg
+    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
+    WHERE kg.id = graph_nodes.graph_id 
+    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+  )
+);
 
 -- Edges
 ALTER TABLE edges ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view edges of own graphs" ON edges FOR SELECT USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = edges.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
-CREATE POLICY "Users can insert edges to own graphs" ON edges FOR INSERT WITH CHECK (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = edges.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
-CREATE POLICY "Users can update edges of own graphs" ON edges FOR UPDATE USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = edges.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
-CREATE POLICY "Users can delete edges of own graphs" ON edges FOR DELETE USING (EXISTS (
-  SELECT 1 FROM knowledge_graphs WHERE knowledge_graphs.id = edges.graph_id AND knowledge_graphs.user_id = auth.uid()
-));
+DROP POLICY IF EXISTS "Users can view edges of own graphs" ON edges;
+CREATE POLICY "Users can view edges of accessible graphs" ON edges FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs 
+    WHERE knowledge_graphs.id = edges.graph_id 
+    AND (
+      knowledge_graphs.user_id = auth.uid() 
+      OR knowledge_graphs.is_public = true
+      OR EXISTS (SELECT 1 FROM graph_collaborators WHERE graph_collaborators.graph_id = knowledge_graphs.id AND graph_collaborators.user_id = auth.uid() AND graph_collaborators.accepted_at IS NOT NULL)
+    )
+  )
+);
+
+DROP POLICY IF EXISTS "Users can insert edges to own graphs" ON edges;
+CREATE POLICY "Editors can insert edges" ON edges FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs kg
+    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
+    WHERE kg.id = edges.graph_id 
+    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+  )
+);
+
+DROP POLICY IF EXISTS "Users can update edges of own graphs" ON edges;
+CREATE POLICY "Editors can update edges" ON edges FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs kg
+    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
+    WHERE kg.id = edges.graph_id 
+    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+  )
+);
+
+DROP POLICY IF EXISTS "Users can delete edges of own graphs" ON edges;
+CREATE POLICY "Editors can delete edges" ON edges FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_graphs kg
+    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
+    WHERE kg.id = edges.graph_id 
+    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+  )
+);
 
 -- Study Cards
 ALTER TABLE study_cards ENABLE ROW LEVEL SECURITY;
@@ -1316,6 +1407,17 @@ ALTER TABLE backup_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own backup snapshots" ON backup_snapshots FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own backup snapshots" ON backup_snapshots FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete own backup snapshots" ON backup_snapshots FOR DELETE USING (auth.uid() = user_id);
+
+-- Graph collaborators RLS
+ALTER TABLE graph_collaborators ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view collaborators of graphs they have access to" ON graph_collaborators FOR SELECT USING (
+  EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_collaborators.graph_id AND (user_id = auth.uid() OR is_public = true))
+  OR EXISTS (SELECT 1 FROM graph_collaborators gc WHERE gc.graph_id = graph_collaborators.graph_id AND gc.user_id = auth.uid())
+);
+CREATE POLICY "Owners can manage collaborators" ON graph_collaborators FOR ALL USING (
+  EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_collaborators.graph_id AND user_id = auth.uid())
+);
+CREATE POLICY "Users can view own collaborations" ON graph_collaborators FOR SELECT USING (user_id = auth.uid());
 
 -- Queues RLS
 ALTER TABLE queues ENABLE ROW LEVEL SECURITY;
@@ -2263,6 +2365,9 @@ GRANT ALL PRIVILEGES ON study_progress TO authenticated;
 GRANT SELECT ON templates TO anon;
 GRANT ALL PRIVILEGES ON templates TO authenticated;
 GRANT ALL ON backup_snapshots TO authenticated;
+
+GRANT ALL PRIVILEGES ON graph_collaborators TO authenticated;
+GRANT SELECT ON graph_collaborators TO anon;
 
 GRANT ALL PRIVILEGES ON scheduled_tasks TO authenticated;
 GRANT ALL PRIVILEGES ON task_executions TO authenticated;

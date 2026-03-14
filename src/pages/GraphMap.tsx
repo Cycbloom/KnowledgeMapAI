@@ -213,12 +213,24 @@ export const GraphMap = () => {
           ...result.coreNodes.map((n: any) => ({ title: n.title, content: n.content, level: n.level || 'core' }))
         ];
         
-        await api.autoGraph.saveNodes({
+        const saveResult = await api.autoGraph.saveNodes({
           graph_id: selectedGraphId,
           nodes,
         });
         
         queryClient.invalidateQueries({ queryKey: ['graphMap'] });
+        
+        // 将 nodeMapping 中的 ID 映射到 coreNodes
+        if (saveResult.nodeMapping) {
+          const coreNodesWithIds = result.coreNodes.map((n: any, index: number) => {
+            const tempId = `temp-${index + 1}`; // root 是 temp-0, coreNodes 从 temp-1 开始
+            return {
+              ...n,
+              id: saveResult.nodeMapping[tempId]?.graphNodeId
+            };
+          });
+          return { root: result.root, coreNodes: coreNodesWithIds };
+        }
         
         return { root: result.root, coreNodes: result.coreNodes };
       }

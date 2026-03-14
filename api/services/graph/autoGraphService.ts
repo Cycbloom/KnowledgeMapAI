@@ -29,6 +29,7 @@ export interface ProcessAINodesResult {
   nodeCount: number;
   edgeCount: number;
   graphNodeIds: string[];
+  nodeMapping: Record<string, { graphNodeId: string; knowledgePointId: string }>;
 }
 
 export class AutoGraphService {
@@ -65,7 +66,7 @@ export class AutoGraphService {
     const validNodes = nodes.filter(node => node.title && node.title.trim() !== '');
 
     if (validNodes.length === 0) {
-      return { nodeCount: 0, edgeCount: 0, graphNodeIds: [] };
+      return { nodeCount: 0, edgeCount: 0, graphNodeIds: [], nodeMapping: {} };
     }
 
     logger.info(`Processing ${validNodes.length} nodes for graph ${graphId}`);
@@ -119,8 +120,30 @@ export class AutoGraphService {
     const edgesToCreate: CreateEdgeData[] = [];
     for (const nodeData of validNodes) {
       if (nodeData.parentId) {
-        const parentInfo = nodeMap.get(nodeData.parentId);
+        let parentInfo = nodeMap.get(nodeData.parentId);
         const childInfo = nodeMap.get(nodeData.tempId);
+
+        // If parentId is not in nodeMap, it might be an existing graph node UUID
+        // Query the database to get its knowledge_point_id
+        if (!parentInfo && childInfo) {
+          try {
+            const { data: existingNode, error } = await supabase
+              .from('graph_nodes')
+              .select('knowledge_point_id')
+              .eq('id', nodeData.parentId)
+              .eq('graph_id', graphId)
+              .single();
+
+            if (!error && existingNode) {
+              parentInfo = {
+                graphNodeId: nodeData.parentId,
+                knowledgePointId: existingNode.knowledge_point_id,
+              };
+            }
+          } catch (e) {
+            logger.warn(`Could not find parent node ${nodeData.parentId} in database`);
+          }
+        }
 
         if (parentInfo && childInfo) {
           edgesToCreate.push({
@@ -156,10 +179,16 @@ export class AutoGraphService {
       }
     }
 
+    const nodeMappingRecord: Record<string, { graphNodeId: string; knowledgePointId: string }> = {};
+    for (const [tempId, info] of nodeMap) {
+      nodeMappingRecord[tempId] = info;
+    }
+
     return {
       nodeCount: graphNodeIds.length,
       edgeCount,
       graphNodeIds,
+      nodeMapping: nodeMappingRecord,
     };
   }
 

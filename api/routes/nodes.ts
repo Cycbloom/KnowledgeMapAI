@@ -105,7 +105,8 @@ router.post(
         is_accepted,
       });
 
-      const result = buildNodeFromGraphNode(graphNode);
+      // graphNode 已经是扁平化的 Node 对象，不需要再调用 buildNodeFromGraphNode
+      const result = graphNode;
       if (result && reusedKnowledgePoint) {
         (result as any)._reused = true;
       }

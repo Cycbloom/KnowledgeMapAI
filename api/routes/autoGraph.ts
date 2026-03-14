@@ -424,10 +424,13 @@ router.post(
       await cacheService.del(CacheKeys.GRAPH_NODES(req.user.id, graph_id));
       await cacheService.del(CacheKeys.GRAPH_NODES("public", graph_id));
 
+      const nodeMapping: Record<string, { graphNodeId: string; knowledgePointId: string }> = result.nodeMapping;
+
       res.json({
         success: true,
         nodeCount: result.nodeCount,
         edgeCount: result.edgeCount,
+        nodeMapping,
       });
     } catch (error: any) {
       logger.error("Save nodes error:", error);

@@ -1,5 +1,6 @@
 import { Node, Edge } from '../../types';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
+import { logger } from '../../utils/logger';
 
 export interface ExpandSuggestion {
   title: string;
@@ -89,6 +90,11 @@ export async function processExpandSuggestions({
         level: newLevel,
         properties: {}
       });
+      
+      if (!newNode) {
+        logger.warn(`Failed to create node: ${s.title}`);
+        continue;
+      }
       
       onNodeCreated?.(newNode);
 

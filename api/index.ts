@@ -1,5 +1,6 @@
 /**
- * Vercel deploy entry handler, for serverless deployment, please don't modify this file
+ * Vercel API Entry - Single Serverless Function
+ * All API routes are handled by Express app
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import app from './app.js';

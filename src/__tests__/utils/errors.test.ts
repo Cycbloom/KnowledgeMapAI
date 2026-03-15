@@ -95,7 +95,7 @@ describe('errors utilities', () => {
     it('should create error with default message', () => {
       const error = new AuthError();
       expect(error.message).toBe('认证失败，请重新登录');
-      expect(error.code).toBe('AUTH_ERROR');
+      expect(error.code).toBe('AUTH_UNAUTHORIZED');
       expect(error.statusCode).toBe(401);
       expect(error.name).toBe('AuthError');
     });
@@ -105,7 +105,7 @@ describe('errors utilities', () => {
     it('should create error with default message', () => {
       const error = new TokenExpiredError();
       expect(error.message).toBe('登录已过期，请重新登录');
-      expect(error.code).toBe('TOKEN_EXPIRED');
+      expect(error.code).toBe('AUTH_TOKEN_EXPIRED');
       expect(error.statusCode).toBe(401);
       expect(error.name).toBe('TokenExpiredError');
     });
@@ -115,7 +115,7 @@ describe('errors utilities', () => {
     it('should create error with default message', () => {
       const error = new ForbiddenError();
       expect(error.message).toBe('没有权限执行此操作');
-      expect(error.code).toBe('FORBIDDEN');
+      expect(error.code).toBe('AUTH_FORBIDDEN');
       expect(error.statusCode).toBe(403);
       expect(error.name).toBe('ForbiddenError');
     });
@@ -125,7 +125,7 @@ describe('errors utilities', () => {
     it('should create error with default message', () => {
       const error = new NotFoundError();
       expect(error.message).toBe('请求的资源不存在');
-      expect(error.code).toBe('NOT_FOUND');
+      expect(error.code).toBe('RESOURCE_NOT_FOUND');
       expect(error.statusCode).toBe(404);
       expect(error.name).toBe('NotFoundError');
     });
@@ -160,7 +160,7 @@ describe('errors utilities', () => {
     it('should create error with default message', () => {
       const error = new ServerError();
       expect(error.message).toBe('服务器错误，请稍后重试');
-      expect(error.code).toBe('SERVER_ERROR');
+      expect(error.code).toBe('SYSTEM_INTERNAL_ERROR');
       expect(error.statusCode).toBe(500);
       expect(error.name).toBe('ServerError');
     });
@@ -170,7 +170,7 @@ describe('errors utilities', () => {
     it('should create error with default message', () => {
       const error = new TimeoutError();
       expect(error.message).toBe('请求超时，请稍后重试');
-      expect(error.code).toBe('TIMEOUT_ERROR');
+      expect(error.code).toBe('AI_TIMEOUT');
       expect(error.statusCode).toBe(408);
       expect(error.name).toBe('TimeoutError');
     });
@@ -180,7 +180,7 @@ describe('errors utilities', () => {
     it('should create error with default message', () => {
       const error = new RateLimitError();
       expect(error.message).toBe('请求过于频繁，请稍后重试');
-      expect(error.code).toBe('RATE_LIMIT_ERROR');
+      expect(error.code).toBe('AI_RATE_LIMIT_EXCEEDED');
       expect(error.statusCode).toBe(429);
       expect(error.name).toBe('RateLimitError');
     });
@@ -232,11 +232,11 @@ describe('errors utilities', () => {
     it('should return true for AuthError and TokenExpiredError', () => {
       const authError = new AuthError();
       expect(authError.name).toBe('AuthError');
-      expect(authError.code).toBe('AUTH_ERROR');
+      expect(authError.code).toBe('AUTH_UNAUTHORIZED');
       
       const tokenError = new TokenExpiredError();
       expect(tokenError.name).toBe('TokenExpiredError');
-      expect(tokenError.code).toBe('TOKEN_EXPIRED');
+      expect(tokenError.code).toBe('AUTH_TOKEN_EXPIRED');
     });
   });
 
@@ -271,7 +271,7 @@ describe('errors utilities', () => {
   describe('getErrorCode', () => {
     it('should return code from AppError', () => {
       expect(getErrorCode(new ValidationError())).toBe('VALIDATION_ERROR');
-      expect(getErrorCode(new AuthError())).toBe('AUTH_ERROR');
+      expect(getErrorCode(new AuthError())).toBe('AUTH_UNAUTHORIZED');
     });
 
     it('should return UNKNOWN_ERROR for non-AppError', () => {
@@ -284,14 +284,14 @@ describe('errors utilities', () => {
     it('should have messages for all error codes', () => {
       const codes: ErrorCode[] = [
         'NETWORK_ERROR',
-        'AUTH_ERROR',
-        'TOKEN_EXPIRED',
-        'FORBIDDEN',
-        'NOT_FOUND',
+        'AUTH_UNAUTHORIZED',
+        'AUTH_TOKEN_EXPIRED',
+        'AUTH_FORBIDDEN',
+        'RESOURCE_NOT_FOUND',
         'VALIDATION_ERROR',
-        'SERVER_ERROR',
-        'TIMEOUT_ERROR',
-        'RATE_LIMIT_ERROR',
+        'SYSTEM_INTERNAL_ERROR',
+        'AI_TIMEOUT',
+        'AI_RATE_LIMIT_EXCEEDED',
         'CANCELLED_ERROR',
         'UNKNOWN_ERROR',
       ];
@@ -340,37 +340,37 @@ describe('errors utilities', () => {
     it('should create TokenExpiredError for status 401', () => {
       const error = createErrorFromResponse({ status: 401, statusText: 'Unauthorized' });
       expect(error.name).toBe('TokenExpiredError');
-      expect(error.code).toBe('TOKEN_EXPIRED');
+      expect(error.code).toBe('AUTH_TOKEN_EXPIRED');
     });
 
     it('should create ForbiddenError for status 403', () => {
       const error = createErrorFromResponse({ status: 403, statusText: 'Forbidden' });
       expect(error.name).toBe('ForbiddenError');
-      expect(error.code).toBe('FORBIDDEN');
+      expect(error.code).toBe('AUTH_FORBIDDEN');
     });
 
     it('should create NotFoundError for status 404', () => {
       const error = createErrorFromResponse({ status: 404, statusText: 'Not Found' });
       expect(error.name).toBe('NotFoundError');
-      expect(error.code).toBe('NOT_FOUND');
+      expect(error.code).toBe('RESOURCE_NOT_FOUND');
     });
 
     it('should create TimeoutError for status 408', () => {
       const error = createErrorFromResponse({ status: 408, statusText: 'Request Timeout' });
       expect(error.name).toBe('TimeoutError');
-      expect(error.code).toBe('TIMEOUT_ERROR');
+      expect(error.code).toBe('AI_TIMEOUT');
     });
 
     it('should create RateLimitError for status 429', () => {
       const error = createErrorFromResponse({ status: 429, statusText: 'Too Many Requests' });
       expect(error.name).toBe('RateLimitError');
-      expect(error.code).toBe('RATE_LIMIT_ERROR');
+      expect(error.code).toBe('AI_RATE_LIMIT_EXCEEDED');
     });
 
     it('should create ServerError for 5xx status', () => {
       const error500 = createErrorFromResponse({ status: 500, statusText: 'Internal Server Error' });
       expect(error500.name).toBe('ServerError');
-      expect(error500.code).toBe('SERVER_ERROR');
+      expect(error500.code).toBe('SYSTEM_INTERNAL_ERROR');
       
       const error502 = createErrorFromResponse({ status: 502, statusText: 'Bad Gateway' });
       expect(error502.name).toBe('ServerError');
@@ -427,7 +427,7 @@ describe('errors utilities', () => {
     it('should wrap timeout errors', () => {
       const error = wrapUnknownError(new Error('Request timeout'));
       expect(error.name).toBe('TimeoutError');
-      expect(error.code).toBe('TIMEOUT_ERROR');
+      expect(error.code).toBe('AI_TIMEOUT');
     });
 
     it('should wrap AbortError as TimeoutError', () => {
@@ -435,7 +435,7 @@ describe('errors utilities', () => {
       abortError.name = 'AbortError';
       const error = wrapUnknownError(abortError);
       expect(error.name).toBe('TimeoutError');
-      expect(error.code).toBe('TIMEOUT_ERROR');
+      expect(error.code).toBe('AI_TIMEOUT');
     });
 
     it('should wrap generic errors', () => {

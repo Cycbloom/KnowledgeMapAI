@@ -9,6 +9,7 @@ import {
   knowledgePointService,
   graphNodeService,
   graphService,
+  knowledgePointVersionService,
 } from "../services/graph/index.js";
 import { authService } from "../services/core/authService.js";
 import { logger } from "../utils/logger.js";
@@ -575,6 +576,247 @@ router.post(
       if (error.message === "Knowledge point not found or not pending") {
         throw new AppError(
           "Knowledge point not found or not pending",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+const listVersionsSchema = z.object({
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+  query: z.object({
+    limit: z.coerce.number().min(1).max(100).optional().default(20),
+    offset: z.coerce.number().min(0).optional().default(0),
+  }),
+});
+
+const getVersionSchema = z.object({
+  params: z.object({
+    id: z.string().uuid(),
+    versionNumber: z.coerce.number().int().min(1),
+  }),
+});
+
+const compareVersionsSchema = z.object({
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+  query: z.object({
+    version1: z.coerce.number().int().min(1),
+    version2: z.coerce.number().int().min(1),
+  }),
+});
+
+const rollbackSchema = z.object({
+  params: z.object({
+    id: z.string().uuid(),
+    versionNumber: z.coerce.number().int().min(1),
+  }),
+});
+
+const createManualVersionSchema = z.object({
+  params: z.object({
+    id: z.string().uuid(),
+  }),
+  body: z.object({
+    change_summary: z.string().min(1).max(500),
+  }),
+});
+
+router.get(
+  "/knowledge-points/:id/versions",
+  requireAuth,
+  validate(listVersionsSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { limit, offset } = req.query;
+
+    try {
+      const kp = await knowledgePointService.getAccessible(req.supabase!, id, req.user.id);
+
+      if (!kp) {
+        throw new AppError(
+          "Knowledge point not found",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+
+      const result = await knowledgePointVersionService.getVersionHistory(
+        req.supabase!,
+        id,
+        { limit: Number(limit), offset: Number(offset) },
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
+  "/knowledge-points/:id/versions/:versionNumber",
+  requireAuth,
+  validate(getVersionSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { id, versionNumber } = req.params;
+
+    try {
+      const kp = await knowledgePointService.getAccessible(req.supabase!, id, req.user.id);
+
+      if (!kp) {
+        throw new AppError(
+          "Knowledge point not found",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+
+      const version = await knowledgePointVersionService.getVersion(
+        req.supabase!,
+        id,
+        Number(versionNumber),
+      );
+
+      if (!version) {
+        throw new AppError(
+          "Version not found",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+
+      res.json(version);
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
+  "/knowledge-points/:id/versions/compare",
+  requireAuth,
+  validate(compareVersionsSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { version1, version2 } = req.query;
+
+    try {
+      const kp = await knowledgePointService.getAccessible(req.supabase!, id, req.user.id);
+
+      if (!kp) {
+        throw new AppError(
+          "Knowledge point not found",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+
+      const result = await knowledgePointVersionService.compareVersions(
+        req.supabase!,
+        id,
+        Number(version1),
+        Number(version2),
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      if (error.message === "One or both versions not found") {
+        throw new AppError(
+          "One or both versions not found",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/knowledge-points/:id/versions/:versionNumber/rollback",
+  requireAuth,
+  validate(rollbackSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { id, versionNumber } = req.params;
+
+    try {
+      const isOwner = await knowledgePointService.checkOwnership(
+        req.supabase!,
+        id,
+        req.user.id,
+      );
+
+      if (!isOwner) {
+        throw new AppError("Permission denied", 403, ErrorCodes.FORBIDDEN);
+      }
+
+      const result = await knowledgePointVersionService.rollback(
+        req.supabase!,
+        id,
+        Number(versionNumber),
+        req.user.id,
+      );
+
+      res.json({
+        success: true,
+        knowledge_point: result,
+      });
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      if (error.message === "Version not found") {
+        throw new AppError(
+          "Version not found",
+          404,
+          ErrorCodes.RESOURCE_NOT_FOUND,
+        );
+      }
+      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/knowledge-points/:id/versions",
+  requireAuth,
+  validate(createManualVersionSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { change_summary } = req.body;
+
+    try {
+      const isOwner = await knowledgePointService.checkOwnership(
+        req.supabase!,
+        id,
+        req.user.id,
+      );
+
+      if (!isOwner) {
+        throw new AppError("Permission denied", 403, ErrorCodes.FORBIDDEN);
+      }
+
+      const version = await knowledgePointVersionService.createManualVersion(
+        req.supabase!,
+        id,
+        change_summary,
+        req.user.id,
+      );
+
+      res.status(201).json(version);
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      if (error.message === "Knowledge point not found") {
+        throw new AppError(
+          "Knowledge point not found",
           404,
           ErrorCodes.RESOURCE_NOT_FOUND,
         );

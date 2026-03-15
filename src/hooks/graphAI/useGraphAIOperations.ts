@@ -522,7 +522,11 @@ export const useGraphAIOperations = ({
   const handleGenerateNodeContent = async () => {
     if (!selectedNode || !id) return;
     
-    addMessage({ content: 'AI 内容生成任务已开始...', type: 'info' });
+    const loadingMsgId = addMessage({ 
+      content: 'AI 内容生成任务已开始...', 
+      type: 'loading',
+      duration: 0
+    });
     
     await asyncHandler(
       async () => {
@@ -556,7 +560,10 @@ export const useGraphAIOperations = ({
       {
         loadingSetter: setLoading,
         successMessage: 'AI 内容生成完成',
-        errorMessage: 'AI 生成失败'
+        errorMessage: 'AI 生成失败',
+        onFinally: () => {
+          useMessageStore.getState().removeMessage(loadingMsgId);
+        }
       }
     );
   };

@@ -123,6 +123,9 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* 公开图谱路由 - 允许未登录用户访问 */}
+          <Route path="/graph/:id" element={<GraphEditor />} />
 
           <Route
             path="/"
@@ -135,7 +138,6 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Navigate to="/" replace />} />
             <Route path="graphs" element={<Navigate to="/" replace />} />
-            <Route path="graph/:id" element={<GraphEditor />} />
             <Route
               path="combined-graphs/:id1/:id2"
               element={<CombinedGraphView />}

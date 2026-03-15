@@ -29,13 +29,14 @@ import {
   Activity,
   Link as LinkIcon,
   ChevronRight,
+  History,
 } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
 
 interface NodeDetailSidebarProps {
   node: Node;
-  nodes?: Node[]; // Optional to avoid breaking if not passed immediately, but we just passed it
+  nodes?: Node[];
   edges: Edge[];
   prevSidebarMode: "none" | "create" | "edit" | "outline" | "detail";
   nodeStatus?: Record<string, any>;
@@ -48,21 +49,21 @@ interface NodeDetailSidebarProps {
   onGenerateCards: () => void;
   onFetchRelatedNodes: () => void;
 
-  // AI/Related Nodes State
   showRelatedSection: boolean;
   isRelatedLoading: boolean;
   relatedNodes: Node[];
   onRelatedNodeClick: (node: Node) => void;
 
-  // Branch Switching
   onUpdateNode?: (nodeId: string, updates: Partial<Node>) => void;
   isExplorationMode?: boolean;
 
-  // New AI Actions
   onGenerateNodeContent: () => void;
   onDeepAnalysis: () => void;
   onGenerateQuiz: () => void;
   onBackgroundGenerate: () => void;
+  isReadOnly?: boolean;
+  onShowVersionHistory?: () => void;
+  isGeneratingContent?: boolean;
 }
 
 export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
@@ -89,6 +90,9 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   onGenerateQuiz,
   onBackgroundGenerate,
   nodes = [],
+  isReadOnly = false,
+  onShowVersionHistory,
+  isGeneratingContent = false,
 }) => {
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
@@ -151,6 +155,14 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         </button>
       </div>
 
+      {isReadOnly && (
+        <div className="mb-4 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+            🔒 只读模式 - 您正在查看其他用户的知识图谱，无法进行编辑操作
+          </p>
+        </div>
+      )}
+
       <div
         className={`flex-1 space-y-6 overflow-y-auto ${isMobile ? "pr-0 px-2 pb-24" : "pr-1"}`}
       >
@@ -182,6 +194,16 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                   : "未知日期"}
               </span>
             </div>
+
+            {onShowVersionHistory && (
+              <button
+                onClick={onShowVersionHistory}
+                className={`flex items-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors cursor-pointer ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
+              >
+                <History size={14} className="mr-1.5" />
+                <span>版本历史</span>
+              </button>
+            )}
 
             {isMastered ? (
               <div
@@ -301,90 +323,110 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         </section>
 
         {/* Quick AI Generate Content Action */}
-        <button
-          onClick={onGenerateNodeContent}
-          className={`w-full flex items-center justify-center bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-sm font-bold ${isMobile ? "p-3.5 min-h-[48px]" : "p-2.5"}`}
-        >
-          <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
-          生成/补充节点内容
-        </button>
+        {!isReadOnly && (
+          <button
+            onClick={onGenerateNodeContent}
+            disabled={isGeneratingContent}
+            className={`w-full flex items-center justify-center bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl transition-colors text-sm font-bold ${isMobile ? "p-3.5 min-h-[48px]" : "p-2.5"} ${
+              isGeneratingContent
+                ? "opacity-60 cursor-not-allowed"
+                : "hover:bg-purple-100 dark:hover:bg-purple-900/30"
+            }`}
+          >
+            {isGeneratingContent ? (
+              <>
+                <Loader2 size={isMobile ? 18 : 16} className="mr-2 animate-spin" />
+                生成中...
+              </>
+            ) : (
+              <>
+                <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
+                生成/补充节点内容
+              </>
+            )}
+          </button>
+        )}
 
         {/* Learning Actions */}
-        <section
-          className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}
-        >
-          <button
-            onClick={onStartLearningMode}
-            className={`flex items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] ${isMobile ? "p-4 min-h-[52px]" : "col-span-2 p-3"}`}
+        {!isReadOnly && (
+          <section
+            className={`grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}
           >
-            <Navigation size={isMobile ? 20 : 18} className="mr-2" />
-            <span className={`font-bold ${isMobile ? "text-base" : ""}`}>
-              开启沉浸学习
-            </span>
-          </button>
+            <button
+              onClick={onStartLearningMode}
+              className={`flex items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] ${isMobile ? "p-4 min-h-[52px]" : "col-span-2 p-3"}`}
+            >
+              <Navigation size={isMobile ? 20 : 18} className="mr-2" />
+              <span className={`font-bold ${isMobile ? "text-base" : ""}`}>
+                开启沉浸学习
+              </span>
+            </button>
 
-          <button
-            onClick={onStartLevelTest}
-            className={`flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "p-3.5 min-h-[48px]" : "p-3"}`}
-          >
-            <GraduationCap
-              size={isMobile ? 20 : 18}
-              className="mr-2 text-indigo-500"
-            />
-            <span className="font-medium">关卡测试</span>
-          </button>
+            <button
+              onClick={onStartLevelTest}
+              className={`flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "p-3.5 min-h-[48px]" : "p-3"}`}
+            >
+              <GraduationCap
+                size={isMobile ? 20 : 18}
+                className="mr-2 text-indigo-500"
+              />
+              <span className="font-medium">关卡测试</span>
+            </button>
 
-          <button
-            onClick={onGenerateCards}
-            className={`flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "p-3.5 min-h-[48px]" : "p-3"}`}
-          >
-            <Sparkles
-              size={isMobile ? 20 : 18}
-              className="mr-2 text-amber-500"
-            />
-            <span className="font-medium">生成卡片</span>
-          </button>
-        </section>
+            <button
+              onClick={onGenerateCards}
+              className={`flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "p-3.5 min-h-[48px]" : "p-3"}`}
+            >
+              <Sparkles
+                size={isMobile ? 20 : 18}
+                className="mr-2 text-amber-500"
+              />
+              <span className="font-medium">生成卡片</span>
+            </button>
+          </section>
+        )}
 
         {/* AI Analysis Section */}
-        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-4 border border-purple-100 dark:border-purple-800">
-          <div className="flex items-center justify-between mb-3">
-            <h3
-              className={`font-bold text-purple-900 dark:text-purple-300 flex items-center ${isMobile ? "text-base" : ""}`}
+        {!isReadOnly && (
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-4 border border-purple-100 dark:border-purple-800">
+            <div className="flex items-center justify-between mb-3">
+              <h3
+                className={`font-bold text-purple-900 dark:text-purple-300 flex items-center ${isMobile ? "text-base" : ""}`}
+              >
+                <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
+                AI 深度探索
+              </h3>
+              <span className="text-[10px] bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                Beta
+              </span>
+            </div>
+            <p className="text-xs text-purple-700 dark:text-purple-400 mb-4 leading-relaxed">
+              使用 AI 分析当前节点，发现潜在的关联知识点或生成深度思考问题。
+            </p>
+            <div
+              className={`grid gap-2 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}
             >
-              <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
-              AI 深度探索
-            </h3>
-            <span className="text-[10px] bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full">
-              Beta
-            </span>
+              <button
+                onClick={onDeepAnalysis}
+                className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
+              >
+                深度解析
+              </button>
+              <button
+                onClick={onGenerateQuiz}
+                className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
+              >
+                生成测验
+              </button>
+              <button
+                onClick={onBackgroundGenerate}
+                className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
+              >
+                后台生成
+              </button>
+            </div>
           </div>
-          <p className="text-xs text-purple-700 dark:text-purple-400 mb-4 leading-relaxed">
-            使用 AI 分析当前节点，发现潜在的关联知识点或生成深度思考问题。
-          </p>
-          <div
-            className={`grid gap-2 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}
-          >
-            <button
-              onClick={onDeepAnalysis}
-              className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
-            >
-              深度解析
-            </button>
-            <button
-              onClick={onGenerateQuiz}
-              className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
-            >
-              生成测验
-            </button>
-            <button
-              onClick={onBackgroundGenerate}
-              className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
-            >
-              后台生成
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Navigation Links */}
         <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -514,33 +556,35 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         )}
       </div>
 
-      <div
-        className={`${
-          isMobile
-            ? "fixed bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
-            : "mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center space-x-3 bg-white dark:bg-gray-900 sticky bottom-0 z-10"
-        }`}
-        style={
-          isMobile
-            ? { paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }
-            : undefined
-        }
-      >
-        <button
-          onClick={onEdit}
-          className={`flex-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 dark:shadow-blue-900/30 transition-all active:scale-95 ${isMobile ? "py-3.5 min-h-[52px]" : "py-2.5"}`}
+      {!isReadOnly && (
+        <div
+          className={`${
+            isMobile
+              ? "fixed bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+              : "mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center space-x-3 bg-white dark:bg-gray-900 sticky bottom-0 z-10"
+          }`}
+          style={
+            isMobile
+              ? { paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }
+              : undefined
+          }
         >
-          <Edit3 size={isMobile ? 20 : 18} className="mr-2" />
-          编辑节点
-        </button>
-        <button
-          onClick={onDelete}
-          className={`bg-white dark:bg-gray-800 text-red-500 border border-red-100 dark:border-red-900 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-all ${isMobile ? "w-14 h-[52px] min-h-[52px]" : "w-12"}`}
-          title="删除节点"
-        >
-          <Trash2 size={isMobile ? 20 : 18} />
-        </button>
-      </div>
+          <button
+            onClick={onEdit}
+            className={`flex-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 dark:shadow-blue-900/30 transition-all active:scale-95 ${isMobile ? "py-3.5 min-h-[52px]" : "py-2.5"}`}
+          >
+            <Edit3 size={isMobile ? 20 : 18} className="mr-2" />
+            编辑节点
+          </button>
+          <button
+            onClick={onDelete}
+            className={`bg-white dark:bg-gray-800 text-red-500 border border-red-100 dark:border-red-900 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-all ${isMobile ? "w-14 h-[52px] min-h-[52px]" : "w-12"}`}
+            title="删除节点"
+          >
+            <Trash2 size={isMobile ? 20 : 18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -7,7 +7,9 @@ import type {
   GraphNode,
   GraphNodeWithKnowledgePoint,
   CombinedViewData,
-  KnowledgePointVisibility
+  KnowledgePointVisibility,
+  KnowledgePointVersion,
+  KnowledgePointVersionWithDiff
 } from '../../types';
 
 export const knowledgePointsApi = {
@@ -82,6 +84,32 @@ export const knowledgePointsApi = {
       y_position: number;
       level: string;
     }>>(`/knowledge-points/${knowledgePointId}/graphs`, { method: 'GET' }),
+  
+  getVersions: (knowledgePointId: string, params?: { limit?: number; offset?: number }) => {
+    const queryParts: string[] = [];
+    if (params?.limit) queryParts.push(`limit=${params.limit}`);
+    if (params?.offset) queryParts.push(`offset=${params.offset}`);
+    const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+    return request<{
+      versions: KnowledgePointVersionWithDiff[];
+      total: number;
+    }>(`/knowledge-points/${knowledgePointId}/versions${query}`, { method: 'GET' });
+  },
+  
+  getVersion: (knowledgePointId: string, versionNumber: number) => 
+    request<KnowledgePointVersion>(`/knowledge-points/${knowledgePointId}/versions/${versionNumber}`, { method: 'GET' }),
+  
+  compareVersions: (knowledgePointId: string, version1: number, version2: number) => 
+    request<KnowledgePointVersionWithDiff[]>(`/knowledge-points/${knowledgePointId}/versions/compare?version1=${version1}&version2=${version2}`, { method: 'GET' }),
+  
+  rollbackVersion: (knowledgePointId: string, versionNumber: number) => 
+    request<{ success: boolean; knowledge_point: KnowledgePoint }>(`/knowledge-points/${knowledgePointId}/versions/${versionNumber}/rollback`, { method: 'POST' }),
+  
+  createVersion: (knowledgePointId: string, changeSummary: string) => 
+    request<KnowledgePointVersion>(`/knowledge-points/${knowledgePointId}/versions`, { 
+      method: 'POST', 
+      body: JSON.stringify({ change_summary: changeSummary }) 
+    }),
 };
 
 export const graphNodesApi = {

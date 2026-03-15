@@ -63,6 +63,30 @@ export interface KnowledgePoint {
   is_accepted?: boolean;
 }
 
+export interface KnowledgePointVersion {
+  id: string;
+  knowledge_point_id: string;
+  version_number: number;
+  title: string;
+  content?: string;
+  learning_material?: string;
+  properties?: NodeProperties;
+  change_summary?: string;
+  changed_by?: string;
+  created_at: string;
+}
+
+export interface KnowledgePointVersionDiff {
+  field: string;
+  old_value: unknown;
+  new_value: unknown;
+}
+
+export interface KnowledgePointVersionWithDiff extends KnowledgePointVersion {
+  diffs?: KnowledgePointVersionDiff[];
+  previous_version?: KnowledgePointVersion;
+}
+
 export interface Graph {
   id: string;
   title: string;

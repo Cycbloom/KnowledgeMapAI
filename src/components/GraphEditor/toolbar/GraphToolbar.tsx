@@ -104,6 +104,9 @@ interface GraphToolbarProps {
   
   // RAG Chat Panel
   isRAGChatOpen?: boolean;
+  
+  // Read-only mode
+  isReadOnly?: boolean;
 }
 
 export const GraphToolbar: React.FC<GraphToolbarProps> = ({
@@ -120,7 +123,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isTutorMode: _isTutorMode, onToggleTutorMode: _onToggleTutorMode, onOpenAnalysis,
   onTogglePresentation, onTogglePodcast,
   isMobilePreviewMode, setIsMobilePreviewMode,
-  isRAGChatOpen, ragChatWidth = 420
+  isRAGChatOpen, ragChatWidth = 420,
+  isReadOnly = false,
 }) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -544,117 +548,137 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       <Divider />
 
-      {/* 2. Edit Tools Dropdown */}
-      <div className="flex items-center space-x-2">
-        <DropdownButton id="edit" icon={Plus} label="编辑" active={isDeleteMode || selectedNodeIds.size > 0}>
-          <MenuItem onClick={onAddNode} icon={Plus} label="添加节点" colorClass="text-blue-500" />
-          <MenuItem 
-            onClick={() => setIsDeleteMode(!isDeleteMode)} 
-            icon={Eraser} 
-            label={isDeleteMode ? "退出删除模式" : "删除模式"} 
-            active={isDeleteMode}
-            activeClass="bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-          />
-          <MenuItem 
-            onClick={onDeleteSelected}
-            disabled={selectedNodeIds.size !== 1}
-            icon={Trash2}
-            label="删除选中节点"
-            colorClass="text-red-500"
-          />
-        </DropdownButton>
+      {/* 2. Edit Tools Dropdown - Hidden in read-only mode */}
+      {!isReadOnly && (
+        <div className="flex items-center space-x-2">
+          <DropdownButton id="edit" icon={Plus} label="编辑" active={isDeleteMode || selectedNodeIds.size > 0}>
+            <MenuItem onClick={onAddNode} icon={Plus} label="添加节点" colorClass="text-blue-500" />
+            <MenuItem 
+              onClick={() => setIsDeleteMode(!isDeleteMode)} 
+              icon={Eraser} 
+              label={isDeleteMode ? "退出删除模式" : "删除模式"} 
+              active={isDeleteMode}
+              activeClass="bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+            />
+            <MenuItem 
+              onClick={onDeleteSelected}
+              disabled={selectedNodeIds.size !== 1}
+              icon={Trash2}
+              label="删除选中节点"
+              colorClass="text-red-500"
+            />
+          </DropdownButton>
 
-        {/* Share Button */}
-        {onShare && (
-           <button
-             onClick={onShare}
-             className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
-               isDark 
-                 ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60' 
-                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-             }`}
-             title="分享图谱"
-           >
-             <Share2 size={16} />
-             <span className="text-xs font-bold hidden xl:inline">分享</span>
-           </button>
-        )}
+          {/* Share Button */}
+          {onShare && (
+             <button
+               onClick={onShare}
+               className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
+                 isDark 
+                   ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60' 
+                   : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+               }`}
+               title="分享图谱"
+             >
+               <Share2 size={16} />
+               <span className="text-xs font-bold hidden xl:inline">分享</span>
+             </button>
+          )}
 
-        {/* AI Expand Shortcut - Visible when 1 node selected */}
-        {selectedNodeIds.size === 1 && onAIExpand && (
-          <button
-             onClick={onAIExpand}
-             className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
-               isDark 
-                 ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50 hover:bg-purple-800/60' 
-                 : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
-             }`}
-             title="基于选中节点进行智能拓展 (无限模式)"
-          >
-            <Sparkles size={16} />
-            <span className="text-xs font-bold">无限拓展</span>
-          </button>
-        )}
+          {/* AI Expand Shortcut - Visible when 1 node selected */}
+          {selectedNodeIds.size === 1 && onAIExpand && (
+            <button
+               onClick={onAIExpand}
+               className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
+                 isDark 
+                   ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50 hover:bg-purple-800/60' 
+                   : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
+               }`}
+               title="基于选中节点进行智能拓展 (无限模式)"
+            >
+              <Sparkles size={16} />
+              <span className="text-xs font-bold">无限拓展</span>
+            </button>
+          )}
 
-        {/* Branch Explore Shortcut - Visible when exploration mode and 1 node selected */}
-        {isExplorationMode && selectedNodeIds.size === 1 && onBranchExplore && (
-          <button
-             onClick={onBranchExplore}
-             className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
-               isDark 
-                 ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-800/60' 
-                 : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
-             }`}
-             title="查看分支建议"
-          >
-            <GitBranch size={16} />
-            <span className="text-xs font-bold">探索分支</span>
-          </button>
-        )}
+          {/* Branch Explore Shortcut - Visible when exploration mode and 1 node selected */}
+          {isExplorationMode && selectedNodeIds.size === 1 && onBranchExplore && (
+            <button
+               onClick={onBranchExplore}
+               className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm animate-in fade-in zoom-in-95 ${
+                 isDark 
+                   ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-800/60' 
+                   : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+               }`}
+               title="查看分支建议"
+            >
+              <GitBranch size={16} />
+              <span className="text-xs font-bold">探索分支</span>
+            </button>
+          )}
 
-        {selectedNodeIds.size > 1 && (
-          <>
-            <div className={`w-px h-6 mx-1 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
-            <BatchMenu />
-          </>
-        )}
-      </div>
+          {selectedNodeIds.size > 1 && (
+            <>
+              <div className={`w-px h-6 mx-1 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+              <BatchMenu />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Share Button - Visible in read-only mode */}
+      {isReadOnly && onShare && (
+         <button
+           onClick={onShare}
+           className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-all shadow-sm ${
+             isDark 
+               ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60' 
+               : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+           }`}
+           title="分享图谱"
+         >
+           <Share2 size={16} />
+           <span className="text-xs font-bold hidden xl:inline">分享</span>
+         </button>
+      )}
 
       <Divider />
 
-      {/* 3. AI Tools Dropdown */}
-      <DropdownButton id="ai" icon={Sparkles} label="AI 助手" active={isChatOpen || isPathfindingMode}>
-        <MenuItem onClick={onTextToGraph} icon={Sparkles} label="文本/文档生成" colorClass="text-purple-500" />
-        <MenuItem 
-          onClick={() => {
-            if (selectedNodeIds.size === 1 && onAIExpand) {
-              onAIExpand();
-            }
-          }}
-          disabled={selectedNodeIds.size !== 1}
-          icon={Navigation} 
-          label="智能拓展 (无限模式)" 
-          colorClass="text-green-500"
-        />
-        <MenuItem 
-          onClick={() => {
-             if (selectedNodeIds.size === 1 && onBackgroundTask) {
-               onBackgroundTask('expand_graph');
-             }
-          }}
-          disabled={selectedNodeIds.size !== 1 || !onBackgroundTask}
-          icon={Sparkles} 
-          label="后台自动拓展" 
-          colorClass="text-blue-500"
-        />
-        <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label="智能问答" active={isChatOpen} colorClass="text-purple-500" />
-        <MenuItem 
-          onClick={() => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); }} 
-          icon={Navigation} 
-          label={isPathfindingMode ? "退出路径导航" : "路径导航"} 
-          active={isPathfindingMode}
-        />
-      </DropdownButton>
+      {/* 3. AI Tools Dropdown - Hidden in read-only mode */}
+      {!isReadOnly && (
+        <DropdownButton id="ai" icon={Sparkles} label="AI 助手" active={isChatOpen || isPathfindingMode}>
+          <MenuItem onClick={onTextToGraph} icon={Sparkles} label="文本/文档生成" colorClass="text-purple-500" />
+          <MenuItem 
+            onClick={() => {
+              if (selectedNodeIds.size === 1 && onAIExpand) {
+                onAIExpand();
+              }
+            }}
+            disabled={selectedNodeIds.size !== 1}
+            icon={Navigation} 
+            label="智能拓展 (无限模式)" 
+            colorClass="text-green-500"
+          />
+          <MenuItem 
+            onClick={() => {
+               if (selectedNodeIds.size === 1 && onBackgroundTask) {
+                 onBackgroundTask('expand_graph');
+               }
+            }}
+            disabled={selectedNodeIds.size !== 1 || !onBackgroundTask}
+            icon={Sparkles} 
+            label="后台自动拓展" 
+            colorClass="text-blue-500"
+          />
+          <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label="智能问答" active={isChatOpen} colorClass="text-purple-500" />
+          <MenuItem 
+            onClick={() => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); }} 
+            icon={Navigation} 
+            label={isPathfindingMode ? "退出路径导航" : "路径导航"} 
+            active={isPathfindingMode}
+          />
+        </DropdownButton>
+      )}
 
       <Divider />
 
@@ -749,8 +773,13 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
           <MenuItem onClick={exportActions.onImage} icon={Download} label="图片 (PNG)" />
         </MenuItem>
 
-        <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <MenuItem onClick={exportActions.onDeleteGraph} icon={Trash2} label="彻底删除此图谱" colorClass="text-red-500" />
+        {/* Delete graph - Hidden in read-only mode */}
+        {!isReadOnly && (
+          <>
+            <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
+            <MenuItem onClick={exportActions.onDeleteGraph} icon={Trash2} label="彻底删除此图谱" colorClass="text-red-500" />
+          </>
+        )}
       </DropdownButton>
     </div>
   );

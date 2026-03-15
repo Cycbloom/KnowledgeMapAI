@@ -21,6 +21,7 @@ interface GraphOutlineProps {
     masteredCount: number;
     dueTodayCount: number;
   };
+  isReadOnly?: boolean;
 }
 
 export const GraphOutline: React.FC<GraphOutlineProps> = ({
@@ -34,7 +35,8 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   onAddNode,
   onConnectNodes,
   className = '',
-  stats
+  stats,
+  isReadOnly = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
@@ -438,7 +440,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   }, [selectedNodeIds, onSelectionChange, isMultiSelectMode, nodes, edges]);
 
   // Tree Mode: Recursive Render
-  const TreeNode = React.memo(({ node, depth, visited }: { node: Node; depth: number; visited: Set<string> }) => {
+  const TreeNode = React.memo(({ node, depth, visited, isReadOnly: isNodeReadOnly }: { node: Node; depth: number; visited: Set<string>; isReadOnly?: boolean }) => {
     if (visited.has(node.id)) return null;
     const newVisited = new Set(visited).add(node.id);
     
@@ -514,7 +516,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             </span>
           )}
 
-          {hasChildren && (
+          {hasChildren && !isNodeReadOnly && (
             <button
               onClick={(e) => handleSelectChildren(node.id, e)}
               className="ml-2 p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded hidden group-hover:flex items-center justify-center transition-colors"
@@ -528,7 +530,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         {hasChildren && isExpanded && (
           <div>
             {children.map(child => (
-              <TreeNode key={child.id} node={child} depth={depth + 1} visited={newVisited} />
+              <TreeNode key={child.id} node={child} depth={depth + 1} visited={newVisited} isReadOnly={isNodeReadOnly} />
             ))}
           </div>
         )}
@@ -552,7 +554,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             大纲视图 ({nodes.length})
           </h2>
           <div className="flex items-center gap-1">
-            {onAddNode && (
+            {onAddNode && !isReadOnly && (
               <button
                 onClick={onAddNode}
                 className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
@@ -561,14 +563,16 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                 <Plus size={16} />
               </button>
             )}
-            <button
-              onClick={handleSelectIsolated}
-              className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500"
-              title="选中所有孤立节点 (无连线)"
-            >
-              <Eraser size={16} />
-            </button>
-            {filteredSuggestions.length > 0 && (
+            {!isReadOnly && (
+              <button
+                onClick={handleSelectIsolated}
+                className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500"
+                title="选中所有孤立节点 (无连线)"
+              >
+                <Eraser size={16} />
+              </button>
+            )}
+            {filteredSuggestions.length > 0 && !isReadOnly && (
               <button
                 onClick={() => setShowConnectionDiscovery(!showConnectionDiscovery)}
                 className={`p-1.5 rounded transition-colors ${showConnectionDiscovery ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-purple-500'}`}
@@ -577,18 +581,20 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                 <Network size={16} />
               </button>
             )}
-            <button 
-              onClick={() => {
-                setIsMultiSelectMode(!isMultiSelectMode);
-                if (isMultiSelectMode && onSelectionChange) {
-                  onSelectionChange(new Set()); // Clear selection when exiting
-                }
-              }}
-              className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-              title={isMultiSelectMode ? "退出多选" : "多选模式"}
-            >
-              <MousePointer2 size={16} />
-            </button>
+            {!isReadOnly && (
+              <button 
+                onClick={() => {
+                  setIsMultiSelectMode(!isMultiSelectMode);
+                  if (isMultiSelectMode && onSelectionChange) {
+                    onSelectionChange(new Set());
+                  }
+                }}
+                className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                title={isMultiSelectMode ? "退出多选" : "多选模式"}
+              >
+                <MousePointer2 size={16} />
+              </button>
+            )}
           </div>
         </div>
         
@@ -655,7 +661,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         </div>
 
         {/* Batch Actions Toolbar */}
-        {isMultiSelectMode && (
+        {isMultiSelectMode && !isReadOnly && (
           <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-2">
              <div className="flex items-center gap-2">
                 <button 
@@ -698,7 +704,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       </div>
 
       {/* Connection Discovery Panel */}
-      {showConnectionDiscovery && filteredSuggestions.length > 0 && (
+      {showConnectionDiscovery && filteredSuggestions.length > 0 && !isReadOnly && (
         <div className="border-b border-slate-200 dark:border-slate-800 p-3 bg-purple-50/50 dark:bg-purple-900/10">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -765,11 +771,11 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           <div className="space-y-0.5">
              {rootNodes.length === 0 && nodes.length > 0 ? (
                 nodes.map(node => (
-                  <TreeNode key={node.id} node={node} depth={0} visited={new Set()} />
+                  <TreeNode key={node.id} node={node} depth={0} visited={new Set()} isReadOnly={isReadOnly} />
                 ))
              ) : (
                 rootNodes.map(node => (
-                  <TreeNode key={node.id} node={node} depth={0} visited={new Set()} />
+                  <TreeNode key={node.id} node={node} depth={0} visited={new Set()} isReadOnly={isReadOnly} />
                 ))
              )}
              {nodes.length === 0 && (

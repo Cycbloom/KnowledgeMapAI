@@ -7,6 +7,8 @@ export type { GraphTemplateNode, GraphTemplateEdge, GraphTemplateLayout, GraphTe
 export { edgeService, EdgeService } from './edgeService.js';
 export { knowledgePointService, KnowledgePointService } from './knowledgePointService.js';
 export type { ListKnowledgePointsOptions, ListPublicKnowledgePointsOptions, PaginatedResult, SubmitPublicOptions, AutoReviewResult, PendingKnowledgePointItem, CreateKnowledgePointData, UpdateKnowledgePointData, SimilarKnowledgePointResult, KnowledgePointGraph } from './knowledgePointService.js';
+export { knowledgePointVersionService, KnowledgePointVersionService } from './knowledgePointVersionService.js';
+export type { ListVersionsOptions, PaginatedVersionsResult } from './knowledgePointVersionService.js';
 export { relationshipTypeService, RelationshipTypeService } from './relationshipTypeService.js';
 export { autoGraphService, AutoGraphService } from './autoGraphService.js';
 export type { AINodeData, CreateEdgeData, ProcessAINodesResult } from './autoGraphService.js';

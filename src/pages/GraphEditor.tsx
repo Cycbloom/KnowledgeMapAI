@@ -10,7 +10,7 @@ import React, {
 import { useParams, useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
 import { useMessageStore } from "../store/useMessageStore";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, LogIn } from "lucide-react";
 
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
 import { MindMapCanvas } from "../components/GraphEditor/canvas/MindMapCanvas";
@@ -90,6 +90,9 @@ export const GraphEditor = () => {
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
   const queryClient = useQueryClient();
+
+  const isAuthenticated = !!token;
+  const isReadOnly = !isAuthenticated;
 
   const [mobileActionMenuOpen, setMobileActionMenuOpen] = useState(false);
   const [mobileActionNodeId, setMobileActionNodeId] = useState<string | null>(
@@ -725,6 +728,22 @@ export const GraphEditor = () => {
     <div
       className={`h-screen w-screen flex flex-col overflow-hidden ${isDark ? "dark" : ""}`}
     >
+      {/* 只读模式提示条 */}
+      {isReadOnly && !isGraphLoading && (
+        <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+            <Lock size={16} />
+            <span className="text-sm font-medium">只读模式 - 您正在查看公开图谱</span>
+          </div>
+          <button
+            onClick={() => navigate(`/login?redirect=/graph/${id}`)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg transition-colors"
+          >
+            <LogIn size={14} />
+            登录以编辑
+          </button>
+        </div>
+      )}
       {/* Main Canvas Area */}
       <div
         className={`flex-1 h-full relative ${isDeleteMode ? "cursor-not-allowed" : ""} ${isMobile ? "pb-14" : ""}`}
@@ -1146,6 +1165,7 @@ export const GraphEditor = () => {
         setIsMobilePreviewMode={setIsMobilePreviewMode}
         isRAGChatOpen={isRAGChatOpen}
         ragChatWidth={ragChatWidth}
+        isReadOnly={isReadOnly}
       />
 
       {state.isPresentationMode && (
@@ -1366,6 +1386,7 @@ export const GraphEditor = () => {
         onCancelSelectingParent={handleCancelSelectingParent}
         onSelectParentFromGraph={handleSelectParentFromGraph}
         onConnectNodes={handleConnectNodes}
+        isReadOnly={isReadOnly}
       />
 
       <GraphAnalysisPanel

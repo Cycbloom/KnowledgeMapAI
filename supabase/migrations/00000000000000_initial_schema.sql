@@ -70,6 +70,27 @@ COMMENT ON TABLE knowledge_points IS '独立的知识点实体，支持跨图谱
 COMMENT ON COLUMN knowledge_points.visibility IS '知识点可见性：private(私有), public(公共), pending(待审核)';
 COMMENT ON COLUMN knowledge_points.owner_id IS '知识点所有者，私有知识点仅所有者可见';
 
+-- Knowledge point versions table (知识点版本历史)
+CREATE TABLE IF NOT EXISTS knowledge_point_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  knowledge_point_id UUID NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,
+  version_number INTEGER NOT NULL,
+  title VARCHAR(512) NOT NULL,
+  content TEXT,
+  learning_material TEXT,
+  properties JSONB DEFAULT '{}',
+  change_summary TEXT,
+  changed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(knowledge_point_id, version_number)
+);
+
+COMMENT ON TABLE knowledge_point_versions IS '知识点版本历史表，记录知识点的每次修改';
+COMMENT ON COLUMN knowledge_point_versions.version_number IS '版本号，从1开始递增';
+COMMENT ON COLUMN knowledge_point_versions.change_summary IS '本次修改的摘要说明';
+COMMENT ON COLUMN knowledge_point_versions.changed_by IS '执行修改的用户ID';
+
 -- Graph nodes table (图谱-知识点关联)
 CREATE TABLE IF NOT EXISTS graph_nodes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -933,6 +954,12 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_points_public ON knowledge_points(id) W
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner_visibility ON knowledge_points(owner_id, visibility);
 CREATE INDEX IF NOT EXISTS idx_knowledge_points_owner ON knowledge_points(owner_id);
 
+-- Knowledge point versions
+CREATE INDEX IF NOT EXISTS idx_knowledge_point_versions_kp_id ON knowledge_point_versions(knowledge_point_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_point_versions_version ON knowledge_point_versions(knowledge_point_id, version_number DESC);
+CREATE INDEX IF NOT EXISTS idx_knowledge_point_versions_created_at ON knowledge_point_versions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_knowledge_point_versions_changed_by ON knowledge_point_versions(changed_by);
+
 -- Graph nodes
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_graph_id ON graph_nodes(graph_id);
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_knowledge_point_id ON graph_nodes(knowledge_point_id);
@@ -1211,9 +1238,35 @@ CREATE POLICY "Users can delete own graphs" ON knowledge_graphs FOR DELETE USING
 ALTER TABLE knowledge_points ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view public knowledge points" ON knowledge_points FOR SELECT USING (visibility = 'public');
 CREATE POLICY "Users can view own knowledge points" ON knowledge_points FOR SELECT USING (auth.uid() = owner_id);
+CREATE POLICY "Users can view knowledge points in public graphs" ON knowledge_points FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM graph_nodes
+    JOIN knowledge_graphs ON knowledge_graphs.id = graph_nodes.graph_id
+    WHERE graph_nodes.knowledge_point_id = knowledge_points.id
+    AND knowledge_graphs.is_public = true
+    AND graph_nodes.deleted_at IS NULL
+  )
+);
 CREATE POLICY "Users can insert own knowledge points" ON knowledge_points FOR INSERT WITH CHECK (auth.uid() = owner_id);
 CREATE POLICY "Users can update own knowledge points" ON knowledge_points FOR UPDATE USING (auth.uid() = owner_id);
 CREATE POLICY "Users can delete own knowledge points" ON knowledge_points FOR DELETE USING (auth.uid() = owner_id);
+
+-- Knowledge Point Versions
+ALTER TABLE knowledge_point_versions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view versions of own knowledge points" ON knowledge_point_versions FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM knowledge_points 
+    WHERE knowledge_points.id = knowledge_point_versions.knowledge_point_id 
+    AND (knowledge_points.owner_id = auth.uid() OR knowledge_points.visibility = 'public')
+  )
+);
+CREATE POLICY "Users can insert versions of own knowledge points" ON knowledge_point_versions FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM knowledge_points 
+    WHERE knowledge_points.id = knowledge_point_versions.knowledge_point_id 
+    AND knowledge_points.owner_id = auth.uid()
+  )
+);
 
 -- Graph Nodes
 ALTER TABLE graph_nodes ENABLE ROW LEVEL SECURITY;
@@ -1733,6 +1786,68 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Knowledge point version snapshot trigger
+CREATE OR REPLACE FUNCTION create_knowledge_point_version()
+RETURNS TRIGGER AS $$
+DECLARE
+  next_version INTEGER;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO knowledge_point_versions (
+      knowledge_point_id,
+      version_number,
+      title,
+      content,
+      learning_material,
+      properties,
+      changed_by
+    ) VALUES (
+      NEW.id,
+      1,
+      NEW.title,
+      NEW.content,
+      NEW.learning_material,
+      NEW.properties,
+      NEW.owner_id
+    );
+  ELSIF TG_OP = 'UPDATE' THEN
+    IF OLD.title != NEW.title OR 
+       OLD.content IS DISTINCT FROM NEW.content OR 
+       OLD.learning_material IS DISTINCT FROM NEW.learning_material OR
+       OLD.properties IS DISTINCT FROM NEW.properties THEN
+      
+      SELECT COALESCE(MAX(version_number), 0) + 1 INTO next_version
+      FROM knowledge_point_versions
+      WHERE knowledge_point_id = NEW.id;
+      
+      INSERT INTO knowledge_point_versions (
+        knowledge_point_id,
+        version_number,
+        title,
+        content,
+        learning_material,
+        properties,
+        changed_by
+      ) VALUES (
+        NEW.id,
+        next_version,
+        NEW.title,
+        NEW.content,
+        NEW.learning_material,
+        NEW.properties,
+        NEW.owner_id
+      );
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_knowledge_point_change
+  AFTER INSERT OR UPDATE ON knowledge_points
+  FOR EACH ROW EXECUTE FUNCTION create_knowledge_point_version();
 
 -- Match knowledge points function for semantic search
 CREATE OR REPLACE FUNCTION match_knowledge_points (
@@ -2362,6 +2477,8 @@ GRANT SELECT ON knowledge_graphs TO anon;
 GRANT ALL PRIVILEGES ON knowledge_graphs TO authenticated;
 GRANT SELECT ON knowledge_points TO anon;
 GRANT ALL PRIVILEGES ON knowledge_points TO authenticated;
+GRANT SELECT ON knowledge_point_versions TO anon;
+GRANT ALL PRIVILEGES ON knowledge_point_versions TO authenticated;
 GRANT SELECT ON graph_nodes TO anon;
 GRANT ALL PRIVILEGES ON graph_nodes TO authenticated;
 GRANT SELECT ON edges TO anon;

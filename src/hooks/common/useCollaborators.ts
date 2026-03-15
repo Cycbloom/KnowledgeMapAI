@@ -3,6 +3,7 @@ import type {
   CollaboratorRole,
   CollaboratorWithUser,
 } from "@shared/types";
+import { apiClient } from "../../services/api/createApiClient";
 
 interface UseCollaboratorsResult {
   collaborators: CollaboratorWithUser[];
@@ -24,14 +25,8 @@ export function useCollaborators(): UseCollaboratorsResult {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("获取协作者列表失败");
-      }
-      const data = await response.json();
-      setCollaborators(data);
+      const data = await apiClient.get(`/collaborations/graphs/${graphId}/collaborators`);
+      setCollaborators(data as unknown as CollaboratorWithUser[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "获取协作者列表失败");
     } finally {
@@ -42,16 +37,7 @@ export function useCollaborators(): UseCollaboratorsResult {
   const inviteCollaborator = useCallback(async (graphId: string, email: string, role: CollaboratorRole): Promise<boolean> => {
     setError(null);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, role }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "邀请失败");
-      }
+      await apiClient.post(`/collaborations/graphs/${graphId}/collaborators`, { email, role });
       await fetchCollaborators(graphId);
       return true;
     } catch (err) {
@@ -63,16 +49,7 @@ export function useCollaborators(): UseCollaboratorsResult {
   const updateRole = useCallback(async (graphId: string, userId: string, role: CollaboratorRole): Promise<boolean> => {
     setError(null);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators/${userId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ role }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "更新角色失败");
-      }
+      await apiClient.patch(`/collaborations/graphs/${graphId}/collaborators/${userId}`, { role });
       await fetchCollaborators(graphId);
       return true;
     } catch (err) {
@@ -84,14 +61,7 @@ export function useCollaborators(): UseCollaboratorsResult {
   const removeCollaborator = useCallback(async (graphId: string, userId: string): Promise<boolean> => {
     setError(null);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/collaborators/${userId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "移除失败");
-      }
+      await apiClient.delete(`/collaborations/graphs/${graphId}/collaborators/${userId}`);
       await fetchCollaborators(graphId);
       return true;
     } catch (err) {
@@ -103,17 +73,8 @@ export function useCollaborators(): UseCollaboratorsResult {
   const generateShareLink = useCallback(async (graphId: string, role: CollaboratorRole = "viewer") => {
     setError(null);
     try {
-      const response = await fetch(`/api/collaborations/graphs/${graphId}/share`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ role }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "生成分享链接失败");
-      }
-      return await response.json();
+      const data = await apiClient.post(`/collaborations/graphs/${graphId}/share`, { role });
+      return data as unknown as { invitationToken: string; shareUrl: string };
     } catch (err) {
       setError(err instanceof Error ? err.message : "生成分享链接失败");
       return null;

@@ -13,6 +13,7 @@ import { NodeEditSidebar } from "./NodeEditSidebar";
 import { GraphOutline } from "../panels/GraphOutline";
 import { ErrorBoundary } from "../../common";
 import { X, GripHorizontal } from "lucide-react";
+import { VersionHistoryModal } from "../modals/VersionHistoryModal";
 
 interface GraphSidebarManagerProps {
   state: GraphEditorState;
@@ -30,6 +31,7 @@ interface GraphSidebarManagerProps {
   onCancelSelectingParent?: () => void;
   onSelectParentFromGraph?: (nodeId: string) => void;
   onConnectNodes?: (sourceId: string, targetId: string) => void;
+  isReadOnly?: boolean;
 }
 
 export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
@@ -47,6 +49,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
   onStartSelectingParent,
   onCancelSelectingParent,
   onConnectNodes,
+  isReadOnly = false,
 }) => {
   const {
     sidebarMode,
@@ -73,6 +76,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
 
   const { isMobile } = useIsMobile();
   const [isResizing, setIsResizing] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const touchCurrentY = useRef<number>(0);
@@ -141,6 +145,20 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
 
   if (sidebarMode === "none") return null;
 
+  const versionHistoryModal = isVersionHistoryOpen && selectedNode && (
+    <VersionHistoryModal
+      isOpen={isVersionHistoryOpen}
+      onClose={() => setIsVersionHistoryOpen(false)}
+      knowledgePointId={selectedNode.knowledge_point_id || selectedNode.id}
+      knowledgePointTitle={selectedNode.title || "未命名知识点"}
+      onRollback={() => {
+        if (nodeOps?.handleRefreshNode) {
+          nodeOps.handleRefreshNode();
+        }
+      }}
+    />
+  );
+
   const renderSidebarContent = () => (
     <>
       {sidebarMode === "outline" ? (
@@ -170,6 +188,7 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
             onConnectNodes={onConnectNodes}
             className="h-full"
             stats={graphStats}
+            isReadOnly={isReadOnly}
           />
         </div>
       ) : sidebarMode === "detail" && selectedNode ? (
@@ -236,6 +255,9 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
           onBackgroundGenerate={() =>
             aiOps.handleBackgroundTask("expand_graph")
           }
+          isReadOnly={isReadOnly}
+          onShowVersionHistory={() => setIsVersionHistoryOpen(true)}
+          isGeneratingContent={loading}
         />
       ) : sidebarMode === "create" || sidebarMode === "edit" ? (
         <NodeEditSidebar
@@ -262,67 +284,73 @@ export const GraphSidebarManager: React.FC<GraphSidebarManagerProps> = ({
 
   if (isMobile) {
     return (
-      <AnimatePresence>
-        <motion.div
-          ref={sidebarRef}
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <GripHorizontal
-              className="text-gray-400 dark:text-gray-500"
-              size={24}
-            />
-            <button
-              onClick={handleCloseSidebar}
-              className="absolute right-4 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
-            >
-              <X size={20} className="text-gray-600 dark:text-gray-400" />
-            </button>
-          </div>
-          <div
-            className={`flex-1 overflow-y-auto ${sidebarMode !== "outline" ? "p-4" : ""}`}
+      <>
+        <AnimatePresence>
+          <motion.div
+            ref={sidebarRef}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            {renderSidebarContent()}
-          </div>
-        </motion.div>
-      </AnimatePresence>
+            <div className="flex items-center justify-center py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <GripHorizontal
+                className="text-gray-400 dark:text-gray-500"
+                size={24}
+              />
+              <button
+                onClick={handleCloseSidebar}
+                className="absolute right-4 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <X size={20} className="text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+            <div
+              className={`flex-1 overflow-y-auto ${sidebarMode !== "outline" ? "p-4" : ""}`}
+            >
+              {renderSidebarContent()}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+        {versionHistoryModal}
+      </>
     );
   }
 
   return (
-    <ErrorBoundary
-      fallback={
-        <div className="w-80 bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 absolute right-0 top-0 bottom-0 z-20 flex flex-col p-4 items-center justify-center">
-          <div className="text-red-500 font-bold mb-2">侧边栏组件出错</div>
-          <button
-            onClick={handleCloseSidebar}
-            className="text-blue-600 hover:underline"
-          >
-            关闭侧边栏
-          </button>
-        </div>
-      }
-    >
-      <div
-        ref={sidebarRef}
-        className={`bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== "outline" ? "p-4 overflow-y-auto" : ""}`}
-        style={{ width: sidebarWidth }}
+    <>
+      <ErrorBoundary
+        fallback={
+          <div className="w-80 bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 absolute right-0 top-0 bottom-0 z-20 flex flex-col p-4 items-center justify-center">
+            <div className="text-red-500 font-bold mb-2">侧边栏组件出错</div>
+            <button
+              onClick={handleCloseSidebar}
+              className="text-blue-600 hover:underline"
+            >
+              关闭侧边栏
+            </button>
+          </div>
+        }
       >
         <div
-          className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 z-50 flex items-center justify-center group transition-colors"
-          onMouseDown={startResizing}
+          ref={sidebarRef}
+          className={`bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 absolute right-0 top-0 bottom-0 z-20 flex flex-col ${sidebarMode !== "outline" ? "p-4 overflow-y-auto" : ""}`}
+          style={{ width: sidebarWidth }}
         >
-          <div className="h-8 w-1 bg-gray-300 dark:bg-gray-600 rounded-full group-hover:bg-blue-500 transition-colors" />
+          <div
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 z-50 flex items-center justify-center group transition-colors"
+            onMouseDown={startResizing}
+          >
+            <div className="h-8 w-1 bg-gray-300 dark:bg-gray-600 rounded-full group-hover:bg-blue-500 transition-colors" />
+          </div>
+          {renderSidebarContent()}
         </div>
-        {renderSidebarContent()}
-      </div>
-    </ErrorBoundary>
+      </ErrorBoundary>
+      {versionHistoryModal}
+    </>
   );
 };

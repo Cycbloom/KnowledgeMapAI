@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-export type MessageType = 'info' | 'success' | 'warning' | 'error';
+export type MessageType = 'info' | 'success' | 'warning' | 'error' | 'loading';
 
 export interface Message {
   id: string;

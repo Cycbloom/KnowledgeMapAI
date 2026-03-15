@@ -164,40 +164,18 @@ export class GraphService {
   async getGraph(
     supabase: SupabaseClient,
     graphId: string,
-    userId: string | null
+    _userId: string | null
   ) {
-    let query = supabase
+    const { data, error } = await supabase
       .from("knowledge_graphs")
       .select("*")
       .eq("id", graphId)
-      .is("deleted_at", null);
-
-    if (userId) {
-      query = query.eq("user_id", userId);
-    }
-
-    const { data, error } = await query.maybeSingle();
+      .is("deleted_at", null)
+      .maybeSingle();
 
     if (error) {
       logger.error("getGraph error:", error);
       throw error;
-    }
-
-    if (!data) {
-      const { data: publicGraph, error: publicError } = await supabase
-        .from("knowledge_graphs")
-        .select("*")
-        .eq("id", graphId)
-        .eq("is_public", true)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (publicError) {
-        logger.error("getGraph public fallback error:", publicError);
-        throw publicError;
-      }
-
-      return publicGraph;
     }
 
     return data;

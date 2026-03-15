@@ -81,6 +81,9 @@ export default defineConfig({
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
+        orientation: 'any',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'favicon.svg',
@@ -94,7 +97,41 @@ export default defineConfig({
             type: 'image/svg+xml',
             purpose: 'any maskable'
           }
-        ]
+        ],
+        shortcuts: [
+          {
+            name: '新建图谱',
+            short_name: '新建',
+            description: '创建一个新的知识图谱',
+            url: '/dashboard?action=create',
+            icons: [{ src: 'favicon.svg', sizes: '96x96' }]
+          },
+          {
+            name: '学习模式',
+            short_name: '学习',
+            description: '进入学习模式',
+            url: '/study',
+            icons: [{ src: 'favicon.svg', sizes: '96x96' }]
+          }
+        ],
+        share_target: {
+          action: '/api/share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url',
+            files: [
+              {
+                name: 'file',
+                accept: ['text/plain', 'text/markdown', 'application/json']
+              }
+            ]
+          }
+        },
+        categories: ['education', 'productivity'],
+        lang: 'zh-CN'
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
@@ -129,6 +166,36 @@ export default defineConfig({
             }
           },
           {
+            urlPattern: /\/api\/graphs\/[^/]+$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'graph-data-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
+            urlPattern: /\/api\/graphs\/[^/]+\/nodes/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'graph-nodes-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
             urlPattern: /\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -139,10 +206,15 @@ export default defineConfig({
               },
               cacheableResponse: {
                 statuses: [0, 200]
-              }
+              },
+              networkTimeoutSeconds: 5
             }
           }
         ]
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module'
       }
     })
   ],

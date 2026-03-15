@@ -12,6 +12,7 @@ export { VirtualList, VirtualGrid } from "./VirtualList.js";
 export { Mermaid } from "./Mermaid.js";
 export { MessageBar } from "./MessageBar.js";
 export { OfflineIndicator } from "./OfflineIndicator.js";
+export { OfflineStatusBar } from "./OfflineStatusBar.js";
 export { ConfirmationModal } from "./ConfirmationModal.js";
 export { FocusTimer } from "./FocusTimer.js";
 export { HelpModal } from "./HelpModal.js";

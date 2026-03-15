@@ -1169,6 +1169,23 @@ CREATE INDEX IF NOT EXISTS idx_learning_plans_path ON learning_plans(path_id);
 CREATE INDEX IF NOT EXISTS idx_learning_plans_status ON learning_plans(user_id, status);
 
 -- =====================================================
+-- HELPER FUNCTIONS FOR RLS
+-- =====================================================
+
+-- Helper function to check if user is a collaborator (breaks RLS circular dependency)
+CREATE OR REPLACE FUNCTION public.is_graph_collaborator(p_graph_id UUID, p_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM graph_collaborators 
+    WHERE graph_id = p_graph_id 
+    AND user_id = p_user_id 
+    AND accepted_at IS NOT NULL
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- =====================================================
 -- ROW LEVEL SECURITY
 -- =====================================================
 
@@ -1184,7 +1201,7 @@ DROP POLICY IF EXISTS "Users can view own graphs" ON knowledge_graphs;
 CREATE POLICY "Users can view accessible graphs" ON knowledge_graphs FOR SELECT USING (
   user_id = auth.uid() 
   OR is_public = true
-  OR EXISTS (SELECT 1 FROM graph_collaborators WHERE graph_collaborators.graph_id = knowledge_graphs.id AND graph_collaborators.user_id = auth.uid() AND graph_collaborators.accepted_at IS NOT NULL)
+  OR public.is_graph_collaborator(id, auth.uid())
 );
 CREATE POLICY "Users can insert own graphs" ON knowledge_graphs FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own graphs" ON knowledge_graphs FOR UPDATE USING (auth.uid() = user_id);
@@ -1208,7 +1225,7 @@ CREATE POLICY "Users can view graph_nodes of accessible graphs" ON graph_nodes F
     AND (
       knowledge_graphs.user_id = auth.uid() 
       OR knowledge_graphs.is_public = true
-      OR EXISTS (SELECT 1 FROM graph_collaborators WHERE graph_collaborators.graph_id = knowledge_graphs.id AND graph_collaborators.user_id = auth.uid() AND graph_collaborators.accepted_at IS NOT NULL)
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
     )
   )
 );
@@ -1216,27 +1233,24 @@ DROP POLICY IF EXISTS "Users can insert graph_nodes to own graphs" ON graph_node
 CREATE POLICY "Editors can insert graph_nodes" ON graph_nodes FOR INSERT WITH CHECK (
   EXISTS (
     SELECT 1 FROM knowledge_graphs kg
-    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
     WHERE kg.id = graph_nodes.graph_id 
-    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+    AND (kg.user_id = auth.uid() OR (public.is_graph_collaborator(kg.id, auth.uid())))
   )
 );
 DROP POLICY IF EXISTS "Users can update graph_nodes of own graphs" ON graph_nodes;
 CREATE POLICY "Editors can update graph_nodes" ON graph_nodes FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM knowledge_graphs kg
-    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
     WHERE kg.id = graph_nodes.graph_id 
-    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+    AND (kg.user_id = auth.uid() OR (public.is_graph_collaborator(kg.id, auth.uid())))
   )
 );
 DROP POLICY IF EXISTS "Users can delete graph_nodes of own graphs" ON graph_nodes;
 CREATE POLICY "Editors can delete graph_nodes" ON graph_nodes FOR DELETE USING (
   EXISTS (
     SELECT 1 FROM knowledge_graphs kg
-    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
     WHERE kg.id = graph_nodes.graph_id 
-    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+    AND (kg.user_id = auth.uid() OR (public.is_graph_collaborator(kg.id, auth.uid())))
   )
 );
 
@@ -1250,7 +1264,7 @@ CREATE POLICY "Users can view edges of accessible graphs" ON edges FOR SELECT US
     AND (
       knowledge_graphs.user_id = auth.uid() 
       OR knowledge_graphs.is_public = true
-      OR EXISTS (SELECT 1 FROM graph_collaborators WHERE graph_collaborators.graph_id = knowledge_graphs.id AND graph_collaborators.user_id = auth.uid() AND graph_collaborators.accepted_at IS NOT NULL)
+      OR public.is_graph_collaborator(knowledge_graphs.id, auth.uid())
     )
   )
 );
@@ -1259,9 +1273,8 @@ DROP POLICY IF EXISTS "Users can insert edges to own graphs" ON edges;
 CREATE POLICY "Editors can insert edges" ON edges FOR INSERT WITH CHECK (
   EXISTS (
     SELECT 1 FROM knowledge_graphs kg
-    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
     WHERE kg.id = edges.graph_id 
-    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+    AND (kg.user_id = auth.uid() OR public.is_graph_collaborator(kg.id, auth.uid()))
   )
 );
 
@@ -1269,9 +1282,8 @@ DROP POLICY IF EXISTS "Users can update edges of own graphs" ON edges;
 CREATE POLICY "Editors can update edges" ON edges FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM knowledge_graphs kg
-    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
     WHERE kg.id = edges.graph_id 
-    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+    AND (kg.user_id = auth.uid() OR public.is_graph_collaborator(kg.id, auth.uid()))
   )
 );
 
@@ -1279,9 +1291,8 @@ DROP POLICY IF EXISTS "Users can delete edges of own graphs" ON edges;
 CREATE POLICY "Editors can delete edges" ON edges FOR DELETE USING (
   EXISTS (
     SELECT 1 FROM knowledge_graphs kg
-    LEFT JOIN graph_collaborators gc ON gc.graph_id = kg.id AND gc.user_id = auth.uid() AND gc.accepted_at IS NOT NULL
     WHERE kg.id = edges.graph_id 
-    AND (kg.user_id = auth.uid() OR (gc.role IN ('owner', 'editor')))
+    AND (kg.user_id = auth.uid() OR public.is_graph_collaborator(kg.id, auth.uid()))
   )
 );
 
@@ -1411,8 +1422,9 @@ CREATE POLICY "Users can delete own backup snapshots" ON backup_snapshots FOR DE
 -- Graph collaborators RLS
 ALTER TABLE graph_collaborators ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view collaborators of graphs they have access to" ON graph_collaborators FOR SELECT USING (
-  EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_collaborators.graph_id AND (user_id = auth.uid() OR is_public = true))
-  OR EXISTS (SELECT 1 FROM graph_collaborators gc WHERE gc.graph_id = graph_collaborators.graph_id AND gc.user_id = auth.uid())
+  user_id = auth.uid()
+  OR EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_collaborators.graph_id AND user_id = auth.uid())
+  OR EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_collaborators.graph_id AND is_public = true)
 );
 CREATE POLICY "Owners can manage collaborators" ON graph_collaborators FOR ALL USING (
   EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_collaborators.graph_id AND user_id = auth.uid())

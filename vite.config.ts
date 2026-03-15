@@ -232,7 +232,6 @@ export default defineConfig({
     target: 'es2020',
     minify: 'esbuild',
     esbuild: {
-      drop: ['console', 'debugger'],
       legalComments: 'none',
     },
     sourcemap: false,

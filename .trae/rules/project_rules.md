@@ -1,5 +1,53 @@
 # 项目规则
 
+## 项目概述
+
+**目标平台：** 本项目以 **Electron 桌面应用** 为主要开发和发布目标，同时支持 Web 端访问。
+
+- **主要平台**：Electron 桌面应用（Windows、macOS、Linux）
+- **辅助平台**：Web 应用（用于快速预览和开发调试）
+
+## Electron 桌面应用开发
+
+### 开发模式
+
+```bash
+# 启动 Electron 开发模式（同时启动前端、后端和 Electron）
+npm run electron:dev
+
+# 类型检查
+npm run check:electron
+```
+
+### 构建发布
+
+```bash
+# 构建所有平台
+npm run electron:build
+
+# 构建特定平台
+npm run electron:build:win    # Windows
+npm run electron:build:mac    # macOS
+npm run electron:build:linux  # Linux
+```
+
+### Electron 代码规范
+
+1. **主进程代码** - 位于 `electron/` 目录，使用 TypeScript 编写
+2. **预加载脚本** - 通过 `contextBridge` 暴露安全的 API 给渲染进程
+3. **IPC 通信** - 使用 `ipcMain` 和 `ipcRenderer` 进行进程间通信
+4. **安全原则**：
+   - 禁用 `nodeIntegration`
+   - 启用 `contextIsolation`
+   - 使用预加载脚本暴露有限 API
+
+### 自动更新
+
+项目使用 `electron-updater` 实现自动更新：
+- 配置 GitHub Releases 作为更新源
+- 支持静默下载和安装
+- 开发模式下自动跳过更新检查
+
 ## 数据库操作
 
 ### 数据库修改流程（无迁移模式）

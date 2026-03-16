@@ -1,15 +1,15 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { taskQueue } from './common/queueService.js';
-import { sseService } from './core/sseService.js';
-import { logger } from '../utils/logger.js';
-import { getProcessor } from './taskProcessors/index.js';
-import { getPaginationParams, PaginationOptions } from '../utils/pagination.js';
-import './taskProcessors/batchGenerateCardsProcessor.js';
-import './taskProcessors/recursiveGraphProcessor.js';
-import './taskProcessors/infiniteExpansionProcessor.js';
-import './taskProcessors/embeddingGenerationProcessor.js';
-import './taskProcessors/quizGenerationProcessor.js';
-import dotenv from 'dotenv';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { taskQueue } from "./common/queueService.js";
+import { sseService } from "./core/sseService.js";
+import { logger } from "../utils/logger.js";
+import { getProcessor } from "./taskProcessors/index.js";
+import { getPaginationParams, PaginationOptions } from "../utils/pagination.js";
+import "./taskProcessors/batchGenerateCardsProcessor.js";
+import "./taskProcessors/recursiveGraphProcessor.js";
+import "./taskProcessors/infiniteExpansionProcessor.js";
+import "./taskProcessors/embeddingGenerationProcessor.js";
+import "./taskProcessors/quizGenerationProcessor.js";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -18,7 +18,7 @@ export interface Task {
   user_id: string;
   type: string;
   name?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   payload: any;
   result?: any;
   error?: string;
@@ -27,40 +27,66 @@ export interface Task {
 }
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
+const supabaseKey =
+  process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const defaultClient = createClient(supabaseUrl!, supabaseServiceKey || supabaseKey!);
+const defaultClient = createClient(
+  supabaseUrl!,
+  supabaseServiceKey || supabaseKey!,
+);
 
 export class TaskService {
-  
   async createTask(userId: string, type: string, payload?: any, name?: string) {
     const supabase = defaultClient;
 
     const { data, error } = await supabase
-      .from('tasks')
+      .from("tasks")
       .insert({
         user_id: userId,
         type,
         name,
-        status: 'pending',
-        payload: payload || {}
+        status: "pending",
+        payload: payload || {},
       })
       .select()
       .single();
 
     if (error) throw new Error(`Failed to create task: ${error.message}`);
-    
+
     if (taskQueue) {
       await taskQueue.add(type, { taskId: data.id });
     } else {
-      logger.warn('Task queue not available, task will not be processed automatically');
+      logger.info("Task queue not available, processing task synchronously");
+      this.processTaskAsync(data.id, userId, type, payload).catch((err) => {
+        logger.error(`Failed to process task ${data.id} synchronously:`, err);
+      });
     }
-    
+
     return data as Task;
   }
 
-  async updateTaskStatus(client: SupabaseClient | string, taskId: string, status: string, result?: any, errorMsg?: string, userId?: string) {
+  private async processTaskAsync(
+    taskId: string,
+    userId: string,
+    type: string,
+    payload: any,
+  ) {
+    try {
+      await this.processTask(taskId, userId, type, payload);
+    } catch (error) {
+      logger.error(`Error in async task processing for task ${taskId}:`, error);
+    }
+  }
+
+  async updateTaskStatus(
+    client: SupabaseClient | string,
+    taskId: string,
+    status: string,
+    result?: any,
+    errorMsg?: string,
+    userId?: string,
+  ) {
     let supabase = defaultClient;
     let tid = taskId;
     let s = status;
@@ -68,14 +94,14 @@ export class TaskService {
     let e = errorMsg;
     let uid = userId;
 
-    if (typeof client !== 'string' && client !== undefined) {
-        supabase = client;
+    if (typeof client !== "string" && client !== undefined) {
+      supabase = client;
     } else {
-        uid = e;
-        e = r;
-        r = s;
-        s = tid;
-        tid = client as string;
+      uid = e;
+      e = r;
+      r = s;
+      s = tid;
+      tid = client as string;
     }
 
     const updateData: any = { status: s, updated_at: new Date().toISOString() };
@@ -83,34 +109,39 @@ export class TaskService {
     if (e !== undefined) updateData.error = e;
 
     const { error } = await supabase
-      .from('tasks')
+      .from("tasks")
       .update(updateData)
-      .eq('id', tid);
-      
+      .eq("id", tid);
+
     if (error) throw error;
 
     if (uid) {
-        sseService.sendToUser(uid, {
-            type: 'task_update',
-            taskId: tid,
-            status: s,
-            result: r,
-            error: e
-        });
+      sseService.sendToUser(uid, {
+        type: "task_update",
+        taskId: tid,
+        status: s,
+        result: r,
+        error: e,
+      });
     }
   }
 
-  async getTasks(client: SupabaseClient, userId: string, status?: string, options?: PaginationOptions) {
+  async getTasks(
+    client: SupabaseClient,
+    userId: string,
+    status?: string,
+    options?: PaginationOptions,
+  ) {
     const { offset, end } = getPaginationParams(options);
     let query = client
-      .from('tasks')
-      .select('*', { count: 'exact' })
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .from("tasks")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
       .range(offset, end);
 
-    if (status && status !== 'all') {
-      query = query.eq('status', status);
+    if (status && status !== "all") {
+      query = query.eq("status", status);
     }
 
     const { data, error, count } = await query;
@@ -118,24 +149,29 @@ export class TaskService {
     return { tasks: data as Task[], total: count || 0 };
   }
 
-  async getTask(client: SupabaseClient, taskId: string, userId: string): Promise<Task | null> {
+  async getTask(
+    client: SupabaseClient,
+    taskId: string,
+    userId: string,
+  ): Promise<Task | null> {
     const { data, error } = await client
-      .from('tasks')
-      .select('*')
-      .eq('id', taskId)
-      .eq('user_id', userId)
+      .from("tasks")
+      .select("*")
+      .eq("id", taskId)
+      .eq("user_id", userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw new Error(`Failed to fetch task: ${error.message}`);
+    if (error && error.code !== "PGRST116")
+      throw new Error(`Failed to fetch task: ${error.message}`);
     return data as Task | null;
   }
 
   async getPendingTasks(client: SupabaseClient) {
     const { data, error } = await client
-      .from('tasks')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true })
+      .from("tasks")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
       .limit(10);
 
     if (error) throw error;
@@ -144,53 +180,86 @@ export class TaskService {
 
   async retryTask(client: SupabaseClient, taskId: string, userId: string) {
     const { data: task, error: fetchError } = await client
-      .from('tasks')
-      .select('*')
-      .eq('id', taskId)
-      .eq('user_id', userId)
+      .from("tasks")
+      .select("*")
+      .eq("id", taskId)
+      .eq("user_id", userId)
       .single();
 
-    if (fetchError || !task) throw new Error('Task not found');
+    if (fetchError || !task) throw new Error("Task not found");
 
     const { data, error } = await client
-      .from('tasks')
-      .update({ status: 'pending', error: null, result: null, updated_at: new Date().toISOString() })
-      .eq('id', taskId)
+      .from("tasks")
+      .update({
+        status: "pending",
+        error: null,
+        result: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", taskId)
       .select()
       .single();
 
     if (error) throw new Error(`Failed to retry task: ${error.message}`);
-    
+
     if (taskQueue) {
       await taskQueue.add(data.type, { taskId: data.id });
     } else {
-      logger.warn('Task queue not available, task will not be processed automatically');
+      logger.info(
+        "Task queue not available, processing retried task synchronously",
+      );
+      this.processTaskAsync(data.id, userId, data.type, data.payload).catch(
+        (err) => {
+          logger.error(
+            `Failed to process retried task ${data.id} synchronously:`,
+            err,
+          );
+        },
+      );
     }
-    
+
     return data as Task;
   }
 
   async deleteTask(client: SupabaseClient, taskId: string, userId: string) {
     const { error } = await client
-      .from('tasks')
+      .from("tasks")
       .delete()
-      .eq('id', taskId)
-      .eq('user_id', userId);
+      .eq("id", taskId)
+      .eq("user_id", userId);
 
     if (error) throw new Error(`Failed to delete task: ${error.message}`);
   }
 
-  async processTask(taskId: string, userId: string, type: string, payload: any) {
+  async processTask(
+    taskId: string,
+    userId: string,
+    type: string,
+    payload: any,
+  ) {
     const supabase = defaultClient;
     const processor = getProcessor(type);
-    
+
     if (!processor) {
       logger.error(`No processor found for task type: ${type}`);
-      await this.updateTaskStatus(supabase, taskId, 'failed', null, `Unknown task type: ${type}`, userId);
+      await this.updateTaskStatus(
+        supabase,
+        taskId,
+        "failed",
+        null,
+        `Unknown task type: ${type}`,
+        userId,
+      );
       return;
     }
 
-    await processor.process(taskId, userId, payload, supabase, this.updateTaskStatus.bind(this));
+    await processor.process(
+      taskId,
+      userId,
+      payload,
+      supabase,
+      this.updateTaskStatus.bind(this),
+    );
   }
 }
 

@@ -220,6 +220,12 @@ ipcMain.handle('server:getPort', () => {
 });
 
 function configureAutoUpdater(): void {
+  // 开发模式下跳过自动更新配置
+  if (!app.isPackaged) {
+    console.log('[AutoUpdater] Skipping auto updater configuration in development mode');
+    return;
+  }
+  
   // 配置更新源
   autoUpdater.setFeedURL({
     provider: 'github',

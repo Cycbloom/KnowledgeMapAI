@@ -53,31 +53,33 @@ dotenv.config();
 import { errorHandler } from "./middleware/errorHandler.js";
 import { csrfProtection, getCsrfToken } from "./middleware/csrf.js";
 import { rateLimiters } from "./middleware/rateLimiter.js";
-import { requestLogger, slowRequestLogger, } from "./middleware/requestLogger.js";
+import {
+  requestLogger,
+  slowRequestLogger,
+} from "./middleware/requestLogger.js";
 import { requestIdMiddleware } from "./middleware/requestId.js";
 import { logger } from "./utils/logger.js";
-const DATABASE_MODE = process.env.DATABASE_MODE || 'supabase';
+const DATABASE_MODE = process.env.DATABASE_MODE || "supabase";
 let localDb = null;
 async function initializeLocalDatabase() {
-    if (DATABASE_MODE === 'local') {
-        try {
-            const Database = (await import('better-sqlite3')).default;
-            const dbPath = process.env.LOCAL_DB_PATH || './data/knowledgemap.db';
-            localDb = new Database(dbPath);
-            localDb.pragma('journal_mode = WAL');
-            localDb.pragma('foreign_keys = ON');
-            localDb.pragma('synchronous = NORMAL');
-            localUserService.setDatabase(localDb);
-            logger.info('Local database initialized', { dbPath });
-        }
-        catch (error) {
-            logger.error('Failed to initialize local database', { error });
-            throw error;
-        }
+  if (DATABASE_MODE === "local") {
+    try {
+      const Database = (await import("better-sqlite3")).default;
+      const dbPath = process.env.LOCAL_DB_PATH || "./data/knowledgemap.db";
+      localDb = new Database(dbPath);
+      localDb.pragma("journal_mode = WAL");
+      localDb.pragma("foreign_keys = ON");
+      localDb.pragma("synchronous = NORMAL");
+      localUserService.setDatabase(localDb);
+      logger.info("Local database initialized", { dbPath });
+    } catch (error) {
+      logger.error("Failed to initialize local database", { error });
+      throw error;
     }
+  }
 }
 initializeLocalDatabase().catch((error) => {
-    logger.error('Failed to initialize local database on startup', { error });
+  logger.error("Failed to initialize local database on startup", { error });
 });
 const app = express();
 app.use(requestIdMiddleware);
@@ -87,52 +89,58 @@ app.use(cookieParser());
 // Security Headers
 app.use(helmet());
 // Gzip Compression
-app.use(compression({
+app.use(
+  compression({
     level: 6, // Balanced setting
     threshold: 1024, // Only compress responses larger than 1KB
     filter: (req, res) => {
-        if (req.headers["x-no-compression"]) {
-            // don't compress responses with this request header
-            return false;
-        }
-        // fallback to standard filter function
-        return compression.filter(req, res);
+      if (req.headers["x-no-compression"]) {
+        // don't compress responses with this request header
+        return false;
+      }
+      // fallback to standard filter function
+      return compression.filter(req, res);
     },
-}));
+  }),
+);
 // Trust Proxy (Required for correct IP rate limiting behind proxies like Vercel/Nginx)
 app.set("trust proxy", 1);
 // CORS Configuration
 const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:4173", // Vite preview
-    process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:4173", // Vite preview
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 const isVercelOrigin = (origin) => {
-    return origin.endsWith('.vercel.app') ||
-        origin.includes('.vercel.app') ||
-        /^https?:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+  return (
+    origin.endsWith(".vercel.app") ||
+    origin.includes(".vercel.app") ||
+    /^https?:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
+  );
 };
-app.use(cors({
+app.use(
+  cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin)
-            return callback(null, true);
-        // Allow Vercel preview deployments
-        if (isVercelOrigin(origin)) {
-            return callback(null, true);
-        }
-        if (allowedOrigins.indexOf(origin) !== -1 ||
-            !process.env.NODE_ENV ||
-            process.env.NODE_ENV === "development") {
-            callback(null, true);
-        }
-        else {
-            logger.warn('CORS blocked origin', { origin, allowedOrigins });
-            callback(new Error("Not allowed by CORS"));
-        }
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      // Allow Vercel preview deployments
+      if (isVercelOrigin(origin)) {
+        return callback(null, true);
+      }
+      if (
+        allowedOrigins.indexOf(origin) !== -1 ||
+        !process.env.NODE_ENV ||
+        process.env.NODE_ENV === "development"
+      ) {
+        callback(null, true);
+      } else {
+        logger.warn("CORS blocked origin", { origin, allowedOrigins });
+        callback(new Error("Not allowed by CORS"));
+      }
     },
     credentials: true,
-}));
+  }),
+);
 app.use(csrfProtection);
 app.use(requestLogger);
 app.use(slowRequestLogger(2000));
@@ -141,7 +149,7 @@ app.get("/api/csrf-token", getCsrfToken);
 /**
  * API Routes
  */
-const authRouter = DATABASE_MODE === 'local' ? authLocalRoutes : authRoutes;
+const authRouter = DATABASE_MODE === "local" ? authLocalRoutes : authRoutes;
 app.use("/api/auth", rateLimiters.auth, authRouter);
 app.use("/api/graphs", graphRoutes);
 app.use("/api/graphs", graphRelationsRoutes);
@@ -182,10 +190,10 @@ app.use("/api/sync", syncRoutes);
  * health
  */
 app.use("/api/health", (_req, res, _next) => {
-    res.status(200).json({
-        success: true,
-        message: "ok",
-    });
+  res.status(200).json({
+    success: true,
+    message: "ok",
+  });
 });
 startAutoBackupScheduler();
 syncExistingBackups();
@@ -197,10 +205,10 @@ app.use(errorHandler);
  * 404 handler
  */
 app.use((_req, res) => {
-    res.status(404).json({
-        success: false,
-        error: "API not found",
-    });
+  res.status(404).json({
+    success: false,
+    error: "API not found",
+  });
 });
 export default app;
 //# sourceMappingURL=app.js.map

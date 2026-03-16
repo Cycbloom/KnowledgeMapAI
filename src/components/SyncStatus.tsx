@@ -1,12 +1,25 @@
-import React, { useState } from 'react';
-import { AlertCircle, CheckCircle, Clock, RefreshCw, Settings, X } from 'lucide-react';
-import { SyncStatus as SyncStatusType, SyncDevice } from '../../electron/services/syncTypes.js';
+import React, { useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  RefreshCw,
+  Settings,
+  X,
+} from "lucide-react";
+import {
+  SyncStatus as SyncStatusType,
+  SyncDevice,
+} from "../../electron/services/syncTypes.js";
 
 interface SyncStatusProps {
   status: SyncStatusType;
   devices: SyncDevice[];
   onSyncNow: () => void;
-  onResolveConflict: (conflictId: string, resolution: 'local' | 'remote' | 'merge') => void;
+  onResolveConflict: (
+    conflictId: string,
+    resolution: "local" | "remote" | "merge",
+  ) => void;
   onOpenSettings: () => void;
 }
 
@@ -15,7 +28,7 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
   devices,
   onSyncNow,
   onResolveConflict,
-  onOpenSettings
+  onOpenSettings,
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -23,7 +36,7 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
     if (!status.isRunning) {
       return <X className="text-gray-400" size={20} />;
     }
-    if (status.lastSyncStatus === 'error') {
+    if (status.lastSyncStatus === "error") {
       return <AlertCircle className="text-red-500" size={20} />;
     }
     if (status.lastSync) {
@@ -34,16 +47,16 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
 
   const getStatusText = () => {
     if (!status.isRunning) {
-      return '同步已禁用';
+      return "同步已禁用";
     }
-    if (status.lastSyncStatus === 'error') {
-      return '同步失败';
+    if (status.lastSyncStatus === "error") {
+      return "同步失败";
     }
     if (status.lastSync) {
       const lastSyncTime = new Date(status.lastSync).toLocaleString();
       return `上次同步: ${lastSyncTime}`;
     }
-    return '等待同步...';
+    return "等待同步...";
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -51,8 +64,8 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.round(diffMs / 60000);
-    
-    if (diffMins < 1) return '刚刚';
+
+    if (diffMins < 1) return "刚刚";
     if (diffMins < 60) return `${diffMins}分钟前`;
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)}小时前`;
     return date.toLocaleDateString();
@@ -60,7 +73,7 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
 
   return (
     <div className="w-full">
-      <div 
+      <div
         className="flex items-center justify-between cursor-pointer p-4 bg-gray-50 dark:bg-gray-750 rounded-lg"
         onClick={() => setExpanded(!expanded)}
       >
@@ -69,7 +82,9 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
             {getStatusIcon()}
           </div>
           <div>
-            <h3 className="font-medium text-gray-900 dark:text-white">同步状态</h3>
+            <h3 className="font-medium text-gray-900 dark:text-white">
+              同步状态
+            </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {getStatusText()}
             </p>
@@ -104,12 +119,20 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
           {/* 同步统计 */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 dark:bg-gray-750 p-4 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">待同步操作</p>
-              <p className="font-medium text-gray-900 dark:text-white text-lg">{status.pendingOperations}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                待同步操作
+              </p>
+              <p className="font-medium text-gray-900 dark:text-white text-lg">
+                {status.pendingOperations}
+              </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-750 p-4 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">冲突数量</p>
-              <p className="font-medium text-gray-900 dark:text-white text-lg">{status.conflicts.length}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                冲突数量
+              </p>
+              <p className="font-medium text-gray-900 dark:text-white text-lg">
+                {status.conflicts.length}
+              </p>
             </div>
           </div>
 
@@ -121,9 +144,14 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
               </h4>
               <div className="space-y-3">
                 {devices.map((device) => (
-                  <div key={device.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-750 rounded-lg">
+                  <div
+                    key={device.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-750 rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      <div
+                        className={`w-3 h-3 rounded-full ${device.status === "online" ? "bg-green-500" : "bg-gray-400"}`}
+                      />
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
                           {device.name}
@@ -156,7 +184,10 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
               </h4>
               <div className="space-y-3">
                 {status.conflicts.map((conflict) => (
-                  <div key={conflict.id} className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div
+                    key={conflict.id}
+                    className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
+                  >
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {conflict.table} · {conflict.recordId}
                     </p>
@@ -168,7 +199,7 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
                         className="text-sm px-4 py-2 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onResolveConflict(conflict.id, 'local');
+                          onResolveConflict(conflict.id, "local");
                         }}
                       >
                         保留本地
@@ -177,7 +208,7 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
                         className="text-sm px-4 py-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onResolveConflict(conflict.id, 'remote');
+                          onResolveConflict(conflict.id, "remote");
                         }}
                       >
                         采用远程
@@ -186,7 +217,7 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
                         className="text-sm px-4 py-2 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onResolveConflict(conflict.id, 'merge');
+                          onResolveConflict(conflict.id, "merge");
                         }}
                       >
                         合并

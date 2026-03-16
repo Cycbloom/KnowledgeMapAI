@@ -3,45 +3,84 @@ import Redis from 'ioredis';
 import { taskProcessor } from './taskProcessor.js';
 import { supabaseAdmin } from '../supabase.js';
 import { logger } from '../utils/logger.js';
+import { isRedisAvailable } from '../utils/redis.js';
 
-// Reuse REDIS_URL from environment
-const connection = new Redis(process.env.REDIS_URL!, {
-  maxRetriesPerRequest: null,
-});
+let taskWorker: Worker | null = null;
 
-export const taskWorker = new Worker('task-queue', async (job) => {
-  const { taskId } = job.data;
-  logger.debug(`Processing job ${job.id} for task ${taskId}`);
+const redisUrl = process.env.REDIS_URL;
 
-  try {
-    // Fetch the task record from database
-    const { data: task, error } = await supabaseAdmin
-      .from('tasks')
-      .select('*')
-      .eq('id', taskId)
-      .single();
+if (redisUrl) {
+  logger.info('🔌 Initializing Task Worker...');
+  
+  const connection = new Redis(redisUrl, {
+    maxRetriesPerRequest: null,
+    lazyConnect: true,
+  });
 
-    if (error || !task) {
-      console.error(`[Worker] Task ${taskId} not found in DB:`, error);
-      return;
+  connection.on('error', (err) => {
+    if (isRedisAvailable) {
+      logger.warn('Worker Redis connection error:', err.message);
     }
+  });
 
-    // Delegate execution to the existing TaskProcessor logic
-    await taskProcessor.processTask(task);
+  connection.on('connect', () => {
+    logger.info('✅ Worker Redis connected');
+  });
 
-  } catch (err) {
-    console.error(`[Worker] Critical error processing task ${taskId}:`, err);
-    throw err;
-  }
-}, { 
-  connection,
-  concurrency: 5 // Process up to 5 tasks concurrently
-});
+  connection.on('ready', () => {
+    if (!taskWorker) {
+      taskWorker = new Worker('task-queue', async (job) => {
+        const { taskId } = job.data;
+        logger.debug(`Processing job ${job.id} for task ${taskId}`);
 
-taskWorker.on('completed', job => {
-  logger.debug(`Job ${job.id} completed successfully`);
-});
+        try {
+          const { data: task, error } = await supabaseAdmin
+            .from('tasks')
+            .select('*')
+            .eq('id', taskId)
+            .single();
 
-taskWorker.on('failed', (job, err) => {
-  logger.error(`Job ${job?.id} failed: ${err.message}`);
-});
+          if (error || !task) {
+            console.error(`[Worker] Task ${taskId} not found in DB:`, error);
+            return;
+          }
+
+          await taskProcessor.processTask(task);
+
+        } catch (err) {
+          console.error(`[Worker] Critical error processing task ${taskId}:`, err);
+          throw err;
+        }
+      }, { 
+        connection,
+        concurrency: 5
+      });
+
+      taskWorker.on('completed', job => {
+        logger.debug(`Job ${job.id} completed successfully`);
+      });
+
+      taskWorker.on('failed', (job, err) => {
+        logger.error(`Job ${job?.id} failed: ${err.message}`);
+      });
+
+      logger.info('✅ Task Worker initialized with Redis');
+    }
+  });
+
+  connection.on('close', () => {
+    if (taskWorker) {
+      logger.warn('⚠️ Worker Redis connection closed, background task processing disabled');
+      taskWorker = null;
+    }
+  });
+
+  connection.connect().catch((err) => {
+    logger.warn('⚠️ Failed to connect to Redis for worker:', err.message);
+    logger.info('📦 Background task processing will be disabled');
+  });
+} else {
+  logger.warn('⚠️ No REDIS_URL found, background task processing will be disabled');
+}
+
+export { taskWorker };

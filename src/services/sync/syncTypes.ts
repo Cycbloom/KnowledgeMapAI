@@ -1,6 +1,6 @@
 export interface SyncOperation {
   id: string;
-  type: 'create' | 'update' | 'delete';
+  type: "create" | "update" | "delete";
   table: string;
   record: Record<string, any>;
   recordId: string;
@@ -19,7 +19,7 @@ export interface SyncBatch {
 export interface SyncStatus {
   isRunning: boolean;
   lastSync?: string;
-  lastSyncStatus?: 'success' | 'error';
+  lastSyncStatus?: "success" | "error";
   pendingOperations: number;
   conflicts: SyncConflict[];
   devices: SyncDevice[];
@@ -32,7 +32,7 @@ export interface SyncConflict {
   localVersion: SyncOperation;
   remoteVersion: SyncOperation;
   resolved: boolean;
-  resolution?: 'local' | 'remote' | 'merge';
+  resolution?: "local" | "remote" | "merge";
 }
 
 export interface SyncDevice {
@@ -40,14 +40,14 @@ export interface SyncDevice {
   name: string;
   ipAddress: string;
   lastSeen: string;
-  status: 'online' | 'offline';
+  status: "online" | "offline";
 }
 
 export interface SyncConfig {
   enabled: boolean;
   autoSync: boolean;
   syncInterval: number; // in minutes
-  syncMode: 'lan' | 'cloud';
+  syncMode: "lan" | "cloud";
   lanPort: number;
   deviceName: string;
   deviceId: string;

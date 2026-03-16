@@ -1,22 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Settings, Wifi, Cloud, Save, RefreshCw, Plus, Minus, CheckCircle, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { SyncStatus as SyncStatusComponent } from '../components/SyncStatus.js';
-import { useMobileSync } from '../hooks/useMobileSync';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Settings,
+  Wifi,
+  Cloud,
+  Save,
+  RefreshCw,
+  Plus,
+  Minus,
+  CheckCircle,
+  X,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { SyncStatus as SyncStatusComponent } from "../components/SyncStatus.js";
+import { useMobileSync } from "../hooks/useMobileSync";
 
 const SyncSettings: React.FC = () => {
   const navigate = useNavigate();
-  const { 
-    syncStatus, 
-    isInitialized, 
-    fetchSyncStatus, 
-    syncNow, 
+  const {
+    syncStatus,
+    isInitialized,
+    fetchSyncStatus,
+    syncNow,
     generatePairingCode: generateMobilePairingCode,
     unpairDevice,
     getDevices,
-    getPairedDevices
+    getPairedDevices,
   } = useMobileSync();
-  
+
   const [devices, setDevices] = useState<any[]>([]);
   const [pairedDevices, setPairedDevices] = useState<any[]>([]);
   // 生成设备名称的函数
@@ -28,22 +40,24 @@ const SyncSettings: React.FC = () => {
     enabled: false,
     autoSync: true,
     syncInterval: 15,
-    syncMode: 'lan' as 'lan' | 'cloud',
+    syncMode: "lan" as "lan" | "cloud",
     lanPort: 3001,
-    deviceName: generateDeviceName()
+    deviceName: generateDeviceName(),
   }));
-  const [pairingCode, setPairingCode] = useState('');
+  const [pairingCode, setPairingCode] = useState("");
   const [isPairing, setIsPairing] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<string | null>('status');
+  const [expandedSection, setExpandedSection] = useState<string | null>(
+    "status",
+  );
 
   // 获取同步配置
   const fetchSyncConfig = async () => {
     try {
-      const response = await fetch('/api/sync/config');
+      const response = await fetch("/api/sync/config");
       const data = await response.json();
       setSyncConfig(data);
     } catch (error) {
-      console.error('Failed to fetch sync config:', error);
+      console.error("Failed to fetch sync config:", error);
     }
   };
 
@@ -67,19 +81,19 @@ const SyncSettings: React.FC = () => {
 
   const handleConfigUpdate = async () => {
     try {
-      const response = await fetch('/api/sync/config', {
-        method: 'PUT',
+      const response = await fetch("/api/sync/config", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(syncConfig)
+        body: JSON.stringify(syncConfig),
       });
       const data = await response.json();
       if (data.success) {
         // 配置更新成功
       }
     } catch (error) {
-      console.error('Failed to update sync config:', error);
+      console.error("Failed to update sync config:", error);
     }
   };
 
@@ -95,21 +109,27 @@ const SyncSettings: React.FC = () => {
     refreshDevices();
   };
 
-  const handleResolveConflict = async (conflictId: string, resolution: 'local' | 'remote' | 'merge') => {
+  const handleResolveConflict = async (
+    conflictId: string,
+    resolution: "local" | "remote" | "merge",
+  ) => {
     try {
-      const response = await fetch(`/api/sync/conflicts/${conflictId}/resolve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `/api/sync/conflicts/${conflictId}/resolve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ resolution }),
         },
-        body: JSON.stringify({ resolution })
-      });
+      );
       const data = await response.json();
       if (data.success) {
         fetchSyncStatus();
       }
     } catch (error) {
-      console.error('Failed to resolve conflict:', error);
+      console.error("Failed to resolve conflict:", error);
     }
   };
 
@@ -122,9 +142,11 @@ const SyncSettings: React.FC = () => {
       {/* 移动端头部 */}
       <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">同步设置</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            同步设置
+          </h1>
           <button
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate("/settings")}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <Settings size={24} />
@@ -136,21 +158,27 @@ const SyncSettings: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* 同步状态 */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div 
+          <div
             className="flex items-center justify-between p-4 cursor-pointer"
-            onClick={() => toggleSection('status')}
+            onClick={() => toggleSection("status")}
           >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">同步状态</h2>
-            {expandedSection === 'status' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              同步状态
+            </h2>
+            {expandedSection === "status" ? (
+              <ChevronUp size={20} />
+            ) : (
+              <ChevronDown size={20} />
+            )}
           </div>
-          {expandedSection === 'status' && (
+          {expandedSection === "status" && (
             <div className="p-4 border-t border-gray-200 dark:border-gray-700">
               <SyncStatusComponent
                 status={syncStatus}
                 devices={devices}
                 onSyncNow={handleSyncNow}
                 onResolveConflict={handleResolveConflict}
-                onOpenSettings={() => toggleSection('config')}
+                onOpenSettings={() => toggleSection("config")}
               />
             </div>
           )}
@@ -158,24 +186,37 @@ const SyncSettings: React.FC = () => {
 
         {/* 同步配置 */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div 
+          <div
             className="flex items-center justify-between p-4 cursor-pointer"
-            onClick={() => toggleSection('config')}
+            onClick={() => toggleSection("config")}
           >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">同步配置</h2>
-            {expandedSection === 'config' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              同步配置
+            </h2>
+            {expandedSection === "config" ? (
+              <ChevronUp size={20} />
+            ) : (
+              <ChevronDown size={20} />
+            )}
           </div>
-          {expandedSection === 'config' && (
+          {expandedSection === "config" && (
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-6">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-3">
                   <input
                     type="checkbox"
                     checked={syncConfig.enabled}
-                    onChange={(e) => setSyncConfig({ ...syncConfig, enabled: e.target.checked })}
+                    onChange={(e) =>
+                      setSyncConfig({
+                        ...syncConfig,
+                        enabled: e.target.checked,
+                      })
+                    }
                     className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">启用同步</span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    启用同步
+                  </span>
                 </label>
                 {syncConfig.enabled ? (
                   <CheckCircle className="text-green-500" size={20} />
@@ -189,10 +230,17 @@ const SyncSettings: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={syncConfig.autoSync}
-                    onChange={(e) => setSyncConfig({ ...syncConfig, autoSync: e.target.checked })}
+                    onChange={(e) =>
+                      setSyncConfig({
+                        ...syncConfig,
+                        autoSync: e.target.checked,
+                      })
+                    }
                     className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">自动同步</span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    自动同步
+                  </span>
                 </label>
               </div>
 
@@ -202,14 +250,29 @@ const SyncSettings: React.FC = () => {
                 </label>
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => setSyncConfig({ ...syncConfig, syncInterval: Math.max(5, syncConfig.syncInterval - 5) })}
+                    onClick={() =>
+                      setSyncConfig({
+                        ...syncConfig,
+                        syncInterval: Math.max(5, syncConfig.syncInterval - 5),
+                      })
+                    }
                     className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg"
                   >
                     <Minus size={18} />
                   </button>
-                  <span className="text-gray-900 dark:text-white font-medium text-lg min-w-[40px] text-center">{syncConfig.syncInterval}</span>
+                  <span className="text-gray-900 dark:text-white font-medium text-lg min-w-[40px] text-center">
+                    {syncConfig.syncInterval}
+                  </span>
                   <button
-                    onClick={() => setSyncConfig({ ...syncConfig, syncInterval: Math.min(120, syncConfig.syncInterval + 5) })}
+                    onClick={() =>
+                      setSyncConfig({
+                        ...syncConfig,
+                        syncInterval: Math.min(
+                          120,
+                          syncConfig.syncInterval + 5,
+                        ),
+                      })
+                    }
                     className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg"
                   >
                     <Plus size={18} />
@@ -227,8 +290,10 @@ const SyncSettings: React.FC = () => {
                       type="radio"
                       name="syncMode"
                       value="lan"
-                      checked={syncConfig.syncMode === 'lan'}
-                      onChange={() => setSyncConfig({ ...syncConfig, syncMode: 'lan' })}
+                      checked={syncConfig.syncMode === "lan"}
+                      onChange={() =>
+                        setSyncConfig({ ...syncConfig, syncMode: "lan" })
+                      }
                       className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                     />
                     <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
@@ -241,8 +306,10 @@ const SyncSettings: React.FC = () => {
                       type="radio"
                       name="syncMode"
                       value="cloud"
-                      checked={syncConfig.syncMode === 'cloud'}
-                      onChange={() => setSyncConfig({ ...syncConfig, syncMode: 'cloud' })}
+                      checked={syncConfig.syncMode === "cloud"}
+                      onChange={() =>
+                        setSyncConfig({ ...syncConfig, syncMode: "cloud" })
+                      }
                       className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                     />
                     <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
@@ -260,12 +327,14 @@ const SyncSettings: React.FC = () => {
                 <input
                   type="text"
                   value={syncConfig.deviceName}
-                  onChange={(e) => setSyncConfig({ ...syncConfig, deviceName: e.target.value })}
+                  onChange={(e) =>
+                    setSyncConfig({ ...syncConfig, deviceName: e.target.value })
+                  }
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-750 dark:text-white text-base"
                 />
               </div>
 
-              {syncConfig.syncMode === 'lan' && (
+              {syncConfig.syncMode === "lan" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     局域网端口
@@ -273,7 +342,12 @@ const SyncSettings: React.FC = () => {
                   <input
                     type="number"
                     value={syncConfig.lanPort}
-                    onChange={(e) => setSyncConfig({ ...syncConfig, lanPort: parseInt(e.target.value) || 3001 })}
+                    onChange={(e) =>
+                      setSyncConfig({
+                        ...syncConfig,
+                        lanPort: parseInt(e.target.value) || 3001,
+                      })
+                    }
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-750 dark:text-white text-base"
                   />
                 </div>
@@ -294,17 +368,25 @@ const SyncSettings: React.FC = () => {
 
         {/* 设备管理 */}
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div 
+          <div
             className="flex items-center justify-between p-4 cursor-pointer"
-            onClick={() => toggleSection('devices')}
+            onClick={() => toggleSection("devices")}
           >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">设备管理</h2>
-            {expandedSection === 'devices' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              设备管理
+            </h2>
+            {expandedSection === "devices" ? (
+              <ChevronUp size={20} />
+            ) : (
+              <ChevronDown size={20} />
+            )}
           </div>
-          {expandedSection === 'devices' && (
+          {expandedSection === "devices" && (
             <div className="p-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-medium text-gray-900 dark:text-white">可用设备</h3>
+                <h3 className="font-medium text-gray-900 dark:text-white">
+                  可用设备
+                </h3>
                 <button
                   onClick={refreshDevices}
                   className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -321,12 +403,21 @@ const SyncSettings: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {devices.map((device) => (
-                    <div key={device.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-750 rounded-lg">
+                    <div
+                      key={device.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-750 rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                        <div
+                          className={`w-4 h-4 rounded-full ${device.status === "online" ? "bg-green-500" : "bg-gray-400"}`}
+                        />
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{device.name}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{device.ipAddress}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {device.name}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {device.ipAddress}
+                          </p>
                         </div>
                       </div>
                       <button
@@ -341,7 +432,9 @@ const SyncSettings: React.FC = () => {
               )}
 
               <div className="mt-8">
-                <h3 className="font-medium text-gray-900 dark:text-white mb-4">已配对设备</h3>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-4">
+                  已配对设备
+                </h3>
                 {pairedDevices.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     暂无已配对设备
@@ -349,11 +442,17 @@ const SyncSettings: React.FC = () => {
                 ) : (
                   <div className="space-y-3">
                     {pairedDevices.map((device) => (
-                      <div key={device.deviceId} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-750 rounded-lg">
+                      <div
+                        key={device.deviceId}
+                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-750 rounded-lg"
+                      >
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{device.deviceName}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {device.deviceName}
+                          </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            配对时间: {new Date(device.pairedAt).toLocaleString()}
+                            配对时间:{" "}
+                            {new Date(device.pairedAt).toLocaleString()}
                           </p>
                         </div>
                         <button
@@ -375,7 +474,9 @@ const SyncSettings: React.FC = () => {
         {isPairing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">设备配对</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">
+                设备配对
+              </h3>
               <p className="text-gray-700 dark:text-gray-300 mb-6 text-center">
                 在另一台设备上输入以下配对码以完成配对：
               </p>

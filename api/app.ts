@@ -66,25 +66,75 @@ import {
 import { requestIdMiddleware } from "./middleware/requestId.js";
 import { logger } from "./utils/logger.js";
 
-const DATABASE_MODE = process.env.DATABASE_MODE || 'supabase';
+const DATABASE_MODE = process.env.DATABASE_MODE || 'cloud';
+const IS_ELECTRON = process.env.ELECTRON_RUN_AS_NODE === 'true' || process.versions?.electron;
 
 let localDb: any = null;
 
 async function initializeLocalDatabase(): Promise<void> {
-  if (DATABASE_MODE === 'local') {
-    try {
-      const Database = (await import('better-sqlite3')).default;
-      const dbPath = process.env.LOCAL_DB_PATH || './data/knowledgemap.db';
-      localDb = new Database(dbPath);
-      localDb.pragma('journal_mode = WAL');
-      localDb.pragma('foreign_keys = ON');
-      localDb.pragma('synchronous = NORMAL');
-      localUserService.setDatabase(localDb);
-      logger.info('Local database initialized', { dbPath });
-    } catch (error) {
-      logger.error('Failed to initialize local database', { error });
-      throw error;
+  if (DATABASE_MODE !== 'local') {
+    return;
+  }
+  
+  if (IS_ELECTRON) {
+    logger.info('Running in Electron, skipping backend database initialization (handled by main process)');
+    return;
+  }
+  
+  try {
+    const Database = (await import('better-sqlite3')).default;
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    const dbPath = process.env.SQLITE_PATH || './data/knowledgemap.db';
+    const dbDir = path.dirname(dbPath);
+    
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
     }
+    
+    localDb = new Database(dbPath);
+    localDb.pragma('journal_mode = WAL');
+    localDb.pragma('foreign_keys = ON');
+    localDb.pragma('synchronous = NORMAL');
+    
+    localDb.exec(`
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        applied_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    
+    const migrationsPath = path.join(process.cwd(), 'electron', 'database', 'migrations');
+    
+    if (fs.existsSync(migrationsPath)) {
+      const appliedMigrations = new Set(
+        localDb.prepare('SELECT name FROM migrations').all().map((r: any) => r.name)
+      );
+      
+      const migrationFiles = fs.readdirSync(migrationsPath)
+        .filter((f: string) => f.endsWith('.sql'))
+        .sort();
+      
+      for (const file of migrationFiles) {
+        if (!appliedMigrations.has(file)) {
+          const sql = fs.readFileSync(path.join(migrationsPath, file), 'utf-8');
+          const applyMigration = localDb.transaction(() => {
+            localDb.exec(sql);
+            localDb.prepare('INSERT INTO migrations (name) VALUES (?)').run(file);
+          });
+          applyMigration();
+          logger.info(`Applied migration: ${file}`);
+        }
+      }
+    }
+    
+    localUserService.setDatabase(localDb);
+    logger.info('Local database initialized', { dbPath });
+  } catch (error) {
+    logger.error('Failed to initialize local database', { error });
+    throw error;
   }
 }
 

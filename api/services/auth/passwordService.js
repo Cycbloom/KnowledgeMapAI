@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import { logger } from '../../utils/logger.js';
 const SALT_ROUNDS = 12;
 export class PasswordService {
@@ -24,4 +24,3 @@ export class PasswordService {
     }
 }
 export const passwordService = new PasswordService();
-//# sourceMappingURL=passwordService.js.map

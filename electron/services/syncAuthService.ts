@@ -1,6 +1,6 @@
-import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as path from "path";
 
 interface DeviceCredential {
   deviceId: string;
@@ -19,19 +19,19 @@ export class SyncAuthService {
   constructor(deviceId: string, deviceName: string, dataPath: string) {
     this.deviceId = deviceId;
     this.deviceName = deviceName;
-    this.credentialsPath = path.join(dataPath, 'sync-credentials.json');
+    this.credentialsPath = path.join(dataPath, "sync-credentials.json");
     this.loadCredentials();
   }
 
   private loadCredentials(): void {
     try {
       if (fs.existsSync(this.credentialsPath)) {
-        const content = fs.readFileSync(this.credentialsPath, 'utf-8');
+        const content = fs.readFileSync(this.credentialsPath, "utf-8");
         const data = JSON.parse(content);
         this.credentials = new Map(Object.entries(data));
       }
     } catch (error) {
-      console.error('Failed to load sync credentials:', error);
+      console.error("Failed to load sync credentials:", error);
     }
   }
 
@@ -44,19 +44,23 @@ export class SyncAuthService {
       }
       fs.writeFileSync(this.credentialsPath, JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error('Failed to save sync credentials:', error);
+      console.error("Failed to save sync credentials:", error);
     }
   }
 
   generatePairingCode(): string {
-    return crypto.randomBytes(3).toString('hex').toUpperCase();
+    return crypto.randomBytes(3).toString("hex").toUpperCase();
   }
 
   generateSharedSecret(): string {
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(32).toString("hex");
   }
 
-  pairDevice(deviceId: string, deviceName: string, sharedSecret: string): boolean {
+  pairDevice(
+    deviceId: string,
+    deviceName: string,
+    sharedSecret: string,
+  ): boolean {
     if (this.credentials.has(deviceId)) {
       return false; // Device already paired
     }
@@ -65,7 +69,7 @@ export class SyncAuthService {
       deviceId,
       deviceName,
       sharedSecret,
-      pairedAt: new Date().toISOString()
+      pairedAt: new Date().toISOString(),
     });
 
     this.saveCredentials();
@@ -90,11 +94,13 @@ export class SyncAuthService {
       deviceId: this.deviceId,
       targetDeviceId: deviceId,
       timestamp: Date.now(),
-      nonce: crypto.randomBytes(16).toString('hex')
+      nonce: crypto.randomBytes(16).toString("hex"),
     };
 
     const signature = this.signPayload(payload, credential.sharedSecret);
-    return Buffer.from(JSON.stringify({ ...payload, signature })).toString('base64');
+    return Buffer.from(JSON.stringify({ ...payload, signature })).toString(
+      "base64",
+    );
   }
 
   validateSyncToken(token: string, deviceId: string): boolean {
@@ -104,20 +110,25 @@ export class SyncAuthService {
         return false;
       }
 
-      const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
+      const decoded = JSON.parse(
+        Buffer.from(token, "base64").toString("utf-8"),
+      );
       const { signature, ...payload } = decoded;
 
-      const expectedSignature = this.signPayload(payload, credential.sharedSecret);
+      const expectedSignature = this.signPayload(
+        payload,
+        credential.sharedSecret,
+      );
       return signature === expectedSignature;
     } catch (error) {
-      console.error('Failed to validate sync token:', error);
+      console.error("Failed to validate sync token:", error);
       return false;
     }
   }
 
   private signPayload(payload: any, secret: string): string {
     const data = JSON.stringify(payload);
-    return crypto.createHmac('sha256', secret).update(data).digest('hex');
+    return crypto.createHmac("sha256", secret).update(data).digest("hex");
   }
 
   getPairedDevices(): DeviceCredential[] {
@@ -133,7 +144,7 @@ export class SyncAuthService {
     if (credential) {
       this.credentials.set(deviceId, {
         ...credential,
-        lastSyncAt: new Date().toISOString()
+        lastSyncAt: new Date().toISOString(),
       });
       this.saveCredentials();
     }

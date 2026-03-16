@@ -1,7 +1,7 @@
-import * as jwt from 'jsonwebtoken';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { logger } from '../../utils/logger.js';
 import type { UserWithoutPassword } from '../../models/user.js';
 

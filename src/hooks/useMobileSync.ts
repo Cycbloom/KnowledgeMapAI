@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { mobileSyncService } from '../services/sync/mobileSyncService';
-import { SyncOperation } from '../services/sync/syncTypes';
+import { useState, useEffect, useCallback } from "react";
+import { mobileSyncService } from "../services/sync/mobileSyncService";
+import { SyncOperation } from "../services/sync/syncTypes";
 
 export const useMobileSync = () => {
   const [syncStatus, setSyncStatus] = useState<any>({
@@ -9,9 +9,9 @@ export const useMobileSync = () => {
     lastSyncStatus: null,
     pendingOperations: 0,
     conflicts: [],
-    devices: []
+    devices: [],
   });
-  
+
   const [isInitialized, setIsInitialized] = useState(false);
 
   // 获取同步状态
@@ -20,7 +20,7 @@ export const useMobileSync = () => {
       const status = await mobileSyncService.getStatus();
       setSyncStatus(status);
     } catch (error) {
-      console.error('Failed to fetch sync status:', error);
+      console.error("Failed to fetch sync status:", error);
     }
   }, []);
 
@@ -32,7 +32,7 @@ export const useMobileSync = () => {
         setIsInitialized(true);
         await fetchSyncStatus();
       } catch (error) {
-        console.error('Failed to initialize sync service:', error);
+        console.error("Failed to initialize sync service:", error);
       }
     };
 
@@ -49,19 +49,22 @@ export const useMobileSync = () => {
       await mobileSyncService.sync();
       await fetchSyncStatus();
     } catch (error) {
-      console.error('Failed to sync:', error);
+      console.error("Failed to sync:", error);
     }
   }, [fetchSyncStatus]);
 
   // 添加同步操作
-  const addSyncOperation = useCallback(async (operation: SyncOperation) => {
-    try {
-      await mobileSyncService.addOperation(operation);
-      await fetchSyncStatus();
-    } catch (error) {
-      console.error('Failed to add sync operation:', error);
-    }
-  }, [fetchSyncStatus]);
+  const addSyncOperation = useCallback(
+    async (operation: SyncOperation) => {
+      try {
+        await mobileSyncService.addOperation(operation);
+        await fetchSyncStatus();
+      } catch (error) {
+        console.error("Failed to add sync operation:", error);
+      }
+    },
+    [fetchSyncStatus],
+  );
 
   // 生成配对码
   const generatePairingCode = useCallback(() => {
@@ -69,32 +72,42 @@ export const useMobileSync = () => {
   }, []);
 
   // 配对设备
-  const pairDevice = useCallback(async (deviceId: string, deviceName: string, pairingCode: string) => {
-    try {
-      const success = await mobileSyncService.pairDevice(deviceId, deviceName, pairingCode);
-      if (success) {
-        await fetchSyncStatus();
+  const pairDevice = useCallback(
+    async (deviceId: string, deviceName: string, pairingCode: string) => {
+      try {
+        const success = await mobileSyncService.pairDevice(
+          deviceId,
+          deviceName,
+          pairingCode,
+        );
+        if (success) {
+          await fetchSyncStatus();
+        }
+        return success;
+      } catch (error) {
+        console.error("Failed to pair device:", error);
+        return false;
       }
-      return success;
-    } catch (error) {
-      console.error('Failed to pair device:', error);
-      return false;
-    }
-  }, [fetchSyncStatus]);
+    },
+    [fetchSyncStatus],
+  );
 
   // 解除配对
-  const unpairDevice = useCallback(async (deviceId: string) => {
-    try {
-      const success = mobileSyncService.unpairDevice(deviceId);
-      if (success) {
-        await fetchSyncStatus();
+  const unpairDevice = useCallback(
+    async (deviceId: string) => {
+      try {
+        const success = mobileSyncService.unpairDevice(deviceId);
+        if (success) {
+          await fetchSyncStatus();
+        }
+        return success;
+      } catch (error) {
+        console.error("Failed to unpair device:", error);
+        return false;
       }
-      return success;
-    } catch (error) {
-      console.error('Failed to unpair device:', error);
-      return false;
-    }
-  }, [fetchSyncStatus]);
+    },
+    [fetchSyncStatus],
+  );
 
   // 获取设备列表
   const getDevices = useCallback(() => {
@@ -122,6 +135,6 @@ export const useMobileSync = () => {
     unpairDevice,
     getDevices,
     getPairedDevices,
-    isDevicePaired
+    isDevicePaired,
   };
 };

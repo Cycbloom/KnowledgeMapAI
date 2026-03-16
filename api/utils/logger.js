@@ -28,10 +28,8 @@ const LEVEL_STYLES = {
     [LogLevel.DEBUG]: { color: COLORS.dim, icon: '○', label: 'DEBUG' },
 };
 export class Logger {
-    level = LogLevel.INFO;
-    prefix;
-    isProduction;
     constructor(prefix) {
+        this.level = LogLevel.INFO;
         this.prefix = prefix;
         this.isProduction = process.env.NODE_ENV === 'production';
         const envLevel = process.env.LOG_LEVEL;
@@ -182,4 +180,3 @@ export class Logger {
     }
 }
 export const logger = new Logger();
-//# sourceMappingURL=logger.js.map

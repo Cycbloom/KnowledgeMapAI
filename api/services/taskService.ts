@@ -51,7 +51,11 @@ export class TaskService {
 
     if (error) throw new Error(`Failed to create task: ${error.message}`);
     
-    await taskQueue.add(type, { taskId: data.id });
+    if (taskQueue) {
+      await taskQueue.add(type, { taskId: data.id });
+    } else {
+      logger.warn('Task queue not available, task will not be processed automatically');
+    }
     
     return data as Task;
   }
@@ -157,7 +161,11 @@ export class TaskService {
 
     if (error) throw new Error(`Failed to retry task: ${error.message}`);
     
-    await taskQueue.add(data.type, { taskId: data.id });
+    if (taskQueue) {
+      await taskQueue.add(data.type, { taskId: data.id });
+    } else {
+      logger.warn('Task queue not available, task will not be processed automatically');
+    }
     
     return data as Task;
   }

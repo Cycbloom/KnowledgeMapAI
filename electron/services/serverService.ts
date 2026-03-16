@@ -27,6 +27,19 @@ export class ServerService {
       };
     }
 
+    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+    
+    if (isDev) {
+      console.log('[ServerService] Development mode: assuming external server is running');
+      const port = preferredPort || this.defaultPort;
+      this.isRunning = true;
+      this.currentPort = port;
+      return {
+        isRunning: true,
+        port: this.currentPort,
+      };
+    }
+
     const startPort = preferredPort || this.defaultPort;
     
     try {

@@ -6,6 +6,7 @@
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create enum types
 CREATE TYPE prompt_scope AS ENUM ('system', 'user', 'graph');
@@ -236,7 +237,7 @@ CREATE TABLE IF NOT EXISTS templates (
 
 -- Prompt templates table
 CREATE TABLE IF NOT EXISTS prompt_templates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL,
   scope prompt_scope NOT NULL,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,

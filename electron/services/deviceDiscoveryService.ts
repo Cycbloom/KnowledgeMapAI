@@ -1,5 +1,5 @@
-import * as dgram from 'dgram';
-import { SyncDevice } from './syncTypes.js';
+import * as dgram from "dgram";
+import { SyncDevice } from "./syncTypes.js";
 
 const DISCOVERY_PORT = 5000;
 const BROADCAST_INTERVAL = 5000; // 5 seconds
@@ -21,29 +21,31 @@ export class DeviceDiscoveryService {
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.socket = dgram.createSocket('udp4');
+        this.socket = dgram.createSocket("udp4");
 
-        this.socket.on('error', (err) => {
-          console.error('Device discovery error:', err);
+        this.socket.on("error", (err) => {
+          console.error("Device discovery error:", err);
           this.socket?.close();
           this.socket = null;
           reject(err);
         });
 
-        this.socket.on('message', (message, rinfo) => {
+        this.socket.on("message", (message, rinfo) => {
           this.handleMessage(message, rinfo);
         });
 
-        this.socket.on('listening', () => {
+        this.socket.on("listening", () => {
           const address = this.socket?.address();
-          console.log(`Device discovery service started on ${address?.address}:${address?.port}`);
+          console.log(
+            `Device discovery service started on ${address?.address}:${address?.port}`,
+          );
           this.startBroadcasting();
           resolve();
         });
 
         this.socket.bind(DISCOVERY_PORT);
       } catch (error) {
-        console.error('Failed to start device discovery:', error);
+        console.error("Failed to start device discovery:", error);
         reject(error);
       }
     });
@@ -55,7 +57,7 @@ export class DeviceDiscoveryService {
       this.broadcastInterval = null;
     }
 
-    this.deviceTimeoutIntervals.forEach(interval => clearTimeout(interval));
+    this.deviceTimeoutIntervals.forEach((interval) => clearTimeout(interval));
     this.deviceTimeoutIntervals.clear();
 
     if (this.socket) {
@@ -64,7 +66,7 @@ export class DeviceDiscoveryService {
     }
 
     this.devices.clear();
-    console.log('Device discovery service stopped');
+    console.log("Device discovery service stopped");
   }
 
   private startBroadcasting(): void {
@@ -77,11 +79,11 @@ export class DeviceDiscoveryService {
     if (!this.socket) return;
 
     const deviceInfo = {
-      type: 'KNOWLEDGE_MAP_DEVICE',
+      type: "KNOWLEDGE_MAP_DEVICE",
       id: this.deviceId,
       name: this.deviceName,
       timestamp: Date.now(),
-      version: '1.0.0'
+      version: "1.0.0",
     };
 
     const message = Buffer.from(JSON.stringify(deviceInfo));
@@ -91,12 +93,12 @@ export class DeviceDiscoveryService {
       0,
       message.length,
       DISCOVERY_PORT,
-      '255.255.255.255',
+      "255.255.255.255",
       (err) => {
         if (err) {
-          console.error('Failed to send broadcast:', err);
+          console.error("Failed to send broadcast:", err);
         }
-      }
+      },
     );
   }
 
@@ -104,17 +106,17 @@ export class DeviceDiscoveryService {
     try {
       const data = JSON.parse(message.toString());
 
-      if (data.type === 'KNOWLEDGE_MAP_DEVICE' && data.id !== this.deviceId) {
+      if (data.type === "KNOWLEDGE_MAP_DEVICE" && data.id !== this.deviceId) {
         this.updateDevice({
           id: data.id,
           name: data.name,
           ipAddress: rinfo.address,
           lastSeen: new Date().toISOString(),
-          status: 'online' as const
+          status: "online" as const,
         });
       }
     } catch (error) {
-      console.error('Failed to parse discovery message:', error);
+      console.error("Failed to parse discovery message:", error);
     }
   }
 
@@ -138,7 +140,7 @@ export class DeviceDiscoveryService {
     if (device) {
       this.devices.set(deviceId, {
         ...device,
-        status: 'offline' as const
+        status: "offline" as const,
       });
     }
   }
@@ -148,13 +150,15 @@ export class DeviceDiscoveryService {
   }
 
   getOnlineDevices(): SyncDevice[] {
-    return Array.from(this.devices.values()).filter(device => device.status === 'online');
+    return Array.from(this.devices.values()).filter(
+      (device) => device.status === "online",
+    );
   }
 
   async discoverDevices(): Promise<SyncDevice[]> {
     // Clear existing devices
     this.devices.clear();
-    this.deviceTimeoutIntervals.forEach(interval => clearTimeout(interval));
+    this.deviceTimeoutIntervals.forEach((interval) => clearTimeout(interval));
     this.deviceTimeoutIntervals.clear();
 
     // Send a broadcast and wait for responses
@@ -169,7 +173,7 @@ export class DeviceDiscoveryService {
 
   async isDeviceOnline(deviceId: string): Promise<boolean> {
     const device = this.devices.get(deviceId);
-    return device?.status === 'online';
+    return device?.status === "online";
   }
 
   async getDeviceById(deviceId: string): Promise<SyncDevice | undefined> {

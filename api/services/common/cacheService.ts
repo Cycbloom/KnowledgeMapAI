@@ -1,15 +1,21 @@
 import NodeCache from 'node-cache';
-import redisClient from '../../utils/redis.js';
+import redisClient, { isRedisAvailable } from '../../utils/redis.js';
 import { logger } from '../../utils/logger.js';
-
-const useRedis = !!redisClient;
 
 let localCache: NodeCache | null = null;
 
-if (!useRedis) {
-  logger.warn('⚠️ Redis not available, using In-Memory Cache');
-  localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
-}
+localCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+logger.info('📦 In-Memory Cache initialized as fallback');
+
+const checkRedisAndLog = (): boolean => {
+  if (isRedisAvailable && redisClient) {
+    return true;
+  }
+  if (redisClient && !isRedisAvailable) {
+    logger.debug('Redis not available, using in-memory cache');
+  }
+  return false;
+};
 
 export const CacheKeys = {
   GRAPH_NODES: (userId: string, graphId: string) => `graph_nodes_${userId}_${graphId}`,
@@ -34,40 +40,56 @@ const stochasticTTL = (baseTTL: number): number => {
 
 export const cacheService = {
   get: async <T>(key: string): Promise<T | undefined> => {
-    if (redisClient) {
-      const data = await redisClient.get(key);
-      return data ? JSON.parse(data) : undefined;
+    if (checkRedisAndLog()) {
+      try {
+        const data = await redisClient!.get(key);
+        return data ? JSON.parse(data) : undefined;
+      } catch (error) {
+        logger.warn('Redis get failed, falling back to local cache:', error);
+      }
     }
     return localCache?.get<T>(key);
   },
 
   set: async <T>(key: string, value: T, ttl?: number): Promise<boolean> => {
     const effectiveTTL = stochasticTTL(ttl || DEFAULT_TTL);
-    if (redisClient) {
-      const result = await redisClient.set(key, JSON.stringify(value), 'EX', effectiveTTL);
-      return result === 'OK';
+    if (checkRedisAndLog()) {
+      try {
+        const result = await redisClient!.set(key, JSON.stringify(value), 'EX', effectiveTTL);
+        return result === 'OK';
+      } catch (error) {
+        logger.warn('Redis set failed, falling back to local cache:', error);
+      }
     }
     return localCache?.set(key, value, effectiveTTL) || false;
   },
 
   del: async (key: string | string[]): Promise<number> => {
-    if (redisClient) {
-      if (Array.isArray(key)) {
-        if (key.length === 0) return 0;
-        return await redisClient.del(...key);
+    if (checkRedisAndLog()) {
+      try {
+        if (Array.isArray(key)) {
+          if (key.length === 0) return 0;
+          return await redisClient!.del(...key);
+        }
+        return await redisClient!.del(key);
+      } catch (error) {
+        logger.warn('Redis del failed, falling back to local cache:', error);
       }
-      return await redisClient.del(key);
     }
     return localCache?.del(key) || 0;
   },
 
   delByPrefix: async (prefix: string): Promise<number> => {
-    if (redisClient) {
-      const keys = await redisClient.keys(`${prefix}*`);
-      if (keys.length > 0) {
-        return await redisClient.del(...keys);
+    if (checkRedisAndLog()) {
+      try {
+        const keys = await redisClient!.keys(`${prefix}*`);
+        if (keys.length > 0) {
+          return await redisClient!.del(...keys);
+        }
+        return 0;
+      } catch (error) {
+        logger.warn('Redis delByPrefix failed, falling back to local cache:', error);
       }
-      return 0;
     }
     
     if (localCache) {
@@ -81,11 +103,15 @@ export const cacheService = {
   },
 
   flush: async (): Promise<void> => {
-    if (redisClient) {
-      await redisClient.flushdb();
-    } else {
-      localCache?.flushAll();
+    if (checkRedisAndLog()) {
+      try {
+        await redisClient!.flushdb();
+        return;
+      } catch (error) {
+        logger.warn('Redis flush failed, falling back to local cache:', error);
+      }
     }
+    localCache?.flushAll();
   },
   
   getOrSet: async <T>(key: string, fetchFn: () => Promise<T>, ttl?: number): Promise<T> => {
@@ -139,19 +165,23 @@ export const cacheService = {
     misses: number;
     kps: number;
   }> => {
-    if (redisClient) {
-      const info = await redisClient.info('stats');
-      const keysMatch = info.match(/keys=(\d+)/);
-      const hitsMatch = info.match(/keyspace_hits=(\d+)/);
-      const missesMatch = info.match(/keyspace_misses=(\d+)/);
-      const kpsMatch = info.match(/instantaneous_ops_per_sec=(\d+)/);
-      
-      return {
-        keys: keysMatch ? parseInt(keysMatch[1], 10) : 0,
-        hits: hitsMatch ? parseInt(hitsMatch[1], 10) : 0,
-        misses: missesMatch ? parseInt(missesMatch[1], 10) : 0,
-        kps: kpsMatch ? parseInt(kpsMatch[1], 10) : 0,
-      };
+    if (checkRedisAndLog()) {
+      try {
+        const info = await redisClient!.info('stats');
+        const keysMatch = info.match(/keys=(\d+)/);
+        const hitsMatch = info.match(/keyspace_hits=(\d+)/);
+        const missesMatch = info.match(/keyspace_misses=(\d+)/);
+        const kpsMatch = info.match(/instantaneous_ops_per_sec=(\d+)/);
+        
+        return {
+          keys: keysMatch ? parseInt(keysMatch[1], 10) : 0,
+          hits: hitsMatch ? parseInt(hitsMatch[1], 10) : 0,
+          misses: missesMatch ? parseInt(missesMatch[1], 10) : 0,
+          kps: kpsMatch ? parseInt(kpsMatch[1], 10) : 0,
+        };
+      } catch (error) {
+        logger.warn('Redis getStats failed, falling back to local cache stats:', error);
+      }
     }
     
     if (localCache) {

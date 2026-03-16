@@ -3,11 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="AI-powered 3D Knowledge Graph Editor" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="KnowledgeMap" />
     <link rel="apple-touch-icon" href="/icons/180x180.png" />
     <link rel="mask-icon" href="/favicon.svg" color="#ffffff" />
@@ -15,13 +21,13 @@
     <title>Knowledge Map AI</title>
     <script type="module">
       if (import.meta.hot?.on) {
-        import.meta.hot.on('vite:error', (error) => {
+        import.meta.hot.on("vite:error", (error) => {
           if (error.err) {
             console.error(
-              [error.err.message, error.err.frame].filter(Boolean).join('\n'),
-            )
+              [error.err.message, error.err.frame].filter(Boolean).join("\n"),
+            );
           }
-        })
+        });
       }
     </script>
   </head>

@@ -8,7 +8,14 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
 
 let isRunning = false;
 
+const DATABASE_MODE = process.env.DATABASE_MODE || 'cloud';
+
 export function startAutoBackupScheduler() {
+  if (DATABASE_MODE === 'local') {
+    logger.info('Auto backup scheduler disabled in local mode');
+    return;
+  }
+
   logger.info('Starting auto backup scheduler...');
 
   setInterval(async () => {

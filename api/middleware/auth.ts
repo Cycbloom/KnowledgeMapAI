@@ -91,6 +91,8 @@ const requireAuthLocal = async (req: AuthRequest, _res: Response, next: NextFunc
     user_metadata: { name: user.name },
   };
 
+  req.supabase = supabaseAdmin;
+
   next();
 };
 
@@ -133,6 +135,8 @@ export const requireAuth = DATABASE_MODE === 'local' ? requireAuthLocal : requir
 
 const optionalAuthLocal = async (req: AuthRequest, _res: Response, next: NextFunction) => {
   const token = extractToken(req);
+
+  req.supabase = supabaseAdmin;
 
   if (!token) {
     return next();

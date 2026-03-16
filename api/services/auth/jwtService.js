@@ -1,7 +1,7 @@
-import * as jwt from 'jsonwebtoken';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { logger } from '../../utils/logger.js';
 const ACCESS_TOKEN_EXPIRES_IN = '1h';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
@@ -92,4 +92,3 @@ export class JwtService {
     }
 }
 export const jwtService = new JwtService();
-//# sourceMappingURL=jwtService.js.map

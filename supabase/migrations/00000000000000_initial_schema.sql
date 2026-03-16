@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR(512) NOT NULL,
   description TEXT,
+  domain VARCHAR(255),
   settings JSONB DEFAULT '{}',
   is_public BOOLEAN DEFAULT false,
   is_favorite BOOLEAN DEFAULT false,
@@ -52,6 +53,8 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+COMMENT ON COLUMN knowledge_graphs.domain IS 'The domain/field this graph belongs to, used for star map visualization';
 
 -- Knowledge points table (独立的知识点实体)
 CREATE TABLE IF NOT EXISTS knowledge_points (
@@ -344,9 +347,12 @@ CREATE TABLE IF NOT EXISTS graph_relations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   source_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
   target_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
-  relation_type VARCHAR(50) NOT NULL CHECK (relation_type IN ('prerequisite', 'extension', 'related')),
+  relation_type VARCHAR(50) NOT NULL CHECK (relation_type IN ('prerequisite', 'extension', 'related', 'cross_domain')),
   context TEXT,
   metadata JSONB DEFAULT '{}',
+  confidence DECIMAL(3,2) DEFAULT 1.0,
+  source VARCHAR(20) DEFAULT 'manual' CHECK (source IN ('manual', 'ai_discovered', 'ai_suggested')),
+  shared_concepts TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
   UNIQUE(source_graph_id, target_graph_id, relation_type)
@@ -385,11 +391,14 @@ COMMENT ON COLUMN graph_collaborators.invitation_token IS '邀请令牌，用于
 COMMENT ON COLUMN graph_collaborators.accepted_at IS '接受邀请的时间，null表示待接受';
 
 -- Add comments
-COMMENT ON TABLE graph_relations IS 'Stores relationships between knowledge graphs (prerequisite, extension, related)';
+COMMENT ON TABLE graph_relations IS 'Stores relationships between knowledge graphs (prerequisite, extension, related, cross_domain)';
 COMMENT ON COLUMN graph_relations.source_graph_id IS 'The graph that has the dependency';
 COMMENT ON COLUMN graph_relations.target_graph_id IS 'The graph that is depended upon';
-COMMENT ON COLUMN graph_relations.relation_type IS 'Type: prerequisite (must learn first), extension (advanced topic), related (connected topic)';
+COMMENT ON COLUMN graph_relations.relation_type IS 'Type: prerequisite (must learn first), extension (advanced topic), related (connected topic), cross_domain (interdisciplinary)';
 COMMENT ON COLUMN graph_relations.context IS 'Context or reason for the relationship';
+COMMENT ON COLUMN graph_relations.confidence IS 'AI confidence score for discovered relations (0.00-1.00)';
+COMMENT ON COLUMN graph_relations.source IS 'How the relation was created: manual, ai_discovered, ai_suggested';
+COMMENT ON COLUMN graph_relations.shared_concepts IS 'Shared concepts between the two graphs';
 COMMENT ON TABLE prompt_templates IS 'Prompt templates with priority: graph > user > system';
 
 -- =====================================================
@@ -943,6 +952,7 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_deleted ON knowledge_graphs
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_created ON knowledge_graphs(user_id, created_at DESC) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_public ON knowledge_graphs(id) WHERE is_public = true AND deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_user_favorite ON knowledge_graphs(user_id, is_favorite DESC) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_knowledge_graphs_domain ON knowledge_graphs(domain) WHERE domain IS NOT NULL AND deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS knowledge_graphs_embedding_idx ON knowledge_graphs USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Knowledge points

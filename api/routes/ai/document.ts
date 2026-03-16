@@ -117,7 +117,7 @@ router.post(
                   graph_id,
                   source_knowledge_point_id: sourceKPId,
                   target_knowledge_point_id: targetKPId,
-                  relationship_type: edge.relationship || "related",
+                  relationship_type: edge.relationship_type || edge.relationship || "related",
                 });
                 edgeCount++;
               } catch (err) {

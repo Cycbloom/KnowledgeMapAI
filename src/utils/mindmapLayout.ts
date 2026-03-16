@@ -13,6 +13,7 @@ export interface LayoutOptions {
   chargeStrength?: number;
   linkDistance?: number;
   centerForce?: number;
+  domainGroups?: Map<string, string[]>;
 }
 
 const LEVEL_CHARGE_STRENGTH: Record<NodeLevel, number> = {
@@ -28,7 +29,7 @@ export const createMindMapLayout = (
   edges: Edge[],
   options: LayoutOptions
 ): LayoutResult => {
-  const { width, height, chargeStrength, linkDistance, centerForce } = options;
+  const { width, height, chargeStrength, linkDistance, centerForce, domainGroups } = options;
 
   const nodeCount = nodes.length;
 
@@ -58,13 +59,30 @@ export const createMindMapLayout = (
 
   const nodeIds = new Set(nodes.map(n => n.id));
 
-  const layoutNodes: LayoutNode[] = nodes.map(node => ({
-    ...node,
-    x: width / 2 + (Math.random() - 0.5) * 100,
-    y: height / 2 + (Math.random() - 0.5) * 100,
-    vx: 0,
-    vy: 0
-  }));
+  const layoutNodes: LayoutNode[] = nodes.map(node => {
+    const domain = node.properties?.domain as string | undefined;
+    let initialX = width / 2 + (Math.random() - 0.5) * 100;
+    let initialY = height / 2 + (Math.random() - 0.5) * 100;
+    
+    if (domain && domainGroups) {
+      const domainNodeIds = domainGroups.get(domain);
+      if (domainNodeIds) {
+        const domainIndex = Array.from(domainGroups.keys()).indexOf(domain);
+        const angle = (domainIndex / domainGroups.size) * Math.PI * 2;
+        const radius = Math.min(width, height) * 0.3;
+        initialX = width / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 50;
+        initialY = height / 2 + Math.sin(angle) * radius + (Math.random() - 0.5) * 50;
+      }
+    }
+    
+    return {
+      ...node,
+      x: initialX,
+      y: initialY,
+      vx: 0,
+      vy: 0
+    };
+  });
 
   const layoutLinks: LayoutLink[] = edges
     .filter(edge => nodeIds.has(edge.source_knowledge_point_id) && nodeIds.has(edge.target_knowledge_point_id))
@@ -99,6 +117,31 @@ export const createMindMapLayout = (
     )
     .force('x', d3.forceX(width / 2).strength(0.03))
     .force('y', d3.forceY(height / 2).strength(0.03));
+
+  if (domainGroups && domainGroups.size > 0) {
+    const domainCenters = new Map<string, { x: number; y: number }>();
+    const domainIndex = Array.from(domainGroups.keys());
+    
+    domainIndex.forEach((domain, idx) => {
+      const angle = (idx / domainGroups.size) * Math.PI * 2;
+      const radius = Math.min(width, height) * 0.25;
+      domainCenters.set(domain, {
+        x: width / 2 + Math.cos(angle) * radius,
+        y: height / 2 + Math.sin(angle) * radius
+      });
+    });
+
+    simulation.force('domain', (alpha: number) => {
+      layoutNodes.forEach(node => {
+        const domain = (node as any).properties?.domain as string | undefined;
+        if (domain && domainCenters.has(domain)) {
+          const center = domainCenters.get(domain)!;
+          node.vx = (node.vx || 0) + (center.x - node.x) * alpha * 0.1;
+          node.vy = (node.vy || 0) + (center.y - node.y) * alpha * 0.1;
+        }
+      });
+    });
+  }
 
   simulation.stop();
 

@@ -50,9 +50,49 @@ npm run electron:build:linux  # Linux
 
 ## 数据库操作
 
-### 数据库修改流程（无迁移模式）
+### 远程数据库（生产环境）
 
-**项目采用直接修改 schema 文件的方式，不使用增量迁移：**
+**项目使用远程 Supabase 数据库作为生产环境：**
+
+#### 远程数据库修改流程
+
+1. **修改 schema 文件**：编辑 `supabase/migrations/00000000000000_initial_schema.sql`
+2. **生成迁移 SQL**：提取需要执行的变更 SQL
+3. **在 Supabase Dashboard 执行**：登录 Supabase Dashboard → SQL Editor → 执行变更 SQL
+
+#### 常用远程数据库操作
+
+```bash
+# 连接远程数据库（需要先 link）
+npx supabase link --project-ref <project-ref>
+
+# 推送本地 schema 到远程（谨慎使用）
+npx supabase db push
+
+# 查看远程数据库状态
+npx supabase db diff --schema public
+```
+
+#### 远程数据库变更 SQL 模板
+
+当需要添加新字段时，在 Supabase Dashboard 的 SQL Editor 中执行：
+
+```sql
+-- 添加新字段
+ALTER TABLE table_name ADD COLUMN IF NOT EXISTS column_name data_type;
+
+-- 添加索引
+CREATE INDEX IF NOT EXISTS index_name ON table_name(column_name) WHERE condition;
+
+-- 添加注释
+COMMENT ON COLUMN table_name.column_name IS 'Column description';
+```
+
+### 本地数据库（开发环境）
+
+**本地开发使用 Docker 运行 Supabase：**
+
+#### 数据库修改流程
 
 1. **修改数据库架构**：直接编辑 `supabase/migrations/00000000000000_initial_schema.sql`
 2. **修改种子数据**：直接编辑 `supabase/migrations/00000000000001_initial_seed.sql`
@@ -66,7 +106,7 @@ npm run electron:build:linux  # Linux
 - db reset 会删除所有本地数据库数据
 - 测试用户: `test@example.com` / `test123456`
 
-### 数据库重置完整流程
+### 数据库重置完整流程（本地）
 
 ```bash
 # 1. 重置数据库（应用 schema 和 seed 文件）
@@ -85,13 +125,13 @@ npm run db:seed
 5. **添加函数/触发器**：在 `FUNCTIONS` 部分添加
 6. **添加种子数据**：在 seed 文件中添加 INSERT 语句
 
-### 远程数据库同步
+### 同步本地 Schema 到远程
 
-**注意**：此方式仅适用于本地开发环境。远程生产环境需要谨慎处理：
+**推荐流程：**
 
-1. 本地开发完成后，导出 schema 差异
-2. 在远程环境手动执行变更 SQL
-3. 或使用 `npx supabase db push` 推送（需要先 link）
+1. 本地开发完成后，提取变更 SQL
+2. 在 Supabase Dashboard 的 SQL Editor 中执行变更 SQL
+3. 验证远程数据库功能正常
 
 ## 自动化测试
 

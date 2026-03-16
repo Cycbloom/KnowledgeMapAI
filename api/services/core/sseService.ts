@@ -45,7 +45,7 @@ class SSEService {
     }
   }
 
-  startHeartbeat(intervalMs: number = 30000) {
+  startHeartbeat(intervalMs: number = 25000) {
     setInterval(() => {
       this.clients.forEach((clients, userId) => {
         if (clients.length > 0) {

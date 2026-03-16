@@ -12,3 +12,5 @@ export type { ListVersionsOptions, PaginatedVersionsResult } from './knowledgePo
 export { relationshipTypeService, RelationshipTypeService } from './relationshipTypeService.js';
 export { autoGraphService, AutoGraphService } from './autoGraphService.js';
 export type { AINodeData, CreateEdgeData, ProcessAINodesResult } from './autoGraphService.js';
+export { relationDiscoveryService, RelationDiscoveryService } from './relationDiscoveryService.js';
+export type { DiscoveredRelation, CrossDomainInsight, DiscoveryResult, IntelligentSuggestion, CreateRelationFromDiscoveryData } from './relationDiscoveryService.js';

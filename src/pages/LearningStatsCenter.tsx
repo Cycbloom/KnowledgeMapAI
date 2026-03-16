@@ -4,7 +4,6 @@ import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
   KnowledgeHeatmap,
   MasteryDistributionChart,
-  WeakPointsAnalysis,
   QuickStatsCards
 } from '../components/Statistics/LearningStatsEnhanced';
 import { 
@@ -259,40 +258,29 @@ export const LearningStatsCenter = () => {
     }
   });
 
+  const totalNodesCount = useMemo(() => {
+    if (!graphsData) return 0;
+    return graphsData.reduce((sum: number, g: any) => sum + (g.nodes_count || 0), 0);
+  }, [graphsData]);
+
   const graphHeatmapData = useMemo(() => {
     if (!graphsData) return [];
     return graphsData.map((graph: any) => ({
       id: graph.id,
       title: graph.title,
-      nodes: (graph.nodes || []).map((n: any) => ({
-        id: n.id,
-        title: n.title,
-        status: n.status || 'new',
-        level: n.level
-      }))
+      nodes: [],
+      nodes_count: graph.nodes_count || 0
     }));
   }, [graphsData]);
 
-  const allNodes = useMemo(() => {
-    if (!graphsData) return [];
-    return graphsData.flatMap((g: any) => 
-      (g.nodes || []).map((n: any) => ({ ...n, graphTitle: g.title }))
-    );
-  }, [graphsData]);
-
-  const nodeStatus = useMemo(() => {
-    const status: Record<string, any> = {};
-    allNodes.forEach((n: any) => {
-      status[n.id] = {
-        mastered: n.status === 'mastered',
-        locked: n.status === 'locked',
-        due: n.status === 'due',
-        review_count: n.review_count || 0,
-        stability: n.stability || 0
-      };
-    });
-    return status;
-  }, [allNodes]);
+  const distributionData = useMemo(() => {
+    if (!stats?.distribution) return [];
+    return stats.distribution.map((item: any) => ({
+      name: item.name,
+      value: item.value,
+      color: item.color
+    }));
+  }, [stats]);
 
   if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-slate-400">加载统计数据中...</div>;
   if (error) return <div className="p-8 text-center text-red-500">无法加载统计数据</div>;
@@ -308,9 +296,9 @@ export const LearningStatsCenter = () => {
 
         <div className="space-y-8">
           <QuickStatsCards 
-            totalNodes={allNodes.length}
-            masteredNodes={allNodes.filter((n: any) => n.status === 'mastered').length}
-            dueToday={allNodes.filter((n: any) => n.status === 'due').length}
+            totalNodes={totalNodesCount}
+            masteredNodes={stats.metrics.learning}
+            dueToday={stats.metrics.dueToday}
             streak={userData?.user?.profile?.study_streak || 0}
           />
 
@@ -357,7 +345,7 @@ export const LearningStatsCenter = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <KnowledgeHeatmap graphData={graphHeatmapData} />
-            <MasteryDistributionChart nodeStatus={nodeStatus} />
+            <MasteryDistributionChart distribution={distributionData} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -370,11 +358,6 @@ export const LearningStatsCenter = () => {
           </div>
 
           <GrowthChart data={stats.growth || []} isDark={isDark} />
-
-          <WeakPointsAnalysis 
-            nodes={allNodes}
-            nodeStatus={nodeStatus}
-          />
         </div>
       </div>
     </div>

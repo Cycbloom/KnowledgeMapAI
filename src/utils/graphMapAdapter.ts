@@ -37,8 +37,26 @@ export const convertGraphsToNodes = (
       nodeCount: graph.node_count || 0,
       createdAt: graph.created_at,
       isGraph: true,
+      domain: graph.domain,
     },
   }));
+};
+
+export const getDomainGroups = (
+  graphs: Array<{ id: string; domain?: string }>
+): Map<string, string[]> => {
+  const groups = new Map<string, string[]>();
+  
+  graphs.forEach(graph => {
+    if (!graph.domain) return;
+    
+    if (!groups.has(graph.domain)) {
+      groups.set(graph.domain, []);
+    }
+    groups.get(graph.domain)!.push(graph.id);
+  });
+  
+  return groups;
 };
 
 export const convertRelationsToEdges = (relations: GraphRelation[]): Edge[] => {
@@ -56,6 +74,7 @@ export const getRelationColor = (relationType: GraphRelationType): string => {
     prerequisite: '#3B82F6',
     extension: '#10B981',
     related: '#F59E0B',
+    cross_domain: '#8B5CF6',
   };
   return colors[relationType] || '#6B7280';
 };
@@ -65,6 +84,7 @@ export const getRelationLabel = (relationType: GraphRelationType): string => {
     prerequisite: '前置知识',
     extension: '扩展知识',
     related: '相关知识',
+    cross_domain: '跨学科',
   };
   return labels[relationType] || '未知关系';
 };

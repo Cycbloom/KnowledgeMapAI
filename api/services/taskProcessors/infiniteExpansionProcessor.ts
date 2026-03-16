@@ -15,6 +15,8 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
+    logger.info(`Starting infinite graph expansion task ${taskId} for user ${userId}`, { payload });
+    
     try {
       await updateTaskStatus(supabase, taskId, 'processing', { 
         stage: 'init', 
@@ -24,7 +26,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         total_graphs_created: 0,
         total_nodes_created: 0,
         created_graphs: []
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
       const { 
         source_graph_id, 
@@ -75,7 +77,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
           total_graphs_created: totalGraphsCreated,
           total_nodes_created: totalNodesCreated,
           created_graphs: createdGraphs
-        }, undefined, userId);
+        }, undefined, undefined, userId);
 
         const systemPrompt = await promptService.getRenderedPrompt(
           supabase,
@@ -148,7 +150,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
                     total_graphs_created: totalGraphsCreated,
                     total_nodes_created: totalNodesCreated,
                     created_graphs: createdGraphs
-                  }, undefined, userId);
+                  }, undefined, undefined, userId);
 
                   const nodeCount = await generateNodesForGraph(
                     supabase, 
@@ -220,6 +222,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         }
       }
 
+      logger.info(`Infinite expansion completed: ${totalGraphsCreated} graphs, ${totalNodesCreated} nodes`);
       await updateTaskStatus(supabase, taskId, 'completed', { 
         success: true,
         progress: 100,
@@ -229,11 +232,11 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         created_graphs: createdGraphs,
         source_graph_id,
         source_graph_title
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
     } catch (error: any) {
-      logger.error('Infinite graph expansion failed:', error);
-      await updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
+      logger.error(`Infinite graph expansion failed for task ${taskId}:`, error);
+      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error.message, userId);
     }
   }
 }

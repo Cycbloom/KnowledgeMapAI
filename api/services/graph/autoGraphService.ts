@@ -16,6 +16,7 @@ export interface AINodeData {
   level: string;
   x_position: number;
   y_position: number;
+  relationshipType?: string;
 }
 
 export interface CreateEdgeData {
@@ -150,7 +151,7 @@ export class AutoGraphService {
             graph_id: graphId,
             source_knowledge_point_id: parentInfo.knowledgePointId,
             target_knowledge_point_id: childInfo.knowledgePointId,
-            relationship_type: 'contains',
+            relationship_type: nodeData.relationshipType || 'contains',
           });
         }
       }

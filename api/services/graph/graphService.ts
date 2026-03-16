@@ -367,6 +367,21 @@ export class GraphService {
     await cacheService.del(CacheKeys.GRAPH(graphId));
   }
 
+  async deleteGraphs(supabase: SupabaseClient, graphIds: string[], userId: string) {
+    const { data, error } = await supabase
+      .from("knowledge_graphs")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", graphIds)
+      .eq("user_id", userId)
+      .select("id");
+
+    if (error) throw error;
+
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+    return { count: data?.length || 0 };
+  }
+
   async restoreGraph(
     supabase: SupabaseClient,
     graphId: string,

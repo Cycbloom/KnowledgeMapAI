@@ -12,11 +12,14 @@ import {
   shareGraphSchema,
 } from "../schemas/index.js";
 import { graphService } from "../services/graph/index.js";
+import { taskService } from "../services/taskService.js";
+import { aiService } from "../services/ai/aiService.js";
 import { ErrorCodes } from "../constants/errorCodes.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { achievementService } from "../services/achievementService.js";
 import { cacheService } from "../services/common/cacheService.js";
 import { logger } from "../utils/logger.js";
+import { relationDiscoveryService } from "../services/graph/index.js";
 import { z } from "zod";
 
 const checkTopicSchema = z.object({
@@ -26,6 +29,34 @@ const checkTopicSchema = z.object({
 
 const batchOperationSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(50),
+});
+
+const analyzeDomainSchema = z.object({
+  domain: z.string().min(2).max(200),
+  count: z.number().min(5).max(30).default(10),
+});
+
+const batchCreateDomainGraphsSchema = z.object({
+  graphs: z
+    .array(
+      z.object({
+        title: z.string().min(2).max(200),
+        description: z.string().max(1000).optional(),
+      }),
+    )
+    .min(1)
+    .max(30),
+  domain: z.string().max(255).optional(),
+  relations: z
+    .array(
+      z.object({
+        from_title: z.string(),
+        to_title: z.string(),
+        type: z.enum(["prerequisite", "extension", "related"]),
+        reason: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 const router = Router();
@@ -48,7 +79,7 @@ router.get("/map", requireAuth, async (req: AuthRequest, res: Response) => {
 
   const { data: graphs } = await supabase
     .from("knowledge_graphs")
-    .select("id, title, description, created_at, is_public")
+    .select("id, title, description, created_at, is_public, domain")
     .eq("user_id", userId)
     .is("deleted_at", null)
     .order("last_used_at", { ascending: false });
@@ -414,6 +445,25 @@ router.post(
   },
 );
 
+// Batch delete graphs (soft delete, move to trash)
+router.post(
+  "/batch/delete",
+  requireAuth,
+  validate({ body: batchOperationSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { ids } = req.body;
+    const result = await graphService.deleteGraphs(
+      req.supabase!,
+      ids,
+      req.user.id,
+    );
+    res.json({
+      message: `已移至回收站 ${result.count} 个图谱`,
+      count: result.count,
+    });
+  },
+);
+
 // Batch permanently delete graphs (must be before /:id/permanent)
 router.delete(
   "/batch/permanent",
@@ -552,6 +602,560 @@ router.get(
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "获取连接建议失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+// Analyze domain topic and return recommended graphs (Auth Required)
+router.post(
+  "/domain/analyze",
+  requireAuth,
+  validate({ body: analyzeDomainSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { domain, count = 10 } = req.body;
+    const userId = req.user.id;
+
+    try {
+      const { data: existingGraphs } = await req
+        .supabase!.from("knowledge_graphs")
+        .select("id, title, description")
+        .eq("user_id", userId)
+        .is("deleted_at", null);
+
+      const existingTitles = (existingGraphs || []).map((g) =>
+        g.title.toLowerCase(),
+      );
+
+      const prompt = `你是知识图谱专家。用户想学习「${domain}」领域。
+
+请推荐 ${count} 个该领域的知识图谱主题，并分析它们之间的学习依赖关系。
+
+要求：
+1. 推荐主题覆盖领域各方面，避免重复
+2. 分析主题之间的学习依赖关系（如：学A之前需要先学B）
+3. 优先级：high(核心基础)/medium(重要内容)/low(扩展内容)
+4. 简述不超过60字
+
+返回JSON格式：
+{
+  "graphs": [
+    {"title": "主题名", "description": "简述", "priority": "high/medium/low"}
+  ],
+  "relations": [
+    {"from": "主题A", "to": "主题B", "type": "prerequisite", "reason": "A是B的前置知识"}
+  ]
+}
+
+关系类型说明：
+- prerequisite: from 是 to 的前置知识（学to之前需要先学from）
+- extension: from 是 to 的扩展知识（学完to后可以学习from）
+- related: from 和 to 相关但无直接依赖
+
+已有图谱：${existingTitles.length > 0 ? existingTitles.slice(0, 15).join("、") : "无"}`;
+
+      const response = await aiService.chat(
+        [
+          {
+            role: "system",
+            content:
+              "你是一个知识图谱专家，擅长分析领域知识结构、推荐学习路径、识别知识点之间的依赖关系。请用中文回复。确保返回有效的JSON格式。",
+          },
+          { role: "user", content: prompt },
+        ],
+        { timeout: 60000 },
+      );
+
+      let recommendations: Array<{
+        title: string;
+        description: string;
+        priority: "high" | "medium" | "low";
+      }> = [];
+
+      let graphRelations: Array<{
+        from_title: string;
+        to_title: string;
+        type: "prerequisite" | "extension" | "related";
+        reason?: string;
+      }> = [];
+
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          const graphs =
+            parsed.graphs || parsed.list || parsed.recommendations || [];
+
+          for (const item of graphs) {
+            if (typeof item === "string") {
+              const parts = item.split("|");
+              if (parts.length >= 3) {
+                const [title, description, priority] = parts.map((s) =>
+                  s.trim(),
+                );
+                if (title && !existingTitles.includes(title.toLowerCase())) {
+                  recommendations.push({
+                    title,
+                    description: description || "",
+                    priority: (["high", "medium", "low"].includes(priority)
+                      ? priority
+                      : "medium") as "high" | "medium" | "low",
+                  });
+                }
+              }
+            } else if (typeof item === "object" && item.title) {
+              if (!existingTitles.includes(item.title.toLowerCase())) {
+                recommendations.push({
+                  title: item.title,
+                  description: item.description || "",
+                  priority: item.priority || "medium",
+                });
+              }
+            }
+          }
+
+          const relations = parsed.relations || [];
+          for (const rel of relations) {
+            if (rel.from && rel.to && rel.type) {
+              graphRelations.push({
+                from_title: rel.from,
+                to_title: rel.to,
+                type: rel.type as "prerequisite" | "extension" | "related",
+                reason: rel.reason,
+              });
+            }
+          }
+        }
+      } catch {
+        logger.warn("Failed to parse domain analysis response as JSON");
+      }
+
+      const validTitles = new Set(
+        recommendations.map((r) => r.title.toLowerCase()),
+      );
+      graphRelations = graphRelations.filter(
+        (rel) =>
+          validTitles.has(rel.from_title.toLowerCase()) &&
+          validTitles.has(rel.to_title.toLowerCase()),
+      );
+
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      recommendations.sort((a, b) => {
+        const priorityDiff =
+          priorityOrder[a.priority] - priorityOrder[b.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        return a.title.localeCompare(b.title, "zh-CN");
+      });
+
+      res.json({
+        recommendations: recommendations.slice(0, count),
+        relations: graphRelations,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "领域分析失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+// Batch create domain graphs (Auth Required)
+router.post(
+  "/domain/batch-create",
+  requireAuth,
+  validate({ body: batchCreateDomainGraphsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graphs, domain, relations } = req.body;
+    const userId = req.user.id;
+    const supabase = req.supabase!;
+
+    try {
+      const results: Array<{
+        graphId: string;
+        title: string;
+        isNew: boolean;
+      }> = [];
+
+      const titleToIdMap = new Map<string, string>();
+
+      for (const graphData of graphs) {
+        const { data: existingGraph } = await supabase
+          .from("knowledge_graphs")
+          .select("id, title")
+          .eq("user_id", userId)
+          .ilike("title", graphData.title)
+          .is("deleted_at", null)
+          .limit(1)
+          .maybeSingle();
+
+        if (existingGraph) {
+          results.push({
+            graphId: existingGraph.id,
+            title: existingGraph.title,
+            isNew: false,
+          });
+          titleToIdMap.set(graphData.title.toLowerCase(), existingGraph.id);
+        } else {
+          const { data: newGraph, error: createError } = await supabase
+            .from("knowledge_graphs")
+            .insert({
+              user_id: userId,
+              title: graphData.title,
+              description: graphData.description || "",
+              domain: domain || null,
+            })
+            .select()
+            .single();
+
+          if (createError || !newGraph) {
+            logger.error("Failed to create graph:", createError);
+            continue;
+          }
+
+          results.push({
+            graphId: newGraph.id,
+            title: graphData.title,
+            isNew: true,
+          });
+          titleToIdMap.set(graphData.title.toLowerCase(), newGraph.id);
+        }
+      }
+
+      if (relations && relations.length > 0) {
+        logger.info(`Creating ${relations.length} relations between graphs`);
+
+        const relationsToCreate: Array<{
+          source_graph_id: string;
+          target_graph_id: string;
+          relation_type: string;
+          context?: string;
+        }> = [];
+
+        for (const rel of relations) {
+          const sourceId = titleToIdMap.get(rel.from_title.toLowerCase());
+          const targetId = titleToIdMap.get(rel.to_title.toLowerCase());
+
+          if (!sourceId || !targetId) {
+            logger.warn(
+              `Skipping relation: graph not found - from: ${rel.from_title}, to: ${rel.to_title}`,
+            );
+            continue;
+          }
+
+          const { data: existingRelation } = await supabase
+            .from("graph_relations")
+            .select("id")
+            .eq("source_graph_id", sourceId)
+            .eq("target_graph_id", targetId)
+            .maybeSingle();
+
+          if (!existingRelation) {
+            relationsToCreate.push({
+              source_graph_id: sourceId,
+              target_graph_id: targetId,
+              relation_type: rel.type,
+              context: rel.reason,
+            });
+            logger.info(
+              `Relation [${rel.type}]: ${rel.from_title} -> ${rel.to_title}${rel.reason ? ` (${rel.reason})` : ""}`,
+            );
+          } else {
+            logger.info(
+              `Relation already exists: ${rel.from_title} -> ${rel.to_title}`,
+            );
+          }
+        }
+
+        if (relationsToCreate.length > 0) {
+          logger.info(
+            `Inserting ${relationsToCreate.length} relations into graph_relations`,
+          );
+          const { error: relationError } = await supabase
+            .from("graph_relations")
+            .insert(relationsToCreate);
+
+          if (relationError) {
+            logger.error("Failed to create relations:", relationError);
+          } else {
+            logger.info(
+              `Successfully created ${relationsToCreate.length} relations`,
+            );
+          }
+        }
+      }
+
+      res.json({ created: results });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "批量创建图谱失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+const initializeGraphSchema = z.object({
+  style: z.enum(["academic", "practical", "beginner"]).default("academic"),
+});
+
+const batchInitializeSchema = z.object({
+  graph_ids: z.array(z.string().uuid()).min(1).max(10),
+  style: z.enum(["academic", "practical", "beginner"]).default("academic"),
+});
+
+router.post(
+  "/batch-initialize",
+  requireAuth,
+  validate({ body: batchInitializeSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_ids, style = "academic" } = req.body;
+    const userId = req.user.id;
+    const supabase = req.supabase!;
+
+    try {
+      const { data: graphs, error: graphsError } = await supabase
+        .from("knowledge_graphs")
+        .select("id, title")
+        .in("id", graph_ids)
+        .eq("user_id", userId)
+        .is("deleted_at", null);
+
+      if (graphsError || !graphs || graphs.length === 0) {
+        throw new AppError("未找到有效的图谱", 404, ErrorCodes.NOT_FOUND);
+      }
+
+      const results: Array<{
+        graphId: string;
+        title: string;
+        taskId?: string;
+        status: "pending" | "skipped";
+        reason?: string;
+      }> = [];
+
+      for (const graph of graphs) {
+        const { data: existingNodes } = await supabase
+          .from("knowledge_points")
+          .select("id")
+          .eq("graph_id", graph.id)
+          .limit(1);
+
+        if (existingNodes && existingNodes.length > 0) {
+          results.push({
+            graphId: graph.id,
+            title: graph.title,
+            status: "skipped",
+            reason: "图谱已有知识点",
+          });
+          continue;
+        }
+
+        const task = await taskService.createTask(
+          userId,
+          "recursive_graph_generation",
+          {
+            graph_id: graph.id,
+            topic: graph.title,
+            depth: 2,
+            style,
+          },
+          `初始化知识图谱：${graph.title}`,
+        );
+
+        results.push({
+          graphId: graph.id,
+          title: graph.title,
+          taskId: task.id,
+          status: "pending",
+        });
+      }
+
+      res.json({
+        success: true,
+        results,
+        summary: {
+          total: graph_ids.length,
+          pending: results.filter((r) => r.status === "pending").length,
+          skipped: results.filter((r) => r.status === "skipped").length,
+        },
+      });
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      const message = error instanceof Error ? error.message : "批量初始化失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/:id/initialize",
+  requireAuth,
+  validate({ params: uuidParamsSchema, body: initializeGraphSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { style = "academic" } = req.body;
+    const userId = req.user.id;
+    const supabase = req.supabase!;
+
+    try {
+      const { data: graph, error: graphError } = await supabase
+        .from("knowledge_graphs")
+        .select("id, title, description")
+        .eq("id", id)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .single();
+
+      if (graphError || !graph) {
+        throw new AppError("图谱不存在", 404, ErrorCodes.NOT_FOUND);
+      }
+
+      const { data: existingNodes } = await supabase
+        .from("knowledge_points")
+        .select("id")
+        .eq("graph_id", id)
+        .limit(1);
+
+      if (existingNodes && existingNodes.length > 0) {
+        throw new AppError(
+          "图谱已有知识点，无法重复初始化",
+          400,
+          ErrorCodes.VALIDATION_ERROR,
+        );
+      }
+
+      const task = await taskService.createTask(
+        userId,
+        "recursive_graph_generation",
+        {
+          graph_id: id,
+          topic: graph.title,
+          depth: 2,
+          style,
+        },
+        `初始化知识图谱：${graph.title}`,
+      );
+
+      res.json({
+        success: true,
+        taskId: task.id,
+        graphId: id,
+        message: "初始化任务已创建，请通过任务状态查询进度",
+      });
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      const message = error instanceof Error ? error.message : "初始化图谱失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+const discoverRelationsSchema = z.object({
+  graph_ids: z.array(z.string().uuid()).optional(),
+  max_suggestions: z.number().min(1).max(50).default(20),
+  include_cross_domain: z.boolean().default(true),
+});
+
+const createRelationFromDiscoverySchema = z.object({
+  source_graph_id: z.string().uuid(),
+  target_graph_id: z.string().uuid(),
+  relation_type: z.enum([
+    "prerequisite",
+    "extension",
+    "related",
+    "cross_domain",
+  ]),
+  context: z.string().max(500).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  shared_concepts: z.array(z.string()).optional(),
+});
+
+router.post(
+  "/discover-relations",
+  requireAuth,
+  validate({ body: discoverRelationsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_ids, max_suggestions, include_cross_domain } = req.body;
+    const userId = req.user.id;
+
+    try {
+      const result = await relationDiscoveryService.discoverRelations(
+        req.supabase!,
+        userId,
+        {
+          graph_ids,
+          max_suggestions,
+          include_cross_domain,
+        },
+      );
+
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "图谱关系发现失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/create-discovered-relation",
+  requireAuth,
+  validate({ body: createRelationFromDiscoverySchema }),
+  async (req: AuthRequest, res: Response) => {
+    const {
+      source_graph_id,
+      target_graph_id,
+      relation_type,
+      context,
+      confidence,
+      shared_concepts,
+    } = req.body;
+    const userId = req.user.id;
+
+    try {
+      const result = await relationDiscoveryService.createRelationFromDiscovery(
+        req.supabase!,
+        userId,
+        {
+          source_graph_id,
+          target_graph_id,
+          relation_type,
+          context,
+          confidence,
+          shared_concepts,
+        },
+      );
+
+      res.json({
+        success: true,
+        relation_id: result.id,
+        message: "关系创建成功",
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "创建关系失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
+  "/intelligent-suggestions",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const graphIds = req.query.graph_ids
+      ? (req.query.graph_ids as string).split(",")
+      : undefined;
+
+    try {
+      const result = await relationDiscoveryService.getIntelligentSuggestions(
+        req.supabase!,
+        userId,
+        { graph_ids: graphIds },
+      );
+
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "获取智能建议失败";
       throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },

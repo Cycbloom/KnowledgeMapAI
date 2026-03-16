@@ -1,19 +1,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor } from './index.js';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index.js';
 import { aiService } from '../ai/aiService.js';
 import { logger } from '../../utils/logger.js';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;
-
-type UpdateTaskStatusFn = (
-  supabase: SupabaseClient,
-  taskId: string,
-  status: string,
-  result?: Record<string, unknown> | null,
-  errorMsg?: string | null,
-  userId?: string
-) => Promise<void>;
 
 export class EmbeddingGenerationProcessor implements TaskProcessor {
   async process(
@@ -21,10 +12,12 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
     userId: string,
     payload: Record<string, unknown>,
     supabase: SupabaseClient,
-    updateTaskStatus: UpdateTaskStatusFn
+    updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
+    logger.info(`Starting embedding generation task ${taskId} for user ${userId}`, { payload });
+    
     try {
-      await updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, userId);
+      await updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, undefined, userId);
 
       const { graphId, knowledgePointIds } = payload;
 
@@ -83,7 +76,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
           processed: 0,
           failed: 0,
           message: 'No knowledge points need embedding generation'
-        }, undefined, userId);
+        }, undefined, undefined, userId);
         return;
       }
 
@@ -126,7 +119,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
             processed,
             failed,
             total: knowledgePoints.length
-          }, undefined, userId);
+          }, undefined, undefined, userId);
 
           if (i + BATCH_SIZE < knowledgePoints.length) {
             await this.sleep(EMBEDDING_DELAY_MS);
@@ -146,11 +139,11 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
         failed,
         total: knowledgePoints.length,
         failedIds: failedIds.length > 0 ? failedIds : undefined
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
     } catch (error: unknown) {
-      logger.error('Embedding generation task failed:', error);
-      await updateTaskStatus(supabase, taskId, 'failed', null, error instanceof Error ? error.message : 'Unknown error', userId);
+      logger.error(`Embedding generation task ${taskId} failed:`, error);
+      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error instanceof Error ? error.message : 'Unknown error', userId);
     }
   }
 

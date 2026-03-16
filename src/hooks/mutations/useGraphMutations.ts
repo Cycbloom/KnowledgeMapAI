@@ -82,11 +82,27 @@ export const usePermanentDeleteGraphMutation = () => {
   });
 };
 
+const batchOperation = async <T>(
+  operation: (ids: string[]) => Promise<T>,
+  ids: string[],
+  batchSize = 50
+): Promise<{ count: number }> => {
+  const results: { count: number }[] = [];
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const batch = ids.slice(i, i + batchSize);
+    const result = await operation(batch);
+    results.push(result as { count: number });
+  }
+  return {
+    count: results.reduce((sum, r) => sum + r.count, 0),
+  };
+};
+
 export const useBatchRestoreGraphsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: api.graphs.batchRestore,
+    mutationFn: (ids: string[]) => batchOperation(api.graphs.batchRestore, ids),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
@@ -98,8 +114,21 @@ export const useBatchPermanentDeleteGraphsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: api.graphs.batchPermanentDelete,
+    mutationFn: (ids: string[]) =>
+      batchOperation(api.graphs.batchPermanentDelete, ids),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
+    },
+  });
+};
+
+export const useBatchDeleteGraphsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => batchOperation(api.graphs.batchDelete, ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
     },
   });

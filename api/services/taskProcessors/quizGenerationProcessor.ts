@@ -27,8 +27,10 @@ export class QuizGenerationProcessor implements TaskProcessor {
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
+    logger.info(`Starting quiz generation task ${taskId} for user ${userId}`, { payload });
+    
     try {
-      await updateTaskStatus(supabase, taskId, 'processing', { stage: 'initializing', progress: 0 }, undefined, userId);
+      await updateTaskStatus(supabase, taskId, 'processing', { stage: 'initializing', progress: 0 }, undefined, undefined, userId);
 
       const { quizSetId, knowledgePointIds, config } = payload;
       const { cardTypes = ['qa', 'choice'], difficulty = 'medium', cardsPerType, customPrompt, provider, model } = config || {};
@@ -198,7 +200,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
           progress: Math.round((processedCount / sortedNodes.length) * 100),
           current_node: node.title,
           total_cards: totalCards
-        }, undefined, userId);
+        }, undefined, undefined, userId);
       }
 
       if (allGeneratedCards.length > 0) {
@@ -226,15 +228,16 @@ export class QuizGenerationProcessor implements TaskProcessor {
         })
         .eq('id', quizSetId);
 
+      logger.info(`Quiz generation completed: ${totalCards} cards for quiz set ${quizSetId}`);
       await updateTaskStatus(supabase, taskId, 'completed', {
         success: true,
         totalCards,
         quizSetId,
         details: results
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
     } catch (error: any) {
-      logger.error('Quiz generation task failed:', error);
+      logger.error(`Quiz generation task ${taskId} failed:`, error);
 
       try {
         const { quizSetId } = payload;
@@ -246,7 +249,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
         logger.error('Failed to update quiz set status:', updateError);
       }
 
-      await updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
+      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error.message, userId);
     }
   }
 

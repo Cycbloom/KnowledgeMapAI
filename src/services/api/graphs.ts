@@ -1,4 +1,9 @@
 import { request } from './client';
+import type { 
+  DiscoveryResult, 
+  IntelligentSuggestion,
+  GraphRelationType 
+} from '@shared/types/graph';
 
 export interface TopicCheckResult {
   is_duplicate: boolean;
@@ -8,6 +13,60 @@ export interface TopicCheckResult {
     description?: string;
     similarity: number;
   }>;
+}
+
+export interface DomainRecommendation {
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface DomainGraphRelation {
+  from_title: string;
+  to_title: string;
+  type: 'prerequisite' | 'extension' | 'related';
+  reason?: string;
+}
+
+export interface DomainAnalysisResult {
+  recommendations: DomainRecommendation[];
+  relations: DomainGraphRelation[];
+  meta?: {
+    requested: number;
+    generated: number;
+    rounds: number;
+  };
+}
+
+export interface BatchCreateDomainGraphsResult {
+  created: Array<{
+    graphId: string;
+    title: string;
+    isNew: boolean;
+  }>;
+}
+
+export interface InitializeGraphResult {
+  success: boolean;
+  taskId: string;
+  graphId: string;
+  message: string;
+}
+
+export interface BatchInitializeResult {
+  success: boolean;
+  results: Array<{
+    graphId: string;
+    title: string;
+    taskId?: string;
+    status: 'pending' | 'skipped';
+    reason?: string;
+  }>;
+  summary: {
+    total: number;
+    pending: number;
+    skipped: number;
+  };
 }
 
 export const graphsApi = {
@@ -23,7 +82,7 @@ export const graphsApi = {
       body: JSON.stringify({ topic, exclude_graph_id: excludeGraphId }) 
     }),
   
-  create: (data: { title: string; description?: string }) => 
+  create: (data: { title: string; description?: string; domain?: string }) => 
     request('/graphs', { method: 'POST', body: JSON.stringify(data) }),
   
   createFromTemplate: (data: { template_id: string; title?: string; description?: string }) => 
@@ -35,7 +94,7 @@ export const graphsApi = {
   
   getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
   
-  update: (id: string, data: { title?: string; description?: string; settings?: Record<string, unknown> }) => 
+  update: (id: string, data: { title?: string; description?: string; domain?: string; settings?: Record<string, unknown> }) => 
     request(`/graphs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
   togglePublic: (id: string, is_public: boolean) => 
@@ -52,6 +111,9 @@ export const graphsApi = {
   
   batchRestore: (ids: string[]) => 
     request('/graphs/batch/restore', { method: 'POST', body: JSON.stringify({ ids }) }),
+  
+  batchDelete: (ids: string[]) => 
+    request('/graphs/batch/delete', { method: 'POST', body: JSON.stringify({ ids }) }),
   
   batchPermanentDelete: (ids: string[]) => 
     request('/graphs/batch/permanent', { method: 'DELETE', body: JSON.stringify({ ids }) }),
@@ -85,7 +147,7 @@ export const graphsApi = {
   createRelation: (data: { 
     source_graph_id: string; 
     target_graph_id: string; 
-    relation_type: 'prerequisite' | 'extension' | 'related'; 
+    relation_type: 'prerequisite' | 'extension' | 'related' | 'cross_domain'; 
     context?: string;
   }) => request('/graph-relations/relations', { method: 'POST', body: JSON.stringify(data) }),
   
@@ -101,4 +163,55 @@ export const graphsApi = {
     auto_generate_nodes?: boolean;
     node_depth?: number;
   }) => request(`/graphs/${graphId}/infinite-expand`, { method: 'POST', body: JSON.stringify(data) }),
+  
+  analyzeDomain: (domain: string, count: number = 10): Promise<DomainAnalysisResult> => 
+    request('/graphs/domain/analyze', { method: 'POST', body: JSON.stringify({ domain, count }) }),
+  
+  batchCreateDomainGraphs: (data: {
+    graphs: Array<{
+      title: string;
+      description?: string;
+    }>;
+    domain?: string;
+    relations?: Array<{
+      from_title: string;
+      to_title: string;
+      type: 'prerequisite' | 'extension' | 'related';
+      reason?: string;
+    }>;
+  }): Promise<BatchCreateDomainGraphsResult> => 
+    request('/graphs/domain/batch-create', { method: 'POST', body: JSON.stringify(data) }),
+  
+  initializeGraph: (graphId: string, style: 'academic' | 'practical' | 'beginner' = 'academic'): Promise<InitializeGraphResult> => 
+    request(`/graphs/${graphId}/initialize`, { method: 'POST', body: JSON.stringify({ style }) }),
+  
+  batchInitializeGraphs: (data: {
+    graph_ids: string[];
+    style?: 'academic' | 'practical' | 'beginner';
+  }): Promise<BatchInitializeResult> => 
+    request('/graphs/batch-initialize', { method: 'POST', body: JSON.stringify(data) }),
+  
+  discoverRelations: (data?: {
+    graph_ids?: string[];
+    max_suggestions?: number;
+    include_cross_domain?: boolean;
+  }): Promise<DiscoveryResult> => 
+    request('/graphs/discover-relations', { method: 'POST', body: JSON.stringify(data || {}) }),
+  
+  createDiscoveredRelation: (data: {
+    source_graph_id: string;
+    target_graph_id: string;
+    relation_type: GraphRelationType;
+    context?: string;
+    confidence?: number;
+    shared_concepts?: string[];
+  }): Promise<{ success: boolean; relation_id: string; message: string }> => 
+    request('/graphs/create-discovered-relation', { method: 'POST', body: JSON.stringify(data) }),
+  
+  getIntelligentSuggestions: (graphIds?: string[]): Promise<IntelligentSuggestion> => {
+    const url = graphIds && graphIds.length > 0
+      ? `/graphs/intelligent-suggestions?graph_ids=${graphIds.join(',')}` 
+      : '/graphs/intelligent-suggestions';
+    return request(url);
+  },
 };

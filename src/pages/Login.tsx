@@ -1,25 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useLoginMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../hooks';
 import { Sun, Moon, Cloud } from 'lucide-react';
 import { getAuthModeDisplay } from '../config/authConfig';
+import { credentialStorage } from '../utils/credentialStorage';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const setUser = useStore(state => state.setUser);
   const loginMutation = useLoginMutation();
   const { isDark, toggleTheme } = useTheme();
 
+  useEffect(() => {
+    const saved = credentialStorage.load();
+    if (saved) {
+      setEmail(saved.email);
+      setPassword(saved.password);
+      setRememberMe(true);
+    }
+  }, []);
+
+  const handleRememberMeChange = (checked: boolean) => {
+    setRememberMe(checked);
+    if (!checked) {
+      credentialStorage.clear();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const data = await loginMutation.mutateAsync({ email, password });
       if (data.error) throw new Error(data.error);
+      
+      if (rememberMe) {
+        credentialStorage.save(email, password);
+      } else {
+        credentialStorage.clear();
+      }
       
       setUser(data.user, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
       navigate('/');
@@ -61,6 +85,18 @@ export const Login = () => {
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
               required
             />
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={e => handleRememberMeChange(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded cursor-pointer"
+            />
+            <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+              记住账号密码
+            </label>
           </div>
           <button
             type="submit"

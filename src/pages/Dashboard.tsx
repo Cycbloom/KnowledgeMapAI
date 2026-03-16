@@ -8,6 +8,7 @@ import {
   useCreateGraphFromTemplateMutation,
   useToggleFavoriteMutation,
   usePrefetchGraph,
+  useBatchDeleteGraphsMutation,
 } from "../hooks/mutations";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -28,6 +29,13 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
+  CheckSquare,
+  Square,
+  Check,
+  LayoutGrid,
+  List,
+  Clock,
+  Calendar,
 } from "lucide-react";
 import { useMessageStore } from "../store/useMessageStore";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
@@ -52,6 +60,7 @@ export const Dashboard = () => {
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
+  const batchDeleteGraphsMutation = useBatchDeleteGraphsMutation();
   const prefetchGraph = usePrefetchGraph();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addMessage } = useMessageStore();
@@ -81,7 +90,17 @@ export const Dashboard = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showFABMenu, setShowFABMenu] = useState(false);
-  const graphsPerPage = isMobile ? 6 : 9;
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<"card" | "list">(() => {
+    const saved = localStorage.getItem("dashboard-view-mode");
+    return (saved === "card" || saved === "list") ? saved : "card";
+  });
+  const graphsPerPage = isMobile ? 6 : viewMode === "list" ? 15 : 9;
+
+  useEffect(() => {
+    localStorage.setItem("dashboard-view-mode", viewMode);
+  }, [viewMode]);
 
   const {
     isChecking,
@@ -221,6 +240,75 @@ export const Dashboard = () => {
     setShowFABMenu(false);
   };
 
+  const isAllSelected =
+    paginatedGraphs.length > 0 &&
+    paginatedGraphs.every((g) => selectedIds.has(g.id));
+  const isPartialSelected =
+    paginatedGraphs.some((g) => selectedIds.has(g.id)) && !isAllSelected;
+  const selectedCount = selectedIds.size;
+
+  const toggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedGraphs.map((g) => g.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const enterSelectMode = () => {
+    setIsSelectMode(true);
+    setSelectedIds(new Set());
+  };
+
+  const exitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedIds.size === 0) return;
+    setDeleteConfirm({
+      isOpen: true,
+      id: "",
+      title: `${selectedIds.size} 个图谱`,
+    });
+  };
+
+  const handleConfirmBatchDelete = () => {
+    const ids = Array.from(selectedIds);
+    batchDeleteGraphsMutation.mutate(ids, {
+      onSuccess: () => {
+        addMessage({
+          type: "success",
+          content: `已将 ${ids.length} 个图谱移至回收站`,
+        });
+        setSelectedIds(new Set());
+        setIsSelectMode(false);
+        setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
+      },
+      onError: (err: unknown) => {
+        console.error(err);
+        const message = err instanceof Error ? err.message : "批量删除失败";
+        addMessage({ type: "error", content: message });
+        setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
   const handleSelectTemplate = (template: Template | null) => {
     setSelectedTemplate(template);
     setIsTemplateSelectorOpen(false);
@@ -236,20 +324,22 @@ export const Dashboard = () => {
   };
 
   const handleConfirmDelete = () => {
-    if (!deleteConfirm.id) return;
-
-    deleteGraphMutation.mutate(deleteConfirm.id, {
-      onSuccess: () => {
-        addMessage({ type: "success", content: "图谱删除成功" });
-        setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
-      },
-      onError: (err: unknown) => {
-        console.error(err);
-        const message = err instanceof Error ? err.message : "删除失败";
-        addMessage({ type: "error", content: message });
-        setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
-      },
-    });
+    if (deleteConfirm.id) {
+      deleteGraphMutation.mutate(deleteConfirm.id, {
+        onSuccess: () => {
+          addMessage({ type: "success", content: "图谱删除成功" });
+          setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
+        },
+        onError: (err: unknown) => {
+          console.error(err);
+          const message = err instanceof Error ? err.message : "删除失败";
+          addMessage({ type: "error", content: message });
+          setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
+        },
+      });
+    } else if (selectedIds.size > 0) {
+      handleConfirmBatchDelete();
+    }
   };
 
   const handleToggleFavorite = (id: string, currentFavorite: boolean) => {
@@ -431,7 +521,7 @@ export const Dashboard = () => {
           {/* Row 2: Search + Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             {/* Search Box */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <Search
                 className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500" : "text-gray-400"}`}
                 size={18}
@@ -497,9 +587,9 @@ export const Dashboard = () => {
               )}
             </div>
 
-            {/* Action Buttons - Desktop */}
+            {/* Action Buttons - Desktop & Tablet */}
             {!isMobile && (
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap lg:flex-nowrap">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -508,47 +598,121 @@ export const Dashboard = () => {
                   accept=".json,.md,.opml"
                 />
 
+                {/* View Toggle - integrated into action buttons */}
+                <div
+                  className={`flex items-center rounded-xl border overflow-hidden ${
+                    isDark
+                      ? "bg-slate-800 border-slate-700"
+                      : "bg-white border-gray-200 shadow-sm"
+                  }`}
+                >
+                  <button
+                    onClick={() => setViewMode("card")}
+                    className={`p-2.5 transition-all ${
+                      viewMode === "card"
+                        ? isDark
+                          ? "bg-blue-600 text-white"
+                          : "bg-blue-500 text-white"
+                        : isDark
+                          ? "text-slate-400 hover:text-slate-300"
+                          : "text-gray-400 hover:text-gray-600"
+                    }`}
+                    title="卡片视图"
+                  >
+                    <LayoutGrid size={18} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`p-2.5 transition-all ${
+                      viewMode === "list"
+                        ? isDark
+                          ? "bg-blue-600 text-white"
+                          : "bg-blue-500 text-white"
+                        : isDark
+                          ? "text-slate-400 hover:text-slate-300"
+                          : "text-gray-400 hover:text-gray-600"
+                    }`}
+                    title="列表视图"
+                  >
+                    <List size={18} />
+                  </button>
+                </div>
+
+                {!isSelectMode && (
+                  <button
+                    onClick={enterSelectMode}
+                    className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                      isDark
+                        ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
+                    }`}
+                    title="选择"
+                  >
+                    <CheckSquare size={16} />
+                    <span className="hidden lg:inline">选择</span>
+                  </button>
+                )}
+
+                {isSelectMode && (
+                  <button
+                    onClick={exitSelectMode}
+                    className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                      isDark
+                        ? "bg-red-900/30 border-red-800 text-red-400 hover:bg-red-900/50"
+                        : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                    }`}
+                    title="取消选择"
+                  >
+                    <X size={16} />
+                    <span className="hidden lg:inline">取消</span>
+                  </button>
+                )}
+
                 <button
                   onClick={handleImportClick}
                   disabled={importGraphMutation.isPending}
-                  className={`px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                  className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   } disabled:opacity-50`}
+                  title="导入"
                 >
                   <Upload size={16} />
-                  <span>
+                  <span className="hidden lg:inline">
                     {importGraphMutation.isPending ? "导入中..." : "导入"}
                   </span>
                 </button>
 
                 <Link
                   to="/graph-map"
-                  className={`px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                  className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   }`}
+                  title="图谱地图"
                 >
                   <Network size={16} />
-                  <span>图谱地图</span>
+                  <span className="hidden lg:inline">图谱地图</span>
                 </Link>
 
                 <button
                   onClick={handleOpenTemplateSelector}
-                  className="px-4 py-2.5 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium"
+                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium"
+                  title="新建图谱"
                 >
                   <Plus size={16} />
-                  <span>新建图谱</span>
+                  <span className="hidden lg:inline">新建图谱</span>
                 </button>
 
                 <button
                   onClick={handleOpenAIGenerator}
-                  className="px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium"
+                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium"
+                  title="AI 生成"
                 >
                   <Sparkles size={16} />
-                  <span>AI 生成</span>
+                  <span className="hidden lg:inline">AI 生成</span>
                 </button>
               </div>
             )}
@@ -600,6 +764,40 @@ export const Dashboard = () => {
                           : "bg-white border-gray-200"
                       }`}
                     >
+                      {!isSelectMode && (
+                        <button
+                          onClick={() => {
+                            enterSelectMode();
+                            setShowMoreMenu(false);
+                          }}
+                          className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                            isDark
+                              ? "text-slate-300 hover:bg-slate-700"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <CheckSquare size={18} />
+                          <span>选择</span>
+                        </button>
+                      )}
+
+                      {isSelectMode && (
+                        <button
+                          onClick={() => {
+                            exitSelectMode();
+                            setShowMoreMenu(false);
+                          }}
+                          className={`w-full min-h-[44px] px-4 py-3 flex items-center gap-3 text-sm transition-colors ${
+                            isDark
+                              ? "text-red-400 hover:bg-red-900/30"
+                              : "text-red-600 hover:bg-red-50"
+                          }`}
+                        >
+                          <X size={18} />
+                          <span>取消选择</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={handleImportClick}
                         disabled={importGraphMutation.isPending}
@@ -846,6 +1044,70 @@ export const Dashboard = () => {
         )}
 
         {/* Graphs Grid */}
+        {/* Batch Operations Toolbar */}
+        {isSelectMode && filteredGraphs.length > 0 && (
+          <div
+            className={`flex items-center gap-4 p-3 rounded-xl ${
+              isDark ? "bg-slate-800" : "bg-white border border-gray-200"
+            }`}
+          >
+            <button
+              onClick={toggleSelectAll}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+                isDark
+                  ? "hover:bg-slate-700 text-slate-300"
+                  : "hover:bg-gray-100 text-gray-600"
+              }`}
+            >
+              {isAllSelected ? (
+                <CheckSquare className="w-5 h-5 text-blue-500" />
+              ) : isPartialSelected ? (
+                <div className="w-5 h-5 rounded border-2 border-blue-500 bg-blue-500/30 flex items-center justify-center">
+                  <div className="w-2.5 h-0.5 bg-blue-500 rounded" />
+                </div>
+              ) : (
+                <Square className="w-5 h-5" />
+              )}
+              <span className="text-sm">
+                {isAllSelected ? "取消全选" : "全选"}
+              </span>
+            </button>
+
+            {selectedCount > 0 && (
+              <>
+                <span
+                  className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                >
+                  已选择 {selectedCount} 项
+                </span>
+                <div className="flex-1" />
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={batchDeleteGraphsMutation.isPending}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    isDark
+                      ? "bg-red-900/30 text-red-400 hover:bg-red-900/50"
+                      : "bg-red-50 text-red-600 hover:bg-red-100"
+                  } disabled:opacity-50`}
+                >
+                  <Trash2 size={16} />
+                  {batchDeleteGraphsMutation.isPending ? "删除中..." : "批量删除"}
+                </button>
+                <button
+                  onClick={clearSelection}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isDark
+                      ? "hover:bg-slate-700 text-slate-400"
+                      : "hover:bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  <X size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         <div
           className={`grid gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
         >
@@ -883,23 +1145,331 @@ export const Dashboard = () => {
                 </button>
               )}
             </div>
+          ) : viewMode === "list" ? (
+            <div className={`col-span-full rounded-2xl border overflow-hidden ${
+              isDark
+                ? "bg-slate-800 border-slate-700"
+                : "bg-white border-gray-200 shadow-sm"
+            }`}>
+              <div className={`overflow-x-auto ${isMobile ? "hidden" : ""}`}>
+                <table className="w-full">
+                  <thead>
+                    <tr className={`border-b ${isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-100 bg-gray-50"}`}>
+                      {isSelectMode && (
+                        <th className="w-12 px-4 py-3">
+                          <button
+                            onClick={toggleSelectAll}
+                            className={`flex items-center justify-center w-5 h-5 rounded ${
+                              isAllSelected
+                                ? "bg-blue-500 text-white"
+                                : isPartialSelected
+                                  ? "bg-blue-500/30 border-2 border-blue-500"
+                                  : isDark
+                                    ? "border border-slate-600"
+                                    : "border border-gray-300"
+                            }`}
+                          >
+                            {isAllSelected && <Check size={14} />}
+                            {isPartialSelected && <div className="w-2 h-0.5 bg-blue-500 rounded" />}
+                          </button>
+                        </th>
+                      )}
+                      <th className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>标题</th>
+                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>描述</th>
+                      <th className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>节点</th>
+                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>创建时间</th>
+                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>更新时间</th>
+                      <th className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedGraphs.map((graph) => (
+                      <tr
+                        key={graph.id}
+                        onMouseEnter={() => prefetchGraph(graph.id)}
+                        className={`border-b transition-colors cursor-pointer ${
+                          isDark
+                            ? "border-slate-700 hover:bg-slate-700/50"
+                            : "border-gray-100 hover:bg-gray-50"
+                        } ${
+                          isSelectMode && selectedIds.has(graph.id)
+                            ? isDark
+                              ? "bg-blue-900/20"
+                              : "bg-blue-50"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          if (isSelectMode) {
+                            toggleSelect(graph.id);
+                          } else {
+                            navigate(`/learning?graph_id=${graph.id}`);
+                          }
+                        }}
+                      >
+                        {isSelectMode && (
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => toggleSelect(graph.id)}
+                              className={`flex items-center justify-center w-5 h-5 rounded ${
+                                selectedIds.has(graph.id)
+                                  ? "bg-blue-500 text-white"
+                                  : isDark
+                                    ? "border border-slate-600 hover:border-blue-500"
+                                    : "border border-gray-300 hover:border-blue-500"
+                              }`}
+                            >
+                              {selectedIds.has(graph.id) && <Check size={14} />}
+                            </button>
+                          </td>
+                        )}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg flex-shrink-0 ${
+                              isDark
+                                ? "bg-indigo-900/30 text-indigo-400"
+                                : "bg-indigo-50 text-indigo-600"
+                            }`}>
+                              <BookOpen size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium truncate ${isDark ? "text-slate-100" : "text-gray-900"}`}>
+                                  {graph.title}
+                                </span>
+                                {graph.is_favorite && (
+                                  <Star size={14} className="text-yellow-500 flex-shrink-0" fill="currentColor" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={`px-4 py-3 hidden lg:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                          <span className="line-clamp-1 text-sm">{graph.description || "暂无描述"}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className={`flex items-center justify-center gap-1 text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                            <Network size={14} />
+                            <span>{graph.nodes_count || 0}</span>
+                          </div>
+                        </td>
+                        <td className={`px-4 py-3 hidden md:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <Calendar size={14} />
+                            <span>{graph.created_at ? new Date(graph.created_at).toLocaleDateString("zh-CN") : "-"}</span>
+                          </div>
+                        </td>
+                        <td className={`px-4 py-3 hidden xl:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <Clock size={14} />
+                            <span>{graph.updated_at ? new Date(graph.updated_at).toLocaleDateString("zh-CN") : "-"}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1">
+                            <Link
+                              to={`/graph/${graph.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isDark
+                                  ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
+                                  : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
+                              }`}
+                              title="打开思维导图"
+                            >
+                              <Network size={16} />
+                            </Link>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleToggleFavorite(graph.id, graph.is_favorite || false);
+                              }}
+                              className={`p-2 rounded-lg transition-colors ${
+                                graph.is_favorite
+                                  ? "text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                                  : isDark
+                                    ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
+                                    : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
+                              }`}
+                              title={graph.is_favorite ? "取消收藏" : "收藏图谱"}
+                            >
+                              <Star size={16} fill={graph.is_favorite ? "currentColor" : "none"} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteGraph(graph.id, graph.title);
+                              }}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isDark
+                                  ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
+                                  : "text-gray-400 hover:bg-red-50 hover:text-red-500"
+                              }`}
+                              title="删除图谱"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {isMobile && (
+                <div className="divide-y divide-gray-100 dark:divide-slate-700">
+                  {paginatedGraphs.map((graph) => (
+                    <div
+                      key={graph.id}
+                      className={`p-4 transition-colors ${
+                        isSelectMode && selectedIds.has(graph.id)
+                          ? isDark
+                            ? "bg-blue-900/20"
+                            : "bg-blue-50"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        if (isSelectMode) {
+                          toggleSelect(graph.id);
+                        } else {
+                          navigate(`/learning?graph_id=${graph.id}`);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        {isSelectMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSelect(graph.id);
+                            }}
+                            className={`flex items-center justify-center w-6 h-6 rounded mt-1 ${
+                              selectedIds.has(graph.id)
+                                ? "bg-blue-500 text-white"
+                                : isDark
+                                  ? "border border-slate-600"
+                                  : "border border-gray-300"
+                            }`}
+                          >
+                            {selectedIds.has(graph.id) && <Check size={14} />}
+                          </button>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`font-medium ${isDark ? "text-slate-100" : "text-gray-900"}`}>
+                              {graph.title}
+                            </span>
+                            {graph.is_favorite && (
+                              <Star size={14} className="text-yellow-500" fill="currentColor" />
+                            )}
+                          </div>
+                          <p className={`text-sm mb-2 line-clamp-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                            {graph.description || "暂无描述"}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs">
+                            <div className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                              <Network size={12} />
+                              <span>{graph.nodes_count || 0} 节点</span>
+                            </div>
+                            <div className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                              <Calendar size={12} />
+                              <span>{graph.created_at ? new Date(graph.created_at).toLocaleDateString("zh-CN") : "-"}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Link
+                            to={`/graph/${graph.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                              isDark
+                                ? "text-slate-400 hover:bg-indigo-900/30"
+                                : "text-gray-400 hover:bg-indigo-50"
+                            }`}
+                          >
+                            <Network size={18} />
+                          </Link>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteGraph(graph.id, graph.title);
+                            }}
+                            className={`p-2 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                              isDark
+                                ? "text-slate-400 hover:bg-red-900/30"
+                                : "text-gray-400 hover:bg-red-50"
+                            }`}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
             paginatedGraphs.map((graph, index) => (
               <div
                 key={graph.id || index}
                 onMouseEnter={() => prefetchGraph(graph.id)}
-                className={`group relative rounded-2xl transition-all duration-300 hover:-translate-y-1 ${
-                  isDark
+                className={`group relative rounded-2xl transition-all duration-300 ${
+                  isSelectMode
+                    ? selectedIds.has(graph.id)
+                      ? isDark
+                        ? "bg-blue-900/20 border-2 border-blue-500"
+                        : "bg-blue-50 border-2 border-blue-400"
+                      : isDark
+                        ? "bg-slate-800 border border-slate-700 hover:border-slate-600"
+                        : "bg-white border border-gray-100 hover:border-gray-200"
+                    : "hover:-translate-y-1"
+                } ${
+                  !isSelectMode && (isDark
                     ? "bg-slate-800 border border-slate-700 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20"
-                    : "bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/5"
+                    : "bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/5")
                 }`}
               >
+                {/* Selection Checkbox - Select Mode */}
+                {isSelectMode && (
+                  <div
+                    className="absolute top-3 left-3 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelect(graph.id);
+                    }}
+                  >
+                    <div
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
+                        selectedIds.has(graph.id)
+                          ? "bg-blue-500 text-white"
+                          : isDark
+                            ? "bg-slate-700 border border-slate-600 hover:border-blue-500"
+                            : "bg-white border border-gray-300 hover:border-blue-500"
+                      }`}
+                    >
+                      {selectedIds.has(graph.id) && <Check size={14} />}
+                    </div>
+                  </div>
+                )}
+
                 {/* Card Content */}
                 <div
-                  onClick={() => navigate(`/learning?graph_id=${graph.id}`)}
+                  onClick={() => {
+                    if (isSelectMode) {
+                      toggleSelect(graph.id);
+                    } else {
+                      navigate(`/learning?graph_id=${graph.id}`);
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
-                      navigate(`/learning?graph_id=${graph.id}`);
+                      if (isSelectMode) {
+                        toggleSelect(graph.id);
+                      } else {
+                        navigate(`/learning?graph_id=${graph.id}`);
+                      }
                     }
                   }}
                   tabIndex={0}
@@ -909,17 +1479,19 @@ export const Dashboard = () => {
                   <div className="flex items-start justify-between mb-3 sm:mb-4">
                     <div
                       className={`p-2.5 sm:p-3.5 rounded-xl transition-colors ${
-                        isDark
-                          ? "bg-indigo-900/30 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white"
-                          : "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"
+                        isSelectMode && selectedIds.has(graph.id)
+                          ? "bg-blue-500 text-white"
+                          : isDark
+                            ? "bg-indigo-900/30 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white"
+                            : "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"
                       }`}
                     >
                       <BookOpen size={isMobile ? 20 : 24} />
                     </div>
 
                     <div className="flex items-center gap-1 sm:gap-2">
-                      {/* Hover Actions - Desktop */}
-                      {!isMobile && (
+                      {/* Hover Actions - Desktop (not in select mode) */}
+                      {!isMobile && !isSelectMode && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
                           <Link
                             to={`/graph/${graph.id}`}

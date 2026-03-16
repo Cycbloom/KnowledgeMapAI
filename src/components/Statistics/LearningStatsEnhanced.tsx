@@ -7,12 +7,13 @@ interface KnowledgeHeatmapProps {
   graphData: Array<{
     id: string;
     title: string;
-    nodes: Array<{
+    nodes?: Array<{
       id: string;
       title: string;
       status: 'mastered' | 'learning' | 'new' | 'locked';
       level: string;
     }>;
+    nodes_count?: number;
   }>;
 }
 
@@ -26,13 +27,6 @@ interface WeakPoint {
   suggestion: string;
 }
 
-const STATUS_COLORS = {
-  mastered: '#10b981',
-  learning: '#3b82f6',
-  new: '#f59e0b',
-  locked: '#6b7280'
-};
-
 export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData }) => {
   const { isDark } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,10 +34,10 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
 
   const heatmapData = useMemo(() => {
     return graphData.map(graph => {
-      const total = graph.nodes.length;
-      const mastered = graph.nodes.filter(n => n.status === 'mastered').length;
-      const learning = graph.nodes.filter(n => n.status === 'learning').length;
-      const newNodes = graph.nodes.filter(n => n.status === 'new').length;
+      const total = graph.nodes?.length || graph.nodes_count || 0;
+      const mastered = graph.nodes?.filter(n => n.status === 'mastered').length || 0;
+      const learning = graph.nodes?.filter(n => n.status === 'learning').length || 0;
+      const newNodes = graph.nodes?.filter(n => n.status === 'new').length || 0;
       
       return {
         name: graph.title,
@@ -149,27 +143,10 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
   );
 };
 
-export const MasteryDistributionChart: React.FC<{ nodeStatus: Record<string, any> }> = ({ nodeStatus }) => {
+export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: string; value: number; color: string }> }> = ({ distribution }) => {
   const { isDark } = useTheme();
 
-  const distributionData = useMemo(() => {
-    const counts = { mastered: 0, learning: 0, new: 0, locked: 0 };
-    
-    Object.values(nodeStatus || {}).forEach((status: any) => {
-      if (status.mastered) counts.mastered++;
-      else if (status.locked) counts.locked++;
-      else if (status.due || status.due_today) counts.learning++;
-      else counts.new++;
-    });
-
-    return [
-      { name: '已掌握', value: counts.mastered, color: STATUS_COLORS.mastered },
-      { name: '学习中', value: counts.learning, color: STATUS_COLORS.learning },
-      { name: '未开始', value: counts.new, color: STATUS_COLORS.new },
-      { name: '已锁定', value: counts.locked, color: STATUS_COLORS.locked }
-    ].filter(d => d.value > 0);
-  }, [nodeStatus]);
-
+  const distributionData = distribution || [];
   const total = distributionData.reduce((sum, d) => sum + d.value, 0);
 
   return (

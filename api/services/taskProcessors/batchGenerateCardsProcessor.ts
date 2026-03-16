@@ -11,8 +11,10 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
+    logger.info(`Starting batch generate cards task ${taskId} for user ${userId}`, { payload });
+    
     try {
-      await updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, userId);
+      await updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, undefined, userId);
       
       const { node_ids, config } = payload;
       const { types = ['qa', 'choice', 'true_false'], count = 3 } = config || {};
@@ -169,18 +171,19 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
         await updateTaskStatus(supabase, taskId, 'processing', { 
             progress: Math.round((processedCount / sortedNodes.length) * 100),
             current_node: node.title
-        }, undefined, userId);
+        }, undefined, undefined, userId);
       }
 
+      logger.info(`Batch card generation completed: ${totalCards} cards generated`);
       await updateTaskStatus(supabase, taskId, 'completed', { 
         success: true, 
         totalCards, 
         details: results 
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
     } catch (error: any) {
-      logger.error('Task failed:', error);
-      await updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
+      logger.error(`Batch generate cards task ${taskId} failed:`, error);
+      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error.message, userId);
     }
   }
 }

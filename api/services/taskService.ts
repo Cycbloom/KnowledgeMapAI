@@ -83,30 +83,53 @@ export class TaskService {
     client: SupabaseClient | string,
     taskId: string,
     status: string,
+    progress?: {
+      stage?: string;
+      progress?: number;
+      [key: string]: unknown;
+    } | null,
     result?: any,
     errorMsg?: string,
     userId?: string,
   ) {
-    let supabase = defaultClient;
-    let tid = taskId;
-    let s = status;
-    let r = result;
-    let e = errorMsg;
-    let uid = userId;
+    let supabase: SupabaseClient;
+    let tid: string;
+    let s: string;
+    let p:
+      | { stage?: string; progress?: number; [key: string]: unknown }
+      | null
+      | undefined;
+    let r: any;
+    let e: string | undefined;
+    let uid: string | undefined;
 
     if (typeof client !== "string" && client !== undefined) {
       supabase = client;
+      tid = taskId;
+      s = status;
+      p = progress;
+      r = result;
+      e = errorMsg;
+      uid = userId;
     } else {
-      uid = e;
-      e = r;
-      r = s;
-      s = tid;
+      supabase = defaultClient;
       tid = client as string;
+      s = taskId;
+      r = status;
+      e = progress as string | undefined;
+      uid = result as string | undefined;
+      p = undefined;
     }
 
     const updateData: any = { status: s, updated_at: new Date().toISOString() };
-    if (r !== undefined) updateData.result = r;
+    if (p !== undefined && p !== null) updateData.result = { ...r, ...p };
+    else if (r !== undefined) updateData.result = r;
     if (e !== undefined) updateData.error = e;
+
+    logger.info(`Updating task ${tid} status to ${s}`, {
+      stage: p?.stage,
+      progress: p?.progress,
+    });
 
     const { error } = await supabase
       .from("tasks")
@@ -120,7 +143,7 @@ export class TaskService {
         type: "task_update",
         taskId: tid,
         status: s,
-        result: r,
+        result: updateData.result,
         error: e,
       });
     }

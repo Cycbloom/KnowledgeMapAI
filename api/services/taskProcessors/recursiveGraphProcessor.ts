@@ -13,13 +13,17 @@ export class RecursiveGraphProcessor implements TaskProcessor {
     supabase: SupabaseClient,
     updateTaskStatus: UpdateTaskStatusFunction
   ): Promise<void> {
+    logger.info(`Starting recursive graph generation task ${taskId} for user ${userId}`, { payload });
+    
     try {
       await updateTaskStatus(supabase, taskId, 'processing', { 
         stage: 'init', 
         progress: 0 
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
       const { graph_id, topic, depth = 3, style = 'academic' } = payload;
+
+      logger.info(`Processing graph ${graph_id} with topic "${topic}", depth ${depth}, style ${style}`);
 
       const { data: graph } = await supabase
         .from('knowledge_graphs')
@@ -106,19 +110,21 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         stage: 'init_complete', 
         progress: 30,
         totalNodes 
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
       if (depth >= 2) {
         const coreNodeEntries = Array.from(nodeMap.entries()).filter(([title]) => title !== rootData.title);
+        logger.info(`Starting depth 2 expansion for ${coreNodeEntries.length} core nodes`);
         
         for (let i = 0; i < coreNodeEntries.length; i++) {
           const [nodeTitle, nodeId] = coreNodeEntries[i];
           
+          logger.debug(`Expanding core node ${i + 1}/${coreNodeEntries.length}: ${nodeTitle}`);
           await updateTaskStatus(supabase, taskId, 'processing', { 
             stage: 'expanding', 
             progress: 30 + Math.round((i / coreNodeEntries.length) * 40),
             currentNode: nodeTitle
-          }, undefined, userId);
+          }, undefined, undefined, userId);
 
           try {
             const expandPrompt = await getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
@@ -175,6 +181,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
       }
 
       if (depth >= 3) {
+        logger.info(`Starting depth 3 expansion for sub-nodes`);
         const subNodeEntries = Array.from(nodeMap.entries()).filter(([title]) => {
           return title !== rootData.title && !coreNodes.some((c: any) => c.title === title);
         });
@@ -182,11 +189,12 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         for (let i = 0; i < Math.min(subNodeEntries.length, 10); i++) {
           const [nodeTitle, nodeId] = subNodeEntries[i];
           
+          logger.debug(`Expanding sub-node ${i + 1}/${Math.min(subNodeEntries.length, 10)}: ${nodeTitle}`);
           await updateTaskStatus(supabase, taskId, 'processing', { 
             stage: 'deep_expanding', 
             progress: 70 + Math.round((i / Math.min(subNodeEntries.length, 10)) * 25),
             currentNode: nodeTitle
-          }, undefined, userId);
+          }, undefined, undefined, userId);
 
           try {
             const expandPrompt = await getAutoGraphPrompt(supabase, userId, graph_id, 'expand', {
@@ -241,16 +249,17 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         }
       }
 
+      logger.info(`Graph generation completed for graph ${graph_id}: ${totalNodes} nodes, ${totalEdges} edges`);
       await updateTaskStatus(supabase, taskId, 'completed', { 
         success: true, 
         totalNodes,
         totalEdges,
         graphId: graph_id
-      }, undefined, userId);
+      }, undefined, undefined, userId);
 
     } catch (error: any) {
-      logger.error('Recursive graph generation failed:', error);
-      await updateTaskStatus(supabase, taskId, 'failed', null, error.message, userId);
+      logger.error(`Recursive graph generation failed for task ${taskId}:`, error);
+      await updateTaskStatus(supabase, taskId, 'failed', null, undefined, error.message, userId);
     }
   }
 }

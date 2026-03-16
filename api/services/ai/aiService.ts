@@ -1122,7 +1122,7 @@ Please respond in Chinese.`,
         .slice(0, 50)
         .map(
           (n) =>
-            `- ID: ${n.id}, Title: ${n.title}${
+            `- Title: ${n.title}${
               n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
             }`
         )
@@ -1132,7 +1132,7 @@ Please respond in Chinese.`,
         .slice(0, 50)
         .map(
           (n) =>
-            `- ID: ${n.id}, Title: ${n.title}${
+            `- Title: ${n.title}${
               n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
             }`
         )
@@ -1178,9 +1178,7 @@ Please respond in Chinese.`,
       const content = completion.choices[0].message.content || "";
       return parseAIResponse<{
         connections: Array<{
-          node1_id: string;
           node1_title: string;
-          node2_id: string;
           node2_title: string;
           connection_type: string;
           similarity: number;

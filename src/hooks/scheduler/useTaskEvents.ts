@@ -4,6 +4,10 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
 import { useStore } from '../../store/useStore';
 import { Task } from '../../types';
 
+const SSE_HEARTBEAT_TIMEOUT = 300000;
+const SSE_RECONNECT_DELAY_BASE = 1000;
+const SSE_RECONNECT_MAX_ATTEMPTS = 10;
+
 export const useTaskEvents = () => {
   const queryClient = useQueryClient();
   const token = useStore((state) => state.token);
@@ -11,9 +15,9 @@ export const useTaskEvents = () => {
   const eventSourceRef = useRef<EventSourcePolyfill | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const connectRef = useRef<(() => void) | null>(null);
-  const maxReconnectAttempts = 5;
-  const baseReconnectDelay = 1000;
+  const connectRef = useRef<((isReconnect?: boolean) => void) | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
+  const wasHiddenRef = useRef<boolean>(false);
 
   const cleanup = useCallback(() => {
     if (eventSourceRef.current) {
@@ -26,7 +30,7 @@ export const useTaskEvents = () => {
     }
   }, []);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((isReconnect = false) => {
     if (!token) {
       console.warn('[SSE] No token available, skipping connection');
       return;
@@ -34,7 +38,11 @@ export const useTaskEvents = () => {
 
     cleanup();
     setSSEStatus('connecting');
-    reconnectAttemptsRef.current = 0;
+    
+    if (!isReconnect) {
+      reconnectAttemptsRef.current = 0;
+    }
+    lastActivityRef.current = Date.now();
 
     console.info('[SSE] Attempting to connect to /api/tasks/events');
 
@@ -43,7 +51,7 @@ export const useTaskEvents = () => {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        heartbeatTimeout: 120000,
+        heartbeatTimeout: SSE_HEARTBEAT_TIMEOUT,
         withCredentials: true
       });
 
@@ -53,9 +61,12 @@ export const useTaskEvents = () => {
         console.info('[SSE] Connection established successfully');
         setSSEStatus('connected');
         reconnectAttemptsRef.current = 0;
+        lastActivityRef.current = Date.now();
       };
 
       es.onmessage = (event) => {
+        lastActivityRef.current = Date.now();
+        
         try {
           const data = JSON.parse(event.data);
           
@@ -110,16 +121,16 @@ export const useTaskEvents = () => {
           return;
         }
 
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+        if (reconnectAttemptsRef.current < SSE_RECONNECT_MAX_ATTEMPTS) {
           reconnectAttemptsRef.current++;
-          const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current - 1);
+          const delay = SSE_RECONNECT_DELAY_BASE * Math.pow(2, Math.min(reconnectAttemptsRef.current - 1, 5));
           
-          console.info(`[SSE] Reconnection attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts} in ${delay}ms`);
-          setSSEStatus('connecting', `Reconnecting... (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
+          console.info(`[SSE] Reconnection attempt ${reconnectAttemptsRef.current}/${SSE_RECONNECT_MAX_ATTEMPTS} in ${delay}ms`);
+          setSSEStatus('connecting', `Reconnecting... (${reconnectAttemptsRef.current}/${SSE_RECONNECT_MAX_ATTEMPTS})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             if (connectRef.current) {
-              connectRef.current();
+              connectRef.current(true);
             }
           }, delay);
         } else {
@@ -138,6 +149,30 @@ export const useTaskEvents = () => {
 
   useEffect(() => {
     connectRef.current = connect;
+  }, [connect]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && wasHiddenRef.current) {
+        wasHiddenRef.current = false;
+        const timeSinceLastActivity = Date.now() - lastActivityRef.current;
+        const connectionStale = timeSinceLastActivity > 60000;
+        
+        if (connectionStale || !eventSourceRef.current) {
+          console.info('[SSE] Page became visible, reconnecting stale connection');
+          reconnectAttemptsRef.current = 0;
+          connect();
+        }
+      } else if (document.visibilityState === 'hidden') {
+        wasHiddenRef.current = true;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [connect]);
 
   useEffect(() => {

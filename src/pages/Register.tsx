@@ -3,8 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useRegisterMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../hooks';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Database, Cloud } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
+import { authConfig, getAuthModeDisplay } from '../config/authConfig';
 
 export const Register = () => {
   const [email, setEmail] = useState('');
@@ -23,7 +24,7 @@ export const Register = () => {
       const data = await registerMutation.mutateAsync({ email, password, name });
       if (data.error) throw new Error(data.error);
       
-      setUser(data.user, data.session?.access_token, data.session?.refresh_token);
+      setUser(data.user, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
       navigate('/');
     } catch (err: any) {
       if (isValidationError(err)) {
@@ -38,7 +39,11 @@ export const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-slate-900 transition-colors duration-300">
       <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-96 transition-colors duration-300">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">注册</h2>
+        <h2 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">注册</h2>
+        <div className="flex items-center justify-center gap-1.5 mb-6 text-xs text-gray-500 dark:text-gray-400">
+          {authConfig.isLocal() ? <Database size={14} /> : <Cloud size={14} />}
+          <span>{getAuthModeDisplay()}</span>
+        </div>
         {errors.length > 0 && (
           <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-2 mb-4 rounded">
             {errors.map((msg, index) => (

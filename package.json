@@ -1,7 +1,13 @@
 {
-  "name": "trae-project",
+  "name": "knowledgemap",
   "private": true,
   "version": "1.0.0",
+  "description": "KnowledgeMap - A powerful knowledge management application",
+  "author": {
+    "name": "KnowledgeMap Team",
+    "email": "support@knowledgemap.app"
+  },
+  "main": "dist-electron/main.js",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
@@ -9,6 +15,7 @@
   "scripts": {
     "client:dev": "vite",
     "build": "tsc -b && vite build",
+    "build:electron": "cross-env ELECTRON_BUILD=true tsc -p tsconfig.electron.json && vite build",
     "lint": "eslint . --quiet",
     "preview": "vite preview",
     "test": "vitest",
@@ -29,10 +36,18 @@
     "test:all": "npm run test && npm run test:e2e",
     "test:ci": "npm run check && npm run lint && npm run test:all",
     "check": "tsc --noEmit",
+    "check:electron": "tsc -p tsconfig.electron.json --noEmit",
     "server:dev": "nodemon",
     "db:backfill": "tsx scripts/backfill_embeddings.ts",
     "db:seed": "tsx scripts/seed_test_data.ts",
-    "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\""
+    "db:export": "tsx scripts/exportFromSupabase.ts",
+    "db:import": "tsx scripts/importToSQLite.ts",
+    "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\"",
+    "electron:dev": "concurrently \"npm run client:dev\" \"npm run server:dev\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "electron:build": "npm run build:electron && electron-builder",
+    "electron:build:win": "npm run build:electron && electron-builder --win",
+    "electron:build:mac": "npm run build:electron && electron-builder --mac",
+    "electron:build:linux": "npm run build:electron && electron-builder --linux"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -51,6 +66,8 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/three": "^0.182.0",
     "axios": "^1.13.6",
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.8.0",
     "bullmq": "^5.70.4",
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
@@ -62,6 +79,7 @@
     "d3-hierarchy": "^3.1.2",
     "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
+    "electron-updater": "^6.8.3",
     "event-source-polyfill": "^1.0.31",
     "express": "^4.22.1",
     "express-async-errors": "^3.1.1",
@@ -70,6 +88,7 @@
     "helmet": "^8.1.0",
     "html2canvas": "^1.4.1",
     "ioredis": "^5.10.0",
+    "jsonwebtoken": "^9.0.3",
     "katex": "^0.16.35",
     "lucide-react": "^0.511.0",
     "mermaid": "^10.9.5",
@@ -102,6 +121,8 @@
     "@eslint/js": "^9.39.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/bcrypt": "^6.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -110,6 +131,7 @@
     "@types/event-source-polyfill": "^1.0.5",
     "@types/express": "^4.17.25",
     "@types/express-rate-limit": "^5.1.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^22.19.15",
     "@types/pdfkit": "^0.13.9",
@@ -122,13 +144,20 @@
     "autoprefixer": "^10.4.27",
     "babel-plugin-react-dev-locator": "^1.0.6",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^41.0.2",
+    "electron-builder": "^26.8.1",
+    "electron-icon-builder": "^2.0.1",
     "eslint": "^9.39.3",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^16.5.0",
+    "jimp": "^1.6.0",
     "jsdom": "^27.4.0",
     "nodemon": "^3.1.14",
+    "png-to-ico": "^3.0.1",
     "postcss": "^8.5.8",
+    "sharp": "^0.34.5",
     "swagger-jsdoc": "^6.2.8",
     "tailwindcss": "^3.4.19",
     "tsx": "^4.21.0",
@@ -138,7 +167,8 @@
     "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-trae-solo-badge": "^1.0.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "wait-on": "^9.0.4"
   },
   "overrides": {
     "@vercel/node": {
@@ -151,5 +181,188 @@
     "ioredis": "^5.10.0",
     "serialize-javascript": "^7.0.3",
     "@rollup/plugin-terser": "^1.0.0"
+  },
+  "build": {
+    "appId": "com.knowledgemap.app",
+    "productName": "KnowledgeMap",
+    "copyright": "Copyright © 2025 KnowledgeMap",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "api/**/*",
+      "shared/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,LICENSE,license}",
+      "!**/node_modules/.bin/**",
+      "!**/node_modules/**/*.ts",
+      "!**/node_modules/**/*.map",
+      "!**/*.ts",
+      "!**/*.map",
+      "!test-results/**",
+      "!playwright-report/**",
+      "!tests/**",
+      "!e2e/**",
+      "!**/.DS_Store",
+      "!**/Thumbs.db"
+    ],
+    "extraResources": [
+      {
+        "from": "api",
+        "to": "api",
+        "filter": [
+          "**/*",
+          "!**/*.ts",
+          "!**/*.map"
+        ]
+      },
+      {
+        "from": "shared",
+        "to": "shared",
+        "filter": [
+          "**/*",
+          "!**/*.ts",
+          "!**/*.map"
+        ]
+      },
+      {
+        "from": "public",
+        "to": "public",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/sharp/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}-setup.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "KnowledgeMap",
+      "include": "build/installer.nsh",
+      "deleteAppDataOnUninstall": false,
+      "displayLanguageSelector": false,
+      "installerLanguages": [
+        "zh_CN",
+        "en_US"
+      ],
+      "language": "2052"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.productivity",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icons",
+      "category": "Office",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "maintainer": "KnowledgeMap Team",
+      "desktop": {
+        "entry": {
+          "Name": "KnowledgeMap",
+          "Comment": "AI-powered Knowledge Graph Editor",
+          "Categories": "Office;Education;Productivity",
+          "StartupWMClass": "knowledgemap"
+        }
+      }
+    },
+    "deb": {
+      "priority": "optional",
+      "compression": "xz"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "knowledgemap",
+      "repo": "knowledgemap-app",
+      "releaseType": "release"
+    }
   }
 }

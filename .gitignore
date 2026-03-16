@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-electron
+release
 *.local
 
 # Editor directories and files
@@ -32,3 +34,6 @@ backups/
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Electron
+*.blockmap

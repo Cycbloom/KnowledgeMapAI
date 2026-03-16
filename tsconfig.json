@@ -28,7 +28,8 @@
       "@/*": ["./src/*"],
       "@shared/*": ["./shared/*"]
     },
-    "types": ["node", "express"]
+    "types": ["node", "express"],
+    "typeRoots": ["./node_modules/@types", "./api/types"]
   },
   "include": ["src", "api", "shared"],
   "exclude": ["**/*.test.ts"]

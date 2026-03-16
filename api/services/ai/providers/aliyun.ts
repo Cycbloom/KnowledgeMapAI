@@ -140,7 +140,10 @@ export class AliyunProvider extends BaseAIProvider {
             });
         }
 
-        const data = await response.json();
+        const data = await response.json() as {
+          audio?: { url: string };
+          output?: { audio?: { url: string } };
+        };
         
         let audioUrl = '';
         if (data.audio && data.audio.url) {

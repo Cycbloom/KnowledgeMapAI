@@ -82,6 +82,9 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
   const [focusedGraphId, setFocusedGraphId] = useState<string | null>(null);
   const [hasMoved, setHasMoved] = useState(false);
   const mouseDownPos = useRef({ x: 0, y: 0 });
+  const touchStartPos = useRef<{ x: number, y: number } | null>(null);
+  const touchStartDistance = useRef<number | null>(null);
+  const touchStartMidpoint = useRef<{ x: number, y: number } | null>(null);
 
   const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
 
@@ -267,6 +270,123 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
     updateTransformState(newTransform);
   }, [updateTransformDOM, updateTransformState]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    
+    if (e.touches.length === 1) {
+      // 单指触摸 - 准备拖拽
+      setIsDragging(true);
+      setHasMoved(false);
+      const touch = e.touches[0];
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (rect) {
+        touchStartPos.current = {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+        setDragStart({
+          x: touch.clientX - transformRef.current.x,
+          y: touch.clientY - transformRef.current.y
+        });
+      }
+    } else if (e.touches.length === 2) {
+      // 双指触摸 - 准备缩放
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+      touchStartDistance.current = distance;
+      
+      // 计算中心点
+      const midpoint = {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2
+      };
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (rect) {
+        touchStartMidpoint.current = {
+          x: midpoint.x - rect.left,
+          y: midpoint.y - rect.top
+        };
+      }
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    
+    if (e.touches.length === 1 && isDragging && touchStartPos.current) {
+      // 单指拖拽
+      const touch = e.touches[0];
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (rect) {
+        const dx = touch.clientX - (touchStartPos.current.x + rect.left);
+        const dy = touch.clientY - (touchStartPos.current.y + rect.top);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 5) {
+          setHasMoved(true);
+        }
+        
+        const newTransform = {
+          x: touch.clientX - dragStart.x,
+          y: touch.clientY - dragStart.y,
+          k: transformRef.current.k
+        };
+        
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        updateTransformState(newTransform);
+      }
+    } else if (e.touches.length === 2 && touchStartDistance.current && touchStartMidpoint.current) {
+      // 双指缩放
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const currentDistance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+      
+      const scaleFactor = currentDistance / touchStartDistance.current;
+      const prev = transformRef.current;
+      const newK = Math.max(0.1, Math.min(5, prev.k * scaleFactor));
+      
+      // 计算新的中心点
+      const midpoint = {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2
+      };
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (rect) {
+        const currentMidpoint = {
+          x: midpoint.x - rect.left,
+          y: midpoint.y - rect.top
+        };
+        
+        const deltaX = currentMidpoint.x - touchStartMidpoint.current.x;
+        const deltaY = currentMidpoint.y - touchStartMidpoint.current.y;
+        
+        const newX = prev.x + deltaX;
+        const newY = prev.y + deltaY;
+        
+        const newTransform = { x: newX, y: newY, k: newK };
+        
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        updateTransformState(newTransform);
+      }
+    }
+  }, [isDragging, dragStart, updateTransformDOM, updateTransformState]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+    touchStartPos.current = null;
+    touchStartDistance.current = null;
+    touchStartMidpoint.current = null;
+  }, []);
+
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
       setIsDragging(true);
@@ -384,7 +504,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
         ref={svgRef}
         width="100%"
         height="100%"
-        style={{ backgroundColor: colors.background, cursor: isDragging ? 'grabbing' : 'grab' }}
+        style={{ backgroundColor: colors.background, cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' as any }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -392,6 +512,10 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(({
         onMouseLeave={handleMouseUp}
         onClick={handleCanvasClick}
         onContextMenu={(e) => e.preventDefault()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         <g ref={contentRef}>
           <CanvasLayout

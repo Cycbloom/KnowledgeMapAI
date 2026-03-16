@@ -1,0 +1,206 @@
+/**
+ * This is a API server
+ */
+import express from "express";
+import "express-async-errors";
+import cors from "cors";
+import dotenv from "dotenv";
+import helmet from "helmet";
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import authRoutes from "./routes/auth.js";
+import authLocalRoutes from "./routes/auth.local.js";
+import { localUserService } from "./services/auth/index.js";
+import graphRoutes from "./routes/graphs.js";
+import nodeRoutes from "./routes/nodes.js";
+import aiRoutes from "./routes/ai.js";
+import studyRoutes from "./routes/study.js";
+import dataRoutes from "./routes/data.js";
+import dashboardRoutes from "./routes/dashboard.js";
+import taskRoutes from "./routes/tasks.js";
+import statisticsRoutes from "./routes/statistics.js";
+import searchRoutes from "./routes/search.js";
+import templateRoutes from "./routes/templates.js";
+import promptRoutes from "./routes/prompts.js";
+import aiActionRoutes from "./routes/aiActions.js";
+import focusRoutes from "./routes/focus.js";
+import achievementRoutes from "./routes/achievements.js";
+import periodicTaskRoutes from "./routes/periodicTasks.js";
+import ragRoutes from "./routes/rag.js";
+import autoGraphRoutes from "./routes/autoGraph.js";
+import learningPathRoutes from "./routes/learningPath.js";
+import learningPathsRoutes from "./routes/learningPaths.js";
+import graphRelationsRoutes from "./routes/graphRelations.js";
+import healthRoutes from "./routes/health.js";
+import analyticsRoutes from "./routes/analytics.js";
+import alertsRoutes from "./routes/alerts.js";
+import systemMonitorRoutes from "./routes/systemMonitor.js";
+import backupRoutes from "./routes/backup.js";
+import knowledgePointRoutes from "./routes/knowledgePoints.js";
+import schedulerRoutes from "./routes/scheduler/index.js";
+import notificationRoutes from "./routes/notifications.js";
+import relationshipTypesRoutes from "./routes/relationshipTypes.js";
+import calendarRoutes from "./routes/calendar.js";
+import quizSetRoutes from "./routes/quizSets.js";
+import collaboratorRoutes from "./routes/collaborators.js";
+import syncRoutes from "./routes/sync.js";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./docs/swagger.js";
+import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler.js";
+import { syncExistingBackups } from "./services/common/backupSyncService.js";
+// load env
+dotenv.config();
+import { errorHandler } from "./middleware/errorHandler.js";
+import { csrfProtection, getCsrfToken } from "./middleware/csrf.js";
+import { rateLimiters } from "./middleware/rateLimiter.js";
+import { requestLogger, slowRequestLogger, } from "./middleware/requestLogger.js";
+import { requestIdMiddleware } from "./middleware/requestId.js";
+import { logger } from "./utils/logger.js";
+const DATABASE_MODE = process.env.DATABASE_MODE || 'supabase';
+let localDb = null;
+async function initializeLocalDatabase() {
+    if (DATABASE_MODE === 'local') {
+        try {
+            const Database = (await import('better-sqlite3')).default;
+            const dbPath = process.env.LOCAL_DB_PATH || './data/knowledgemap.db';
+            localDb = new Database(dbPath);
+            localDb.pragma('journal_mode = WAL');
+            localDb.pragma('foreign_keys = ON');
+            localDb.pragma('synchronous = NORMAL');
+            localUserService.setDatabase(localDb);
+            logger.info('Local database initialized', { dbPath });
+        }
+        catch (error) {
+            logger.error('Failed to initialize local database', { error });
+            throw error;
+        }
+    }
+}
+initializeLocalDatabase().catch((error) => {
+    logger.error('Failed to initialize local database on startup', { error });
+});
+const app = express();
+app.use(requestIdMiddleware);
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
+// Security Headers
+app.use(helmet());
+// Gzip Compression
+app.use(compression({
+    level: 6, // Balanced setting
+    threshold: 1024, // Only compress responses larger than 1KB
+    filter: (req, res) => {
+        if (req.headers["x-no-compression"]) {
+            // don't compress responses with this request header
+            return false;
+        }
+        // fallback to standard filter function
+        return compression.filter(req, res);
+    },
+}));
+// Trust Proxy (Required for correct IP rate limiting behind proxies like Vercel/Nginx)
+app.set("trust proxy", 1);
+// CORS Configuration
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:4173", // Vite preview
+    process.env.FRONTEND_URL,
+].filter(Boolean);
+const isVercelOrigin = (origin) => {
+    return origin.endsWith('.vercel.app') ||
+        origin.includes('.vercel.app') ||
+        /^https?:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+};
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin)
+            return callback(null, true);
+        // Allow Vercel preview deployments
+        if (isVercelOrigin(origin)) {
+            return callback(null, true);
+        }
+        if (allowedOrigins.indexOf(origin) !== -1 ||
+            !process.env.NODE_ENV ||
+            process.env.NODE_ENV === "development") {
+            callback(null, true);
+        }
+        else {
+            logger.warn('CORS blocked origin', { origin, allowedOrigins });
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true,
+}));
+app.use(csrfProtection);
+app.use(requestLogger);
+app.use(slowRequestLogger(2000));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api/csrf-token", getCsrfToken);
+/**
+ * API Routes
+ */
+const authRouter = DATABASE_MODE === 'local' ? authLocalRoutes : authRoutes;
+app.use("/api/auth", rateLimiters.auth, authRouter);
+app.use("/api/graphs", graphRoutes);
+app.use("/api/graphs", graphRelationsRoutes);
+app.use("/api", nodeRoutes);
+app.use("/api/ai", rateLimiters.ai, aiRoutes);
+app.use("/api/study", studyRoutes);
+app.use("/api/data", dataRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/statistics", statisticsRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/templates", templateRoutes);
+app.use("/api/prompts", promptRoutes);
+app.use("/api/ai-actions", aiActionRoutes);
+app.use("/api/focus", focusRoutes);
+app.use("/api/achievements", achievementRoutes);
+app.use("/api/periodic-tasks", periodicTaskRoutes);
+app.use("/api/rag", ragRoutes);
+app.use("/api/auto-graph", rateLimiters.aiHeavy, autoGraphRoutes);
+app.use("/api/learning-path", learningPathRoutes);
+app.use("/api/learning-paths", learningPathsRoutes);
+app.use("/api/health", healthRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/alerts", alertsRoutes);
+app.use("/api/system-monitor", systemMonitorRoutes);
+app.use("/api/backup", backupRoutes);
+app.use("/api/knowledge-points", knowledgePointRoutes);
+app.use("/api/graph-nodes", knowledgePointRoutes);
+app.use("/api/combined-view", knowledgePointRoutes);
+app.use("/api/scheduler", schedulerRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/relationship-types", relationshipTypesRoutes);
+app.use("/api/calendar", calendarRoutes);
+app.use("/api/collaborations", collaboratorRoutes);
+app.use("/api", quizSetRoutes);
+app.use("/api/sync", syncRoutes);
+/**
+ * health
+ */
+app.use("/api/health", (_req, res, _next) => {
+    res.status(200).json({
+        success: true,
+        message: "ok",
+    });
+});
+startAutoBackupScheduler();
+syncExistingBackups();
+/**
+ * error handler middleware
+ */
+app.use(errorHandler);
+/**
+ * 404 handler
+ */
+app.use((_req, res) => {
+    res.status(404).json({
+        success: false,
+        error: "API not found",
+    });
+});
+export default app;
+//# sourceMappingURL=app.js.map

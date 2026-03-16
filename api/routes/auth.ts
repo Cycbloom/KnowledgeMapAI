@@ -10,16 +10,25 @@ import { logger } from '../utils/logger.js';
 
 const router = Router();
 
-/**
- * User Register
- * POST /api/auth/register
- */
 router.post('/register', validate(registerSchema), async (req: Request, res: Response, _next: import('express').NextFunction): Promise<void> => {
+  const requestId = req.requestId || 'unknown';
   try {
     const { email, password, name } = req.body;
-    // Manual validation removed as it is handled by middleware
+    
+    logger.info('Register attempt', {
+      requestId,
+      email: email?.substring(0, 3) + '***',
+      hasName: !!name,
+      passwordLength: password?.length || 0,
+    });
 
-    // 1. Sign up with Supabase Auth (trigger will create user in public.users)
+    if (!email || !password || !name) {
+      logger.warn('Register validation failed: missing fields', { requestId });
+      throw new AppError('请填写所有必填字段', 400, ErrorCodes.VALIDATION_ERROR);
+    }
+
+    logger.info('Calling Supabase signUp', { requestId, email: email?.substring(0, 3) + '***' });
+    
     const { data: authData, error: authError } = await supabaseAdmin.auth.signUp({
       email,
       password,
@@ -31,46 +40,107 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     });
 
     if (authError) {
+      logger.error('Supabase signUp error', {
+        requestId,
+        error: authError,
+        errorMessage: authError.message,
+        errorCode: (authError as any).code,
+        errorStatus: (authError as any).status,
+      });
+      
+      const errorMap: Record<string, { message: string; status: number }> = {
+        'user_already_exists': { message: '该邮箱已被注册', status: 409 },
+        'email_address_invalid': { message: '邮箱格式不正确', status: 400 },
+        'invalid_password': { message: '密码不符合要求，请确保密码至少8位，包含大小写字母和数字', status: 400 },
+        'weak_password': { message: '密码强度不足，请使用更复杂的密码', status: 400 },
+        'signup_disabled': { message: '注册功能已禁用，请联系管理员', status: 403 },
+        'email_not_confirmed': { message: '请检查邮箱完成验证', status: 200 },
+      };
+      
+      const errorCode = (authError as any).code || '';
+      const mappedError = errorMap[errorCode];
+      
+      if (mappedError) {
+        throw new AppError(mappedError.message, mappedError.status, ErrorCodes.VALIDATION_ERROR);
+      }
+      
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+        throw new AppError('该邮箱已被注册', 409, ErrorCodes.VALIDATION_ERROR);
+      }
+      
+      if (authError.message.includes('password')) {
+        throw new AppError('密码不符合要求，请确保密码至少8位，包含大小写字母和数字', 400, ErrorCodes.VALIDATION_ERROR);
+      }
+      
       throw new AppError(authError.message, 400, ErrorCodes.VALIDATION_ERROR);
     }
 
     if (!authData.user) {
-      throw new AppError('创建用户失败', 500, ErrorCodes.INTERNAL_ERROR);
+      logger.error('Supabase signUp returned no user', { requestId, authData });
+      throw new AppError('创建用户失败，请稍后重试', 500, ErrorCodes.INTERNAL_ERROR);
     }
 
-    // Note: User record is created automatically by handle_new_user trigger
+    logger.info('User created successfully', {
+      requestId,
+      userId: authData.user.id,
+      email: authData.user.email?.substring(0, 3) + '***',
+      hasSession: !!authData.session,
+    });
 
-    // If email confirmation is disabled, automatically sign in the user
     let session = authData.session;
     if (!session) {
+      logger.info('No session returned, attempting to sign in', { requestId });
+      
       const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) {
-        throw new AppError(signInError.message, 400, ErrorCodes.VALIDATION_ERROR);
+        logger.error('Auto sign-in after registration failed', {
+          requestId,
+          error: signInError,
+          errorMessage: signInError.message,
+        });
+        res.status(201).json({ 
+          user: authData.user, 
+          session: null,
+          message: '注册成功，请登录' 
+        });
+        return;
       }
 
       session = signInData.session;
+      logger.info('Auto sign-in successful', { requestId, hasSession: !!session });
     }
 
     res.status(201).json({ user: authData.user, session });
   } catch (error: unknown) {
-    console.error('Register error:', error);
+    logger.error('Register error', {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
+    if (error instanceof AppError) {
+      throw error;
+    }
+    
     const message = error instanceof Error ? error.message : '内部服务器错误';
     throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
-/**
- * User Login
- * POST /api/auth/login
- */
 router.post('/login', validate(loginSchema), async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
+  const requestId = req.requestId || 'unknown';
   try {
     const { email, password } = req.body;
-    // Manual validation removed as it is handled by middleware
+    
+    logger.info('Login attempt', {
+      requestId,
+      email: email?.substring(0, 3) + '***',
+      hasPassword: !!password,
+    });
 
     const { data, error } = await supabaseAdmin.auth.signInWithPassword({
       email,
@@ -78,11 +148,23 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
     });
 
     if (error) {
+      logger.error('Supabase signIn error', {
+        requestId,
+        error: error,
+        errorMessage: error.message,
+        errorCode: (error as any).code,
+        errorStatus: (error as any).status,
+      });
       res.status(401).json({ error: error.message });
       return;
     }
 
-    // Auto-repair: Ensure public.users record exists
+    logger.info('Login successful', {
+      requestId,
+      userId: data.user.id,
+      email: data.user.email?.substring(0, 3) + '***',
+    });
+
     const { data: existingProfile } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -90,7 +172,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
       .single();
 
     if (!existingProfile) {
-      console.log(`[Auth] Repairing missing public profile for user ${data.user.id}`);
+      logger.info('Repairing missing public profile for user', { requestId, userId: data.user.id });
       await supabaseAdmin.from('users').insert([
         {
           id: data.user.id,
@@ -103,15 +185,15 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
 
     res.json({ user: data.user, session: data.session });
   } catch (error: unknown) {
-    console.error('Login error:', error);
+    logger.error('Login error', {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     next(error);
   }
 });
 
-/**
- * Refresh Token
- * POST /api/auth/refresh
- */
 router.post('/refresh', async (req: Request, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
     const { refreshToken } = req.body;
@@ -139,10 +221,6 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
   }
 });
 
-/**
- * User Logout
- * POST /api/auth/logout
- */
 router.post('/logout', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
     const { error } = await supabaseAdmin.auth.admin.signOut(req.user.id);
@@ -157,10 +235,6 @@ router.post('/logout', requireAuth, async (req: AuthRequest, res: Response, next
   }
 });
 
-/**
- * Get Current User
- * GET /api/auth/user
- */
 router.get('/user', requireAuth, async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
     const profile = await authService.getProfile(req.user.id);
@@ -170,10 +244,6 @@ router.get('/user', requireAuth, async (req: AuthRequest, res: Response, next: i
   }
 });
 
-/**
- * Update Profile (Settings)
- * PUT /api/auth/profile
- */
 router.put('/profile', requireAuth, validate(updateProfileSchema), async (req: AuthRequest, res: Response, next: import('express').NextFunction): Promise<void> => {
   try {
     const { name, settings } = req.body;

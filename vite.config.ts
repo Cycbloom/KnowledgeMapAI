@@ -58,7 +58,10 @@ function getChunkStrategy(id: string): string | undefined {
   return undefined;
 }
 
+const isElectronBuild = process.env.ELECTRON_BUILD === 'true';
+
 export default defineConfig({
+  base: isElectronBuild ? './' : '/',
   plugins: [
     react(),
     traeBadgePlugin({
@@ -73,7 +76,7 @@ export default defineConfig({
     tsconfigPaths(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'robots.txt'],
+      includeAssets: ['favicon.svg', 'robots.txt', 'icons/*.png'],
       manifest: {
         name: 'Knowledge Map AI',
         short_name: 'KnowledgeMap',
@@ -96,6 +99,24 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
+          },
+          {
+            src: 'icons/192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         shortcuts: [
@@ -104,14 +125,21 @@ export default defineConfig({
             short_name: '新建',
             description: '创建一个新的知识图谱',
             url: '/dashboard?action=create',
-            icons: [{ src: 'favicon.svg', sizes: '96x96' }]
+            icons: [{ src: 'icons/96x96.png', sizes: '96x96' }]
           },
           {
             name: '学习模式',
             short_name: '学习',
             description: '进入学习模式',
             url: '/study',
-            icons: [{ src: 'favicon.svg', sizes: '96x96' }]
+            icons: [{ src: 'icons/96x96.png', sizes: '96x96' }]
+          },
+          {
+            name: '任务管理',
+            short_name: '任务',
+            description: '查看和管理任务',
+            url: '/scheduler',
+            icons: [{ src: 'icons/96x96.png', sizes: '96x96' }]
           }
         ],
         share_target: {
@@ -130,12 +158,18 @@ export default defineConfig({
             ]
           }
         },
-        categories: ['education', 'productivity'],
-        lang: 'zh-CN'
+        categories: ['education', 'productivity', 'utilities'],
+        lang: 'zh-CN',
+        dir: 'ltr',
+        prefer_related_applications: false,
+        related_applications: [],
+        iarc_rating_id: ''
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        navigationPreload: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -143,7 +177,7 @@ export default defineConfig({
             options: {
               cacheName: 'google-fonts-cache',
               expiration: {
-                maxEntries: 10,
+                maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
@@ -157,7 +191,7 @@ export default defineConfig({
             options: {
               cacheName: 'gstatic-fonts-cache',
               expiration: {
-                maxEntries: 10,
+                maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
@@ -196,18 +230,61 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /\/api\/.*/i,
+            urlPattern: /\/api\/templates/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'templates-cache',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/auth\/user/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'api-cache',
+              cacheName: 'user-cache',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5
+                maxEntries: 1,
+                maxAgeSeconds: 60 * 60
               },
               cacheableResponse: {
                 statuses: [0, 200]
               },
               networkTimeoutSeconds: 5
+            }
+          },
+          {
+            urlPattern: /\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 10
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              networkTimeoutSeconds: 5
+            }
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
             }
           }
         ]

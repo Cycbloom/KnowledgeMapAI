@@ -121,4 +121,83 @@ router.get('/system', async (_req, res) => {
   });
 });
 
+router.get('/env', async (_req, res) => {
+  const envChecks: Record<string, { configured: boolean; source?: string; note?: string }> = {};
+
+  const requiredEnvVars = [
+    { key: 'VITE_SUPABASE_URL', description: 'Supabase项目URL' },
+    { key: 'SUPABASE_SERVICE_ROLE_KEY', description: 'Supabase服务角色密钥' },
+    { key: 'VITE_SUPABASE_ANON_KEY', description: 'Supabase匿名密钥' },
+  ];
+
+  const optionalEnvVars = [
+    { key: 'DEEPSEEK_API_KEY', description: 'DeepSeek API密钥' },
+    { key: 'VOLCENGINE_API_KEY', description: '火山引擎API密钥' },
+    { key: 'ALIYUN_API_KEY', description: '阿里云API密钥' },
+    { key: 'REDIS_URL', description: 'Redis连接URL' },
+    { key: 'FRONTEND_URL', description: '前端URL (CORS)' },
+    { key: 'NODE_ENV', description: '运行环境' },
+  ];
+
+  for (const { key, description } of requiredEnvVars) {
+    const value = process.env[key];
+    envChecks[key] = {
+      configured: !!value && value.length > 0,
+      note: description,
+    };
+  }
+
+  for (const { key, description } of optionalEnvVars) {
+    const value = process.env[key];
+    envChecks[key] = {
+      configured: !!value && value.length > 0,
+      note: description,
+    };
+  }
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+  let supabaseKeyCheck = { valid: false, type: 'unknown', error: '' };
+  if (anonKey) {
+    try {
+      const parts = anonKey.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+        supabaseKeyCheck = {
+          valid: true,
+          type: payload.role || 'unknown',
+          error: payload.role === 'service_role' 
+            ? 'WARNING: Using service_role key as anon key - this is insecure!' 
+            : '',
+        };
+      }
+    } catch (e) {
+      supabaseKeyCheck = { valid: false, type: 'parse_error', error: 'Invalid JWT format' };
+    }
+  }
+
+  const missingRequired = requiredEnvVars
+    .filter(({ key }) => !process.env[key])
+    .map(({ key }) => key);
+
+  res.json({
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    envVars: envChecks,
+    supabase: {
+      urlConfigured: !!supabaseUrl,
+      urlValid: supabaseUrl ? supabaseUrl.startsWith('https://') : false,
+      anonKeyConfigured: !!anonKey,
+      anonKeyType: supabaseKeyCheck.type,
+      anonKeyWarning: supabaseKeyCheck.error,
+    },
+    missingRequired,
+    status: missingRequired.length === 0 ? 'ok' : 'error',
+    message: missingRequired.length > 0 
+      ? `缺少必需的环境变量: ${missingRequired.join(', ')}` 
+      : '所有必需环境变量已配置',
+  });
+});
+
 export default router;

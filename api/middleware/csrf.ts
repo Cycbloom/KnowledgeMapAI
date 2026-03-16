@@ -25,13 +25,19 @@ const shouldSkipCsrf = (req: Request): boolean => {
   return SKIP_CSRF_ROUTES.some(route => req.path === route || req.path.startsWith(route + '/'));
 };
 
-const getCookieOptions = () => ({
-  httpOnly: false,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' as const : 'lax' as const,
-  maxAge: 24 * 60 * 60 * 1000,
-  path: '/',
-});
+const getCookieOptions = () => {
+  const isVercel = process.env.VERCEL === '1';
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  return {
+    httpOnly: false,
+    secure: isProduction || isVercel,
+    sameSite: isVercel ? 'lax' as const : (isProduction ? 'strict' as const : 'lax' as const),
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
+    domain: undefined,
+  };
+};
 
 export const csrfProtection = (req: Request, res: Response, next: NextFunction): void => {
   if (shouldSkipCsrf(req)) {

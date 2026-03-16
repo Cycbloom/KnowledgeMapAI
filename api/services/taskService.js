@@ -1,0 +1,154 @@
+import { createClient } from '@supabase/supabase-js';
+import { taskQueue } from './common/queueService.js';
+import { sseService } from './core/sseService.js';
+import { logger } from '../utils/logger.js';
+import { getProcessor } from './taskProcessors/index.js';
+import { getPaginationParams } from '../utils/pagination.js';
+import './taskProcessors/batchGenerateCardsProcessor.js';
+import './taskProcessors/recursiveGraphProcessor.js';
+import './taskProcessors/infiniteExpansionProcessor.js';
+import './taskProcessors/embeddingGenerationProcessor.js';
+import './taskProcessors/quizGenerationProcessor.js';
+import dotenv from 'dotenv';
+dotenv.config();
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const defaultClient = createClient(supabaseUrl, supabaseServiceKey || supabaseKey);
+export class TaskService {
+    async createTask(userId, type, payload, name) {
+        const supabase = defaultClient;
+        const { data, error } = await supabase
+            .from('tasks')
+            .insert({
+            user_id: userId,
+            type,
+            name,
+            status: 'pending',
+            payload: payload || {}
+        })
+            .select()
+            .single();
+        if (error)
+            throw new Error(`Failed to create task: ${error.message}`);
+        await taskQueue.add(type, { taskId: data.id });
+        return data;
+    }
+    async updateTaskStatus(client, taskId, status, result, errorMsg, userId) {
+        let supabase = defaultClient;
+        let tid = taskId;
+        let s = status;
+        let r = result;
+        let e = errorMsg;
+        let uid = userId;
+        if (typeof client !== 'string' && client !== undefined) {
+            supabase = client;
+        }
+        else {
+            uid = e;
+            e = r;
+            r = s;
+            s = tid;
+            tid = client;
+        }
+        const updateData = { status: s, updated_at: new Date().toISOString() };
+        if (r !== undefined)
+            updateData.result = r;
+        if (e !== undefined)
+            updateData.error = e;
+        const { error } = await supabase
+            .from('tasks')
+            .update(updateData)
+            .eq('id', tid);
+        if (error)
+            throw error;
+        if (uid) {
+            sseService.sendToUser(uid, {
+                type: 'task_update',
+                taskId: tid,
+                status: s,
+                result: r,
+                error: e
+            });
+        }
+    }
+    async getTasks(client, userId, status, options) {
+        const { offset, end } = getPaginationParams(options);
+        let query = client
+            .from('tasks')
+            .select('*', { count: 'exact' })
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .range(offset, end);
+        if (status && status !== 'all') {
+            query = query.eq('status', status);
+        }
+        const { data, error, count } = await query;
+        if (error)
+            throw new Error(`Failed to fetch tasks: ${error.message}`);
+        return { tasks: data, total: count || 0 };
+    }
+    async getTask(client, taskId, userId) {
+        const { data, error } = await client
+            .from('tasks')
+            .select('*')
+            .eq('id', taskId)
+            .eq('user_id', userId)
+            .single();
+        if (error && error.code !== 'PGRST116')
+            throw new Error(`Failed to fetch task: ${error.message}`);
+        return data;
+    }
+    async getPendingTasks(client) {
+        const { data, error } = await client
+            .from('tasks')
+            .select('*')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: true })
+            .limit(10);
+        if (error)
+            throw error;
+        return data;
+    }
+    async retryTask(client, taskId, userId) {
+        const { data: task, error: fetchError } = await client
+            .from('tasks')
+            .select('*')
+            .eq('id', taskId)
+            .eq('user_id', userId)
+            .single();
+        if (fetchError || !task)
+            throw new Error('Task not found');
+        const { data, error } = await client
+            .from('tasks')
+            .update({ status: 'pending', error: null, result: null, updated_at: new Date().toISOString() })
+            .eq('id', taskId)
+            .select()
+            .single();
+        if (error)
+            throw new Error(`Failed to retry task: ${error.message}`);
+        await taskQueue.add(data.type, { taskId: data.id });
+        return data;
+    }
+    async deleteTask(client, taskId, userId) {
+        const { error } = await client
+            .from('tasks')
+            .delete()
+            .eq('id', taskId)
+            .eq('user_id', userId);
+        if (error)
+            throw new Error(`Failed to delete task: ${error.message}`);
+    }
+    async processTask(taskId, userId, type, payload) {
+        const supabase = defaultClient;
+        const processor = getProcessor(type);
+        if (!processor) {
+            logger.error(`No processor found for task type: ${type}`);
+            await this.updateTaskStatus(supabase, taskId, 'failed', null, `Unknown task type: ${type}`, userId);
+            return;
+        }
+        await processor.process(taskId, userId, payload, supabase, this.updateTaskStatus.bind(this));
+    }
+}
+export const taskService = new TaskService();
+//# sourceMappingURL=taskService.js.map

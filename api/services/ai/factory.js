@@ -1,0 +1,31 @@
+import { DeepseekProvider } from './providers/deepseek.js';
+import { VolcengineProvider } from './providers/volcengine.js';
+import { AliyunProvider } from './providers/aliyun.js';
+import { getDefaultProvider, getProviderForTask, getProviderConfig } from './config.js';
+export const getAIProvider = async (type) => {
+    const targetType = type || await getDefaultProvider();
+    const config = await getProviderConfig(targetType);
+    switch (targetType) {
+        case 'deepseek':
+            return new DeepseekProvider(config);
+        case 'volcengine':
+            return new VolcengineProvider(config);
+        case 'aliyun':
+            return new AliyunProvider(config);
+        default:
+            throw new Error(`Unsupported AI Provider: ${targetType}`);
+    }
+};
+export const getAIProviderForTask = async (task = 'text', providerOverride, modelOverride) => {
+    const defaultProviderType = await getProviderForTask(task);
+    const providerType = providerOverride || defaultProviderType;
+    const provider = await getAIProvider(providerType);
+    if (modelOverride) {
+        return {
+            ...provider,
+            model: modelOverride
+        };
+    }
+    return provider;
+};
+//# sourceMappingURL=factory.js.map

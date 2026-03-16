@@ -77,9 +77,11 @@ export class VolcengineProvider extends BaseAIProvider {
         });
       }
 
-      const data = await response.json();
+      const data = await response.json() as {
+        data?: { embedding?: number[] } | Array<{ embedding?: number[] }>;
+      };
       
-      if (data && data.data && data.data.embedding) {
+      if (data && data.data && !Array.isArray(data.data) && data.data.embedding) {
         return data.data.embedding;
       } 
       else if (data && data.data && Array.isArray(data.data) && data.data.length > 0 && data.data[0].embedding) {

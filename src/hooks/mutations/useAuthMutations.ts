@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../services/api";
+import { authApi, type LoginData, type RegisterData, type UpdateProfileData } from "../../services/api/auth";
 import { useStore } from "../../store/useStore";
 import { queryKeys } from "../queries/config";
 
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.auth.login,
+    mutationFn: (data: LoginData) => authApi.login(data),
     onSuccess: (data) => {
       if (data.user) {
         queryClient.setQueryData(queryKeys.user, { user: data.user });
@@ -18,7 +18,7 @@ export const useLoginMutation = () => {
 export const useRegisterMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.auth.register,
+    mutationFn: (data: RegisterData) => authApi.register(data),
     onSuccess: (data) => {
       if (data.user) {
         queryClient.setQueryData(queryKeys.user, { user: data.user });
@@ -30,7 +30,7 @@ export const useRegisterMutation = () => {
 export const useLogoutMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.auth.logout,
+    mutationFn: () => authApi.logout(),
     onSuccess: () => {
       queryClient.setQueryData(queryKeys.user, null);
       queryClient.clear();
@@ -41,7 +41,7 @@ export const useLogoutMutation = () => {
 export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.auth.updateProfile,
+    mutationFn: (data: UpdateProfileData) => authApi.updateProfile(data),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.user, data);
       queryClient.invalidateQueries({ queryKey: queryKeys.user });
@@ -51,5 +51,11 @@ export const useUpdateProfileMutation = () => {
         setUser(data.user, token);
       }
     },
+  });
+};
+
+export const useRefreshTokenMutation = () => {
+  return useMutation({
+    mutationFn: (refreshToken: string) => authApi.refreshToken(refreshToken),
   });
 };

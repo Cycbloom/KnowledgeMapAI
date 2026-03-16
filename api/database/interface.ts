@@ -462,14 +462,10 @@ export interface DatabaseInterface {
   execute(sql: string, params?: unknown[]): Promise<{ changes: number; lastInsertRowid: unknown }>;
 }
 
-export type DatabaseMode = 'local' | 'cloud';
+export type DatabaseMode = 'cloud';
 
 export interface DatabaseConfig {
-  mode: DatabaseMode;
-  sqlite?: {
-    path: string;
-  };
-  supabase?: {
+  supabase: {
     url: string;
     key: string;
   };

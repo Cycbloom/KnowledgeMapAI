@@ -3,9 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useRegisterMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../hooks';
-import { Sun, Moon, Database, Cloud } from 'lucide-react';
+import { Sun, Moon, Cloud } from 'lucide-react';
 import { isValidationError } from '../utils/errors';
-import { authConfig, getAuthModeDisplay } from '../config/authConfig';
+import { getAuthModeDisplay } from '../config/authConfig';
 
 export const Register = () => {
   const [email, setEmail] = useState('');
@@ -41,7 +41,7 @@ export const Register = () => {
       <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md w-96 transition-colors duration-300">
         <h2 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">注册</h2>
         <div className="flex items-center justify-center gap-1.5 mb-6 text-xs text-gray-500 dark:text-gray-400">
-          {authConfig.isLocal() ? <Database size={14} /> : <Cloud size={14} />}
+          <Cloud size={14} />
           <span>{getAuthModeDisplay()}</span>
         </div>
         {errors.length > 0 && (

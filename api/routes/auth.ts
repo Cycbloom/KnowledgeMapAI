@@ -87,6 +87,25 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
       hasSession: !!authData.session,
     });
 
+    const { error: profileError } = await supabaseAdmin
+      .from('users')
+      .insert([
+        {
+          id: authData.user.id,
+          email,
+          name,
+          password_hash: 'MANAGED_BY_SUPABASE_AUTH',
+        },
+      ]);
+
+    if (profileError) {
+      logger.warn('Failed to create user profile, may already exist', {
+        requestId,
+        userId: authData.user.id,
+        error: profileError,
+      });
+    }
+
     let session = authData.session;
     if (!session) {
       logger.info('No session returned, attempting to sign in', { requestId });

@@ -1,19 +1,27 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { useStore } from '../../store/useStore';
-import { createErrorFromResponse } from '../../utils/errors';
-import { TokenRefreshManager } from './TokenRefreshManager';
-import { getMobileApiBaseUrl } from '../../config/mobileApiConfig';
+import axios, {
+  AxiosInstance,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
+import { useStore } from "../../store/useStore";
+import { createErrorFromResponse } from "../../utils/errors";
+import { TokenRefreshManager } from "./TokenRefreshManager";
+import { getMobileApiBaseUrl } from "../../config/mobileApiConfig";
+
+const isMobileClient = (): boolean => {
+  return !!(window as any).Capacitor?.isNativePlatform?.();
+};
 
 export const getCookie = (name: string): string | null => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
   return null;
 };
 
 export const createApiClient = (): AxiosInstance => {
   const mobileBaseUrl = getMobileApiBaseUrl();
-  const baseURL = mobileBaseUrl ? `${mobileBaseUrl}/api` : '/api';
+  const baseURL = mobileBaseUrl ? `${mobileBaseUrl}/api` : "/api";
 
   const client = axios.create({
     baseURL,
@@ -23,21 +31,25 @@ export const createApiClient = (): AxiosInstance => {
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       const token = useStore.getState().token;
-      const csrfToken = getCookie('csrf-token');
+      const csrfToken = getCookie("csrf-token");
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
       if (csrfToken) {
-        config.headers['x-csrf-token'] = csrfToken;
+        config.headers["x-csrf-token"] = csrfToken;
+      }
+
+      if (isMobileClient()) {
+        config.headers["x-mobile-client"] = "true";
       }
 
       return config;
     },
     (error) => {
       return Promise.reject(error);
-    }
+    },
   );
 
   client.interceptors.response.use(
@@ -45,7 +57,9 @@ export const createApiClient = (): AxiosInstance => {
       return response.data;
     },
     async (error: AxiosError) => {
-      const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+      const originalRequest = error.config as InternalAxiosRequestConfig & {
+        _retry?: boolean;
+      };
 
       if (!originalRequest) {
         return Promise.reject(error);
@@ -62,8 +76,8 @@ export const createApiClient = (): AxiosInstance => {
       if (
         tokenRefreshManager.shouldRefreshToken(appError) &&
         !originalRequest._retry &&
-        !originalRequest.url?.includes('/auth/login') &&
-        !originalRequest.url?.includes('/auth/refresh')
+        !originalRequest.url?.includes("/auth/login") &&
+        !originalRequest.url?.includes("/auth/refresh")
       ) {
         originalRequest._retry = true;
 
@@ -77,7 +91,7 @@ export const createApiClient = (): AxiosInstance => {
       }
 
       return Promise.reject(appError);
-    }
+    },
   );
 
   return client;

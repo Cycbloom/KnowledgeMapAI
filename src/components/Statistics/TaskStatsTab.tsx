@@ -98,17 +98,17 @@ const MetricCard: React.FC<{
   const { isDark } = useTheme();
   return (
     <div
-      className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+      className={`p-4 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
     >
       <div className="flex items-start justify-between">
-        <div>
+        <div className="flex-1 min-w-0">
           <p
-            className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
           >
             {title}
           </p>
           <h3
-            className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-gray-900"}`}
+            className={`text-xl md:text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-gray-900"}`}
           >
             {value}
           </h3>
@@ -120,7 +120,7 @@ const MetricCard: React.FC<{
             </p>
           )}
         </div>
-        <div className={`p-3 rounded-full ${color}`}>{icon}</div>
+        <div className={`p-2 rounded-full ${color} flex-shrink-0 ml-2`}>{icon}</div>
       </div>
       {change !== undefined && (
         <div
@@ -142,14 +142,14 @@ const CompletionTrendChart: React.FC<{
   isDark: boolean;
 }> = ({ data, isDark }) => (
   <div
-    className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+    className={`p-4 md:p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
   >
     <h3
-      className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+      className={`text-base md:text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
     >
       任务完成趋势（近30天）
     </h3>
-    <div className="h-64">
+    <div className="h-48 md:h-64">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
@@ -174,12 +174,13 @@ const CompletionTrendChart: React.FC<{
             }}
             axisLine={false}
             tickLine={false}
-            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 11 }}
+            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 11 }}
+            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
+            width={30}
           />
           <RechartsTooltip
             contentStyle={{
@@ -235,21 +236,21 @@ const TimeDistributionHeatmap: React.FC<{
 
   return (
     <div
-      className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+      className={`p-4 md:p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
     >
       <h3
-        className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+        className={`text-base md:text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
       >
         时间分布热力图
       </h3>
-      <div className="overflow-x-auto">
-        <div className="min-w-[600px]">
+      <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+        <div className="min-w-[500px] md:min-w-[600px]">
           <div className="flex">
-            <div className="w-12" />
+            <div className="w-10 md:w-12" />
             {hours.map((h) => (
               <div
                 key={h}
-                className={`w-8 text-center text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                className={`w-6 md:w-8 text-center text-[10px] md:text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
               >
                 {h}
               </div>
@@ -258,7 +259,7 @@ const TimeDistributionHeatmap: React.FC<{
           {days.map((day, dayIndex) => (
             <div key={day} className="flex items-center">
               <div
-                className={`w-12 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                className={`w-10 md:w-12 text-[10px] md:text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
               >
                 {day}
               </div>
@@ -267,7 +268,7 @@ const TimeDistributionHeatmap: React.FC<{
                 return (
                   <div
                     key={h}
-                    className="w-8 h-6 m-0.5 rounded-sm transition-colors"
+                    className="w-6 h-5 md:w-8 md:h-6 m-0.5 rounded-sm transition-colors"
                     style={{ backgroundColor: getHeatmapColor(value) }}
                     title={`${day} ${h}:00 - 完成 ${value} 个任务`}
                   />
@@ -277,21 +278,21 @@ const TimeDistributionHeatmap: React.FC<{
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-end gap-2 mt-4">
+      <div className="flex items-center justify-end gap-1 md:gap-2 mt-4">
         <span
-          className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          className={`text-[10px] md:text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
         >
           少
         </span>
         {[0, 2, 4, 6, 8].map((v) => (
           <div
             key={v}
-            className="w-4 h-4 rounded-sm"
+            className="w-3 h-3 md:w-4 md:h-4 rounded-sm"
             style={{ backgroundColor: getHeatmapColor(v) }}
           />
         ))}
         <span
-          className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
+          className={`text-[10px] md:text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
         >
           多
         </span>
@@ -718,12 +719,12 @@ export const TaskStatsTab: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Efficiency Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
           title="今日完成"
           value={overview.todayCompleted}
           subtext="任务"
-          icon={<CheckCircle size={20} className="text-white" />}
+          icon={<CheckCircle size={18} className="text-white" />}
           color="bg-green-500"
           change={comparison?.change?.completedChange}
         />
@@ -731,21 +732,21 @@ export const TaskStatsTab: React.FC = () => {
           title="本周完成"
           value={overview.weekCompleted}
           subtext="任务"
-          icon={<Calendar size={20} className="text-white" />}
+          icon={<Calendar size={18} className="text-white" />}
           color="bg-blue-500"
         />
         <MetricCard
           title="本月完成"
           value={overview.monthCompleted}
           subtext="任务"
-          icon={<Target size={20} className="text-white" />}
+          icon={<Target size={18} className="text-white" />}
           color="bg-purple-500"
         />
         <MetricCard
           title="平均时长"
           value={overview.avgDuration}
           subtext="分钟"
-          icon={<Clock size={20} className="text-white" />}
+          icon={<Clock size={18} className="text-white" />}
           color="bg-amber-500"
           change={comparison?.change?.avgDurationChange}
         />

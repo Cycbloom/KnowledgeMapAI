@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
-import { useErrorHandler } from "../../hooks";
+import { useErrorHandler, useIsMobile } from "../../hooks";
 import { useTopicCheck } from "../../hooks";
 
 interface AutoGraphGeneratorProps {
@@ -96,6 +96,7 @@ interface NodeItemProps {
   depth: number;
   style: 'academic' | 'practical' | 'beginner' | 'custom';
   graphId?: string;
+  isMobile?: boolean;
   onExpand: (nodeId: string) => Promise<TreeNode[] | null>;
   onNodeUpdate: (nodeId: string, updates: Partial<TreeNode>) => void;
 }
@@ -105,6 +106,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
   depth, 
   style, 
   graphId,
+  isMobile,
   onExpand,
   onNodeUpdate 
 }) => {
@@ -140,36 +142,36 @@ const NodeItem: React.FC<NodeItemProps> = ({
   };
 
   const hasChildren = node.children && node.children.length > 0;
-  const indent = depth * 16;
+  const indent = depth * (isMobile ? 12 : 16);
 
   return (
     <div className="node-item">
       <div 
-        className={`p-3 rounded-lg border cursor-pointer hover:shadow-sm transition-all ${getLevelColor(node.level)}`}
+        className={`${isMobile ? 'p-2' : 'p-3'} rounded-lg border cursor-pointer hover:shadow-sm transition-all ${getLevelColor(node.level)}`}
         style={{ marginLeft: `${indent}px` }}
         onClick={toggleExpand}
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="font-medium truncate">{node.title}</div>
-            <p className="text-sm mt-1 opacity-70 line-clamp-1">{node.content}</p>
+            <div className={`font-medium truncate ${isMobile ? 'text-sm' : ''}`}>{node.title}</div>
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} mt-1 opacity-70 line-clamp-1`}>{node.content}</p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
             <button
               onClick={handleExpand}
               disabled={node.isLoading || isExpanding}
-              className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 transition-colors"
+              className={`${isMobile ? 'p-1' : 'p-1.5'} bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 transition-colors`}
               title="AI 展开此节点"
             >
               {node.isLoading || isExpanding ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={isMobile ? 12 : 14} className="animate-spin" />
               ) : (
-                <Sparkles size={14} />
+                <Sparkles size={isMobile ? 12 : 14} />
               )}
             </button>
             {hasChildren && (
               <ChevronRight 
-                size={16} 
+                size={isMobile ? 14 : 16} 
                 className={`transition-transform ${node.isExpanded ? 'rotate-90' : ''}`} 
               />
             )}
@@ -192,6 +194,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
                 depth={depth + 1}
                 style={style}
                 graphId={graphId}
+                isMobile={isMobile}
                 onExpand={onExpand}
                 onNodeUpdate={onNodeUpdate}
               />
@@ -208,6 +211,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   onGraphGenerated,
   onClose
 }) => {
+  const { isMobile } = useIsMobile();
   const [topic, setTopic] = useState('');
   const [style, setStyle] = useState<'academic' | 'practical' | 'beginner' | 'custom'>('academic');
   const [customPrompt, setCustomPrompt] = useState('');
@@ -440,25 +444,25 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   }, [graphId, rootNode, topic, collectAllNodes, onGraphGenerated, onClose, addMessage, handleError]);
 
   return (
-    <div className="auto-graph-generator bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg">
-            <Layers className="w-6 h-6 text-white" />
+    <div className={`auto-graph-generator bg-white dark:bg-slate-800 ${isMobile ? 'rounded-none' : 'rounded-xl'} shadow-lg ${isMobile ? 'p-4' : 'p-6'} w-full ${isMobile ? 'h-full' : 'max-w-2xl max-h-[90vh]'} overflow-y-auto`}>
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className={`${isMobile ? 'p-1.5' : 'p-2'} bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg`}>
+            <Layers className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI 知识图谱生成器</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">渐进式生成，无限展开</p>
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900 dark:text-white`}>AI 知识图谱生成器</h2>
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 dark:text-gray-400`}>渐进式生成，无限展开</p>
           </div>
         </div>
         {onClose && (
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg">
-            <X size={20} />
+            <X size={isMobile ? 18 : 20} />
           </button>
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         <AnimatePresence mode="wait">
           {isInputCollapsed && rootNode ? (
             <motion.div
@@ -466,21 +470,21 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg"
+              className="p-2 md:p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">主题：</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{topic}</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 px-2 py-0.5 bg-gray-200 dark:bg-slate-600 rounded">
+                  <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-300`}>主题：</span>
+                  <span className={`font-medium text-gray-900 dark:text-white ${isMobile ? 'text-sm' : ''}`}>{topic}</span>
+                  <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 dark:text-gray-500 px-2 py-0.5 bg-gray-200 dark:bg-slate-600 rounded`}>
                     {style === 'custom' ? '自定义' : style === 'academic' ? '学术' : style === 'practical' ? '实用' : '入门'}
                   </span>
                 </div>
                 <button
                   onClick={() => setIsInputCollapsed(false)}
-                  className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                  className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-blue-500 hover:text-blue-600 flex items-center gap-1`}
                 >
-                  <ChevronDown size={14} />
+                  <ChevronDown size={isMobile ? 12 : 14} />
                   修改
                 </button>
               </div>
@@ -491,10 +495,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="space-y-4"
+              className="space-y-3 md:space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}>
                   主题 <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -503,7 +507,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     placeholder="例如：机器学习基础、量子计算入门"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
+                    className={`w-full ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-3'} border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
                       isDuplicate 
                         ? 'border-amber-500 focus:ring-amber-500' 
                         : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
@@ -516,8 +520,8 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 </div>
                 {isDuplicate && similarGraphs.length > 0 && !graphId && (
                   <div className="mt-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm">
+                    <AlertCircle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} mt-0.5 flex-shrink-0`} />
+                    <div className={`${isMobile ? 'text-xs' : 'text-sm'}`}>
                       <p className="font-medium">主题重复</p>
                       <p className="mt-0.5">
                         与现有图谱「{similarGraphs[0].title}」相似度为 {(similarGraphs[0].similarity * 100).toFixed(1)}%
@@ -528,10 +532,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}>
                   生成风格
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className={`grid ${isMobile ? 'grid-cols-2 gap-1.5' : 'grid-cols-4 gap-2'}`}>
                   {styleOptions.map((option) => {
                     const Icon = option.icon;
                     return (
@@ -539,23 +543,23 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         key={option.value}
                         onClick={() => setStyle(option.value as any)}
                         disabled={isInitializing}
-                        className={`p-2 rounded-lg border-2 transition-all text-left ${
+                        className={`${isMobile ? 'p-2' : 'p-2'} rounded-lg border-2 transition-all text-left ${
                           style === option.value
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
                         }`}
                       >
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <Icon className={`w-3.5 h-3.5 ${
+                        <div className={`flex items-center gap-1 ${isMobile ? 'mb-0.5' : 'mb-0.5'}`}>
+                          <Icon className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'} ${
                             style === option.value ? 'text-blue-500' : 'text-gray-400'
                           }`} />
-                          <span className={`text-xs font-medium ${
+                          <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium ${
                             style === option.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
                           }`}>
                             {option.label}
                           </span>
                         </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">
+                        <p className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} text-gray-500 dark:text-gray-400 line-clamp-1`}>
                           {option.details}
                         </p>
                       </button>
@@ -571,8 +575,8 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="flex items-center justify-between mb-2 mt-3">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <div className={`flex items-center justify-between ${isMobile ? 'mb-1.5 mt-2' : 'mb-2 mt-3'}`}>
+                        <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-700 dark:text-gray-300`}>
                           自定义生成规则
                         </label>
                         <button
@@ -590,9 +594,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                             }
                           }}
                           disabled={isInitializing}
-                          className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:opacity-50"
+                          className={`flex items-center gap-1 px-2 py-1 ${isMobile ? 'text-[10px]' : 'text-xs'} bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:opacity-50`}
                         >
-                          <Sparkles size={12} />
+                          <Sparkles size={isMobile ? 10 : 12} />
                           AI 优化
                         </button>
                       </div>
@@ -600,10 +604,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         value={customPrompt}
                         onChange={(e) => setCustomPrompt(e.target.value)}
                         placeholder="例如：请用简单的语言解释概念，每个节点不超过50字，重点关注实际应用场景..."
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white min-h-[100px] resize-y"
+                        className={`w-full ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? 'min-h-[80px]' : 'min-h-[100px]'} resize-y`}
                         disabled={isInitializing}
                       />
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 mt-1`}>
                         描述你希望 AI 如何生成知识图谱节点
                       </p>
                     </motion.div>
@@ -613,9 +617,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200`}
               >
-                {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {showAdvanced ? <ChevronUp size={isMobile ? 14 : 16} /> : <ChevronDown size={isMobile ? 14 : 16} />}
                 参考来源
               </button>
 
@@ -625,7 +629,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="space-y-3 overflow-hidden"
+                    className="space-y-2 md:space-y-3 overflow-hidden"
                   >
                     <div className="flex gap-2">
                       <input
@@ -633,15 +637,15 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         value={newSource}
                         onChange={(e) => setNewSource(e.target.value)}
                         placeholder="输入 URL 或文本内容"
-                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-slate-700 dark:text-white"
+                        className={`flex-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white`}
                         disabled={isInitializing}
                       />
                       <button
                         onClick={handleAddSource}
                         disabled={isInitializing || !newSource.trim()}
-                        className="px-3 py-2 bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50"
+                        className={`${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'} bg-gray-100 dark:bg-slate-600 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 disabled:opacity-50`}
                       >
-                        <Plus size={16} />
+                        <Plus size={isMobile ? 14 : 16} />
                       </button>
                     </div>
                     {sources.length > 0 && (
@@ -649,7 +653,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         {sources.map((source, index) => (
                           <span
                             key={index}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded text-xs"
+                            className={`inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-slate-600 rounded ${isMobile ? 'text-[10px]' : 'text-xs'}`}
                           >
                             {source.slice(0, 30)}...
                             <button
@@ -669,16 +673,16 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               <button
                 onClick={handleInitialize}
                 disabled={isInitializing || !topic.trim() || isChecking || isDuplicate}
-                className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className={`w-full ${isMobile ? 'py-2.5 px-3 text-sm' : 'py-3 px-4'} bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
               >
                 {isInitializing ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} animate-spin`} />
                     正在初始化...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" />
+                    <Sparkles className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                     开始生成
                   </>
                 )}
@@ -691,23 +695,24 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-3 md:space-y-4"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-gray-900 dark:text-white`}>
                 生成结果
               </h3>
-              <span className="text-sm text-gray-500">
+              <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500`}>
                 点击 ✨ 展开任意节点
               </span>
             </div>
 
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className={`space-y-2 ${isMobile ? 'max-h-[300px]' : 'max-h-[400px]'} overflow-y-auto`}>
               <NodeItem
                 node={rootNode}
                 depth={0}
                 style={style}
                 graphId={createdGraphId || graphId}
+                isMobile={isMobile}
                 onExpand={handleExpandWrapper}
                 onNodeUpdate={handleNodeUpdate}
               />
@@ -716,12 +721,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             <button
               onClick={handleSaveToGraph}
               disabled={isSaving || (rootNode && hasAnyNodeLoading(rootNode))}
-              className="w-full py-2 px-4 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2"
+              className={`w-full ${isMobile ? 'py-2 px-3 text-sm' : 'py-2 px-4'} bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2`}
             >
               {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} animate-spin`} />
               ) : (
-                <Check className="w-4 h-4" />
+                <Check className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
               )}
               {graphId ? '保存到当前图谱' : '创建新图谱并保存'}
             </button>

@@ -33,6 +33,7 @@ import {
   MessageBar,
   OfflineIndicator,
   FocusTimer,
+  MobileFocusTimer,
   HelpModal,
   SSEStatusIndicator,
 } from "../common";
@@ -40,6 +41,7 @@ import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
 import { useTheme } from "../../hooks";
+import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
 
 interface SidebarLinkProps {
@@ -76,6 +78,7 @@ export const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
+  const { isMobile } = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -210,6 +213,7 @@ export const Layout = () => {
             transform md:relative md:translate-x-0
             ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
             w-64 ${isCollapsed ? "md:w-20" : "md:w-64"}
+            pt-[var(--safe-area-inset-top)]
           `}
           >
             {/* Sidebar Header (Desktop) */}
@@ -340,7 +344,7 @@ export const Layout = () => {
             </nav>
 
             {/* Sidebar Footer */}
-            <div className="p-4 border-t border-slate-700">
+            <div className="p-4 border-t border-slate-700 pb-[var(--safe-area-inset-bottom)]">
               <button
                 onClick={handleLogout}
                 className={`flex items-center ${isCollapsed && !isMobileMenuOpen ? "justify-center" : "space-x-2"} text-gray-400 hover:text-white w-full p-2 hover:bg-slate-800 rounded transition-colors`}
@@ -358,7 +362,7 @@ export const Layout = () => {
           {/* Top Header */}
           {!isFullScreenPage && (
             <header
-              className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${
+              className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative pt-[var(--safe-area-inset-top)] ${
                 isDark
                   ? "bg-slate-900 border-slate-800"
                   : "bg-white border-gray-200"
@@ -368,7 +372,11 @@ export const Layout = () => {
               <div className="flex-shrink-0 flex items-center gap-2">
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="md:hidden p-1.5 -ml-1"
+                  className={`md:hidden p-1.5 -ml-1 rounded-lg transition-colors ${
+                    isDark
+                      ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
                 >
                   {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
                 </button>
@@ -442,7 +450,7 @@ export const Layout = () => {
           </div>
           <MessageBar />
           <OfflineIndicator />
-          <FocusTimer />
+          {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
         </div>
       </div>

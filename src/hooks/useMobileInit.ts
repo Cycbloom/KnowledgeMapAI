@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { App } from '@capacitor/app';
-import { Network } from '@capacitor/network';
-import { SplashScreen } from '@capacitor/splash-screen';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { StatusBar, Style } from "@capacitor/status-bar";
+import { App } from "@capacitor/app";
+import { Network } from "@capacitor/network";
+import { SplashScreen } from "@capacitor/splash-screen";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function useMobileInit() {
   const [isMobile, setIsMobile] = useState(false);
@@ -24,43 +24,43 @@ export function useMobileInit() {
     const initMobile = async () => {
       try {
         await SplashScreen.hide();
-        
+
         await StatusBar.setStyle({ style: Style.Dark });
-        await StatusBar.setBackgroundColor({ color: '#ffffff' });
+        await StatusBar.setBackgroundColor({ color: "#ffffff" });
       } catch (error) {
-        console.log('StatusBar not available:', error);
+        console.log("StatusBar not available:", error);
       }
 
       try {
         const status = await Network.getStatus();
         setIsOnline(status.connected);
       } catch (error) {
-        console.log('Network status not available:', error);
+        console.log("Network status not available:", error);
       }
 
-      Network.addListener('networkStatusChange', (status) => {
+      Network.addListener("networkStatusChange", (status) => {
         setIsOnline(status.connected);
         if (!status.connected) {
-          console.log('Network disconnected');
+          console.log("Network disconnected");
         } else {
-          console.log('Network connected');
+          console.log("Network connected");
         }
       });
     };
 
     initMobile();
 
-    const backButtonListener = App.addListener('backButton', ({ canGoBack }) => {
-      const publicRoutes = ['/login', '/register'];
+    const backButtonListener = App.addListener("backButton", () => {
+      const publicRoutes = ["/login", "/register"];
       const isPublicRoute = publicRoutes.includes(location.pathname);
-      const isGraphRoute = location.pathname.startsWith('/graph/');
-      
+      const isGraphRoute = location.pathname.startsWith("/graph/");
+
       if (isPublicRoute || isGraphRoute) {
         App.exitApp();
         return;
       }
 
-      if (location.pathname === '/') {
+      if (location.pathname === "/") {
         App.exitApp();
       } else {
         navigate(-1);
@@ -77,10 +77,41 @@ export function useMobileInit() {
 }
 
 export function useSafeAreaInsets() {
-  return {
-    top: 'var(--safe-area-inset-top, 0px)',
-    bottom: 'var(--safe-area-inset-bottom, 0px)',
-    left: 'var(--safe-area-inset-left, 0px)',
-    right: 'var(--safe-area-inset-right, 0px)',
-  };
+  const [insets, setInsets] = useState({
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  });
+
+  useEffect(() => {
+    const updateInsets = () => {
+      const computedStyle = getComputedStyle(document.documentElement);
+      const top = parseInt(
+        computedStyle.getPropertyValue("--safe-area-inset-top") || "0",
+        10,
+      );
+      const bottom = parseInt(
+        computedStyle.getPropertyValue("--safe-area-inset-bottom") || "0",
+        10,
+      );
+      const left = parseInt(
+        computedStyle.getPropertyValue("--safe-area-inset-left") || "0",
+        10,
+      );
+      const right = parseInt(
+        computedStyle.getPropertyValue("--safe-area-inset-right") || "0",
+        10,
+      );
+
+      setInsets({ top, bottom, left, right });
+    };
+
+    updateInsets();
+
+    window.addEventListener("resize", updateInsets);
+    return () => window.removeEventListener("resize", updateInsets);
+  }, []);
+
+  return insets;
 }

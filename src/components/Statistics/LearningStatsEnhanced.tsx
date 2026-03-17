@@ -66,9 +66,9 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
   };
 
   return (
-    <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+    <div className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+        <h3 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
           知识掌握热力图
         </h3>
         {totalPages > 1 && (
@@ -102,31 +102,31 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
         )}
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
         {paginatedData.map(item => (
           <div
             key={item.id}
-            className={`relative p-3 rounded-lg border transition-all hover:scale-105 cursor-pointer ${
+            className={`relative p-2 md:p-3 rounded-lg border transition-all hover:scale-105 cursor-pointer ${
               isDark ? 'border-slate-600 hover:border-slate-500' : 'border-gray-200 hover:border-gray-300'
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs font-medium truncate ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <span className={`text-[10px] md:text-xs font-medium truncate ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                 {item.name}
               </span>
-              <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              <span className={`text-[10px] md:text-xs font-bold ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                 {item.masteryRate}%
               </span>
             </div>
             
-            <div className="h-2 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+            <div className="h-1.5 md:h-2 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
               <div 
                 className={`h-full rounded-full transition-all ${getMasteryColor(item.masteryRate)}`}
                 style={{ width: `${item.masteryRate}%` }}
               />
             </div>
             
-            <div className="flex justify-between mt-2 text-[10px]">
+            <div className="flex justify-between mt-1 md:mt-2 text-[8px] md:text-[10px]">
               <span className="text-green-500">{item.mastered} 已掌握</span>
               <span className="text-gray-400">{item.total} 节点</span>
             </div>
@@ -150,21 +150,21 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
   const total = distributionData.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-      <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+    <div className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+      <h3 className={`text-base md:text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
         知识点掌握分布
       </h3>
       
-      <div className="flex items-center">
-        <div className="w-40 h-40">
+      <div className="flex flex-col sm:flex-row items-center">
+        <div className="w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={distributionData}
                 cx="50%"
                 cy="50%"
-                innerRadius={40}
-                outerRadius={60}
+                innerRadius={30}
+                outerRadius={50}
                 paddingAngle={2}
                 dataKey="value"
               >
@@ -185,11 +185,11 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
           </ResponsiveContainer>
         </div>
         
-        <div className="flex-1 ml-4 space-y-2">
+        <div className="flex-1 sm:ml-4 mt-4 sm:mt-0 space-y-2 w-full">
           {distributionData.map(item => (
             <div key={item.name} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
                 <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
                   {item.name}
                 </span>
@@ -416,24 +416,24 @@ export const QuickStatsCards: React.FC<{
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
       {stats.map(stat => (
         <div 
           key={stat.label}
-          className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}
+          className={`rounded-xl p-3 md:p-4 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <div className="flex-1 min-w-0">
+              <p className={`text-[10px] md:text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                 {stat.label}
               </p>
-              <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+              <p className={`text-xl md:text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-800'}`}>
                 {stat.value}
-                {stat.subtext && <span className="text-sm font-normal ml-1">{stat.subtext}</span>}
+                {stat.subtext && <span className="text-xs font-normal ml-1">{stat.subtext}</span>}
               </p>
             </div>
-            <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-              <stat.icon size={20} className={stat.color} />
+            <div className={`p-1.5 md:p-2 rounded-lg ${stat.bgColor} flex-shrink-0 ml-2`}>
+              <stat.icon size={16} className={`${stat.color} md:w-5 md:h-5`} />
             </div>
           </div>
         </div>

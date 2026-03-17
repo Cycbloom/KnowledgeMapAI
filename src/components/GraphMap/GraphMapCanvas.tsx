@@ -87,7 +87,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
     const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
     const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const dragStartRef = useRef({ x: 0, y: 0 });
     const [_hoveredNodeId, _setHoveredNodeId] = useState<string | null>(null);
     const [containerSize, setContainerSize] = useState({
       width: typeof window !== "undefined" ? window.innerWidth : width,
@@ -320,10 +320,10 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             x: touch.clientX - rect.left,
             y: touch.clientY - rect.top,
           };
-          setDragStart({
+          dragStartRef.current = {
             x: touch.clientX - transformRef.current.x,
             y: touch.clientY - transformRef.current.y,
-          });
+          };
         }
       } else if (e.touches.length === 2) {
         const touch1 = e.touches[0];
@@ -365,8 +365,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             }
 
             const newTransform = {
-              x: touch.clientX - dragStart.x,
-              y: touch.clientY - dragStart.y,
+              x: touch.clientX - dragStartRef.current.x,
+              y: touch.clientY - dragStartRef.current.y,
               k: transformRef.current.k,
             };
 
@@ -415,7 +415,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           }
         }
       },
-      [isDragging, dragStart, updateTransformDOM, updateTransformState],
+      [isDragging, updateTransformDOM, updateTransformState],
     );
 
     const handleTouchEnd = useCallback(() => {
@@ -434,13 +434,17 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       svg.addEventListener("wheel", handleWheel, options);
       svg.addEventListener("touchstart", handleTouchStart, options);
       svg.addEventListener("touchmove", handleTouchMove, options);
+      svg.addEventListener("touchend", handleTouchEnd, options);
+      svg.addEventListener("touchcancel", handleTouchEnd, options);
 
       return () => {
         svg.removeEventListener("wheel", handleWheel);
         svg.removeEventListener("touchstart", handleTouchStart);
         svg.removeEventListener("touchmove", handleTouchMove);
+        svg.removeEventListener("touchend", handleTouchEnd);
+        svg.removeEventListener("touchcancel", handleTouchEnd);
       };
-    }, [handleWheel, handleTouchStart, handleTouchMove]);
+    }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
     const handleMouseDown = useCallback(
       (e: React.MouseEvent<SVGSVGElement>) => {
@@ -448,10 +452,10 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           setIsDragging(true);
           setHasMoved(false);
           mouseDownPos.current = { x: e.clientX, y: e.clientY };
-          setDragStart({
+          dragStartRef.current = {
             x: e.clientX - transformRef.current.x,
             y: e.clientY - transformRef.current.y,
-          });
+          };
         }
       },
       [],
@@ -469,8 +473,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           }
 
           const newTransform = {
-            x: e.clientX - dragStart.x,
-            y: e.clientY - dragStart.y,
+            x: e.clientX - dragStartRef.current.x,
+            y: e.clientY - dragStartRef.current.y,
             k: transformRef.current.k,
           };
 
@@ -479,7 +483,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           updateTransformState(newTransform);
         }
       },
-      [isDragging, dragStart, updateTransformDOM, updateTransformState],
+      [isDragging, updateTransformDOM, updateTransformState],
     );
 
     const handleMouseUp = useCallback(() => {

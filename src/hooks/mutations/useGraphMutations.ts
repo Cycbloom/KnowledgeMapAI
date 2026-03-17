@@ -85,7 +85,7 @@ export const usePermanentDeleteGraphMutation = () => {
 const batchOperation = async <T>(
   operation: (ids: string[]) => Promise<T>,
   ids: string[],
-  batchSize = 50
+  batchSize = 50,
 ): Promise<{ count: number }> => {
   const results: { count: number }[] = [];
   for (let i = 0; i < ids.length; i += batchSize) {

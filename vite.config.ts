@@ -1,7 +1,6 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { traeBadgePlugin } from "vite-plugin-trae-solo-badge";
 import { VitePWA } from "vite-plugin-pwa";
 
 function getChunkStrategy(id: string): string | undefined {
@@ -82,20 +81,19 @@ function getChunkStrategy(id: string): string | undefined {
 }
 
 const isElectronBuild = process.env.ELECTRON_BUILD === "true";
+const isMobileBuild = process.env.MOBILE_BUILD === "true";
+
+function getBasePath(): string {
+  if (isElectronBuild || isMobileBuild) {
+    return "./";
+  }
+  return "/";
+}
 
 export default defineConfig({
-  base: isElectronBuild ? "./" : "/",
+  base: getBasePath(),
   plugins: [
     react(),
-    traeBadgePlugin({
-      variant: "dark",
-      position: "bottom-right",
-      prodOnly: true,
-      clickable: true,
-      clickUrl: "https://www.trae.ai/solo?showJoin=1",
-      autoTheme: true,
-      autoThemeTarget: "#root",
-    }),
     tsconfigPaths(),
     VitePWA({
       registerType: "autoUpdate",

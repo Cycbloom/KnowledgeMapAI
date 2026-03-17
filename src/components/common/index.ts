@@ -15,6 +15,7 @@ export { OfflineIndicator } from "./OfflineIndicator.js";
 export { OfflineStatusBar } from "./OfflineStatusBar.js";
 export { ConfirmationModal } from "./ConfirmationModal.js";
 export { FocusTimer } from "./FocusTimer.js";
+export { MobileFocusTimer } from "./MobileFocusTimer.js";
 export { HelpModal } from "./HelpModal.js";
 export { SSEStatusIndicator } from "./SSEStatusIndicator.js";
 export { TagCloud, TagFilter, TagSuggestions, TagInput } from "./TagSystem.js";

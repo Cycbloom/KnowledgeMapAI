@@ -97,10 +97,14 @@ const LearningPathDetail = lazy(() =>
   })),
 );
 const QuizPreview = lazy(() =>
-  import("./pages/QuizPreview").then((module) => ({ default: module.QuizPreview })),
+  import("./pages/QuizPreview").then((module) => ({
+    default: module.QuizPreview,
+  })),
 );
 const QuizPractice = lazy(() =>
-  import("./pages/QuizPractice").then((module) => ({ default: module.QuizPractice })),
+  import("./pages/QuizPractice").then((module) => ({
+    default: module.QuizPractice,
+  })),
 );
 
 const LoadingFallback = () => (
@@ -118,7 +122,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   useMobileInit();
-  
+
   return (
     <ErrorBoundary>
       <LoadingBar />
@@ -126,7 +130,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
+
           {/* 公开图谱路由 - 允许未登录用户访问 */}
           <Route path="/graph/:id" element={<GraphEditor />} />
 

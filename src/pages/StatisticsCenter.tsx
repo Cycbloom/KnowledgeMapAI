@@ -8,8 +8,8 @@ import { TaskStatsTab } from "../components/Statistics/TaskStatsTab";
 type StatsTab = "learning" | "tasks";
 
 const tabs: { id: StatsTab; label: string; icon: React.ReactNode }[] = [
-  { id: "learning", label: "学习统计", icon: <BookOpen size={20} /> },
-  { id: "tasks", label: "任务统计", icon: <CheckSquare size={20} /> },
+  { id: "learning", label: "学习统计", icon: <BookOpen size={18} /> },
+  { id: "tasks", label: "任务统计", icon: <CheckSquare size={18} /> },
 ];
 
 export const StatisticsCenter: React.FC = () => {
@@ -20,26 +20,26 @@ export const StatisticsCenter: React.FC = () => {
     <div
       className={`h-full overflow-y-auto ${isDark ? "bg-slate-900" : "bg-gray-50"}`}
     >
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <h1
-            className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+            className={`text-2xl md:text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
           >
             统计中心
           </h1>
-          <p className={`mt-2 ${isDark ? "text-slate-400" : "text-gray-600"}`}>
+          <p className={`mt-1 md:mt-2 text-sm md:text-base ${isDark ? "text-slate-400" : "text-gray-600"}`}>
             全面分析您的学习和任务完成情况
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-6 md:mb-8">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
+              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-sm md:text-base font-medium transition-all ${
                 activeTab === tab.id
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
                   : isDark

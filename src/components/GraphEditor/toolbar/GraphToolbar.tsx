@@ -180,7 +180,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
     return (
       <div className={`fixed bottom-0 left-0 right-0 z-50 ${
         isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-gray-200'
-      } border-t backdrop-blur-lg safe-area-bottom`}>
+      } border-t backdrop-blur-lg pb-[var(--safe-area-inset-bottom)]`}>
         <div className="flex justify-around items-center h-14 px-2">
           {navItems.map((item, index) => (
             <button

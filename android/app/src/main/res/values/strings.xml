@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KnowledgeMap</string>
+    <string name="title_activity_main">KnowledgeMap</string>
+    <string name="package_name">com.knowledgemap.app</string>
+    <string name="custom_url_scheme">com.knowledgemap.app</string>
+</resources>

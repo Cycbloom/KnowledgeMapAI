@@ -75,7 +75,7 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl max-h-[80vh] overflow-hidden"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl max-h-[80vh] overflow-hidden pb-[var(--safe-area-inset-bottom)]"
           >
             <div className="flex justify-center pt-2 pb-1">
               <div className="w-10 h-1 bg-gray-300 dark:bg-slate-600 rounded-full" />
@@ -128,8 +128,6 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
                 </span>
               </button>
             </div>
-
-            <div className="h-[env(safe-area-inset-bottom,16px)]" />
           </motion.div>
         </>
       )}

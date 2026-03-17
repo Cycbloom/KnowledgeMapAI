@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-export const MOBILE_API_BASE_URL = 'http://192.168.1.100:3001';
+export const MOBILE_API_BASE_URL = "http://192.168.0.6:3001";
 
 export function useMobileApiConfig() {
   const [isMobile, setIsMobile] = useState(false);
@@ -18,5 +18,5 @@ export function getMobileApiBaseUrl(): string {
   if (isCapacitor) {
     return MOBILE_API_BASE_URL;
   }
-  return '';
+  return "";
 }

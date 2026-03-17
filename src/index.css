@@ -102,11 +102,6 @@
   background: transparent;
 }
 
-html {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
 /* 暗色模式下的滚动条 */
 .dark .custom-scrollbar {
   scrollbar-color: rgba(71, 85, 105, 0.4) transparent;
@@ -170,6 +165,20 @@ html {
   /* Scheduler Card */
   --scheduler-card-bg: rgba(15, 23, 42, 0.8);
   --scheduler-card-border: rgba(51, 65, 85, 0.5);
+}
+
+/* Global safe area padding for mobile devices */
+html {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+/* Ensure body takes full height accounting for safe areas */
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 @keyframes rotate {

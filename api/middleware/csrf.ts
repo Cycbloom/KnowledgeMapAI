@@ -22,7 +22,9 @@ const generateToken = (): string => {
 };
 
 const shouldSkipCsrf = (req: Request): boolean => {
-  return SKIP_CSRF_ROUTES.some(route => req.path === route || req.path.startsWith(route + '/'));
+  const isMobileClient = req.headers['x-mobile-client'] === 'true';
+  const isRouteSkipped = SKIP_CSRF_ROUTES.some(route => req.path === route || req.path.startsWith(route + '/'));
+  return isMobileClient || isRouteSkipped;
 };
 
 const getCookieOptions = () => {

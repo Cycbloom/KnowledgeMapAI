@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
 import { LoadingBar, ErrorBoundary } from "./components/common";
+import { useMobileInit } from "./hooks/useMobileInit";
 
 // Lazy Load Pages
 const Login = lazy(() =>
@@ -116,6 +117,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  useMobileInit();
+  
   return (
     <ErrorBoundary>
       <LoadingBar />

@@ -134,6 +134,12 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  /* Safe Area Insets for mobile devices */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+
   /* Scheduler Theme Colors - 三层反馈队列 */
   --scheduler-q0: #06b6d4;
   --scheduler-q1: #10b981;

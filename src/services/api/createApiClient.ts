@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { useStore } from '../../store/useStore';
 import { createErrorFromResponse } from '../../utils/errors';
 import { TokenRefreshManager } from './TokenRefreshManager';
+import { getMobileApiBaseUrl } from '../../config/mobileApiConfig';
 
 export const getCookie = (name: string): string | null => {
   const value = `; ${document.cookie}`;
@@ -11,8 +12,11 @@ export const getCookie = (name: string): string | null => {
 };
 
 export const createApiClient = (): AxiosInstance => {
+  const mobileBaseUrl = getMobileApiBaseUrl();
+  const baseURL = mobileBaseUrl ? `${mobileBaseUrl}/api` : '/api';
+
   const client = axios.create({
-    baseURL: '/api',
+    baseURL,
     withCredentials: true,
   });
 

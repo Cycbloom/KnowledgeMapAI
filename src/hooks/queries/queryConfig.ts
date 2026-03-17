@@ -17,7 +17,7 @@ export const staticQueryConfig = {
 };
 
 export const realtimeQueryConfig = {
-  staleTime: 0,
+  staleTime: 5000,
   gcTime: GC_TIME,
   retry: 1,
 };

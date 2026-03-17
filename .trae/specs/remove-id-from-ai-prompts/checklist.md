@@ -1,0 +1,9 @@
+- [x] learningPaths.ts 中的 nodesInfo 不再包含节点 ID
+- [x] learningPaths.ts 中的 edgesInfo 使用标题而非 ID
+- [x] learningPath.ts 中的 nodesInfo 不再包含节点 ID
+- [x] learningPath.ts 中的 edgesInfo 使用标题而非 ID
+- [x] promptService.ts 中 recommend_connections schema 移除了 node_id
+- [x] promptService.ts 中 learning_path_generate schema 使用 nodeTitle 替代 nodeId
+- [x] 提供了云端数据库清理 SQL 和执行说明
+- [x] 类型检查通过
+- [x] 代码检查通过（修改的文件）

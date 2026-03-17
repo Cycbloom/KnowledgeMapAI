@@ -105,6 +105,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   >("sequential");
   const [dailyTime, setDailyTime] = useState(30);
   const [showSettings, setShowSettings] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
@@ -121,11 +122,11 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   );
 
   useEffect(() => {
-    if (graphId && graphPaths.length === 0 && !tempPath) {
+    if (graphId && graphPaths.length === 0 && !tempPath && !hasInitialized && !isLoadingPaths) {
+      setHasInitialized(true);
       generateTempPath();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphId]);
+  }, [graphId, graphPaths.length, tempPath, hasInitialized, isLoadingPaths]);
 
   if (!graphId) {
     return (
@@ -203,6 +204,8 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
     setIsGenerating(true);
     try {
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
       const nodes = tempPath.stages.map((stage, index) => ({
         knowledge_point_id: stage.nodeId,
         order_index: index,
@@ -210,7 +213,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         description: stage.reason,
         estimated_time: stage.estimatedTime,
         is_milestone: stage.priority === "high",
-        prerequisites: stage.prerequisites,
+        prerequisites: stage.prerequisites.filter(id => uuidPattern.test(id)),
       }));
 
       await createMutation.mutateAsync({

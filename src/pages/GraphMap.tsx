@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Sparkles, BookOpen } from "lucide-react";
 import { api } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
+import { queryKeys } from "../hooks/queries/queryConfig";
 import { GraphMapCanvas } from "../components/GraphMap/GraphMapCanvas";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
@@ -191,6 +192,7 @@ export const GraphMap = () => {
 
         addMessage({ type: "success", content: "图谱创建成功" });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
 
         if (data.auto_generate_content) {
           addMessage({ type: "info", content: "正在生成初始内容..." });
@@ -236,6 +238,7 @@ export const GraphMap = () => {
         });
 
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "启动扩展失败";
         addMessage({ type: "error", content: message });
@@ -1016,6 +1019,7 @@ export const GraphMap = () => {
             domain: domain,
           });
           queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
           addMessage({
             type: "success",
             content: `成功创建 ${result.created.length} 个图谱`,

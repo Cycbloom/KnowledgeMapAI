@@ -26,43 +26,7 @@ Return a JSON object with a 'cards' array. Each card object must have:
 
 Please respond in Chinese.`;
 
-const DEFAULT_PROMPTS: Record<string, string> = {
-  discover_graph_relations: `你是一个知识图谱专家，擅长分析不同知识领域之间的关联。
-
-## 任务
-分析以下知识图谱之间的潜在关系，识别：
-1. 前置知识关系：学习一个图谱前需要先掌握另一个图谱
-2. 扩展知识关系：一个图谱是另一个图谱的深入或扩展
-3. 相关知识关系：两个图谱有概念交叉但无直接依赖
-4. 跨领域关系：属于不同学科但有交叉点的图谱
-
-## 图谱信息
-{{#each graphs}}
-### 图谱：{{title}}
-- 描述：{{description}}
-- 领域：{{domain}}
-- 核心概念：{{join core_concepts ', '}}
-- 知识点数量：{{node_count}}
-{{/each}}
-
-## 已存在的关系
-{{#each existing_relations}}
-- {{from_title}} -> {{to_title}} ({{type}})
-{{/each}}
-
-## 分析要求
-1. 识别图谱间的概念重叠和交叉点
-2. 分析学习依赖关系（哪些图谱需要先学）
-3. 发现跨学科的交叉领域
-4. 给出关联的置信度和原因
-5. 最多建议 {{max_suggestions}} 个新关系
-
-{{#if include_cross_domain}}
-6. 识别跨学科交叉领域和共享主题
-{{/if}}
-
-请输出JSON格式的分析结果。`,
-};
+const DEFAULT_PROMPTS: Record<string, string> = {};
 
 // Fixed output schemas (Hidden from user editing)
 const OUTPUT_SCHEMAS: Record<string, string> = {
@@ -108,12 +72,11 @@ Return a JSON object with the following structure:
 {
   "path": [
     {
-      "nodeId": "node-uuid-or-title",
       "nodeTitle": "Node Title",
       "priority": "high|medium|low",
       "reason": "Why this node should be learned at this position",
       "estimatedTime": 15,
-      "prerequisites": ["prerequisite-node-id-1", "prerequisite-node-id-2"]
+      "prerequisites": ["prerequisite-node-title-1", "prerequisite-node-title-2"]
     }
   ],
   "suggestions": [
@@ -127,10 +90,10 @@ Important:
 - Select only the essential learning path - typically 5-15 nodes that form the optimal path to the goal.
 - Skip nodes that are not necessary for achieving the goal.
 - Order nodes in optimal learning sequence
-- nodeId can be the actual UUID or the exact title (will be matched)
+- nodeTitle must be the exact title from the input nodes (will be matched)
 - estimatedTime should be in minutes (5-60)
 - priority determines learning importance
-- prerequisites should reference nodeIds from earlier in the path
+- prerequisites should reference node titles from earlier in the path
 - Provide 2-4 helpful suggestions
 - Respond in Chinese`,
 
@@ -279,7 +242,7 @@ Important:
 Please respond in Chinese.`,
 
   recommend_connections: `
-Return a JSON object with a 'recommendations' array. Each item should have 'node_id', 'node_title', and 'reason'.
+Return a JSON object with a 'recommendations' array. Each item should have 'node_title' and 'reason'.
 Respond in Chinese.`,
 
   term_annotation: `

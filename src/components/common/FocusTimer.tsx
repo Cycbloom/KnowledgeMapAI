@@ -47,6 +47,7 @@ export const FocusTimer: React.FC = () => {
     setMode,
     tick,
     updateSettings,
+    isInFocusMode,
   } = useFocusStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -54,6 +55,10 @@ export const FocusTimer: React.FC = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const dragControls = useDragControls();
   const isDragging = useRef(false);
+
+  if (isInFocusMode) {
+    return null;
+  }
 
   useEffect(() => {
     if (isActive) {

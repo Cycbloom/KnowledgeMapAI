@@ -16,7 +16,7 @@ export const useTaskEvents = () => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const connectRef = useRef<((isReconnect?: boolean) => void) | null>(null);
-  const lastActivityRef = useRef<number>(Date.now());
+  const lastActivityRef = useRef<number>(0);
   const wasHiddenRef = useRef<boolean>(false);
 
   const cleanup = useCallback(() => {

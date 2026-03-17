@@ -11,16 +11,25 @@ import {
   Wand2,
   AlertTriangle,
   Plus,
-  FolderPlus
+  FolderPlus,
+  Link2
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useMessageStore } from '../../store/useMessageStore';
 import { useErrorHandler } from "../../hooks";
 
+interface ExistingGraph {
+  id: string;
+  title: string;
+  similarity: number;
+  nodeCount: number;
+}
+
 interface PrerequisiteQuestion {
   topic: string;
   description?: string;
   options: string[];
+  existingGraph?: ExistingGraph;
 }
 
 interface QuestionsData {
@@ -64,7 +73,13 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
   const [learningStyle, setLearningStyle] = useState<'sequential' | 'exploratory' | 'focused'>('sequential');
   const [dailyTime, setDailyTime] = useState(30);
   const [selectedPrerequisites, setSelectedPrerequisites] = useState<Set<string>>(new Set());
-  const [createdGraphs, setCreatedGraphs] = useState<Array<{ topic: string; graphId: string }>>([]);
+  const [createdGraphs, setCreatedGraphs] = useState<Array<{ 
+    topic: string; 
+    graphId: string;
+    isNew: boolean;
+    similarity?: number;
+    matchedTitle?: string;
+  }>>([]);
   
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
@@ -152,9 +167,22 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
       console.info('Create prerequisite graphs result:', result);
 
       setCreatedGraphs(result.created);
+      
+      const newCount = result.created.filter((g: { isNew: boolean }) => g.isNew).length;
+      const linkedCount = result.created.filter((g: { isNew: boolean }) => !g.isNew).length;
+      
+      let message = '';
+      if (newCount > 0 && linkedCount > 0) {
+        message = `已创建 ${newCount} 个新图谱，关联 ${linkedCount} 个现有图谱`;
+      } else if (newCount > 0) {
+        message = `已创建 ${newCount} 个前置知识图谱`;
+      } else if (linkedCount > 0) {
+        message = `已关联 ${linkedCount} 个现有图谱`;
+      }
+      
       addMessage({ 
         type: 'success', 
-        content: `已创建 ${result.created.length} 个前置知识图谱` 
+        content: message 
       });
       
       setSelectedPrerequisites(new Set());
@@ -328,19 +356,35 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             <div className="space-y-4">
               {questionsData?.prerequisiteQuestions.map((question, index) => {
                 const isUnknown = knowledgeAnswers[question.topic] === '不了解';
+                const hasExistingGraph = question.existingGraph;
                 return (
                   <div key={index} className={`space-y-2 p-2 rounded-lg ${isUnknown ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900 dark:text-white">{question.topic}</span>
                         {question.description && (
-                          <span className="text-xs text-gray-500 ml-2">({question.description})</span>
+                          <span className="text-xs text-gray-500">({question.description})</span>
+                        )}
+                        {hasExistingGraph && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                            <Link2 className="w-3 h-3" />
+                            已有图谱
+                          </span>
                         )}
                       </div>
-                      {isUnknown && (
+                      {isUnknown && !hasExistingGraph && (
                         <AlertTriangle className="w-4 h-4 text-red-500" />
                       )}
                     </div>
+                    {hasExistingGraph && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 rounded px-2 py-1">
+                        <span>匹配到：「{hasExistingGraph.title}」</span>
+                        <span className="text-gray-300 dark:text-gray-600">|</span>
+                        <span>{Math.round(hasExistingGraph.similarity * 100)}% 相似</span>
+                        <span className="text-gray-300 dark:text-gray-600">|</span>
+                        <span>{hasExistingGraph.nodeCount} 个知识点</span>
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {KNOWLEDGE_LEVELS.map((level) => (
                         <button
@@ -385,39 +429,69 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
             </div>
 
             <div className="space-y-2">
-              {unknownPrerequisites.map((topic) => (
-                <button
-                  key={topic}
-                  onClick={() => togglePrerequisite(topic)}
-                  className={`w-full p-3 rounded-lg text-left text-sm transition-all flex items-center gap-3 ${
-                    selectedPrerequisites.has(topic)
-                      ? 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500'
-                      : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded flex items-center justify-center ${
-                    selectedPrerequisites.has(topic)
-                      ? 'bg-indigo-500 text-white'
-                      : 'border-2 border-gray-300 dark:border-gray-600'
-                  }`}>
-                    {selectedPrerequisites.has(topic) && <Check className="w-3 h-3" />}
-                  </div>
-                  <span className="flex-1">{topic}</span>
-                  <span className="text-xs text-gray-400">点击选择</span>
-                </button>
-              ))}
+              {unknownPrerequisites.map((topic) => {
+                const questionData = questionsData?.prerequisiteQuestions.find(q => q.topic === topic);
+                const existingGraph = questionData?.existingGraph;
+                return (
+                  <button
+                    key={topic}
+                    onClick={() => togglePrerequisite(topic)}
+                    className={`w-full p-3 rounded-lg text-left text-sm transition-all flex items-center gap-3 ${
+                      selectedPrerequisites.has(topic)
+                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500'
+                        : 'bg-gray-50 dark:bg-slate-700 border-2 border-transparent hover:border-gray-200 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded flex items-center justify-center ${
+                      selectedPrerequisites.has(topic)
+                        ? 'bg-indigo-500 text-white'
+                        : 'border-2 border-gray-300 dark:border-gray-600'
+                    }`}>
+                      {selectedPrerequisites.has(topic) && <Check className="w-3 h-3" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span>{topic}</span>
+                        {existingGraph && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                            <Link2 className="w-3 h-3" />
+                            已有图谱
+                          </span>
+                        )}
+                      </div>
+                      {existingGraph && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          匹配到：「{existingGraph.title}」({Math.round(existingGraph.similarity * 100)}% 相似，{existingGraph.nodeCount} 个知识点)
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400">{existingGraph ? '关联' : '创建'}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {createdGraphs.length > 0 && (
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
                 <p className="text-sm text-green-800 dark:text-green-200 font-medium mb-2">
-                  已创建的图谱：
+                  处理结果：
                 </p>
-                <ul className="space-y-1">
+                <ul className="space-y-2">
                   {createdGraphs.map((g) => (
                     <li key={g.graphId} className="text-sm text-green-700 dark:text-green-300 flex items-center gap-2">
-                      <Check className="w-3 h-3" />
-                      {g.topic}
+                      {g.isNew ? (
+                        <Plus className="w-3 h-3" />
+                      ) : (
+                        <Link2 className="w-3 h-3" />
+                      )}
+                      <span>{g.topic}</span>
+                      {g.isNew ? (
+                        <span className="text-xs text-green-600 dark:text-green-400">（新建）</span>
+                      ) : (
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          （关联「{g.matchedTitle}」，{Math.round((g.similarity || 0) * 100)}% 相似）
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -432,12 +506,12 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
               {isCreatingGraphs ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  创建中...
+                  处理中...
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
-                  为选中的知识创建学习图谱
+                  <FolderPlus className="w-4 h-4" />
+                  创建或关联选中的知识图谱
                 </>
               )}
             </button>

@@ -358,7 +358,9 @@ Title: {{node_title}}
 Content: {{node_content}}
 
 Existing Nodes:
-{{existing_nodes_json}}', NOW(), NOW()),
+{{existing_nodes_json}}
+
+Important: Return node titles (not IDs) in your recommendations. Use exact titles from the existing nodes list.', NOW(), NOW()),
 ('term_annotation', 'system', null, null, '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。', NOW(), NOW()),
 ('generate_cards_choice', 'system', null, null, 'For ''choice'' type: Create multiple-choice questions with 4 plausible options. 
 Provide the correct answer and a detailed ''explanation'' of why it is correct and others are wrong.
@@ -495,7 +497,7 @@ Analyze the knowledge graph and create a personalized learning path that helps t
 2. Estimate time for each node (5-60 minutes)
 3. Assign priority: high (must learn), medium (should learn), low (nice to have)
 4. Provide a brief reason for each node''s placement
-5. List prerequisite node IDs for each node
+5. List prerequisite node titles for each node (use exact titles from the input)
 
 Respond in Chinese.', NOW(), NOW()),
 ('learning_path_questions', 'system', null, null, 'You are an expert learning path designer. Generate guided questions to help users plan their learning journey.
@@ -637,7 +639,42 @@ Respond in Chinese.', NOW(), NOW()),
 请确保：
 - 描述具体、可操作
 - 标签实用、常用
-- 时长合理、符合任务复杂度', NOW(), NOW())
+- 时长合理、符合任务复杂度', NOW(), NOW()),
+('discover_graph_relations', 'system', null, null, '你是一个知识图谱专家，擅长分析不同知识领域之间的关联。
+
+## 任务
+分析以下知识图谱之间的潜在关系，识别：
+1. 前置知识关系：学习一个图谱前需要先掌握另一个图谱
+2. 扩展知识关系：一个图谱是另一个图谱的深入或扩展
+3. 相关知识关系：两个图谱有概念交叉但无直接依赖
+4. 跨领域关系：属于不同学科但有交叉点的图谱
+
+## 图谱信息
+{{#each graphs}}
+### 图谱：{{title}}
+- 描述：{{description}}
+- 领域：{{domain}}
+- 核心概念：{{join core_concepts '', ''}}
+- 知识点数量：{{node_count}}
+{{/each}}
+
+## 已存在的关系
+{{#each existing_relations}}
+- {{from_title}} -> {{to_title}} ({{type}})
+{{/each}}
+
+## 分析要求
+1. 识别图谱间的概念重叠和交叉点
+2. 分析学习依赖关系（哪些图谱需要先学）
+3. 发现跨学科的交叉领域
+4. 给出关联的置信度和原因
+5. 最多建议 {{max_suggestions}} 个新关系
+
+{{#if include_cross_domain}}
+6. 识别跨学科交叉领域和共享主题
+{{/if}}
+
+请输出JSON格式的分析结果。', NOW(), NOW())
 ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
 
 -- =====================================================

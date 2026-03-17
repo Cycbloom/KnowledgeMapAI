@@ -292,19 +292,26 @@ router.post(
         graph: any;
         isNew: boolean;
         taskId?: string;
+        similarity?: number;
+        matchedTitle?: string;
       }> = [];
 
       for (const item of topics) {
-        const { data: existingGraph } = await supabase
-          .from("knowledge_graphs")
-          .select("id, title")
-          .eq("user_id", req.user.id)
-          .ilike("title", item.topic)
-          .is("deleted_at", null)
-          .limit(1)
-          .maybeSingle();
+        const duplicateCheck = await checkDuplicateGraphTopic(
+          supabase,
+          req.user.id,
+          item.topic,
+          { threshold: 0.85 },
+        );
 
-        if (existingGraph) {
+        if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs[0]) {
+          const existingGraph = duplicateCheck.similarGraphs[0];
+          const similarity = existingGraph.similarity;
+
+          logger.info(
+            `Reusing existing graph "${existingGraph.title}" (similarity: ${(similarity * 100).toFixed(1)}%) for prerequisite topic "${item.topic}"`,
+          );
+
           const exists = await graphRelationService.checkRelationExists(
             supabase,
             graphId,
@@ -316,15 +323,20 @@ router.post(
               source_graph_id: graphId,
               target_graph_id: existingGraph.id,
               relation_type: "prerequisite",
-              context: `学习「${sourceGraph.title}」前建议先掌握「${item.topic}」`,
+              context: `学习「${sourceGraph.title}」前建议先掌握「${existingGraph.title}」`,
             });
           }
 
           results.push({
             topic: item.topic,
             graphId: existingGraph.id,
-            graph: existingGraph,
+            graph: {
+              id: existingGraph.id,
+              title: existingGraph.title,
+            },
             isNew: false,
+            similarity,
+            matchedTitle: existingGraph.title,
           });
         } else {
           const { data: newGraph } = await supabase
@@ -334,6 +346,7 @@ router.post(
               title: item.topic,
               description: item.description || "",
               parent_graph_id: graphId,
+              embedding: duplicateCheck.embedding,
             })
             .select()
             .single();

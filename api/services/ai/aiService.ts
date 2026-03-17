@@ -26,7 +26,7 @@ const pendingRequests = new Map<string, Promise<unknown>>();
 
 async function dedupedRequest<T>(
   key: string,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T> {
   const pending = pendingRequests.get(key) as Promise<T> | undefined;
   if (pending) {
@@ -41,7 +41,7 @@ async function dedupedRequest<T>(
 
 function generateRequestKey(
   operation: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
 ): string {
   const sortedParams = Object.keys(params)
     .sort()
@@ -50,7 +50,7 @@ function generateRequestKey(
   return `${operation}:${sortedParams}`;
 }
 
-export type CardDifficulty = 'easy' | 'medium' | 'hard' | 'mixed';
+export type CardDifficulty = "easy" | "medium" | "hard" | "mixed";
 
 export interface GenerateCardsOptions {
   type?: string;
@@ -107,7 +107,9 @@ export class AIService {
       for (let i = 0; i < texts.length; i += concurrencyLimit) {
         const batch = texts.slice(i, i + concurrencyLimit);
         const batchResults = await Promise.all(
-          batch.map((text) => provider.createEmbedding!(text).catch(() => null))
+          batch.map((text) =>
+            provider.createEmbedding!(text).catch(() => null),
+          ),
         );
 
         for (let j = 0; j < batch.length; j++) {
@@ -145,7 +147,7 @@ export class AIService {
       provider?: AIProviderType;
       model?: string;
       timeout?: number;
-    } = {}
+    } = {},
   ): Promise<string> {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -154,7 +156,7 @@ export class AIService {
     if (!provider.hasKey) {
       const response = getMockResponse(
         "chat",
-        messages[messages.length - 1].content
+        messages[messages.length - 1].content,
       );
       return typeof response === "string" ? response : JSON.stringify(response);
     }
@@ -177,10 +179,10 @@ export class AIService {
             maxRetries: 3,
             onRetry: (attempt, error) => {
               logger.warn(
-                `Chat request retry attempt ${attempt}: ${error.message}`
+                `Chat request retry attempt ${attempt}: ${error.message}`,
               );
             },
-          }
+          },
         );
 
         return completion.choices[0].message.content || "";
@@ -188,7 +190,7 @@ export class AIService {
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Chat Error:", error);
-      
+
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
@@ -205,7 +207,7 @@ export class AIService {
 
   async generatePodcastScript(
     context: string,
-    language: string = "zh"
+    language: string = "zh",
   ): Promise<string> {
     const prompt = `You are a professional podcast host. 
 Your task is to create an engaging, educational podcast script based on the provided knowledge graph content.
@@ -257,10 +259,10 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
             maxRetries: 3,
             onRetry: (attempt, error) => {
               logger.warn(
-                `Generate Podcast Script retry attempt ${attempt}: ${error.message}`
+                `Generate Podcast Script retry attempt ${attempt}: ${error.message}`,
               );
             },
-          }
+          },
         );
 
         return completion.choices[0].message.content || "";
@@ -268,7 +270,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Generate Podcast Script Error:", error);
-      
+
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
@@ -286,7 +288,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
   async generateCards(
     topic: string,
     content: string,
-    options: GenerateCardsOptions = {}
+    options: GenerateCardsOptions = {},
   ) {
     const types = options.type
       ? [options.type]
@@ -306,7 +308,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       topic: topic.slice(0, 100),
       types: types.sort(),
       count,
-      difficulty: options.difficulty || 'medium',
+      difficulty: options.difficulty || "medium",
       model: options.model || provider.model,
     });
 
@@ -349,7 +351,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
 - Include a mix of memory recall, understanding, and analytical questions`,
     };
 
-    const difficulty = options.difficulty || 'medium';
+    const difficulty = options.difficulty || "medium";
 
     try {
       return await dedupedRequest(requestKey, async () => {
@@ -361,7 +363,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
               code,
               { count: Math.ceil(count / types.length), difficulty },
               options.userId,
-              options.graphId
+              options.graphId,
             );
 
             if (rendered && rendered.trim().length > 0) {
@@ -369,14 +371,15 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
             }
 
             return typePrompts[type] || "";
-          })
+          }),
         );
 
         let systemPrompt = promptParts
           .filter((p) => p.length > 0)
           .join("\n\n---\n\n");
 
-        const difficultyInstruction = difficultyPrompts[difficulty] || difficultyPrompts.medium;
+        const difficultyInstruction =
+          difficultyPrompts[difficulty] || difficultyPrompts.medium;
 
         if (!systemPrompt.trim()) {
           systemPrompt = await promptService.getRenderedPrompt(
@@ -389,48 +392,46 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
               difficulty,
             },
             options.userId,
-            options.graphId
+            options.graphId,
           );
         } else {
           systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
 ${difficultyInstruction}
 
-Context: ${
-            context || "None"
-          }\n\n${systemPrompt}`;
+Context: ${context || "None"}\n\n${systemPrompt}`;
         }
 
         const completion = await withTimeoutAndRetry(
-        () =>
-          provider.client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content: `Topic: ${topic}\nContent: ${
-                  content || "No detailed content provided."
-                }`,
-              },
-            ],
-            model: options.model || provider.model,
-            response_format: { type: "json_object" },
-          }),
-        {
-          timeout: DEFAULT_TIMEOUT,
-          maxRetries: 3,
-          onRetry: (attempt, error) => {
-            logger.warn(
-              `Generate Cards retry attempt ${attempt}: ${error.message}`
-            );
+          () =>
+            provider.client.chat.completions.create({
+              messages: [
+                { role: "system", content: systemPrompt },
+                {
+                  role: "user",
+                  content: `Topic: ${topic}\nContent: ${
+                    content || "No detailed content provided."
+                  }`,
+                },
+              ],
+              model: options.model || provider.model,
+              response_format: { type: "json_object" },
+            }),
+          {
+            timeout: DEFAULT_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `Generate Cards retry attempt ${attempt}: ${error.message}`,
+              );
+            },
           },
-        }
-      );
+        );
 
         const result = completion.choices[0].message.content || "";
         const parsed = parseAIResponse<{ cards: unknown[] }>(
           result,
-          "Generate Cards"
+          "Generate Cards",
         );
 
         return { cards: parsed.cards || [] };
@@ -438,7 +439,7 @@ Context: ${
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
-      
+
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
@@ -465,7 +466,7 @@ Context: ${
       expandPrompt?: string;
       userId?: string;
       graphId?: string;
-    } = {}
+    } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -477,7 +478,7 @@ Context: ${
 
     const cacheKey = CacheKeys.AI_EXPAND(
       nodeTitle,
-      options.contextLevel || "normal"
+      options.contextLevel || "normal",
     );
     const cached = await cacheService.get<{ suggestions: unknown[] }>(cacheKey);
     if (cached) {
@@ -495,7 +496,7 @@ Context: ${
       const childrenContext =
         childNodes && childNodes.length > 0
           ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
-              ", "
+              ", ",
             )}`
           : "";
 
@@ -516,7 +517,7 @@ Context: ${
         "expand_knowledge",
         templateContext,
         options.userId,
-        options.graphId
+        options.graphId,
       );
 
       const completion = await withTimeoutAndRetry(
@@ -539,17 +540,17 @@ Context: ${
           maxRetries: 3,
           onRetry: (attempt, error) => {
             logger.warn(
-              `Expand Knowledge retry attempt ${attempt}: ${error.message}`
+              `Expand Knowledge retry attempt ${attempt}: ${error.message}`,
             );
           },
-        }
+        },
       );
 
       const content = completion.choices[0].message.content || "";
 
       if (!content || content.trim() === "") {
         logger.error(
-          "[AI] Empty response from AI provider for expandKnowledge"
+          "[AI] Empty response from AI provider for expandKnowledge",
         );
         return getMockResponse("expand", nodeTitle) as {
           suggestions: unknown[];
@@ -558,7 +559,7 @@ Context: ${
 
       const parsed = parseAIResponse<{ suggestions: unknown[] }>(
         content,
-        "Expand Knowledge"
+        "Expand Knowledge",
       );
       const result = { suggestions: parsed.suggestions || parsed };
 
@@ -602,7 +603,7 @@ Context: ${
       contextLevel?: string;
       userId?: string;
       graphId?: string;
-    } = {}
+    } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -630,7 +631,7 @@ Context: ${
         const childrenContext =
           childNodes && childNodes.length > 0
             ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
-                ", "
+                ", ",
               )}`
             : "";
 
@@ -650,7 +651,7 @@ Context: ${
           "branch_suggestions",
           templateContext,
           options.userId,
-          options.graphId
+          options.graphId,
         );
 
         const completion = await provider.client.chat.completions.create({
@@ -670,7 +671,7 @@ Context: ${
         const content = completion.choices[0].message.content || "";
         const parsed = parseAIResponse<{ suggestions: unknown[] }>(
           content,
-          "Branch Suggestions"
+          "Branch Suggestions",
         );
 
         return { suggestions: parsed.suggestions || [] };
@@ -686,7 +687,7 @@ Context: ${
 
   async generateGraphFromImage(
     imageBase64: string,
-    options: { provider?: AIProviderType; model?: string } = {}
+    options: { provider?: AIProviderType; model?: string } = {},
   ) {
     let providerName = options.provider;
 
@@ -744,7 +745,7 @@ Your task:
       const content = completion.choices[0].message.content || "";
       return parseAIResponse<{ nodes: unknown[]; edges: unknown[] }>(
         content,
-        "Image to Graph"
+        "Image to Graph",
       );
     } catch (error: unknown) {
       const err = error as Error;
@@ -758,7 +759,7 @@ Your task:
   async generateLearningMaterial(
     topic: string,
     context: string,
-    options: { provider?: AIProviderType; model?: string; level?: string } = {}
+    options: { provider?: AIProviderType; model?: string; level?: string } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -826,7 +827,7 @@ Your task:
       provider?: AIProviderType;
       model?: string;
       userProgress?: { masteredCount?: number; currentLevel?: string };
-    } = {}
+    } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -880,7 +881,7 @@ Your task:
         const content = completion.choices[0].message.content || "";
         const parsed = parseAIResponse<{ suggestions: unknown[] }>(
           content,
-          "Suggest Next Topic"
+          "Suggest Next Topic",
         );
 
         return { suggestions: parsed.suggestions || [] };
@@ -906,7 +907,7 @@ Your task:
       mode?: "free" | "guided";
       learningPath?: string[];
     } = {},
-    options: { provider?: AIProviderType; model?: string } = {}
+    options: { provider?: AIProviderType; model?: string } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -958,17 +959,17 @@ Instructions:
           maxRetries: 3,
           onRetry: (attempt, error) => {
             logger.warn(
-              `Tutor Chat retry attempt ${attempt}: ${error.message}`
+              `Tutor Chat retry attempt ${attempt}: ${error.message}`,
             );
           },
-        }
+        },
       );
 
       return completion.choices[0].message.content || "";
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Tutor Chat Error:", error);
-      
+
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
@@ -990,7 +991,7 @@ Instructions:
       provider?: AIProviderType;
       model?: string;
       maxConcepts?: number;
-    } = {}
+    } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -1052,16 +1053,16 @@ Please respond in Chinese.`,
             maxRetries: 3,
             onRetry: (attempt, error) => {
               logger.warn(
-                `Extract Concepts retry attempt ${attempt}: ${error.message}`
+                `Extract Concepts retry attempt ${attempt}: ${error.message}`,
               );
             },
-          }
+          },
         );
 
         const content = completion.choices[0].message.content || "";
         const parsed = parseAIResponse<{ concepts: unknown[] }>(
           content,
-          "Extract Concepts"
+          "Extract Concepts",
         );
 
         return { concepts: parsed.concepts || [] };
@@ -1069,7 +1070,7 @@ Please respond in Chinese.`,
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
-      
+
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
@@ -1095,7 +1096,11 @@ Please respond in Chinese.`,
       title?: string;
       nodes: Array<{ id: string; title: string; content?: string }>;
     },
-    options: { provider?: AIProviderType; model?: string; userId?: string } = {}
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      userId?: string;
+    } = {},
   ) {
     const provider = options.provider
       ? await getAIProvider(options.provider)
@@ -1124,7 +1129,7 @@ Please respond in Chinese.`,
           (n) =>
             `- Title: ${n.title}${
               n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
-            }`
+            }`,
         )
         .join("\n");
 
@@ -1134,7 +1139,7 @@ Please respond in Chinese.`,
           (n) =>
             `- Title: ${n.title}${
               n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
-            }`
+            }`,
         )
         .join("\n");
 
@@ -1151,7 +1156,7 @@ Please respond in Chinese.`,
         supabaseAdmin,
         "cross_graph_connection_analysis",
         templateContext,
-        options.userId
+        options.userId,
       );
 
       const completion = await withTimeoutAndRetry(
@@ -1169,10 +1174,10 @@ Please respond in Chinese.`,
           maxRetries: 3,
           onRetry: (attempt, error) => {
             logger.warn(
-              `Cross Graph Connections retry attempt ${attempt}: ${error.message}`
+              `Cross Graph Connections retry attempt ${attempt}: ${error.message}`,
             );
           },
-        }
+        },
       );
 
       const content = completion.choices[0].message.content || "";
@@ -1193,7 +1198,7 @@ Please respond in Chinese.`,
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Cross Graph Connections Error:", error);
-      
+
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
       }
@@ -1215,7 +1220,7 @@ Please respond in Chinese.`,
       model?: string;
       context?: string;
       userId?: string;
-    } = {}
+    } = {},
   ): Promise<{
     description: string;
     tags: string[];
@@ -1251,7 +1256,7 @@ Please respond in Chinese.`,
             title,
             context: options.context || "",
           },
-          options.userId
+          options.userId,
         );
 
         const completion = await withTimeoutAndRetry(
@@ -1274,10 +1279,10 @@ Please respond in Chinese.`,
             maxRetries: 3,
             onRetry: (attempt, error) => {
               logger.warn(
-                `Generate Task Details retry attempt ${attempt}: ${error.message}`
+                `Generate Task Details retry attempt ${attempt}: ${error.message}`,
               );
             },
-          }
+          },
         );
 
         const content = completion.choices[0].message.content || "";
@@ -1294,16 +1299,19 @@ Please respond in Chinese.`,
           tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
           estimated_duration: Math.min(
             180,
-            Math.max(15, parsed.estimated_duration || 25)
+            Math.max(15, parsed.estimated_duration || 25),
           ),
           priority: Math.min(4, Math.max(1, parsed.priority || 2)),
-          suggested_queue: Math.min(2, Math.max(0, parsed.suggested_queue || 2)),
+          suggested_queue: Math.min(
+            2,
+            Math.max(0, parsed.suggested_queue || 2),
+          ),
         };
       });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Generate Task Details Error:", error);
-      
+
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
       }

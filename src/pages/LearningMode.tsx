@@ -30,6 +30,7 @@ import {
   Plus,
   Route,
   MessageCircle,
+  Brain,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,7 +43,9 @@ import { GraphOutline } from "../components/GraphEditor/panels/GraphOutline";
 import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
 import { LearningPathOutline } from "../components/Learning/LearningPathOutline";
+import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
 import { NodeLevel } from "../types";
+import { useFocusStore } from "../store/useFocusStore";
 
 type Message = {
   id: string;
@@ -84,7 +87,10 @@ export const LearningMode = () => {
   );
   const [outlineMode, setOutlineMode] = useState<OutlineMode>('graph');
   const [selectedLearningPathId, setSelectedLearningPathId] = useState<string | null>(null);
+  const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
   const queryClient = useQueryClient();
+  
+  const { enterFocusMode, exitFocusMode } = useFocusStore();
 
   const handleSelectLearningPath = (pathId: string) => {
     setSelectedLearningPathId(pathId);
@@ -694,6 +700,26 @@ export const LearningMode = () => {
 
           {!isMobile && (
             <>
+              <button
+                onClick={() => {
+                  if (nodeId && articleContent) {
+                    enterFocusMode(nodeId);
+                    setIsFocusModeOpen(true);
+                  }
+                }}
+                disabled={!nodeId || !articleContent}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
+                  !nodeId || !articleContent
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600'
+                    : isDark
+                      ? 'bg-cyan-900/30 text-cyan-400 hover:bg-cyan-900/50 border border-cyan-500/30'
+                      : 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border border-cyan-200'
+                }`}
+                title={!nodeId || !articleContent ? '请先选择学习内容' : '进入专注模式'}
+              >
+                <Brain size={18} />
+                <span className="hidden sm:inline">专注模式</span>
+              </button>
               <button
                 onClick={() => {
                   setRightPanelMode("learning-path");
@@ -1391,6 +1417,17 @@ export const LearningMode = () => {
           </div>
         </div>
       )}
+
+      <LearningFocusPanel
+        isOpen={isFocusModeOpen}
+        onClose={() => {
+          setIsFocusModeOpen(false);
+          exitFocusMode();
+        }}
+        articleContent={articleContent}
+        nodeTitle={nodeTitle}
+        isMobile={isMobile}
+      />
     </div>
   );
 };

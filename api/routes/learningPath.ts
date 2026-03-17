@@ -7,6 +7,7 @@ import { graphService } from "../services/graph/index.js";
 import { getAIProviderForTask } from "../services/ai/factory.js";
 import { promptService } from "../services/ai/promptService.js";
 import { logger } from "../utils/logger.js";
+import { checkDuplicateGraphTopic } from "../utils/similaritySearch.js";
 import { z } from "zod";
 
 const router = Router();
@@ -331,7 +332,6 @@ async function generateAIPath(
   const nodesInfo = nodes.map((n) => {
     const progress = progressMap.get(n.id);
     return {
-      id: n.id,
       title: n.title,
       level: n.level || "normal",
       mastery: progress?.masteryLevel || 0,
@@ -339,9 +339,14 @@ async function generateAIPath(
     };
   });
 
+  const nodeIdToTitle = new Map(nodes.map((n) => [n.id, n.title]));
   const edgesInfo = edges.map((e) => ({
-    source: e.source_knowledge_point_id,
-    target: e.target_knowledge_point_id,
+    source:
+      nodeIdToTitle.get(e.source_knowledge_point_id) ||
+      e.source_knowledge_point_id,
+    target:
+      nodeIdToTitle.get(e.target_knowledge_point_id) ||
+      e.target_knowledge_point_id,
     relationship: e.relationship_type,
   }));
 
@@ -393,7 +398,9 @@ ${JSON.stringify(edgesInfo, null, 2)}
     const stages: LearningPathStage[] = (parsed.path || []).map(
       (item: any, index: number) => {
         const node = nodes.find(
-          (n) => n.id === item.nodeId || n.title === item.nodeTitle,
+          (n) =>
+            n.title === item.nodeTitle ||
+            n.title.toLowerCase() === item.nodeTitle?.toLowerCase(),
         );
         const progress = node ? progressMap.get(node.id) : null;
 
@@ -792,10 +799,61 @@ ${graphMeta.description ? `描述：${graphMeta.description}` : ""}
       const content = completion.choices[0].message.content;
       const parsed = JSON.parse(content || "{}");
 
+      const prerequisiteQuestions = parsed.prerequisiteQuestions || [];
+
+      const enhancedQuestions = await Promise.all(
+        prerequisiteQuestions.map(
+          async (q: {
+            topic: string;
+            description?: string;
+            options: string[];
+          }) => {
+            try {
+              const duplicateCheck = await checkDuplicateGraphTopic(
+                supabase,
+                req.user.id,
+                q.topic,
+                { threshold: 0.85 },
+              );
+
+              if (
+                duplicateCheck.isDuplicate &&
+                duplicateCheck.similarGraphs[0]
+              ) {
+                const matchedGraph = duplicateCheck.similarGraphs[0];
+
+                const { data: nodeCount } = await supabase
+                  .from("graph_nodes")
+                  .select("id", { count: "exact", head: true })
+                  .eq("graph_id", matchedGraph.id)
+                  .is("deleted_at", null);
+
+                return {
+                  ...q,
+                  existingGraph: {
+                    id: matchedGraph.id,
+                    title: matchedGraph.title,
+                    similarity: matchedGraph.similarity,
+                    nodeCount: nodeCount?.length || 0,
+                  },
+                };
+              }
+            } catch (err) {
+              logger.warn(
+                `Failed to check existing graph for topic "${q.topic}":`,
+                err,
+              );
+            }
+
+            return q;
+          },
+        ),
+      );
+
       res.json({
         graphTitle: graphMeta.title,
         suggestedGoals: parsed.suggestedGoals || [],
-        prerequisiteQuestions: parsed.prerequisiteQuestions || [],
+        prerequisiteQuestions: enhancedQuestions,
       });
     } catch (error: any) {
       logger.error("Learning Path Questions Error:", error);

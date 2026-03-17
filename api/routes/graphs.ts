@@ -330,6 +330,31 @@ router.post(
 );
 
 router.get(
+  "/intelligent-suggestions",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user.id;
+    const graphIds = req.query.graph_ids
+      ? (req.query.graph_ids as string).split(",")
+      : undefined;
+
+    try {
+      const result = await relationDiscoveryService.getIntelligentSuggestions(
+        req.supabase!,
+        userId,
+        { graph_ids: graphIds },
+      );
+
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "获取智能建议失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.get(
   "/:id",
   optionalAuth,
   validate({ params: uuidParamsSchema }),
@@ -897,7 +922,7 @@ const initializeGraphSchema = z.object({
 });
 
 const batchInitializeSchema = z.object({
-  graph_ids: z.array(z.string().uuid()).min(1).max(10),
+  graph_ids: z.array(z.string().uuid()).min(1).max(50),
   style: z.enum(["academic", "practical", "beginner"]).default("academic"),
 });
 
@@ -1131,31 +1156,6 @@ router.post(
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "创建关系失败";
-      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
-    }
-  },
-);
-
-router.get(
-  "/intelligent-suggestions",
-  requireAuth,
-  async (req: AuthRequest, res: Response) => {
-    const userId = req.user.id;
-    const graphIds = req.query.graph_ids
-      ? (req.query.graph_ids as string).split(",")
-      : undefined;
-
-    try {
-      const result = await relationDiscoveryService.getIntelligentSuggestions(
-        req.supabase!,
-        userId,
-        { graph_ids: graphIds },
-      );
-
-      res.json(result);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "获取智能建议失败";
       throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },

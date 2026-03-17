@@ -4,25 +4,29 @@ import { api } from '../services/api';
 
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
+export type WhiteNoiseType = 'rain' | 'cafe' | 'forest' | 'ocean' | 'fire' | 'none';
+
 interface FocusState {
-  // Timer State
   isActive: boolean;
-  timeLeft: number; // in seconds
+  timeLeft: number;
   mode: TimerMode;
   
-  // Task Association
   taskId: string | null;
   
-  // Settings
-  focusDuration: number; // in minutes
-  shortBreakDuration: number; // in minutes
-  longBreakDuration: number; // in minutes
+  focusDuration: number;
+  shortBreakDuration: number;
+  longBreakDuration: number;
   soundEnabled: boolean;
   
-  // Stats (Session tracking for current session)
   sessionsCompleted: number;
 
-  // Actions
+  isInFocusMode: boolean;
+  selectedNoise: WhiteNoiseType;
+  noiseVolume: number;
+  highlightEnabled: boolean;
+  highlightIntensity: number;
+  currentNodeId: string | null;
+
   startTimer: () => void;
   pauseTimer: () => void;
   resetTimer: () => void;
@@ -31,6 +35,13 @@ interface FocusState {
   updateSettings: (settings: Partial<Pick<FocusState, 'focusDuration' | 'shortBreakDuration' | 'longBreakDuration' | 'soundEnabled'>>) => void;
   setTaskId: (taskId: string | null) => void;
   setDuration: (minutes: number) => void;
+  enterFocusMode: (nodeId?: string) => void;
+  exitFocusMode: () => void;
+  setNoise: (noise: WhiteNoiseType) => void;
+  setNoiseVolume: (volume: number) => void;
+  setHighlightEnabled: (enabled: boolean) => void;
+  setHighlightIntensity: (intensity: number) => void;
+  setCurrentNodeId: (nodeId: string | null) => void;
 }
 
 const DEFAULT_DURATIONS = {
@@ -52,6 +63,13 @@ export const useFocusStore = create<FocusState>()(
         longBreakDuration: DEFAULT_DURATIONS.longBreak,
         soundEnabled: true,
         sessionsCompleted: 0,
+
+        isInFocusMode: false,
+        selectedNoise: 'none' as WhiteNoiseType,
+        noiseVolume: 0.5,
+        highlightEnabled: false,
+        highlightIntensity: 0.5,
+        currentNodeId: null,
 
         startTimer: () => set({ isActive: true }),
         
@@ -141,6 +159,26 @@ export const useFocusStore = create<FocusState>()(
             set({ timeLeft: minutes * 60, focusDuration: minutes });
           }
         },
+
+        enterFocusMode: (nodeId) => set({ 
+          isInFocusMode: true, 
+          currentNodeId: nodeId || null 
+        }),
+
+        exitFocusMode: () => set({ 
+          isInFocusMode: false,
+          selectedNoise: 'none' as WhiteNoiseType
+        }),
+
+        setNoise: (noise) => set({ selectedNoise: noise }),
+
+        setNoiseVolume: (volume) => set({ noiseVolume: volume }),
+
+        setHighlightEnabled: (enabled) => set({ highlightEnabled: enabled }),
+
+        setHighlightIntensity: (intensity) => set({ highlightIntensity: intensity }),
+
+        setCurrentNodeId: (nodeId) => set({ currentNodeId: nodeId }),
       }),
       {
         name: 'focus-storage',
@@ -150,6 +188,10 @@ export const useFocusStore = create<FocusState>()(
           longBreakDuration: state.longBreakDuration,
           soundEnabled: state.soundEnabled,
           sessionsCompleted: state.sessionsCompleted,
+          selectedNoise: state.selectedNoise,
+          noiseVolume: state.noiseVolume,
+          highlightEnabled: state.highlightEnabled,
+          highlightIntensity: state.highlightIntensity,
         }),
       }
     ),

@@ -272,11 +272,6 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                       <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {node.title}
                       </span>
-                      {isCurrentNode && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium bg-indigo-500 text-white rounded">
-                          当前
-                        </span>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">

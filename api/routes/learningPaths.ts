@@ -577,6 +577,25 @@ router.post(
       };
 
       if (save_path) {
+        const validStages = stages.filter((stage) => {
+          const isUuid =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              stage.nodeId,
+            );
+          return isUuid;
+        });
+
+        if (validStages.length === 0) {
+          throw new AppError(
+            "AI 生成的学习路径无法匹配到图谱中的知识点，请重试",
+            400,
+            ErrorCodes.VALIDATION_ERROR,
+          );
+        }
+
+        const uuidPattern =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
         const savedPath = await learningPathService.createLearningPath(
           supabase,
           req.user.id,
@@ -587,14 +606,16 @@ router.post(
             total_estimated_time: totalEstimatedTime,
             ai_generated: aiGenerated,
             daily_minutes_target: daily_time_minutes,
-            nodes: stages.map((stage, index) => ({
+            nodes: validStages.map((stage, index) => ({
               knowledge_point_id: stage.nodeId,
               order_index: index,
               title: stage.nodeTitle,
               description: stage.reason,
               estimated_time: stage.estimatedTime,
               is_milestone: stage.priority === "high",
-              prerequisites: stage.prerequisites,
+              prerequisites: stage.prerequisites.filter((id) =>
+                uuidPattern.test(id),
+              ),
             })),
           },
         );
@@ -650,7 +671,6 @@ async function generateAIPath(
   const nodesInfo = nodes.map((n) => {
     const progress = progressMap.get(n.id);
     return {
-      id: n.id,
       title: n.title,
       level: n.level || "normal",
       mastery: progress?.masteryLevel || 0,
@@ -658,11 +678,33 @@ async function generateAIPath(
     };
   });
 
+  const nodeIdToTitle = new Map(nodes.map((n) => [n.id, n.title]));
+  const titleToNodeId = new Map(
+    nodes.map((n) => [n.title.toLowerCase(), n.id]),
+  );
   const edgesInfo = edges.map((e) => ({
-    source: e.source_knowledge_point_id,
-    target: e.target_knowledge_point_id,
+    source:
+      nodeIdToTitle.get(e.source_knowledge_point_id) ||
+      e.source_knowledge_point_id,
+    target:
+      nodeIdToTitle.get(e.target_knowledge_point_id) ||
+      e.target_knowledge_point_id,
     relationship: e.relationship_type,
   }));
+
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  const mapPrerequisitesToUuids = (prereqs: string[]): string[] => {
+    return (prereqs || [])
+      .map((prereq: string) => {
+        if (uuidPattern.test(prereq)) {
+          return prereq;
+        }
+        return titleToNodeId.get(prereq.toLowerCase()) || null;
+      })
+      .filter((id): id is string => id !== null);
+  };
 
   const systemPrompt = await promptService.getRenderedPrompt(
     supabase,
@@ -714,29 +756,51 @@ ${JSON.stringify(edgesInfo, null, 2)}
     const content = completion.choices[0].message.content;
     const parsed = JSON.parse(content || '{"path": [], "suggestions": []}');
 
-    const stages = (parsed.path || []).map((item: any, index: number) => {
-      const node = nodes.find(
-        (n) => n.id === item.nodeId || n.title === item.nodeTitle,
-      );
-      const progress = node ? progressMap.get(node.id) : null;
+    const stages: LearningPathStage[] = [];
 
-      return {
-        nodeId: node?.id || item.nodeId || `ai-${index}`,
-        nodeTitle: item.nodeTitle || node?.title || "",
-        nodeContent: node?.content || "",
-        level: node?.level || item.level || "normal",
-        order: index,
+    for (let index = 0; index < (parsed.path || []).length; index++) {
+      const item = parsed.path[index];
+      let node = nodes.find(
+        (n) =>
+          n.title === item.nodeTitle ||
+          n.title.toLowerCase() === item.nodeTitle?.toLowerCase(),
+      );
+
+      if (!node && item.nodeTitle) {
+        const searchTitle = item.nodeTitle.toLowerCase();
+        node = nodes.find(
+          (n) =>
+            n.title.toLowerCase().includes(searchTitle) ||
+            searchTitle.includes(n.title.toLowerCase()),
+        );
+      }
+
+      if (!node) {
+        logger.warn(
+          `AI 返回的节点 "${item.nodeTitle}" 无法匹配到图谱中的知识点，已跳过`,
+        );
+        continue;
+      }
+
+      const progress = progressMap.get(node.id);
+
+      stages.push({
+        nodeId: node.id,
+        nodeTitle: node.title,
+        nodeContent: node.content || "",
+        level: node.level || item.level || "normal",
+        order: stages.length,
         priority: item.priority || "medium",
         reason: item.reason || "",
         estimatedTime: item.estimatedTime || 15,
-        prerequisites: item.prerequisites || [],
+        prerequisites: mapPrerequisitesToUuids(item.prerequisites || []),
         isCompleted: progress?.masteryLevel
           ? progress.masteryLevel > 0.8
           : false,
         masteryLevel: progress?.masteryLevel || 0,
         nextReviewDate: progress?.nextReviewDate?.toISOString() || null,
-      };
-    });
+      });
+    }
 
     return {
       stages,

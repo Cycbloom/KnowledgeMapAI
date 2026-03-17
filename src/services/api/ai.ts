@@ -96,7 +96,7 @@ export const aiApi = {
     });
   },
   
-  generateLearningMaterial: (data: { topic: string; context?: string; level?: string; provider?: string; model?: string }) => {
+  generateLearningMaterial: (data: { topic: string; context?: string; level?: string; graph_id?: string; provider?: string; model?: string }) => {
     const payload = injectAIConfig(data, 'text');
     return request('/ai/learning-material', { method: 'POST', body: JSON.stringify(payload) });
   },

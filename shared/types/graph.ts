@@ -52,6 +52,13 @@ export interface NodeProperties {
   [key: string]: unknown;
 }
 
+export interface Keyword {
+  term: string;
+  importance: number;
+  category: string;
+  explanation: string;
+}
+
 export interface KnowledgePoint {
   id: string;
   title: string;
@@ -65,6 +72,7 @@ export interface KnowledgePoint {
   updated_at: string;
   level?: NodeLevel;
   is_accepted?: boolean;
+  keywords?: Keyword[];
 }
 
 export interface KnowledgePointVersion {

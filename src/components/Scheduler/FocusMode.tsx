@@ -1,37 +1,17 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useWhiteNoise } from '../../hooks/useWhiteNoise';
+import { AudioVisualizer } from '../common/AudioVisualizer';
+import { NOISE_OPTIONS, WhiteNoiseType as AudioWhiteNoiseType } from '../../utils/audioSynthesis';
+import { NoisePreset, WhiteNoiseType } from '../../store/useFocusStore';
 import { 
-  X, 
-  Volume2, 
-  VolumeX, 
-  CloudRain, 
-  Coffee, 
-  Trees, 
-  Waves, 
-  Flame,
-  Shield,
-  Minimize2,
-  Maximize2
+  CloudRain, Coffee, Trees, Waves, Flame, 
+  CloudLightning, Droplets, Wind, BookOpen, Moon, 
+  Train, Plane, Circle, Bell, Activity, Radio,
+  Volume2, X,
+  Shield, Minimize2, Maximize2,
+  LucideIcon
 } from 'lucide-react';
-
-type WhiteNoiseType = 'rain' | 'cafe' | 'forest' | 'ocean' | 'fire' | 'none';
-
-interface WhiteNoiseOption {
-  id: WhiteNoiseType;
-  label: string;
-  icon: React.ReactNode;
-  frequency?: number;
-  noiseType?: OscillatorType;
-}
-
-const WHITE_NOISE_OPTIONS: WhiteNoiseOption[] = [
-  { id: 'none', label: '关闭', icon: <VolumeX size={18} /> },
-  { id: 'rain', label: '雨声', icon: <CloudRain size={18} />, frequency: 200, noiseType: 'sawtooth' },
-  { id: 'cafe', label: '咖啡厅', icon: <Coffee size={18} />, frequency: 150, noiseType: 'triangle' },
-  { id: 'forest', label: '森林', icon: <Trees size={18} />, frequency: 300, noiseType: 'sine' },
-  { id: 'ocean', label: '海浪', icon: <Waves size={18} />, frequency: 100, noiseType: 'sine' },
-  { id: 'fire', label: '篝火', icon: <Flame size={18} />, frequency: 80, noiseType: 'sawtooth' },
-];
 
 interface FocusModeProps {
   isOpen: boolean;
@@ -41,6 +21,36 @@ interface FocusModeProps {
   children?: React.ReactNode;
 }
 
+const ICON_MAP: Record<string, LucideIcon> = {
+  CloudRain,
+  Coffee,
+  Trees,
+  Waves,
+  Flame,
+  CloudLightning,
+  Droplets,
+  Wind,
+  BookOpen,
+  Moon,
+  Train,
+  Plane,
+  Circle,
+  Bell,
+  Activity,
+  Radio,
+};
+
+const getIcon = (iconName: string | undefined, size: number = 18): React.ReactNode => {
+  if (!iconName) return <Volume2 size={size} />;
+  const IconComponent = ICON_MAP[iconName];
+  return IconComponent ? <IconComponent size={size} /> : <Volume2 size={size} />;
+};
+
+const getNoiseOption = (type: WhiteNoiseType) => {
+  if (type === 'none') return undefined;
+  return NOISE_OPTIONS.find(option => option.id === type as AudioWhiteNoiseType);
+};
+
 export const FocusMode: React.FC<FocusModeProps> = ({
   isOpen,
   onClose,
@@ -49,144 +59,30 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   children,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [selectedNoise, setSelectedNoise] = useState<WhiteNoiseType>('none');
-  const [volume, setVolume] = useState(0.5);
   const [showControls, setShowControls] = useState(true);
-  
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const oscillatorsRef = useRef<OscillatorNode[]>([]);
-  const noiseSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const [showNoiseSelector, setShowNoiseSelector] = useState(false);
 
-  const createWhiteNoise = useCallback((context: AudioContext): AudioBufferSourceNode => {
-    const bufferSize = context.sampleRate * 2;
-    const buffer = context.createBuffer(1, bufferSize, context.sampleRate);
-    const output = buffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
-    }
-    
-    const source = context.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    return source;
-  }, []);
-
-  const stopAudio = useCallback(() => {
-    oscillatorsRef.current.forEach(osc => {
-      try {
-        osc.stop();
-      } catch {
-        // ignore errors on stop
-      }
-    });
-    oscillatorsRef.current = [];
-    
-    if (noiseSourceRef.current) {
-      try {
-        noiseSourceRef.current.stop();
-      } catch {
-        // ignore errors on stop
-      }
-      noiseSourceRef.current = null;
-    }
-  }, []);
-
-  const startAudio = useCallback((noiseType: WhiteNoiseType) => {
-    if (noiseType === 'none') {
-      stopAudio();
-      return;
-    }
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-
-    const ctx = audioContextRef.current;
-    
-    stopAudio();
-
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = volume * 0.3;
-    gainNode.connect(ctx.destination);
-    gainNodeRef.current = gainNode;
-
-    const option = WHITE_NOISE_OPTIONS.find(o => o.id === noiseType);
-    if (!option) return;
-
-    if (noiseType === 'rain' || noiseType === 'cafe' || noiseType === 'fire') {
-      const noiseSource = createWhiteNoise(ctx);
-      const filter = ctx.createBiquadFilter();
-      
-      if (noiseType === 'rain') {
-        filter.type = 'lowpass';
-        filter.frequency.value = 1000;
-      } else if (noiseType === 'cafe') {
-        filter.type = 'bandpass';
-        filter.frequency.value = 500;
-        filter.Q.value = 0.5;
-      } else {
-        filter.type = 'lowpass';
-        filter.frequency.value = 400;
-      }
-      
-      noiseSource.connect(filter);
-      filter.connect(gainNode);
-      noiseSource.start();
-      noiseSourceRef.current = noiseSource;
-    } else if (noiseType === 'forest' || noiseType === 'ocean') {
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const osc3 = ctx.createOscillator();
-      
-      osc1.type = option.noiseType || 'sine';
-      osc1.frequency.value = option.frequency || 200;
-      
-      osc2.type = option.noiseType || 'sine';
-      osc2.frequency.value = (option.frequency || 200) * 1.5;
-      
-      osc3.type = option.noiseType || 'sine';
-      osc3.frequency.value = (option.frequency || 200) * 0.75;
-      
-      const lfo = ctx.createOscillator();
-      lfo.type = 'sine';
-      lfo.frequency.value = 0.1;
-      
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.value = 10;
-      
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc1.frequency);
-      lfoGain.connect(osc2.frequency);
-      
-      osc1.connect(gainNode);
-      osc2.connect(gainNode);
-      osc3.connect(gainNode);
-      lfo.start();
-      
-      osc1.start();
-      osc2.start();
-      osc3.start();
-      
-      oscillatorsRef.current = [osc1, osc2, osc3, lfo];
-    }
-  }, [volume, createWhiteNoise, stopAudio]);
+  const {
+    isPlaying,
+    mixedNoises,
+    activePresetId,
+    allPresets,
+    analyserData,
+    startMixer,
+    stopMixer,
+    addNoise,
+    removeNoise,
+    setNoiseVolume,
+    loadPreset,
+  } = useWhiteNoise();
 
   useEffect(() => {
-    if (isOpen && selectedNoise !== 'none') {
-      startAudio(selectedNoise);
+    if (isOpen) {
+      startMixer();
+    } else {
+      stopMixer();
     }
-    return () => {
-      stopAudio();
-    };
-  }, [isOpen, selectedNoise, startAudio, stopAudio]);
-
-  useEffect(() => {
-    if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = volume * 0.3;
-    }
-  }, [volume]);
+  }, [isOpen, startMixer, stopMixer]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -209,15 +105,6 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     }
   };
 
-  const handleNoiseSelect = (noise: WhiteNoiseType) => {
-    setSelectedNoise(noise);
-    if (noise !== 'none') {
-      startAudio(noise);
-    } else {
-      stopAudio();
-    }
-  };
-
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -225,6 +112,18 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  const handleNoiseToggle = (type: AudioWhiteNoiseType) => {
+    if (mixedNoises.find(n => n.type === type as WhiteNoiseType)) {
+      removeNoise(type as WhiteNoiseType);
+    } else {
+      addNoise(type as WhiteNoiseType);
+    }
+  };
+
+  const handlePresetClick = (preset: NoisePreset) => {
+    loadPreset(preset);
+  };
 
   return (
     <AnimatePresence>
@@ -298,6 +197,17 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             {children}
           </div>
 
+          {isPlaying && analyserData && (
+            <AudioVisualizer 
+              analyserData={analyserData}
+              type="wave"
+              width={400}
+              height={80}
+              color="rgba(6, 182, 212, 0.5)"
+              className="absolute bottom-24 left-1/2 -translate-x-1/2 opacity-50"
+            />
+          )}
+
           <AnimatePresence>
             {showControls && (
               <motion.div
@@ -307,43 +217,100 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                 className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/50 to-transparent"
               >
                 <div className="max-w-2xl mx-auto space-y-4">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <span className="text-xs text-slate-400">白噪音</span>
-                    <div className="flex items-center gap-1">
-                      {WHITE_NOISE_OPTIONS.map((option) => (
-                        <motion.button
-                          key={option.id}
-                          onClick={() => handleNoiseSelect(option.id)}
-                          className={`p-2 rounded-lg transition-all ${
-                            selectedNoise === option.id
-                              ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
-                              : 'bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent'
-                          }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          title={option.label}
-                        >
-                          {option.icon}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {selectedNoise !== 'none' && (
-                    <div className="flex items-center justify-center gap-3">
-                      <VolumeX size={16} className="text-slate-400" />
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={volume}
-                        onChange={(e) => setVolume(parseFloat(e.target.value))}
-                        className="w-32 accent-cyan-500"
-                      />
-                      <Volume2 size={16} className="text-slate-400" />
+                  {allPresets.length > 0 && (
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <span className="text-xs text-slate-400">预设</span>
+                      <div className="flex items-center gap-1">
+                        {allPresets.slice(0, 4).map(preset => (
+                          <motion.button
+                            key={preset.id}
+                            onClick={() => handlePresetClick(preset)}
+                            className={`px-3 py-1 rounded-lg text-xs transition-all ${
+                              activePresetId === preset.id
+                                ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
+                                : 'bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent'
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {preset.name}
+                          </motion.button>
+                        ))}
+                      </div>
                     </div>
                   )}
+
+                  {mixedNoises.length > 0 && (
+                    <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
+                      {mixedNoises.map(noise => {
+                        const option = getNoiseOption(noise.type);
+                        return (
+                          <div 
+                            key={noise.type} 
+                            className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1"
+                          >
+                            {getIcon(option?.icon, 16)}
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="1" 
+                              step="0.1"
+                              value={noise.volume} 
+                              onChange={(e) => setNoiseVolume(noise.type, parseFloat(e.target.value))}
+                              className="w-16 accent-cyan-500"
+                            />
+                            <button 
+                              onClick={() => removeNoise(noise.type)}
+                              className="text-slate-400 hover:text-red-400"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <AnimatePresence>
+                    {showNoiseSelector && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="grid grid-cols-6 gap-2 p-4 bg-black/30 rounded-lg mb-4">
+                          {NOISE_OPTIONS.map(option => {
+                            const isActive = mixedNoises.find(n => n.type === option.id);
+                            return (
+                              <motion.button
+                                key={option.id}
+                                onClick={() => handleNoiseToggle(option.id)}
+                                className={`p-2 rounded-lg flex flex-col items-center gap-1 transition-all ${
+                                  isActive
+                                    ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
+                                    : 'bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent'
+                                }`}
+                                title={option.label}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                {getIcon(option.icon, 18)}
+                                <span className="text-[10px]">{option.label}</span>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button 
+                    onClick={() => setShowNoiseSelector(!showNoiseSelector)}
+                    className="text-xs text-cyan-400 hover:text-cyan-300 mb-4 w-full text-center"
+                  >
+                    {showNoiseSelector ? '收起' : '展开更多声音'}
+                  </button>
 
                   <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
                     <div className="flex items-center gap-1">

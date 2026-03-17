@@ -1,4 +1,4 @@
-import { FileText, BrainCircuit, BookOpen } from 'lucide-react';
+import { FileText, BrainCircuit, BookOpen, GraduationCap } from 'lucide-react';
 
 export interface PromptScenario {
   id: string;
@@ -8,9 +8,40 @@ export interface PromptScenario {
   variables: string[];
   defaultTemplate: string;
   category: 'creation' | 'generation' | 'analysis';
+  supportsThreeTier?: boolean;
 }
 
 export const PROMPT_SCENARIOS: PromptScenario[] = [
+  {
+    id: 'learning_material',
+    name: '学习资料生成',
+    description: '生成学习教材时的提示词模板',
+    icon: <GraduationCap size={20} />,
+    variables: ['topic', 'context', 'level'],
+    defaultTemplate: `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
+
+Target Audience: University students or professionals learning this concept.
+
+Structure:
+1. **Introduction (Hook)**: Briefly explain what this is and why it matters.
+2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.
+3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.
+4. **Real-world Examples**: Concrete use cases or historical context.
+5. **Summary**: Key takeaways.
+
+Formatting:
+- Use Markdown headers (##, ###).
+- Use bolding for key terms.
+- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.
+- Use lists and bullet points for readability.
+- Length: Comprehensive (approx 800-1500 words).
+
+Topic: {{topic}}
+Context/Background: {{context}}
+{{#if level}}Knowledge Level: {{level}}{{/if}}`,
+    category: 'generation',
+    supportsThreeTier: true,
+  },
   {
     id: 'graph_creation',
     name: '图谱创建',

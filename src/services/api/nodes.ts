@@ -1,5 +1,5 @@
 import { request } from './client';
-import type { Node, Edge } from '../../types';
+import type { Node, Edge, Keyword } from '../../types';
 
 export const nodesApi = {
   create: (data: { 
@@ -26,6 +26,7 @@ export const nodesApi = {
     y_position?: number;
     learning_material?: string;
     properties?: Record<string, unknown>;
+    keywords?: Keyword[];
   }) => request<Node>(`/nodes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
   delete: (id: string, hardDelete?: boolean) => {

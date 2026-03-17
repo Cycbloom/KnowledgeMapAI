@@ -56,10 +56,6 @@ export const FocusTimer: React.FC = () => {
   const dragControls = useDragControls();
   const isDragging = useRef(false);
 
-  if (isInFocusMode) {
-    return null;
-  }
-
   useEffect(() => {
     if (isActive) {
       intervalRef.current = setInterval(tick, 1000);
@@ -90,10 +86,13 @@ export const FocusTimer: React.FC = () => {
   };
 
   const toggleExpand = (_e: React.MouseEvent) => {
-    // Prevent toggle if we were dragging
     if (isDragging.current) return;
     setIsExpanded(!isExpanded);
   };
+
+  if (isInFocusMode) {
+    return null;
+  }
 
   return (
     <motion.div

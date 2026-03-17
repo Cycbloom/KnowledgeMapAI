@@ -229,15 +229,17 @@ router.post(
   requireAuth,
   validate(generateLearningMaterialSchema),
   async (req: AuthRequest, res: Response) => {
-    const { topic, context, level, provider, model } = req.body;
+    const { topic, context, level, provider, model, graph_id } = req.body;
 
     try {
-      const content = await aiService.generateLearningMaterial(topic, context, {
+      const result = await aiService.generateLearningMaterial(topic, context, {
         provider,
         model,
         level,
+        userId: req.user.id,
+        graphId: graph_id,
       });
-      res.json({ content });
+      res.json({ content: result.content, keywords: result.keywords });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Learning Material Error:", error);

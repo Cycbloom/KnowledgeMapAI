@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS knowledge_points (
   title VARCHAR(512) NOT NULL,
   content TEXT,
   learning_material TEXT,
+  keywords JSONB DEFAULT '[]'::jsonb,
   properties JSONB DEFAULT '{}',
   embedding vector(1024),
   visibility knowledge_point_visibility DEFAULT 'private',
@@ -73,6 +74,7 @@ CREATE TABLE IF NOT EXISTS knowledge_points (
 COMMENT ON TABLE knowledge_points IS '独立的知识点实体，支持跨图谱复用';
 COMMENT ON COLUMN knowledge_points.visibility IS '知识点可见性：private(私有), public(公共), pending(待审核)';
 COMMENT ON COLUMN knowledge_points.owner_id IS '知识点所有者，私有知识点仅所有者可见';
+COMMENT ON COLUMN knowledge_points.keywords IS '关键词数组，结构: [{"term": "关键词文本", "importance": 5, "category": "定义", "explanation": "简短解释"}]';
 
 -- Knowledge point versions table (知识点版本历史)
 CREATE TABLE IF NOT EXISTS knowledge_point_versions (
@@ -82,6 +84,7 @@ CREATE TABLE IF NOT EXISTS knowledge_point_versions (
   title VARCHAR(512) NOT NULL,
   content TEXT,
   learning_material TEXT,
+  keywords JSONB DEFAULT '[]'::jsonb,
   properties JSONB DEFAULT '{}',
   change_summary TEXT,
   changed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -1811,6 +1814,7 @@ BEGIN
       title,
       content,
       learning_material,
+      keywords,
       properties,
       changed_by
     ) VALUES (
@@ -1819,6 +1823,7 @@ BEGIN
       NEW.title,
       NEW.content,
       NEW.learning_material,
+      NEW.keywords,
       NEW.properties,
       NEW.owner_id
     );
@@ -1826,6 +1831,7 @@ BEGIN
     IF OLD.title != NEW.title OR 
        OLD.content IS DISTINCT FROM NEW.content OR 
        OLD.learning_material IS DISTINCT FROM NEW.learning_material OR
+       OLD.keywords IS DISTINCT FROM NEW.keywords OR
        OLD.properties IS DISTINCT FROM NEW.properties THEN
       
       SELECT COALESCE(MAX(version_number), 0) + 1 INTO next_version
@@ -1838,6 +1844,7 @@ BEGIN
         title,
         content,
         learning_material,
+        keywords,
         properties,
         changed_by
       ) VALUES (
@@ -1846,6 +1853,7 @@ BEGIN
         NEW.title,
         NEW.content,
         NEW.learning_material,
+        NEW.keywords,
         NEW.properties,
         NEW.owner_id
       );
@@ -2066,6 +2074,7 @@ RETURNS TABLE (
   title VARCHAR(512),
   content TEXT,
   learning_material TEXT,
+  keywords JSONB,
   properties JSONB,
   visibility knowledge_point_visibility,
   owner_id UUID,
@@ -2079,6 +2088,7 @@ BEGIN
     kp.title,
     kp.content,
     kp.learning_material,
+    kp.keywords,
     kp.properties,
     kp.visibility,
     kp.owner_id,

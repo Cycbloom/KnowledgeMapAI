@@ -31,6 +31,7 @@ import {
   Route,
   MessageCircle,
   Brain,
+  Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,7 +45,8 @@ import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
 import { LearningPathOutline } from "../components/Learning/LearningPathOutline";
 import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
-import { NodeLevel } from "../types";
+import { PromptConfigPanel } from "../components/PromptConfig/PromptConfigPanel";
+import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 
 type Message = {
@@ -54,7 +56,7 @@ type Message = {
   isStreaming?: boolean;
 };
 
-type OutlineMode = 'graph' | 'learning-path';
+type OutlineMode = "graph" | "learning-path";
 
 export const LearningMode = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -66,6 +68,7 @@ export const LearningMode = () => {
 
   const [nodeTitle, setNodeTitle] = useState("");
   const [articleContent, setArticleContent] = useState("");
+  const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingCards, setIsGeneratingCards] = useState(false);
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
@@ -85,21 +88,24 @@ export const LearningMode = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
     new Set(),
   );
-  const [outlineMode, setOutlineMode] = useState<OutlineMode>('graph');
-  const [selectedLearningPathId, setSelectedLearningPathId] = useState<string | null>(null);
+  const [outlineMode, setOutlineMode] = useState<OutlineMode>("graph");
+  const [selectedLearningPathId, setSelectedLearningPathId] = useState<
+    string | null
+  >(null);
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
+  const [isPromptConfigOpen, setIsPromptConfigOpen] = useState(false);
   const queryClient = useQueryClient();
-  
+
   const { enterFocusMode, exitFocusMode } = useFocusStore();
 
   const handleSelectLearningPath = (pathId: string) => {
     setSelectedLearningPathId(pathId);
-    setOutlineMode('learning-path');
+    setOutlineMode("learning-path");
     setSelectedNodeIds(new Set());
   };
 
   const handleBackToGraphOutline = () => {
-    setOutlineMode('graph');
+    setOutlineMode("graph");
     setSelectedLearningPathId(null);
   };
 
@@ -240,6 +246,7 @@ export const LearningMode = () => {
     if (!nodeId) {
       setNodeTitle("");
       setArticleContent("");
+      setKeywords([]);
       return;
     }
 
@@ -250,6 +257,7 @@ export const LearningMode = () => {
         // 1. Fetch Node Details
         const node = await api.nodes.get(nodeId);
         setNodeTitle(node.title || "");
+        setKeywords(node.keywords || []);
 
         // 2. Check if learning material already exists
         if (node.learning_material) {
@@ -271,15 +279,19 @@ export const LearningMode = () => {
           topic: node.title || "",
           context: node.content,
           level: node.level,
+          graph_id: graphId || undefined,
         });
 
         // 4. Save the generated material back to the node
         if (response.content) {
           setArticleContent(response.content);
+          const responseKeywords = response.keywords || [];
+          setKeywords(responseKeywords);
 
           try {
             await api.nodes.update(nodeId, {
               learning_material: response.content,
+              keywords: responseKeywords,
             });
 
             // OPTIMIZATION: Manual trigger for questions instead of automatic
@@ -458,6 +470,60 @@ export const LearningMode = () => {
 
   const handleStartChallenge = () => {
     navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz`);
+  };
+
+  const handleRegenerateMaterial = async () => {
+    if (!nodeId || !graphId) {
+      addMessage({ type: "warning", content: "缺少必要参数" });
+      return;
+    }
+
+    if (!isOnline) {
+      addMessage({ type: "error", content: "离线模式下无法重新生成" });
+      return;
+    }
+
+    setIsGenerating(true);
+    setArticleContent("");
+
+    try {
+      const node = await api.nodes.get(nodeId);
+
+      const response = await api.ai.generateLearningMaterial({
+        topic: node.title || "",
+        context: node.content,
+        level: node.level,
+        graph_id: graphId,
+      });
+
+      if (response.content) {
+        setArticleContent(response.content);
+        setKeywords(response.keywords || []);
+
+        await api.nodes.update(nodeId, {
+          learning_material: response.content,
+          keywords: response.keywords || [],
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
+
+        addMessage({ type: "success", content: "学习资料已重新生成" });
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `regenerated-${Date.now()}`,
+            role: "assistant",
+            content: `学习资料已重新生成！请查看更新后的内容。`,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Failed to regenerate learning material:", error);
+      addMessage({ type: "error", content: "重新生成失败，请重试" });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleManualGenerateCards = async (config: {
@@ -710,12 +776,16 @@ export const LearningMode = () => {
                 disabled={!nodeId || !articleContent}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-all ${
                   !nodeId || !articleContent
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600'
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
                     : isDark
-                      ? 'bg-cyan-900/30 text-cyan-400 hover:bg-cyan-900/50 border border-cyan-500/30'
-                      : 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border border-cyan-200'
+                      ? "bg-cyan-900/30 text-cyan-400 hover:bg-cyan-900/50 border border-cyan-500/30"
+                      : "bg-cyan-50 text-cyan-600 hover:bg-cyan-100 border border-cyan-200"
                 }`}
-                title={!nodeId || !articleContent ? '请先选择学习内容' : '进入专注模式'}
+                title={
+                  !nodeId || !articleContent
+                    ? "请先选择学习内容"
+                    : "进入专注模式"
+                }
               >
                 <Brain size={18} />
                 <span className="hidden sm:inline">专注模式</span>
@@ -815,7 +885,7 @@ export const LearningMode = () => {
           } transition-all duration-300 ease-in-out border-r dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 relative`}
         >
           <div className={`absolute inset-0 ${isMobile ? "w-full" : "w-80"}`}>
-            {outlineMode === 'learning-path' && selectedLearningPathId ? (
+            {outlineMode === "learning-path" && selectedLearningPathId ? (
               <LearningPathOutline
                 learningPathId={selectedLearningPathId}
                 currentNodeId={nodeId || undefined}
@@ -881,49 +951,111 @@ export const LearningMode = () => {
                     </div>
                   </div>
                 ) : (
-                  <div
-                    className={`max-w-3xl mx-auto prose ${isMobile ? "prose-sm" : "prose-lg"} dark:prose-invert prose-indigo ${isDark ? "text-slate-50" : "text-gray-900"}`}
-                  >
+                  <div className="max-w-3xl mx-auto">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
+                      <div>
+                        <h2
+                          className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                        >
+                          {nodeTitle}
+                        </h2>
+                        {keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {keywords.slice(0, 5).map((kw, idx) => (
+                              <span
+                                key={idx}
+                                className={`px-2 py-0.5 text-xs rounded-full ${
+                                  isDark
+                                    ? "bg-indigo-900/30 text-indigo-300"
+                                    : "bg-indigo-50 text-indigo-600"
+                                }`}
+                              >
+                                {kw.term}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setIsPromptConfigOpen(true)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isDark
+                              ? "hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+                              : "hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                          }`}
+                          title="配置生成模板"
+                        >
+                          <Settings size={18} />
+                        </button>
+                        <button
+                          onClick={handleRegenerateMaterial}
+                          disabled={isGenerating || !isOnline}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            isGenerating || !isOnline
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
+                              : isDark
+                                ? "bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30"
+                                : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
+                          }`}
+                          title={
+                            isOnline ? "重新生成学习资料" : "离线模式不可用"
+                          }
+                        >
+                          <RefreshCw
+                            size={16}
+                            className={isGenerating ? "animate-spin" : ""}
+                          />
+                          <span className="hidden sm:inline">重新生成</span>
+                        </button>
+                      </div>
+                    </div>
                     <div
-                      className={isMobile ? "leading-relaxed space-y-4" : ""}
+                      className={`prose ${isMobile ? "prose-sm" : "prose-lg"} dark:prose-invert prose-indigo ${isDark ? "text-slate-50" : "text-gray-900"}`}
                     >
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[[rehypeKatex, { output: "html" }]]}
-                        components={{
-                          code: ({ className, children, node: _node }) => (
-                            <CodeBlock
-                              className={className}
-                              isDark={isDark}
-                              node={_node}
-                            >
-                              {children}
-                            </CodeBlock>
-                          ),
-                          a: ({ node: _node, ...props }) => {
-                            const { href, children } = props;
-                            if (href && href.startsWith("term:")) {
-                              const explanation = href.replace("term:", "");
+                      <div
+                        className={isMobile ? "leading-relaxed space-y-4" : ""}
+                      >
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[[rehypeKatex, { output: "html" }]]}
+                          components={{
+                            code: ({ className, children, node: _node }) => (
+                              <CodeBlock
+                                className={className}
+                                isDark={isDark}
+                                node={_node}
+                              >
+                                {children}
+                              </CodeBlock>
+                            ),
+                            a: ({ node: _node, ...props }) => {
+                              const { href, children } = props;
+                              if (href && href.startsWith("term:")) {
+                                const explanation = href.replace("term:", "");
+                                return (
+                                  <TermTooltip
+                                    term={String(children)}
+                                    explanation={decodeURIComponent(
+                                      explanation,
+                                    )}
+                                  />
+                                );
+                              }
                               return (
-                                <TermTooltip
-                                  term={String(children)}
-                                  explanation={decodeURIComponent(explanation)}
+                                <a
+                                  {...props}
+                                  className="text-blue-600 hover:underline"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                 />
                               );
-                            }
-                            return (
-                              <a
-                                {...props}
-                                className="text-blue-600 hover:underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              />
-                            );
-                          },
-                        }}
-                      >
-                        {preprocessMarkdown(articleContent)}
-                      </ReactMarkdown>
+                            },
+                          }}
+                        >
+                          {preprocessMarkdown(articleContent)}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -972,9 +1104,7 @@ export const LearningMode = () => {
                 />
               )}
               <motion.div
-                initial={
-                  isMobile ? { x: "100%" } : { width: 0, opacity: 0 }
-                }
+                initial={isMobile ? { x: "100%" } : { width: 0, opacity: 0 }}
                 animate={isMobile ? { x: 0 } : { width: 384, opacity: 1 }}
                 exit={isMobile ? { x: "100%" } : { width: 0, opacity: 0 }}
                 transition={{
@@ -999,9 +1129,7 @@ export const LearningMode = () => {
                     </div>
                     <div>
                       <h3 className="font-bold text-sm">
-                        {rightPanelMode === "chat"
-                          ? "AI 助教"
-                          : "学习路径"}
+                        {rightPanelMode === "chat" ? "AI 助教" : "学习路径"}
                       </h3>
                       <div className="flex items-center text-[10px] text-green-500">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
@@ -1052,9 +1180,7 @@ export const LearningMode = () => {
                       }}
                       className={`p-1.5 rounded-md transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
                       title={
-                        rightPanelMode === "chat"
-                          ? "清空对话"
-                          : "刷新路径"
+                        rightPanelMode === "chat" ? "清空对话" : "刷新路径"
                       }
                     >
                       <RefreshCw size={14} />
@@ -1135,10 +1261,7 @@ export const LearningMode = () => {
                               ) : (
                                 <div className="prose prose-sm dark:prose-invert prose-indigo max-w-none">
                                   <ReactMarkdown
-                                    remarkPlugins={[
-                                      remarkGfm,
-                                      remarkMath,
-                                    ]}
+                                    remarkPlugins={[remarkGfm, remarkMath]}
                                     rehypePlugins={[
                                       [rehypeKatex, { output: "html" }],
                                     ]}
@@ -1158,12 +1281,11 @@ export const LearningMode = () => {
                                       ),
                                       a: ({ node: _node, ...props }) => {
                                         const { href, children } = props;
-                                        if (
-                                          href &&
-                                          href.startsWith("term:")
-                                        ) {
-                                          const explanation =
-                                            href.replace("term:", "");
+                                        if (href && href.startsWith("term:")) {
+                                          const explanation = href.replace(
+                                            "term:",
+                                            "",
+                                          );
                                           return (
                                             <TermTooltip
                                               term={String(children)}
@@ -1202,10 +1324,7 @@ export const LearningMode = () => {
                 {/* Chat Input - Only show in chat mode */}
                 {rightPanelMode === "chat" && (
                   <div className="p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-                    <form
-                      onSubmit={handleChatSubmit}
-                      className="relative"
-                    >
+                    <form onSubmit={handleChatSubmit} className="relative">
                       <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -1427,6 +1546,14 @@ export const LearningMode = () => {
         articleContent={articleContent}
         nodeTitle={nodeTitle}
         isMobile={isMobile}
+        keywords={keywords}
+      />
+
+      <PromptConfigPanel
+        isOpen={isPromptConfigOpen}
+        onClose={() => setIsPromptConfigOpen(false)}
+        initialScenarioId="learning_material"
+        graphId={graphId || undefined}
       />
     </div>
   );

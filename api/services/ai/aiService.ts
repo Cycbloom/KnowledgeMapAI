@@ -52,6 +52,18 @@ function generateRequestKey(
 
 export type CardDifficulty = "easy" | "medium" | "hard" | "mixed";
 
+export interface Keyword {
+  term: string;
+  importance: number;
+  category: string;
+  explanation: string;
+}
+
+export interface GenerateLearningMaterialResult {
+  content: string;
+  keywords: Keyword[];
+}
+
 export interface GenerateCardsOptions {
   type?: string;
   types?: string[];
@@ -759,14 +771,37 @@ Your task:
   async generateLearningMaterial(
     topic: string,
     context: string,
-    options: { provider?: AIProviderType; model?: string; level?: string } = {},
-  ) {
+    options: {
+      provider?: AIProviderType;
+      model?: string;
+      level?: string;
+      userId?: string;
+      graphId?: string;
+    } = {},
+  ): Promise<GenerateLearningMaterialResult> {
     const provider = options.provider
       ? await getAIProvider(options.provider)
       : await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
-      return getMockResponse("content", `Learning Material for ${topic}`);
+      const mockContent = getMockResponse(
+        "content",
+        `Learning Material for ${topic}`,
+      );
+      return {
+        content:
+          typeof mockContent === "string"
+            ? mockContent
+            : JSON.stringify(mockContent),
+        keywords: [
+          {
+            term: topic,
+            importance: 5,
+            category: "概念",
+            explanation: `关于${topic}的核心概念`,
+          },
+        ],
+      };
     }
 
     const requestKey = generateRequestKey("generateLearningMaterial", {
@@ -777,38 +812,52 @@ Your task:
 
     try {
       return await dedupedRequest(requestKey, async () => {
+        const templateContext = {
+          topic,
+          context: context || "General knowledge",
+          level: options.level,
+        };
+
+        const systemPrompt = await promptService.getRenderedPrompt(
+          supabaseAdmin,
+          "learning_material",
+          templateContext,
+          options.userId,
+          options.graphId,
+        );
+
         const completion = await provider.client.chat.completions.create({
           messages: [
             {
               role: "system",
-              content:
-                "You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.\n" +
-                "Target Audience: University students or professionals learning this concept.\n" +
-                "Structure:\n" +
-                "1. **Introduction (Hook)**: Briefly explain what this is and why it matters.\n" +
-                "2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.\n" +
-                "3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.\n" +
-                "4. **Real-world Examples**: Concrete use cases or historical context.\n" +
-                "5. **Summary**: Key takeaways.\n\n" +
-                "Formatting:\n" +
-                "- Use Markdown headers (##, ###).\n" +
-                "- Use bolding for key terms.\n" +
-                "- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.\n" +
-                "- Use lists and bullet points for readability.\n" +
-                "- Length: Comprehensive (approx 800-1500 words).\n" +
-                "Please respond in Chinese.",
+              content: systemPrompt,
             },
             {
               role: "user",
-              content: `Topic: ${topic}\nContext/Background: ${
-                context || "General knowledge"
-              }`,
+              content: `Please generate the learning material based on the instructions above.`,
             },
           ],
           model: options.model || provider.model,
+          response_format: { type: "json_object" },
         });
 
-        return completion.choices[0].message.content || "";
+        const rawContent = completion.choices[0].message.content || "";
+        const parsed = parseAIResponse<{
+          content: string;
+          keywords: Keyword[];
+        }>(rawContent, "Generate Learning Material");
+
+        return {
+          content: parsed.content || "",
+          keywords: Array.isArray(parsed.keywords)
+            ? parsed.keywords.map((k) => ({
+                term: k.term || "",
+                importance: Math.min(5, Math.max(1, k.importance || 3)),
+                category: k.category || "概念",
+                explanation: k.explanation || "",
+              }))
+            : [],
+        };
       });
     } catch (error: unknown) {
       const err = error as Error;

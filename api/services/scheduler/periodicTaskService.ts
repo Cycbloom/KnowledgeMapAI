@@ -420,7 +420,7 @@ export class PeriodicTaskService {
       return { streak: 0, bonusAwarded: 0 };
     }
 
-    const allCompleted = dailyTasks.every(t => t.status === 'completed');
+    const allCompleted = dailyTasks.every((t: any) => t.status === 'completed');
     if (!allCompleted) {
       return { streak: 0, bonusAwarded: 0 };
     }
@@ -493,7 +493,7 @@ export class PeriodicTaskService {
 
       if (!tasks || tasks.length === 0) continue;
 
-      const allCompleted = tasks.every(t => t.status === 'completed');
+      const allCompleted = tasks.every((t: any) => t.status === 'completed');
 
       const { data: stats } = await supabaseAdmin
         .from('user_focus_stats')
@@ -559,10 +559,10 @@ export class PeriodicTaskService {
       .from('user_achievements')
       .select('achievement_id')
       .eq('user_id', userId)
-      .in('achievement_id', achievements.map(a => a.id));
+      .in('achievement_id', achievements.map((a: any) => a.id));
 
-    const unlockedIds = new Set(unlocked?.map(u => u.achievement_id) || []);
-    const newUnlocks = achievements.filter(a => !unlockedIds.has(a.id));
+    const unlockedIds = new Set(unlocked?.map((u: any) => u.achievement_id) || []);
+    const newUnlocks = achievements.filter((a: any) => !unlockedIds.has(a.id));
 
     for (const achievement of newUnlocks) {
       await supabaseAdmin

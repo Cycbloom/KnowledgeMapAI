@@ -6,6 +6,7 @@ import { useTheme } from '../hooks';
 import { Sun, Moon, Cloud } from 'lucide-react';
 import { getAuthModeDisplay } from '../config/authConfig';
 import { credentialStorage } from '../utils/credentialStorage';
+import { getSupabaseClient, resetSupabaseClient } from '../lib/supabase';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -36,7 +37,24 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('[Login] 开始登录流程');
+      const client = getSupabaseClient();
+      if (client) {
+        console.log('[Login] 先登出现有 session');
+        await client.auth.signOut();
+      }
+      resetSupabaseClient();
+      
+      console.log('[Login] 调用登录 API');
       const data = await loginMutation.mutateAsync({ email, password });
+      console.log('[Login] 登录响应:', { 
+        hasUser: !!data.user, 
+        hasSession: !!data.session,
+        hasAccessToken: !!data.session?.access_token,
+        hasRefreshToken: !!data.session?.refresh_token,
+        error: data.error
+      });
+      
       if (data.error) throw new Error(data.error);
       
       if (rememberMe) {
@@ -45,9 +63,11 @@ export const Login = () => {
         credentialStorage.clear();
       }
       
+      console.log('[Login] 设置用户状态到 store');
       setUser(data.user, data.session?.access_token ?? null, data.session?.refresh_token ?? null);
       navigate('/');
     } catch (err: any) {
+      console.error('[Login] 登录失败:', err);
       setError(err.message);
     }
   };

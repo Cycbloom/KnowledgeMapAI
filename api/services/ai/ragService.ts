@@ -66,7 +66,7 @@ export class RAGService {
           .is('deleted_at', null);
         
         if (graphNodes && graphNodes.length > 0) {
-          const kpIds = graphNodes.map(gn => gn.knowledge_point_id);
+          const kpIds = graphNodes.map((gn: any) => gn.knowledge_point_id);
           query_builder = query_builder.in('id', kpIds);
         } else {
           return [];
@@ -79,7 +79,7 @@ export class RAGService {
           .is('deleted_at', null);
         
         if (userGraphs && userGraphs.length > 0) {
-          const graphIds = userGraphs.map(g => g.id);
+          const graphIds = userGraphs.map((g: any) => g.id);
           const { data: graphNodes } = await supabaseAdmin
             .from('graph_nodes')
             .select('knowledge_point_id')
@@ -87,7 +87,7 @@ export class RAGService {
             .is('deleted_at', null);
           
           if (graphNodes && graphNodes.length > 0) {
-            const kpIds = graphNodes.map(gn => gn.knowledge_point_id);
+            const kpIds = graphNodes.map((gn: any) => gn.knowledge_point_id);
             query_builder = query_builder.in('id', kpIds);
           } else {
             return [];
@@ -105,7 +105,7 @@ export class RAGService {
       }
 
       const results: RAGSearchResult[] = knowledgePoints
-        .map(kp => {
+        .map((kp: any) => {
           const similarity = this.cosineSimilarity(queryEmbedding, kp.embedding);
           return {
             id: kp.id,
@@ -115,8 +115,8 @@ export class RAGService {
             graphId: graphId || ''
           };
         })
-        .filter(r => r.similarity >= matchThreshold)
-        .sort((a, b) => b.similarity - a.similarity)
+        .filter((r: any) => r.similarity >= matchThreshold)
+        .sort((a: any, b: any) => b.similarity - a.similarity)
         .slice(0, matchCount);
 
       return results;
@@ -472,18 +472,18 @@ ${context || '(暂无相关上下文)'}`;
     const connectedNodes = new Set<string>();
     
     if (edges) {
-      edges.forEach(e => {
+      edges.forEach((e: any) => {
         connectedNodes.add(e.source_knowledge_point_id);
         connectedNodes.add(e.target_knowledge_point_id);
       });
     }
 
-    const isolatedNodes = nodes.filter(n => !connectedNodes.has(n.id));
-    const nodesWithoutContent = nodes.filter(n => !n.content || n.content.length < 50);
+    const isolatedNodes = nodes.filter((n: any) => !connectedNodes.has(n.id));
+    const nodesWithoutContent = nodes.filter((n: any) => !n.content || n.content.length < 50);
 
     const gaps: Array<{ topic: string; reason: string; priority: 'high' | 'medium' | 'low' }> = [];
 
-    isolatedNodes.forEach(n => {
+    isolatedNodes.forEach((n: any) => {
       gaps.push({
         topic: n.title,
         reason: '该节点没有与其他节点建立连接',
@@ -491,7 +491,7 @@ ${context || '(暂无相关上下文)'}`;
       });
     });
 
-    nodesWithoutContent.forEach(n => {
+    nodesWithoutContent.forEach((n: any) => {
       gaps.push({
         topic: n.title,
         reason: '该节点缺少详细内容描述',
@@ -504,7 +504,7 @@ ${context || '(暂无相关上下文)'}`;
 
     if (aiProvider.hasKey && nodes.length > 3) {
       try {
-        const nodeTitles = nodes.map(n => n.title).join(', ');
+        const nodeTitles = nodes.map((n: any) => n.title).join(', ');
         
         const completion = await aiProvider.client.chat.completions.create({
           messages: [

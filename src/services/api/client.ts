@@ -1,6 +1,7 @@
 import { useStore } from '../../store/useStore';
 import { createErrorFromResponse } from '../../utils/errors';
 import { apiClient, getCookie } from './createApiClient';
+import { isElectronProduction, getElectronApiUrl } from '../../config/electronConfig';
 
 const API_URL = '/api';
 
@@ -11,6 +12,11 @@ export { getCookie };
 export const initCsrf = async (): Promise<void> => {
   if (csrfInitialized) return;
   
+  if (isElectronProduction()) {
+    csrfInitialized = true;
+    return;
+  }
+  
   const existingToken = getCookie('csrf-token');
   if (existingToken) {
     csrfInitialized = true;
@@ -18,24 +24,44 @@ export const initCsrf = async (): Promise<void> => {
   }
 
   try {
-    await fetch(`${API_URL}/csrf-token`, {
+    let csrfUrl: string;
+    if (isElectronProduction()) {
+      const electronApiUrl = await getElectronApiUrl();
+      csrfUrl = `${electronApiUrl}/csrf-token`;
+    } else {
+      csrfUrl = `${API_URL}/csrf-token`;
+    }
+    
+    await fetch(csrfUrl, {
       credentials: 'include',
     });
     csrfInitialized = true;
-  } catch {
-    console.warn('Failed to initialize CSRF token');
+  } catch (error) {
+    console.warn('Failed to initialize CSRF token', error);
   }
 };
 
 export const getHeaders = () => {
   const token = useStore.getState().token;
-  const csrfToken = getCookie('csrf-token');
+  const csrfToken = !isElectronProduction() ? getCookie('csrf-token') : null;
   
-  return {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
   };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  if (csrfToken) {
+    headers['x-csrf-token'] = csrfToken;
+  }
+  
+  if (isElectronProduction()) {
+    headers['x-electron-client'] = 'true';
+  }
+  
+  return headers;
 };
 
 export const handleResponse = async <T = any>(res: Response): Promise<T> => {

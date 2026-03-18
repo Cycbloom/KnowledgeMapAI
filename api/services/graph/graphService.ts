@@ -785,17 +785,17 @@ export async function getUserAccessibleGraphs(userId: string): Promise<GraphWith
     throw new Error(collabError.message);
   }
 
-  const ownedResults = (ownedGraphs || []).map((g) => ({
+  const ownedResults = (ownedGraphs || []).map((g: any) => ({
     ...g,
     user_role: "owner" as CollaboratorRole,
   }));
 
   const collabResults = (collaboratedGraphs || [])
-    .filter((c) => {
+    .filter((c: any) => {
       const graphData = Array.isArray(c.graph) ? c.graph[0] : c.graph;
       return graphData && !graphData.deleted_at;
     })
-    .map((c) => {
+    .map((c: any) => {
       const graphData = Array.isArray(c.graph) ? c.graph[0] : c.graph;
       return {
         ...graphData,

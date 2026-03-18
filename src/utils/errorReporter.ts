@@ -1,3 +1,5 @@
+import { request } from "../services/api/client";
+
 interface ErrorReport {
   message: string;
   stack?: string;
@@ -22,13 +24,12 @@ const flushErrors = async (): Promise<void> => {
   errorQueue.length = 0;
 
   try {
-    await fetch('/api/analytics/errors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await request("/analytics/errors", {
+      method: "POST",
       body: JSON.stringify({ errors }),
     });
   } catch {
-    console.warn('[ErrorReporter] Failed to flush errors');
+    console.warn("[ErrorReporter] Failed to flush errors");
   }
 };
 
@@ -36,7 +37,7 @@ setInterval(flushErrors, FLUSH_INTERVAL);
 
 const getUserId = (): string | undefined => {
   try {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem("user");
     if (userStr) {
       const user = JSON.parse(userStr);
       return user.id;
@@ -76,34 +77,36 @@ export const initErrorReporter = (): void => {
 
   window.onunhandledrejection = (event) => {
     const error = event.reason;
-    
+
     reportError({
-      message: error?.message || 'Unhandled Promise Rejection',
+      message: error?.message || "Unhandled Promise Rejection",
       stack: error?.stack,
       url: window.location.href,
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       userId: getUserId(),
       metadata: {
-        type: 'unhandledrejection',
+        type: "unhandledrejection",
       },
     });
   };
 
   const originalConsoleError = console.error;
   console.error = (...args) => {
-    const message = args.map(arg => 
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
+    const message = args
+      .map((arg) =>
+        typeof arg === "object" ? JSON.stringify(arg) : String(arg),
+      )
+      .join(" ");
 
-    if (!message.includes('[ErrorReporter]') && !message.includes('Warning:')) {
+    if (!message.includes("[ErrorReporter]") && !message.includes("Warning:")) {
       reportError({
         message,
         url: window.location.href,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         userId: getUserId(),
-        metadata: { type: 'console.error' },
+        metadata: { type: "console.error" },
       });
     }
 
@@ -113,7 +116,7 @@ export const initErrorReporter = (): void => {
 
 export const captureException = (
   error: Error,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): void => {
   reportError({
     message: error.message,
@@ -128,7 +131,7 @@ export const captureException = (
 
 export const captureMessage = (
   message: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): void => {
   reportError({
     message,
@@ -142,7 +145,7 @@ export const captureMessage = (
 
 export const setUserContext = (userId: string, email?: string): void => {
   try {
-    localStorage.setItem('errorContext', JSON.stringify({ userId, email }));
+    localStorage.setItem("errorContext", JSON.stringify({ userId, email }));
   } catch {
     // Ignore storage errors
   }
@@ -150,7 +153,7 @@ export const setUserContext = (userId: string, email?: string): void => {
 
 export const clearUserContext = (): void => {
   try {
-    localStorage.removeItem('errorContext');
+    localStorage.removeItem("errorContext");
   } catch {
     // Ignore storage errors
   }

@@ -143,17 +143,17 @@ export class AchievementService {
       .from('user_achievements')
       .select('achievement_id')
       .eq('user_id', userId)
-      .in('achievement_id', candidates.map(c => c.id));
+      .in('achievement_id', candidates.map((c: any) => c.id));
 
     if (unlockedError) throw unlockedError;
     
     const unlockedIds = new Set(unlocked.map((u: any) => u.achievement_id));
-    const newUnlocks = candidates.filter(c => !unlockedIds.has(c.id));
+    const newUnlocks = candidates.filter((c: any) => !unlockedIds.has(c.id));
 
     if (newUnlocks.length === 0) return [];
 
     // 3. Unlock them
-    const unlocksToInsert = newUnlocks.map(ach => ({
+    const unlocksToInsert = newUnlocks.map((ach: any) => ({
       user_id: userId,
       achievement_id: ach.id,
       unlocked_at: new Date().toISOString()
@@ -233,8 +233,8 @@ export class AchievementService {
     if (error || !sessions) return;
 
     // Calculate streak
-    const dates = new Set(sessions.map(s => s.start_time.split('T')[0]));
-    const sortedDates = Array.from(dates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    const dates = new Set(sessions.map((s: any) => s.start_time.split('T')[0]));
+    const sortedDates = Array.from(dates).sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime());
     
     if (sortedDates.length === 0) return;
 
@@ -309,7 +309,7 @@ export class AchievementService {
       .eq('completed', true)
       .gte('start_time', today);
       
-    const todayMinutes = todaySessions?.reduce((acc, curr) => acc + curr.duration, 0) || 0;
+    const todayMinutes = todaySessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0;
     
     // Update daily task progress to match today's total
     // But updateDailyTask adds incremental progress usually? 
@@ -333,7 +333,7 @@ export class AchievementService {
       .eq('user_id', userId)
       .eq('completed', true);
       
-    const totalMinutes = allSessions?.reduce((acc, curr) => acc + curr.duration, 0) || 0;
+    const totalMinutes = allSessions?.reduce((acc: number, curr: any) => acc + curr.duration, 0) || 0;
     await this.checkAndUnlock(userId, 'focus_minutes', totalMinutes);
     
     await periodicTaskService.updatePeriodicTaskProgress(userId, 'focus', totalMinutes);

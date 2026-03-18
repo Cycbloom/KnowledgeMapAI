@@ -4,6 +4,7 @@ import {
   RelationshipCategory,
   EdgeLineStyle,
 } from '../../../types';
+import { request } from '../../../services/api';
 
 interface RelationshipTypeSettingsProps {
   isOpen: boolean;
@@ -97,12 +98,10 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/relationship-types', {
+      const data = await request('/relationship-types', {
         headers: getAuthHeaders(),
       });
-      if (!response.ok) throw new Error('获取关系类型失败');
-      const data = await response.json();
-      setRelationshipTypes(data.data || []);
+      setRelationshipTypes((data as any).data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取关系类型失败');
     } finally {
@@ -114,15 +113,11 @@ export const RelationshipTypeSettings: React.FC<RelationshipTypeSettingsProps> =
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/relationship-types', {
+      await request('/relationship-types', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(formData),
       });
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || '创建关系类型失败');
-      }
       await fetchRelationshipTypes();
       setIsCreating(false);
       setFormData(initialFormData);

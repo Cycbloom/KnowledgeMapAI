@@ -7,9 +7,17 @@ import { useStore } from "../../store/useStore";
 import { createErrorFromResponse } from "../../utils/errors";
 import { TokenRefreshManager } from "./TokenRefreshManager";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
+import {
+  isElectronProduction,
+  getElectronApiUrl,
+} from "../../config/electronConfig";
 
 const isMobileClient = (): boolean => {
   return isCapacitorMobile();
+};
+
+const isElectronClient = (): boolean => {
+  return isElectronProduction();
 };
 
 export const getCookie = (name: string): string | null => {
@@ -20,20 +28,37 @@ export const getCookie = (name: string): string | null => {
 };
 
 export const createApiClient = (): AxiosInstance => {
-  const baseURL = "/api";
-
   const client = axios.create({
-    baseURL,
+    baseURL: "/api",
     withCredentials: true,
   });
 
+  let electronBaseURLInitialized = false;
+
   client.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
+    async (config: InternalAxiosRequestConfig) => {
+      if (isElectronProduction() && !electronBaseURLInitialized) {
+        const electronBaseURL = await getElectronApiUrl();
+        client.defaults.baseURL = electronBaseURL;
+        config.baseURL = electronBaseURL;
+        electronBaseURLInitialized = true;
+      }
+
       const token = useStore.getState().token;
       const csrfToken = getCookie("csrf-token");
 
+      console.log('[createApiClient] 请求拦截器:', { 
+        url: config.url, 
+        hasToken: !!token, 
+        hasCsrfToken: !!csrfToken,
+        isElectron: isElectronClient()
+      });
+
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('[createApiClient] 已设置 Authorization header');
+      } else {
+        console.log('[createApiClient] ⚠️  没有 token，未设置 Authorization header');
       }
 
       if (csrfToken) {
@@ -42,6 +67,10 @@ export const createApiClient = (): AxiosInstance => {
 
       if (isMobileClient()) {
         config.headers["x-mobile-client"] = "true";
+      }
+
+      if (isElectronClient()) {
+        config.headers["x-electron-client"] = "true";
       }
 
       return config;

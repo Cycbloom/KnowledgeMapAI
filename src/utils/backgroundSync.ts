@@ -11,6 +11,7 @@ import {
   initDB,
 } from './offlineStorage';
 import { createLogger } from './logger';
+import { request } from '../services/api';
 
 const logger = createLogger('BackgroundSync');
 
@@ -183,12 +184,12 @@ class BackgroundSyncManager {
       }
 
       const endpoints: Record<string, string> = {
-        graph: '/api/graphs',
-        node: '/api/nodes',
-        edge: '/api/edges',
+        graph: '/graphs',
+        node: '/nodes',
+        edge: '/edges',
       };
 
-      const baseUrl = endpoints[item.entityType] || `/api/${item.entityType}s`;
+      const baseUrl = endpoints[item.entityType] || `/${item.entityType}s`;
       let url = baseUrl;
       let method = 'POST';
       let body: Record<string, unknown> = item.data as Record<string, unknown> || {};
@@ -205,38 +206,36 @@ class BackgroundSyncManager {
           break;
       }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
-      });
-
-      if (response.status === 409) {
-        const remoteData = await response.json();
-        return {
-          success: false,
-          conflict: {
-            id: item.id,
-            entity: item.entityType,
-            localData: item.data as Record<string, unknown>,
-            remoteData: remoteData.data || remoteData,
-            timestamp: Date.now(),
+      try {
+        await request(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
-        };
-      }
+          body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        return { success: true };
+      } catch (error: any) {
+        if (error.code === 'CONFLICT' || error.status === 409) {
+          return {
+            success: false,
+            conflict: {
+              id: item.id,
+              entity: item.entityType,
+              localData: item.data as Record<string, unknown>,
+              remoteData: error.data || {},
+              timestamp: Date.now(),
+            },
+          };
+        }
+
         return {
           success: false,
-          error: errorData.message || `HTTP ${response.status}`,
+          error: error.message || 'Network error',
         };
       }
-
-      return { success: true };
     } catch (error) {
       return {
         success: false,

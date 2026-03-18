@@ -15,7 +15,7 @@
   "scripts": {
     "client:dev": "vite",
     "build": "tsc -b && vite build",
-    "build:electron": "cross-env ELECTRON_BUILD=true tsc -p tsconfig.electron.json && vite build && node scripts/fix-relative-paths.cjs",
+    "build:electron": "cross-env ELECTRON_BUILD=true NODE_ENV=production tsc -p tsconfig.electron.json && vite build",
     "lint": "eslint . --quiet",
     "preview": "vite preview",
     "test": "vitest",
@@ -193,7 +193,17 @@
     "cross-spawn": "^7.0.0",
     "ioredis": "^5.10.0",
     "serialize-javascript": "^7.0.3",
-    "@rollup/plugin-terser": "^1.0.0"
+    "@rollup/plugin-terser": "^1.0.0",
+    "@capacitor/core": "^8.2.0",
+    "@ionic/utils-terminal": "^2.3.5",
+    "@ionic/utils-fs": "^3.1.7",
+    "debug": "^4.4.3",
+    "jsonfile": "^6.2.0",
+    "strip-ansi": "^6.0.1",
+    "ansi-styles": "^4.3.0",
+    "string-width": "^4.2.3",
+    "plist": "^3.1.0",
+    "readable-stream": "^3.6.2"
   },
   "build": {
     "appId": "com.knowledgemap.app",
@@ -210,6 +220,7 @@
       "shared/**/*",
       "node_modules/**/*",
       "package.json",
+      ".env.production",
       "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,LICENSE,license}",
       "!**/node_modules/.bin/**",
       "!**/node_modules/**/*.ts",
@@ -225,21 +236,17 @@
     ],
     "extraResources": [
       {
-        "from": "api",
+        "from": "dist-electron/api",
         "to": "api",
         "filter": [
-          "**/*",
-          "!**/*.ts",
-          "!**/*.map"
+          "**/*"
         ]
       },
       {
-        "from": "shared",
+        "from": "dist-electron/shared",
         "to": "shared",
         "filter": [
-          "**/*",
-          "!**/*.ts",
-          "!**/*.map"
+          "**/*"
         ]
       },
       {
@@ -248,6 +255,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": ".env.production",
+        "to": ".env.production"
       }
     ],
     "asar": true,

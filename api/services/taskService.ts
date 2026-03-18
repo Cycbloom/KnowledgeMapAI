@@ -11,8 +11,17 @@ import "./taskProcessors/embeddingGenerationProcessor.js";
 import "./taskProcessors/quizGenerationProcessor.js";
 import "./taskProcessors/generateQuestionsProcessor.js";
 import dotenv from "dotenv";
+import * as path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+try {
+  dotenv.config({ path: path.join(__dirname, '..', '..', '.env.production') });
+  dotenv.config();
+} catch (err) {
+  console.warn('Failed to load .env file in taskService:', err);
+}
 
 export interface Task {
   id: string;
@@ -32,10 +41,18 @@ const supabaseKey =
   process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const defaultClient = createClient(
-  supabaseUrl!,
-  supabaseServiceKey || supabaseKey!,
-);
+let defaultClient: SupabaseClient;
+
+try {
+  const validUrl = supabaseUrl || 'https://placeholder.supabase.co';
+  const validKey = supabaseServiceKey || supabaseKey || 'placeholder-key';
+  
+  defaultClient = createClient(validUrl, validKey);
+  logger.info('TaskService Supabase client initialized successfully');
+} catch (error) {
+  logger.error('Failed to initialize TaskService Supabase client:', error);
+  defaultClient = createClient('https://placeholder.supabase.co', 'placeholder-key');
+}
 
 export class TaskService {
   async createTask(userId: string, type: string, payload?: any, name?: string) {
@@ -117,7 +134,7 @@ export class TaskService {
       tid = client as string;
       s = taskId;
       r = status;
-      e = progress as string | undefined;
+      e = progress as any;
       uid = result as string | undefined;
       p = undefined;
     }

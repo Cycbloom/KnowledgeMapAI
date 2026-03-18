@@ -25,6 +25,11 @@ export const useStore = create<AppState>()(
         sseStatus: 'disconnected',
         sseError: null,
         setUser: (user, token, refreshToken = null) => {
+          console.log('[useStore] setUser 被调用:', { 
+            hasUser: !!user, 
+            hasToken: !!token, 
+            hasRefreshToken: !!refreshToken 
+          });
           set({ 
             user, 
             token, 
@@ -35,10 +40,11 @@ export const useStore = create<AppState>()(
           set({ sseStatus: status, sseError: error });
         },
         clearAuth: () => {
+          console.log('[useStore] clearAuth 被调用');
           set({ 
             user: null, 
             token: null, 
-            refreshToken: null,
+            refreshToken: null, 
             sseStatus: 'disconnected',
             sseError: null 
           });
@@ -52,6 +58,18 @@ export const useStore = create<AppState>()(
           token: state.token,
           refreshToken: state.refreshToken,
         }),
+        onRehydrateStorage: () => {
+          console.log('[useStore] 从 localStorage 恢复数据');
+          return (state) => {
+            if (state) {
+              console.log('[useStore] 恢复的数据:', { 
+                hasUser: !!state.user, 
+                hasToken: !!state.token, 
+                hasRefreshToken: !!state.refreshToken 
+              });
+            }
+          };
+        }
       }
     ),
     { name: 'AuthStore' }

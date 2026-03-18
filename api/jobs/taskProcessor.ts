@@ -272,7 +272,7 @@ class TaskProcessor {
 
     let latestChildNodes: string[] = [];
     if (currentEdges && currentEdges.length > 0) {
-      const targetIds = currentEdges.map((e) => e.target_knowledge_point_id);
+      const targetIds = currentEdges.map((e: any) => e.target_knowledge_point_id);
       const { data: childGraphNodeData } = await supabaseAdmin
         .from("graph_nodes")
         .select(

@@ -1,4 +1,5 @@
-import { dataCache, CacheKeys } from './dataCache';
+import { dataCache, CacheKeys } from "./dataCache";
+import { request } from "../services/api";
 
 interface CachedApiOptions {
   ttl?: number;
@@ -10,7 +11,7 @@ const DEFAULT_TTL = 5 * 60 * 1000;
 export const createCachedApi = <T>(
   key: string,
   fetchFn: () => Promise<T>,
-  options: CachedApiOptions = {}
+  options: CachedApiOptions = {},
 ): Promise<T> => {
   const { ttl = DEFAULT_TTL, forceRefresh = false } = options;
 
@@ -24,20 +25,18 @@ export const createCachedApi = <T>(
 export const cachedApi = {
   graphs: {
     list: (options?: CachedApiOptions) => {
-      const userId = localStorage.getItem('userId') || 'anonymous';
+      const userId = localStorage.getItem("userId") || "anonymous";
       return createCachedApi(
         CacheKeys.USER_GRAPHS(userId),
         async () => {
-          const response = await fetch('/api/graphs', {
+          return request("/graphs", {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch graphs');
-          return response.json();
         },
-        options
+        options,
       );
     },
 
@@ -45,16 +44,14 @@ export const cachedApi = {
       return createCachedApi(
         CacheKeys.GRAPH(id),
         async () => {
-          const response = await fetch(`/api/graphs/${id}`, {
+          return request(`/graphs/${id}`, {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch graph');
-          return response.json();
         },
-        options
+        options,
       );
     },
 
@@ -62,16 +59,14 @@ export const cachedApi = {
       return createCachedApi(
         CacheKeys.GRAPH_NODES(id),
         async () => {
-          const response = await fetch(`/api/graphs/${id}/nodes`, {
+          return request(`/graphs/${id}/nodes`, {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch nodes');
-          return response.json();
         },
-        options
+        options,
       );
     },
 
@@ -82,7 +77,7 @@ export const cachedApi = {
       dataCache.delete(CacheKeys.STUDY_CARDS(graphId));
       dataCache.delete(CacheKeys.LEARNING_PATH(graphId));
 
-      const userId = localStorage.getItem('userId') || 'anonymous';
+      const userId = localStorage.getItem("userId") || "anonymous";
       dataCache.delete(CacheKeys.USER_GRAPHS(userId));
     },
   },
@@ -92,16 +87,14 @@ export const cachedApi = {
       return createCachedApi(
         CacheKeys.TEMPLATES(),
         async () => {
-          const response = await fetch('/api/templates', {
+          return request("/templates", {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch templates');
-          return response.json();
         },
-        { ttl: 30 * 60 * 1000, ...options }
+        { ttl: 30 * 60 * 1000, ...options },
       );
     },
 
@@ -109,16 +102,14 @@ export const cachedApi = {
       return createCachedApi(
         CacheKeys.TEMPLATE(id),
         async () => {
-          const response = await fetch(`/api/templates/${id}`, {
+          return request(`/templates/${id}`, {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch template');
-          return response.json();
         },
-        { ttl: 30 * 60 * 1000, ...options }
+        { ttl: 30 * 60 * 1000, ...options },
       );
     },
 
@@ -132,16 +123,14 @@ export const cachedApi = {
       return createCachedApi(
         CacheKeys.USER_PROFILE(userId),
         async () => {
-          const response = await fetch('/api/auth/user', {
+          return request("/auth/user", {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch profile');
-          return response.json();
         },
-        options
+        options,
       );
     },
 
@@ -156,16 +145,14 @@ export const cachedApi = {
       return createCachedApi(
         CacheKeys.STUDY_CARDS(graphId),
         async () => {
-          const response = await fetch(`/api/study/cards?graph_id=${graphId}`, {
+          return request(`/study/cards?graph_id=${graphId}`, {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch study cards');
-          return response.json();
         },
-        options
+        options,
       );
     },
 
@@ -173,16 +160,14 @@ export const cachedApi = {
       return createCachedApi(
         CacheKeys.LEARNING_PATH(graphId),
         async () => {
-          const response = await fetch(`/api/learning-path/${graphId}`, {
+          return request(`/learning-path/${graphId}`, {
             headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          if (!response.ok) throw new Error('Failed to fetch learning path');
-          return response.json();
         },
-        options
+        options,
       );
     },
 

@@ -84,6 +84,9 @@ const electronAPI = {
       return ipcRenderer.invoke(channel, ...args);
     },
   },
+  api: {
+    getPort: () => ipcRenderer.invoke("api:getPort"),
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { isElectronProduction, getElectronApiUrl } from '../../config/electronConfig';
 
 interface NetworkInformation extends EventTarget {
   effectiveType?: string;
@@ -52,7 +53,16 @@ export const useNetworkStatusEnhanced = (options: NetworkStatusOptions = {}) => 
   const checkConnection = useCallback(async (): Promise<boolean> => {
     try {
       const startTime = Date.now();
-      const response = await fetch('/api/health/system', {
+      
+      let healthUrl: string;
+      if (isElectronProduction()) {
+        const electronApiUrl = await getElectronApiUrl();
+        healthUrl = `${electronApiUrl}/health/system`;
+      } else {
+        healthUrl = '/api/health/system';
+      }
+      
+      const response = await fetch(healthUrl, {
         method: 'HEAD',
         cache: 'no-store',
       });

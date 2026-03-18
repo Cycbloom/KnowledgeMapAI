@@ -1,5 +1,6 @@
 import { useStore } from '../../store/useStore';
 import { TokenExpiredError, AppError, SharedErrorCodes } from '../../utils/errors';
+import { authApi } from './auth';
 
 interface QueueItem {
   resolve: (token: string) => void;
@@ -33,12 +34,16 @@ export class TokenRefreshManager {
   async refreshAccessToken(): Promise<string> {
     const { refreshToken } = useStore.getState();
 
+    console.log('[TokenRefreshManager] 尝试刷新 token, refreshToken 存在:', !!refreshToken);
+
     if (!refreshToken) {
-      useStore.getState().setUser(null, null);
+      console.log('[TokenRefreshManager] 没有 refresh token，清除用户状态');
+      useStore.getState().setUser(null, null, null);
       throw new TokenExpiredError('No refresh token available');
     }
 
     if (this.isRefreshing) {
+      console.log('[TokenRefreshManager] 已有刷新正在进行中，加入队列');
       return new Promise((resolve, reject) => {
         this.failedQueue.push({ resolve, reject });
       });
@@ -47,26 +52,25 @@ export class TokenRefreshManager {
     this.isRefreshing = true;
 
     try {
-      const refreshRes = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      });
+      console.log('[TokenRefreshManager] 调用 authApi.refreshToken');
+      const data = await authApi.refreshToken(refreshToken);
+      console.log('[TokenRefreshManager] refreshToken 响应:', { hasError: !!data.error, hasSession: !!data.session });
 
-      if (!refreshRes.ok) {
-        throw new TokenExpiredError('Token refresh failed');
+      if (data.error || !data.session) {
+        throw new TokenExpiredError(data.error || 'Token refresh failed');
       }
 
-      const data = await refreshRes.json();
       const { session, user } = data;
       
       useStore.getState().setUser(user, session.access_token, session.refresh_token);
+      console.log('[TokenRefreshManager] Token 刷新成功');
       this.processQueue(null, session.access_token);
       
       return session.access_token;
     } catch (error) {
+      console.error('[TokenRefreshManager] Token 刷新失败:', error);
       this.processQueue(error, null);
-      useStore.getState().setUser(null, null);
+      useStore.getState().setUser(null, null, null);
       throw error;
     } finally {
       this.isRefreshing = false;

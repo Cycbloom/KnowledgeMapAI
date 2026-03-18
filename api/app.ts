@@ -46,8 +46,6 @@ import relationshipTypesRoutes from "./routes/relationshipTypes.js";
 import calendarRoutes from "./routes/calendar.js";
 import quizSetRoutes from "./routes/quizSets.js";
 import collaboratorRoutes from "./routes/collaborators.js";
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "./docs/swagger.js";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler.js";
 import { syncExistingBackups } from "./services/common/backupSyncService.js";
 
@@ -138,7 +136,7 @@ app.use(csrfProtection);
 app.use(requestLogger);
 app.use(slowRequestLogger(2000));
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/api/csrf-token", getCsrfToken);
 
 /**

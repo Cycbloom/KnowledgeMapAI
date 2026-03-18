@@ -142,7 +142,7 @@ export class AIActionService {
                 .is('deleted_at', null);
             
             if (edges && edges.length > 0) {
-                const parentIds = edges.map(e => e.source_knowledge_point_id);
+                const parentIds = edges.map((e: any) => e.source_knowledge_point_id);
                 const { data: parentGraphNodes } = await supabaseAdmin
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
@@ -167,7 +167,7 @@ export class AIActionService {
                 .is('deleted_at', null);
             
             if (edges && edges.length > 0) {
-                const childIds = edges.map(e => e.target_knowledge_point_id);
+                const childIds = edges.map((e: any) => e.target_knowledge_point_id);
                 const { data: childGraphNodes } = await supabaseAdmin
                     .from('graph_nodes')
                     .select(GRAPH_NODES_SELECT)
@@ -192,7 +192,7 @@ export class AIActionService {
                 .is('deleted_at', null);
             
             if (parentEdges && parentEdges.length > 0) {
-                const parentIds = parentEdges.map(e => e.source_knowledge_point_id);
+                const parentIds = parentEdges.map((e: any) => e.source_knowledge_point_id);
                 
                 const { data: siblingEdges } = await supabaseAdmin
                     .from('edges')
@@ -203,8 +203,8 @@ export class AIActionService {
                 if (siblingEdges && siblingEdges.length > 0) {
                     const siblingIds = [...new Set(
                         siblingEdges
-                            .map(e => e.target_knowledge_point_id)
-                            .filter(id => id !== nodeId)
+                            .map((e: any) => e.target_knowledge_point_id)
+                            .filter((id: any) => id !== nodeId)
                     )];
 
                     if (siblingIds.length > 0) {

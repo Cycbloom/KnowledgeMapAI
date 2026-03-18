@@ -1,9 +1,11 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
 import { LoadingBar, ErrorBoundary } from "./components/common";
 import { useMobileInit } from "./hooks/useMobileInit";
+import { getSupabaseClient } from "./lib/supabase";
+import { authConfig } from "./config/authConfig";
 
 // Lazy Load Pages
 const Login = lazy(() =>
@@ -122,6 +124,71 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   useMobileInit();
+  const setUser = useStore(state => state.setUser);
+  const clearAuth = useStore(state => state.clearAuth);
+  const storeToken = useStore(state => state.token);
+  const storeRefreshToken = useStore(state => state.refreshToken);
+
+  useEffect(() => {
+    if (!authConfig.isSupabase()) return;
+
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    const restoreSession = async () => {
+      console.log('[App] 开始从 Supabase 恢复 session');
+      const { data: { session } } = await client.auth.getSession();
+      
+      console.log('[App] Supabase getSession 结果:', { 
+        hasSession: !!session, 
+        hasUser: !!session?.user, 
+        hasAccessToken: !!session?.access_token, 
+        hasRefreshToken: !!session?.refresh_token 
+      });
+      
+      if (session?.user) {
+        console.log('[App] 从 Supabase 恢复 session，设置用户状态');
+        setUser(
+          session.user as any,
+          session.access_token,
+          session.refresh_token
+        );
+      } else if (storeToken || storeRefreshToken) {
+        console.log('[App] Supabase 无 session，但 store 有 token - 清除不一致数据');
+        clearAuth();
+      }
+    };
+
+    restoreSession();
+
+    const { data: { subscription } } = client.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('[App] Auth state changed:', { 
+          event, 
+          hasSession: !!session, 
+          hasUser: !!session?.user, 
+          hasAccessToken: !!session?.access_token, 
+          hasRefreshToken: !!session?.refresh_token 
+        });
+        
+        if (session?.user) {
+          console.log('[App] Auth state changed - 用户已登录');
+          setUser(
+            session.user as any,
+            session.access_token,
+            session.refresh_token
+          );
+        } else {
+          console.log('[App] Auth state changed - 用户已登出');
+          setUser(null, null, null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [setUser, clearAuth, storeToken, storeRefreshToken]);
 
   return (
     <ErrorBoundary>

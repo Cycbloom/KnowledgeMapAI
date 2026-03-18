@@ -1,8 +1,9 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { useStore } from '../../store/useStore';
 import { Task } from '../../types';
+import { isElectronProduction, getElectronApiUrl } from '../../config/electronConfig';
 
 const SSE_HEARTBEAT_TIMEOUT = 300000;
 const SSE_RECONNECT_DELAY_BASE = 1000;
@@ -12,12 +13,25 @@ export const useTaskEvents = () => {
   const queryClient = useQueryClient();
   const token = useStore((state) => state.token);
   const setSSEStatus = useStore((state) => state.setSSEStatus);
+  const [apiUrl, setApiUrl] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSourcePolyfill | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const connectRef = useRef<((isReconnect?: boolean) => void) | null>(null);
   const lastActivityRef = useRef<number>(0);
   const wasHiddenRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const initApiUrl = async () => {
+      if (isElectronProduction()) {
+        const url = await getElectronApiUrl();
+        setApiUrl(url);
+      } else {
+        setApiUrl('/api');
+      }
+    };
+    initApiUrl();
+  }, []);
 
   const cleanup = useCallback(() => {
     if (eventSourceRef.current) {
@@ -35,6 +49,10 @@ export const useTaskEvents = () => {
       console.warn('[SSE] No token available, skipping connection');
       return;
     }
+    if (!apiUrl) {
+      console.warn('[SSE] API URL not ready, skipping connection');
+      return;
+    }
 
     cleanup();
     setSSEStatus('connecting');
@@ -44,10 +62,11 @@ export const useTaskEvents = () => {
     }
     lastActivityRef.current = Date.now();
 
-    console.info('[SSE] Attempting to connect to /api/tasks/events');
+    const sseUrl = `${apiUrl}/tasks/events`;
+    console.info('[SSE] Attempting to connect to', sseUrl);
 
     try {
-      const es = new EventSourcePolyfill('/api/tasks/events', {
+      const es = new EventSourcePolyfill(sseUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -145,7 +164,7 @@ export const useTaskEvents = () => {
       setSSEStatus('error', 'Failed to establish connection');
       cleanup();
     }
-  }, [token, queryClient, setSSEStatus, cleanup]);
+  }, [token, apiUrl, queryClient, setSSEStatus, cleanup]);
 
   useEffect(() => {
     connectRef.current = connect;
@@ -181,6 +200,9 @@ export const useTaskEvents = () => {
       setSSEStatus('disconnected');
       return;
     }
+    if (!apiUrl) {
+      return;
+    }
 
     connect();
 
@@ -189,5 +211,5 @@ export const useTaskEvents = () => {
       setSSEStatus('disconnected');
       console.info('[SSE] Connection closed');
     };
-  }, [token, connect, cleanup, setSSEStatus]);
+  }, [token, apiUrl, connect, cleanup, setSSEStatus]);
 };

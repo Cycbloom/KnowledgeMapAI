@@ -91,7 +91,7 @@ function getBasePath(): string {
 }
 
 export default defineConfig({
-  base: getBasePath(),
+  base: "./",
   plugins: [
     react(),
     tsconfigPaths(),

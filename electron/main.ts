@@ -1,12 +1,67 @@
 import { app, BrowserWindow, shell, crashReporter, ipcMain } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import * as http from "http";
 import pkg from "electron-updater";
 const { autoUpdater } = pkg;
+import dotenv from "dotenv";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function loadEnvVariables() {
+  try {
+    let envPath;
+    const isPackaged = process.mainModule && process.mainModule.filename.indexOf('app.asar') !== -1;
+    
+    if (isPackaged) {
+      envPath = path.join(process.resourcesPath, ".env.production");
+    } else {
+      envPath = path.join(__dirname, "..", ".env.production");
+    }
+    console.log("[Main] 尝试加载环境变量文件:", envPath);
+    dotenv.config({ path: envPath });
+    
+    console.log("[Main] 环境变量加载结果:");
+    console.log(`  VITE_SUPABASE_URL: ${process.env.VITE_SUPABASE_URL ? '已加载' : '未找到'}`);
+    console.log(`  SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? '已加载' : '未找到'}`);
+  } catch (err) {
+    console.warn("[Main] 加载环境变量文件失败:", err);
+  }
+}
+
+loadEnvVariables();
+
+let apiApp: any = null;
+
+async function loadApiApp() {
+  if (app.isPackaged) {
+    try {
+      const module = await import(path.join(process.resourcesPath, "api", "app.js"));
+      apiApp = module.default || module;
+    } catch (error) {
+      try {
+        const module = await import(path.join(__dirname, "api", "app.js"));
+        apiApp = module.default || module;
+      } catch (error2) {
+        try {
+          const module = await import("../api/app.js");
+          apiApp = module.default || module;
+        } catch (error3) {
+          console.error("[Main] 所有 API 应用加载路径都失败:", error, error2, error3);
+          throw error3;
+        }
+      }
+    }
+  } else {
+    const module = await import("../api/app.js");
+    apiApp = module.default || module;
+  }
+  console.log("[Main] API 应用加载成功");
+}
+
 let mainWindow: BrowserWindow | null = null;
+let apiServer: http.Server | null = null;
+let apiPort: number = 0;
 
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 
@@ -22,6 +77,66 @@ function getDistPath(...paths: string[]): string {
     return path.join(process.resourcesPath, ...paths);
   }
   return path.join(__dirname, "..", ...paths);
+}
+
+async function startApiServer(): Promise<number> {
+  if (!apiApp) {
+    await loadApiApp();
+  }
+  
+  return new Promise((resolve, reject) => {
+    const server = http.createServer(apiApp);
+    
+    const getRandomPort = (): number => {
+      return 30000 + Math.floor(Math.random() * 30000);
+    };
+    
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    const tryPort = (port: number): void => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        reject(new Error(`尝试了 ${maxAttempts} 个端口都无法启动 API 服务器`));
+        return;
+      }
+      
+      server.once("error", (err: NodeJS.ErrnoException) => {
+        if (err.code === "EADDRINUSE") {
+          console.log(`[API] 端口 ${port} 已被占用，尝试另一个随机端口`);
+          tryPort(getRandomPort());
+        } else {
+          reject(err);
+        }
+      });
+      
+      server.once("listening", () => {
+        apiServer = server;
+        apiPort = port;
+        console.log(`[API] 服务器已启动，端口: ${port}`);
+        resolve(port);
+      });
+      
+      server.listen(port);
+    };
+    
+    tryPort(getRandomPort());
+  });
+}
+
+async function stopApiServer(): Promise<void> {
+  return new Promise((resolve) => {
+    if (apiServer) {
+      apiServer.close(() => {
+        console.log("[API] 服务器已关闭");
+        apiServer = null;
+        apiPort = 0;
+        resolve();
+      });
+    } else {
+      resolve();
+    }
+  });
 }
 
 async function createWindow(): Promise<void> {
@@ -131,6 +246,16 @@ function configureCrashReporter(): void {
 
 app.whenReady().then(async () => {
   configureCrashReporter();
+  
+  if (app.isPackaged && !VITE_DEV_SERVER_URL) {
+    try {
+      const port = await startApiServer();
+      console.log(`[Main] API 服务器已启动，端口: ${port}`);
+    } catch (error) {
+      console.error("[Main] 启动 API 服务器失败:", error);
+    }
+  }
+  
   await createWindow();
   configureAutoUpdater();
 
@@ -147,12 +272,20 @@ app.on("window-all-closed", () => {
   }
 });
 
+app.on("will-quit", async () => {
+  await stopApiServer();
+});
+
 ipcMain.handle("app:getVersion", () => {
   return app.getVersion();
 });
 
 ipcMain.handle("app:getPlatform", () => {
   return process.platform;
+});
+
+ipcMain.handle("api:getPort", () => {
+  return apiPort;
 });
 
 ipcMain.handle("app:quit", () => {

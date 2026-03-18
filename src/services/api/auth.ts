@@ -89,14 +89,26 @@ const supabaseAuthApi = {
   },
 
   login: async (data: LoginData): Promise<AuthResponse> => {
+    console.log('[authApi.login] 开始 Supabase 登录');
     const client = getSupabaseClient();
     if (!client) {
+      console.error('[authApi.login] Supabase client 未初始化');
       throw new Error('Supabase client not initialized');
     }
 
+    console.log('[authApi.login] 调用 client.auth.signInWithPassword');
     const { data: authData, error } = await client.auth.signInWithPassword({
       email: data.email,
       password: data.password,
+    });
+
+    console.log('[authApi.login] Supabase 响应:', { 
+      hasError: !!error, 
+      hasUser: !!authData.user, 
+      hasSession: !!authData.session,
+      hasAccessToken: !!authData.session?.access_token,
+      hasRefreshToken: !!authData.session?.refresh_token,
+      errorMessage: error?.message
     });
 
     if (error) {

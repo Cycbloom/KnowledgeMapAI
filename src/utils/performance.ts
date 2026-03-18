@@ -1,3 +1,5 @@
+import { request } from '../services/api';
+
 interface PerformanceMetric {
   name: string;
   value: number;
@@ -153,7 +155,7 @@ const reportMetrics = async (): Promise<void> => {
   console.log('[Performance] Web Vitals:', webVitals);
 
   try {
-    const response = await fetch('/api/analytics/performance', {
+    await request('/analytics/performance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -163,10 +165,6 @@ const reportMetrics = async (): Promise<void> => {
         timestamp: new Date().toISOString(),
       }),
     });
-
-    if (!response.ok) {
-      console.warn('[Performance] Failed to report metrics');
-    }
   } catch (error) {
     console.warn('[Performance] Report error:', error);
   }

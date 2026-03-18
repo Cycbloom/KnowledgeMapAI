@@ -14,6 +14,26 @@ dist-electron
 release
 *.local
 
+# TypeScript 编译产物 (api 目录)
+api/**/*.js
+api/**/*.js.map
+
+# TypeScript 编译产物 (src/types 目录)
+src/types/*.js
+src/types/*.js.map
+
+# TypeScript 编译产物 (shared/types 目录)
+shared/types/*.js
+shared/types/*.js.map
+
+# 开发产物
+dev-dist/
+
+# 本地数据库
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

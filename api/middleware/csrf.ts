@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import crypto from 'crypto';
 import { AppError } from './errorHandler.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 
 const CSRF_HEADER = 'x-csrf-token';
 const CSRF_COOKIE_NAME = 'csrf-token';

@@ -4,7 +4,7 @@ import type { StudyCard } from "@/types";
 import { cacheService, CacheKeys } from "../common/cacheService.js";
 import { logger } from "../../utils/logger.js";
 import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../constants/errorCodes.js";
+import { ErrorCodes } from "../../../shared/types/errorCodes.js";
 
 interface GetCardsOptions {
   userId: string;

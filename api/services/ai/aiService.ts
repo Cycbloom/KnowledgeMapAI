@@ -20,7 +20,7 @@ import {
   DEFAULT_TIMEOUT,
 } from "../../utils/retry.js";
 import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../constants/errorCodes.js";
+import { ErrorCodes } from "../../../shared/types/errorCodes.js";
 
 const pendingRequests = new Map<string, Promise<unknown>>();
 

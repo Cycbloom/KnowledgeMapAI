@@ -8,7 +8,7 @@ import {
   extractConceptsSchema,
   suggestNextTopicSchema
 } from '../../schemas/index.js';
-import { ErrorCodes } from '../../constants/errorCodes.js';
+import { ErrorCodes } from '../../../shared/types/errorCodes.js';
 import { aiService } from '../../services/ai/aiService.js';
 import { getMockResponse } from '../../services/ai/mock.js';
 import { getAIProviderForTask, getAIProvider } from '../../services/ai/factory.js';

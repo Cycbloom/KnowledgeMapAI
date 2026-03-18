@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 
 type ValidationSchemas = {
   body?: ZodSchema;

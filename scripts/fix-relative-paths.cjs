@@ -16,6 +16,16 @@ if (fs.existsSync(indexPath)) {
     '$1./'
   );
   
+  html = html.replace(
+    /<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/g,
+    ''
+  );
+  
+  html = html.replace(
+    /<link rel="manifest"[^>]*>/g,
+    ''
+  );
+  
   const distDir = path.join(__dirname, "..", "dist");
   const jsFiles = findFilesByExtension(distDir, ".js");
   

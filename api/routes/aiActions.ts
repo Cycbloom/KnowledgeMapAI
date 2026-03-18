@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
 import { aiActionService } from '../services/ai/aiActionService.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 
 const router = express.Router();
 

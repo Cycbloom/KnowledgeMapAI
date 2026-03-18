@@ -5,7 +5,7 @@ import { authService } from '../services/core/authService.js';
 import { validate } from '../middleware/validate.js';
 import { registerSchema, loginSchema, updateProfileSchema } from '../schemas/index.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 import { logger } from '../utils/logger.js';
 
 const router = Router();

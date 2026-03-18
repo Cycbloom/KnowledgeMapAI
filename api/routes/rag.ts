@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { z } from 'zod';
 import { ragService } from '../services/ai/ragService.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { logger } from '../utils/logger.js';
 

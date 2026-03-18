@@ -11,7 +11,7 @@ import type {
   TaskFilters,
 } from "../../../shared/types/index.js";
 import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../constants/errorCodes.js";
+import { ErrorCodes } from "../../../shared/types/errorCodes.js";
 
 export type {
   ScheduledTask,

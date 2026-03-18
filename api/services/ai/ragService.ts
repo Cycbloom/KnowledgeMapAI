@@ -4,7 +4,7 @@ import { getAIProviderForTask } from './factory.js';
 import { logger } from '../../utils/logger.js';
 import { buildNodeContext, buildNodesContext, NodeData } from './utils.js';
 import { AppError } from '../../middleware/errorHandler.js';
-import { ErrorCodes } from '../../constants/errorCodes.js';
+import { ErrorCodes } from '../../../shared/types/errorCodes.js';
 
 export interface RAGContext {
   graphId: string;

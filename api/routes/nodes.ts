@@ -11,7 +11,7 @@ import {
 } from "../schemas/index.js";
 import { cacheService } from "../services/common/cacheService.js";
 import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../constants/errorCodes.js";
+import { ErrorCodes } from "../../shared/types/errorCodes.js";
 import { aiService } from "../services/ai/aiService.js";
 import { achievementService } from "../services/achievementService.js";
 import { logger } from "../utils/logger.js";

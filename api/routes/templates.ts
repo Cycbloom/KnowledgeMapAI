@@ -13,7 +13,7 @@ import { graphTemplateService, graphService } from "../services/graph/index.js";
 import { cacheService } from "../services/common/cacheService.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { achievementService } from "../services/achievementService.js";
-import { ErrorCodes } from "../constants/errorCodes.js";
+import { ErrorCodes } from "../../shared/types/errorCodes.js";
 import { z } from "zod";
 
 const createTemplateSchema = z.object({

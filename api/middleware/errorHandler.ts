@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { ErrorCodes, type ErrorCode, ErrorCodeMessages, ErrorCodeStatus } from '../constants/errorCodes.js';
+import { ErrorCodes, type ErrorCode, ErrorCodeMessages, ErrorCodeStatus } from '../../shared/types/errorCodes.js';
 import { logger } from '../utils/logger.js';
 
 const SENSITIVE_FIELDS = [

@@ -8,7 +8,7 @@ import {
   regenerateCardSchema,
   uuidParamsSchema,
 } from "../schemas/index.js";
-import { ErrorCodes } from "../constants/errorCodes.js";
+import { ErrorCodes } from "../../shared/types/errorCodes.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { taskService } from "../services/taskService.js";
 import { studyService } from "../services/study/studyService.js";

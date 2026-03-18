@@ -4,7 +4,7 @@ import { validate } from '../middleware/validate.js';
 import { importDataSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/common/cacheService.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 import { pdfService } from '../services/common/pdfService.js';
 import { parseMarkdownToGraph } from '../utils/markdownParser.js';
 import { logger } from '../utils/logger.js';

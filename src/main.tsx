@@ -23,7 +23,9 @@ const queryClient = new QueryClient({
 
 initCsrf()
 
-if (import.meta.env.PROD) {
+const isElectron = navigator.userAgent.toLowerCase().includes('electron')
+
+if (import.meta.env.PROD && !isElectron) {
   initErrorReporter()
   
   registerServiceWorker({
@@ -39,6 +41,11 @@ if (import.meta.env.PROD) {
     },
   })
 
+  initPerformanceMonitoring()
+}
+
+if (isElectron) {
+  initErrorReporter()
   initPerformanceMonitoring()
 }
 

@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../constants/errorCodes.js";
+import { ErrorCodes } from "../../shared/types/errorCodes.js";
 import { graphRelationService } from "../services/graph/index.js";
 import { taskService } from "../services/taskService.js";
 import { logger } from "../utils/logger.js";

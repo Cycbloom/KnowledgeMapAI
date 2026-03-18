@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { uuidParamsSchema, createRelationshipTypeSchema, updateRelationshipTypeSchema } from '../schemas/index.js';
 import { relationshipTypeService } from '../services/graph/index.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();

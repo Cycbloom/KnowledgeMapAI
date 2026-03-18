@@ -95,226 +95,234 @@ export default defineConfig({
   plugins: [
     react(),
     tsconfigPaths(),
-    VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "robots.txt", "icons/*.png"],
-      manifest: {
-        name: "Knowledge Map AI",
-        short_name: "KnowledgeMap",
-        description: "AI-powered Knowledge Graph Editor",
-        theme_color: "#ffffff",
-        background_color: "#ffffff",
-        display: "standalone",
-        orientation: "any",
-        start_url: "./",
-        scope: "./",
-        icons: [
-          {
-            src: "favicon.svg",
-            sizes: "192x192",
-            type: "image/svg+xml",
-            purpose: "any maskable",
-          },
-          {
-            src: "favicon.svg",
-            sizes: "512x512",
-            type: "image/svg+xml",
-            purpose: "any maskable",
-          },
-          {
-            src: "icons/192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "icons/512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any",
-          },
-          {
-            src: "icons/512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-        shortcuts: [
-          {
-            name: "新建图谱",
-            short_name: "新建",
-            description: "创建一个新的知识图谱",
-            url: "./dashboard?action=create",
-            icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
-          },
-          {
-            name: "学习模式",
-            short_name: "学习",
-            description: "进入学习模式",
-            url: "./study",
-            icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
-          },
-          {
-            name: "任务管理",
-            short_name: "任务",
-            description: "查看和管理任务",
-            url: "./scheduler",
-            icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
-          },
-        ],
-        share_target: {
-          action: "./api/share-target",
-          method: "POST",
-          enctype: "multipart/form-data",
-          params: {
-            title: "title",
-            text: "text",
-            url: "url",
-            files: [
-              {
-                name: "file",
-                accept: ["text/plain", "text/markdown", "application/json"],
+    ...(!isElectronBuild
+      ? [
+          VitePWA({
+            registerType: "autoUpdate",
+            includeAssets: ["favicon.svg", "robots.txt", "icons/*.png"],
+            manifest: {
+              name: "Knowledge Map AI",
+              short_name: "KnowledgeMap",
+              description: "AI-powered Knowledge Graph Editor",
+              theme_color: "#ffffff",
+              background_color: "#ffffff",
+              display: "standalone",
+              orientation: "any",
+              start_url: "./",
+              scope: "./",
+              icons: [
+                {
+                  src: "favicon.svg",
+                  sizes: "192x192",
+                  type: "image/svg+xml",
+                  purpose: "any maskable",
+                },
+                {
+                  src: "favicon.svg",
+                  sizes: "512x512",
+                  type: "image/svg+xml",
+                  purpose: "any maskable",
+                },
+                {
+                  src: "icons/192x192.png",
+                  sizes: "192x192",
+                  type: "image/png",
+                  purpose: "any",
+                },
+                {
+                  src: "icons/512x512.png",
+                  sizes: "512x512",
+                  type: "image/png",
+                  purpose: "any",
+                },
+                {
+                  src: "icons/512x512.png",
+                  sizes: "512x512",
+                  type: "image/png",
+                  purpose: "maskable",
+                },
+              ],
+              shortcuts: [
+                {
+                  name: "新建图谱",
+                  short_name: "新建",
+                  description: "创建一个新的知识图谱",
+                  url: "./dashboard?action=create",
+                  icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
+                },
+                {
+                  name: "学习模式",
+                  short_name: "学习",
+                  description: "进入学习模式",
+                  url: "./study",
+                  icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
+                },
+                {
+                  name: "任务管理",
+                  short_name: "任务",
+                  description: "查看和管理任务",
+                  url: "./scheduler",
+                  icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
+                },
+              ],
+              share_target: {
+                action: "./api/share-target",
+                method: "POST",
+                enctype: "multipart/form-data",
+                params: {
+                  title: "title",
+                  text: "text",
+                  url: "url",
+                  files: [
+                    {
+                      name: "file",
+                      accept: [
+                        "text/plain",
+                        "text/markdown",
+                        "application/json",
+                      ],
+                    },
+                  ],
+                },
               },
-            ],
-          },
-        },
-        categories: ["education", "productivity", "utilities"],
-        lang: "zh-CN",
-        dir: "ltr",
-        prefer_related_applications: false,
-        related_applications: [],
-        iarc_rating_id: "",
-      },
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        cleanupOutdatedCaches: true,
-        navigationPreload: false,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-cache",
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
+              categories: ["education", "productivity", "utilities"],
+              lang: "zh-CN",
+              dir: "ltr",
+              prefer_related_applications: false,
+              related_applications: [],
+              iarc_rating_id: "",
             },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "gstatic-fonts-cache",
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
+            workbox: {
+              globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
+              maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+              cleanupOutdatedCaches: true,
+              navigationPreload: false,
+              runtimeCaching: [
+                {
+                  urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+                  handler: "CacheFirst",
+                  options: {
+                    cacheName: "google-fonts-cache",
+                    expiration: {
+                      maxEntries: 20,
+                      maxAgeSeconds: 60 * 60 * 24 * 365,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                  },
+                },
+                {
+                  urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+                  handler: "CacheFirst",
+                  options: {
+                    cacheName: "gstatic-fonts-cache",
+                    expiration: {
+                      maxEntries: 20,
+                      maxAgeSeconds: 60 * 60 * 24 * 365,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                  },
+                },
+                {
+                  urlPattern: /\/api\/graphs\/[^/]+$/i,
+                  handler: "NetworkFirst",
+                  options: {
+                    cacheName: "graph-data-cache",
+                    expiration: {
+                      maxEntries: 50,
+                      maxAgeSeconds: 60 * 60 * 24,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                    networkTimeoutSeconds: 10,
+                  },
+                },
+                {
+                  urlPattern: /\/api\/graphs\/[^/]+\/nodes/i,
+                  handler: "NetworkFirst",
+                  options: {
+                    cacheName: "graph-nodes-cache",
+                    expiration: {
+                      maxEntries: 100,
+                      maxAgeSeconds: 60 * 60,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                    networkTimeoutSeconds: 10,
+                  },
+                },
+                {
+                  urlPattern: /\/api\/templates/i,
+                  handler: "CacheFirst",
+                  options: {
+                    cacheName: "templates-cache",
+                    expiration: {
+                      maxEntries: 30,
+                      maxAgeSeconds: 60 * 60 * 24 * 7,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                  },
+                },
+                {
+                  urlPattern: /\/api\/auth\/user/i,
+                  handler: "NetworkFirst",
+                  options: {
+                    cacheName: "user-cache",
+                    expiration: {
+                      maxEntries: 1,
+                      maxAgeSeconds: 60 * 60,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                    networkTimeoutSeconds: 5,
+                  },
+                },
+                {
+                  urlPattern: /\/api\/.*/i,
+                  handler: "NetworkFirst",
+                  options: {
+                    cacheName: "api-cache",
+                    expiration: {
+                      maxEntries: 100,
+                      maxAgeSeconds: 60 * 10,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                    networkTimeoutSeconds: 5,
+                  },
+                },
+                {
+                  urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/i,
+                  handler: "CacheFirst",
+                  options: {
+                    cacheName: "images-cache",
+                    expiration: {
+                      maxEntries: 60,
+                      maxAgeSeconds: 60 * 60 * 24 * 30,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                  },
+                },
+              ],
             },
-          },
-          {
-            urlPattern: /\/api\/graphs\/[^/]+$/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "graph-data-cache",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              networkTimeoutSeconds: 10,
+            devOptions: {
+              enabled: true,
+              type: "module",
             },
-          },
-          {
-            urlPattern: /\/api\/graphs\/[^/]+\/nodes/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "graph-nodes-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
-          {
-            urlPattern: /\/api\/templates/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "templates-cache",
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /\/api\/auth\/user/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "user-cache",
-              expiration: {
-                maxEntries: 1,
-                maxAgeSeconds: 60 * 60,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              networkTimeoutSeconds: 5,
-            },
-          },
-          {
-            urlPattern: /\/api\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 10,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              networkTimeoutSeconds: 5,
-            },
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "images-cache",
-              expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-        ],
-      },
-      devOptions: {
-        enabled: true,
-        type: "module",
-      },
-    }),
+          }),
+        ]
+      : []),
   ],
   build: {
     chunkSizeWarningLimit: 1000,

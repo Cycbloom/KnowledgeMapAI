@@ -3,7 +3,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } from '../schemas/index.js';
 import { cacheService, CacheKeys } from '../services/common/cacheService.js';
-import { ErrorCodes } from '../constants/errorCodes.js';
+import { ErrorCodes } from '../../shared/types/errorCodes.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { studyService } from '../services/study/studyService.js';
 import { achievementService } from '../services/achievementService.js';

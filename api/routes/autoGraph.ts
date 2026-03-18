@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { requireAuth, type AuthRequest } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../constants/errorCodes.js";
+import { ErrorCodes } from "../../shared/types/errorCodes.js";
 import { getAIProviderForTask, getAIProvider } from "../services/ai/factory.js";
 import { promptService } from "../services/ai/promptService.js";
 import { cacheService, CacheKeys } from "../services/common/cacheService.js";

@@ -1,1 +1,1 @@
-export { ErrorCodes, type ErrorCode } from './errorCodes.js';
+export { ErrorCodes, type ErrorCode } from '../../shared/types/errorCodes.js';

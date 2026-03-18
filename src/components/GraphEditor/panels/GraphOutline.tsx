@@ -55,13 +55,13 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
 
   // Process nodes (Search -> Filter -> Sort)
   const processedNodes = useMemo(() => {
-    let result = nodes;
+    let result = nodes.filter(node => node && node.id);
     
     // 1. Search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(node => 
-        node.title.toLowerCase().includes(query) || 
+        node.title && node.title.toLowerCase().includes(query) || 
         (node.content && node.content.toLowerCase().includes(query))
       );
     }
@@ -74,7 +74,10 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     // 3. Sort (Applies to List Mode mainly, but we prepare it anyway)
     if (viewMode === 'list' || searchQuery.trim() || filterLevel !== 'all') {
        result = [...result].sort((a, b) => {
-          if (sortMode === 'title') return a.title.localeCompare(b.title);
+          const safeTitleA = a.title || '';
+          const safeTitleB = b.title || '';
+          
+          if (sortMode === 'title') return safeTitleA.localeCompare(safeTitleB);
           if (sortMode === 'level') {
               const levelOrder: any = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
               return (levelOrder[a.level || 'leaf'] || 4) - (levelOrder[b.level || 'leaf'] || 4);
@@ -84,7 +87,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           const la = levelOrder[a.level || 'leaf'] ?? 4;
           const lb = levelOrder[b.level || 'leaf'] ?? 4;
           if (la !== lb) return la - lb;
-          return a.title.localeCompare(b.title);
+          return safeTitleA.localeCompare(safeTitleB);
        });
     }
     
@@ -180,17 +183,17 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         const la = levelOrder[a.level || 'leaf'] ?? 4;
         const lb = levelOrder[b.level || 'leaf'] ?? 4;
         if (la !== lb) return la - lb;
-        return a.title.localeCompare(b.title);
+        return (a.title || '').localeCompare(b.title || '');
       });
     });
 
     // Find roots
-    let roots = nodes.filter(n => !hasParent.has(n.id));
+    let roots = nodes.filter(n => n && n.id && !hasParent.has(n.id));
     
     // Fallback for cycles/loops where everyone has a parent
     if (roots.length === 0 && nodes.length > 0) {
-      roots = nodes.filter(n => n.level === 'root');
-      if (roots.length === 0) roots = [nodes[0]];
+      roots = nodes.filter(n => n && n.level === 'root');
+      if (roots.length === 0 && nodes[0]) roots = [nodes[0]];
     }
 
     // Sort roots
@@ -199,7 +202,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       const la = levelOrder[a.level || 'leaf'] ?? 4;
       const lb = levelOrder[b.level || 'leaf'] ?? 4;
       if (la !== lb) return la - lb;
-      return a.title.localeCompare(b.title);
+      return (a.title || '').localeCompare(b.title || '');
     });
 
     return { rootNodes: roots, childrenMap: cMap, parentMap: pMap };

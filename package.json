@@ -7,7 +7,7 @@
     "name": "KnowledgeMap Team",
     "email": "support@knowledgemap.app"
   },
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/electron/main.js",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
@@ -15,7 +15,7 @@
   "scripts": {
     "client:dev": "vite",
     "build": "tsc -b && vite build",
-    "build:electron": "cross-env ELECTRON_BUILD=true tsc -p tsconfig.electron.json && vite build",
+    "build:electron": "cross-env ELECTRON_BUILD=true tsc -p tsconfig.electron.json && vite build && node scripts/fix-relative-paths.cjs",
     "lint": "eslint . --quiet",
     "preview": "vite preview",
     "test": "vitest",

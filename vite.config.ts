@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
@@ -106,8 +106,8 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         orientation: "any",
-        start_url: "/",
-        scope: "/",
+        start_url: "./",
+        scope: "./",
         icons: [
           {
             src: "favicon.svg",
@@ -145,26 +145,26 @@ export default defineConfig({
             name: "新建图谱",
             short_name: "新建",
             description: "创建一个新的知识图谱",
-            url: "/dashboard?action=create",
+            url: "./dashboard?action=create",
             icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
           },
           {
             name: "学习模式",
             short_name: "学习",
             description: "进入学习模式",
-            url: "/study",
+            url: "./study",
             icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
           },
           {
             name: "任务管理",
             short_name: "任务",
             description: "查看和管理任务",
-            url: "/scheduler",
+            url: "./scheduler",
             icons: [{ src: "icons/96x96.png", sizes: "96x96" }],
           },
         ],
         share_target: {
-          action: "/api/share-target",
+          action: "./api/share-target",
           method: "POST",
           enctype: "multipart/form-data",
           params: {

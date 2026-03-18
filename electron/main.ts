@@ -1,7 +1,8 @@
 import { app, BrowserWindow, shell, crashReporter, ipcMain } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { autoUpdater } from "electron-updater";
+import pkg from "electron-updater";
+const { autoUpdater } = pkg;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -10,6 +11,13 @@ let mainWindow: BrowserWindow | null = null;
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 
 function getResourcePath(...paths: string[]): string {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, ...paths);
+  }
+  return path.join(__dirname, "..", ...paths);
+}
+
+function getDistPath(...paths: string[]): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, ...paths);
   }
@@ -45,12 +53,31 @@ async function createWindow(): Promise<void> {
   });
 
   if (VITE_DEV_SERVER_URL) {
+    console.log(`[Main] 加载开发服务器: ${VITE_DEV_SERVER_URL}`);
     mainWindow.loadURL(VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools();
   } else {
-    const distPath = getResourcePath("dist", "index.html");
-    mainWindow?.loadFile(distPath).catch((err) => {
+    let indexPath: string;
+    if (app.isPackaged) {
+      indexPath = path.join(app.getAppPath(), "dist", "index.html");
+    } else {
+      indexPath = path.join(__dirname, "..", "dist", "index.html");
+    }
+
+    console.log(`[Main] 尝试加载文件: ${indexPath}`);
+    console.log(`[Main] app.getAppPath(): ${app.getAppPath()}`);
+    console.log(`[Main] process.resourcesPath: ${process.resourcesPath}`);
+    console.log(`[Main] __dirname: ${__dirname}`);
+    console.log(`[Main] app.isPackaged: ${app.isPackaged}`);
+
+    mainWindow?.loadFile(indexPath).catch((err) => {
       console.error("Failed to load index.html:", err);
+      console.error("Error details:", {
+        indexPath,
+        appPath: app.getAppPath(),
+        resourcesPath: process.resourcesPath,
+        dirname: __dirname,
+      });
     });
   }
 

@@ -34,12 +34,12 @@ export const StatisticsCenter: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 md:mb-8">
+        <div className="flex gap-2 mb-6 md:mb-8 overflow-x-auto pb-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-sm md:text-base font-medium transition-all ${
+              className={`flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-3 md:py-2.5 rounded-xl text-sm md:text-base font-medium transition-all flex-shrink-0 min-h-[44px] ${
                 activeTab === tab.id
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30"
                   : isDark

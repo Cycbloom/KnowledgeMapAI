@@ -35,7 +35,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`group p-5 rounded-2xl border transition-all hover:shadow-xl flex flex-col h-full relative ${
+      className={`group p-4 md:p-5 rounded-2xl border transition-all hover:shadow-xl flex flex-col h-full relative ${
         selected 
           ? (isDark ? 'bg-indigo-900/20 border-indigo-500' : 'bg-indigo-50 border-indigo-200')
           : (isDark 
@@ -51,7 +51,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
               e.stopPropagation();
               if (onSelect) onSelect(card);
             }}
-            className={`transition-colors ${selected ? 'text-indigo-500' : 'text-gray-300 hover:text-gray-400'}`}
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${selected ? 'text-indigo-500' : 'text-gray-300 hover:text-gray-400'}`}
           >
              {selected ? <CheckSquare size={20} /> : <Square size={20} />}
           </button>
@@ -101,7 +101,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                 e.stopPropagation();
                 onPreview(card);
               }}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all ${
                 isDark 
                   ? 'text-slate-400 hover:text-indigo-400 hover:bg-slate-700' 
                   : 'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
@@ -118,7 +118,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                 e.stopPropagation();
                 onEdit(card);
               }}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all ${
                 isDark 
                   ? 'text-slate-400 hover:text-amber-400 hover:bg-slate-700' 
                   : 'text-gray-400 hover:text-amber-600 hover:bg-gray-100'
@@ -135,7 +135,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                 e.stopPropagation();
                 onDelete(card);
               }}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all ${
                 isDark 
                   ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700' 
                   : 'text-gray-400 hover:text-red-600 hover:bg-gray-100'
@@ -152,7 +152,7 @@ export const StudyCardPreview: React.FC<StudyCardPreviewProps> = ({
                 e.stopPropagation();
                 onPractice(card);
               }}
-              className={`ml-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+              className={`ml-1 min-w-[64px] min-h-[44px] text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
                 isDark 
                   ? 'text-indigo-400 hover:bg-indigo-500/10' 
                   : 'text-indigo-600 hover:bg-indigo-50'

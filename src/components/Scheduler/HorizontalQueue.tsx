@@ -122,7 +122,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
       <div
         className={`${config.headerBg} rounded-t-2xl p-3 border-b ${config.border}`}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-3">
             <div
               className={`p-2 rounded-lg bg-gradient-to-br ${config.gradient} shadow-lg`}
@@ -146,7 +146,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
             <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
               <Clock size={12} className={config.accentColor} />
               <span>
@@ -339,13 +339,13 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                       animate={{ opacity: 1, scale: 1 }}
                       onClick={onAddTask}
                       className={`
-                          flex-shrink-0 w-[180px] h-[100px] rounded-xl border-2 border-dashed
+                          flex-shrink-0 w-[140px] sm:w-[180px] h-[90px] sm:h-[100px] rounded-xl border-2 border-dashed
                           ${config.border} ${config.accentColor}
                           hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all
-                          flex flex-col items-center justify-center gap-2 text-sm
+                          flex flex-col items-center justify-center gap-2 text-xs sm:text-sm min-h-[44px]
                         `}
                     >
-                      <Plus size={20} />
+                      <Plus size={18} />
                       <span>添加任务</span>
                     </motion.button>
                   )}

@@ -11,8 +11,6 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  X,
   ListChecks,
   HelpCircle,
   GraduationCap,
@@ -40,6 +38,7 @@ import {
 import { Breadcrumb } from "./Breadcrumb";
 import { HeaderGreeting } from "./HeaderGreeting";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { useTheme } from "../../hooks";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
@@ -49,9 +48,7 @@ interface SidebarLinkProps {
   icon: LucideIcon;
   label: string;
   isCollapsed: boolean;
-  isMobileMenuOpen: boolean;
   isDark: boolean;
-  onClick?: () => void;
 }
 
 const SidebarLink: React.FC<SidebarLinkProps> = ({
@@ -59,17 +56,14 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   icon: Icon,
   label,
   isCollapsed,
-  isMobileMenuOpen,
-  onClick,
 }) => (
   <Link
     to={to}
-    className={`flex items-center ${isCollapsed && !isMobileMenuOpen ? "justify-center" : "space-x-2"} p-2 hover:bg-slate-800 rounded transition-colors`}
+    className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} p-2 hover:bg-slate-800 rounded transition-colors`}
     title={label}
-    onClick={onClick}
   >
     <Icon size={20} />
-    {(!isCollapsed || isMobileMenuOpen) && <span>{label}</span>}
+    {!isCollapsed && <span>{label}</span>}
   </Link>
 );
 
@@ -80,7 +74,6 @@ export const Layout = () => {
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { addMessage } = useMessageStore();
 
@@ -180,10 +173,6 @@ export const Layout = () => {
     lastTaskStatusRef.current = updated;
   }, [tasksData, addMessage, navigate]);
 
-  const handleMobileNavClick = useCallback(() => {
-    setIsMobileMenuOpen(false);
-  }, []);
-
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -197,22 +186,12 @@ export const Layout = () => {
       className={`flex h-screen flex-col ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}
     >
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        {/* Mobile Overlay */}
-        {isMobileMenuOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-        )}
-
-        {/* Sidebar */}
-        {!isFullScreenPage && (
+        {/* Sidebar - Desktop Only */}
+        {!isFullScreenPage && !isMobile && (
           <div
             className={`
-            fixed inset-y-0 left-0 z-40 bg-slate-900 text-white flex flex-col transition-all duration-300
-            transform md:relative md:translate-x-0
-            ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-            w-64 ${isCollapsed ? "md:w-20" : "md:w-64"}
+            bg-slate-900 text-white flex flex-col transition-all duration-300
+            ${isCollapsed ? "w-20" : "w-64"}
             pt-[var(--safe-area-inset-top)]
           `}
           >
@@ -238,108 +217,84 @@ export const Layout = () => {
                 icon={BookOpen}
                 label="我的图谱"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/graph-map"
                 icon={Network}
                 label="图谱地图"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/study"
                 icon={GraduationCap}
                 label="学习中心"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/learning-paths"
                 icon={Route}
                 label="学习路径"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/statistics"
                 icon={BarChart3}
                 label="统计中心"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/calendar"
                 icon={Calendar}
                 label="日历"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/achievements"
                 icon={Trophy}
                 label="成就系统"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/templates"
                 icon={Sparkles}
                 label="模板管理"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/tasks"
                 icon={ListChecks}
                 label="任务中心"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/scheduler"
                 icon={Zap}
                 label="任务调度"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/profile"
                 icon={User}
                 label="个人设置"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
               <SidebarLink
                 to="/trash"
                 icon={Trash2}
                 label="回收站"
                 isCollapsed={isCollapsed}
-                isMobileMenuOpen={isMobileMenuOpen}
                 isDark={isDark}
-                onClick={handleMobileNavClick}
               />
             </nav>
 
@@ -347,11 +302,11 @@ export const Layout = () => {
             <div className="p-4 border-t border-slate-700 pb-[var(--safe-area-inset-bottom)]">
               <button
                 onClick={handleLogout}
-                className={`flex items-center ${isCollapsed && !isMobileMenuOpen ? "justify-center" : "space-x-2"} text-gray-400 hover:text-white w-full p-2 hover:bg-slate-800 rounded transition-colors`}
+                className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} text-gray-400 hover:text-white w-full p-2 hover:bg-slate-800 rounded transition-colors`}
                 title="退出登录"
               >
                 <LogOut size={20} />
-                {(!isCollapsed || isMobileMenuOpen) && <span>退出登录</span>}
+                {!isCollapsed && <span>退出登录</span>}
               </button>
             </div>
           </div>
@@ -368,18 +323,8 @@ export const Layout = () => {
                   : "bg-white border-gray-200"
               }`}
             >
-              {/* Left: Mobile Menu Button and Breadcrumb */}
+              {/* Left: Breadcrumb */}
               <div className="flex-shrink-0 flex items-center gap-2">
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className={`md:hidden p-1.5 -ml-1 rounded-lg transition-colors ${
-                    isDark
-                      ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
-                >
-                  {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-                </button>
                 <Breadcrumb />
               </div>
 
@@ -443,12 +388,17 @@ export const Layout = () => {
             </header>
           )}
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+          <div
+            className={`flex-1 overflow-y-auto custom-scrollbar relative ${isMobile && !isFullScreenPage ? "pb-16" : ""}`}
+          >
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
           </div>
-          <MessageBar />
+          {isMobile && !isFullScreenPage && (
+            <MobileBottomNav isDark={isDark} currentPath={location.pathname} />
+          )}
+          <MessageBar bottomOffset={isMobile && !isFullScreenPage ? 56 : 0} />
           <OfflineIndicator />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />

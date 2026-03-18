@@ -837,7 +837,7 @@ export const GraphMap = () => {
           </div>
         )}
 
-        <div className="absolute bottom-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-3">
+        <div className="hidden md:block absolute bottom-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-3">
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
             关系类型图例
           </h4>

@@ -6,10 +6,10 @@ import axios, {
 import { useStore } from "../../store/useStore";
 import { createErrorFromResponse } from "../../utils/errors";
 import { TokenRefreshManager } from "./TokenRefreshManager";
-import { getMobileApiBaseUrl } from "../../config/mobileApiConfig";
+import { isCapacitorMobile } from "../../config/mobileApiConfig";
 
 const isMobileClient = (): boolean => {
-  return !!(window as any).Capacitor?.isNativePlatform?.();
+  return isCapacitorMobile();
 };
 
 export const getCookie = (name: string): string | null => {
@@ -20,8 +20,7 @@ export const getCookie = (name: string): string | null => {
 };
 
 export const createApiClient = (): AxiosInstance => {
-  const mobileBaseUrl = getMobileApiBaseUrl();
-  const baseURL = mobileBaseUrl ? `${mobileBaseUrl}/api` : "/api";
+  const baseURL = "/api";
 
   const client = axios.create({
     baseURL,

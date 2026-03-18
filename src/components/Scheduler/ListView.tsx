@@ -234,9 +234,9 @@ export const ListView: React.FC<ListViewProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+          <div className="relative flex-1 max-w-sm">
             <Search
               size={16}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
@@ -246,14 +246,14 @@ export const ListView: React.FC<ListViewProps> = ({
               placeholder="搜索任务..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-slate-800 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-400 dark:focus:border-cyan-500/50 w-64"
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-slate-800 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-400 dark:focus:border-cyan-500/50"
             />
           </div>
 
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`
-              flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all
+              flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm transition-all min-h-[44px]
               ${
                 showFilters
                   ? "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30"
@@ -517,7 +517,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             {task.status === "pending" && onStartTask && (
                               <button
                                 onClick={() => onStartTask(task)}
-                                className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all"
+                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all"
                                 title="开始"
                               >
                                 <Play size={14} />
@@ -526,7 +526,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             {task.status === "in_progress" && onPauseTask && (
                               <button
                                 onClick={() => onPauseTask(task)}
-                                className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
+                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
                                 title="暂停"
                               >
                                 <Pause size={14} />
@@ -538,7 +538,7 @@ export const ListView: React.FC<ListViewProps> = ({
                               onCompleteTask && (
                                 <button
                                   onClick={() => onCompleteTask(task)}
-                                  className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
+                                  className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
                                   title="完成"
                                 >
                                   <Check size={14} />
@@ -547,7 +547,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             {onEditTask && (
                               <button
                                 onClick={() => onEditTask(task)}
-                                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-all"
+                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-all"
                                 title="编辑"
                               >
                                 <Edit2 size={14} />
@@ -556,7 +556,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             {onDeleteTask && (
                               <button
                                 onClick={() => onDeleteTask(task)}
-                                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                                className="p-2.5 rounded-lg min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
                                 title="删除"
                               >
                                 <Trash2 size={14} />

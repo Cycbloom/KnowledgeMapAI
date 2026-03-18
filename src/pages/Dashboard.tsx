@@ -608,7 +608,7 @@ export const Dashboard = () => {
                 >
                   <button
                     onClick={() => setViewMode("card")}
-                    className={`p-2.5 transition-all ${
+                    className={`p-2.5 min-h-[44px] min-w-[44px] transition-all ${
                       viewMode === "card"
                         ? isDark
                           ? "bg-blue-600 text-white"
@@ -623,7 +623,7 @@ export const Dashboard = () => {
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`p-2.5 transition-all ${
+                    className={`p-2.5 min-h-[44px] min-w-[44px] transition-all ${
                       viewMode === "list"
                         ? isDark
                           ? "bg-blue-600 text-white"
@@ -641,7 +641,7 @@ export const Dashboard = () => {
                 {!isSelectMode && (
                   <button
                     onClick={enterSelectMode}
-                    className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                    className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
                       isDark
                         ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                         : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
@@ -656,7 +656,7 @@ export const Dashboard = () => {
                 {isSelectMode && (
                   <button
                     onClick={exitSelectMode}
-                    className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                    className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
                       isDark
                         ? "bg-red-900/30 border-red-800 text-red-400 hover:bg-red-900/50"
                         : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
@@ -671,7 +671,7 @@ export const Dashboard = () => {
                 <button
                   onClick={handleImportClick}
                   disabled={importGraphMutation.isPending}
-                  className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                  className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
@@ -686,7 +686,7 @@ export const Dashboard = () => {
 
                 <Link
                   to="/graph-map"
-                  className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium ${
+                  className={`px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 border transition-all text-sm font-medium min-h-[44px] ${
                     isDark
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
@@ -699,7 +699,7 @@ export const Dashboard = () => {
 
                 <button
                   onClick={handleOpenTemplateSelector}
-                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium"
+                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
                   title="新建图谱"
                 >
                   <Plus size={16} />
@@ -708,7 +708,7 @@ export const Dashboard = () => {
 
                 <button
                   onClick={handleOpenAIGenerator}
-                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium"
+                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
                   title="AI 生成"
                 >
                   <Sparkles size={16} />
@@ -1053,7 +1053,7 @@ export const Dashboard = () => {
           >
             <button
               onClick={toggleSelectAll}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors min-h-[44px] ${
                 isDark
                   ? "hover:bg-slate-700 text-slate-300"
                   : "hover:bg-gray-100 text-gray-600"
@@ -1084,7 +1084,7 @@ export const Dashboard = () => {
                 <button
                   onClick={handleBatchDelete}
                   disabled={batchDeleteGraphsMutation.isPending}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
                     isDark
                       ? "bg-red-900/30 text-red-400 hover:bg-red-900/50"
                       : "bg-red-50 text-red-600 hover:bg-red-100"
@@ -1095,7 +1095,7 @@ export const Dashboard = () => {
                 </button>
                 <button
                   onClick={clearSelection}
-                  className={`p-1.5 rounded-lg transition-colors ${
+                  className={`p-1.5 rounded-lg transition-colors min-h-[44px] min-w-[44px] ${
                     isDark
                       ? "hover:bg-slate-700 text-slate-400"
                       : "hover:bg-gray-100 text-gray-500"
@@ -1109,7 +1109,7 @@ export const Dashboard = () => {
         )}
 
         <div
-          className={`grid gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
+          className={`grid gap-3 sm:gap-4 lg:gap-6 ${isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}
         >
           {filteredGraphs.length === 0 ? (
             <div
@@ -1269,7 +1269,7 @@ export const Dashboard = () => {
                             <Link
                               to={`/graph/${graph.id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className={`p-2 rounded-lg transition-colors ${
+                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                                 isDark
                                   ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                   : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
@@ -1284,7 +1284,7 @@ export const Dashboard = () => {
                                 e.stopPropagation();
                                 handleToggleFavorite(graph.id, graph.is_favorite || false);
                               }}
-                              className={`p-2 rounded-lg transition-colors ${
+                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                                 graph.is_favorite
                                   ? "text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
                                   : isDark
@@ -1301,7 +1301,7 @@ export const Dashboard = () => {
                                 e.stopPropagation();
                                 handleDeleteGraph(graph.id, graph.title);
                               }}
-                              className={`p-2 rounded-lg transition-colors ${
+                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                                 isDark
                                   ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                   : "text-gray-400 hover:bg-red-50 hover:text-red-500"
@@ -1322,7 +1322,7 @@ export const Dashboard = () => {
                   {paginatedGraphs.map((graph) => (
                     <div
                       key={graph.id}
-                      className={`p-4 transition-colors ${
+                      className={`p-3 sm:p-4 transition-colors ${
                         isSelectMode && selectedIds.has(graph.id)
                           ? isDark
                             ? "bg-blue-900/20"
@@ -1357,17 +1357,17 @@ export const Dashboard = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className={`font-medium ${isDark ? "text-slate-100" : "text-gray-900"}`}>
+                            <span className={`font-medium text-sm sm:text-base ${isDark ? "text-slate-100" : "text-gray-900"}`}>
                               {graph.title}
                             </span>
                             {graph.is_favorite && (
-                              <Star size={14} className="text-yellow-500" fill="currentColor" />
+                              <Star size={14} className="text-yellow-500 flex-shrink-0" fill="currentColor" />
                             )}
                           </div>
-                          <p className={`text-sm mb-2 line-clamp-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                          <p className={`text-xs sm:text-sm mb-2 line-clamp-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
                             {graph.description || "暂无描述"}
                           </p>
-                          <div className="flex items-center gap-4 text-xs">
+                          <div className="flex items-center gap-3 text-xs">
                             <div className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}>
                               <Network size={12} />
                               <span>{graph.nodes_count || 0} 节点</span>
@@ -1496,7 +1496,7 @@ export const Dashboard = () => {
                           <Link
                             to={`/graph/${graph.id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className={`p-2 rounded-lg transition-colors ${
+                            className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                               isDark
                                 ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                 : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
@@ -1511,7 +1511,7 @@ export const Dashboard = () => {
                               e.stopPropagation();
                               handleDeleteGraph(graph.id, graph.title);
                             }}
-                            className={`p-2 rounded-lg transition-colors ${
+                            className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                               isDark
                                 ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                 : "text-gray-400 hover:bg-red-50 hover:text-red-500"
@@ -1527,7 +1527,7 @@ export const Dashboard = () => {
                                 e.stopPropagation();
                                 handleToggleFavorite(graph.id, false);
                               }}
-                              className={`p-2 rounded-lg transition-colors ${
+                              className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                                 isDark
                                   ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
                                   : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
@@ -1738,10 +1738,10 @@ export const Dashboard = () => {
 
       {/* Mobile FAB */}
       {isMobile && (
-        <div className="fixed bottom-6 right-6 z-40" ref={fabMenuRef}>
+        <div className="fixed bottom-20 right-6 z-40" ref={fabMenuRef}>
           {/* FAB Menu */}
           {showFABMenu && (
-            <div className="absolute bottom-16 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="absolute bottom-20 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
               <button
                 onClick={handleOpenTemplateSelector}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${

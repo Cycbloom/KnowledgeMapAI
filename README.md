@@ -6,7 +6,7 @@
 
 Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 辅助学习、间隔重复记忆和任务管理融为一体。用户可以通过可视化图谱组织知识，利用 AI 自动扩展知识点、生成学习材料，并通过科学的间隔重复算法进行高效学习。
 
-**目标平台：** 本项目以 **Electron 桌面应用** 为主要开发和发布目标，同时支持 Web 端访问。通过 Electron 实现跨平台桌面应用（Windows、macOS、Linux），提供原生桌面体验，包括系统托盘、自动更新、离线支持等特性。
+**目标平台：** 本项目以 **Electron 桌面应用** 为主要开发和发布目标，同时支持 Web 端和移动端（Android）访问。通过 Electron 实现跨平台桌面应用（Windows、macOS、Linux），提供原生桌面体验，包括系统托盘、自动更新、离线支持等特性。移动端使用 Capacitor 构建，直接连接 Supabase，支持离线存储和实时同步。
 
 **核心价值：**
 
@@ -73,10 +73,11 @@ Knowledge Map 是一个功能丰富的知识管理工具，将知识图谱、AI 
 
 本项目采用 **Electron + Web** 双端架构，以 Electron 桌面应用为主要发布形式：
 
-| 平台                  | 描述                                     |
-| --------------------- | ---------------------------------------- |
-| **Electron 桌面应用** | 主要目标平台，支持 Windows、macOS、Linux |
-| **Web 应用**          | 支持浏览器访问，便于快速预览和开发调试   |
+| 平台                  | 描述                                                           |
+| --------------------- | -------------------------------------------------------------- |
+| **Electron 桌面应用** | 主要目标平台，支持 Windows、macOS、Linux                       |
+| **Web 应用**          | 支持浏览器访问，便于快速预览和开发调试                         |
+| **移动端 (Android)**  | 基于 Capacitor 构建，直接连接 Supabase，支持离线存储和实时同步 |
 
 ### 桌面应用特性
 
@@ -330,6 +331,13 @@ npm run test:e2e:report  # 查看 E2E 测试报告
 # 数据库
 npm run db:seed          # 插入测试数据
 npm run db:backfill      # 回填向量嵌入
+
+# 移动端
+npm run mobile:build     # 构建移动端应用
+npm run mobile:sync      # 构建并同步到 Capacitor
+npm run mobile:run       # 运行 Android 应用
+npm run mobile:build:release # 构建 Android 发布版 APK
+npm run mobile:test      # 运行移动端测试
 ```
 
 ### 代码规范

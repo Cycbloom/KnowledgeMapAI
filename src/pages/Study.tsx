@@ -11,7 +11,7 @@ import { StatsOverview } from '../components/Statistics/StatsOverview';
 import { QuizList, QuizGenerationModal } from '../components/Quiz';
 import { Check, X, RefreshCw, BookOpen, Trophy, Clock, Brain, Search, ArrowLeft, Play, LayoutGrid, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Activity, Flame, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../store/useMessageStore';
-import { useTheme } from '../hooks';
+import { useTheme, useIsMobile } from '../hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 
@@ -35,6 +35,7 @@ interface Prediction {
 
 export const Study = () => {
   const { isDark } = useTheme();
+  const { isMobile } = useIsMobile();
   const { addMessage } = useMessageStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -296,19 +297,19 @@ export const Study = () => {
     return [];
   }, [currentCard]);
 
-  if (isLoading) return <div className={`min-h-full flex items-center justify-center p-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>正在加载学习资源...</div>;
+  if (isLoading) return <div className={`min-h-full flex items-center justify-center ${isMobile ? 'p-4' : 'p-8'} ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>正在加载学习资源...</div>;
 
   // --- Dashboard & Bank & Focus & Quizzes View ---
   if (viewState === 'dashboard' || viewState === 'bank' || viewState === 'focus' || viewState === 'quizzes') {
     return (
-      <div className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'} p-8`}>
-        <div className="max-w-6xl mx-auto space-y-8">
+      <div className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-gray-900'} ${isMobile ? 'p-3' : 'p-8'}`}>
+        <div className={`${isMobile ? 'max-w-full' : 'max-w-6xl'} mx-auto space-y-6 md:space-y-8`}>
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className={`flex items-center ${isMobile ? 'flex-col gap-3' : 'justify-between'}`}>
+            <div className={`flex items-center ${isMobile ? 'w-full' : 'space-x-4'}`}>
               <button 
                 onClick={() => window.history.back()}
-                className={`p-2 rounded-lg border transition-colors ${
+                className={`min-w-[44px] min-h-[44px] p-2 rounded-lg border transition-colors flex items-center justify-center ${
                   isDark 
                     ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' 
                     : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-600'
@@ -317,18 +318,18 @@ export const Study = () => {
                 <ArrowLeft size={20} />
               </button>
               <div>
-                <h1 className="text-2xl font-bold">学习中心</h1>
-                <p className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                <h1 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold`}>学习中心</h1>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                   {nodeId ? '单点突破' : nodeIds ? '路径特训' : '全图复习'}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-                <div className={`flex p-1 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+            <div className={`flex items-center ${isMobile ? 'w-full overflow-x-auto' : 'space-x-2'}`}>
+                <div className={`flex p-1 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${isMobile ? 'flex-1 min-w-0' : ''}`}>
                     <button
                         onClick={() => setViewState('dashboard')}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        className={`min-h-[44px] px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${
                             viewState === 'dashboard' 
                             ? (isDark ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-900')
                             : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')
@@ -338,47 +339,49 @@ export const Study = () => {
                     </button>
                     <button
                         onClick={() => setViewState('bank')}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        className={`min-h-[44px] px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${
                             viewState === 'bank'
                             ? (isDark ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-900')
                             : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')
                         }`}
                     >
-                        题库管理
+                        题库
                     </button>
                     <button
                         onClick={() => setViewState('focus')}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        className={`min-h-[44px] px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${
                             viewState === 'focus'
                             ? (isDark ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-900')
                             : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')
                         }`}
                     >
-                        专注统计
+                        专注
                     </button>
                     <button
                         onClick={() => setViewState('quizzes')}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        className={`min-h-[44px] px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${
                             viewState === 'quizzes'
                             ? (isDark ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-900')
                             : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-500 hover:text-gray-700')
                         }`}
                     >
-                        测验管理
+                        测验
                     </button>
                 </div>
 
                 {graphId && (
                 <button 
                     onClick={() => navigate(`/graph/${graphId}`)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                    className={`flex items-center space-x-2 px-3 md:px-4 py-2 rounded-lg transition-colors font-medium ${
+                      isMobile ? 'shrink-0' : ''
+                    } ${
                     isDark 
                         ? 'bg-indigo-900/40 text-indigo-300 hover:bg-indigo-900/60' 
                         : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
                     }`}
                 >
                     <LayoutGrid size={18} />
-                    <span>进入闯关图谱</span>
+                    <span className={`${isMobile ? 'hidden' : 'inline'}`}>进入闯关图谱</span>
                 </button>
                 )}
             </div>
@@ -406,23 +409,23 @@ export const Study = () => {
           ) : (
             <>
           {/* Stats Cards & Chart */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="lg:col-span-2 space-y-4 md:space-y-6">
+               <div className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-3 sm:grid-cols-5'} gap-2 md:gap-3`}>
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
+                  className={`p-2 md:p-3 rounded-xl shadow-sm border flex items-center gap-1.5 md:gap-2 ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-                    <LayoutGrid size={18} />
+                  <div className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                    <LayoutGrid size={isMobile ? 16 : 18} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片</p>
-                    <p className="text-xl font-black">{stats.total}</p>
+                    <p className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总卡片</p>
+                    <p className={`${isMobile ? 'text-base' : 'text-xl'} font-black`}>{stats.total}</p>
                   </div>
                 </motion.div>
                 
@@ -430,16 +433,16 @@ export const Study = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 }}
-                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
+                  className={`p-2 md:p-3 rounded-xl shadow-sm border flex items-center gap-1.5 md:gap-2 ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-                    <Trophy size={18} />
+                  <div className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                    <Trophy size={isMobile ? 16 : 18} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
-                    <p className="text-xl font-black">{stats.mastered}</p>
+                    <p className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>已掌握</p>
+                    <p className={`${isMobile ? 'text-base' : 'text-xl'} font-black`}>{stats.mastered}</p>
                   </div>
                 </motion.div>
 
@@ -447,16 +450,16 @@ export const Study = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
+                  className={`p-2 md:p-3 rounded-xl shadow-sm border flex items-center gap-1.5 md:gap-2 ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
-                    <Clock size={18} />
+                  <div className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}>
+                    <Clock size={isMobile ? 16 : 18} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
-                    <p className="text-xl font-black text-amber-500">{stats.due}</p>
+                    <p className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>待复习</p>
+                    <p className={`${isMobile ? 'text-base' : 'text-xl'} font-black text-amber-500`}>{stats.due}</p>
                   </div>
                 </motion.div>
 
@@ -464,16 +467,16 @@ export const Study = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.25 }}
-                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
+                  className={`p-2 md:p-3 rounded-xl shadow-sm border flex items-center gap-1.5 md:gap-2 ${isMobile ? 'hidden sm:flex' : ''} ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-orange-900/40 text-orange-400' : 'bg-orange-50 text-orange-600'}`}>
-                    <Flame size={18} />
+                  <div className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? 'bg-orange-900/40 text-orange-400' : 'bg-orange-50 text-orange-600'}`}>
+                    <Flame size={isMobile ? 16 : 18} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>连续学习</p>
-                    <p className="text-xl font-black">{streakDays}天</p>
+                    <p className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>连续学习</p>
+                    <p className={`${isMobile ? 'text-base' : 'text-xl'} font-black`}>{streakDays}天</p>
                   </div>
                 </motion.div>
 
@@ -481,29 +484,29 @@ export const Study = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className={`p-3 rounded-xl shadow-sm border flex items-center gap-2 ${
+                  className={`p-2 md:p-3 rounded-xl shadow-sm border flex items-center gap-1.5 md:gap-2 ${isMobile ? 'hidden sm:flex' : ''} ${
                     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-sm'
                   }`}
                 >
-                  <div className={`p-2 rounded-lg shrink-0 ${isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
-                    <Activity size={18} />
+                  <div className={`p-1.5 md:p-2 rounded-lg shrink-0 ${isDark ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                    <Activity size={isMobile ? 16 : 18} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>本周学习</p>
-                    <p className="text-xl font-black">{Math.round(weeklyStudyTime / 60)}h</p>
+                    <p className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>本周学习</p>
+                    <p className={`${isMobile ? 'text-base' : 'text-xl'} font-black`}>{Math.round(weeklyStudyTime / 60)}h</p>
                   </div>
                 </motion.div>
                </div>
 
                {/* Action Cards */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4 md:gap-6`}>
                 <motion.button
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
                   onClick={() => handleStartQuiz('due')}
                   disabled={dueCards.length === 0}
-                  className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group relative overflow-hidden ${
+                  className={`flex flex-col items-center text-center ${isMobile ? 'p-5 rounded-2xl' : 'p-8 rounded-[2.5rem]'} border-2 transition-all group relative overflow-hidden ${
                     dueCards.length > 0 
                       ? (isDark ? 'bg-indigo-900/20 border-indigo-800/50 hover:border-indigo-500 shadow-lg shadow-indigo-900/20' : 'bg-indigo-50 border-indigo-100 hover:border-indigo-400 shadow-xl shadow-indigo-100/50')
                       : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
@@ -515,14 +518,14 @@ export const Study = () => {
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
                     </div>
                   )}
-                  <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
+                  <div className={`${isMobile ? 'p-4 rounded-xl' : 'p-6 rounded-[2rem]'} mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-500 ${
                     isDark ? 'bg-indigo-900/40 text-indigo-400' : 'bg-white text-indigo-600 shadow-md'
                   }`}>
-                    <Brain size={48} />
+                    <Brain size={isMobile ? 36 : 48} />
                   </div>
-                  <h3 className={`text-2xl font-black mb-2 ${isDark ? 'text-indigo-300' : 'text-indigo-900'}`}>今日待复习</h3>
-                  <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-indigo-400/80' : 'text-indigo-700/70'}`}>基于 FSRS 算法为您定制的最佳复习计划</p>
-                  <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
+                  <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-black mb-1 md:mb-2 ${isDark ? 'text-indigo-300' : 'text-indigo-900'}`}>今日待复习</h3>
+                  <p className={`mb-4 md:mb-8 max-w-[280px] ${isMobile ? 'text-xs' : 'text-sm'} font-medium ${isDark ? 'text-indigo-400/80' : 'text-indigo-700/70'}`}>基于 FSRS 算法为您定制的最佳复习计划</p>
+                  <div className={`${isMobile ? 'px-5 py-2' : 'px-8 py-3'} rounded-2xl font-black ${isMobile ? 'text-base' : 'text-lg'} transition-all ${
                     dueCards.length > 0 
                       ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-300 group-hover:bg-indigo-700 group-hover:-translate-y-1' 
                       : 'bg-gray-300 text-gray-500'
@@ -537,20 +540,20 @@ export const Study = () => {
                   transition={{ delay: 0.5 }}
                   onClick={() => handleStartQuiz('all')}
                   disabled={allCards.length === 0}
-                  className={`flex flex-col items-center text-center p-8 rounded-[2.5rem] border-2 transition-all group ${
+                  className={`flex flex-col items-center text-center ${isMobile ? 'p-5 rounded-2xl' : 'p-8 rounded-[2.5rem]'} border-2 transition-all group ${
                     allCards.length > 0 
                       ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 shadow-lg' : 'bg-white border-gray-100 hover:border-indigo-400 shadow-xl shadow-gray-100/50')
                       : (isDark ? 'bg-slate-800/50 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed')
                   }`}
                 >
-                  <div className={`p-6 rounded-[2rem] mb-4 group-hover:scale-110 transition-transform duration-500 ${
+                  <div className={`${isMobile ? 'p-4 rounded-xl' : 'p-6 rounded-[2rem]'} mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-500 ${
                     isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-50 text-gray-600'
                   }`}>
-                    <Play size={48} />
+                    <Play size={isMobile ? 36 : 48} />
                   </div>
-                  <h3 className="text-2xl font-black mb-2">自由练习</h3>
-                  <p className={`mb-8 max-w-[280px] text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>随机测验当前范围内的所有内容，巩固基础</p>
-                  <div className={`px-8 py-3 rounded-2xl font-black text-lg transition-all ${
+                  <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-black mb-1 md:mb-2`}>自由练习</h3>
+                  <p className={`mb-4 md:mb-8 max-w-[280px] ${isMobile ? 'text-xs' : 'text-sm'} font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>随机测验当前范围内的所有内容，巩固基础</p>
+                  <div className={`${isMobile ? 'px-5 py-2' : 'px-8 py-3'} rounded-2xl font-black ${isMobile ? 'text-base' : 'text-lg'} transition-all ${
                     allCards.length > 0 
                       ? (isDark ? 'bg-slate-700 text-white border border-slate-600 group-hover:bg-slate-600 group-hover:-translate-y-1' : 'bg-white text-gray-700 border-2 border-gray-100 shadow-sm group-hover:border-indigo-200 group-hover:-translate-y-1')
                       : 'bg-gray-200 text-gray-500'
@@ -562,7 +565,7 @@ export const Study = () => {
             </div>
 
             {/* Chart */}
-            <div className="lg:col-span-1">
+            <div className={`lg:col-span-1 ${isMobile ? 'hidden lg:block' : ''}`}>
               <StatsOverview data={pieData} />
             </div>
           </div>
@@ -655,18 +658,18 @@ export const Study = () => {
           </div>
 
           {/* Cards List Section */}
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <BookOpen className="text-indigo-500" size={24} />
+          <div className="space-y-4 md:space-y-6">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-col md:flex-row md:items-center justify-between gap-4'}`}>
+              <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold flex items-center gap-2`}>
+                <BookOpen className="text-indigo-500" size={isMobile ? 20 : 24} />
                 卡片列表
               </h2>
               
-              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
-                <div className={`flex p-1 rounded-xl w-fit ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+              <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-col md:flex-row items-stretch md:items-center gap-4'}`}>
+                <div className={`flex p-1 rounded-xl ${isMobile ? 'w-full' : 'w-fit'} ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
                   <button
                     onClick={() => setTableMode('due')}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? 'text-sm' : 'text-sm'} font-medium transition-all ${
                       tableMode === 'due' 
                         ? (isDark ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-indigo-600 shadow-sm') 
                         : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
@@ -676,7 +679,7 @@ export const Study = () => {
                   </button>
                   <button
                     onClick={() => setTableMode('all')}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex-1 px-3 md:px-4 py-2 md:py-1.5 rounded-lg ${isMobile ? 'text-sm' : 'text-sm'} font-medium transition-all ${
                       tableMode === 'all' 
                         ? (isDark ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-indigo-600 shadow-sm') 
                         : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700')
@@ -693,7 +696,7 @@ export const Study = () => {
                     placeholder="搜索题目或答案..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:ring-2 focus:ring-indigo-500 outline-none transition-all w-full md:w-64 ${
+                    className={`pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isMobile ? 'w-full' : 'w-full md:w-64'} ${
                       isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200 text-gray-900 shadow-sm'
                     }`}
                   />
@@ -701,7 +704,7 @@ export const Study = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'} gap-3 md:gap-4`}>
               {paginatedCards.length === 0 ? (
                 <div className={`col-span-full py-12 text-center rounded-3xl border-2 border-dashed ${
                   isDark ? 'border-slate-800 text-slate-500' : 'border-gray-200 text-gray-400'
@@ -731,22 +734,21 @@ export const Study = () => {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
+              <div className={`flex items-center justify-center gap-1 md:gap-2 mt-6 md:mt-8`}>
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className={`p-2 rounded-xl transition-all ${
+                  className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? 'p-3' : 'p-2'} rounded-xl transition-all ${
                     currentPage === 1 
                       ? 'opacity-30 cursor-not-allowed' 
                       : (isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600')
                   }`}
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={isMobile ? 24 : 20} />
                 </button>
                 
                 <div className="flex items-center gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                    // Show first, last, current, and pages around current
                     if (
                       page === 1 || 
                       page === totalPages || 
@@ -756,7 +758,7 @@ export const Study = () => {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                          className={`${isMobile ? 'w-11 h-11 text-base' : 'w-10 h-10 text-sm'} rounded-xl font-bold transition-all min-w-[44px] min-h-[44px] ${
                             currentPage === page
                               ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
                               : (isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500')
@@ -778,13 +780,13 @@ export const Study = () => {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className={`p-2 rounded-xl transition-all ${
+                  className={`min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? 'p-3' : 'p-2'} rounded-xl transition-all ${
                     currentPage === totalPages 
                       ? 'opacity-30 cursor-not-allowed' 
                       : (isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600')
                   }`}
                 >
-                  <ChevronRight size={20} />
+                  <ChevronRight size={isMobile ? 24 : 20} />
                 </button>
               </div>
             )}
@@ -824,15 +826,15 @@ export const Study = () => {
   // --- Quiz View ---
   if (finished) {
     return (
-      <div className="min-h-full flex flex-col items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-10 text-center animate-fade-in-up">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check size={40} strokeWidth={3} />
+      <div className={`min-h-full flex flex-col items-center justify-center ${isMobile ? 'p-4' : 'p-8'} ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+        <div className={`w-full max-w-md ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow-xl ${isMobile ? 'p-6' : 'p-10'} text-center animate-fade-in-up`}>
+          <div className={`w-16 md:w-20 h-16 md:h-20 ${isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'} rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6`}>
+            <Check size={isMobile ? 32 : 40} strokeWidth={3} />
           </div>
-          <h2 className="text-3xl font-bold mb-2 text-gray-900">
+          <h2 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
             {nodeId ? '关卡挑战成功!' : '本次学习完成!'}
           </h2>
-          <p className="text-gray-500 mb-8 text-lg">
+          <p className={`mb-6 md:mb-8 ${isMobile ? 'text-base' : 'text-lg'} ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
             {nodeId 
               ? `你已经完成了该知识点的所有测验卡片。` 
               : `你已经复习了本次所有的 ${quizCards.length} 张卡片。`}
@@ -841,15 +843,15 @@ export const Study = () => {
           <div className="space-y-3">
             <button
               onClick={handleBackToDashboard}
-              className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center"
+              className={`w-full bg-indigo-600 text-white ${isMobile ? 'py-4' : 'py-3'} rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center ${isMobile ? 'text-lg' : ''}`}
             >
               返回学习中心
             </button>
             <button
               onClick={handleRestart}
-              className="w-full bg-gray-50 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all flex items-center justify-center"
+              className={`w-full ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'} ${isMobile ? 'py-4' : 'py-3'} rounded-xl font-bold transition-all flex items-center justify-center ${isMobile ? 'text-lg' : ''}`}
             >
-              <RefreshCw className="mr-2" size={18} />
+              <RefreshCw className="mr-2" size={isMobile ? 20 : 18} />
               再练一次
             </button>
           </div>
@@ -879,26 +881,26 @@ export const Study = () => {
   };
 
   return (
-    <div className={`min-h-full flex flex-col items-center justify-center p-4 md:p-8 transition-colors ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
+    <div className={`min-h-full flex flex-col items-center justify-center ${isMobile ? 'p-2' : 'p-4 md:p-8'} transition-colors ${isDark ? 'bg-slate-900' : 'bg-gray-100'}`}>
       <div className="w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-6 px-2">
+        <div className={`flex justify-between items-center mb-4 md:mb-6 px-2`}>
           <button 
             onClick={handleBackToDashboard}
-            className={`flex items-center transition-colors ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-800'}`}
+            className={`flex items-center transition-colors ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-800'} ${isMobile ? 'p-2 -ml-2' : ''}`}
           >
-            <ArrowLeft size={20} className="mr-1" />
-            <span className="font-medium">退出</span>
+            <ArrowLeft size={isMobile ? 24 : 20} className={isMobile ? '' : 'mr-1'} />
+            <span className={`font-medium ${isMobile ? 'hidden' : 'inline'}`}>退出</span>
           </button>
           <div className="text-center">
-            <h2 className={`text-lg font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>学习模式</h2>
-            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>左右滑动可快速评分</p>
+            <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>学习模式</h2>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'} ${isMobile ? 'hidden' : ''}`}>左右滑动可快速评分</p>
           </div>
-          <span className={`font-bold px-3 py-1 rounded-full text-sm ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-gray-500 shadow-sm'}`}>
+          <span className={`font-bold px-3 py-1 rounded-full ${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-gray-500 shadow-sm'}`}>
             {currentCardIndex + 1} / {quizCards.length}
           </span>
         </div>
 
-        <div className="relative perspective-1000 h-[550px] md:h-[600px]">
+        <div className={`relative perspective-1000 ${isMobile ? 'h-[65vh]' : 'h-[550px] md:h-[600px]'}`}>
           {quizCards.slice(currentCardIndex + 1, currentCardIndex + 3).map((stackCard, index) => {
             const stackIndex = index + 1;
             const isNext = stackIndex === 1;
@@ -1059,7 +1061,7 @@ export const Study = () => {
                 transition: { duration: 0.55, ease: [0.4, 0, 0.2, 1] }
               }}
               transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              className={`absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 md:p-10 flex flex-col cursor-grab active:cursor-grabbing transition-colors border ${
+              className={`absolute inset-0 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl ${isMobile ? 'p-4' : 'p-6 md:p-10'} flex flex-col cursor-grab active:cursor-grabbing transition-colors border ${
                 isDark ? 'border-slate-700' : 'border-gray-100'
               }`}
               style={{ transformOrigin: 'bottom center', rotate: cardRotation, zIndex: 10 }}
@@ -1073,8 +1075,8 @@ export const Study = () => {
                 }}
                 transition={{ duration: 0.15 }}
               >
-                <div className="bg-green-500/20 p-8 rounded-full border-4 border-green-500 text-green-500">
-                  <ThumbsUp size={80} />
+                <div className={`bg-green-500/20 ${isMobile ? 'p-4' : 'p-8'} rounded-full border-4 border-green-500 text-green-500`}>
+                  <ThumbsUp size={isMobile ? 48 : 80} />
                 </div>
               </motion.div>
               <motion.div 
@@ -1085,54 +1087,54 @@ export const Study = () => {
                 }}
                 transition={{ duration: 0.15 }}
               >
-                <div className="bg-red-500/20 p-8 rounded-full border-4 border-red-500 text-red-500">
-                  <ThumbsDown size={80} />
+                <div className={`bg-red-500/20 ${isMobile ? 'p-4' : 'p-8'} rounded-full border-4 border-red-500 text-red-500`}>
+                  <ThumbsDown size={isMobile ? 48 : 80} />
                 </div>
               </motion.div>
               {/* Card Type Badge */}
-              <div className={`absolute top-6 right-6 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider z-10 ${
+              <div className={`absolute ${isMobile ? 'top-3 right-3' : 'top-6 right-6'} text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider z-10 ${
                 isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-500'
               }`}>
                 {isQA ? '问答题' : isChoice ? '单选题' : isMultiChoice ? '多选题' : isTrueFalse ? '判断题' : isFillBlank ? '填空题' : '解答题'}
               </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-8 mt-4">
+              <div className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? 'pr-0' : 'pr-1'} space-y-4 md:space-y-8 mt-2 md:mt-4`}>
                 {/* Question Section */}
                 <div className="flex flex-col items-start text-left">
-                  <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-3 px-3 py-1 rounded-md ${
+                  <h3 className={`uppercase tracking-widest text-[10px] md:text-[11px] font-bold mb-2 md:mb-3 px-2 md:px-3 py-0.5 md:py-1 rounded-md ${
                     isDark ? 'bg-indigo-900/30 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
                   }`}>
                     问题
                   </h3>
-                  <div className={`text-lg md:text-xl font-semibold leading-snug ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
+                  <div className={`${isMobile ? 'text-base' : 'text-lg md:text-xl'} font-semibold leading-snug ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
                     {currentCard.question}
                   </div>
                 </div>
 
                 {/* Answer Content Section */}
-                <div className="w-full pb-6">
+                <div className="w-full pb-4 md:pb-6">
                   {showAnswer && (
-                    <div className="space-y-8 animate-fade-in">
+                    <div className="space-y-4 md:space-y-8 animate-fade-in">
                       {(isQA || isEssay || isFillBlank) && (
-                        <div className={`border-t pt-8 ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-                          <h3 className={`uppercase tracking-widest text-[11px] font-bold mb-4 px-3 py-1 rounded-md w-fit ${
+                        <div className={`border-t ${isMobile ? 'pt-4' : 'pt-8'} ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                          <h3 className={`uppercase tracking-widest text-[10px] md:text-[11px] font-bold mb-3 md:mb-4 px-2 md:px-3 py-0.5 md:py-1 rounded-md w-fit ${
                             isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
                           }`}>
                             {isFillBlank ? '填空内容' : '标准答案'}
                           </h3>
-                          <div className={`text-lg md:text-xl font-medium ${isDark ? 'text-slate-200' : 'text-gray-800'} whitespace-pre-wrap`}>
+                          <div className={`${isMobile ? 'text-base' : 'text-lg md:text-xl'} font-medium ${isDark ? 'text-slate-200' : 'text-gray-800'} whitespace-pre-wrap`}>
                             {currentCard.answer}
                           </div>
                         </div>
                       )}
 
                       {currentCard.explanation && (
-                        <div className={`pt-8 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-                          <div className="flex items-center gap-2 mb-4 text-indigo-500">
-                            <Brain size={18} />
-                            <h4 className="font-bold tracking-wider text-sm uppercase">题目解析</h4>
+                        <div className={`border-t ${isMobile ? 'pt-4' : 'pt-8'} ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+                          <div className="flex items-center gap-2 mb-3 md:mb-4 text-indigo-500">
+                            <Brain size={isMobile ? 16 : 18} />
+                            <h4 className="font-bold tracking-wider text-xs md:text-sm uppercase">题目解析</h4>
                           </div>
-                          <div className={`p-5 rounded-2xl text-sm leading-relaxed border ${
+                          <div className={`p-3 md:p-5 rounded-2xl text-sm leading-relaxed border ${
                             isDark ? 'bg-slate-900/50 text-slate-400 border-slate-700' : 'bg-indigo-50/30 text-gray-600 border-indigo-100'
                           }`}>
                             {currentCard.explanation}
@@ -1144,12 +1146,12 @@ export const Study = () => {
 
                   {/* Options Section */}
                   {isChoice && currentOptions.length > 0 && (
-                    <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex flex-col gap-2 md:gap-2 mt-3 md:mt-4">
                       {currentOptions.map((option: string, idx: number) => {
                         const isSelected = selectedOption === option;
                         const isCorrect = option === currentCard.answer;
                         
-                        let btnClass = "group p-3 rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm ";
+                        let btnClass = `group ${isMobile ? 'p-3.5' : 'p-3'} rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm `;
                         if (showAnswer) {
                           if (isCorrect) btnClass += isDark ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md" : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
                           else if (isSelected) btnClass += isDark ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md" : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
@@ -1167,16 +1169,16 @@ export const Study = () => {
                             disabled={showAnswer}
                             className={btnClass}
                           >
-                            <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
+                            <span className={`flex-shrink-0 ${isMobile ? 'w-8 h-8' : 'w-7 h-7'} rounded-lg flex items-center justify-center font-bold ${isMobile ? 'text-base' : 'text-sm'} transition-all ${
                               isSelected 
                                 ? 'bg-indigo-500 text-white shadow-sm scale-105' 
                                 : (isDark ? 'bg-slate-700 text-slate-400 group-hover:bg-slate-600' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600')
                             }`}>
                               {String.fromCharCode(65 + idx)}
                             </span>
-                            <span className="flex-1 text-sm font-medium leading-snug">{option}</span>
-                            {showAnswer && isCorrect && <Check className="text-emerald-500 flex-shrink-0" size={18} />}
-                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 flex-shrink-0" size={18} />}
+                            <span className={`flex-1 ${isMobile ? 'text-base' : 'text-sm'} font-medium leading-snug`}>{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 flex-shrink-0" size={isMobile ? 20 : 18} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 flex-shrink-0" size={isMobile ? 20 : 18} />}
                           </button>
                         );
                       })}
@@ -1184,7 +1186,7 @@ export const Study = () => {
                   )}
 
                   {isMultiChoice && currentOptions.length > 0 && (
-                    <div className="flex flex-col gap-2 mt-4">
+                    <div className="flex flex-col gap-2 md:gap-2 mt-3 md:mt-4">
                       {currentOptions.map((option: string, idx: number) => {
                         const selectedList = selectedOption ? JSON.parse(selectedOption) : [];
                         const isSelected = selectedList.includes(option);
@@ -1192,7 +1194,7 @@ export const Study = () => {
                         try { correctList = JSON.parse(currentCard.answer); } catch { correctList = []; }
                         const isCorrect = correctList.includes(option);
                         
-                        let btnClass = "group p-3 rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm ";
+                        let btnClass = `group ${isMobile ? 'p-3.5' : 'p-3'} rounded-xl border transition-all duration-200 relative flex items-start gap-3 shadow-sm `;
                         if (showAnswer) {
                           if (isCorrect) btnClass += isDark ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md" : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
                           else if (isSelected) btnClass += isDark ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md" : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
@@ -1210,16 +1212,16 @@ export const Study = () => {
                             disabled={showAnswer}
                             className={btnClass}
                           >
-                            <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
+                            <span className={`flex-shrink-0 ${isMobile ? 'w-8 h-8' : 'w-7 h-7'} rounded-lg flex items-center justify-center font-bold ${isMobile ? 'text-base' : 'text-sm'} transition-all ${
                               isSelected 
                                 ? 'bg-indigo-500 text-white shadow-sm scale-105' 
                                 : (isDark ? 'bg-slate-700 text-slate-400 group-hover:bg-slate-600' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600')
                             }`}>
                               {String.fromCharCode(65 + idx)}
                             </span>
-                            <span className="flex-1 text-sm font-medium leading-snug">{option}</span>
-                            {showAnswer && isCorrect && <Check className="text-emerald-500 flex-shrink-0" size={18} />}
-                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 flex-shrink-0" size={18} />}
+                            <span className={`flex-1 ${isMobile ? 'text-base' : 'text-sm'} font-medium leading-snug`}>{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 flex-shrink-0" size={isMobile ? 20 : 18} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 flex-shrink-0" size={isMobile ? 20 : 18} />}
                           </button>
                         );
                       })}
@@ -1227,12 +1229,12 @@ export const Study = () => {
                   )}
 
                   {isTrueFalse && (
-                    <div className="flex flex-col md:flex-row gap-3 justify-center mt-4">
+                    <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-col md:flex-row gap-3'} justify-center mt-3 md:mt-4`}>
                       {['True', 'False'].map((option) => {
                         const isSelected = selectedOption === option;
                         const isCorrect = option === currentCard.answer;
                         
-                        let btnClass = "group flex-1 p-4 rounded-xl border transition-all duration-200 font-bold text-base relative flex flex-col items-center justify-center gap-2 shadow-sm ";
+                        let btnClass = `group flex-1 ${isMobile ? 'p-5' : 'p-4'} rounded-xl border transition-all duration-200 font-bold ${isMobile ? 'text-lg' : 'text-base'} relative flex flex-col items-center justify-center gap-2 shadow-sm `;
                         if (showAnswer) {
                            if (isCorrect) btnClass += isDark ? "bg-gradient-to-r from-emerald-900/30 to-emerald-900/10 border-emerald-500 text-emerald-400 shadow-md" : "bg-gradient-to-r from-emerald-100 to-emerald-50 border-emerald-400 text-emerald-700 shadow-md";
                            else if (isSelected) btnClass += isDark ? "bg-gradient-to-r from-red-900/30 to-red-900/10 border-red-500 text-red-400 shadow-md" : "bg-gradient-to-r from-red-100 to-red-50 border-red-400 text-red-700 shadow-md";
@@ -1250,10 +1252,10 @@ export const Study = () => {
                             disabled={showAnswer}
                             className={btnClass}
                           >
-                            <span className="text-lg font-bold">{option === 'True' ? '正确' : '错误'}</span>
-                            <span className="text-xs opacity-50 uppercase tracking-wider">{option}</span>
-                            {showAnswer && isCorrect && <Check className="text-emerald-500 absolute top-3 right-3" size={16} />}
-                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 absolute top-3 right-3" size={16} />}
+                            <span className={`${isMobile ? 'text-xl' : 'text-lg'} font-bold`}>{option === 'True' ? '正确' : '错误'}</span>
+                            <span className={`text-xs opacity-50 uppercase tracking-wider`}>{option}</span>
+                            {showAnswer && isCorrect && <Check className="text-emerald-500 absolute top-3 right-3" size={isMobile ? 20 : 16} />}
+                            {showAnswer && isSelected && !isCorrect && <X className="text-red-500 absolute top-3 right-3" size={isMobile ? 20 : 16} />}
                           </button>
                         );
                       })}
@@ -1263,7 +1265,7 @@ export const Study = () => {
               </div>
 
               {/* Action Footer */}
-              <div className={`mt-auto pt-6 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+              <div className={`mt-auto ${isMobile ? 'pt-4' : 'pt-6'} border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
                 <AnimatePresence mode="wait">
                   {!showAnswer ? (
                     <motion.div
@@ -1276,21 +1278,21 @@ export const Study = () => {
                       {(isQA || isEssay || isFillBlank) ? (
                         <button
                           onClick={() => setShowAnswer(true)}
-                          className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
+                          className={`w-full ${isMobile ? 'py-4' : 'py-4'} bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2`}
                         >
-                          <BookOpen size={20} />
-                          显示答案
+                          <BookOpen size={isMobile ? 22 : 20} />
+                          <span className={isMobile ? 'text-lg' : ''}>显示答案</span>
                         </button>
                       ) : isMultiChoice ? (
                         <button
                           onClick={() => setShowAnswer(true)}
                           disabled={!selectedOption || JSON.parse(selectedOption).length === 0}
-                          className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
+                          className={`w-full ${isMobile ? 'py-4' : 'py-4'} bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none ${isMobile ? 'text-lg' : ''}`}
                         >
                           提交答案
                         </button>
                       ) : (
-                        <div className={`text-center py-4 text-sm font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                        <div className={`text-center py-4 ${isMobile ? 'text-base' : 'text-sm'} font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                           请选择一个选项以查看答案
                         </div>
                       )}
@@ -1303,48 +1305,48 @@ export const Study = () => {
                       exit={{ opacity: 0, y: -10 }}
                       className="w-full"
                     >
-                      <div className="flex items-center gap-2 mb-4 text-slate-400 dark:text-slate-500">
-                        <Check size={14} />
+                      <div className={`flex items-center gap-2 mb-3 md:mb-4 text-slate-400 dark:text-slate-500`}>
+                        <Check size={isMobile ? 16 : 14} />
                         <h4 className="font-bold tracking-wider text-[10px] uppercase">评价记忆程度</h4>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className={`grid ${isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-2 md:grid-cols-4 gap-3'}`}>
                         <button
                           onClick={() => handleRate(1)}
-                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                          className={`flex flex-col items-center justify-center ${isMobile ? 'py-4' : 'py-3'} rounded-xl font-bold transition-all ${
                             isDark ? 'bg-red-900/20 text-red-400 hover:bg-red-900/40' : 'bg-red-50 text-red-700 hover:bg-red-100'
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
-                          <ThumbsDown size={16} className="mb-1" />
-                          <span className="text-xs">重来</span>
+                          <ThumbsDown size={isMobile ? 20 : 16} className={isMobile ? 'mb-2' : 'mb-1'} />
+                          <span className={isMobile ? 'text-base' : 'text-xs'}>重来</span>
                         </button>
                         <button
                           onClick={() => handleRate(2)}
-                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                          className={`flex flex-col items-center justify-center ${isMobile ? 'py-4' : 'py-3'} rounded-xl font-bold transition-all ${
                             isDark ? 'bg-orange-900/20 text-orange-400 hover:bg-orange-900/40' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
-                          <span className="text-xs">困难</span>
+                          <span className={isMobile ? 'text-base' : 'text-xs'}>困难</span>
                         </button>
                         <button
                           onClick={() => handleRate(3)}
-                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                          className={`flex flex-col items-center justify-center ${isMobile ? 'py-4' : 'py-3'} rounded-xl font-bold transition-all ${
                             isDark ? 'bg-blue-900/20 text-blue-400 hover:bg-blue-900/40' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
-                          <ThumbsUp size={16} className="mb-1" />
-                          <span className="text-xs">良好</span>
+                          <ThumbsUp size={isMobile ? 20 : 16} className={isMobile ? 'mb-2' : 'mb-1'} />
+                          <span className={isMobile ? 'text-base' : 'text-xs'}>良好</span>
                         </button>
                         <button
                           onClick={() => handleRate(4)}
-                          className={`flex flex-col items-center justify-center py-3 rounded-xl font-bold transition-all ${
+                          className={`flex flex-col items-center justify-center ${isMobile ? 'py-4' : 'py-3'} rounded-xl font-bold transition-all ${
                             isDark ? 'bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                           }`}
                           disabled={updateProgressMutation.isPending}
                         >
-                          <span className="text-xs">简单</span>
+                          <span className={isMobile ? 'text-base' : 'text-xs'}>简单</span>
                         </button>
                       </div>
                     </motion.div>
@@ -1356,7 +1358,7 @@ export const Study = () => {
         </div>
 
         {/* Swipe Instructions */}
-        {!showAnswer && (
+        {!showAnswer && !isMobile && (
           <div className="mt-8 text-center animate-bounce-slow">
             <p className={`text-sm font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
               左右滑动卡片快速评分 (左: 重来, 右: 良好)

@@ -9,6 +9,7 @@ import "./taskProcessors/recursiveGraphProcessor.js";
 import "./taskProcessors/infiniteExpansionProcessor.js";
 import "./taskProcessors/embeddingGenerationProcessor.js";
 import "./taskProcessors/quizGenerationProcessor.js";
+import "./taskProcessors/generateQuestionsProcessor.js";
 import dotenv from "dotenv";
 
 dotenv.config();

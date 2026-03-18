@@ -120,23 +120,25 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
             {onOpenDetail && (
               <button
                 onClick={onOpenDetail}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors ${
                   isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
                 }`}
                 title="查看详情"
+                aria-label="查看详情"
               >
-                <Maximize2 size={18} />
+                <Maximize2 size={22} />
               </button>
             )}
             {onClose && (
               <button
                 onClick={onClose}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors ${
                   isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
                 }`}
                 title="关闭"
+                aria-label="关闭"
               >
-                <X size={18} />
+                <X size={22} />
               </button>
             )}
           </div>
@@ -184,37 +186,39 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
               <button
                 onClick={() => onNavigateToNode?.(parentNode)}
                 className={`
-                  w-full text-left px-2 py-1.5 rounded-lg text-xs
+                  w-full text-left px-3 py-3 min-h-[48px] rounded-xl text-sm
                   flex items-center gap-2 transition-colors
                   ${isDark 
-                    ? 'hover:bg-slate-700 text-slate-300' 
-                    : 'hover:bg-gray-50 text-gray-600'}
+                    ? 'hover:bg-slate-700 active:bg-slate-600 text-slate-300' 
+                    : 'hover:bg-gray-50 active:bg-gray-100 text-gray-600'}
                 `}
+                aria-label={`查看父节点：${parentNode.title}`}
               >
-                <ChevronLeft size={12} className="shrink-0" />
-                <span className="truncate">{parentNode.title}</span>
+                <ChevronLeft size={16} className="shrink-0" />
+                <span className="truncate font-medium">{parentNode.title}</span>
               </button>
             )}
             {childNodes.length > 0 && (
-              <div className="max-h-20 overflow-y-auto space-y-1">
+              <div className="max-h-32 overflow-y-auto space-y-1">
                 {childNodes.slice(0, 3).map(child => (
                   <button
                     key={child.id}
                     onClick={() => onNavigateToNode?.(child)}
                     className={`
-                      w-full text-left px-2 py-1.5 rounded-lg text-xs
+                      w-full text-left px-3 py-3 min-h-[48px] rounded-xl text-sm
                       flex items-center justify-between transition-colors
                       ${isDark 
-                        ? 'hover:bg-slate-700 text-slate-300' 
-                        : 'hover:bg-gray-50 text-gray-600'}
+                        ? 'hover:bg-slate-700 active:bg-slate-600 text-slate-300' 
+                        : 'hover:bg-gray-50 active:bg-gray-100 text-gray-600'}
                     `}
+                    aria-label={`查看子节点：${child.title}`}
                   >
-                    <span className="truncate">{child.title}</span>
-                    <ChevronRight size={12} className="shrink-0" />
+                    <span className="truncate font-medium">{child.title}</span>
+                    <ChevronRight size={16} className="shrink-0" />
                   </button>
                 ))}
                 {childNodes.length > 3 && (
-                  <div className={`text-xs text-center py-1 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                  <div className={`text-xs text-center py-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                     还有 {childNodes.length - 3} 个子节点
                   </div>
                 )}
@@ -226,10 +230,10 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
       
       <div 
         className={`
-          px-4 py-2 border-t flex items-center justify-between
+          px-4 py-2 border-t flex items-center justify-between gap-2
           ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-gray-50 border-gray-100'}
         `}
-        style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
       >
         {!isMastered && !isLocked && onMarkMastered && (
           <button
@@ -237,7 +241,8 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
               e.stopPropagation();
               onMarkMastered(node.id);
             }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors font-medium"
+            className="flex-1 text-sm px-4 py-3 min-h-[44px] rounded-xl bg-green-500 text-white hover:bg-green-600 active:bg-green-700 transition-colors font-medium"
+            aria-label="标记已掌握"
           >
             标记已掌握
           </button>
@@ -245,11 +250,12 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
         {onOpenDetail && (
           <button
             onClick={onOpenDetail}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`flex-1 text-sm px-4 py-3 min-h-[44px] rounded-xl font-medium transition-colors ${
               isDark 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                : 'bg-blue-500 text-white hover:bg-blue-600'
+                ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800' 
+                : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
             }`}
+            aria-label="查看详情"
           >
             查看详情
           </button>

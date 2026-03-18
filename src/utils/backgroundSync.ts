@@ -1,12 +1,18 @@
-export interface SyncQueueItem {
-  id: string;
-  type: 'create' | 'update' | 'delete';
-  entity: string;
-  data: Record<string, unknown>;
-  timestamp: number;
-  retryCount: number;
-  lastError?: string;
-}
+import { Capacitor } from '@capacitor/core';
+import { Network } from '@capacitor/network';
+import {
+  OfflineOperation,
+  addToOfflineQueue,
+  getOfflineQueue,
+  getOfflineQueueCount,
+  removeFromOfflineQueue,
+  updateOfflineQueueOperation,
+  clearOfflineQueue,
+  initDB,
+} from './offlineStorage';
+import { createLogger } from './logger';
+
+const logger = createLogger('BackgroundSync');
 
 export interface SyncConflict {
   id: string;
@@ -34,8 +40,6 @@ type SyncEventType = 'syncStart' | 'syncComplete' | 'syncError' | 'conflictDetec
 
 type SyncEventCallback = (data: unknown) => void;
 
-const SYNC_QUEUE_KEY = 'sync_queue';
-const SYNC_STATUS_KEY = 'sync_status';
 const MAX_RETRY_COUNT = 3;
 
 class BackgroundSyncManager {
@@ -43,18 +47,56 @@ class BackgroundSyncManager {
   private eventListeners = new Map<SyncEventType, Set<SyncEventCallback>>();
 
   constructor() {
-    this.setupNetworkListeners();
+    this.initialize();
   }
 
-  private setupNetworkListeners(): void {
-    window.addEventListener('online', () => {
-      this.notifyListeners('queueUpdated', { isOnline: true });
-      this.syncOfflineQueue();
-    });
+  private async initialize() {
+    try {
+      await initDB();
+      await this.setupNetworkListeners();
+      this.checkAndSync();
+    } catch (error) {
+      logger.error('Failed to initialize BackgroundSyncManager', error);
+    }
+  }
 
-    window.addEventListener('offline', () => {
-      this.notifyListeners('queueUpdated', { isOnline: false });
-    });
+  private async setupNetworkListeners(): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+      await Network.addListener('networkStatusChange', (status) => {
+        this.notifyListeners('queueUpdated', { isOnline: status.connected });
+        if (status.connected) {
+          this.checkAndSync();
+        }
+      });
+    } else {
+      window.addEventListener('online', () => {
+        this.notifyListeners('queueUpdated', { isOnline: true });
+        this.checkAndSync();
+      });
+
+      window.addEventListener('offline', () => {
+        this.notifyListeners('queueUpdated', { isOnline: false });
+      });
+    }
+  }
+
+  private async checkAndSync() {
+    const isOnline = await this.getIsOnline();
+    if (isOnline) {
+      await this.syncOfflineQueue();
+    }
+  }
+
+  private async getIsOnline(): Promise<boolean> {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const status = await Network.getStatus();
+        return status.connected;
+      } catch {
+        return navigator.onLine;
+      }
+    }
+    return navigator.onLine;
   }
 
   private notifyListeners(event: SyncEventType, data: unknown): void {
@@ -64,67 +106,42 @@ class BackgroundSyncManager {
     }
   }
 
-  private getQueue(): SyncQueueItem[] {
-    try {
-      const queue = localStorage.getItem(SYNC_QUEUE_KEY);
-      return queue ? JSON.parse(queue) : [];
-    } catch {
-      return [];
+  async addToQueue(item: Omit<OfflineOperation, 'id' | 'timestamp' | 'retryCount'>): Promise<string> {
+    const id = await addToOfflineQueue(item);
+    const count = await getOfflineQueueCount();
+    this.notifyListeners('queueUpdated', { pendingCount: count });
+    const isOnline = await this.getIsOnline();
+    if (isOnline) {
+      this.checkAndSync();
     }
+    return id;
   }
 
-  private saveQueue(queue: SyncQueueItem[]): void {
-    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
-    this.notifyListeners('queueUpdated', { pendingCount: queue.length });
-  }
-
-  private updateStatus(updates: Partial<SyncStatus>): void {
-    try {
-      const current = this.getStatus();
-      const updated = { ...current, ...updates };
-      localStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(updated));
-    } catch {
-      console.error('[BackgroundSync] Failed to update status');
-    }
-  }
-
-  addToQueue(item: Omit<SyncQueueItem, 'id' | 'timestamp' | 'retryCount'>): string {
-    const queue = this.getQueue();
-    const newItem: SyncQueueItem = {
-      ...item,
-      id: `${item.entity}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
-      retryCount: 0,
-    };
-    queue.push(newItem);
-    this.saveQueue(queue);
-    return newItem.id;
-  }
-
-  removeFromQueue(itemId: string): void {
-    const queue = this.getQueue();
-    const filtered = queue.filter(item => item.id !== itemId);
-    this.saveQueue(filtered);
+  async removeFromQueue(operationId: string): Promise<void> {
+    await removeFromOfflineQueue(operationId);
+    const count = await getOfflineQueueCount();
+    this.notifyListeners('queueUpdated', { pendingCount: count });
   }
 
   async syncOfflineQueue(): Promise<{ success: number; failed: number; conflicts: SyncConflict[] }> {
-    if (this.isSyncing || !navigator.onLine) {
+    const isOnline = await this.getIsOnline();
+    if (this.isSyncing || !isOnline) {
       return { success: 0, failed: 0, conflicts: [] };
     }
 
     this.isSyncing = true;
-    this.updateStatus({ isSyncing: true });
     this.notifyListeners('syncStart', { timestamp: Date.now() });
 
-    const queue = this.getQueue();
+    const queue = await getOfflineQueue();
     const results = { success: 0, failed: 0, conflicts: [] as SyncConflict[] };
-    const failedItems: SyncQueueItem[] = [];
+    const failedItems: OfflineOperation[] = [];
 
     for (const item of queue) {
       try {
         const result = await this.syncItem(item);
         if (result.success) {
           results.success++;
+          await removeFromOfflineQueue(item.id);
         } else if (result.conflict) {
           results.conflicts.push(result.conflict);
           this.notifyListeners('conflictDetected', result.conflict);
@@ -136,64 +153,58 @@ class BackgroundSyncManager {
         const updatedItem = {
           ...item,
           retryCount: item.retryCount + 1,
-          lastError: error instanceof Error ? error.message : 'Unknown error',
         };
 
         if (updatedItem.retryCount < MAX_RETRY_COUNT) {
           failedItems.push(updatedItem);
+          await updateOfflineQueueOperation(item.id, { retryCount: updatedItem.retryCount });
+        } else {
+          await removeFromOfflineQueue(item.id);
         }
       }
     }
 
-    this.saveQueue(failedItems);
     this.isSyncing = false;
 
-    const status: Partial<SyncStatus> = {
-      isSyncing: false,
-      lastSyncTime: Date.now(),
-      lastSyncError: results.failed > 0 ? `${results.failed} items failed to sync` : null,
-    };
-    this.updateStatus(status);
-
+    const count = await getOfflineQueueCount();
+    this.notifyListeners('queueUpdated', { pendingCount: count });
     this.notifyListeners('syncComplete', results);
 
     return results;
   }
 
   private async syncItem(
-    item: SyncQueueItem
+    item: OfflineOperation
   ): Promise<{ success: boolean; conflict?: SyncConflict; error?: string }> {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return { success: false, error: 'No authentication token' };
-    }
-
-    const endpoints: Record<string, string> = {
-      graph: '/api/graphs',
-      node: '/api/nodes',
-      edge: '/api/edges',
-      card: '/api/cards',
-      template: '/api/templates',
-    };
-
-    const baseUrl = endpoints[item.entity] || `/api/${item.entity}s`;
-    let url = baseUrl;
-    let method = 'POST';
-    let body: Record<string, unknown> = item.data;
-
-    switch (item.type) {
-      case 'update':
-        url = `${baseUrl}/${item.data.id}`;
-        method = 'PATCH';
-        break;
-      case 'delete':
-        url = `${baseUrl}/${item.data.id}`;
-        method = 'DELETE';
-        body = {};
-        break;
-    }
-
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return { success: false, error: 'No authentication token' };
+      }
+
+      const endpoints: Record<string, string> = {
+        graph: '/api/graphs',
+        node: '/api/nodes',
+        edge: '/api/edges',
+      };
+
+      const baseUrl = endpoints[item.entityType] || `/api/${item.entityType}s`;
+      let url = baseUrl;
+      let method = 'POST';
+      let body: Record<string, unknown> = item.data as Record<string, unknown> || {};
+
+      switch (item.type) {
+        case 'update':
+          url = `${baseUrl}/${item.entityId}`;
+          method = 'PATCH';
+          break;
+        case 'delete':
+          url = `${baseUrl}/${item.entityId}`;
+          method = 'DELETE';
+          body = {};
+          break;
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -209,8 +220,8 @@ class BackgroundSyncManager {
           success: false,
           conflict: {
             id: item.id,
-            entity: item.entity,
-            localData: item.data,
+            entity: item.entityType,
+            localData: item.data as Record<string, unknown>,
             remoteData: remoteData.data || remoteData,
             timestamp: Date.now(),
           },
@@ -234,8 +245,8 @@ class BackgroundSyncManager {
     }
   }
 
-  handleSyncConflict(conflict: SyncConflict, resolution: ConflictResolution): void {
-    const queue = this.getQueue();
+  async handleSyncConflict(conflict: SyncConflict, resolution: ConflictResolution): Promise<void> {
+    const queue = await getOfflineQueue();
     const itemIndex = queue.findIndex(item => item.id === conflict.id);
 
     if (itemIndex === -1) return;
@@ -244,46 +255,48 @@ class BackgroundSyncManager {
 
     switch (resolution.strategy) {
       case 'local':
-        item.retryCount = 0;
-        item.lastError = undefined;
+        await updateOfflineQueueOperation(item.id, { retryCount: 0 });
         break;
       case 'remote':
-        queue.splice(itemIndex, 1);
+        await removeFromOfflineQueue(item.id);
         break;
       case 'merge':
         if (resolution.mergedData) {
-          item.data = resolution.mergedData;
-          item.retryCount = 0;
-          item.lastError = undefined;
+          await updateOfflineQueueOperation(item.id, {
+            data: resolution.mergedData,
+            retryCount: 0,
+          });
         }
         break;
     }
 
-    this.saveQueue(queue);
-
-    if (navigator.onLine && resolution.strategy !== 'remote') {
-      this.syncOfflineQueue();
+    const isOnline = await this.getIsOnline();
+    if (isOnline && resolution.strategy !== 'remote') {
+      await this.syncOfflineQueue();
     }
   }
 
-  getStatus(): SyncStatus {
+  async getStatus(): Promise<SyncStatus> {
+    const isOnline = await this.getIsOnline();
+    const pendingCount = await getOfflineQueueCount();
+
     const defaults: SyncStatus = {
-      isOnline: navigator.onLine,
+      isOnline,
       isSyncing: this.isSyncing,
-      pendingCount: this.getQueue().length,
+      pendingCount,
       lastSyncTime: null,
       lastSyncError: null,
       conflicts: [],
     };
 
     try {
-      const stored = localStorage.getItem(SYNC_STATUS_KEY);
+      const stored = localStorage.getItem('sync_status');
       if (stored) {
         const parsed = JSON.parse(stored);
-        return { ...defaults, ...parsed, isOnline: navigator.onLine, isSyncing: this.isSyncing };
+        return { ...defaults, ...parsed, isOnline, isSyncing: this.isSyncing };
       }
     } catch {
-      console.error('[BackgroundSync] Failed to parse status');
+      logger.error('Failed to parse sync status');
     }
 
     return defaults;
@@ -300,12 +313,14 @@ class BackgroundSyncManager {
     };
   }
 
-  clearQueue(): void {
-    this.saveQueue([]);
+  async clearQueue(): Promise<void> {
+    await clearOfflineQueue();
+    const count = await getOfflineQueueCount();
+    this.notifyListeners('queueUpdated', { pendingCount: count });
   }
 
-  getPendingItems(): SyncQueueItem[] {
-    return this.getQueue();
+  async getPendingItems(): Promise<OfflineOperation[]> {
+    return getOfflineQueue();
   }
 }
 
@@ -316,12 +331,8 @@ export const registerBackgroundSync = (): void => {
     navigator.serviceWorker.ready.then(registration => {
       return (registration as ServiceWorkerRegistration & { sync: { register: (tag: string) => Promise<void> } }).sync.register('offline-sync');
     }).catch(error => {
-      console.error('[BackgroundSync] Failed to register:', error);
+      logger.error('Failed to register background sync', error);
     });
-  }
-
-  if (navigator.onLine) {
-    syncManager.syncOfflineQueue();
   }
 };
 
@@ -329,31 +340,31 @@ export const syncOfflineQueue = (): Promise<{ success: number; failed: number; c
   return syncManager.syncOfflineQueue();
 };
 
-export const handleSyncConflict = (conflict: SyncConflict, resolution: ConflictResolution): void => {
-  syncManager.handleSyncConflict(conflict, resolution);
+export const handleSyncConflict = (conflict: SyncConflict, resolution: ConflictResolution): Promise<void> => {
+  return syncManager.handleSyncConflict(conflict, resolution);
 };
 
-export const getSyncStatus = (): SyncStatus => {
+export const getSyncStatus = (): Promise<SyncStatus> => {
   return syncManager.getStatus();
 };
 
-export const addToSyncQueue = (item: Omit<SyncQueueItem, 'id' | 'timestamp' | 'retryCount'>): string => {
+export const addToSyncQueue = (item: Omit<OfflineOperation, 'id' | 'timestamp' | 'retryCount'>): Promise<string> => {
   return syncManager.addToQueue(item);
 };
 
-export const removeFromSyncQueue = (itemId: string): void => {
-  syncManager.removeFromQueue(itemId);
+export const removeFromSyncQueue = (operationId: string): Promise<void> => {
+  return syncManager.removeFromQueue(operationId);
 };
 
 export const onSyncEvent = (event: SyncEventType, callback: SyncEventCallback): (() => void) => {
   return syncManager.on(event, callback);
 };
 
-export const clearSyncQueue = (): void => {
-  syncManager.clearQueue();
+export const clearSyncQueue = (): Promise<void> => {
+  return syncManager.clearQueue();
 };
 
-export const getPendingSyncItems = (): SyncQueueItem[] => {
+export const getPendingSyncItems = (): Promise<OfflineOperation[]> => {
   return syncManager.getPendingItems();
 };
 

@@ -520,6 +520,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
     const isLongPressTriggeredRef = useRef(false);
     const touchMovedRef = useRef(false);
     const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+    const touchStartOnNodeRef = useRef<string | null>(null);
     const [_hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
     const [previewNode, setPreviewNode] = useState<{
       node: Node;
@@ -807,13 +808,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
           touchStartDistanceRef.current = null;
           touchStartCenterRef.current = null;
-          touchStartTransformRef.current = null;
+          touchStartTransformRef.current = { ...transformRef.current };
 
           const target = e.target as SVGElement;
           const nodeElement = target.closest("[data-node-id]");
-          if (nodeElement && onNodeLongPress) {
+          if (nodeElement) {
             const nodeId = nodeElement.getAttribute("data-node-id");
-            if (nodeId) {
+            touchStartOnNodeRef.current = nodeId;
+            if (nodeId && onNodeLongPress) {
               setTouchPressedNodeId(nodeId);
               longPressTimeoutRef.current = setTimeout(() => {
                 if (
@@ -829,6 +831,13 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                 setTouchPressedNodeId(null);
               }, 500);
             }
+          } else {
+            touchStartOnNodeRef.current = null;
+            setIsDragging(true);
+            setDragStart({
+              x: touch.clientX - transformRef.current.x,
+              y: touch.clientY - transformRef.current.y,
+            });
           }
         } else if (touches.length === 2) {
           setTouchPressedNodeId(null);
@@ -872,21 +881,14 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
             }
           }
 
-          if (touchMovedRef.current || !onNodeLongPress) {
+          if (touchMovedRef.current && !touchStartOnNodeRef.current && touchStartTransformRef.current) {
+            const deltaX = touch.clientX - touchStartRef.current.x;
+            const deltaY = touch.clientY - touchStartRef.current.y;
+
             const newTransform = {
-              x:
-                touch.clientX -
-                touchStartRef.current.x +
-                transformRef.current.x -
-                (lastTouchRef.current?.x ||
-                  touchStartRef.current.x - transformRef.current.x),
-              y:
-                touch.clientY -
-                touchStartRef.current.y +
-                transformRef.current.y -
-                (lastTouchRef.current?.y ||
-                  touchStartRef.current.y - transformRef.current.y),
-              k: transformRef.current.k,
+              x: touchStartTransformRef.current.x + deltaX,
+              y: touchStartTransformRef.current.y + deltaY,
+              k: touchStartTransformRef.current.k,
             };
 
             transformRef.current = newTransform;
@@ -946,7 +948,6 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         updateTransformDOM,
         updateTransformState,
         scheduleViewportUpdate,
-        onNodeLongPress,
       ],
     );
 
@@ -968,6 +969,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           touchStartCenterRef.current = null;
           touchStartTransformRef.current = null;
           lastTouchRef.current = null;
+          touchStartOnNodeRef.current = null;
 
           if (
             !touchMovedRef.current &&
@@ -986,7 +988,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
           touchStartDistanceRef.current = null;
           touchStartCenterRef.current = null;
-          touchStartTransformRef.current = null;
+          touchStartTransformRef.current = { ...transformRef.current };
+
+          const target = e.target as SVGElement;
+          const nodeElement = target.closest("[data-node-id]");
+          touchStartOnNodeRef.current = nodeElement ? nodeElement.getAttribute("data-node-id") : null;
 
           setDragStart({
             x: touch.clientX - transformRef.current.x,
@@ -1129,7 +1135,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           style={{
             backgroundColor: colors.background,
             cursor: isDragging ? "grabbing" : "grab",
-            touchAction: "pan-y",
+            touchAction: "none",
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}

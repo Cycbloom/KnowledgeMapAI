@@ -106,23 +106,23 @@ export const Settings = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+    <div className="h-full overflow-y-auto px-4 py-4 md:p-8 bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+            className="p-3 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors min-h-[44px] min-w-[44px]"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">系统设置</h1>
+          <div className="flex-1">
+            <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">系统设置</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm md:text-base">管理外观、AI 模型与学习算法</p>
           </div>
-          <div className="ml-auto">
+          <div>
              <button
                onClick={handleSaveAllSettings}
-               className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm"
+               className="px-4 py-3 rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm min-h-[44px]"
                disabled={updateProfileMutation.isPending}
             >
                <Save className="w-4 h-4" />
@@ -132,16 +132,16 @@ export const Settings = () => {
         </div>
 
         {/* Appearance Settings */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <Palette className="w-5 h-5 text-pink-600 dark:text-pink-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">外观设置</h2>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               onClick={() => setTheme('light')}
-              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 themeMode === 'light'
                   ? 'bg-blue-50 border-blue-200 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
                   : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700'
@@ -153,7 +153,7 @@ export const Settings = () => {
             
             <button
               onClick={() => setTheme('dark')}
-              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 themeMode === 'dark'
                   ? 'bg-slate-800 border-slate-700 text-white ring-1 ring-slate-600 dark:bg-blue-600 dark:border-blue-500'
                   : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700'
@@ -165,7 +165,7 @@ export const Settings = () => {
             
             <button
               onClick={() => setTheme('system')}
-              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 themeMode === 'system'
                   ? 'bg-purple-50 border-purple-200 text-purple-700 ring-1 ring-purple-200 dark:bg-purple-900/30 dark:border-purple-800 dark:text-purple-300'
                   : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700'
@@ -178,7 +178,7 @@ export const Settings = () => {
         </div>
 
         {/* AI Settings */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Cpu className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -194,28 +194,28 @@ export const Settings = () => {
              </div>
              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">在此添加各服务商支持的模型，以便在下方任务中选择。</p>
              
-             <div className="flex flex-col md:flex-row gap-2 mb-4">
+             <div className="flex flex-col gap-2 mb-4">
                 <select 
                    value={selectedProviderForAdd}
                    onChange={(e) => setSelectedProviderForAdd(e.target.value)}
-                   className="p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                   className="p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
                 >
                    <option value="deepseek">Deepseek</option>
                    <option value="volcengine">火山引擎 (Volcengine)</option>
                    <option value="aliyun">阿里云 (Aliyun)</option>
                 </select>
-                <div className="flex-1 flex gap-2">
+                <div className="flex gap-2">
                     <input 
                     type="text" 
                     value={newModelName}
                     onChange={(e) => setNewModelName(e.target.value)}
                     placeholder="输入模型名称 (如 deepseek-chat)"
-                    className="flex-1 p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
                     />
                     <button 
                     onClick={handleAddModel}
                     disabled={!newModelName.trim()}
-                    className="px-3 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1 transition-colors whitespace-nowrap"
+                    className="px-4 py-3 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1 transition-colors whitespace-nowrap min-h-[44px]"
                     >
                     <Plus className="w-4 h-4" /> 添加
                     </button>
@@ -232,9 +232,9 @@ export const Settings = () => {
                                <span className="truncate" title={model}>{model}</span>
                                <button 
                                   onClick={() => handleDeleteModel(provider, model)}
-                                  className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 opacity-100 transition-opacity p-1 min-h-[32px] min-w-[32px]"
                                >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-4 h-4" />
                                </button>
                             </div>
                          ))}
@@ -260,7 +260,7 @@ export const Settings = () => {
                   <select 
                     value={textConfig.provider}
                     onChange={(e) => setTextConfig({ ...textConfig, provider: e.target.value, model: availableModels[e.target.value]?.[0] || '' })}
-                    className="w-full p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
                   >
                     <option value="deepseek">Deepseek</option>
                     <option value="volcengine">火山引擎 (Volcengine)</option>
@@ -272,7 +272,7 @@ export const Settings = () => {
                   <select 
                     value={textConfig.model}
                     onChange={(e) => setTextConfig({ ...textConfig, model: e.target.value })}
-                    className="w-full p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
                   >
                      {availableModels[textConfig.provider]?.map(m => (
                         <option key={m} value={m}>{m}</option>
@@ -297,7 +297,7 @@ export const Settings = () => {
                   <select 
                     value={embeddingConfig.provider}
                     onChange={(e) => setEmbeddingConfig({ ...embeddingConfig, provider: e.target.value, model: availableModels[e.target.value]?.[0] || '' })}
-                    className="w-full p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
                   >
                     <option value="volcengine">火山引擎 (Volcengine)</option>
                     <option value="aliyun">阿里云 (Aliyun)</option>
@@ -309,7 +309,7 @@ export const Settings = () => {
                    <select 
                     value={embeddingConfig.model}
                     onChange={(e) => setEmbeddingConfig({ ...embeddingConfig, model: e.target.value })}
-                    className="w-full p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
                   >
                      {availableModels[embeddingConfig.provider]?.map(m => (
                         <option key={m} value={m}>{m}</option>
@@ -334,7 +334,7 @@ export const Settings = () => {
                   <select 
                     value={reasoningConfig.provider}
                     onChange={(e) => setReasoningConfig({ ...reasoningConfig, provider: e.target.value, model: availableModels[e.target.value]?.[0] || '' })}
-                    className="w-full p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
                   >
                     <option value="aliyun">阿里云 (Aliyun)</option>
                     <option value="deepseek">Deepseek</option>
@@ -346,7 +346,7 @@ export const Settings = () => {
                   <select 
                     value={reasoningConfig.model}
                     onChange={(e) => setReasoningConfig({ ...reasoningConfig, model: e.target.value })}
-                    className="w-full p-2 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
                   >
                      {availableModels[reasoningConfig.provider]?.map(m => (
                         <option key={m} value={m}>{m}</option>
@@ -374,7 +374,7 @@ export const Settings = () => {
         </div>
 
         {/* FSRS Settings */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
                <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -382,7 +382,7 @@ export const Settings = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
              <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
                 <div className="flex justify-between items-center mb-2">
                    <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">目标保留率 (Request Retention)</label>
@@ -396,7 +396,7 @@ export const Settings = () => {
                            const val = parseFloat(e.target.value);
                            if (!isNaN(val) && val >= 0.7 && val <= 0.99) setRetention(val);
                        }}
-                       className="w-20 p-1 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500"
+                       className="w-20 p-2 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500 min-h-[44px]"
                    />
                 </div>
                 <input 
@@ -406,7 +406,7 @@ export const Settings = () => {
                    step="0.01"
                    value={retention}
                    onChange={(e) => setRetention(Number(e.target.value))}
-                   className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                   className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                    设定您希望在复习时记住的概率。值越高，复习越频繁，记忆越牢固。建议范围：0.80 - 0.95。
@@ -425,7 +425,7 @@ export const Settings = () => {
                            const val = parseInt(e.target.value);
                            if (!isNaN(val) && val >= 1 && val <= 36500) setMaxInterval(val);
                        }}
-                       className="w-24 p-1 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500"
+                       className="w-24 p-2 text-right text-indigo-600 dark:text-indigo-400 font-bold bg-transparent border-b border-indigo-200 dark:border-indigo-800 focus:outline-none focus:border-indigo-500 min-h-[44px]"
                    />
                 </div>
                 <input 
@@ -435,7 +435,7 @@ export const Settings = () => {
                    step="10"
                    value={maxInterval}
                    onChange={(e) => setMaxInterval(Number(e.target.value))}
-                   className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                   className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                    限制卡片复习的最大间隔天数。默认 36500 天（100年）。

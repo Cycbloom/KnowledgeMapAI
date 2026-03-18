@@ -136,11 +136,11 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   };
 
   return (
-    <div className={`p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-indigo-50/50'}`}>
+    <div className={`p-4 sm:p-4 border-b ${isDark ? 'bg-slate-800/50' : 'bg-indigo-50/50'}`}>
       <div className="space-y-4 max-w-2xl">
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 label-mobile">
               问题 <span className="text-red-500">*</span>
               <span className={`ml-2 text-xs font-normal ${formData.question.length > 500 ? 'text-red-500' : 'text-gray-400'}`}>
                 {formData.question.length}/500
@@ -150,14 +150,14 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
               ref={questionRef}
               value={formData.question}
               onChange={e => setFormData({...formData, question: e.target.value})}
-              className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.question ? 'border-red-500' : ''} resize-none overflow-hidden`}
+              className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.question ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
               rows={1}
               placeholder="输入问题内容..."
             />
             {errors.question && <p className="text-red-500 text-xs mt-1">{errors.question}</p>}
           </div>
-          <div className="w-32">
-            <label className="block text-sm font-medium mb-1">类型</label>
+          <div className="w-full sm:w-32">
+            <label className="block text-sm font-medium mb-1 label-mobile">类型</label>
             <select
               value={formData.card_type}
               onChange={e => {
@@ -169,8 +169,8 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                       answer: ''
                   });
               }}
-              className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
-              disabled={!!initialData} // Disable type change in edit mode if desired, but usually okay to keep enabled. Let's keep enabled.
+              className={`w-full p-3 border rounded-lg text-base min-h-[44px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
+              disabled={!!initialData}
             >
               <option value="qa">问答</option>
               <option value="choice">单选</option>
@@ -185,7 +185,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         {/* Options for Choice/Multi-Choice */}
         {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') && (
             <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium mb-1 label-mobile">
                     选项 & 正确答案 <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2">
@@ -207,7 +207,6 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                     if (formData.card_type === 'choice') {
                                         setFormData({...formData, answer: option});
                                     } else {
-                                        // Multi-choice logic
                                         let currentAnswers: string[] = [];
                                         try { currentAnswers = JSON.parse(formData.answer || '[]'); } catch { currentAnswers = []; }
                                         if (!Array.isArray(currentAnswers)) currentAnswers = [];
@@ -220,24 +219,24 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                                         setFormData({...formData, answer: JSON.stringify(currentAnswers)});
                                     }
                                 }}
-                                className={`w-6 h-6 flex items-center justify-center rounded-full border transition-colors ${
+                                className={`w-8 h-8 flex items-center justify-center rounded-full border transition-colors touch-target ${
                                     isChecked
                                     ? 'bg-green-500 border-green-500 text-white' 
                                     : 'border-gray-300 hover:border-green-400'
                                 }`}
                                 title="设为正确答案"
                             >
-                                {isChecked && <CheckSquare size={14} />}
+                                {isChecked && <CheckSquare size={18} />}
                             </button>
                             <span className="font-mono text-gray-400 w-6">{String.fromCharCode(65 + idx)}.</span>
                             <input
                                 type="text"
                                 value={option}
                                 onChange={e => updateOption(idx, e.target.value)}
-                                className={`flex-1 p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
+                                className={`flex-1 p-3 border rounded-lg text-base min-h-[44px] ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}
                                 placeholder={`选项 ${idx + 1}`}
                             />
-                            <button onClick={() => removeOption(idx)} className="text-gray-400 hover:text-red-500">
+                            <button onClick={() => removeOption(idx)} className="text-gray-400 hover:text-red-500 p-2 touch-target">
                                 <X size={18} />
                             </button>
                         </div>
@@ -245,7 +244,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                     })}
                     <button 
                         onClick={addOption}
-                        className="text-sm text-indigo-500 hover:text-indigo-600 font-medium flex items-center gap-1"
+                        className="text-sm text-indigo-500 hover:text-indigo-600 font-medium flex items-center gap-1 min-h-[44px] touch-target"
                     >
                         <Plus size={16} /> 添加选项
                     </button>
@@ -256,7 +255,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
 
         {/* Answer Input */}
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label className="block text-sm font-medium mb-1 label-mobile">
             {(formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? '答案预览 (自动生成)' : '答案'} <span className="text-red-500">*</span>
           </label>
           
@@ -270,14 +269,14 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                               value={val}
                               checked={formData.answer === val}
                               onChange={e => setFormData({...formData, answer: e.target.value})}
-                              className="w-4 h-4 text-indigo-600"
+                              className="w-5 h-5 text-indigo-600"
                           />
-                          <span>{val === 'True' ? '正确 (True)' : '错误 (False)'}</span>
+                          <span className="text-base">{val === 'True' ? '正确 (True)' : '错误 (False)'}</span>
                       </label>
                   ))}
               </div>
           ) : (formData.card_type === 'choice' || formData.card_type === 'multi_choice') ? (
-              <div className={`p-2 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>
+              <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-gray-100 text-gray-600'}`}>
                   {formData.answer || '请点击上方选项左侧圆圈选择正确答案'}
               </div>
           ) : (
@@ -285,7 +284,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                 ref={answerRef}
                 value={formData.answer}
                 onChange={e => setFormData({...formData, answer: e.target.value})}
-                className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.answer ? 'border-red-500' : ''} resize-none overflow-hidden`}
+                className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} ${errors.answer ? 'border-red-500' : ''} resize-none overflow-hidden min-h-[44px]`}
                 rows={1}
                 placeholder="输入标准答案..."
               />
@@ -294,21 +293,21 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">解析 (可选)</label>
+          <label className="block text-sm font-medium mb-1 label-mobile">解析 (可选)</label>
           <textarea
             ref={explanationRef}
             value={formData.explanation}
             onChange={e => setFormData({...formData, explanation: e.target.value})}
-            className={`w-full p-2 border rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} resize-none overflow-hidden`}
+            className={`w-full p-3 border rounded-lg text-base ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} resize-none overflow-hidden min-h-[44px]`}
             rows={1}
             placeholder="输入解析..."
           />
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
           <button 
             onClick={onCancel}
-            className="px-3 py-1.5 text-gray-500 hover:text-gray-700"
+            className="px-4 py-3 text-gray-500 hover:text-gray-700 min-h-[44px] touch-target font-medium rounded-lg"
             disabled={isSubmitting}
           >
             取消
@@ -316,7 +315,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           <button 
             onClick={handleSubmit}
             disabled={!formData.question || !formData.answer || isSubmitting}
-            className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 min-h-[44px] touch-target font-medium"
           >
             {isSubmitting ? '保存中...' : '保存'}
           </button>

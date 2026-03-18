@@ -16,12 +16,12 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 
 const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: any) => (
-  <div className={`p-4 rounded-xl shadow-sm border flex items-start justify-between ${
+  <div className={`p-3 md:p-4 rounded-xl shadow-sm border flex items-start justify-between ${
     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
   }`}>
     <div className="flex-1 min-w-0">
       <p className={`text-xs font-medium mb-1 truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{title}</p>
-      <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{value}</h3>
+      <h3 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{value}</h3>
       {subtext && <p className={`text-xs mt-1 truncate ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{subtext}</p>}
     </div>
     <div className={`p-2 rounded-full ${color} flex-shrink-0 ml-2`}>
@@ -309,7 +309,7 @@ export const LearningStatsCenter = () => {
             <FocusStatsCard stats={focusStats} isDark={isDark} />
           )}
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <MetricCard 
               title="总卡片数" 
               value={stats.metrics.totalCards} 

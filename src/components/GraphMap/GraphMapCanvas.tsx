@@ -102,6 +102,10 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     const touchStartPos = useRef<{ x: number; y: number } | null>(null);
     const touchStartDistance = useRef<number | null>(null);
     const touchStartMidpoint = useRef<{ x: number; y: number } | null>(null);
+    const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+    const touchMovedRef = useRef(false);
+    const touchStartOnNodeRef = useRef<string | null>(null);
+    const touchStartTransformRef = useRef<Transform | null>(null);
 
     const colors = isDark ? THEME_COLORS.dark : THEME_COLORS.light;
 
@@ -310,16 +314,28 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     const handleTouchStart = useCallback((e: TouchEvent) => {
       e.preventDefault();
 
+      touchMovedRef.current = false;
+
       if (e.touches.length === 1) {
-        setIsDragging(true);
-        setHasMoved(false);
         const touch = e.touches[0];
-        const rect = svgRef.current?.getBoundingClientRect();
-        if (rect) {
-          touchStartPos.current = {
-            x: touch.clientX - rect.left,
-            y: touch.clientY - rect.top,
-          };
+        touchStartPos.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+        };
+        lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+        touchStartDistance.current = null;
+        touchStartMidpoint.current = null;
+        touchStartTransformRef.current = { ...transformRef.current };
+
+        const target = e.target as SVGElement;
+        const nodeElement = target.closest("[data-node-id]");
+        if (nodeElement) {
+          const nodeId = nodeElement.getAttribute("data-node-id");
+          touchStartOnNodeRef.current = nodeId;
+        } else {
+          touchStartOnNodeRef.current = null;
+          setIsDragging(true);
+          setHasMoved(false);
           dragStartRef.current = {
             x: touch.clientX - transformRef.current.x,
             y: touch.clientY - transformRef.current.y,
@@ -345,6 +361,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             y: midpoint.y - rect.top,
           };
         }
+        touchStartTransformRef.current = { ...transformRef.current };
       }
     }, []);
 
@@ -352,32 +369,41 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       (e: TouchEvent) => {
         e.preventDefault();
 
-        if (e.touches.length === 1 && isDragging && touchStartPos.current) {
+        if (e.touches.length === 1 && touchStartPos.current) {
           const touch = e.touches[0];
-          const rect = svgRef.current?.getBoundingClientRect();
-          if (rect) {
-            const dx = touch.clientX - (touchStartPos.current.x + rect.left);
-            const dy = touch.clientY - (touchStartPos.current.y + rect.top);
-            const distance = Math.sqrt(dx * dx + dy * dy);
+          const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+          const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+          const moveThreshold = 10;
 
-            if (distance > 5) {
-              setHasMoved(true);
-            }
+          if (dx > moveThreshold || dy > moveThreshold) {
+            touchMovedRef.current = true;
+          }
+
+          if (
+            touchMovedRef.current &&
+            !touchStartOnNodeRef.current &&
+            touchStartTransformRef.current
+          ) {
+            const deltaX = touch.clientX - touchStartPos.current.x;
+            const deltaY = touch.clientY - touchStartPos.current.y;
 
             const newTransform = {
-              x: touch.clientX - dragStartRef.current.x,
-              y: touch.clientY - dragStartRef.current.y,
-              k: transformRef.current.k,
+              x: touchStartTransformRef.current.x + deltaX,
+              y: touchStartTransformRef.current.y + deltaY,
+              k: touchStartTransformRef.current.k,
             };
 
             transformRef.current = newTransform;
             updateTransformDOM(newTransform);
             updateTransformState(newTransform);
           }
+
+          lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
         } else if (
           e.touches.length === 2 &&
           touchStartDistance.current &&
-          touchStartMidpoint.current
+          touchStartMidpoint.current &&
+          touchStartTransformRef.current
         ) {
           const touch1 = e.touches[0];
           const touch2 = e.touches[1];
@@ -387,8 +413,10 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           );
 
           const scaleFactor = currentDistance / touchStartDistance.current;
-          const prev = transformRef.current;
-          const newK = Math.max(0.1, Math.min(5, prev.k * scaleFactor));
+          const newK = Math.max(
+            0.1,
+            Math.min(5, touchStartTransformRef.current.k * scaleFactor),
+          );
 
           const midpoint = {
             x: (touch1.clientX + touch2.clientX) / 2,
@@ -404,8 +432,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             const deltaX = currentMidpoint.x - touchStartMidpoint.current.x;
             const deltaY = currentMidpoint.y - touchStartMidpoint.current.y;
 
-            const newX = prev.x + deltaX;
-            const newY = prev.y + deltaY;
+            const newX = touchStartTransformRef.current.x + deltaX;
+            const newY = touchStartTransformRef.current.y + deltaY;
 
             const newTransform = { x: newX, y: newY, k: newK };
 
@@ -415,14 +443,36 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           }
         }
       },
-      [isDragging, updateTransformDOM, updateTransformState],
+      [updateTransformDOM, updateTransformState],
     );
 
-    const handleTouchEnd = useCallback(() => {
-      setIsDragging(false);
-      touchStartPos.current = null;
-      touchStartDistance.current = null;
-      touchStartMidpoint.current = null;
+    const handleTouchEnd = useCallback((e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        setIsDragging(false);
+        touchStartPos.current = null;
+        touchStartDistance.current = null;
+        touchStartMidpoint.current = null;
+        lastTouchRef.current = null;
+        touchMovedRef.current = false;
+        touchStartOnNodeRef.current = null;
+        touchStartTransformRef.current = null;
+      } else if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        touchStartPos.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+        };
+        lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+        touchStartDistance.current = null;
+        touchStartMidpoint.current = null;
+        touchStartTransformRef.current = { ...transformRef.current };
+
+        const target = e.target as SVGElement;
+        const nodeElement = target.closest("[data-node-id]");
+        touchStartOnNodeRef.current = nodeElement
+          ? nodeElement.getAttribute("data-node-id")
+          : null;
+      }
     }, []);
 
     useEffect(() => {
@@ -600,8 +650,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           onMouseLeave={handleMouseUp}
           onClick={handleCanvasClick}
           onContextMenu={(e) => e.preventDefault()}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
         >
           <g ref={contentRef}>
             <CanvasLayout
@@ -686,7 +734,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           </g>
         </svg>
 
-        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+        <div className="absolute bottom-[calc(3.5rem+var(--safe-area-inset-bottom))] md:bottom-4 right-4 flex flex-col gap-2">
           <div className="flex flex-col gap-2">
             {fromGraphId && onReturnToGraph && (
               <button
@@ -838,7 +886,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         )}
 
         {showMiniMap && layout && (
-          <div className="absolute bottom-4 right-14 mr-1">
+          <div className="absolute bottom-[calc(3.5rem+var(--safe-area-inset-bottom))] md:bottom-4 right-14 mr-1">
             <MiniMap
               nodes={layout.nodes}
               transform={transform}
@@ -853,7 +901,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           </div>
         )}
 
-        <div className="absolute bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
+        <div className="absolute bottom-[calc(3.5rem+var(--safe-area-inset-bottom))] md:bottom-4 left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm">
           缩放: {Math.round(transform.k * 100)}% | 图谱: {graphs.length} | 关系:{" "}
           {relations.length}
         </div>

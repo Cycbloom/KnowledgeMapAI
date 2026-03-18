@@ -141,7 +141,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
 
   return (
     <div className="h-full overflow-x-auto custom-scrollbar">
-      <div className="flex gap-4 min-w-max h-full p-1">
+      <div className="flex gap-3 sm:gap-4 min-w-max h-full p-1">
         <AnimatePresence>
           {columnsData.map((column, index) => {
             const IconComponent = column.icon;
@@ -156,7 +156,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.1 }}
                 className={`
-                  flex flex-col w-80 flex-shrink-0 rounded-2xl border transition-all duration-300
+                  flex flex-col w-64 sm:w-80 flex-shrink-0 rounded-2xl border transition-all duration-300
                   ${isOver ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-[1.02]" : ""}
                   ${column.border}
                   bg-white dark:bg-slate-900/60 backdrop-blur-sm
@@ -182,19 +182,19 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               >
                 <div
                   className={`
-                  p-4 rounded-t-2xl border-b
+                  p-3 sm:p-4 rounded-t-2xl border-b
                   ${column.bg} ${column.border}
                 `}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <div
                         className={`p-2 rounded-lg bg-gradient-to-br ${column.gradient} shadow-lg`}
                       >
-                        <IconComponent size={18} className="text-white" />
+                        <IconComponent size={16} className="text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-800 dark:text-white">
+                        <h3 className="font-bold text-slate-800 dark:text-white text-sm">
                           {column.title}
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -204,7 +204,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                     </div>
                     <div
                       className={`
-                      px-2.5 py-1 rounded-full text-sm font-bold
+                      px-2 py-1 rounded-full text-xs sm:text-sm font-bold
                       ${column.bg} ${column.text}
                     `}
                     >
@@ -213,7 +213,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   </div>
 
                   {estimatedTime > 0 && (
-                    <div className="flex items-center gap-2 mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
                       <Clock size={12} className={column.text} />
                       <span>
                         预计:{" "}
@@ -225,11 +225,11 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   )}
                 </div>
 
-                <div className="flex-1 p-3 overflow-y-auto custom-scrollbar max-h-[calc(100vh-280px)]">
+                <div className="flex-1 p-2 sm:p-3 overflow-y-auto custom-scrollbar max-h-[calc(100vh-280px)]">
                   {column.tasks.length === 0 ? (
                     <div className="text-center py-8 text-slate-400 dark:text-slate-500">
                       <IconComponent
-                        size={32}
+                        size={28}
                         className="mx-auto mb-2 opacity-30"
                       />
                       <p className="text-sm">暂无任务</p>
@@ -244,7 +244,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                       axis="y"
                       values={column.tasks}
                       onReorder={() => {}}
-                      className="space-y-3"
+                      className="space-y-2 sm:space-y-3"
                     >
                       <AnimatePresence>
                         {column.tasks.map((task) => (

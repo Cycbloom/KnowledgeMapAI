@@ -10,7 +10,11 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-export const MessageBar: React.FC = () => {
+interface MessageBarProps {
+  bottomOffset?: number;
+}
+
+export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
   const { messages } = useMessageStore();
   const { isDark } = useTheme();
   // Get the most recent message
@@ -52,7 +56,10 @@ export const MessageBar: React.FC = () => {
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-none">
+    <div
+      className="absolute left-0 right-0 z-50 pointer-events-none"
+      style={{ bottom: bottomOffset }}
+    >
       <AnimatePresence>
         {currentMessage && (
           <motion.div

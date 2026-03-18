@@ -89,9 +89,10 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
                   </p>
                   <button
                     onClick={onClose}
-                    className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                    className="p-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label="关闭菜单"
                   >
-                    <X size={18} />
+                    <X size={22} />
                   </button>
                 </div>
               </div>
@@ -106,10 +107,11 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
                   <button
                     key={item.key}
                     onClick={() => handleAction(action)}
-                    className="w-full flex items-center gap-4 px-5 py-3.5 min-h-[44px] text-left hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                    className="w-full flex items-center gap-4 px-5 py-4 min-h-[52px] text-left rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 active:bg-gray-100 dark:active:bg-slate-700 transition-colors"
+                    aria-label={item.label}
                   >
-                    <item.icon size={20} className={item.color} />
-                    <span className="text-base text-gray-700 dark:text-gray-200">
+                    <item.icon size={22} className={item.color} />
+                    <span className="text-base text-gray-700 dark:text-gray-200 font-medium">
                       {item.label}
                     </span>
                   </button>
@@ -120,10 +122,11 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
 
               <button
                 onClick={() => handleAction(onDelete)}
-                className="w-full flex items-center gap-4 px-5 py-3.5 min-h-[44px] text-left hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="w-full flex items-center gap-4 px-5 py-4 min-h-[52px] text-left rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30 transition-colors"
+                aria-label="删除节点"
               >
-                <Trash2 size={20} className="text-red-500" />
-                <span className="text-base text-red-600 dark:text-red-400">
+                <Trash2 size={22} className="text-red-500" />
+                <span className="text-base text-red-600 dark:text-red-400 font-medium">
                   删除节点
                 </span>
               </button>

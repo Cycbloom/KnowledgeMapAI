@@ -132,26 +132,26 @@ export const Achievements = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div className="h-full overflow-y-auto px-4 py-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+          <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden">
             <div className="absolute right-0 top-0 opacity-10 transform translate-x-10 -translate-y-10">
               <Trophy size={200} />
             </div>
             
-            <div className="relative z-10 flex items-center gap-6">
-              <div className="w-24 h-24 bg-white/20 backdrop-blur rounded-full flex items-center justify-center border-4 border-white/30">
-                <span className="text-4xl font-bold">{level}</span>
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-4 md:gap-6">
+              <div className="w-20 h-20 md:w-24 md:h-24 bg-white/20 backdrop-blur rounded-full flex items-center justify-center border-4 border-white/30">
+                <span className="text-3xl md:text-4xl font-bold">{level}</span>
               </div>
               
-              <div className="flex-1 space-y-2">
-                <div className="flex justify-between items-end">
+              <div className="flex-1 space-y-2 text-center md:text-left">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-2">
                   <div>
-                    <h2 className="text-2xl font-bold">等级 {level}</h2>
-                    <p className="text-blue-100">总获得经验: {totalLifetimeXp} XP</p>
+                    <h2 className="text-xl md:text-2xl font-bold">等级 {level}</h2>
+                    <p className="text-blue-100 text-sm md:text-base">总获得经验: {totalLifetimeXp} XP</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-center md:text-right">
                     <span className="text-sm font-medium text-blue-100">{currentXp} / {xpNeeded} XP</span>
                   </div>
                 </div>
@@ -169,7 +169,7 @@ export const Achievements = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-center">
             <div className="text-center space-y-4">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mb-2">
                 <Award size={24} />
@@ -191,7 +191,7 @@ export const Achievements = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[44px] ${
                   activeTab === tab.key
                     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'

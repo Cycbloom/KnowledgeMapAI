@@ -4,7 +4,7 @@ import { useNetworkStatus } from "../../hooks";
 import { useTheme } from "../../hooks";
 
 export const OfflineIndicator: React.FC = () => {
-  const isOnline = useNetworkStatus();
+  const { isOnline } = useNetworkStatus();
   const { isDark } = useTheme();
 
   if (isOnline) return null;

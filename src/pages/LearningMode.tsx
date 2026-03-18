@@ -657,7 +657,7 @@ export const LearningMode = () => {
     >
       {/* Header */}
       <header
-        className={`${isMobile ? "h-14" : "h-16"} border-b flex items-center justify-between px-3 lg:px-6 flex-shrink-0 ${
+        className={`${isMobile && nodeId ? "min-h-14 py-2" : isMobile ? "h-14" : "h-16"} border-b flex items-center justify-between px-3 lg:px-6 flex-shrink-0 ${
           isDark
             ? "bg-slate-900 border-slate-700"
             : "bg-white border-gray-200 shadow-sm"
@@ -673,7 +673,7 @@ export const LearningMode = () => {
                 window.history.back();
               }
             }}
-            className={`p-1.5 lg:p-2 rounded-lg transition-colors ${
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
               isDark
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
@@ -685,7 +685,7 @@ export const LearningMode = () => {
 
           <button
             onClick={() => navigate("/")}
-            className={`p-1.5 lg:p-2 rounded-lg transition-colors ${
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
               isDark
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
@@ -697,7 +697,7 @@ export const LearningMode = () => {
 
           <button
             onClick={() => setIsOutlineOpen(!isOutlineOpen)}
-            className={`p-2 rounded-lg transition-colors hidden lg:block ${
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-lg transition-colors hidden lg:block ${
               isDark
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
@@ -733,7 +733,7 @@ export const LearningMode = () => {
 
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`p-1.5 lg:p-2 rounded-lg transition-colors xl:hidden ${
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors xl:hidden ${
               isDark
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
@@ -747,10 +747,12 @@ export const LearningMode = () => {
           </button>
         </div>
 
-        <div className="flex items-center space-x-2 lg:space-x-3">
+        <div
+          className={`${isMobile && nodeId ? "flex flex-wrap items-end gap-2 justify-end" : "flex items-center space-x-2 lg:space-x-3"}`}
+        >
           <button
             onClick={toggleTheme}
-            className={`p-1.5 lg:p-2 rounded-lg transition-colors ${
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
               isDark
                 ? "hover:bg-slate-800 text-amber-400"
                 : "hover:bg-gray-100 text-indigo-600"
@@ -857,13 +859,13 @@ export const LearningMode = () => {
               <button
                 onClick={handleStartChallenge}
                 disabled={isGeneratingCards}
-                className={`flex items-center space-x-2 px-4 lg:px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
+                className={`flex items-center space-x-2 px-3 lg:px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
                   isGeneratingCards ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >
                 <GraduationCap size={18} />
                 <span className="hidden sm:inline">完成学习，开始挑战</span>
-                <span className="sm:hidden">开始挑战</span>
+                <span className="sm:hidden">挑战</span>
               </button>
             </div>
           )}
@@ -927,7 +929,9 @@ export const LearningMode = () => {
                 className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"} border-r dark:border-slate-800 relative bg-white dark:bg-slate-900`}
               >
                 {isGenerating ? (
-                  <div className="flex flex-col items-center justify-center h-full space-y-6 text-center">
+                  <div
+                    className={`flex flex-col items-center justify-center h-full space-y-6 text-center ${isMobile ? "pt-8" : ""}`}
+                  >
                     <div className="relative">
                       <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
                       <div className="absolute inset-0 flex items-center justify-center">

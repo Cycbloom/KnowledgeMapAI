@@ -1,22 +1,48 @@
 import { useEffect, useState } from "react";
 
-export const MOBILE_API_BASE_URL = "http://192.168.0.6:3001";
+export function isCapacitorMobile(): boolean {
+  return !!(window as any).Capacitor?.isNativePlatform?.();
+}
+
+export function isElectronDesktop(): boolean {
+  return !!(window as any).electronAPI || !!(window as any).electron;
+}
+
+export function isWebOnly(): boolean {
+  return !isCapacitorMobile() && !isElectronDesktop();
+}
 
 export function useMobileApiConfig() {
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [isWeb, setIsWeb] = useState(false);
 
   useEffect(() => {
-    const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
-    setIsMobile(isCapacitor);
+    const mobile = isCapacitorMobile();
+    const desktop = isElectronDesktop();
+    const web = isWebOnly();
+    setIsMobile(mobile);
+    setIsDesktop(desktop);
+    setIsWeb(web);
   }, []);
 
-  return { isMobile, apiBaseUrl: MOBILE_API_BASE_URL };
+  return {
+    isMobile,
+    isDesktop,
+    isWeb,
+    useSupabaseDirectly: isMobile,
+  };
+}
+
+export function getEnvironmentInfo() {
+  return {
+    isMobile: isCapacitorMobile(),
+    isDesktop: isElectronDesktop(),
+    isWeb: isWebOnly(),
+    useSupabaseDirectly: isCapacitorMobile(),
+  };
 }
 
 export function getMobileApiBaseUrl(): string {
-  const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
-  if (isCapacitor) {
-    return MOBILE_API_BASE_URL;
-  }
   return "";
 }

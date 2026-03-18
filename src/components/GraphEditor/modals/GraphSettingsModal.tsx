@@ -58,29 +58,29 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className={`bg-white rounded-xl shadow-2xl w-full ${activeTab === 'prompts' ? 'max-w-4xl' : 'max-w-md'} transition-all duration-300 overflow-hidden animate-fade-in-up`}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className={`bg-white dark:bg-slate-800 rounded-xl sm:rounded-xl shadow-2xl w-full ${activeTab === 'prompts' ? 'max-w-4xl' : 'max-w-md'} transition-all duration-300 overflow-hidden animate-fade-in-up max-h-[95dvh] sm:max-h-[90dvh]`}>
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-100">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 dark:border-slate-700">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
               <Settings size={24} />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">图谱设置</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">图谱设置</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 touch-target">
             <X size={24} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-100 px-6">
+        <div className="flex flex-wrap border-b border-gray-100 dark:border-slate-700 px-4 sm:px-6">
           <button
             onClick={() => setActiveTab('general')}
-            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center ${
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center min-h-[44px] touch-target ${
               activeTab === 'general'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
             <Settings size={16} className="mr-2" />
@@ -88,10 +88,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
           </button>
           <button
             onClick={() => setActiveTab('prompts')}
-            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center ${
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center min-h-[44px] touch-target ${
               activeTab === 'prompts'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
             <MessageSquare size={16} className="mr-2" />
@@ -99,10 +99,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
             </button>
           <button
             onClick={() => setActiveTab('actions')}
-            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center ${
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors flex items-center min-h-[44px] touch-target ${
               activeTab === 'actions'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
             <Zap size={16} className="mr-2" />
@@ -111,22 +111,22 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
         </div>
 
         {/* Body */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div className="p-4 sm:p-6 max-h-[calc(95dvh-200px)] sm:max-h-[calc(90dvh-200px)] overflow-y-auto custom-scrollbar">
           {activeTab === 'general' ? (
             <div className="space-y-6">
               {/* Performance Settings */}
               <div className="space-y-3">
-                <h3 className="font-bold text-gray-700 flex items-center">
+                <h3 className="font-bold text-gray-700 dark:text-gray-200 flex items-center">
                   <Zap size={18} className="mr-2" />
                   性能与画质 (Performance)
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setQuality('high')}
-                    className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                    className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center min-h-[60px] touch-target ${
                       quality === 'high' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-100 hover:border-indigo-100'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
                     }`}
                   >
                     <Zap size={16} className="mb-1" />
@@ -134,10 +134,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                   </button>
                   <button
                     onClick={() => setQuality('medium')}
-                    className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                    className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center min-h-[60px] touch-target ${
                       quality === 'medium' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-100 hover:border-indigo-100'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
                     }`}
                   >
                     <Activity size={16} className="mb-1" />
@@ -145,10 +145,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                   </button>
                   <button
                     onClick={() => setQuality('low')}
-                    className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                    className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all flex flex-col items-center justify-center min-h-[60px] touch-target ${
                       quality === 'low' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-100 hover:border-indigo-100'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
                     }`}
                   >
                     <Gauge size={16} className="mb-1" />
@@ -156,82 +156,82 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                   </button>
                 </div>
                 
-                <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                  <span className="text-sm text-gray-600">显示性能统计 (FPS)</span>
+                <div className="flex justify-between items-center bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">显示性能统计 (FPS)</span>
                   <button 
                     onClick={toggleStats}
-                    className={`w-10 h-5 rounded-full transition-colors relative ${showStats ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${showStats ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-600'}`}
                   >
-                    <div className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition-transform ${showStats ? 'translate-x-5' : 'translate-x-0'}`} />
+                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${showStats ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   {quality === 'high' ? '启用泛光特效，最大视野距离。' : 
                    quality === 'medium' ? '关闭部分特效，适中视野。' : 
                    '关闭特效，简化几何体，适合低端设备。'}
                 </p>
               </div>
 
-              <div className="border-t border-gray-100 pt-4"></div>
+              <div className="border-t border-gray-100 dark:border-slate-700 pt-4"></div>
 
               {/* Gamification Switch */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2 text-gray-700 font-bold">
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200 font-bold">
                     <Shield size={18} />
                     <span>闯关模式 (Gamification)</span>
                   </div>
                   <button 
                     onClick={() => setGamificationEnabled(!gamificationEnabled)}
-                    className={`w-12 h-6 rounded-full transition-colors relative ${gamificationEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                    className={`w-12 h-6 rounded-full transition-colors relative touch-target ${gamificationEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-600'}`}
                   >
                     <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${gamificationEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                   开启后，节点将被锁定，必须先掌握前置知识点才能解锁。关闭后所有节点可见。
                 </p>
               </div>
 
               {/* Text Display Level */}
               <div className="space-y-3">
-                <h3 className="font-bold text-gray-700 flex items-center">
+                <h3 className="font-bold text-gray-700 dark:text-gray-200 flex items-center">
                   <Type size={18} className="mr-2" />
                   文本显示层级 (Label Display)
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setTextDisplayLevel('all')}
-                    className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all ${
+                    className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all min-h-[44px] touch-target ${
                       textDisplayLevel === 'all' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-100 hover:border-indigo-100'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
                     }`}
                   >
                     全部显示
                   </button>
                   <button
                     onClick={() => setTextDisplayLevel('important')}
-                    className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all ${
+                    className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all min-h-[44px] touch-target ${
                       textDisplayLevel === 'important' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-100 hover:border-indigo-100'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
                     }`}
                   >
                     核心节点
                   </button>
                   <button
                     onClick={() => setTextDisplayLevel('root_only')}
-                    className={`py-2 px-1 rounded-lg border-2 text-xs font-bold transition-all ${
+                    className={`py-3 px-2 rounded-lg border-2 text-xs font-bold transition-all min-h-[44px] touch-target ${
                       textDisplayLevel === 'root_only' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-100 hover:border-indigo-100'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-100 dark:border-slate-600 hover:border-indigo-100 dark:hover:border-indigo-900/30'
                     }`}
                   >
                     仅根节点
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                   {textDisplayLevel === 'all' 
                     ? '在任何距离下显示所有节点的标题（可能较拥挤）。' 
                     : textDisplayLevel === 'important'
@@ -242,17 +242,17 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
 
               {/* Learning Direction */}
               <div className={`space-y-3 transition-opacity ${gamificationEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-                <h3 className="font-bold text-gray-700 flex items-center">
+                <h3 className="font-bold text-gray-700 dark:text-gray-200 flex items-center">
                   学习顺序 (Learning Order)
                 </h3>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={() => setLearningDirection('top_down')}
-                    className={`p-3 rounded-xl border-2 flex flex-col items-center text-center transition-all ${
+                    className={`p-3 rounded-xl border-2 flex flex-col items-center text-center transition-all min-h-[100px] touch-target ${
                       learningDirection === 'top_down' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-200 dark:border-slate-600 hover:border-indigo-200 dark:hover:border-indigo-900/30 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     <ArrowDown size={24} className="mb-2" />
@@ -262,10 +262,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
 
                   <button
                     onClick={() => setLearningDirection('bottom_up')}
-                    className={`p-3 rounded-xl border-2 flex flex-col items-center text-center transition-all ${
+                    className={`p-3 rounded-xl border-2 flex flex-col items-center text-center transition-all min-h-[100px] touch-target ${
                       learningDirection === 'bottom_up' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                        : 'border-gray-200 dark:border-slate-600 hover:border-indigo-200 dark:hover:border-indigo-900/30 hover:bg-gray-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     <ArrowUp size={24} className="mb-2" />
@@ -273,7 +273,7 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
                     <span className="text-xs opacity-70 mt-1">先学叶节点，解锁父节点</span>
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
                   {learningDirection === 'top_down' 
                     ? '传统的学习路径：从概览到细节。' 
                     : '构建式学习路径：从基础部分组装成整体。适合"叶节点是父节点一部分"的场景。'}
@@ -289,11 +289,11 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
 
         {/* Footer - Only show for General settings */}
         {activeTab === 'general' && (
-          <div className="p-6 border-t border-gray-100 flex justify-end">
+          <div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 flex justify-end">
             <button
               onClick={handleSave}
               disabled={updateGraphMutation.isPending}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center min-h-[44px] touch-target"
             >
               <Save size={18} className="mr-2" />
               {updateGraphMutation.isPending ? '保存中...' : '保存设置'}

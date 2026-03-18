@@ -110,13 +110,13 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
           可用时间段
         </h3>
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30 min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
           添加时间段
@@ -124,11 +124,11 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
       </div>
 
       {showAddForm && (
-        <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
           <h4 className="font-medium text-slate-900 dark:text-white mb-4">
             添加新时间段
           </h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1.5">
                 适用日期
@@ -143,7 +143,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                       : null,
                   })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
               >
                 <option value="">每天</option>
                 {DAYS_OF_WEEK.map((day) => (
@@ -164,7 +164,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                   setNewSlot({ ...newSlot, label: e.target.value })
                 }
                 placeholder="如：上午专注时间"
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
             <div>
@@ -177,7 +177,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                 onChange={(e) =>
                   setNewSlot({ ...newSlot, start_time: e.target.value })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
             <div>
@@ -190,20 +190,20 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                 onChange={(e) =>
                   setNewSlot({ ...newSlot, end_time: e.target.value })
                 }
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all min-h-[44px]"
               />
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-5">
             <button
               onClick={() => setShowAddForm(false)}
-              className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors min-h-[44px]"
             >
               取消
             </button>
             <button
               onClick={handleAddSlot}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
+              className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30 min-h-[44px]"
             >
               保存
             </button>
@@ -237,7 +237,7 @@ export const TimeSlotSettings: React.FC<TimeSlotSettingsProps> = (_props) => {
                   )}
                   <button
                     onClick={() => handleDeleteSlot(slot.id)}
-                    className="p-1 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors"
+                    className="p-2 hover:bg-red-100 dark:hover:bg-red-500/20 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   >
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </button>

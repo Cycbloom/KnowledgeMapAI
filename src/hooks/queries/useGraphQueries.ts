@@ -1,5 +1,5 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { api } from "../../services/api";
+import { api } from "../../services/api/adapter";
 import { Node, Edge } from "../../types";
 import { queryKeys, defaultQueryConfig, staticQueryConfig, realtimeQueryConfig } from "./config";
 

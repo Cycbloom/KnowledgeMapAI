@@ -13,7 +13,7 @@ import { getOfflineQueueCount } from '../../utils/offlineStorage';
 type SyncState = 'idle' | 'syncing' | 'success' | 'error';
 
 export const OfflineStatusBar: React.FC = () => {
-  const isOnline = useNetworkStatus();
+  const { isOnline } = useNetworkStatus();
   const { isDark } = useTheme();
   const [pendingCount, setPendingCount] = useState(0);
   const [syncState, setSyncState] = useState<SyncState>('idle');
@@ -22,7 +22,7 @@ export const OfflineStatusBar: React.FC = () => {
 
   const updatePendingCount = useCallback(async () => {
     try {
-      const status = getSyncStatus();
+      const status = await getSyncStatus();
       setPendingCount(status.pendingCount);
     } catch {
       const count = await getOfflineQueueCount();

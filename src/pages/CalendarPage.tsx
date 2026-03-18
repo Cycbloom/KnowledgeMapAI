@@ -269,30 +269,44 @@ export const CalendarPage: React.FC = () => {
   return (
     <div className={`h-full flex flex-col ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className={`px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+      <div className={`px-4 md:px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+        <div className="flex flex-col gap-4">
+          {/* Top row: Title + main controls */}
+          <div className="flex items-center justify-between">
+            <h1 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
               日历
             </h1>
-
             <div className="flex items-center gap-2">
               <button
+                onClick={() => handleAddEvent(currentDate)}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors min-h-[44px]"
+              >
+                <Plus size={18} />
+                <span className="hidden md:inline">添加任务</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation controls */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Date navigation */}
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <button
                 onClick={() => handleNavigate(-1)}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-3 rounded-lg transition-colors min-h-[44px] min-w-[44px] ${
                   isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
                 }`}
               >
                 <ChevronLeft size={20} />
               </button>
-              <span className={`text-lg font-medium min-w-[150px] text-center ${
+              <span className={`text-base md:text-lg font-medium min-w-[120px] md:min-w-[150px] text-center ${
                 isDark ? 'text-white' : 'text-gray-900'
               }`}>
                 {getTitle()}
               </span>
               <button
                 onClick={() => handleNavigate(1)}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-3 rounded-lg transition-colors min-h-[44px] min-w-[44px] ${
                   isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
                 }`}
               >
@@ -300,7 +314,7 @@ export const CalendarPage: React.FC = () => {
               </button>
               <button
                 onClick={goToToday}
-                className={`px-3 py-1.5 text-sm rounded-lg font-medium ${
+                className={`px-4 py-2 text-sm rounded-lg font-medium min-h-[44px] ${
                   isDark
                     ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -309,49 +323,41 @@ export const CalendarPage: React.FC = () => {
                 今天
               </button>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            {/* View type selector */}
-            <div className={`flex rounded-lg p-1 ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
-              {(Object.keys(VIEW_LABELS) as ViewType[]).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setViewType(type)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    viewType === type
-                      ? 'bg-blue-600 text-white'
-                      : isDark
-                        ? 'text-slate-400 hover:text-white'
-                        : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {VIEW_LABELS[type]}
-                </button>
-              ))}
+            {/* Right side controls */}
+            <div className="flex items-center gap-2 md:gap-3 justify-center md:justify-end overflow-x-auto">
+              {/* View type selector */}
+              <div className={`flex rounded-lg p-1 ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                {(Object.keys(VIEW_LABELS) as ViewType[]).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setViewType(type)}
+                    className={`px-3 md:px-4 py-2 md:py-1.5 text-sm font-medium rounded-md transition-colors min-h-[44px] flex-shrink-0 ${
+                      viewType === type
+                        ? 'bg-blue-600 text-white'
+                        : isDark
+                          ? 'text-slate-400 hover:text-white'
+                          : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {VIEW_LABELS[type]}
+                  </button>
+                ))}
+              </div>
+
+              {/* Export button */}
+              <button
+                onClick={() => setShowExportModal(true)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors min-h-[44px] ${
+                  isDark
+                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Download size={18} />
+                <span className="hidden md:inline">导出</span>
+              </button>
             </div>
-
-            {/* Export button */}
-            <button
-              onClick={() => setShowExportModal(true)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors ${
-                isDark
-                  ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <Download size={16} />
-              导出
-            </button>
-
-            {/* Add event button */}
-            <button
-              onClick={() => handleAddEvent(currentDate)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={16} />
-              添加任务
-            </button>
           </div>
         </div>
       </div>
@@ -446,7 +452,7 @@ export const CalendarPage: React.FC = () => {
                 </h3>
                 <button
                   onClick={() => setShowTaskModal(false)}
-                  className={`p-1 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
+                  className={`p-3 rounded-lg min-h-[44px] min-w-[44px] ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
                 >
                   <X size={20} className={isDark ? 'text-slate-400' : 'text-gray-500'} />
                 </button>
@@ -558,7 +564,7 @@ export const CalendarPage: React.FC = () => {
                       onChange={(e) => setNewTag(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                       placeholder="添加标签"
-                      className={`flex-1 px-3 py-2 rounded-lg border ${
+                      className={`flex-1 px-3 py-3 rounded-lg border min-h-[44px] ${
                         isDark
                           ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
                           : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
@@ -567,7 +573,7 @@ export const CalendarPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={addTag}
-                      className={`px-3 py-2 rounded-lg ${
+                      className={`px-4 py-3 rounded-lg min-h-[44px] ${
                         isDark
                           ? 'bg-slate-600 text-white hover:bg-slate-500'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -581,13 +587,13 @@ export const CalendarPage: React.FC = () => {
                       {taskForm.tags.map((tag) => (
                         <span
                           key={tag}
-                          className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 ${
+                          className={`px-3 py-1.5 rounded-full text-xs flex items-center gap-2 ${
                             isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'
                           }`}
                         >
                           {tag}
-                          <button onClick={() => removeTag(tag)} className="hover:text-red-500">
-                            <X size={10} />
+                          <button onClick={() => removeTag(tag)} className="hover:text-red-500 p-1 min-h-[32px] min-w-[32px]">
+                            <X size={14} />
                           </button>
                         </span>
                       ))}
@@ -606,7 +612,7 @@ export const CalendarPage: React.FC = () => {
                           setTaskForm({ ...taskForm, tags: [...taskForm.tags, tag] });
                         }
                       }}
-                      className={`px-2 py-1 rounded text-xs ${
+                      className={`px-3 py-2 rounded text-sm min-h-[40px] ${
                         taskForm.tags.includes(tag)
                           ? 'bg-blue-600 text-white'
                           : isDark
@@ -624,7 +630,7 @@ export const CalendarPage: React.FC = () => {
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowTaskModal(false)}
-                  className={`px-4 py-2 rounded-lg font-medium ${
+                  className={`px-4 py-3 rounded-lg font-medium min-h-[44px] ${
                     isDark
                       ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -635,7 +641,7 @@ export const CalendarPage: React.FC = () => {
                 <button
                   onClick={handleCreateTask}
                   disabled={saving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
                 >
                   {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />}
                   创建任务

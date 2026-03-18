@@ -181,17 +181,18 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       <div className={`fixed bottom-0 left-0 right-0 z-50 ${
         isDark ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-gray-200'
       } border-t backdrop-blur-lg pb-[var(--safe-area-inset-bottom)]`}>
-        <div className="flex justify-around items-center h-14 px-2">
+        <div className="flex justify-around items-center h-14 px-1">
           {navItems.map((item, index) => (
             <button
               key={index}
               onClick={item.onClick}
-              className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] rounded-lg transition-colors ${
-                item.active || mobileMenuOpen !== null && navItems.find(n => n.label === item.label)?.onClick === item.onClick && mobileMenuOpen
-                  ? (isDark ? 'text-blue-400' : 'text-blue-600')
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${
+                item.active || (mobileMenuOpen !== null && navItems.find(n => n.label === item.label)?.onClick === item.onClick)
+                  ? (isDark ? 'text-blue-400 bg-slate-800' : 'text-blue-600 bg-blue-50')
                   : (isDark ? 'text-gray-400 active:bg-slate-800' : 'text-gray-600 active:bg-gray-100')
               }`}
               title={item.label}
+              aria-label={item.label}
             >
               <item.icon size={22} />
               <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
@@ -278,9 +279,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
               </h3>
               <button
                 onClick={onClose}
-                className={`p-2 rounded-full ${isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-100'}`}
+                className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full ${isDark ? 'hover:bg-slate-800' : 'hover:bg-gray-100'}`}
+                aria-label="关闭菜单"
               >
-                <X size={20} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
+                <X size={24} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
               </button>
             </div>
           </div>
@@ -291,15 +293,16 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                   key={index}
                   onClick={item.onClick}
                   disabled={item.disabled}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-4 min-h-[52px] rounded-xl transition-colors ${
                     item.disabled
                       ? 'opacity-50 cursor-not-allowed'
                       : item.active
                         ? (isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600')
                         : (isDark ? 'hover:bg-slate-800 active:bg-slate-700' : 'hover:bg-gray-50 active:bg-gray-100')
                   } ${item.color || (isDark ? 'text-gray-300' : 'text-gray-700')}`}
+                  aria-label={item.label}
                 >
-                  <item.icon size={20} />
+                  <item.icon size={22} />
                   <span className="font-medium">{item.label}</span>
                 </button>
               ))}

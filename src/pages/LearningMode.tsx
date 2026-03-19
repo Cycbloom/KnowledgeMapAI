@@ -245,9 +245,7 @@ export const LearningMode = () => {
 
   // Load Node and Generate Content
   useEffect(() => {
-    console.log("[LearningMode] useEffect triggered with nodeId:", nodeId);
     if (!nodeId) {
-      console.log("[LearningMode] No nodeId, clearing state");
       setNodeTitle("");
       setArticleContent("");
       setKeywords([]);
@@ -256,35 +254,23 @@ export const LearningMode = () => {
 
     const loadData = async () => {
       try {
-        console.log("[LearningMode] Starting to load data for nodeId:", nodeId);
         setIsGenerating(true);
 
-        // 1. Fetch Node Details
-        console.log(
-          "[LearningMode] Calling api.nodes.get with nodeId:",
-          nodeId,
-        );
         const node = await api.nodes.get(nodeId);
-        console.log("[LearningMode] Received node:", node);
+
+        if (!node) {
+          addMessage({ type: "error", content: "节点数据加载失败，请重试" });
+          return;
+        }
 
         setNodeTitle(node.title || "");
         setKeywords(node.keywords || []);
 
-        // 2. Check if learning material already exists
-        console.log("[LearningMode] Checking learning_material:", {
-          exists: !!node.learning_material,
-          length: node.learning_material?.length || 0,
-        });
-
-        if (node.learning_material) {
-          console.log(
-            "[LearningMode] Found existing learning material, setting content",
-          );
+        if (
+          node.learning_material &&
+          node.learning_material.trim().length > 0
+        ) {
           setArticleContent(node.learning_material);
-          console.log(
-            "[LearningMode] articleContent set to:",
-            node.learning_material?.substring(0, 100) + "...",
-          );
 
           setMessages((prev) => [
             ...prev,
@@ -298,7 +284,6 @@ export const LearningMode = () => {
           return;
         }
 
-        // 3. Generate Learning Material
         const response = await api.ai.generateLearningMaterial({
           topic: node.title || "",
           context: node.content,
@@ -306,7 +291,6 @@ export const LearningMode = () => {
           graph_id: graphId || undefined,
         });
 
-        // 4. Save the generated material back to the node
         if (response.content) {
           setArticleContent(response.content);
           const responseKeywords = response.keywords || [];
@@ -318,7 +302,6 @@ export const LearningMode = () => {
               keywords: responseKeywords,
             });
 
-            // OPTIMIZATION: Manual trigger for questions instead of automatic
             addMessage({
               type: "success",
               content: "学习教材已生成",
@@ -344,6 +327,8 @@ export const LearningMode = () => {
               content: `课程内容已生成！请仔细阅读左侧的教材。如果有任何疑问，或想深入了解某个概念，请直接问我。`,
             },
           ]);
+        } else {
+          addMessage({ type: "error", content: "AI 生成内容失败，请重试" });
         }
       } catch (error) {
         console.error("Failed to load learning material:", error);

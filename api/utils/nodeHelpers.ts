@@ -47,6 +47,7 @@ export function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     title: kp.title || "",
     content: kp.content || "",
     learning_material: kp.learning_material || "",
+    keywords: kp.keywords || [],
     properties: kp.properties || {},
     visibility: kp.visibility || "private",
     owner_id: kp.owner_id || "",
@@ -80,7 +81,8 @@ export const GRAPH_NODES_SELECT = `
     visibility,
     owner_id,
     created_at,
-    updated_at
+    updated_at,
+    keywords
   )
 `;
 

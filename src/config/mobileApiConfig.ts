@@ -4,40 +4,24 @@ export function isCapacitorMobile(): boolean {
   try {
     const capacitor = (window as any).Capacitor;
     if (!capacitor) {
-      console.log('[mobileApiConfig] window.Capacitor not found');
       return false;
     }
-    console.log('[mobileApiConfig] Capacitor object found:', {
-      isNative: capacitor.isNative,
-      isNativePlatform: capacitor.isNativePlatform,
-      platform: capacitor.getPlatform?.()
-    });
-    
+
     if (capacitor.isNative !== undefined) {
-      const result = !!capacitor.isNative;
-      console.log('[mobileApiConfig] Using capacitor.isNative:', result);
-      return result;
+      return !!capacitor.isNative;
     }
     if (capacitor.isNativePlatform !== undefined) {
-      if (typeof capacitor.isNativePlatform === 'function') {
-        const result = !!capacitor.isNativePlatform();
-        console.log('[mobileApiConfig] Using capacitor.isNativePlatform() function:', result);
-        return result;
+      if (typeof capacitor.isNativePlatform === "function") {
+        return !!capacitor.isNativePlatform();
       }
-      const result = !!capacitor.isNativePlatform;
-      console.log('[mobileApiConfig] Using capacitor.isNativePlatform property:', result);
-      return result;
+      return !!capacitor.isNativePlatform;
     }
     if (capacitor.getPlatform) {
       const platform = capacitor.getPlatform();
-      const result = platform !== 'web';
-      console.log('[mobileApiConfig] Using capacitor.getPlatform():', platform, 'result:', result);
-      return result;
+      return platform !== "web";
     }
-    console.log('[mobileApiConfig] Falling back to true because Capacitor exists');
     return true;
-  } catch (e) {
-    console.error('[mobileApiConfig] Error checking isCapacitorMobile:', e);
+  } catch {
     return false;
   }
 }

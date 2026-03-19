@@ -1,5 +1,4 @@
 export { 
-  api, 
   initCsrf, 
   request, 
   getAIConfig, 
@@ -9,3 +8,5 @@ export {
   type AIAction,
   type AIActionVariables
 } from './api/index';
+
+export { api } from './api/adapter';

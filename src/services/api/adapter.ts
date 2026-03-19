@@ -33,56 +33,53 @@ const createNoopApi = (originalApi: any) => {
 };
 
 let resolvedApi: ApiType | null = null;
+let lastIsMobile: boolean | null = null;
 
 function getResolvedApi(): ApiType {
-  if (resolvedApi) {
-    return resolvedApi;
-  }
-
-  console.log('[api adapter] Determining API type...');
   const isMobile = isCapacitorMobile();
-  console.log('[api adapter] isCapacitorMobile() returned:', isMobile);
 
-  if (isMobile) {
-    console.log('[api adapter] Using mobile API');
-    resolvedApi = {
-      ...webApi,
-      auth: mobileAuthApi || webApi.auth,
-      graphs: mobileGraphsApi || webApi.graphs,
-      nodes: mobileNodesApi || webApi.nodes,
-      edges: mobileEdgesApi || webApi.edges,
-      ai: mobileAiApi || webApi.ai,
-      study: mobileStudyApi || webApi.study,
-      dashboard: mobileDashboardApi || webApi.dashboard,
-      statistics: mobileStatisticsApi || webApi.statistics,
-      knowledgePoints: createNoopApi(webApi.knowledgePoints),
-      graphNodes: createNoopApi(webApi.graphNodes),
-      combinedView: createNoopApi(webApi.combinedView),
-      tts: createNoopApi(webApi.tts),
-      search: createNoopApi(webApi.search),
-      tasks: createNoopApi(webApi.tasks),
-      data: createNoopApi(webApi.data),
-      templates: createNoopApi(webApi.templates),
-      prompts: createNoopApi(webApi.prompts),
-      focus: createNoopApi(webApi.focus),
-      achievements: createNoopApi(webApi.achievements),
-      periodicTasks: createNoopApi(webApi.periodicTasks),
-      learningPaths: createNoopApi(webApi.learningPaths),
-      rag: createNoopApi(webApi.rag),
-      autoGraph: createNoopApi(webApi.autoGraph),
-      learningPath: createNoopApi(webApi.learningPath),
-      health: createNoopApi(webApi.health),
-      backup: createNoopApi(webApi.backup),
-      scheduler: createNoopApi(webApi.scheduler),
-      quiz: createNoopApi(webApi.quiz),
-      aiActions: createNoopApi(webApi.aiActions),
-    };
-  } else {
-    console.log('[api adapter] Using web API');
-    resolvedApi = webApi;
+  if (resolvedApi === null || lastIsMobile !== isMobile) {
+    lastIsMobile = isMobile;
+
+    if (isMobile) {
+      resolvedApi = {
+        ...webApi,
+        auth: mobileAuthApi || webApi.auth,
+        graphs: mobileGraphsApi || webApi.graphs,
+        nodes: mobileNodesApi || webApi.nodes,
+        edges: mobileEdgesApi || webApi.edges,
+        ai: mobileAiApi || webApi.ai,
+        study: mobileStudyApi || webApi.study,
+        dashboard: mobileDashboardApi || webApi.dashboard,
+        statistics: mobileStatisticsApi || webApi.statistics,
+        knowledgePoints: createNoopApi(webApi.knowledgePoints),
+        graphNodes: createNoopApi(webApi.graphNodes),
+        combinedView: createNoopApi(webApi.combinedView),
+        tts: createNoopApi(webApi.tts),
+        search: createNoopApi(webApi.search),
+        tasks: createNoopApi(webApi.tasks),
+        data: createNoopApi(webApi.data),
+        templates: createNoopApi(webApi.templates),
+        prompts: createNoopApi(webApi.prompts),
+        focus: createNoopApi(webApi.focus),
+        achievements: createNoopApi(webApi.achievements),
+        periodicTasks: createNoopApi(webApi.periodicTasks),
+        learningPaths: createNoopApi(webApi.learningPaths),
+        rag: createNoopApi(webApi.rag),
+        autoGraph: createNoopApi(webApi.autoGraph),
+        learningPath: createNoopApi(webApi.learningPath),
+        health: createNoopApi(webApi.health),
+        backup: createNoopApi(webApi.backup),
+        scheduler: createNoopApi(webApi.scheduler),
+        quiz: createNoopApi(webApi.quiz),
+        aiActions: createNoopApi(webApi.aiActions),
+      };
+    } else {
+      resolvedApi = webApi;
+    }
   }
 
-  return resolvedApi;
+  return resolvedApi!;
 }
 
 export const getApi = getResolvedApi;

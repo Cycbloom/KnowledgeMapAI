@@ -454,54 +454,58 @@ export class GraphService {
 
   async getGraphNodes(
     supabase: SupabaseClient,
-    _userId: string | null,
+    userId: string | null,
     graphId: string
   ) {
-    const { data: graphNodes, error: gnError } = await supabase
-      .from("graph_nodes")
-      .select(GRAPH_NODES_SELECT)
-      .eq("graph_id", graphId)
-      .is("deleted_at", null);
+    const cacheKey = userId ? CacheKeys.GRAPH_NODES(userId, graphId) : `graph_nodes_${graphId}`;
 
-    if (gnError) {
-      logger.error("getGraphNodes error:", gnError);
-      throw gnError;
-    }
+    return cacheService.getOrSet(cacheKey, async () => {
+      const { data: graphNodes, error: gnError } = await supabase
+        .from("graph_nodes")
+        .select(GRAPH_NODES_SELECT)
+        .eq("graph_id", graphId)
+        .is("deleted_at", null);
 
-    const nodes = (graphNodes || [])
-      .map((gn) => {
-        const node = buildNodeFromGraphNode(gn);
-        if (!node) return null;
-        return {
-          id: node.id,
-          graph_id: node.graph_id,
-          graph_node_id: node.id,
-          title: node.title,
-          content: node.content,
-          x_position: node.x_position,
-          y_position: node.y_position,
-          level: node.level,
-          properties: node.properties,
-          learning_material: node.learning_material,
-          is_accepted: node.is_accepted,
-          knowledge_point_id: node.knowledge_point_id,
-          visibility: node.visibility,
-          owner_id: node.owner_id,
-          created_at: node.created_at,
-          updated_at: node.updated_at,
-        };
-      })
-      .filter(Boolean);
+      if (gnError) {
+        logger.error("getGraphNodes error:", gnError);
+        throw gnError;
+      }
 
-    const { data: edges, error: edgesError } = await supabase
-      .from("edges")
-      .select("*")
-      .eq("graph_id", graphId)
-      .is("deleted_at", null);
+      const nodes = (graphNodes || [])
+        .map((gn) => {
+          const node = buildNodeFromGraphNode(gn);
+          if (!node) return null;
+          return {
+            id: node.id,
+            graph_id: node.graph_id,
+            graph_node_id: node.id,
+            title: node.title,
+            content: node.content,
+            x_position: node.x_position,
+            y_position: node.y_position,
+            level: node.level,
+            properties: node.properties,
+            learning_material: node.learning_material,
+            is_accepted: node.is_accepted,
+            knowledge_point_id: node.knowledge_point_id,
+            visibility: node.visibility,
+            owner_id: node.owner_id,
+            created_at: node.created_at,
+            updated_at: node.updated_at,
+          };
+        })
+        .filter(Boolean);
 
-    if (edgesError) throw edgesError;
+      const { data: edges, error: edgesError } = await supabase
+        .from("edges")
+        .select("*")
+        .eq("graph_id", graphId)
+        .is("deleted_at", null);
 
-    return { nodes, edges: edges || [] };
+      if (edgesError) throw edgesError;
+
+      return { nodes, edges: edges || [] };
+    });
   }
 
   async getGraphNodeStatus(

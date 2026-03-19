@@ -11,13 +11,15 @@ let envPath = null;
 try {
   const isPackaged =
     process.mainModule?.filename?.includes("app.asar") ||
-    process.resourcesPath?.includes("resources");
+    (process as any).resourcesPath?.includes("resources");
 
   const possiblePaths = [];
 
   if (isPackaged) {
-    if (process.resourcesPath) {
-      possiblePaths.push(path.join(process.resourcesPath, ".env.production"));
+    if ((process as any).resourcesPath) {
+      possiblePaths.push(
+        path.join((process as any).resourcesPath, ".env.production"),
+      );
     }
     possiblePaths.push(path.join(__dirname, "..", ".env.production"));
     possiblePaths.push(path.join(__dirname, "..", "..", ".env.production"));

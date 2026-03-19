@@ -36,6 +36,22 @@ export interface Task {
   updated_at: string;
 }
 
+export interface TaskProgress {
+  stage?: string;
+  progress?: number;
+  [key: string]: unknown;
+}
+
+export interface UpdateTaskStatusOptions {
+  taskId: string;
+  status: string;
+  progress?: TaskProgress | null;
+  result?: any;
+  error?: string;
+  userId?: string;
+  client?: SupabaseClient;
+}
+
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseKey =
   process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
@@ -98,71 +114,75 @@ export class TaskService {
   }
 
   async updateTaskStatus(
-    client: SupabaseClient | string,
-    taskId: string,
-    status: string,
-    progress?: {
-      stage?: string;
-      progress?: number;
-      [key: string]: unknown;
-    } | null,
-    result?: any,
-    errorMsg?: string,
-    userId?: string,
+    arg1: SupabaseClient | string | UpdateTaskStatusOptions,
+    arg2?: string,
+    arg3?: string,
+    arg4?: TaskProgress | null,
+    arg5?: any,
+    arg6?: string,
+    arg7?: string,
   ) {
     let supabase: SupabaseClient;
-    let tid: string;
-    let s: string;
-    let p:
-      | { stage?: string; progress?: number; [key: string]: unknown }
-      | null
-      | undefined;
-    let r: any;
-    let e: string | undefined;
-    let uid: string | undefined;
+    let taskId: string;
+    let status: string;
+    let progress: TaskProgress | null | undefined;
+    let result: any;
+    let errorMsg: string | undefined;
+    let userId: string | undefined;
 
-    if (typeof client !== "string" && client !== undefined) {
-      supabase = client;
-      tid = taskId;
-      s = status;
-      p = progress;
-      r = result;
-      e = errorMsg;
-      uid = userId;
+    if (typeof arg1 === 'object' && arg1 !== null && 'taskId' in arg1 && 'status' in arg1) {
+      const options = arg1 as UpdateTaskStatusOptions;
+      supabase = options.client || defaultClient;
+      taskId = options.taskId;
+      status = options.status;
+      progress = options.progress;
+      result = options.result;
+      errorMsg = options.error;
+      userId = options.userId;
     } else {
-      supabase = defaultClient;
-      tid = client as string;
-      s = taskId;
-      r = status;
-      e = progress as any;
-      uid = result as string | undefined;
-      p = undefined;
+      if (typeof arg1 !== "string" && arg1 !== undefined) {
+        supabase = arg1 as SupabaseClient;
+        taskId = arg2!;
+        status = arg3!;
+        progress = arg4;
+        result = arg5;
+        errorMsg = arg6;
+        userId = arg7;
+      } else {
+        supabase = defaultClient;
+        taskId = arg1 as string;
+        status = arg2!;
+        result = arg3;
+        errorMsg = arg4 as any;
+        userId = arg5 as string | undefined;
+        progress = undefined;
+      }
     }
 
-    const updateData: any = { status: s, updated_at: new Date().toISOString() };
-    if (p !== undefined && p !== null) updateData.result = { ...r, ...p };
-    else if (r !== undefined) updateData.result = r;
-    if (e !== undefined) updateData.error = e;
+    const updateData: any = { status, updated_at: new Date().toISOString() };
+    if (progress !== undefined && progress !== null) updateData.result = { ...result, ...progress };
+    else if (result !== undefined) updateData.result = result;
+    if (errorMsg !== undefined) updateData.error = errorMsg;
 
-    logger.info(`Updating task ${tid} status to ${s}`, {
-      stage: p?.stage,
-      progress: p?.progress,
+    logger.info(`Updating task ${taskId} status to ${status}`, {
+      stage: progress?.stage,
+      progress: progress?.progress,
     });
 
     const { error } = await supabase
       .from("tasks")
       .update(updateData)
-      .eq("id", tid);
+      .eq("id", taskId);
 
     if (error) throw error;
 
-    if (uid) {
-      sseService.sendToUser(uid, {
+    if (userId) {
+      sseService.sendToUser(userId, {
         type: "task_update",
-        taskId: tid,
-        status: s,
+        taskId,
+        status,
         result: updateData.result,
-        error: e,
+        error: errorMsg,
       });
     }
   }

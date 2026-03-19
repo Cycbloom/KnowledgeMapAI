@@ -1,13 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+export interface TaskProgress {
+  stage?: string;
+  progress?: number;
+  [key: string]: unknown;
+}
+
+export interface UpdateTaskStatusOptions {
+  taskId: string;
+  status: string;
+  progress?: TaskProgress | null;
+  result?: any;
+  error?: string;
+  userId?: string;
+  client?: SupabaseClient;
+}
+
 export type UpdateTaskStatusFunction = (
-  supabase: SupabaseClient,
-  taskId: string,
-  status: string,
-  progress?: { stage?: string; progress?: number; [key: string]: unknown } | null,
-  result?: any,
-  errorMsg?: string,
-  userId?: string
+  arg1: SupabaseClient | string | UpdateTaskStatusOptions,
+  arg2?: string,
+  arg3?: string,
+  arg4?: TaskProgress | null,
+  arg5?: any,
+  arg6?: string,
+  arg7?: string,
 ) => Promise<void>;
 
 export interface TaskProcessor {

@@ -8,6 +8,7 @@ import {
   mobileStatisticsApi,
 } from "./study";
 import { mobileAuthApi } from "./auth";
+import { mobileQuizApi } from "./quiz";
 
 export { getMobileSupabaseClient, resetMobileSupabaseClient } from "./client";
 export { mobileAuthApi } from "./auth";
@@ -21,6 +22,7 @@ export {
   mobileDashboardApi,
   mobileStatisticsApi,
 } from "./study";
+export { mobileQuizApi } from "./quiz";
 
 export type {
   AuthResponse,
@@ -38,4 +40,5 @@ export const mobileApi = {
   study: mobileStudyApi,
   dashboard: mobileDashboardApi,
   statistics: mobileStatisticsApi,
+  quiz: mobileQuizApi,
 };

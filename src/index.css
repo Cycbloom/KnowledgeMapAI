@@ -400,7 +400,6 @@
 
 /* Global safe area padding for mobile devices */
 html {
-  padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;

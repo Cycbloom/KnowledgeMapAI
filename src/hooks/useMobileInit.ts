@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StatusBar, Style } from "@capacitor/status-bar";
+import { StatusBar } from "@capacitor/status-bar";
 import { App } from "@capacitor/app";
 import { Network } from "@capacitor/network";
 import { SplashScreen } from "@capacitor/splash-screen";
@@ -25,8 +25,7 @@ export function useMobileInit() {
       try {
         await SplashScreen.hide();
 
-        await StatusBar.setStyle({ style: Style.Dark });
-        await StatusBar.setBackgroundColor({ color: "#ffffff" });
+        await StatusBar.hide();
       } catch (error) {
         console.log("StatusBar not available:", error);
       }

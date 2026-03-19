@@ -9,6 +9,7 @@ import {
   mobileStudyApi,
   mobileDashboardApi,
   mobileStatisticsApi,
+  mobileQuizApi,
 } from "../mobile";
 
 type ApiType = typeof webApi;
@@ -71,8 +72,8 @@ function getResolvedApi(): ApiType {
         health: createNoopApi(webApi.health),
         backup: createNoopApi(webApi.backup),
         scheduler: createNoopApi(webApi.scheduler),
-        quiz: createNoopApi(webApi.quiz),
-        aiActions: createNoopApi(webApi.aiActions),
+        quiz: mobileQuizApi || webApi.quiz,
+        aiActions: mobileAiApi?.aiActions || webApi.aiActions,
       };
     } else {
       resolvedApi = webApi;

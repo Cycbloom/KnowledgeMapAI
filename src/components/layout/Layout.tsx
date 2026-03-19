@@ -192,7 +192,6 @@ export const Layout = () => {
             className={`
             bg-slate-900 text-white flex flex-col transition-all duration-300
             ${isCollapsed ? "w-20" : "w-64"}
-            pt-[var(--safe-area-inset-top)]
           `}
           >
             {/* Sidebar Header (Desktop) */}
@@ -317,7 +316,7 @@ export const Layout = () => {
           {/* Top Header */}
           {!isFullScreenPage && (
             <header
-              className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative pt-[var(--safe-area-inset-top)] ${
+              className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${
                 isDark
                   ? "bg-slate-900 border-slate-800"
                   : "bg-white border-gray-200"

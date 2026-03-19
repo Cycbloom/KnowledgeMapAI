@@ -15,10 +15,6 @@ const config: CapacitorConfig = {
       backgroundColor: "#ffffff",
       showSpinner: false,
     },
-    StatusBar: {
-      style: "Dark",
-      backgroundColor: "#ffffff",
-    },
   },
   android: {
     allowMixedContent: true,

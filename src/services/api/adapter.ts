@@ -32,9 +32,20 @@ const createNoopApi = (originalApi: any) => {
   return new Proxy(originalApi, handler);
 };
 
-export const getApi = (): ApiType => {
-  if (isCapacitorMobile()) {
-    return {
+let resolvedApi: ApiType | null = null;
+
+function getResolvedApi(): ApiType {
+  if (resolvedApi) {
+    return resolvedApi;
+  }
+
+  console.log('[api adapter] Determining API type...');
+  const isMobile = isCapacitorMobile();
+  console.log('[api adapter] isCapacitorMobile() returned:', isMobile);
+
+  if (isMobile) {
+    console.log('[api adapter] Using mobile API');
+    resolvedApi = {
       ...webApi,
       auth: mobileAuthApi || webApi.auth,
       graphs: mobileGraphsApi || webApi.graphs,
@@ -66,8 +77,19 @@ export const getApi = (): ApiType => {
       quiz: createNoopApi(webApi.quiz),
       aiActions: createNoopApi(webApi.aiActions),
     };
+  } else {
+    console.log('[api adapter] Using web API');
+    resolvedApi = webApi;
   }
-  return webApi;
-};
 
-export const api = getApi();
+  return resolvedApi;
+}
+
+export const getApi = getResolvedApi;
+
+export const api = new Proxy({} as ApiType, {
+  get(_target, prop) {
+    const currentApi = getResolvedApi();
+    return (currentApi as any)[prop];
+  },
+}) as ApiType;

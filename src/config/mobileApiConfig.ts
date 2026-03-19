@@ -1,7 +1,45 @@
 import { useEffect, useState } from "react";
 
 export function isCapacitorMobile(): boolean {
-  return !!(window as any).Capacitor?.isNativePlatform?.();
+  try {
+    const capacitor = (window as any).Capacitor;
+    if (!capacitor) {
+      console.log('[mobileApiConfig] window.Capacitor not found');
+      return false;
+    }
+    console.log('[mobileApiConfig] Capacitor object found:', {
+      isNative: capacitor.isNative,
+      isNativePlatform: capacitor.isNativePlatform,
+      platform: capacitor.getPlatform?.()
+    });
+    
+    if (capacitor.isNative !== undefined) {
+      const result = !!capacitor.isNative;
+      console.log('[mobileApiConfig] Using capacitor.isNative:', result);
+      return result;
+    }
+    if (capacitor.isNativePlatform !== undefined) {
+      if (typeof capacitor.isNativePlatform === 'function') {
+        const result = !!capacitor.isNativePlatform();
+        console.log('[mobileApiConfig] Using capacitor.isNativePlatform() function:', result);
+        return result;
+      }
+      const result = !!capacitor.isNativePlatform;
+      console.log('[mobileApiConfig] Using capacitor.isNativePlatform property:', result);
+      return result;
+    }
+    if (capacitor.getPlatform) {
+      const platform = capacitor.getPlatform();
+      const result = platform !== 'web';
+      console.log('[mobileApiConfig] Using capacitor.getPlatform():', platform, 'result:', result);
+      return result;
+    }
+    console.log('[mobileApiConfig] Falling back to true because Capacitor exists');
+    return true;
+  } catch (e) {
+    console.error('[mobileApiConfig] Error checking isCapacitorMobile:', e);
+    return false;
+  }
 }
 
 export function isElectronDesktop(): boolean {

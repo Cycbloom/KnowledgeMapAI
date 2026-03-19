@@ -245,7 +245,9 @@ export const LearningMode = () => {
 
   // Load Node and Generate Content
   useEffect(() => {
+    console.log("[LearningMode] useEffect triggered with nodeId:", nodeId);
     if (!nodeId) {
+      console.log("[LearningMode] No nodeId, clearing state");
       setNodeTitle("");
       setArticleContent("");
       setKeywords([]);
@@ -254,16 +256,36 @@ export const LearningMode = () => {
 
     const loadData = async () => {
       try {
+        console.log("[LearningMode] Starting to load data for nodeId:", nodeId);
         setIsGenerating(true);
 
         // 1. Fetch Node Details
+        console.log(
+          "[LearningMode] Calling api.nodes.get with nodeId:",
+          nodeId,
+        );
         const node = await api.nodes.get(nodeId);
+        console.log("[LearningMode] Received node:", node);
+
         setNodeTitle(node.title || "");
         setKeywords(node.keywords || []);
 
         // 2. Check if learning material already exists
+        console.log("[LearningMode] Checking learning_material:", {
+          exists: !!node.learning_material,
+          length: node.learning_material?.length || 0,
+        });
+
         if (node.learning_material) {
+          console.log(
+            "[LearningMode] Found existing learning material, setting content",
+          );
           setArticleContent(node.learning_material);
+          console.log(
+            "[LearningMode] articleContent set to:",
+            node.learning_material?.substring(0, 100) + "...",
+          );
+
           setMessages((prev) => [
             ...prev,
             {
@@ -471,7 +493,9 @@ export const LearningMode = () => {
   };
 
   const handleStartChallenge = () => {
-    navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`);
+    navigate(
+      `/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`,
+    );
   };
 
   const handleRegenerateMaterial = async () => {
@@ -1023,8 +1047,8 @@ export const LearningMode = () => {
                             ? "bg-slate-900 text-slate-50"
                             : "bg-white text-gray-900"
                           : readingMode === "eye-care"
-                          ? "bg-amber-50 text-gray-800"
-                          : "bg-slate-900 text-slate-50"
+                            ? "bg-amber-50 text-gray-800"
+                            : "bg-slate-900 text-slate-50"
                       }`}
                       style={{ fontSize: `${fontSize}px` }}
                     >

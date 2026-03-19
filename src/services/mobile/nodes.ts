@@ -25,14 +25,17 @@ function getKnowledgePoint(kp: any | any[] | null): any | null {
 }
 
 function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
+  console.log("[buildNodeFromGraphNode] Input:", gn);
   if (!gn) return null;
 
   const kp =
     gn.knowledge_point || getKnowledgePoint(gn.knowledge_points || null);
 
+  console.log("[buildNodeFromGraphNode] Extracted kp:", kp);
+
   if (!kp) return null;
 
-  return {
+  const node = {
     id: gn.knowledge_point_id,
     graph_id: gn.graph_id || "",
     knowledge_point_id: gn.knowledge_point_id,
@@ -50,7 +53,17 @@ function buildNodeFromGraphNode(gn: GraphNodeRaw | null): Node | null {
     visibility: kp.visibility || "private",
     owner_id: kp.owner_id || "",
     embedding: kp.embedding,
+    keywords: kp.keywords || [],
   } as Node;
+
+  console.log("[buildNodeFromGraphNode] Output node:", {
+    id: node.id,
+    title: node.title,
+    has_learning_material: !!node.learning_material,
+    learning_material_length: node.learning_material?.length || 0,
+  });
+
+  return node;
 }
 
 const GRAPH_NODES_SELECT = `
@@ -72,7 +85,8 @@ const GRAPH_NODES_SELECT = `
     visibility,
     owner_id,
     created_at,
-    updated_at
+    updated_at,
+    keywords
   )
 `;
 
@@ -112,21 +126,32 @@ export const mobileNodesApi = {
   },
 
   get: async (id: string): Promise<Node> => {
+    console.log("[mobileNodesApi.get] Called with id:", id);
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
     }
 
+    console.log(
+      "[mobileNodesApi.get] Querying graph_nodes with knowledge_point_id:",
+      id,
+    );
     const { data, error } = await (client.from("graph_nodes") as any)
       .select(GRAPH_NODES_SELECT)
-      .eq("id", id)
+      .eq("knowledge_point_id", id)
+      .is("deleted_at", null)
       .single();
 
+    console.log("[mobileNodesApi.get] Query result:", { data, error });
+
     if (error) {
+      console.error("[mobileNodesApi.get] Error:", error);
       throw new Error(error.message);
     }
 
     const node = buildNodeFromGraphNode(data);
+    console.log("[mobileNodesApi.get] Built node:", node);
+
     if (!node) {
       throw new Error("Failed to build node from graph node");
     }
@@ -155,7 +180,8 @@ export const mobileNodesApi = {
       client.from("graph_nodes") as any
     )
       .select("*, knowledge_points (*)")
-      .eq("id", id)
+      .eq("knowledge_point_id", id)
+      .is("deleted_at", null)
       .single();
 
     if (fetchError) {
@@ -177,6 +203,7 @@ export const mobileNodesApi = {
               : kp.learning_material,
           properties:
             data.properties !== undefined ? data.properties : kp.properties,
+          keywords: data.keywords !== undefined ? data.keywords : kp.keywords,
         })
         .eq("id", kp.id);
 
@@ -193,7 +220,7 @@ export const mobileNodesApi = {
         x_position: data.x_position,
         y_position: data.y_position,
       })
-      .eq("id", id)
+      .eq("knowledge_point_id", id)
       .select(GRAPH_NODES_SELECT)
       .single();
 
@@ -226,7 +253,7 @@ export const mobileNodesApi = {
     if (hardDelete) {
       const { error } = await (client.from("graph_nodes") as any)
         .delete()
-        .eq("id", id);
+        .eq("knowledge_point_id", id);
 
       if (error) {
         throw new Error(error.message);
@@ -236,7 +263,7 @@ export const mobileNodesApi = {
     } else {
       const { error } = await (client.from("graph_nodes") as any)
         .update({ deleted_at: new Date().toISOString() })
-        .eq("id", id);
+        .eq("knowledge_point_id", id);
 
       if (error) {
         throw new Error(error.message);
@@ -258,7 +285,7 @@ export const mobileNodesApi = {
     if (options?.hard_delete) {
       const { error } = await (client.from("graph_nodes") as any)
         .delete()
-        .in("id", nodeIds);
+        .in("knowledge_point_id", nodeIds);
 
       if (error) {
         throw new Error(error.message);
@@ -266,7 +293,7 @@ export const mobileNodesApi = {
     } else {
       const { error } = await (client.from("graph_nodes") as any)
         .update({ deleted_at: new Date().toISOString() })
-        .in("id", nodeIds);
+        .in("knowledge_point_id", nodeIds);
 
       if (error) {
         throw new Error(error.message);

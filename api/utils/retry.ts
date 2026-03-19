@@ -1,4 +1,5 @@
-export const DEFAULT_TIMEOUT = 30000;
+export const DEFAULT_TIMEOUT = 60000;
+export const LONG_TIMEOUT = 180000; // 3分钟
 
 export class TimeoutError extends Error {
   constructor(ms: number) {

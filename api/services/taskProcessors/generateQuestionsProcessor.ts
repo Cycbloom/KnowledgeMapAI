@@ -83,7 +83,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
           if (cards.length > 0) {
             const cardsToInsert = cards.map((card: any) => ({
               user_id: userId,
-              node_id,
+              knowledge_point_id: node_id,
               graph_id,
               question: card.question,
               answer: card.answer,

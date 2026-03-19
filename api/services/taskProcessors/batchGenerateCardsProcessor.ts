@@ -137,17 +137,14 @@ export class BatchGenerateCardsProcessor implements TaskProcessor {
           if (cards.length > 0) {
             const cardsToInsert = cards.map((card: any) => ({
               user_id: userId,
-              node_id: node.id,
+              knowledge_point_id: node.id,
               graph_id: node.graph_id,
               question: card.question,
               answer: card.answer,
               explanation: card.explanation,
               card_type: card.type || 'qa',
               options: card.options ? JSON.stringify(card.options) : null,
-              next_review: new Date().toISOString(),
-              interval: 0,
-              ease_factor: 2.5,
-              repetitions: 0
+              next_review: new Date().toISOString()
             }));
 
             const { error: insertError } = await supabase

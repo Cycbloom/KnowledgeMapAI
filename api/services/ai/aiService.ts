@@ -18,6 +18,7 @@ import {
   TimeoutError,
   RetryError,
   DEFAULT_TIMEOUT,
+  LONG_TIMEOUT,
 } from "../../utils/retry.js";
 import { AppError } from "../../middleware/errorHandler.js";
 import { ErrorCodes } from "../../../shared/types/errorCodes.js";
@@ -267,7 +268,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
               model: provider.model,
             }),
           {
-            timeout: DEFAULT_TIMEOUT,
+            timeout: LONG_TIMEOUT,
             maxRetries: 3,
             onRetry: (attempt, error) => {
               logger.warn(
@@ -333,7 +334,7 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
       multi_choice:
         "For 'multi_choice' type: Create multiple-choice questions where ONE OR MORE options can be correct.",
       fill_in_the_blank:
-        "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks.",
+        "For 'fill_in_the_blank' type: Create a sentence with '___' as blanks. Return valid JSON.",
       essay:
         "For 'essay' type: Create complex questions requiring a long-form structured answer.",
     };
@@ -411,7 +412,9 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
 
 ${difficultyInstruction}
 
-Context: ${context || "None"}\n\n${systemPrompt}`;
+Context: ${context || "None"}\n\n${systemPrompt}
+
+Please respond with a valid JSON object.`;
         }
 
         const completion = await withTimeoutAndRetry(
@@ -430,7 +433,7 @@ Context: ${context || "None"}\n\n${systemPrompt}`;
               response_format: { type: "json_object" },
             }),
           {
-            timeout: DEFAULT_TIMEOUT,
+            timeout: LONG_TIMEOUT,
             maxRetries: 3,
             onRetry: (attempt, error) => {
               logger.warn(
@@ -548,7 +551,7 @@ Context: ${context || "None"}\n\n${systemPrompt}`;
             response_format: { type: "json_object" },
           }),
         {
-          timeout: DEFAULT_TIMEOUT,
+          timeout: LONG_TIMEOUT,
           maxRetries: 3,
           onRetry: (attempt, error) => {
             logger.warn(
@@ -666,19 +669,31 @@ Context: ${context || "None"}\n\n${systemPrompt}`;
           options.graphId,
         );
 
-        const completion = await provider.client.chat.completions.create({
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `Node Title: ${nodeTitle}\nNode Content: ${
-                nodeContent || ""
-              }${existingNodesContext}${childrenContext}`,
+        const completion = await withTimeoutAndRetry(
+          () =>
+            provider.client.chat.completions.create({
+              messages: [
+                { role: "system", content: systemPrompt },
+                {
+                  role: "user",
+                  content: `Node Title: ${nodeTitle}\nNode Content: ${
+                    nodeContent || ""
+                  }${existingNodesContext}${childrenContext}`,
+                },
+              ],
+              model: options.model || provider.model,
+              response_format: { type: "json_object" },
+            }),
+          {
+            timeout: LONG_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `Branch Suggestions retry attempt ${attempt}: ${error.message}`,
+              );
             },
-          ],
-          model: options.model || provider.model,
-          response_format: { type: "json_object" },
-        });
+          },
+        );
 
         const content = completion.choices[0].message.content || "";
         const parsed = parseAIResponse<{ suggestions: unknown[] }>(
@@ -826,20 +841,32 @@ Your task:
           options.graphId,
         );
 
-        const completion = await provider.client.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt,
+        const completion = await withTimeoutAndRetry(
+          () =>
+            provider.client.chat.completions.create({
+              messages: [
+                {
+                  role: "system",
+                  content: systemPrompt,
+                },
+                {
+                  role: "user",
+                  content: `Please generate the learning material based on the instructions above.`,
+                },
+              ],
+              model: options.model || provider.model,
+              response_format: { type: "json_object" },
+            }),
+          {
+            timeout: LONG_TIMEOUT,
+            maxRetries: 3,
+            onRetry: (attempt, error) => {
+              logger.warn(
+                `Generate Learning Material retry attempt ${attempt}: ${error.message}`,
+              );
             },
-            {
-              role: "user",
-              content: `Please generate the learning material based on the instructions above.`,
-            },
-          ],
-          model: options.model || provider.model,
-          response_format: { type: "json_object" },
-        });
+          },
+        );
 
         const rawContent = completion.choices[0].message.content || "";
         const parsed = parseAIResponse<{

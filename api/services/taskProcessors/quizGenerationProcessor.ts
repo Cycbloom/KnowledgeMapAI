@@ -161,7 +161,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
           if (cards.length > 0) {
             const cardsToInsert = cards.map((card: any) => ({
               user_id: userId,
-              node_id: node.id,
+              knowledge_point_id: node.id,
               graph_id: node.graph_id,
               question: card.question,
               answer: card.answer,
@@ -169,10 +169,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
               card_type: card.type || 'qa',
               difficulty: difficulty === 'mixed' ? this.getRandomDifficulty() : difficulty,
               options: card.options ? JSON.stringify(card.options) : null,
-              next_review: new Date().toISOString(),
-              interval: 0,
-              ease_factor: 2.5,
-              repetitions: 0
+              next_review: new Date().toISOString()
             }));
 
             const { data: insertedCards, error: insertError } = await supabase

@@ -20,6 +20,7 @@ import { achievementService } from "../services/achievementService.js";
 import { cacheService } from "../services/common/cacheService.js";
 import { logger } from "../utils/logger.js";
 import { relationDiscoveryService } from "../services/graph/index.js";
+import { checkDuplicateGraphTopic } from "../utils/similaritySearch.js";
 import { z } from "zod";
 
 const checkTopicSchema = z.object({
@@ -33,6 +34,11 @@ const batchOperationSchema = z.object({
 
 const analyzeDomainSchema = z.object({
   domain: z.string().min(2).max(200),
+  count: z.number().min(5).max(30).default(10),
+});
+
+const expandDomainSchema = z.object({
+  graph_ids: z.array(z.string().uuid()).min(1).max(5),
   count: z.number().min(5).max(30).default(10),
 });
 
@@ -783,6 +789,177 @@ router.post(
   },
 );
 
+// Expand from existing graphs (Auth Required)
+router.post(
+  "/domain/expand",
+  requireAuth,
+  validate({ body: expandDomainSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_ids, count = 10 } = req.body;
+    const userId = req.user.id;
+    const supabase = req.supabase!;
+
+    try {
+      const { data: sourceGraphs } = await supabase
+        .from("knowledge_graphs")
+        .select("id, title, description, domain")
+        .eq("user_id", userId)
+        .in("id", graph_ids)
+        .is("deleted_at", null);
+
+      if (!sourceGraphs || sourceGraphs.length === 0) {
+        throw new AppError("未找到选中的图谱", 404, ErrorCodes.NOT_FOUND);
+      }
+
+      const { data: existingGraphs } = await supabase
+        .from("knowledge_graphs")
+        .select("id, title, description")
+        .eq("user_id", userId)
+        .is("deleted_at", null);
+
+      const existingTitles = (existingGraphs || []).map((g) =>
+        g.title.toLowerCase(),
+      );
+
+      const sourceGraphsInfo = sourceGraphs.map(g => ({
+        title: g.title,
+        description: g.description || "",
+        domain: g.domain || ""
+      }));
+
+      const prompt = `你是知识图谱专家。用户已经有以下知识图谱：
+${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.description}` : ''}`).join('\n')}
+
+请基于这些现有图谱，推荐 ${count} 个相关的新知识图谱，并分析它们之间的学习依赖关系。
+
+要求：
+1. 推荐与现有图谱相关的主题，帮助用户扩展知识体系
+2. 分析主题之间的学习依赖关系（如：学A之前需要先学B）
+3. 优先级：high(核心扩展)/medium(重要扩展)/low(可选扩展)
+4. 简述不超过60字
+
+返回JSON格式：
+{
+  "graphs": [
+    {"title": "主题名", "description": "简述", "priority": "high/medium/low"}
+  ],
+  "relations": [
+    {"from": "主题A", "to": "主题B", "type": "prerequisite", "reason": "A是B的前置知识"}
+  ]
+}
+
+关系类型说明：
+- prerequisite: from 是 to 的前置知识（学to之前需要先学from）
+- extension: from 是 to 的扩展知识（学完to后可以学习from）
+- related: from 和 to 相关但无直接依赖
+
+已有图谱（不要重复推荐）：${existingTitles.length > 0 ? existingTitles.join("、") : "无"}`;
+
+      const response = await aiService.chat(
+        [
+          {
+            role: "system",
+            content:
+              "你是一个知识图谱专家，擅长分析领域知识结构、推荐学习路径、识别知识点之间的依赖关系。请用中文回复。确保返回有效的JSON格式。",
+          },
+          { role: "user", content: prompt },
+        ],
+        { timeout: 60000 },
+      );
+
+      let recommendations: Array<{
+        title: string;
+        description: string;
+        priority: "high" | "medium" | "low";
+      }> = [];
+
+      let graphRelations: Array<{
+        from_title: string;
+        to_title: string;
+        type: "prerequisite" | "extension" | "related";
+        reason?: string;
+      }> = [];
+
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          const graphs =
+            parsed.graphs || parsed.list || parsed.recommendations || [];
+
+          for (const item of graphs) {
+            if (typeof item === "string") {
+              const parts = item.split("|");
+              if (parts.length >= 3) {
+                const [title, description, priority] = parts.map((s) =>
+                  s.trim(),
+                );
+                if (title && !existingTitles.includes(title.toLowerCase())) {
+                  recommendations.push({
+                    title,
+                    description: description || "",
+                    priority: (["high", "medium", "low"].includes(priority)
+                      ? priority
+                      : "medium") as "high" | "medium" | "low",
+                  });
+                }
+              }
+            } else if (typeof item === "object" && item.title) {
+              if (!existingTitles.includes(item.title.toLowerCase())) {
+                recommendations.push({
+                  title: item.title,
+                  description: item.description || "",
+                  priority: item.priority || "medium",
+                });
+              }
+            }
+          }
+
+          const relations = parsed.relations || [];
+          for (const rel of relations) {
+            if (rel.from && rel.to && rel.type) {
+              graphRelations.push({
+                from_title: rel.from,
+                to_title: rel.to,
+                type: rel.type as "prerequisite" | "extension" | "related",
+                reason: rel.reason,
+              });
+            }
+          }
+        }
+      } catch {
+        logger.warn("Failed to parse domain expansion response as JSON");
+      }
+
+      const validTitles = new Set(
+        recommendations.map((r) => r.title.toLowerCase()),
+      );
+      graphRelations = graphRelations.filter(
+        (rel) =>
+          validTitles.has(rel.from_title.toLowerCase()) &&
+          validTitles.has(rel.to_title.toLowerCase()),
+      );
+
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      recommendations.sort((a, b) => {
+        const priorityDiff =
+          priorityOrder[a.priority] - priorityOrder[b.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        return a.title.localeCompare(b.title, "zh-CN");
+      });
+
+      res.json({
+        recommendations: recommendations.slice(0, count),
+        relations: graphRelations,
+        source_graphs: sourceGraphs,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "领域扩展失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
 // Batch create domain graphs (Auth Required)
 router.post(
   "/domain/batch-create",
@@ -803,22 +980,21 @@ router.post(
       const titleToIdMap = new Map<string, string>();
 
       for (const graphData of graphs) {
-        const { data: existingGraph } = await supabase
-          .from("knowledge_graphs")
-          .select("id, title")
-          .eq("user_id", userId)
-          .ilike("title", graphData.title)
-          .is("deleted_at", null)
-          .limit(1)
-          .maybeSingle();
+        const duplicateCheck = await checkDuplicateGraphTopic(
+          supabase,
+          userId,
+          graphData.title,
+          { threshold: 0.85 }
+        );
 
-        if (existingGraph) {
+        if (duplicateCheck.isDuplicate && duplicateCheck.similarGraphs.length > 0) {
+          const similarGraph = duplicateCheck.similarGraphs[0];
           results.push({
-            graphId: existingGraph.id,
-            title: existingGraph.title,
+            graphId: similarGraph.id,
+            title: similarGraph.title,
             isNew: false,
           });
-          titleToIdMap.set(graphData.title.toLowerCase(), existingGraph.id);
+          titleToIdMap.set(graphData.title.toLowerCase(), similarGraph.id);
         } else {
           const { data: newGraph, error: createError } = await supabase
             .from("knowledge_graphs")
@@ -827,6 +1003,7 @@ router.post(
               title: graphData.title,
               description: graphData.description || "",
               domain: domain || null,
+              embedding: duplicateCheck.embedding,
             })
             .select()
             .single();

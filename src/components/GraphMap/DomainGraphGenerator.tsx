@@ -14,6 +14,8 @@ import {
   Settings2,
   ArrowRight,
   GitBranch,
+  Plus,
+  FolderOpen,
 } from 'lucide-react';
 
 export interface RecommendedGraph {
@@ -56,12 +58,20 @@ const priorityConfig = {
 };
 
 type Step = 'input' | 'select' | 'creating' | 'initialize_prompt' | 'initializing' | 'complete';
+type GenerationMode = 'new' | 'expand';
 
 interface CreateProgress {
   current: number;
   total: number;
   status: 'pending' | 'creating' | 'completed' | 'error';
   error?: string;
+}
+
+interface SourceGraph {
+  id: string;
+  title: string;
+  description?: string;
+  node_count?: number;
 }
 
 export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
@@ -71,6 +81,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   onBatchCreate,
   onInitializeGraphs,
 }) => {
+  const [mode, setMode] = useState<GenerationMode>('new');
   const [domain, setDomain] = useState('');
   const [graphCount, setGraphCount] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -79,6 +90,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   const [recommendedGraphs, setRecommendedGraphs] = useState<RecommendedGraph[]>([]);
   const [graphRelations, setGraphRelations] = useState<GraphRelation[]>([]);
   const [selectedGraphs, setSelectedGraphs] = useState<Set<number>>(new Set());
+  const [selectedSourceGraphs, setSelectedSourceGraphs] = useState<Set<string>>(new Set());
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showRelations, setShowRelations] = useState(false);
   const [step, setStep] = useState<Step>('input');
@@ -89,9 +101,39 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   });
   const [error, setError] = useState<string | null>(null);
   const [createdGraphs, setCreatedGraphs] = useState<CreatedGraph[]>([]);
+  const [sourceGraphs, setSourceGraphs] = useState<SourceGraph[]>([]);
+  const [isLoadingSourceGraphs, setIsLoadingSourceGraphs] = useState(false);
+
+  const loadSourceGraphs = async () => {
+    try {
+      setIsLoadingSourceGraphs(true);
+      const result = await (window as any).api.graphs.getMap();
+      if (result?.graphs) {
+        setSourceGraphs(result.graphs);
+      }
+    } catch (err) {
+      console.error('Failed to load source graphs:', err);
+    } finally {
+      setIsLoadingSourceGraphs(false);
+    }
+  };
+
+  const toggleSourceGraph = (graphId: string) => {
+    setSelectedSourceGraphs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(graphId)) {
+        newSet.delete(graphId);
+      } else {
+        if (newSet.size >= 5) return prev;
+        newSet.add(graphId);
+      }
+      return newSet;
+    });
+  };
 
   const handleGenerate = async () => {
-    if (!domain.trim()) return;
+    if (mode === 'new' && !domain.trim()) return;
+    if (mode === 'expand' && selectedSourceGraphs.size === 0) return;
 
     setIsGenerating(true);
     setError(null);
@@ -101,14 +143,31 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     setCreatedGraphs([]);
 
     try {
-      const result = await onGenerateDomain(domain.trim(), graphCount);
-      setRecommendedGraphs(result.graphs);
+      let result;
+      if (mode === 'new') {
+        result = await onGenerateDomain(domain.trim(), graphCount);
+      } else {
+        result = await (window as any).api.graphs.expandDomain(
+          Array.from(selectedSourceGraphs),
+          graphCount
+        );
+      }
+      setRecommendedGraphs(result.graphs || result.recommendations);
       setGraphRelations(result.relations);
       setStep('select');
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成推荐图谱失败');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleModeChange = (newMode: GenerationMode) => {
+    setMode(newMode);
+    setStep('input');
+    setError(null);
+    if (newMode === 'expand') {
+      loadSourceGraphs();
     }
   };
 
@@ -199,11 +258,14 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
 
   const handleClose = () => {
     if (!isGenerating && !isCreating && !isInitializing) {
+      setMode('new');
       setDomain('');
       setRecommendedGraphs([]);
       setGraphRelations([]);
       setSelectedGraphs(new Set());
+      setSelectedSourceGraphs(new Set());
       setCreatedGraphs([]);
+      setSourceGraphs([]);
       setStep('input');
       setError(null);
       setShowRelations(false);
@@ -213,8 +275,12 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isGenerating && domain.trim()) {
-      handleGenerate();
+    if (e.key === 'Enter' && !isGenerating) {
+      if (mode === 'new' && domain.trim()) {
+        handleGenerate();
+      } else if (mode === 'expand' && selectedSourceGraphs.size > 0) {
+        handleGenerate();
+      }
     }
   };
 
@@ -257,29 +323,133 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-4"
               >
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                  <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                    输入一个领域主题，AI 将为您生成推荐的知识图谱列表，并分析它们之间的学习依赖关系。
-                  </p>
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => handleModeChange('new')}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                      mode === 'new'
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    从零开始
+                  </button>
+                  <button
+                    onClick={() => handleModeChange('expand')}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                      mode === 'expand'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    从现有图谱扩展
+                  </button>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    领域主题
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={domain}
-                      onChange={e => setDomain(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      disabled={isGenerating}
-                      placeholder="例如：机器学习、前端开发、数据结构..."
-                      className="w-full pl-10 pr-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
-                    />
-                  </div>
-                </div>
+                {mode === 'new' && (
+                  <>
+                    <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                      <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                        输入一个领域主题，AI 将为您生成推荐的知识图谱列表，并分析它们之间的学习依赖关系。
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        领域主题
+                      </label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={domain}
+                          onChange={e => setDomain(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          disabled={isGenerating}
+                          placeholder="例如：机器学习、前端开发、数据结构..."
+                          className="w-full pl-10 pr-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {mode === 'expand' && (
+                  <>
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <p className="text-sm text-purple-700 dark:text-purple-300">
+                        选择一个或多个现有图谱，AI 将基于它们推荐相关的新知识图谱，帮助您扩展知识体系。
+                      </p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        最多选择 5 个图谱
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          选择现有图谱
+                        </label>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          已选择 {selectedSourceGraphs.size} / 5
+                        </span>
+                      </div>
+
+                      {isLoadingSourceGraphs ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+                          <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                            加载图谱中...
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {sourceGraphs.map((graph) => (
+                            <button
+                              key={graph.id}
+                              onClick={() => toggleSourceGraph(graph.id)}
+                              disabled={!selectedSourceGraphs.has(graph.id) && selectedSourceGraphs.size >= 5}
+                              className={`w-full p-3 rounded-lg text-left transition-all border-2 ${
+                                selectedSourceGraphs.has(graph.id)
+                                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                                  : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                              } ${
+                                !selectedSourceGraphs.has(graph.id) && selectedSourceGraphs.size >= 5
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                  selectedSourceGraphs.has(graph.id)
+                                    ? 'bg-purple-500 text-white'
+                                    : 'border-2 border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {selectedSourceGraphs.has(graph.id) && <Check className="w-3 h-3" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-gray-900 dark:text-white truncate">
+                                    {graph.title}
+                                  </div>
+                                  {graph.description && (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                      {graph.description}
+                                    </p>
+                                  )}
+                                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                    {graph.node_count || 0} 个节点
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
@@ -347,7 +517,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
                     <Check className="w-4 h-4" />
-                    <span>已为「{domain}」生成 {recommendedGraphs.length} 个推荐图谱，{graphRelations.length} 个依赖关系</span>
+                    <span>{mode === 'new' ? `已为「${domain}」` : '已基于选择的图谱'}生成 {recommendedGraphs.length} 个推荐图谱，{graphRelations.length} 个依赖关系</span>
                   </div>
                 </div>
 
@@ -586,7 +756,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                 </button>
                 <button
                   onClick={handleGenerate}
-                  disabled={!domain.trim() || isGenerating}
+                  disabled={(mode === 'new' && !domain.trim()) || (mode === 'expand' && selectedSourceGraphs.size === 0) || isGenerating}
                   className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {isGenerating ? (

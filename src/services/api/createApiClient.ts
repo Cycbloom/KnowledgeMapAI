@@ -47,18 +47,8 @@ export const createApiClient = (): AxiosInstance => {
       const token = useStore.getState().token;
       const csrfToken = getCookie("csrf-token");
 
-      console.log('[createApiClient] 请求拦截器:', { 
-        url: config.url, 
-        hasToken: !!token, 
-        hasCsrfToken: !!csrfToken,
-        isElectron: isElectronClient()
-      });
-
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('[createApiClient] 已设置 Authorization header');
-      } else {
-        console.log('[createApiClient] ⚠️  没有 token，未设置 Authorization header');
       }
 
       if (csrfToken) {

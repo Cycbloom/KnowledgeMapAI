@@ -33,6 +33,8 @@ import {
   Brain,
   Settings,
 } from "lucide-react";
+import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
+import { LearningSettingsPanel } from "../components/Learning/LearningSettingsPanel";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
@@ -45,7 +47,6 @@ import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
 import { LearningPathOutline } from "../components/Learning/LearningPathOutline";
 import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
-import { PromptConfigPanel } from "../components/PromptConfig/PromptConfigPanel";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 
@@ -93,7 +94,8 @@ export const LearningMode = () => {
     string | null
   >(null);
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
-  const [isPromptConfigOpen, setIsPromptConfigOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { fontSize, readingMode } = useLearningSettingsStore();
   const queryClient = useQueryClient();
 
   const { enterFocusMode, exitFocusMode } = useFocusStore();
@@ -765,6 +767,17 @@ export const LearningMode = () => {
               <Moon size={isMobile ? 18 : 20} />
             )}
           </button>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
+              isDark
+                ? "hover:bg-slate-800 text-slate-400"
+                : "hover:bg-gray-100 text-gray-600"
+            }`}
+            title="设置"
+          >
+            <Settings size={isMobile ? 18 : 20} />
+          </button>
 
           {!isMobile && (
             <>
@@ -982,17 +995,6 @@ export const LearningMode = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setIsPromptConfigOpen(true)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            isDark
-                              ? "hover:bg-slate-800 text-slate-400 hover:text-slate-200"
-                              : "hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                          }`}
-                          title="配置生成模板"
-                        >
-                          <Settings size={18} />
-                        </button>
-                        <button
                           onClick={handleRegenerateMaterial}
                           disabled={isGenerating || !isOnline}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -1015,7 +1017,16 @@ export const LearningMode = () => {
                       </div>
                     </div>
                     <div
-                      className={`prose ${isMobile ? "prose-sm" : "prose-lg"} dark:prose-invert prose-indigo ${isDark ? "text-slate-50" : "text-gray-900"}`}
+                      className={`prose dark:prose-invert prose-indigo ${
+                        readingMode === "default"
+                          ? isDark
+                            ? "bg-slate-900 text-slate-50"
+                            : "bg-white text-gray-900"
+                          : readingMode === "eye-care"
+                          ? "bg-amber-50 text-gray-800"
+                          : "bg-slate-900 text-slate-50"
+                      }`}
+                      style={{ fontSize: `${fontSize}px` }}
                     >
                       <div
                         className={isMobile ? "leading-relaxed space-y-4" : ""}
@@ -1027,7 +1038,7 @@ export const LearningMode = () => {
                             code: ({ className, children, node: _node }) => (
                               <CodeBlock
                                 className={className}
-                                isDark={isDark}
+                                isDark={isDark || readingMode === "dark"}
                                 node={_node}
                               >
                                 {children}
@@ -1553,9 +1564,9 @@ export const LearningMode = () => {
         keywords={keywords}
       />
 
-      <PromptConfigPanel
-        isOpen={isPromptConfigOpen}
-        onClose={() => setIsPromptConfigOpen(false)}
+      <LearningSettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
         initialScenarioId="learning_material"
         graphId={graphId || undefined}
       />

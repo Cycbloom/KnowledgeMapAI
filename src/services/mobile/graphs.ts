@@ -569,4 +569,12 @@ export const mobileGraphsApi = {
       cross_domain_opportunities: [],
     };
   },
+
+  expandDomain: async (_graphIds: string[], _count: number = 10) => {
+    return {
+      recommendations: [],
+      relations: [],
+      source_graphs: [],
+    };
+  },
 };

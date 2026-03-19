@@ -136,25 +136,15 @@ function App() {
     if (!client) return;
 
     const restoreSession = async () => {
-      console.log('[App] 开始从 Supabase 恢复 session');
       const { data: { session } } = await client.auth.getSession();
       
-      console.log('[App] Supabase getSession 结果:', { 
-        hasSession: !!session, 
-        hasUser: !!session?.user, 
-        hasAccessToken: !!session?.access_token, 
-        hasRefreshToken: !!session?.refresh_token 
-      });
-      
       if (session?.user) {
-        console.log('[App] 从 Supabase 恢复 session，设置用户状态');
         setUser(
           session.user as any,
           session.access_token,
           session.refresh_token
         );
       } else if (storeToken || storeRefreshToken) {
-        console.log('[App] Supabase 无 session，但 store 有 token - 清除不一致数据');
         clearAuth();
       }
     };
@@ -162,24 +152,14 @@ function App() {
     restoreSession();
 
     const { data: { subscription } } = client.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('[App] Auth state changed:', { 
-          event, 
-          hasSession: !!session, 
-          hasUser: !!session?.user, 
-          hasAccessToken: !!session?.access_token, 
-          hasRefreshToken: !!session?.refresh_token 
-        });
-        
+      (_event, session) => {
         if (session?.user) {
-          console.log('[App] Auth state changed - 用户已登录');
           setUser(
             session.user as any,
             session.access_token,
             session.refresh_token
           );
         } else {
-          console.log('[App] Auth state changed - 用户已登出');
           setUser(null, null, null);
         }
       }

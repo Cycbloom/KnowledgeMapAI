@@ -471,7 +471,7 @@ export const LearningMode = () => {
   };
 
   const handleStartChallenge = () => {
-    navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz`);
+    navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`);
   };
 
   const handleRegenerateMaterial = async () => {

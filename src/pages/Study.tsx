@@ -42,10 +42,12 @@ export const Study = () => {
   const graphId = searchParams.get('graph_id');
   const nodeId = searchParams.get('node_id');
   const nodeIds = searchParams.get('node_ids');
+  const mode = searchParams.get('mode');
+  const from = searchParams.get('from');
 
   const scopeParams = useMemo(() => {
-    if (nodeIds) return { node_ids: nodeIds };
-    if (nodeId) return { node_id: nodeId };
+    if (nodeIds) return { knowledge_point_ids: nodeIds };
+    if (nodeId) return { knowledge_point_id: nodeId };
     if (graphId) return { graph_id: graphId };
     return undefined;
   }, [graphId, nodeId, nodeIds]);
@@ -95,15 +97,32 @@ export const Study = () => {
     setFinished(false);
     setShowAnswer(false);
     setSelectedOption(null);
-    setViewState('dashboard');
     setTableMode('due');
     setCurrentPage(1);
-  }, [graphId, nodeId, nodeIds]);
+    
+    // 如果有 mode=quiz 参数，直接进入 quiz 模式
+    if (mode === 'quiz') {
+      setViewState('quiz');
+    } else {
+      setViewState('dashboard');
+    }
+  }, [graphId, nodeId, nodeIds, mode]);
 
   // Reset page when mode or search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [tableMode, searchQuery]);
+
+  // 当 mode=quiz 且卡片加载完成时，自动开始测验
+  useEffect(() => {
+    if (mode === 'quiz' && allCards.length > 0 && quizCards.length === 0) {
+      const next = [...allCards];
+      next.sort(() => Math.random() - 0.5);
+      setQuizCards(next);
+      setCurrentCardIndex(0);
+      setFinished(false);
+    }
+  }, [mode, allCards, quizCards.length]);
 
   // Fetch health data
   useEffect(() => {
@@ -273,12 +292,17 @@ export const Study = () => {
   };
 
   const handleBackToDashboard = () => {
-    setQuizCards([]);
-    setCurrentCardIndex(0);
-    setShowAnswer(false);
-    setSelectedOption(null);
-    setFinished(false);
-    setViewState('dashboard');
+    // 如果是从 learning 模式跳转过来，返回 learning 页面
+    if (from === 'learning' && graphId && nodeId) {
+      navigate(`/learning?graph_id=${graphId}&node_id=${nodeId}`);
+    } else {
+      setQuizCards([]);
+      setCurrentCardIndex(0);
+      setShowAnswer(false);
+      setSelectedOption(null);
+      setFinished(false);
+      setViewState('dashboard');
+    }
   };
 
   const currentCard = quizCards[currentCardIndex];
@@ -845,7 +869,7 @@ export const Study = () => {
               onClick={handleBackToDashboard}
               className={`w-full bg-indigo-600 text-white ${isMobile ? 'py-4' : 'py-3'} rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center ${isMobile ? 'text-lg' : ''}`}
             >
-              返回学习中心
+              {from === 'learning' ? '返回闯关学习' : '返回学习中心'}
             </button>
             <button
               onClick={handleRestart}

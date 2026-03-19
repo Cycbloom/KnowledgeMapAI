@@ -24,7 +24,8 @@ const createStreamHandler = async (
 ) => {
   const token = useStore.getState().token;
   const csrfToken = getCookie('csrf-token');
-  const response = await fetch(`${getApiUrl()}${url}`, {
+  const apiUrl = await getApiUrl();
+  const response = await fetch(`${apiUrl}${url}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -142,7 +143,8 @@ export const aiApi = {
     if (config.provider) formData.append('provider', config.provider);
     if (config.model) formData.append('model', config.model);
     
-    const response = await fetch(`${getApiUrl()}/ai/document-to-graph`, {
+    const apiUrl = await getApiUrl();
+    const response = await fetch(`${apiUrl}/ai/document-to-graph`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

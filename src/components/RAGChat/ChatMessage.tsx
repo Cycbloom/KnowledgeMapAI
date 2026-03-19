@@ -28,7 +28,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       return (
         <code 
           className={`px-1.5 py-0.5 rounded text-xs ${
-            isDark ? 'bg-slate-700 text-indigo-300' : 'bg-gray-200 text-indigo-600'
+            isDark ? 'bg-slate-700 text-cyan-300' : 'bg-gray-200 text-indigo-600'
           }`} 
           {...props}
         >
@@ -39,7 +39,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     return (
       <code 
         className={`block p-2 rounded-lg text-xs overflow-x-auto ${
-          isDark ? 'bg-slate-900' : 'bg-gray-200'
+          isDark ? 'bg-slate-900 text-slate-100' : 'bg-gray-200'
         }`} 
         {...props}
       >
@@ -78,19 +78,19 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               ? 'bg-amber-500 text-white rounded-tr-sm'
               : 'bg-indigo-600 text-white rounded-tr-sm'
             : isDark 
-              ? 'bg-slate-800 text-slate-200 rounded-tl-sm' 
+              ? 'bg-slate-700 text-white rounded-tl-sm' 
               : 'bg-gray-100 text-gray-800 rounded-tl-sm'
         }`}>
           {message.role === 'assistant' ? (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className={`prose prose-sm max-w-none ${isDark ? 'prose-invert prose-slate' : ''}`}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex]}
                 components={{
-                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                  ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                  li: ({ children }) => <li className="mb-1">{children}</li>,
+                  p: ({ children }) => <p className={`mb-2 last:mb-0 ${isDark ? 'text-white' : ''}`}>{children}</p>,
+                  ul: ({ children }) => <ul className={`list-disc pl-4 mb-2 ${isDark ? 'text-white' : ''}`}>{children}</ul>,
+                  ol: ({ children }) => <ol className={`list-decimal pl-4 mb-2 ${isDark ? 'text-white' : ''}`}>{children}</ol>,
+                  li: ({ children }) => <li className={`mb-1 ${isDark ? 'text-white' : ''}`}>{children}</li>,
                   code: renderCodeBlock
                 }}
               >
@@ -101,14 +101,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               )}
             </div>
           ) : (
-            message.content
+            <span className="text-white">{message.content}</span>
           )}
         </div>
 
         {message.role === 'assistant' && (
           <div className="flex items-center gap-2 mt-1">
             {message.sources && message.sources.length > 0 && (
-              <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+              <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-400'}`}>
                 <div className="flex flex-wrap gap-1">
                   {message.sources.slice(0, 3).map((source) => (
                     <button
@@ -116,13 +116,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                       onClick={() => onNodeClick && onNodeClick(source.id)}
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${
                         isDark 
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-400' 
+                          ? 'bg-slate-700 hover:bg-slate-600 text-white' 
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
                       }`}
                     >
                       <BookOpen size={10} />
                       <span className="truncate max-w-[80px]">{source.title}</span>
-                      <span className="text-[10px] opacity-50">
+                      <span className="text-[10px] opacity-70">
                         {Math.round(source.similarity * 100)}%
                       </span>
                     </button>
@@ -159,7 +159,7 @@ export const LoadingMessage: React.FC<LoadingMessageProps> = ({ isDark, isTutorM
       }`} />
     </div>
     <div className={`p-3 rounded-2xl rounded-tl-sm ${
-      isDark ? 'bg-slate-800' : 'bg-gray-100'
+      isDark ? 'bg-slate-700 text-slate-50' : 'bg-gray-100'
     }`}>
       <div className="flex gap-1">
         <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />

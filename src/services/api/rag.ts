@@ -42,7 +42,8 @@ export const ragApi = {
     if (!payload.model && config.model) payload.model = config.model;
 
     const token = useStore.getState().token;
-    const response = await fetch(`${getApiUrl()}/rag/chat/stream`, {
+    const apiUrl = await getApiUrl();
+    const response = await fetch(`${apiUrl}/rag/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

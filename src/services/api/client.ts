@@ -135,4 +135,9 @@ export const injectAIConfig = <T extends Record<string, any>>(
   };
 };
 
-export const getApiUrl = () => API_URL;
+export const getApiUrl = async () => {
+  if (isElectronProduction()) {
+    return await getElectronApiUrl();
+  }
+  return API_URL;
+};

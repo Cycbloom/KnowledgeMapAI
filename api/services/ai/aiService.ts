@@ -408,7 +408,13 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
             options.graphId,
           );
         } else {
+          const typeRestriction = types.length === 1 
+            ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
+            : `Allowed card types: ${types.join(', ')}. Only generate these types.`;
+          
           systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
+
+${typeRestriction}
 
 ${difficultyInstruction}
 
@@ -449,7 +455,25 @@ Please respond with a valid JSON object.`;
           "Generate Cards",
         );
 
-        return { cards: parsed.cards || [] };
+        let cards = parsed.cards || [];
+        const originalCount = cards.length;
+        
+        if (originalCount > 0) {
+          cards = cards.filter((card: any) => {
+            const cardType = card.type;
+            return types.includes(cardType);
+          });
+          
+          const filteredCount = cards.length;
+          if (filteredCount !== originalCount) {
+            logger.warn(
+              `[Generate Cards] Filtered cards: requested types [${types.join(', ')}], ` +
+              `got ${originalCount}, kept ${filteredCount}`
+            );
+          }
+        }
+
+        return { cards };
       });
     } catch (error: unknown) {
       const err = error as Error;

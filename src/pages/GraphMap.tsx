@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Sparkles, BookOpen } from "lucide-react";
+import { Sparkles, BookOpen, X, ChevronUp, ChevronDown } from "lucide-react";
 import { api } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
 import { queryKeys } from "../hooks/queries/queryConfig";
+import { useIsMobile } from "../hooks/common/useIsMobile";
 import { GraphMapCanvas } from "../components/GraphMap/GraphMapCanvas";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
@@ -32,6 +33,7 @@ export const GraphMap = () => {
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { addMessage } = useMessageStore();
+  const { isMobile } = useIsMobile();
 
   const fromGraphId = searchParams.get("from");
 
@@ -69,6 +71,7 @@ export const GraphMap = () => {
     useState(false);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [isDiscoveryPanelOpen, setIsDiscoveryPanelOpen] = useState(false);
+  const [isMobilePanelExpanded, setIsMobilePanelExpanded] = useState(false);
 
   const {
     data: mapData,
@@ -683,158 +686,342 @@ export const GraphMap = () => {
         )}
 
         {selectedGraphId && multiSelectedGraphIds.size === 0 && (
-          <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 max-w-xs">
-            {(() => {
-              const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
-              if (!graph) return null;
+          <>
+            {isMobile ? (
+              <div
+                className={`fixed left-0 right-0 bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out z-40 ${
+                  isMobilePanelExpanded
+                    ? "bottom-0 max-h-[80vh]"
+                    : "bottom-0 max-h-[180px]"
+                }`}
+                style={{
+                  paddingBottom: "env(safe-area-inset-bottom, 16px)",
+                }}
+              >
+                <div
+                  className="flex justify-center pt-2 pb-1 cursor-pointer"
+                  onClick={() => setIsMobilePanelExpanded(!isMobilePanelExpanded)}
+                >
+                  <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                </div>
+                {(() => {
+                  const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
+                  if (!graph) return null;
 
-              const graphRelations = relations.filter(
-                (r: GraphRelation) =>
-                  r.source_graph_id === selectedGraphId ||
-                  r.target_graph_id === selectedGraphId,
-              );
+                  const graphRelations = relations.filter(
+                    (r: GraphRelation) =>
+                      r.source_graph_id === selectedGraphId ||
+                      r.target_graph_id === selectedGraphId,
+                  );
 
-              return (
-                <>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                    {graph.title}
-                  </h3>
-                  {graph.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {graph.description}
-                    </p>
-                  )}
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    {(graph as any).node_count || 0} 个节点 ·{" "}
-                    {graphRelations.length} 个关系
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate(`/graph/${graph.id}`)}
-                      className="flex-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      打开图谱
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsCreatePanelOpen(true);
-                      }}
-                      className="px-3 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                    >
-                      添加关系
-                    </button>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                      快速创建关联图谱
-                    </h4>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleCreateRelatedGraph("prerequisite")}
-                        className="flex-1 px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                      >
-                        + 前置知识
-                      </button>
-                      <button
-                        onClick={() => handleCreateRelatedGraph("extension")}
-                        className="flex-1 px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
-                      >
-                        + 扩展知识
-                      </button>
-                      <button
-                        onClick={() => handleCreateRelatedGraph("related")}
-                        className="flex-1 px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
-                      >
-                        + 相关知识
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={() => setIsAIExpansionOpen(true)}
-                      className="w-full px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      AI 智能拓展
-                    </button>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                      生成知识点或相关知识网络
-                    </p>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={() => setIsNodeSelectorOpen(true)}
-                      className="w-full px-3 py-2 text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg hover:from-indigo-600 hover:to-violet-600 transition-all flex items-center justify-center gap-2"
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      生成题目
-                    </button>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                      为该图谱知识点生成学习题目
-                    </p>
-                  </div>
-
-                  {graphRelations.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                        相关图谱
-                      </h4>
-                      <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {graphRelations
-                          .slice(0, 5)
-                          .map((relation: GraphRelation) => {
-                            const isSource =
-                              relation.source_graph_id === selectedGraphId;
-                            const otherGraphId = isSource
-                              ? relation.target_graph_id
-                              : relation.source_graph_id;
-                            const otherGraph = graphs.find(
-                              (g: Graph) => g.id === otherGraphId,
-                            );
-
-                            if (!otherGraph) return null;
-
-                            const relationColor = {
-                              prerequisite: "bg-blue-500",
-                              extension: "bg-green-500",
-                              related: "bg-amber-500",
-                              cross_domain: "bg-purple-500",
-                            }[relation.relation_type];
-
-                            return (
-                              <div
-                                key={relation.id}
-                                className="flex items-center justify-between text-xs"
-                              >
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div
-                                    className={`w-2 h-2 rounded-full ${relationColor}`}
-                                  />
-                                  <span className="text-gray-700 dark:text-gray-300 truncate">
-                                    {otherGraph.title}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteRelation(relation.id)
-                                  }
-                                  className="text-gray-400 hover:text-red-500 ml-2"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            );
-                          })}
+                  return (
+                    <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: isMobilePanelExpanded ? "calc(80vh - 40px)" : "140px" }}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                            {graph.title}
+                          </h3>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {(graph as any).node_count || 0} 个节点 · {graphRelations.length} 个关系
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSelectedGraphId(null)}
+                          className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
                       </div>
+
+                      {graph.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                          {graph.description}
+                        </p>
+                      )}
+
+                      <div className="flex gap-2 mb-3">
+                        <button
+                          onClick={() => navigate(`/graph/${graph.id}`)}
+                          className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg active:bg-blue-600 transition-colors"
+                        >
+                          打开图谱
+                        </button>
+                        <button
+                          onClick={() => setIsCreatePanelOpen(true)}
+                          className="px-3 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg active:bg-gray-200 dark:active:bg-slate-600 transition-colors"
+                        >
+                          添加关系
+                        </button>
+                      </div>
+
+                      {isMobilePanelExpanded && (
+                        <>
+                          <div className="mb-3">
+                            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                              快速创建关联图谱
+                            </h4>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleCreateRelatedGraph("prerequisite")}
+                                className="flex-1 px-2 py-2 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg active:bg-blue-100 dark:active:bg-blue-900/50 transition-colors"
+                              >
+                                + 前置知识
+                              </button>
+                              <button
+                                onClick={() => handleCreateRelatedGraph("extension")}
+                                className="flex-1 px-2 py-2 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg active:bg-green-100 dark:active:bg-green-900/50 transition-colors"
+                              >
+                                + 扩展知识
+                              </button>
+                              <button
+                                onClick={() => handleCreateRelatedGraph("related")}
+                                className="flex-1 px-2 py-2 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg active:bg-amber-100 dark:active:bg-amber-900/50 transition-colors"
+                              >
+                                + 相关知识
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mb-3">
+                            <button
+                              onClick={() => setIsAIExpansionOpen(true)}
+                              className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg flex items-center justify-center gap-2"
+                            >
+                              <Sparkles className="w-4 h-4" />
+                              AI 拓展
+                            </button>
+                            <button
+                              onClick={() => setIsNodeSelectorOpen(true)}
+                              className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg flex items-center justify-center gap-2"
+                            >
+                              <BookOpen className="w-4 h-4" />
+                              生成题目
+                            </button>
+                          </div>
+
+                          {graphRelations.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                                相关图谱
+                              </h4>
+                              <div className="space-y-1 max-h-32 overflow-y-auto">
+                                {graphRelations.slice(0, 5).map((relation: GraphRelation) => {
+                                  const isSource = relation.source_graph_id === selectedGraphId;
+                                  const otherGraphId = isSource
+                                    ? relation.target_graph_id
+                                    : relation.source_graph_id;
+                                  const otherGraph = graphs.find((g: Graph) => g.id === otherGraphId);
+
+                                  if (!otherGraph) return null;
+
+                                  const relationColor = {
+                                    prerequisite: "bg-blue-500",
+                                    extension: "bg-green-500",
+                                    related: "bg-amber-500",
+                                    cross_domain: "bg-purple-500",
+                                  }[relation.relation_type];
+
+                                  return (
+                                    <div
+                                      key={relation.id}
+                                      className="flex items-center justify-between text-xs"
+                                    >
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <div className={`w-2 h-2 rounded-full ${relationColor}`} />
+                                        <span className="text-gray-700 dark:text-gray-300 truncate">
+                                          {otherGraph.title}
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={() => handleDeleteRelation(relation.id)}
+                                        className="text-gray-400 hover:text-red-500 ml-2"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      <button
+                        onClick={() => setIsMobilePanelExpanded(!isMobilePanelExpanded)}
+                        className="w-full flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-2 py-1"
+                      >
+                        {isMobilePanelExpanded ? (
+                          <>
+                            <ChevronDown className="w-4 h-4" />
+                            收起
+                          </>
+                        ) : (
+                          <>
+                            <ChevronUp className="w-4 h-4" />
+                            展开更多
+                          </>
+                        )}
+                      </button>
                     </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 max-w-xs">
+                {(() => {
+                  const graph = graphs.find((g: Graph) => g.id === selectedGraphId);
+                  if (!graph) return null;
+
+                  const graphRelations = relations.filter(
+                    (r: GraphRelation) =>
+                      r.source_graph_id === selectedGraphId ||
+                      r.target_graph_id === selectedGraphId,
+                  );
+
+                  return (
+                    <>
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                        {graph.title}
+                      </h3>
+                      {graph.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          {graph.description}
+                        </p>
+                      )}
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        {(graph as any).node_count || 0} 个节点 ·{" "}
+                        {graphRelations.length} 个关系
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/graph/${graph.id}`)}
+                          className="flex-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                          打开图谱
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsCreatePanelOpen(true);
+                          }}
+                          className="px-3 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                        >
+                          添加关系
+                        </button>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                          快速创建关联图谱
+                        </h4>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCreateRelatedGraph("prerequisite")}
+                            className="flex-1 px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                          >
+                            + 前置知识
+                          </button>
+                          <button
+                            onClick={() => handleCreateRelatedGraph("extension")}
+                            className="flex-1 px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
+                          >
+                            + 扩展知识
+                          </button>
+                          <button
+                            onClick={() => handleCreateRelatedGraph("related")}
+                            className="flex-1 px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+                          >
+                            + 相关知识
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                          onClick={() => setIsAIExpansionOpen(true)}
+                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          AI 智能拓展
+                        </button>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                          生成知识点或相关知识网络
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                          onClick={() => setIsNodeSelectorOpen(true)}
+                          className="w-full px-3 py-2 text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg hover:from-indigo-600 hover:to-violet-600 transition-all flex items-center justify-center gap-2"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          生成题目
+                        </button>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                          为该图谱知识点生成学习题目
+                        </p>
+                      </div>
+
+                      {graphRelations.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                            相关图谱
+                          </h4>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {graphRelations
+                              .slice(0, 5)
+                              .map((relation: GraphRelation) => {
+                                const isSource =
+                                  relation.source_graph_id === selectedGraphId;
+                                const otherGraphId = isSource
+                                  ? relation.target_graph_id
+                                  : relation.source_graph_id;
+                                const otherGraph = graphs.find(
+                                  (g: Graph) => g.id === otherGraphId,
+                                );
+
+                                if (!otherGraph) return null;
+
+                                const relationColor = {
+                                  prerequisite: "bg-blue-500",
+                                  extension: "bg-green-500",
+                                  related: "bg-amber-500",
+                                  cross_domain: "bg-purple-500",
+                                }[relation.relation_type];
+
+                                return (
+                                  <div
+                                    key={relation.id}
+                                    className="flex items-center justify-between text-xs"
+                                  >
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      <div
+                                        className={`w-2 h-2 rounded-full ${relationColor}`}
+                                      />
+                                      <span className="text-gray-700 dark:text-gray-300 truncate">
+                                        {otherGraph.title}
+                                      </span>
+                                    </div>
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteRelation(relation.id)
+                                      }
+                                      className="text-gray-400 hover:text-red-500 ml-2"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+          </>
         )}
 
         <div className="hidden md:block absolute bottom-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-3">

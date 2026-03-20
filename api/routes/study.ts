@@ -1,13 +1,17 @@
-import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validate } from '../middleware/validate.js';
-import { createCardSchema, createCardsBatchSchema, updateCardProgressSchema } from '../schemas/index.js';
-import { cacheService, CacheKeys } from '../services/common/cacheService.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
-import { AppError } from '../middleware/errorHandler.js';
-import { studyService } from '../services/study/studyService.js';
-import { achievementService } from '../services/achievementService.js';
-import { logger } from '../utils/logger.js';
+import { Router, type Response } from "express";
+import { requireAuth, type AuthRequest } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import {
+  createCardSchema,
+  createCardsBatchSchema,
+  updateCardProgressSchema,
+} from "../schemas/index.js";
+import { cacheService, CacheKeys } from "../services/common/cacheService.js";
+import { ErrorCodes } from "../../shared/types/errorCodes.js";
+import { AppError } from "../middleware/errorHandler.js";
+import { studyService } from "../services/study/studyService.js";
+import { achievementService } from "../services/achievementService.js";
+import { logger } from "../utils/logger.js";
 
 const router = Router();
 
@@ -48,19 +52,27 @@ const router = Router();
  *       200:
  *         description: List of study cards
  */
-router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { graph_id, knowledge_point_id, knowledge_point_ids, node_id, node_ids, due, refresh } = req.query;
-  const dueOnly = due === 'true' || due === '1';
+router.get("/cards", requireAuth, async (req: AuthRequest, res: Response) => {
+  const {
+    graph_id,
+    knowledge_point_id,
+    knowledge_point_ids,
+    node_id,
+    node_ids,
+    due,
+    refresh,
+  } = req.query;
+  const dueOnly = due === "true" || due === "1";
 
-  if (graph_id && refresh === 'true') {
+  if (graph_id && refresh === "true") {
     await cacheService.del(CacheKeys.STUDY_CARDS(graph_id as string));
   }
 
   let knowledgePointIdList: string[] | undefined;
   if (knowledge_point_ids) {
-    knowledgePointIdList = (knowledge_point_ids as string).split(',');
+    knowledgePointIdList = (knowledge_point_ids as string).split(",");
   } else if (node_ids) {
-    knowledgePointIdList = (node_ids as string).split(',');
+    knowledgePointIdList = (node_ids as string).split(",");
   }
 
   const kpId = (knowledge_point_id || node_id) as string | undefined;
@@ -71,13 +83,17 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
       graphId: graph_id as string,
       knowledgePointId: kpId,
       knowledgePointIds: knowledgePointIdList,
-      dueOnly
+      dueOnly,
     });
 
     res.json(cards);
   } catch (error: any) {
-    logger.error('Error fetching cards:', error);
-    throw new AppError(error.message || '获取学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
+    logger.error("Error fetching cards:", error);
+    throw new AppError(
+      error.message || "获取学习卡片失败",
+      500,
+      ErrorCodes.INTERNAL_ERROR,
+    );
   }
 });
 
@@ -117,38 +133,54 @@ router.get('/cards', requireAuth, async (req: AuthRequest, res: Response) => {
  *       201:
  *         description: Created card
  */
-router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthRequest, res: Response) => {
-  const { knowledge_point_id, question, answer, explanation, card_type, options } = req.body;
-
-  const { data: graphNode } = await req.supabase!
-    .from('graph_nodes')
-    .select('graph_id')
-    .eq('knowledge_point_id', knowledge_point_id)
-    .is('deleted_at', null)
-    .single();
-
-  if (!graphNode) {
-    throw new AppError('未找到所属节点', 404, ErrorCodes.NODE_NOT_FOUND);
-  }
-
-  try {
-    const card = await studyService.createCard(req.supabase!, {
-      userId: req.user.id,
-      knowledgePointId: knowledge_point_id,
-      sourceGraphId: graphNode.graph_id,
+router.post(
+  "/cards",
+  requireAuth,
+  validate(createCardSchema),
+  async (req: AuthRequest, res: Response) => {
+    const {
+      knowledge_point_id,
       question,
       answer,
       explanation,
-      cardType: card_type,
-      options
-    });
+      card_type,
+      options,
+    } = req.body;
 
-    res.status(201).json(card);
-  } catch (error: any) {
-    console.error('Error creating card:', error);
-    throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
-  }
-});
+    const { data: graphNode } = await req
+      .supabase!.from("graph_nodes")
+      .select("graph_id")
+      .eq("knowledge_point_id", knowledge_point_id)
+      .is("deleted_at", null)
+      .single();
+
+    if (!graphNode) {
+      throw new AppError("未找到所属节点", 404, ErrorCodes.NODE_NOT_FOUND);
+    }
+
+    try {
+      const card = await studyService.createCard(req.supabase!, {
+        userId: req.user.id,
+        knowledgePointId: knowledge_point_id,
+        sourceGraphId: graphNode.graph_id,
+        question,
+        answer,
+        explanation,
+        cardType: card_type,
+        options,
+      });
+
+      res.status(201).json(card);
+    } catch (error: any) {
+      console.error("Error creating card:", error);
+      throw new AppError(
+        error.message || "创建学习卡片失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  },
+);
 
 /**
  * @openapi
@@ -193,37 +225,54 @@ router.post('/cards', requireAuth, validate(createCardSchema), async (req: AuthR
  *       201:
  *         description: Created cards
  */
-router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async (req: AuthRequest, res: Response) => {
-  const { cards } = req.body;
+router.post(
+  "/cards/batch",
+  requireAuth,
+  validate(createCardsBatchSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { cards } = req.body;
 
-  const knowledgePointIds = [...new Set(cards.map((c: any) => c.knowledge_point_id))];
+    const knowledgePointIds = [
+      ...new Set(cards.map((c: any) => c.knowledge_point_id)),
+    ];
 
-  const { data: graphNodes } = await req.supabase!
-    .from('graph_nodes')
-    .select('knowledge_point_id, graph_id')
-    .in('knowledge_point_id', knowledgePointIds)
-    .is('deleted_at', null);
+    const { data: graphNodes } = await req
+      .supabase!.from("graph_nodes")
+      .select("knowledge_point_id, graph_id")
+      .in("knowledge_point_id", knowledgePointIds)
+      .is("deleted_at", null);
 
-  const nodeGraphMap = new Map(graphNodes?.map(gn => [gn.knowledge_point_id, gn.graph_id]));
+    const nodeGraphMap = new Map(
+      graphNodes?.map((gn) => [gn.knowledge_point_id, gn.graph_id]),
+    );
 
-  const cardsData = cards.map((card: any) => ({
-    knowledgePointId: card.knowledge_point_id,
-    sourceGraphId: nodeGraphMap.get(card.knowledge_point_id),
-    question: card.question,
-    answer: card.answer,
-    explanation: card.explanation,
-    cardType: card.card_type || card.type,
-    options: card.options
-  }));
+    const cardsData = cards.map((card: any) => ({
+      knowledgePointId: card.knowledge_point_id,
+      sourceGraphId: nodeGraphMap.get(card.knowledge_point_id),
+      question: card.question,
+      answer: card.answer,
+      explanation: card.explanation,
+      cardType: card.card_type || card.type,
+      options: card.options,
+    }));
 
-  try {
-    const createdCards = await studyService.createCardsBatch(req.supabase!, cardsData, req.user.id);
-    res.status(201).json(createdCards);
-  } catch (error: any) {
-    logger.error('Error creating cards batch:', error);
-    throw new AppError(error.message || '创建学习卡片失败', 500, ErrorCodes.INTERNAL_ERROR);
-  }
-});
+    try {
+      const createdCards = await studyService.createCardsBatch(
+        req.supabase!,
+        cardsData,
+        req.user.id,
+      );
+      res.status(201).json(createdCards);
+    } catch (error: any) {
+      logger.error("Error creating cards batch:", error);
+      throw new AppError(
+        error.message || "创建学习卡片失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  },
+);
 
 /**
  * @openapi
@@ -257,27 +306,41 @@ router.post('/cards/batch', requireAuth, validate(createCardsBatchSchema), async
  *       200:
  *         description: Updated card
  */
-router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema), async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  const { quality } = req.body;
+router.put(
+  "/cards/:id/progress",
+  requireAuth,
+  validate(updateCardProgressSchema),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { quality } = req.body;
 
-  try {
-    const result = await studyService.updateProgress(req.supabase!, id, quality, req.user.id);
+    try {
+      const result = await studyService.updateProgress(
+        req.supabase!,
+        id,
+        quality,
+        req.user.id,
+      );
 
-    Promise.all([
-      achievementService.addXp(req.user.id, 10),
-      achievementService.updateMasteredStats(req.user.id)
-    ]).catch(err => console.error('Achievement update failed:', err));
+      Promise.all([
+        achievementService.addXp(req.user.id, 10),
+        achievementService.updateMasteredStats(req.user.id),
+      ]).catch((err) => console.error("Achievement update failed:", err));
 
-    res.json(result.card);
-  } catch (error: any) {
-    logger.error('Error updating card progress:', error);
-    if (error.message === 'Card not found') {
-      throw new AppError('未找到卡片', 404, ErrorCodes.CARD_NOT_FOUND);
+      res.json(result.card);
+    } catch (error: any) {
+      logger.error("Error updating card progress:", error);
+      if (error.message === "Card not found") {
+        throw new AppError("未找到卡片", 404, ErrorCodes.CARD_NOT_FOUND);
+      }
+      throw new AppError(
+        error.message || "更新卡片进度失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
     }
-    throw new AppError(error.message || '更新卡片进度失败', 500, ErrorCodes.INTERNAL_ERROR);
-  }
-});
+  },
+);
 
 /**
  * @openapi
@@ -296,21 +359,29 @@ router.put('/cards/:id/progress', requireAuth, validate(updateCardProgressSchema
  *       200:
  *         description: Study progress data
  */
-router.get('/progress', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { graph_id } = req.query;
+router.get(
+  "/progress",
+  requireAuth,
+  async (req: AuthRequest, res: Response) => {
+    const { graph_id } = req.query;
 
-  const { data, error } = await req.supabase!
-    .from('study_progress')
-    .select('*')
-    .eq('user_id', req.user.id)
-    .eq('graph_id', graph_id)
-    .single();
+    const { data, error } = await req
+      .supabase!.from("study_progress")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .eq("graph_id", graph_id)
+      .single();
 
-  if (error && error.code !== 'PGRST116') {
-    throw new AppError(error.message || '获取学习进度失败', 500, ErrorCodes.INTERNAL_ERROR);
-  }
+    if (error && error.code !== "PGRST116") {
+      throw new AppError(
+        error.message || "获取学习进度失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
 
-  res.json(data || { message: 'No progress recorded yet' });
-});
+    res.json(data || { message: "No progress recorded yet" });
+  },
+);
 
 export default router;

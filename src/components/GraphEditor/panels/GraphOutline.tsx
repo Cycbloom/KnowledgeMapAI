@@ -208,6 +208,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
     return { rootNodes: roots, childrenMap: cMap, parentMap: pMap };
   }, [nodes, edges]);
 
+  // Auto-expand all nodes on initial load
+  useEffect(() => {
+    if (childrenMap.size > 0) {
+      const allParentIds = new Set(childrenMap.keys());
+      setExpandedNodeIds(allParentIds);
+    }
+  }, [childrenMap]);
+
   // Auto-expand path to selected node
   useEffect(() => {
     if (selectedNodeId && !searchQuery) {

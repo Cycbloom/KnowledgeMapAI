@@ -42,6 +42,12 @@ import { useMessageStore } from "../store/useMessageStore";
 import { useTheme, useSpeechRecognition, useNetworkStatus } from "../hooks";
 import { useGraphData, useGraphNodeStatus } from "../hooks/queries";
 import { preprocessMarkdown } from "../utils/markdownUtils";
+import {
+  isAppError,
+  isNetworkError,
+  isAuthError,
+  isValidationError,
+} from "../utils/errors";
 import { GraphOutline } from "../components/GraphEditor/panels/GraphOutline";
 import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
@@ -553,10 +559,18 @@ export const LearningMode = () => {
 
     setIsGeneratingCards(true);
     try {
+      console.log("[LearningMode] 开始生成题目:", {
+        nodeId,
+        config,
+        timestamp: new Date().toISOString(),
+      });
+
       const result = await api.ai.batchGenerateCards([nodeId], {
         count: config.count,
         types: config.types,
       });
+
+      console.log("[LearningMode] 题目生成结果:", result);
 
       if (result.success) {
         addMessage({
@@ -569,11 +583,32 @@ export const LearningMode = () => {
           },
         });
       } else {
-        addMessage({ type: "error", content: "任务提交失败，请重试" });
+        const errorMsg = result.message || result.error || "未知错误";
+        console.error("[LearningMode] 任务提交失败:", errorMsg);
+        addMessage({ type: "error", content: `任务提交失败: ${errorMsg}` });
       }
     } catch (error) {
-      console.error("Manual generation failed:", error);
-      addMessage({ type: "error", content: "题目生成提交失败，请稍后重试" });
+      console.error("[LearningMode] 题目生成异常:", {
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      let errorMessage = "题目生成提交失败";
+
+      if (isNetworkError(error)) {
+        errorMessage = "网络连接失败，请检查网络设置";
+      } else if (isAuthError(error)) {
+        errorMessage = "登录已过期，请重新登录";
+      } else if (isValidationError(error)) {
+        errorMessage = "请求参数格式错误，请刷新页面后重试";
+      } else if (isAppError(error)) {
+        errorMessage = `提交失败: ${error.message}`;
+      } else if (error instanceof Error) {
+        errorMessage = `提交失败: ${error.message}`;
+      }
+
+      addMessage({ type: "error", content: errorMessage });
     } finally {
       setIsGeneratingCards(false);
     }
@@ -638,7 +673,16 @@ export const LearningMode = () => {
 
       setIsGeneratingCards(true);
       try {
+        console.log("[LearningMode] 批量生成题目:", {
+          nodeIds,
+          data,
+          timestamp: new Date().toISOString(),
+        });
+
         const result = await api.ai.batchGenerateCards(nodeIds, data);
+
+        console.log("[LearningMode] 批量生成结果:", result);
+
         if (result.success) {
           addMessage({
             type: "success",
@@ -651,11 +695,32 @@ export const LearningMode = () => {
           });
           setSelectedNodeIds(new Set());
         } else {
-          addMessage({ type: "error", content: "任务提交失败，请重试" });
+          const errorMsg = result.message || result.error || "未知错误";
+          console.error("[LearningMode] 批量生成失败:", errorMsg);
+          addMessage({ type: "error", content: `任务提交失败: ${errorMsg}` });
         }
       } catch (error) {
-        console.error("Batch generation failed:", error);
-        addMessage({ type: "error", content: "批量生成失败，请稍后重试" });
+        console.error("[LearningMode] 批量生成异常:", {
+          error,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+
+        let errorMessage = "批量生成失败";
+
+        if (isNetworkError(error)) {
+          errorMessage = "网络连接失败，请检查网络设置";
+        } else if (isAuthError(error)) {
+          errorMessage = "登录已过期，请重新登录";
+        } else if (isValidationError(error)) {
+          errorMessage = "请求参数格式错误，请刷新页面后重试";
+        } else if (isAppError(error)) {
+          errorMessage = error.message;
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+
+        addMessage({ type: "error", content: errorMessage });
       } finally {
         setIsGeneratingCards(false);
       }
@@ -759,11 +824,13 @@ export const LearningMode = () => {
         </div>
 
         <div
-          className={`${isMobile && nodeId ? "flex flex-wrap items-end gap-2 justify-end" : "flex items-center space-x-2 lg:space-x-3"}`}
+          className={`flex items-center ${isMobile && nodeId ? "gap-1" : "space-x-2 lg:space-x-3"}`}
         >
           <button
             onClick={toggleTheme}
-            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
+            className={`flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
+              isMobile ? "min-w-[36px] min-h-[36px]" : "min-w-[44px] min-h-[44px]"
+            } ${
               isDark
                 ? "hover:bg-slate-800 text-amber-400"
                 : "hover:bg-gray-100 text-indigo-600"
@@ -776,17 +843,21 @@ export const LearningMode = () => {
               <Moon size={isMobile ? 18 : 20} />
             )}
           </button>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
-              isDark
-                ? "hover:bg-slate-800 text-slate-400"
-                : "hover:bg-gray-100 text-gray-600"
-            }`}
-            title="设置"
-          >
-            <Settings size={isMobile ? 18 : 20} />
-          </button>
+          {!isMobile && (
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className={`flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
+                isMobile ? "min-w-[36px] min-h-[36px]" : "min-w-[44px] min-h-[44px]"
+              } ${
+                isDark
+                  ? "hover:bg-slate-800 text-slate-400"
+                  : "hover:bg-gray-100 text-gray-600"
+              }`}
+              title="设置"
+            >
+              <Settings size={isMobile ? 18 : 20} />
+            </button>
+          )}
 
           {!isMobile && (
             <>
@@ -851,7 +922,7 @@ export const LearningMode = () => {
               <button
                 onClick={() => isOnline && setIsGenModalOpen(true)}
                 disabled={!isOnline}
-                className={`flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-full font-medium transition-all ${
+                className={`flex items-center ${isMobile ? "px-2 py-1.5" : "space-x-2 px-3 lg:px-4 py-2"} rounded-full font-medium transition-all ${
                   !isOnline
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700"
                     : isDark
@@ -860,7 +931,7 @@ export const LearningMode = () => {
                 }`}
                 title={isOnline ? "配置并生成题目" : "离线模式不可用"}
               >
-                <BrainCircuit size={18} />
+                <BrainCircuit size={isMobile ? 16 : 18} />
                 <span className="hidden md:inline">生成题目</span>
               </button>
               {!isOnline && (
@@ -881,13 +952,13 @@ export const LearningMode = () => {
               <button
                 onClick={handleStartChallenge}
                 disabled={isGeneratingCards}
-                className={`flex items-center space-x-2 px-3 lg:px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-105 active:scale-95 ${
+                className={`flex items-center justify-center ${isMobile ? "p-2" : "space-x-2 px-3 lg:px-6 py-2"} bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all ${isMobile ? "" : "hover:scale-105 active:scale-95"} ${
                   isGeneratingCards ? "opacity-70 cursor-not-allowed" : ""
                 }`}
+                title="开始挑战"
               >
-                <GraduationCap size={18} />
+                <GraduationCap size={isMobile ? 18 : 18} />
                 <span className="hidden sm:inline">完成学习，开始挑战</span>
-                <span className="sm:hidden">挑战</span>
               </button>
             </div>
           )}

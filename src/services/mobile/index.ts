@@ -9,6 +9,9 @@ import {
 } from "./study";
 import { mobileAuthApi } from "./auth";
 import { mobileQuizApi } from "./quiz";
+import { mobileSchedulerApi } from "./scheduler";
+import { mobileAchievementsApi } from "./achievements";
+import { mobilePeriodicTasksApi } from "./periodicTasks";
 
 export { getMobileSupabaseClient, resetMobileSupabaseClient } from "./client";
 export { mobileAuthApi } from "./auth";
@@ -23,6 +26,9 @@ export {
   mobileStatisticsApi,
 } from "./study";
 export { mobileQuizApi } from "./quiz";
+export { mobileSchedulerApi } from "./scheduler";
+export { mobileAchievementsApi } from "./achievements";
+export { mobilePeriodicTasksApi } from "./periodicTasks";
 
 export type {
   AuthResponse,
@@ -41,4 +47,7 @@ export const mobileApi = {
   dashboard: mobileDashboardApi,
   statistics: mobileStatisticsApi,
   quiz: mobileQuizApi,
+  scheduler: mobileSchedulerApi,
+  achievements: mobileAchievementsApi,
+  periodicTasks: mobilePeriodicTasksApi,
 };

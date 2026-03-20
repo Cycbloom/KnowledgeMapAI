@@ -41,7 +41,10 @@ export const queryKeys = {
       "studyCards",
       params?.graph_id || "all",
       params?.node_id || params?.knowledge_point_id || "all",
-      params?.node_ids || (params?.knowledge_point_ids ? params.knowledge_point_ids.join(",") : "none"),
+      params?.node_ids ||
+        (params?.knowledge_point_ids
+          ? params.knowledge_point_ids.join(",")
+          : "none"),
       params?.due ? "due" : "all",
     ] as const,
   user: ["user"] as const,

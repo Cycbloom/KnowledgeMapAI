@@ -37,7 +37,9 @@ export const mobileStudyApi = {
       (params?.knowledge_point_ids && params.knowledge_point_ids.length > 0) ||
       params?.node_ids
     ) {
-      const kpIds = params.knowledge_point_ids || (params.node_ids ? params.node_ids.split(",") : []);
+      const kpIds =
+        params.knowledge_point_ids ||
+        (params.node_ids ? params.node_ids.split(",") : []);
       if (kpIds.length > 0) {
         query = query.in("knowledge_point_id", kpIds);
       }

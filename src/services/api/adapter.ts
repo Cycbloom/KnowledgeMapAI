@@ -10,6 +10,9 @@ import {
   mobileDashboardApi,
   mobileStatisticsApi,
   mobileQuizApi,
+  mobileSchedulerApi,
+  mobileAchievementsApi,
+  mobilePeriodicTasksApi,
 } from "../mobile";
 
 type ApiType = typeof webApi;
@@ -63,15 +66,15 @@ function getResolvedApi(): ApiType {
         templates: createNoopApi(webApi.templates),
         prompts: createNoopApi(webApi.prompts),
         focus: createNoopApi(webApi.focus),
-        achievements: createNoopApi(webApi.achievements),
-        periodicTasks: createNoopApi(webApi.periodicTasks),
+        achievements: mobileAchievementsApi,
+        periodicTasks: mobilePeriodicTasksApi,
         learningPaths: createNoopApi(webApi.learningPaths),
         rag: createNoopApi(webApi.rag),
         autoGraph: createNoopApi(webApi.autoGraph),
         learningPath: createNoopApi(webApi.learningPath),
         health: createNoopApi(webApi.health),
         backup: createNoopApi(webApi.backup),
-        scheduler: createNoopApi(webApi.scheduler),
+        scheduler: mobileSchedulerApi || webApi.scheduler,
         quiz: mobileQuizApi || webApi.quiz,
         aiActions: mobileAiApi?.aiActions || webApi.aiActions,
       };

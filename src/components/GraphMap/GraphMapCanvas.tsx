@@ -377,11 +377,13 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
 
           if (dx > moveThreshold || dy > moveThreshold) {
             touchMovedRef.current = true;
+            if (touchStartOnNodeRef.current) {
+              touchStartOnNodeRef.current = null;
+            }
           }
 
           if (
             touchMovedRef.current &&
-            !touchStartOnNodeRef.current &&
             touchStartTransformRef.current
           ) {
             const deltaX = touch.clientX - touchStartPos.current.x;
@@ -448,6 +450,14 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
 
     const handleTouchEnd = useCallback((e: TouchEvent) => {
       if (e.touches.length === 0) {
+        if (!touchMovedRef.current && touchStartOnNodeRef.current && onGraphClick) {
+          const graph = graphs.find((g) => g.id === touchStartOnNodeRef.current);
+          if (graph) {
+            onGraphClick(graph);
+            setFocusedGraphId(touchStartOnNodeRef.current);
+          }
+        }
+
         setIsDragging(false);
         touchStartPos.current = null;
         touchStartDistance.current = null;
@@ -473,7 +483,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           ? nodeElement.getAttribute("data-node-id")
           : null;
       }
-    }, []);
+    }, [onGraphClick, graphs]);
 
     useEffect(() => {
       const svg = svgRef.current;

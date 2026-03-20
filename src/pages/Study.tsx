@@ -46,7 +46,7 @@ export const Study = () => {
   const from = searchParams.get('from');
 
   const scopeParams = useMemo(() => {
-    if (nodeIds) return { knowledge_point_ids: nodeIds };
+    if (nodeIds) return { knowledge_point_ids: nodeIds.split(',') };
     if (nodeId) return { knowledge_point_id: nodeId };
     if (graphId) return { graph_id: graphId };
     return undefined;

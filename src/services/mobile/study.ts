@@ -6,6 +6,8 @@ export const mobileStudyApi = {
     graph_id?: string;
     knowledge_point_id?: string;
     knowledge_point_ids?: string[];
+    node_id?: string;
+    node_ids?: string;
     source_graph_id?: string;
     due?: boolean;
   }) => {
@@ -26,13 +28,19 @@ export const mobileStudyApi = {
 
     if (params?.graph_id) {
       query = query.eq("graph_id", params.graph_id);
-    } else if (params?.knowledge_point_id) {
-      query = query.eq("knowledge_point_id", params.knowledge_point_id);
+    } else if (params?.knowledge_point_id || params?.node_id) {
+      const kpId = params.knowledge_point_id || params.node_id;
+      if (kpId) {
+        query = query.eq("knowledge_point_id", kpId);
+      }
     } else if (
-      params?.knowledge_point_ids &&
-      params.knowledge_point_ids.length > 0
+      (params?.knowledge_point_ids && params.knowledge_point_ids.length > 0) ||
+      params?.node_ids
     ) {
-      query = query.in("knowledge_point_id", params.knowledge_point_ids);
+      const kpIds = params.knowledge_point_ids || (params.node_ids ? params.node_ids.split(",") : []);
+      if (kpIds.length > 0) {
+        query = query.in("knowledge_point_id", kpIds);
+      }
     }
 
     if (params?.due) {

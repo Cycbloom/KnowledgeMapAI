@@ -87,6 +87,8 @@ export const graphsApi = {
   
   getTags: () => request('/graphs/tags'),
   
+  getDomains: () => request('/graphs/domains'),
+  
   checkTopic: (topic: string, excludeGraphId?: string): Promise<TopicCheckResult> => 
     request('/graphs/check-topic', { 
       method: 'POST', 
@@ -178,8 +180,8 @@ export const graphsApi = {
   analyzeDomain: (domain: string, count: number = 10): Promise<DomainAnalysisResult> => 
     request('/graphs/domain/analyze', { method: 'POST', body: JSON.stringify({ domain, count }) }),
   
-  expandDomain: (graphIds: string[], count: number = 10): Promise<DomainExpansionResult> => 
-    request('/graphs/domain/expand', { method: 'POST', body: JSON.stringify({ graph_ids: graphIds, count }) }),
+  expandDomain: (graphIds: string[], count: number = 10, domain?: string): Promise<DomainExpansionResult> => 
+    request('/graphs/domain/expand', { method: 'POST', body: JSON.stringify({ graph_ids: graphIds, count, domain }) }),
   
   batchCreateDomainGraphs: (data: {
     graphs: Array<{

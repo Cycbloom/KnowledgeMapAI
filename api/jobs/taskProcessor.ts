@@ -72,14 +72,15 @@ class TaskProcessor {
   }
 
   private async handleGenerateQuestions(task: Task) {
-    const { node_id, node_title, node_content, config } = task.payload;
+    const { knowledge_point_id, node_id, node_title, node_content, config } = task.payload;
+    const nodeId = knowledge_point_id || node_id;
     let totalCount = 0;
     const errors: string[] = [];
 
     const { data: graphNodeData } = await supabaseAdmin
       .from("graph_nodes")
       .select("graph_id, knowledge_point_id")
-      .eq("knowledge_point_id", node_id)
+      .eq("knowledge_point_id", nodeId)
       .is("deleted_at", null)
       .single();
     const graph_id = graphNodeData?.graph_id;
@@ -146,16 +147,15 @@ class TaskProcessor {
         if (cards.length > 0) {
           const cardsToInsert = cards.map((card: any) => ({
             user_id: task.user_id,
-            node_id,
-            graph_id, // Add graph_id
+            knowledge_point_id: nodeId,
+            graph_id,
             question: card.question,
             answer: card.answer,
-            explanation: card.explanation, // Add explanation
-            card_type: card.type || type, // Use returned type or fallback to requested type
+            explanation: card.explanation,
+            card_type: card.type || type,
             options: card.options ? JSON.stringify(card.options) : null,
-            next_review: new Date().toISOString(), // Immediate review
+            next_review: new Date().toISOString(),
             difficulty: 1,
-            // FSRS initial values (Replacing SM-2 fields)
             fsrs_state: 0,
             fsrs_stability: 0,
             fsrs_difficulty: 0,

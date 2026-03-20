@@ -43,6 +43,14 @@ interface DomainGraphGeneratorProps {
   onGenerateDomain: (domain: string, count: number) => Promise<{ graphs: RecommendedGraph[]; relations: GraphRelation[] }>;
   onBatchCreate: (graphs: RecommendedGraph[], relations: GraphRelation[], domain?: string) => Promise<CreatedGraph[]>;
   onInitializeGraphs?: (graphIds: string[]) => Promise<void>;
+  onLoadSourceGraphs?: () => Promise<{ graphs: SourceGraph[] }>;
+  onLoadDomains?: () => Promise<{ domains: DomainItem[] }>;
+  onExpandDomain?: (graphIds: string[], count: number, domain?: string) => Promise<{ recommendations: RecommendedGraph[]; relations: GraphRelation[] }>;
+}
+
+interface DomainItem {
+  name: string;
+  count: number;
 }
 
 const relationTypeConfig = {
@@ -80,9 +88,13 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   onGenerateDomain,
   onBatchCreate,
   onInitializeGraphs,
+  onLoadSourceGraphs,
+  onLoadDomains,
+  onExpandDomain,
 }) => {
   const [mode, setMode] = useState<GenerationMode>('new');
   const [domain, setDomain] = useState('');
+  const [expandDomain, setExpandDomain] = useState('');
   const [graphCount, setGraphCount] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -94,6 +106,8 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showRelations, setShowRelations] = useState(false);
   const [step, setStep] = useState<Step>('input');
+  const [availableDomains, setAvailableDomains] = useState<DomainItem[]>([]);
+  const [isLoadingDomains, setIsLoadingDomains] = useState(false);
   const [createProgress, setCreateProgress] = useState<CreateProgress>({
     current: 0,
     total: 0,
@@ -105,9 +119,10 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   const [isLoadingSourceGraphs, setIsLoadingSourceGraphs] = useState(false);
 
   const loadSourceGraphs = async () => {
+    if (!onLoadSourceGraphs) return;
     try {
       setIsLoadingSourceGraphs(true);
-      const result = await (window as any).api.graphs.getMap();
+      const result = await onLoadSourceGraphs();
       if (result?.graphs) {
         setSourceGraphs(result.graphs);
       }
@@ -115,6 +130,21 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
       console.error('Failed to load source graphs:', err);
     } finally {
       setIsLoadingSourceGraphs(false);
+    }
+  };
+
+  const loadDomains = async () => {
+    if (!onLoadDomains) return;
+    try {
+      setIsLoadingDomains(true);
+      const result = await onLoadDomains();
+      if (result?.domains) {
+        setAvailableDomains(result.domains);
+      }
+    } catch (err) {
+      console.error('Failed to load domains:', err);
+    } finally {
+      setIsLoadingDomains(false);
     }
   };
 
@@ -133,7 +163,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
 
   const handleGenerate = async () => {
     if (mode === 'new' && !domain.trim()) return;
-    if (mode === 'expand' && selectedSourceGraphs.size === 0) return;
+    if (mode === 'expand' && selectedSourceGraphs.size === 0 && !expandDomain.trim()) return;
 
     setIsGenerating(true);
     setError(null);
@@ -146,13 +176,16 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
       let result;
       if (mode === 'new') {
         result = await onGenerateDomain(domain.trim(), graphCount);
+        setRecommendedGraphs(result.graphs);
       } else {
-        result = await (window as any).api.graphs.expandDomain(
+        if (!onExpandDomain) return;
+        result = await onExpandDomain(
           Array.from(selectedSourceGraphs),
-          graphCount
+          graphCount,
+          expandDomain.trim() || undefined
         );
+        setRecommendedGraphs(result.recommendations);
       }
-      setRecommendedGraphs(result.graphs || result.recommendations);
       setGraphRelations(result.relations);
       setStep('select');
     } catch (err) {
@@ -168,6 +201,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     setError(null);
     if (newMode === 'expand') {
       loadSourceGraphs();
+      loadDomains();
     }
   };
 
@@ -260,6 +294,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     if (!isGenerating && !isCreating && !isInitializing) {
       setMode('new');
       setDomain('');
+      setExpandDomain('');
       setRecommendedGraphs([]);
       setGraphRelations([]);
       setSelectedGraphs(new Set());
@@ -278,7 +313,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     if (e.key === 'Enter' && !isGenerating) {
       if (mode === 'new' && domain.trim()) {
         handleGenerate();
-      } else if (mode === 'expand' && selectedSourceGraphs.size > 0) {
+      } else if (mode === 'expand' && (selectedSourceGraphs.size > 0 || expandDomain.trim())) {
         handleGenerate();
       }
     }
@@ -380,17 +415,50 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                   <>
                     <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                       <p className="text-sm text-purple-700 dark:text-purple-300">
-                        选择一个或多个现有图谱，AI 将基于它们推荐相关的新知识图谱，帮助您扩展知识体系。
+                        选择现有图谱或选择领域，AI 将基于它们推荐相关的新知识图谱，帮助您扩展知识体系。
                       </p>
                       <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                        最多选择 5 个图谱
+                        可以选择图谱、选择领域，或两者结合
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        选择领域（可选）
+                      </label>
+                      {isLoadingDomains ? (
+                        <div className="flex items-center gap-2 py-2.5 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-700">
+                          <Loader2 className="w-4 h-4 text-purple-500 animate-spin" />
+                          <span className="text-sm text-gray-500 dark:text-gray-400">加载领域...</span>
+                        </div>
+                      ) : availableDomains.length > 0 ? (
+                        <select
+                          value={expandDomain}
+                          onChange={e => setExpandDomain(e.target.value)}
+                          disabled={isGenerating}
+                          className="w-full px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                        >
+                          <option value="">-- 请选择领域 --</option>
+                          {availableDomains.map(domain => (
+                            <option key={domain.name} value={domain.name}>
+                              {domain.name} ({domain.count} 个图谱)
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="py-2.5 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-sm text-gray-500 dark:text-gray-400">
+                          暂无可选领域，请先为图谱设置领域
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        选择领域后，AI 会将该领域内的所有图谱信息纳入推荐参考
                       </p>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          选择现有图谱
+                          选择现有图谱（可选，最多 5 个）
                         </label>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           已选择 {selectedSourceGraphs.size} / 5
@@ -405,7 +473,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                           </span>
                         </div>
                       ) : (
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
                           {sourceGraphs.map((graph) => (
                             <button
                               key={graph.id}
@@ -756,7 +824,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                 </button>
                 <button
                   onClick={handleGenerate}
-                  disabled={(mode === 'new' && !domain.trim()) || (mode === 'expand' && selectedSourceGraphs.size === 0) || isGenerating}
+                  disabled={(mode === 'new' && !domain.trim()) || (mode === 'expand' && selectedSourceGraphs.size === 0 && !expandDomain.trim()) || isGenerating}
                   className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {isGenerating ? (

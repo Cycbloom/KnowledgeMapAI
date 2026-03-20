@@ -1,7 +1,13 @@
 import { useStore } from "../../store/useStore";
-import { createMobileAIClient, MobileAIClient } from "./aiClient";
+import {
+  createMobileAIClient,
+  MobileAIClient,
+  isValidProvider,
+} from "./aiClient";
 import type { AIProviderType } from "@shared/types";
 import type { StudyCard } from "@shared/types/common";
+import { getMobileSupabaseClient } from "./client";
+import { mobilePromptService } from "./promptService";
 
 const MOBILE_AI_CONFIG_KEY = "mobile_ai_config";
 
@@ -21,10 +27,16 @@ function getStoredAIConfig(): MobileAIUserConfig | null {
   try {
     const stored = localStorage.getItem(MOBILE_AI_CONFIG_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      console.log("[MobileAIService] 从本地存储加载配置", {
+        provider: parsed.provider,
+        hasApiKey: !!parsed.apiKey,
+        model: parsed.model,
+      });
+      return parsed;
     }
   } catch (e) {
-    console.error("Failed to load mobile AI config:", e);
+    console.error("[MobileAIService] 加载本地存储配置失败:", e);
   }
   return null;
 }
@@ -32,8 +44,9 @@ function getStoredAIConfig(): MobileAIUserConfig | null {
 function storeAIConfig(config: MobileAIUserConfig): void {
   try {
     localStorage.setItem(MOBILE_AI_CONFIG_KEY, JSON.stringify(config));
+    console.log("[MobileAIService] 配置已保存到本地存储");
   } catch (e) {
-    console.error("Failed to store mobile AI config:", e);
+    console.error("[MobileAIService] 保存配置到本地存储失败:", e);
   }
 }
 
@@ -45,9 +58,11 @@ function getAIConfigFromEnv(): MobileAIUserConfig | null {
   const apiKey = ENV_API_KEYS[provider];
 
   if (!apiKey) {
+    console.log("[MobileAIService] 环境变量中未找到 API Key", { provider });
     return null;
   }
 
+  console.log("[MobileAIService] 从环境变量加载配置", { provider });
   return {
     provider,
     model: aiConfig?.model,
@@ -65,9 +80,20 @@ function getAIConfigFromUserSettings(): MobileAIUserConfig | null {
   const aiConfig = user?.profile?.settings?.ai_config?.text;
   const storedConfig = getStoredAIConfig();
 
-  if (storedConfig && storedConfig.apiKey) {
+  if (
+    storedConfig &&
+    storedConfig.apiKey &&
+    storedConfig.apiKey.trim() !== ""
+  ) {
     const provider = (aiConfig?.provider ||
       storedConfig.provider) as AIProviderType;
+
+    if (!isValidProvider(provider)) {
+      console.error("[MobileAIService] 无效的 Provider:", provider);
+      return null;
+    }
+
+    console.log("[MobileAIService] 使用本地存储配置", { provider });
     return {
       provider,
       model: aiConfig?.model || storedConfig.model,
@@ -75,15 +101,23 @@ function getAIConfigFromUserSettings(): MobileAIUserConfig | null {
     };
   }
 
+  console.log("[MobileAIService] 未找到有效配置");
   return null;
 }
 
 function createAIClient(): MobileAIClient | null {
   const config = getAIConfigFromUserSettings();
-  if (!config || !config.apiKey) {
+  if (!config || !config.apiKey || config.apiKey.trim() === "") {
+    console.warn("[MobileAIService] AI 服务未配置");
     return null;
   }
-  return createMobileAIClient(config);
+
+  try {
+    return createMobileAIClient(config);
+  } catch (error) {
+    console.error("[MobileAIService] 创建 AI 客户端失败:", error);
+    return null;
+  }
 }
 
 interface GeneratedCard {
@@ -97,6 +131,141 @@ interface GeneratedCard {
 
 interface GenerateCardsResult {
   cards: GeneratedCard[];
+}
+
+export type AICardGenErrorType =
+  | "api_key_missing"
+  | "api_key_invalid"
+  | "quota_exceeded"
+  | "rate_limited"
+  | "network_error"
+  | "timeout"
+  | "invalid_response"
+  | "database_error"
+  | "unknown";
+
+export interface AICardGenError {
+  type: AICardGenErrorType;
+  message: string;
+  suggestion: string;
+  retryable: boolean;
+}
+
+function classifyError(error: unknown): AICardGenError {
+  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  const originalMessage = error instanceof Error ? error.message : String(error);
+
+  if (errorMessage.includes("api key") || errorMessage.includes("api_key") || errorMessage.includes("未配置")) {
+    return {
+      type: "api_key_missing",
+      message: "AI 服务未配置",
+      suggestion: "请前往设置页面配置 AI API Key",
+      retryable: false,
+    };
+  }
+
+  if (
+    errorMessage.includes("invalid") && errorMessage.includes("key") ||
+    errorMessage.includes("unauthorized") ||
+    errorMessage.includes("authentication") ||
+    errorMessage.includes("401") ||
+    errorMessage.includes("403")
+  ) {
+    return {
+      type: "api_key_invalid",
+      message: "API Key 无效",
+      suggestion: "请检查您的 API Key 是否正确，或前往设置页面重新配置",
+      retryable: false,
+    };
+  }
+
+  if (
+    errorMessage.includes("quota") ||
+    errorMessage.includes("exceeded") ||
+    errorMessage.includes("limit") ||
+    errorMessage.includes("insufficient")
+  ) {
+    return {
+      type: "quota_exceeded",
+      message: "API 配额已用尽",
+      suggestion: "您的 API 配额已用尽，请检查账户余额或等待配额重置",
+      retryable: false,
+    };
+  }
+
+  if (
+    errorMessage.includes("rate limit") ||
+    errorMessage.includes("too many requests") ||
+    errorMessage.includes("429")
+  ) {
+    return {
+      type: "rate_limited",
+      message: "请求过于频繁",
+      suggestion: "请稍后再试，或减少单次生成的题目数量",
+      retryable: true,
+    };
+  }
+
+  if (
+    errorMessage.includes("network") ||
+    errorMessage.includes("fetch") ||
+    errorMessage.includes("connection") ||
+    errorMessage.includes("enotfound") ||
+    errorMessage.includes("econnrefused") ||
+    errorMessage.includes("offline")
+  ) {
+    return {
+      type: "network_error",
+      message: "网络连接失败",
+      suggestion: "请检查网络连接后重试",
+      retryable: true,
+    };
+  }
+
+  if (errorMessage.includes("timeout") || errorMessage.includes("timed out")) {
+    return {
+      type: "timeout",
+      message: "请求超时",
+      suggestion: "服务器响应超时，请稍后重试",
+      retryable: true,
+    };
+  }
+
+  if (
+    errorMessage.includes("json") ||
+    errorMessage.includes("parse") ||
+    errorMessage.includes("invalid response") ||
+    errorMessage.includes("format")
+  ) {
+    return {
+      type: "invalid_response",
+      message: "AI 响应格式错误",
+      suggestion: "AI 返回的数据格式不正确，请重试",
+      retryable: true,
+    };
+  }
+
+  if (
+    errorMessage.includes("database") ||
+    errorMessage.includes("supabase") ||
+    errorMessage.includes("insert") ||
+    errorMessage.includes("save") ||
+    errorMessage.includes("保存")
+  ) {
+    return {
+      type: "database_error",
+      message: "数据库写入失败",
+      suggestion: "题目生成成功但保存失败，请检查数据库连接后重试",
+      retryable: true,
+    };
+  }
+
+  return {
+    type: "unknown",
+    message: `生成失败: ${originalMessage}`,
+    suggestion: "请稍后重试，如问题持续请联系技术支持",
+    retryable: true,
+  };
 }
 
 interface Keyword {
@@ -138,10 +307,46 @@ const DIFFICULTY_PROMPTS: Record<string, string> = {
 - Include complex scenarios, edge cases, or require multi-step reasoning`,
 };
 
+const LEARNING_MATERIAL_SYSTEM_PROMPT = `你是一位杰出的教材作者和教育家。请为给定的主题编写一个全面、结构化的学习模块。
+
+目标受众：大学生或正在学习这一概念的专业人士。
+
+结构要求：
+1. **引言（吸引点）**：简要解释这是什么以及为什么重要。
+2. **核心概念（深入探讨）**：解释理论基础。使用类比。
+3. **关键机制/细节**：技术细节、"如何工作"或逐步逻辑。
+4. **现实世界示例**：具体用例或历史背景。
+5. **总结**：关键要点。
+
+格式要求：
+- 使用 Markdown 标题（##, ###）。
+- 对关键术语使用粗体。
+- **重要**：将所有数学公式用 LaTeX 包裹：$行内$ 或 $$块级$$。
+- 使用列表和项目符号提高可读性。
+- 长度：全面（约 800-1500 字）。
+
+你必须返回一个 JSON 对象，包含：
+1. 'content'：Markdown 格式的学习内容（字符串）
+2. 'keywords'：从内容中提取的 5-15 个关键词数组
+
+每个关键词对象必须包含：
+- 'term'：关键词文本（字符串）
+- 'importance'：重要性级别 1-5（数字，5 最重要）
+- 'category'：类别类型 - 以下之一：'定义', '概念', '方法', '结论', '原理', '应用', '术语'（字符串）
+- 'explanation'：关键词的简要解释（字符串，最多 50 字符）
+
+请用中文回答。`;
+
 export const mobileAIService = {
   isConfigured: (): boolean => {
     const config = getAIConfigFromUserSettings();
-    return !!(config && config.apiKey);
+    const configured = !!(
+      config &&
+      config.apiKey &&
+      config.apiKey.trim() !== ""
+    );
+    console.log("[MobileAIService.isConfigured] 检查配置状态:", configured);
+    return configured;
   },
 
   getConfig: (): MobileAIUserConfig | null => {
@@ -149,11 +354,23 @@ export const mobileAIService = {
   },
 
   setConfig: (config: MobileAIUserConfig): void => {
+    if (!config.apiKey || config.apiKey.trim() === "") {
+      console.error("[MobileAIService.setConfig] API Key 不能为空");
+      throw new Error("API Key 不能为空");
+    }
+    if (!isValidProvider(config.provider)) {
+      console.error(
+        "[MobileAIService.setConfig] 无效的 Provider:",
+        config.provider,
+      );
+      throw new Error(`不支持的 AI 服务商: ${config.provider}`);
+    }
     storeAIConfig(config);
   },
 
   clearConfig: (): void => {
     localStorage.removeItem(MOBILE_AI_CONFIG_KEY);
+    console.log("[MobileAIService] 配置已清除");
   },
 
   generateCards: async (
@@ -163,16 +380,27 @@ export const mobileAIService = {
       types?: string[];
       count?: number;
       difficulty?: "easy" | "medium" | "hard";
+      userId?: string;
+      graphId?: string;
     } = {},
   ): Promise<GenerateCardsResult> => {
     const client = createAIClient();
     if (!client) {
-      throw new Error("AI 服务未配置，请检查环境变量或手动配置 API Key");
+      const aiError: AICardGenError = {
+        type: "api_key_missing",
+        message: "AI 服务未配置",
+        suggestion: "请前往设置页面配置 AI API Key",
+        retryable: false,
+      };
+      throw aiError;
     }
 
+    const supabase = getMobileSupabaseClient();
     const types = options.types || ["qa", "choice"];
     const count = options.count || 3;
     const difficulty = options.difficulty || "medium";
+    const userId = options.userId;
+    const graphId = options.graphId;
 
     const typeRestriction =
       types.length === 1
@@ -184,7 +412,7 @@ export const mobileAIService = {
       .filter((p) => p.length > 0)
       .join("\n\n");
 
-    const systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
+    const defaultSystemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
 ${typeRestriction}
 
@@ -213,6 +441,39 @@ Important:
 - For 'multi_choice' type: correct_indices can have multiple values
 - For 'fill_in_the_blank' type: use '___' for blanks in question`;
 
+    let systemPrompt = defaultSystemPrompt;
+
+    if (supabase && userId && graphId) {
+      try {
+        const promptCode = types.length === 1 ? `generate_cards_${types[0].replace("fill_in_the_blank", "fill_blank")}` : "generate_cards";
+        const context = {
+          topic,
+          content: content || "No detailed content provided.",
+          types: types.join(", "),
+          count,
+          difficulty,
+          typeRestriction,
+          typeInstructions,
+          difficultyPrompt: DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS.medium,
+        };
+
+        const renderedPrompt = await mobilePromptService.getRenderedPrompt(
+          supabase,
+          promptCode,
+          context,
+          userId,
+          graphId,
+        );
+
+        if (renderedPrompt && renderedPrompt.trim()) {
+          systemPrompt = renderedPrompt;
+          console.log("[MobileAIService.generateCards] 使用数据库 Prompt 模板", { promptCode });
+        }
+      } catch (error) {
+        console.warn("[MobileAIService.generateCards] 获取 Prompt 模板失败，使用默认模板:", error);
+      }
+    }
+
     const messages = [
       { role: "system" as const, content: systemPrompt },
       {
@@ -222,6 +483,13 @@ Important:
     ];
 
     try {
+      console.log("[MobileAIService.generateCards] 开始生成题目", {
+        topic,
+        types,
+        count,
+        difficulty,
+      });
+
       const result = await client.chatWithJson<GenerateCardsResult>(messages);
 
       let cards = result.cards || [];
@@ -230,12 +498,15 @@ Important:
         return types.includes(card.type);
       });
 
+      console.log("[MobileAIService.generateCards] 题目生成成功", {
+        cardCount: cards.length,
+      });
+
       return { cards };
     } catch (error) {
-      console.error("Generate cards error:", error);
-      throw new Error(
-        `生成题目失败: ${error instanceof Error ? error.message : "未知错误"}`,
-      );
+      console.error("[MobileAIService.generateCards] 生成题目失败:", error);
+      const classifiedError = classifyError(error);
+      throw classifiedError;
     }
   },
 
@@ -244,10 +515,15 @@ Important:
     knowledgePointId: string,
     graphId: string,
   ): Promise<{ success: boolean; count: number }> => {
-    const { getMobileSupabaseClient } = await import("./client");
     const client = getMobileSupabaseClient();
     if (!client) {
-      throw new Error("Supabase client not initialized");
+      const dbError: AICardGenError = {
+        type: "database_error",
+        message: "数据库客户端未初始化",
+        suggestion: "请刷新页面后重试",
+        retryable: true,
+      };
+      throw dbError;
     }
 
     const {
@@ -255,7 +531,13 @@ Important:
     } = await client.auth.getUser();
 
     if (!user) {
-      throw new Error("User not authenticated");
+      const authError: AICardGenError = {
+        type: "api_key_invalid",
+        message: "用户未登录",
+        suggestion: "请重新登录后再试",
+        retryable: false,
+      };
+      throw authError;
     }
 
     const cardsToInsert = cards.map((card) => ({
@@ -283,7 +565,14 @@ Important:
       .select();
 
     if (error) {
-      throw new Error(`保存题目失败: ${error.message}`);
+      console.error("[MobileAIService.saveCardsToStudyCards] 数据库写入失败:", error);
+      const dbError: AICardGenError = {
+        type: "database_error",
+        message: "数据库写入失败",
+        suggestion: `题目生成成功但保存失败: ${error.message}`,
+        retryable: true,
+      };
+      throw dbError;
     }
 
     return { success: true, count: (data as StudyCard[]).length };
@@ -304,23 +593,54 @@ Important:
     cards: GeneratedCard[];
     savedCount: number;
   }> => {
-    const result = await mobileAIService.generateCards(topic, content, options);
+    const supabase = getMobileSupabaseClient();
+    let userId: string | undefined;
+
+    if (supabase) {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+        }
+      } catch (error) {
+        console.warn("[MobileAIService.generateAndSaveCards] 获取用户信息失败:", error);
+      }
+    }
+
+    const result = await mobileAIService.generateCards(topic, content, {
+      ...options,
+      userId,
+      graphId,
+    });
 
     if (result.cards.length === 0) {
       return { success: false, cards: [], savedCount: 0 };
     }
 
-    const saveResult = await mobileAIService.saveCardsToStudyCards(
-      result.cards,
-      knowledgePointId,
-      graphId,
-    );
+    try {
+      const saveResult = await mobileAIService.saveCardsToStudyCards(
+        result.cards,
+        knowledgePointId,
+        graphId,
+      );
 
-    return {
-      success: saveResult.success,
-      cards: result.cards,
-      savedCount: saveResult.count,
-    };
+      return {
+        success: saveResult.success,
+        cards: result.cards,
+        savedCount: saveResult.count,
+      };
+    } catch (saveError) {
+      console.error("[MobileAIService.generateAndSaveCards] 保存失败:", saveError);
+      const dbError: AICardGenError = {
+        type: "database_error",
+        message: "数据库写入失败",
+        suggestion: `题目已生成 ${result.cards.length} 道，但保存失败。请检查网络后重试。`,
+        retryable: true,
+      };
+      throw dbError;
+    }
   },
 
   generateLearningMaterial: async (
@@ -330,71 +650,62 @@ Important:
       level?: string;
     } = {},
   ): Promise<GenerateLearningMaterialResult> => {
+    console.log("[MobileAIService.generateLearningMaterial] 开始生成学习资料", {
+      topic,
+      contextLength: context?.length || 0,
+      level: options.level,
+    });
+
     const client = createAIClient();
     if (!client) {
-      throw new Error("AI 服务未配置，请检查环境变量或手动配置 API Key");
+      console.error("[MobileAIService.generateLearningMaterial] AI 服务未配置");
+      throw new Error("AI 服务未配置，请先在设置中配置 API Key");
     }
 
-    const systemPrompt = `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
+    const userPrompt = `主题：${topic}
+背景/上下文：${context || "通用知识"}
+${options.level ? `知识水平：${options.level}` : ""}
 
-Target Audience: University students or professionals learning this concept.
-
-Structure:
-1. **Introduction (Hook)**: Briefly explain what this is and why it matters.
-2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.
-3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.
-4. **Real-world Examples**: Concrete use cases or historical context.
-5. **Summary**: Key takeaways.
-
-Formatting:
-- Use Markdown headers (##, ###).
-- Use bolding for key terms.
-- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.
-- Use lists and bullet points for readability.
-- Length: Comprehensive (approx 800-1500 words).
-
-Topic: ${topic}
-Context/Background: ${context || "General knowledge"}
-${options.level ? `Knowledge Level: ${options.level}` : ""}
-
-You must respond with a JSON object containing:
-1. 'content': The learning material in Markdown format (as a string)
-2. 'keywords': An array of 5-15 keywords extracted from the content
-
-Each keyword object must have:
-- 'term': The keyword text (string)
-- 'importance': Importance level 1-5 (number, where 5 is most important)
-- 'category': Category type - one of: '定义', '概念', '方法', '结论', '原理', '应用', '术语' (string)
-- 'explanation': Brief explanation of the keyword (string, max 50 chars)
-
-Please respond in Chinese.`;
+请根据上述要求生成学习资料。`;
 
     const messages = [
-      { role: "system" as const, content: systemPrompt },
-      {
-        role: "user" as const,
-        content:
-          "Please generate the learning material based on the instructions above.",
-      },
+      { role: "system" as const, content: LEARNING_MATERIAL_SYSTEM_PROMPT },
+      { role: "user" as const, content: userPrompt },
     ];
 
     try {
+      console.log("[MobileAIService.generateLearningMaterial] 发送 AI 请求");
+
       const result =
         await client.chatWithJson<GenerateLearningMaterialResult>(messages);
 
+      console.log("[MobileAIService.generateLearningMaterial] 收到 AI 响应", {
+        contentLength: result.content?.length || 0,
+        keywordCount: result.keywords?.length || 0,
+      });
+
+      const normalizedKeywords = Array.isArray(result.keywords)
+        ? result.keywords.map((k) => ({
+            term: k.term || "",
+            importance: Math.min(5, Math.max(1, k.importance || 3)),
+            category: k.category || "概念",
+            explanation: k.explanation || "",
+          }))
+        : [];
+
+      console.log(
+        "[MobileAIService.generateLearningMaterial] 学习资料生成成功",
+      );
+
       return {
         content: result.content || "",
-        keywords: Array.isArray(result.keywords)
-          ? result.keywords.map((k) => ({
-              term: k.term || "",
-              importance: Math.min(5, Math.max(1, k.importance || 3)),
-              category: k.category || "概念",
-              explanation: k.explanation || "",
-            }))
-          : [],
+        keywords: normalizedKeywords,
       };
     } catch (error) {
-      console.error("Generate learning material error:", error);
+      console.error(
+        "[MobileAIService.generateLearningMaterial] 生成学习资料失败:",
+        error,
+      );
       throw new Error(
         `生成学习资料失败: ${error instanceof Error ? error.message : "未知错误"}`,
       );
@@ -413,7 +724,7 @@ Please respond in Chinese.`;
   ): Promise<{ suggestions: Array<{ title: string; content: string }> }> => {
     const client = createAIClient();
     if (!client) {
-      throw new Error("AI 服务未配置，请检查环境变量或手动配置 API Key");
+      throw new Error("AI 服务未配置，请先在设置中配置 API Key");
     }
 
     const existingNodesContext =
@@ -454,9 +765,18 @@ Please respond in Chinese.`;
     ];
 
     try {
+      console.log("[MobileAIService.expandKnowledge] 开始扩展知识节点", {
+        nodeTitle,
+        contextLevel,
+      });
+
       const result = await client.chatWithJson<{
         suggestions: Array<{ title: string; content: string }>;
       }>(messages);
+
+      console.log("[MobileAIService.expandKnowledge] 知识节点扩展成功", {
+        suggestionCount: result.suggestions?.length || 0,
+      });
 
       return {
         suggestions: Array.isArray(result.suggestions)
@@ -467,7 +787,10 @@ Please respond in Chinese.`;
           : [],
       };
     } catch (error) {
-      console.error("Expand knowledge error:", error);
+      console.error(
+        "[MobileAIService.expandKnowledge] 扩展知识节点失败:",
+        error,
+      );
       throw new Error(
         `扩展知识节点失败: ${error instanceof Error ? error.message : "未知错误"}`,
       );

@@ -48,6 +48,9 @@ import {
   isAuthError,
   isValidationError,
 } from "../utils/errors";
+import { isCapacitorMobile } from "../config/mobileApiConfig";
+import { mobileAIService, AICardGenError } from "../services/mobile/aiService";
+import { getMobileSupabaseClient } from "../services/mobile/client";
 import { GraphOutline } from "../components/GraphEditor/panels/GraphOutline";
 import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
@@ -103,6 +106,13 @@ export const LearningMode = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { fontSize, readingMode } = useLearningSettingsStore();
   const queryClient = useQueryClient();
+
+  const [generateProgress, setGenerateProgress] = useState<{
+    current: number;
+    total: number;
+    isGenerating: boolean;
+  } | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { enterFocusMode, exitFocusMode } = useFocusStore();
 
@@ -557,6 +567,268 @@ export const LearningMode = () => {
       return;
     }
 
+    const isMobile = isCapacitorMobile();
+
+    if (isMobile) {
+      if (!mobileAIService.isConfigured()) {
+        addMessage({
+          type: "error",
+          content: "请先在设置中配置 AI API Key",
+          action: {
+            label: "前往设置",
+            onClick: () => navigate("/settings?tab=ai"),
+          },
+        });
+        return;
+      }
+
+      setIsGeneratingCards(true);
+      abortControllerRef.current = new AbortController();
+      const { signal } = abortControllerRef.current;
+
+      try {
+        const client = getMobileSupabaseClient();
+        if (!client) {
+          throw new Error("Supabase client not initialized");
+        }
+
+        const { data: graphNodes, error: gnError } = await client
+          .from("graph_nodes")
+          .select(`
+            knowledge_point_id,
+            graph_id,
+            knowledge_points (
+              id,
+              title,
+              content
+            )
+          `)
+          .eq("knowledge_point_id", nodeId)
+          .is("deleted_at", null);
+
+        if (gnError) {
+          console.error("查询 graph_nodes 失败:", gnError);
+          addMessage({ type: "error", content: "查询知识点数据失败" });
+          return;
+        }
+
+        if (!graphNodes || graphNodes.length === 0) {
+          addMessage({ type: "error", content: "未找到知识点数据" });
+          return;
+        }
+
+        const graphNode = graphNodes[0] as {
+          knowledge_point_id: string;
+          graph_id: string;
+          knowledge_points?: {
+            id: string;
+            title?: string | null;
+            content?: string | null;
+          } | null;
+        };
+
+        const node = {
+          knowledge_point_id: graphNode.knowledge_point_id,
+          graph_id: graphNode.graph_id,
+          title: graphNode.knowledge_points?.title || "",
+          content: graphNode.knowledge_points?.content || "",
+        };
+
+        const totalCards = config.count;
+        setGenerateProgress({ current: 0, total: totalCards, isGenerating: true });
+
+        let generatedCount = 0;
+        let savedCount = 0;
+        const batchSize = 3;
+        const batches = Math.ceil(totalCards / batchSize);
+
+        for (let i = 0; i < batches; i++) {
+          if (signal.aborted) {
+            addMessage({
+              type: "info",
+              content: `已取消生成，已生成 ${savedCount} 道题目`,
+            });
+            break;
+          }
+
+          const remainingCards = totalCards - generatedCount;
+          const currentBatchSize = Math.min(batchSize, remainingCards);
+
+          setGenerateProgress({
+            current: generatedCount,
+            total: totalCards,
+            isGenerating: true,
+          });
+
+          addMessage({
+            type: "info",
+            content: `正在生成第 ${generatedCount + 1}-${generatedCount + currentBatchSize} 题（共 ${totalCards} 题）`,
+            duration: 3000,
+          });
+
+          try {
+            const result = await mobileAIService.generateAndSaveCards(
+              node.title || "",
+              node.content || "",
+              node.knowledge_point_id,
+              node.graph_id,
+              {
+                types: config.types,
+                count: currentBatchSize,
+              },
+            );
+
+            if (result.success) {
+              generatedCount += currentBatchSize;
+              savedCount += result.savedCount;
+              setGenerateProgress({
+                current: generatedCount,
+                total: totalCards,
+                isGenerating: true,
+              });
+            }
+          } catch (batchError) {
+            console.error(`Batch ${i + 1} failed:`, batchError);
+            addMessage({
+              type: "warning",
+              content: `第 ${i + 1} 批次生成失败，继续尝试...`,
+              duration: 3000,
+            });
+          }
+        }
+
+        if (!signal.aborted && savedCount > 0) {
+          addMessage({
+            type: "success",
+            content: `成功生成 ${savedCount} 道题目`,
+            duration: 5000,
+            action: {
+              label: "开始挑战",
+              onClick: handleStartChallenge,
+            },
+          });
+        }
+      } catch (error) {
+        console.error("[LearningMode] 移动端题目生成异常:", error);
+        
+        const isAICardGenError = (err: unknown): err is AICardGenError => {
+          return typeof err === "object" && err !== null && "type" in err && "suggestion" in err;
+        };
+
+        if (isAICardGenError(error)) {
+          switch (error.type) {
+            case "api_key_missing":
+            case "api_key_invalid":
+              addMessage({
+                type: "error",
+                content: error.message,
+                duration: 8000,
+                action: {
+                  label: "前往设置",
+                  onClick: () => navigate("/settings?tab=ai"),
+                },
+              });
+              break;
+
+            case "quota_exceeded":
+              addMessage({
+                type: "error",
+                content: error.message,
+                duration: 8000,
+              });
+              addMessage({
+                type: "info",
+                content: error.suggestion,
+                duration: 8000,
+              });
+              break;
+
+            case "rate_limited":
+              addMessage({
+                type: "warning",
+                content: error.message,
+                duration: 5000,
+                action: {
+                  label: "稍后重试",
+                  onClick: () => setIsGenModalOpen(true),
+                },
+              });
+              break;
+
+            case "network_error":
+            case "timeout":
+              addMessage({
+                type: "error",
+                content: error.message,
+                duration: 5000,
+                action: {
+                  label: "重试",
+                  onClick: () => handleManualGenerateCards(config),
+                },
+              });
+              break;
+
+            case "database_error":
+              addMessage({
+                type: "error",
+                content: error.message,
+                duration: 8000,
+              });
+              addMessage({
+                type: "info",
+                content: error.suggestion,
+                duration: 8000,
+                action: error.retryable
+                  ? {
+                      label: "重试",
+                      onClick: () => handleManualGenerateCards(config),
+                    }
+                  : undefined,
+              });
+              break;
+
+            case "invalid_response":
+              addMessage({
+                type: "warning",
+                content: error.message,
+                duration: 5000,
+                action: {
+                  label: "重试",
+                  onClick: () => handleManualGenerateCards(config),
+                },
+              });
+              break;
+
+            default:
+              addMessage({
+                type: "error",
+                content: error.message,
+                duration: 5000,
+              });
+          }
+        } else {
+          let errorMessage = "题目生成失败";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          addMessage({
+            type: "error",
+            content: errorMessage,
+            duration: 5000,
+            action: {
+              label: "重试",
+              onClick: () => handleManualGenerateCards(config),
+            },
+          });
+        }
+      } finally {
+        setIsGeneratingCards(false);
+        setGenerateProgress(null);
+        abortControllerRef.current = null;
+      }
+      return;
+    }
+
     setIsGeneratingCards(true);
     try {
       console.log("[LearningMode] 开始生成题目:", {
@@ -611,6 +883,13 @@ export const LearningMode = () => {
       addMessage({ type: "error", content: errorMessage });
     } finally {
       setIsGeneratingCards(false);
+    }
+  };
+
+  const handleCancelGenerate = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      addMessage({ type: "info", content: "正在取消题目生成..." });
     }
   };
 
@@ -921,9 +1200,9 @@ export const LearningMode = () => {
             <div className="group relative">
               <button
                 onClick={() => isOnline && setIsGenModalOpen(true)}
-                disabled={!isOnline}
+                disabled={!isOnline || generateProgress?.isGenerating}
                 className={`flex items-center ${isMobile ? "px-2 py-1.5" : "space-x-2 px-3 lg:px-4 py-2"} rounded-full font-medium transition-all ${
-                  !isOnline
+                  !isOnline || generateProgress?.isGenerating
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200 dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700"
                     : isDark
                       ? "bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30"
@@ -944,7 +1223,20 @@ export const LearningMode = () => {
 
           {nodeId && (
             <div className="flex flex-col items-end">
-              {isGeneratingCards && !isMobile && (
+              {generateProgress?.isGenerating && (
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
+                    <Sparkles size={10} /> 正在生成第 {generateProgress.current}/{generateProgress.total} 题
+                  </span>
+                  <button
+                    onClick={handleCancelGenerate}
+                    className="text-[10px] px-2 py-0.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                  >
+                    取消
+                  </button>
+                </div>
+              )}
+              {isGeneratingCards && !generateProgress?.isGenerating && !isMobile && (
                 <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
                   <Sparkles size={10} /> 正在生成挑战题...
                 </span>
@@ -1491,6 +1783,7 @@ export const LearningMode = () => {
         onClose={() => setIsGenModalOpen(false)}
         onGenerate={handleManualGenerateCards}
         nodeTitle={nodeTitle}
+        generateProgress={generateProgress}
       />
 
       {/* Create Node Modal */}

@@ -5,6 +5,7 @@ import { getAIConfig, injectAIConfig } from "../api/client";
 import type { AIAction } from "@shared/types";
 import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
+import { getMobileSupabaseClient } from "./client";
 
 const getCloudApiBaseUrl = (): string => {
   return import.meta.env.VITE_API_URL || "";
@@ -151,7 +152,16 @@ export const mobileAiApi = {
     provider?: string;
     model?: string;
   }) => {
-    if (isCapacitorMobile() && mobileAIService.isConfigured()) {
+    const isMobile = isCapacitorMobile();
+    const isConfigured = mobileAIService.isConfigured();
+
+    console.log("[Mobile API] generateLearningMaterial 调用", {
+      isMobile,
+      isConfigured,
+      topic: data.topic,
+    });
+
+    if (isMobile && isConfigured) {
       console.log("[Mobile API] 使用本地 AI 服务生成学习资料");
       try {
         const result = await mobileAIService.generateLearningMaterial(
@@ -159,13 +169,21 @@ export const mobileAiApi = {
           data.context || "",
           { level: data.level },
         );
+        console.log("[Mobile API] generateLearningMaterial 成功", {
+          contentLength: result.content?.length || 0,
+          keywordCount: result.keywords?.length || 0,
+        });
         return result;
       } catch (error) {
-        console.error("[Mobile API] generateLearningMaterial 失败:", error);
+        console.error("[Mobile API] generateLearningMaterial 本地服务失败:", {
+          error: error instanceof Error ? error.message : String(error),
+          topic: data.topic,
+        });
         throw error;
       }
     }
 
+    console.log("[Mobile API] 使用云端 API 生成学习资料");
     const payload = injectAIConfig(data, "text");
     return mobileAiClient.post("/ai/learning-material", payload);
   },
@@ -181,7 +199,16 @@ export const mobileAiApi = {
     provider?: string;
     model?: string;
   }) => {
-    if (isCapacitorMobile() && mobileAIService.isConfigured()) {
+    const isMobile = isCapacitorMobile();
+    const isConfigured = mobileAIService.isConfigured();
+
+    console.log("[Mobile API] expand 调用", {
+      isMobile,
+      isConfigured,
+      node_title: data.node_title,
+    });
+
+    if (isMobile && isConfigured) {
       console.log("[Mobile API] 使用本地 AI 服务扩展知识节点");
       try {
         const result = await mobileAIService.expandKnowledge(
@@ -194,9 +221,15 @@ export const mobileAiApi = {
             expandPrompt: data.expand_prompt,
           },
         );
+        console.log("[Mobile API] expand 成功", {
+          suggestionCount: result.suggestions?.length || 0,
+        });
         return result;
       } catch (error) {
-        console.error("[Mobile API] expand 失败:", error);
+        console.error("[Mobile API] expand 本地服务失败:", {
+          error: error instanceof Error ? error.message : String(error),
+          node_title: data.node_title,
+        });
         throw error;
       }
     }
@@ -240,9 +273,20 @@ export const mobileAiApi = {
       model?: string;
     },
   ) => {
-    if (isCapacitorMobile() && mobileAIService.isConfigured()) {
-      console.log("[Mobile API] 使用本地 AI 服务生成题目");
-      const { getMobileSupabaseClient } = await import("./client");
+    const isMobile = isCapacitorMobile();
+
+    console.log("[Mobile API] batchGenerateCards 调用", {
+      isMobile,
+      nodeCount: node_ids.length,
+    });
+
+    if (isMobile) {
+      console.log("[Mobile API] 移动端使用本地 AI 服务生成题目");
+      
+      if (!mobileAIService.isConfigured()) {
+        throw new Error("请先在设置中配置 AI API Key");
+      }
+
       const client = getMobileSupabaseClient();
       if (!client) {
         throw new Error("Supabase client not initialized");
@@ -250,7 +294,15 @@ export const mobileAiApi = {
 
       const { data: graphNodes } = await client
         .from("graph_nodes")
-        .select("knowledge_point_id, title, content, graph_id")
+        .select(`
+          knowledge_point_id,
+          graph_id,
+          knowledge_points (
+            id,
+            title,
+            content
+          )
+        `)
         .in("knowledge_point_id", node_ids)
         .is("deleted_at", null);
 
@@ -262,14 +314,17 @@ export const mobileAiApi = {
 
       for (const gn of graphNodes as Array<{
         knowledge_point_id: string;
-        title?: string | null;
-        content?: string | null;
         graph_id: string;
+        knowledge_points?: {
+          id: string;
+          title?: string | null;
+          content?: string | null;
+        } | null;
       }>) {
         try {
           const result = await mobileAIService.generateAndSaveCards(
-            gn.title || "",
-            gn.content || "",
+            gn.knowledge_points?.title || "",
+            gn.knowledge_points?.content || "",
             gn.knowledge_point_id,
             gn.graph_id,
             {
@@ -296,6 +351,10 @@ export const mobileAiApi = {
       }
 
       const successCount = results.filter((r) => r.success).length;
+      console.log("[Mobile API] batchGenerateCards 完成", {
+        totalNodes: results.length,
+        successCount,
+      });
       return {
         success: true,
         taskIds: results.map((r) => r.nodeId),

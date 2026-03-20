@@ -1223,6 +1223,21 @@ export const GraphMap = () => {
             content: `已提交 ${result.summary.pending} 个图谱的初始化任务，请在任务列表中查看进度`,
           });
         }}
+        onLoadSourceGraphs={async () => {
+          const result = await api.graphs.getMap();
+          return { graphs: result.graphs };
+        }}
+        onLoadDomains={async () => {
+          const result = await api.graphs.getDomains();
+          return { domains: result.domains };
+        }}
+        onExpandDomain={async (graphIds: string[], count: number, domain?: string) => {
+          const result = await api.graphs.expandDomain(graphIds, count, domain);
+          return {
+            recommendations: result.recommendations,
+            relations: result.relations,
+          };
+        }}
       />
 
       <NodeSelectorModal

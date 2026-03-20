@@ -38,8 +38,11 @@ const analyzeDomainSchema = z.object({
 });
 
 const expandDomainSchema = z.object({
-  graph_ids: z.array(z.string().uuid()).min(1).max(5),
+  graph_ids: z.array(z.string().uuid()).max(5).optional(),
+  domain: z.string().min(1).max(200).optional(),
   count: z.number().min(5).max(30).default(10),
+}).refine(data => (data.graph_ids && data.graph_ids.length > 0) || data.domain, {
+  message: "必须提供 graph_ids 或 domain 中的至少一个",
 });
 
 const batchCreateDomainGraphsSchema = z.object({
@@ -171,6 +174,32 @@ router.get("/tags", requireAuth, async (req: AuthRequest, res: Response) => {
     .sort((a, b) => b.count - a.count);
 
   res.json({ tags });
+});
+
+// Get all domains from user's graphs
+router.get("/domains", requireAuth, async (req: AuthRequest, res: Response) => {
+  const supabase = req.supabase!;
+  const userId = req.user.id;
+
+  const { data: graphs } = await supabase
+    .from("knowledge_graphs")
+    .select("domain")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .not("domain", "is", null);
+
+  const domainMap = new Map<string, number>();
+  (graphs || []).forEach((g) => {
+    if (g.domain) {
+      domainMap.set(g.domain, (domainMap.get(g.domain) || 0) + 1);
+    }
+  });
+
+  const domains = Array.from(domainMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  res.json({ domains });
 });
 
 router.get(
@@ -764,10 +793,16 @@ router.post(
       const validTitles = new Set(
         recommendations.map((r) => r.title.toLowerCase()),
       );
+      const existingTitlesSet = new Set(existingTitles);
+      
       graphRelations = graphRelations.filter(
-        (rel) =>
-          validTitles.has(rel.from_title.toLowerCase()) &&
-          validTitles.has(rel.to_title.toLowerCase()),
+        (rel) => {
+          const fromLower = rel.from_title.toLowerCase();
+          const toLower = rel.to_title.toLowerCase();
+          const fromIsValid = validTitles.has(fromLower) || existingTitlesSet.has(fromLower);
+          const toIsValid = validTitles.has(toLower) || existingTitlesSet.has(toLower);
+          return fromIsValid && toIsValid;
+        },
       );
 
       const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -795,20 +830,51 @@ router.post(
   requireAuth,
   validate({ body: expandDomainSchema }),
   async (req: AuthRequest, res: Response) => {
-    const { graph_ids, count = 10 } = req.body;
+    const { graph_ids, domain, count = 10 } = req.body;
     const userId = req.user.id;
     const supabase = req.supabase!;
 
     try {
-      const { data: sourceGraphs } = await supabase
-        .from("knowledge_graphs")
-        .select("id, title, description, domain")
-        .eq("user_id", userId)
-        .in("id", graph_ids)
-        .is("deleted_at", null);
+      let sourceGraphs: Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        domain: string | null;
+      }> = [];
 
-      if (!sourceGraphs || sourceGraphs.length === 0) {
-        throw new AppError("未找到选中的图谱", 404, ErrorCodes.NOT_FOUND);
+      if (graph_ids && graph_ids.length > 0) {
+        const { data: graphsById } = await supabase
+          .from("knowledge_graphs")
+          .select("id, title, description, domain")
+          .eq("user_id", userId)
+          .in("id", graph_ids)
+          .is("deleted_at", null);
+        
+        if (graphsById) {
+          sourceGraphs.push(...graphsById);
+        }
+      }
+
+      if (domain && domain.trim()) {
+        const { data: graphsByDomain } = await supabase
+          .from("knowledge_graphs")
+          .select("id, title, description, domain")
+          .eq("user_id", userId)
+          .ilike("domain", `%${domain.trim()}%`)
+          .is("deleted_at", null);
+        
+        if (graphsByDomain) {
+          const existingIds = new Set(sourceGraphs.map(g => g.id));
+          for (const g of graphsByDomain) {
+            if (!existingIds.has(g.id)) {
+              sourceGraphs.push(g);
+            }
+          }
+        }
+      }
+
+      if (sourceGraphs.length === 0) {
+        throw new AppError("未找到选中的图谱或领域", 404, ErrorCodes.NOT_FOUND);
       }
 
       const { data: existingGraphs } = await supabase
@@ -822,21 +888,27 @@ router.post(
       );
 
       const sourceGraphsInfo = sourceGraphs.map(g => ({
+        id: g.id,
         title: g.title,
         description: g.description || "",
         domain: g.domain || ""
       }));
 
+      const domainInfo = domain && domain.trim() 
+        ? `\n\n用户希望扩展的方向/领域：${domain.trim()}` 
+        : '';
+
       const prompt = `你是知识图谱专家。用户已经有以下知识图谱：
-${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.description}` : ''}`).join('\n')}
+${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.description}` : ''}${g.domain ? ` [领域: ${g.domain}]` : ''}`).join('\n')}${domainInfo}
 
 请基于这些现有图谱，推荐 ${count} 个相关的新知识图谱，并分析它们之间的学习依赖关系。
 
 要求：
 1. 推荐与现有图谱相关的主题，帮助用户扩展知识体系
-2. 分析主题之间的学习依赖关系（如：学A之前需要先学B）
-3. 优先级：high(核心扩展)/medium(重要扩展)/low(可选扩展)
-4. 简述不超过60字
+2. 分析推荐图谱之间的学习依赖关系（如：学A之前需要先学B）
+3. **重要**：分析推荐图谱与现有图谱之间的关系（如：推荐图谱X是现有图谱Y的前置知识/扩展知识）
+4. 优先级：high(核心扩展)/medium(重要扩展)/low(可选扩展)
+5. 简述不超过60字
 
 返回JSON格式：
 {
@@ -852,6 +924,11 @@ ${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.
 - prerequisite: from 是 to 的前置知识（学to之前需要先学from）
 - extension: from 是 to 的扩展知识（学完to后可以学习from）
 - related: from 和 to 相关但无直接依赖
+
+**重要提示**：
+- relations 中可以包含推荐图谱之间的关系
+- 也可以包含推荐图谱与现有图谱之间的关系（from 或 to 可以是现有图谱的名称）
+- 请尽可能多地建立推荐图谱与现有图谱之间的连接
 
 已有图谱（不要重复推荐）：${existingTitles.length > 0 ? existingTitles.join("、") : "无"}`;
 
@@ -934,10 +1011,16 @@ ${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.
       const validTitles = new Set(
         recommendations.map((r) => r.title.toLowerCase()),
       );
+      const existingTitlesSet = new Set(existingTitles);
+      
       graphRelations = graphRelations.filter(
-        (rel) =>
-          validTitles.has(rel.from_title.toLowerCase()) &&
-          validTitles.has(rel.to_title.toLowerCase()),
+        (rel) => {
+          const fromLower = rel.from_title.toLowerCase();
+          const toLower = rel.to_title.toLowerCase();
+          const fromIsValid = validTitles.has(fromLower) || existingTitlesSet.has(fromLower);
+          const toIsValid = validTitles.has(toLower) || existingTitlesSet.has(toLower);
+          return fromIsValid && toIsValid;
+        },
       );
 
       const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -978,6 +1061,19 @@ router.post(
       }> = [];
 
       const titleToIdMap = new Map<string, string>();
+
+      // 先查询所有现有图谱，建立标题到 ID 的映射
+      const { data: allExistingGraphs } = await supabase
+        .from("knowledge_graphs")
+        .select("id, title")
+        .eq("user_id", userId)
+        .is("deleted_at", null);
+
+      if (allExistingGraphs) {
+        for (const g of allExistingGraphs) {
+          titleToIdMap.set(g.title.toLowerCase(), g.id);
+        }
+      }
 
       for (const graphData of graphs) {
         const duplicateCheck = await checkDuplicateGraphTopic(

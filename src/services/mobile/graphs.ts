@@ -389,6 +389,44 @@ export const mobileGraphsApi = {
     return Array.from(allTags);
   },
 
+  getDomains: async () => {
+    const client = getMobileSupabaseClient();
+    if (!client) {
+      throw new Error("Supabase client not initialized");
+    }
+
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    if (!user) {
+      return [];
+    }
+
+    const { data, error } = await client
+      .from("knowledge_graphs")
+      .select("domain")
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .not("domain", "is", null);
+
+    if (error) {
+      console.error("getDomains error:", error);
+      return [];
+    }
+
+    const domainMap = new Map<string, number>();
+    (data || []).forEach((g: any) => {
+      if (g.domain) {
+        domainMap.set(g.domain, (domainMap.get(g.domain) || 0) + 1);
+      }
+    });
+
+    return Array.from(domainMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  },
+
   checkTopic: async (_topic: string, _excludeGraphId?: string) => {
     return {
       is_duplicate: false,

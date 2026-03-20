@@ -16,7 +16,7 @@ function loadEnvVariables() {
     if (isPackaged) {
       envPath = path.join(process.resourcesPath, ".env.production");
     } else {
-      envPath = path.join(__dirname, "..", ".env.production");
+      envPath = path.join(__dirname, "..", "..", ".env.production");
     }
     console.log("[Main] 尝试加载环境变量文件:", envPath);
     dotenv.config({ path: envPath });

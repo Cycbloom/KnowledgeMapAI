@@ -41,11 +41,11 @@ CREATE INDEX IF NOT EXISTS idx_tasks_user_status ON tasks(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_learning_paths_user_id ON learning_paths(user_id);
 CREATE INDEX IF NOT EXISTS idx_learning_paths_created_at ON learning_paths(created_at DESC);
 
--- Scheduler tasks table indexes
-CREATE INDEX IF NOT EXISTS idx_scheduler_tasks_user_id ON scheduler_tasks(user_id);
-CREATE INDEX IF NOT EXISTS idx_scheduler_tasks_status ON scheduler_tasks(status);
-CREATE INDEX IF NOT EXISTS idx_scheduler_tasks_due_date ON scheduler_tasks(due_date);
-CREATE INDEX IF NOT EXISTS idx_scheduler_tasks_user_status ON scheduler_tasks(user_id, status);
+-- Scheduler tasks table indexes (using periodic_tasks table)
+CREATE INDEX IF NOT EXISTS idx_periodic_tasks_user_id ON periodic_tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_periodic_tasks_status ON periodic_tasks(status);
+CREATE INDEX IF NOT EXISTS idx_periodic_tasks_period_start ON periodic_tasks(period_start);
+CREATE INDEX IF NOT EXISTS idx_periodic_tasks_user_status ON periodic_tasks(user_id, status);
 
 -- Comments
 COMMENT ON INDEX idx_knowledge_graphs_user_id IS 'Index for filtering graphs by user';

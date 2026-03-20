@@ -82,12 +82,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
               const levelOrder: any = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
               return (levelOrder[a.level || 'leaf'] || 4) - (levelOrder[b.level || 'leaf'] || 4);
           }
-          // Default: Level then Title (as per original logic)
+          // Default: Level then Creation Time (to preserve learning order)
           const levelOrder: any = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
           const la = levelOrder[a.level || 'leaf'] ?? 4;
           const lb = levelOrder[b.level || 'leaf'] ?? 4;
           if (la !== lb) return la - lb;
-          return safeTitleA.localeCompare(safeTitleB);
+          const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return timeA - timeB;
        });
     }
     
@@ -176,14 +178,16 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       }
     });
 
-    // Sort children
+    // Sort children by creation time to preserve learning order
     cMap.forEach(list => {
       list.sort((a, b) => {
         const levelOrder: Record<string, number> = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
         const la = levelOrder[a.level || 'leaf'] ?? 4;
         const lb = levelOrder[b.level || 'leaf'] ?? 4;
         if (la !== lb) return la - lb;
-        return (a.title || '').localeCompare(b.title || '');
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeA - timeB;
       });
     });
 
@@ -196,13 +200,15 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
       if (roots.length === 0 && nodes[0]) roots = [nodes[0]];
     }
 
-    // Sort roots
+    // Sort roots by creation time to preserve learning order
     roots.sort((a, b) => {
       const levelOrder: Record<string, number> = { 'root': 0, 'core': 1, 'sub': 2, 'normal': 3, 'leaf': 4 };
       const la = levelOrder[a.level || 'leaf'] ?? 4;
       const lb = levelOrder[b.level || 'leaf'] ?? 4;
       if (la !== lb) return la - lb;
-      return (a.title || '').localeCompare(b.title || '');
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeA - timeB;
     });
 
     return { rootNodes: roots, childrenMap: cMap, parentMap: pMap };

@@ -1,4 +1,5 @@
 import { Router, type Response } from 'express';
+import { z } from 'zod';
 import { requireAuth, type AuthRequest } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { 
@@ -14,6 +15,7 @@ import { aiService } from '../../services/ai/aiService.js';
 import { taskService } from '../../services/taskService.js';
 import { graphNodeService } from '../../services/graph/index.js';
 import { logger } from '../../utils/logger.js';
+import { supabaseAdmin } from '../../supabase.js';
 
 const router = Router();
 
@@ -34,6 +36,127 @@ router.post('/generate-cards', requireAuth, validate(generateCardsSchema), async
     const err = error as Error;
     logger.error('AI Error:', error);
     throw new AppError(err.message || 'AI card generation failed', 500, ErrorCodes.INTERNAL_ERROR);
+  }
+});
+
+const syncGenerateCardsSchema = z.object({
+  node_ids: z.array(z.string().uuid()).min(1),
+  config: z.object({
+    types: z.array(z.string()).optional(),
+    count: z.number().min(1).max(20).optional(),
+  }).optional(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+});
+
+router.post('/sync-generate-cards', requireAuth, validate(syncGenerateCardsSchema), async (req: AuthRequest, res: Response) => {
+  const { node_ids, config, provider, model } = req.body;
+
+  try {
+    const results: { nodeId: string; success: boolean; count: number; error?: string }[] = [];
+    
+    const graphNodes = await graphNodeService.getGraphNodesByKnowledgePoints(supabaseAdmin, node_ids);
+
+    if (!graphNodes || graphNodes.length === 0) {
+      res.json({ success: true, results: [], message: 'No nodes found' });
+      return;
+    }
+
+    const types = config?.types || ['qa', 'choice'];
+    const count = config?.count || 3;
+
+    for (const gn of graphNodes) {
+      try {
+        const aiResult = await aiService.generateCards(
+          gn.title || '',
+          gn.content || '',
+          {
+            types,
+            count,
+            provider,
+            model,
+            userId: req.user.id,
+            graphId: gn.graph_id,
+          }
+        );
+
+        const cards = aiResult.cards || [];
+        
+        if (cards.length > 0) {
+          const cardsToInsert = cards.map((card: any) => ({
+            user_id: req.user.id,
+            knowledge_point_id: gn.knowledge_point_id,
+            graph_id: gn.graph_id,
+            question: card.question,
+            answer: card.answer,
+            explanation: card.explanation || null,
+            card_type: card.type || 'qa',
+            options: card.options ? JSON.stringify(card.options) : null,
+            next_review: new Date().toISOString(),
+            difficulty: 1,
+            fsrs_state: 0,
+            fsrs_stability: 0,
+            fsrs_difficulty: 0,
+            fsrs_elapsed_days: 0,
+            fsrs_scheduled_days: 0,
+            fsrs_retrievability: 0,
+          }));
+
+          const { error: insertError } = await supabaseAdmin
+            .from('study_cards')
+            .insert(cardsToInsert);
+
+          if (insertError) {
+            logger.error(`Failed to insert cards for node ${gn.knowledge_point_id}:`, insertError);
+            results.push({
+              nodeId: gn.knowledge_point_id,
+              success: false,
+              count: 0,
+              error: insertError.message,
+            });
+          } else {
+            results.push({
+              nodeId: gn.knowledge_point_id,
+              success: true,
+              count: cards.length,
+            });
+          }
+        } else {
+          results.push({
+            nodeId: gn.knowledge_point_id,
+            success: true,
+            count: 0,
+          });
+        }
+      } catch (err: any) {
+        logger.error(`Failed to generate cards for node ${gn.knowledge_point_id}:`, err);
+        results.push({
+          nodeId: gn.knowledge_point_id,
+          success: false,
+          count: 0,
+          error: err.message || 'Unknown error',
+        });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const totalCards = results.reduce((sum, r) => sum + r.count, 0);
+
+    res.json({
+      success: true,
+      results,
+      summary: {
+        total: results.length,
+        successCount,
+        totalCards,
+      },
+      message: `Successfully generated ${totalCards} cards for ${successCount}/${results.length} nodes`,
+    });
+
+  } catch (error: unknown) {
+    const err = error as Error;
+    logger.error('Sync Generation Error:', error);
+    throw new AppError(err.message || 'Sync generation failed', 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

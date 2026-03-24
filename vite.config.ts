@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
@@ -92,6 +92,9 @@ function getBasePath(): string {
 
 export default defineConfig({
   base: "./",
+  esbuild: {
+    legalComments: "none",
+  },
   plugins: [
     react(),
     tsconfigPaths(),
@@ -227,80 +230,6 @@ export default defineConfig({
                   },
                 },
                 {
-                  urlPattern: /\/api\/graphs\/[^/]+$/i,
-                  handler: "NetworkFirst",
-                  options: {
-                    cacheName: "graph-data-cache",
-                    expiration: {
-                      maxEntries: 50,
-                      maxAgeSeconds: 60 * 60 * 24,
-                    },
-                    cacheableResponse: {
-                      statuses: [0, 200],
-                    },
-                    networkTimeoutSeconds: 10,
-                  },
-                },
-                {
-                  urlPattern: /\/api\/graphs\/[^/]+\/nodes/i,
-                  handler: "NetworkFirst",
-                  options: {
-                    cacheName: "graph-nodes-cache",
-                    expiration: {
-                      maxEntries: 100,
-                      maxAgeSeconds: 60 * 60,
-                    },
-                    cacheableResponse: {
-                      statuses: [0, 200],
-                    },
-                    networkTimeoutSeconds: 10,
-                  },
-                },
-                {
-                  urlPattern: /\/api\/templates/i,
-                  handler: "CacheFirst",
-                  options: {
-                    cacheName: "templates-cache",
-                    expiration: {
-                      maxEntries: 30,
-                      maxAgeSeconds: 60 * 60 * 24 * 7,
-                    },
-                    cacheableResponse: {
-                      statuses: [0, 200],
-                    },
-                  },
-                },
-                {
-                  urlPattern: /\/api\/auth\/user/i,
-                  handler: "NetworkFirst",
-                  options: {
-                    cacheName: "user-cache",
-                    expiration: {
-                      maxEntries: 1,
-                      maxAgeSeconds: 60 * 60,
-                    },
-                    cacheableResponse: {
-                      statuses: [0, 200],
-                    },
-                    networkTimeoutSeconds: 5,
-                  },
-                },
-                {
-                  urlPattern: /\/api\/.*/i,
-                  handler: "NetworkFirst",
-                  options: {
-                    cacheName: "api-cache",
-                    expiration: {
-                      maxEntries: 100,
-                      maxAgeSeconds: 60 * 10,
-                    },
-                    cacheableResponse: {
-                      statuses: [0, 200],
-                    },
-                    networkTimeoutSeconds: 5,
-                  },
-                },
-                {
                   urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/i,
                   handler: "CacheFirst",
                   options: {
@@ -337,9 +266,6 @@ export default defineConfig({
     },
     target: "es2020",
     minify: "esbuild",
-    esbuild: {
-      legalComments: "none",
-    },
     sourcemap: false,
     cssCodeSplit: true,
     reportCompressedSize: true,

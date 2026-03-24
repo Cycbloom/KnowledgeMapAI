@@ -120,6 +120,21 @@ class TaskProcessor {
     // Concurrency control
     const CONCURRENCY = 3;
     let completedTasks = 0;
+    let lastProgressUpdateAt = 0;
+
+    const maybeUpdateProgress = async (typeLabel: string) => {
+      const now = Date.now();
+      // Throttle DB writes: at most once per second, plus always at 100%
+      const progress = Math.round((completedTasks / tasksToRun.length) * 100);
+      if (progress < 100 && now - lastProgressUpdateAt < 1000) {
+        return;
+      }
+      lastProgressUpdateAt = now;
+      await taskService.updateTaskStatus(supabaseAdmin, task.id, "processing", {
+        progress,
+        current_node: `正在生成 ${typeLabel}...`,
+      });
+    };
 
     // Helper function to process a single type
     const processType = async ({
@@ -185,17 +200,7 @@ class TaskProcessor {
         errors.push(`Failed to generate ${type}: ${err.message}`);
       } finally {
         completedTasks++;
-        // Update Progress
-        const progress = Math.round((completedTasks / tasksToRun.length) * 100);
-        await taskService.updateTaskStatus(
-          supabaseAdmin,
-          task.id,
-          "processing",
-          {
-            progress,
-            current_node: `正在生成 ${this.getTypeName(type)}...`,
-          },
-        );
+        await maybeUpdateProgress(this.getTypeName(type));
       }
     };
 
@@ -204,6 +209,12 @@ class TaskProcessor {
       const chunk = tasksToRun.slice(i, i + CONCURRENCY);
       await Promise.all(chunk.map((t) => processType(t)));
     }
+
+    // Ensure we end at 100% even if throttled
+    await taskService.updateTaskStatus(supabaseAdmin, task.id, "processing", {
+      progress: 100,
+      current_node: "生成完成，正在收尾...",
+    });
 
     if (totalCount === 0 && errors.length > 0) {
       throw new Error(`Failed to generate cards: ${errors.join("; ")}`);

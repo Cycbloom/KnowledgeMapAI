@@ -34,6 +34,26 @@ const sanitizePath = (path: string): string => {
     .replace(/\/\d+/g, '/:id');
 };
 
+const scanKeys = async (pattern: string, maxKeys: number = 5000): Promise<string[]> => {
+  if (!redisClient) return [];
+
+  const keys: string[] = [];
+  let cursor = '0';
+
+  do {
+    const result = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
+    cursor = result[0];
+    const batch = result[1] ?? [];
+    keys.push(...batch);
+  } while (cursor !== '0' && keys.length < maxKeys);
+
+  if (keys.length > maxKeys) {
+    return keys.slice(0, maxKeys);
+  }
+
+  return keys;
+};
+
 const flushLogs = async () => {
   if (LOG_BUFFER.length === 0) return;
 
@@ -123,7 +143,7 @@ export const getRequestStats = async (minutes: number = 60): Promise<{
 
   if (redisClient) {
     try {
-      const keys = await redisClient.keys('logs:*');
+      const keys = await scanKeys('logs:*', 20000);
       let totalDuration = 0;
       let errorCount = 0;
 

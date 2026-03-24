@@ -38,6 +38,26 @@ const stochasticTTL = (baseTTL: number): number => {
   return Math.floor(baseTTL + (Math.random() * variance * 2 - variance));
 };
 
+const scanKeys = async (pattern: string, maxKeys: number = 5000): Promise<string[]> => {
+  if (!redisClient) return [];
+
+  const keys: string[] = [];
+  let cursor = '0';
+
+  do {
+    const result = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
+    cursor = result[0];
+    const batch = result[1] ?? [];
+    keys.push(...batch);
+  } while (cursor !== '0' && keys.length < maxKeys);
+
+  if (keys.length > maxKeys) {
+    return keys.slice(0, maxKeys);
+  }
+
+  return keys;
+};
+
 export const cacheService = {
   get: async <T>(key: string): Promise<T | undefined> => {
     if (checkRedisAndLog()) {
@@ -82,7 +102,7 @@ export const cacheService = {
   delByPrefix: async (prefix: string): Promise<number> => {
     if (checkRedisAndLog()) {
       try {
-        const keys = await redisClient!.keys(`${prefix}*`);
+        const keys = await scanKeys(`${prefix}*`, 20000);
         if (keys.length > 0) {
           return await redisClient!.del(...keys);
         }

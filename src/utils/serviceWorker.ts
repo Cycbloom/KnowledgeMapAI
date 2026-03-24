@@ -73,15 +73,42 @@ export const updateServiceWorker = async (): Promise<void> => {
 };
 
 export const clearApiCache = async (): Promise<void> => {
+  // API 缓存策略已收敛为“默认不缓存 API”。这里做两件事：
+  // 1) 通知 SW 清理历史遗留的 api 缓存（如果存在）
+  // 2) 在页面侧尽力删除可能残留的 api cache storage
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({ type: 'clearCache' });
+  }
+
+  if ('caches' in window) {
+    try {
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((name) => name.includes('api') || name.includes('knowledge-map-api'))
+          .map((name) => caches.delete(name)),
+      );
+    } catch {
+      // ignore
+    }
   }
 };
 
 export const prefetchUrls = async (urls: string[]): Promise<void> => {
+  // 预热请求：只做网络预取，不做持久缓存（与 sw.js 的“API 不缓存”一致）
+  const uniqueUrls = Array.from(new Set(urls)).filter(Boolean);
+  if (uniqueUrls.length === 0) return;
+
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'prefetch', urls });
+    navigator.serviceWorker.controller.postMessage({ type: 'prefetch', urls: uniqueUrls });
+    return;
   }
+
+  await Promise.all(
+    uniqueUrls.map((url) =>
+      fetch(url, { credentials: 'include' }).catch(() => undefined),
+    ),
+  );
 };
 
 export const getServiceWorkerStatus = async (): Promise<{

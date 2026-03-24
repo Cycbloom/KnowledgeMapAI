@@ -5,7 +5,6 @@
 import express, {
   type Request,
   type Response,
-  type NextFunction,
 } from "express";
 import "express-async-errors";
 import cors from "cors";
@@ -181,15 +180,12 @@ app.use("/api", quizSetRoutes);
 /**
  * health
  */
-app.use(
-  "/api/health",
-  (_req: Request, res: Response, _next: NextFunction): void => {
-    res.status(200).json({
-      success: true,
-      message: "ok",
-    });
-  },
-);
+app.get("/api/health", (_req: Request, res: Response): void => {
+  res.status(200).json({
+    success: true,
+    message: "ok",
+  });
+});
 
 startAutoBackupScheduler();
 syncExistingBackups();

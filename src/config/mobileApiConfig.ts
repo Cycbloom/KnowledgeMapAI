@@ -66,5 +66,13 @@ export function getEnvironmentInfo() {
 }
 
 export function getMobileApiBaseUrl(): string {
-  return "";
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  return "/api";
+}
+
+export function shouldUseSupabaseDirect(): boolean {
+  return import.meta.env.VITE_MOBILE_USE_SUPABASE_DIRECT === "true";
 }

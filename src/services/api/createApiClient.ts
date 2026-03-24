@@ -11,6 +11,7 @@ import {
   isElectronProduction,
   getElectronApiUrl,
 } from "../../config/electronConfig";
+import { getMobileApiBaseUrl } from "../../config/mobileApiConfig";
 
 const isMobileClient = (): boolean => {
   return isCapacitorMobile();
@@ -28,8 +29,14 @@ export const getCookie = (name: string): string | null => {
 };
 
 export const createApiClient = (): AxiosInstance => {
+  let initialBaseURL = "/api";
+
+  if (isMobileClient()) {
+    initialBaseURL = getMobileApiBaseUrl();
+  }
+
   const client = axios.create({
-    baseURL: "/api",
+    baseURL: initialBaseURL,
     withCredentials: true,
   });
 

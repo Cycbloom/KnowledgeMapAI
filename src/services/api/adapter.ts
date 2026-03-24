@@ -1,4 +1,4 @@
-import { isCapacitorMobile } from "../../config/mobileApiConfig";
+import { isCapacitorMobile, shouldUseSupabaseDirect } from "../../config/mobileApiConfig";
 import { api as webApi } from "./index";
 import {
   mobileAuthApi,
@@ -38,14 +38,17 @@ const createNoopApi = (originalApi: any) => {
 
 let resolvedApi: ApiType | null = null;
 let lastIsMobile: boolean | null = null;
+let lastUseSupabaseDirect: boolean | null = null;
 
 function getResolvedApi(): ApiType {
   const isMobile = isCapacitorMobile();
+  const useSupabaseDirect = shouldUseSupabaseDirect();
 
-  if (resolvedApi === null || lastIsMobile !== isMobile) {
+  if (resolvedApi === null || lastIsMobile !== isMobile || lastUseSupabaseDirect !== useSupabaseDirect) {
     lastIsMobile = isMobile;
+    lastUseSupabaseDirect = useSupabaseDirect;
 
-    if (isMobile) {
+    if (isMobile && useSupabaseDirect) {
       resolvedApi = {
         ...webApi,
         auth: mobileAuthApi || webApi.auth,

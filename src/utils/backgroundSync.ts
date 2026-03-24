@@ -12,6 +12,7 @@ import {
 } from './offlineStorage';
 import { createLogger } from './logger';
 import { request } from '../services/api';
+import { useStore } from '../store/useStore';
 
 const logger = createLogger('BackgroundSync');
 
@@ -178,7 +179,7 @@ class BackgroundSyncManager {
     item: OfflineOperation
   ): Promise<{ success: boolean; conflict?: SyncConflict; error?: string }> {
     try {
-      const token = localStorage.getItem('token');
+      const token = useStore.getState().token;
       if (!token) {
         return { success: false, error: 'No authentication token' };
       }

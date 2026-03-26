@@ -3,24 +3,24 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
 
-import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
-import { validate } from "../../middleware/validate.js";
-import { textToGraphSchema, urlToTextSchema } from "../../schemas/index.js";
-import { ErrorCodes } from "../../../shared/types/errorCodes.js";
-import { AppError } from "../../middleware/errorHandler.js";
-import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers.js";
-import { cacheService, CacheKeys } from "../../services/common/cacheService.js";
-import { aiService } from "../../services/ai/aiService.js";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
+import { textToGraphSchema, urlToTextSchema } from "../../schemas/index";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { AppError } from "../../middleware/errorHandler";
+import { createKnowledgePointWithGraphNode } from "../../utils/nodeHelpers";
+import { cacheService, CacheKeys } from "../../services/common/cacheService";
+import { aiService } from "../../services/ai/aiService";
 import {
   getAIProviderForTask,
   getAIProvider,
-} from "../../services/ai/factory.js";
-import { edgeService } from "../../services/graph/index.js";
-import { logger } from "../../utils/logger.js";
-import { promptService } from "../../services/ai/promptService.js";
-import { supabaseAdmin } from "../../supabase.js";
-import { scrapeUrl } from "../../utils/scraper.js";
-import { upload } from "./utils.js";
+} from "../../services/ai/factory";
+import { edgeService } from "../../services/graph/index";
+import { logger } from "../../utils/logger";
+import { promptService } from "../../services/ai/promptService";
+import { supabaseAdmin } from "../../supabase";
+import { scrapeUrl } from "../../utils/scraper";
+import { upload } from "./utils";
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { getPaginationParams, PaginationOptions } from '../utils/pagination.js';
+import { getPaginationParams, PaginationOptions } from '../utils/pagination';
 
 export interface FocusSession {
   id: string;

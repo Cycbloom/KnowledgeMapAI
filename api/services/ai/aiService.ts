@@ -1,10 +1,10 @@
-import { getAIProviderForTask, getAIProvider } from "./factory.js";
+import { getAIProviderForTask, getAIProvider } from "./factory";
 import type { AIProviderType } from "@shared/types";
-import { promptService } from "./promptService.js";
-import { cacheService, CacheKeys } from "../common/cacheService.js";
-import { supabaseAdmin } from "../../supabase.js";
-import { logger } from "../../utils/logger.js";
-import { parseAIResponse, buildTutorContext } from "./utils.js";
+import { promptService } from "./promptService";
+import { cacheService, CacheKeys } from "../common/cacheService";
+import { supabaseAdmin } from "../../supabase";
+import { logger } from "../../utils/logger";
+import { parseAIResponse, buildTutorContext } from "./utils";
 import {
   getMockResponse,
   getMockCards,
@@ -12,16 +12,16 @@ import {
   getMockConcepts,
   getMockNextTopics,
   getMockImageGraph,
-} from "./mock.js";
+} from "./mock";
 import {
   withTimeoutAndRetry,
   TimeoutError,
   RetryError,
   DEFAULT_TIMEOUT,
   LONG_TIMEOUT,
-} from "../../utils/retry.js";
-import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../../shared/types/errorCodes.js";
+} from "../../utils/retry";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 const pendingRequests = new Map<string, Promise<unknown>>();
 

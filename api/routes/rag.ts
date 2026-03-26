@@ -1,11 +1,11 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validate } from '../middleware/validate.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { z } from 'zod';
-import { ragService } from '../services/ai/ragService.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
-import { AppError } from '../middleware/errorHandler.js';
-import { logger } from '../utils/logger.js';
+import { ragService } from '../services/ai/ragService';
+import { ErrorCodes } from '../../shared/types/errorCodes';
+import { AppError } from '../middleware/errorHandler';
+import { logger } from '../utils/logger';
 
 const router = Router();
 

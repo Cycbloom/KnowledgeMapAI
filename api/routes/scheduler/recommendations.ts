@@ -1,10 +1,10 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
-import { validate } from "../../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
 import { z } from "zod";
-import { aiService } from "../../services/ai/index.js";
-import { taskRecommendationService } from "../../services/scheduler/taskRecommendationService.js";
-import { logger } from "../../utils/logger.js";
+import { aiService } from "../../services/ai/index";
+import { taskRecommendationService } from "../../services/scheduler/taskRecommendationService";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 

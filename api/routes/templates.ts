@@ -3,17 +3,17 @@ import {
   requireAuth,
   optionalAuth,
   type AuthRequest,
-} from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
+} from "../middleware/auth";
+import { validate } from "../middleware/validate";
 import {
   uuidParamsSchema,
   createGraphFromTemplateSchema,
-} from "../schemas/index.js";
-import { graphTemplateService, graphService } from "../services/graph/index.js";
-import { cacheService } from "../services/common/cacheService.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { achievementService } from "../services/achievementService.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
+} from "../schemas/index";
+import { graphTemplateService, graphService } from "../services/graph/index";
+import { cacheService } from "../services/common/cacheService";
+import { AppError } from "../middleware/errorHandler";
+import { achievementService } from "../services/achievementService";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 import { z } from "zod";
 
 const createTemplateSchema = z.object({

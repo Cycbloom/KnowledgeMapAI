@@ -3,14 +3,14 @@ export {
   AIService,
   type GenerateCardsOptions,
   type CardDifficulty,
-} from "./aiService.js";
+} from "./aiService";
 export {
   aiActionService,
   AIActionService,
   type AIAction,
   type AIActionVariables,
   type AIActionExecutionResult,
-} from "./aiActionService.js";
+} from "./aiActionService";
 export {
   promptService,
   PromptService,
@@ -19,15 +19,15 @@ export {
   type PromptListOptions,
   type PromptCreateData,
   type PromptUpdateData,
-} from "./promptService.js";
-export { embeddingService, EmbeddingService } from "./embeddingService.js";
+} from "./promptService";
+export { embeddingService, EmbeddingService } from "./embeddingService";
 export {
   ragService,
   RAGService,
   type RAGContext,
   type RAGSearchResult,
   type RAGResponse,
-} from "./ragService.js";
+} from "./ragService";
 export {
   searchService,
   SearchService,
@@ -35,5 +35,5 @@ export {
   type SearchGraphResult,
   type SearchNodeResult,
   type SemanticSearchResult,
-} from "./searchService.js";
-export { getMockResponse } from "./mock.js";
+} from "./searchService";
+export { getMockResponse } from "./mock";

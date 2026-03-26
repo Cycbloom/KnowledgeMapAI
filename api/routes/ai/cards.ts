@@ -1,21 +1,21 @@
 import { Router, type Response } from 'express';
 import { z } from 'zod';
-import { requireAuth, type AuthRequest } from '../../middleware/auth.js';
-import { validate } from '../../middleware/validate.js';
+import { requireAuth, type AuthRequest } from '../../middleware/auth';
+import { validate } from '../../middleware/validate';
 import { 
   generateCardsSchema, 
   generateCardsBatchSchema,
   expandKnowledgeSchema,
   branchSuggestionsSchema,
   batchExpandGraphSchema
-} from '../../schemas/index.js';
-import { ErrorCodes } from '../../../shared/types/errorCodes.js';
-import { AppError } from '../../middleware/errorHandler.js';
-import { aiService } from '../../services/ai/aiService.js';
-import { taskService } from '../../services/taskService.js';
-import { graphNodeService } from '../../services/graph/index.js';
-import { logger } from '../../utils/logger.js';
-import { supabaseAdmin } from '../../supabase.js';
+} from '../../schemas/index';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { AppError } from '../../middleware/errorHandler';
+import { aiService } from '../../services/ai/aiService';
+import { taskService } from '../../services/taskService';
+import { graphNodeService } from '../../services/graph/index';
+import { logger } from '../../utils/logger';
+import { supabaseAdmin } from '../../supabase';
 
 const router = Router();
 

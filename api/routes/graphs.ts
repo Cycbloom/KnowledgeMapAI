@@ -3,24 +3,24 @@ import {
   requireAuth,
   optionalAuth,
   type AuthRequest,
-} from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
+} from "../middleware/auth";
+import { validate } from "../middleware/validate";
 import {
   createGraphSchema,
   updateGraphSchema,
   uuidParamsSchema,
   shareGraphSchema,
-} from "../schemas/index.js";
-import { graphService } from "../services/graph/index.js";
-import { taskService } from "../services/taskService.js";
-import { aiService } from "../services/ai/aiService.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { achievementService } from "../services/achievementService.js";
-import { cacheService } from "../services/common/cacheService.js";
-import { logger } from "../utils/logger.js";
-import { relationDiscoveryService } from "../services/graph/index.js";
-import { checkDuplicateGraphTopic } from "../utils/similaritySearch.js";
+} from "../schemas/index";
+import { graphService } from "../services/graph/index";
+import { taskService } from "../services/taskService";
+import { aiService } from "../services/ai/aiService";
+import { ErrorCodes } from "../../shared/types/errorCodes";
+import { AppError } from "../middleware/errorHandler";
+import { achievementService } from "../services/achievementService";
+import { cacheService } from "../services/common/cacheService";
+import { logger } from "../utils/logger";
+import { relationDiscoveryService } from "../services/graph/index";
+import { checkDuplicateGraphTopic } from "../utils/similaritySearch";
 import { z } from "zod";
 
 const checkTopicSchema = z.object({

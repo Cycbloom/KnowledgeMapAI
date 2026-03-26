@@ -1,18 +1,18 @@
 import { Router } from "express";
-import tasksRouter from "./tasks.js";
-import executionsRouter from "./executions.js";
-import focusRouter from "./focus.js";
-import templatesRouter from "./templates.js";
-import timeSlotsRouter from "./timeSlots.js";
-import schedulesRouter from "./schedules.js";
-import dependenciesRouter from "./dependencies.js";
-import subtasksRouter from "./subtasks.js";
-import linksRouter from "./links.js";
-import knowledgePointsRouter from "./knowledgePoints.js";
-import analyticsRouter from "./analytics.js";
-import recommendationsRouter from "./recommendations.js";
-import progressRouter from "./progress.js";
-import settingsRouter from "./settings.js";
+import tasksRouter from "./tasks";
+import executionsRouter from "./executions";
+import focusRouter from "./focus";
+import templatesRouter from "./templates";
+import timeSlotsRouter from "./timeSlots";
+import schedulesRouter from "./schedules";
+import dependenciesRouter from "./dependencies";
+import subtasksRouter from "./subtasks";
+import linksRouter from "./links";
+import knowledgePointsRouter from "./knowledgePoints";
+import analyticsRouter from "./analytics";
+import recommendationsRouter from "./recommendations";
+import progressRouter from "./progress";
+import settingsRouter from "./settings";
 
 const router = Router();
 

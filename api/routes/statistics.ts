@@ -1,7 +1,7 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
-import { AppError } from '../middleware/errorHandler.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { ErrorCodes } from '../../shared/types/errorCodes';
+import { AppError } from '../middleware/errorHandler';
 import { State } from 'ts-fsrs';
 
 const router = Router();

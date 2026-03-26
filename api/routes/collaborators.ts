@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
-import { requireAuth, optionalAuth, type AuthRequest } from "../middleware/auth.js";
-import { collaboratorService } from "../services/graph/collaboratorService.js";
-import { logger } from "../utils/logger.js";
+import { requireAuth, optionalAuth, type AuthRequest } from "../middleware/auth";
+import { collaboratorService } from "../services/graph/collaboratorService";
+import { logger } from "../utils/logger";
 
 const router = Router();
 

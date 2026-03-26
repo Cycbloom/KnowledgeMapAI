@@ -1,5 +1,5 @@
 import type { Node, KnowledgePoint, GraphNode } from "@shared/types";
-import { logger } from "./logger.js";
+import { logger } from "./logger";
 
 export type GraphNodeRaw = Omit<GraphNode, "knowledge_point_id"> & {
   knowledge_point_id: string;

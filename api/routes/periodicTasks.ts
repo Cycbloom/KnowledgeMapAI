@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { periodicTaskService } from '../services/scheduler/periodicTaskService.js';
-import { requireAuth, AuthRequest } from '../middleware/auth.js';
-import { AppError } from '../middleware/errorHandler.js';
+import { periodicTaskService } from '../services/scheduler/periodicTaskService';
+import { requireAuth, AuthRequest } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 

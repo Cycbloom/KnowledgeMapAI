@@ -1,10 +1,10 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validate } from '../middleware/validate.js';
-import { uuidParamsSchema, createRelationshipTypeSchema, updateRelationshipTypeSchema } from '../schemas/index.js';
-import { relationshipTypeService } from '../services/graph/index.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
-import { AppError } from '../middleware/errorHandler.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { uuidParamsSchema, createRelationshipTypeSchema, updateRelationshipTypeSchema } from '../schemas/index';
+import { relationshipTypeService } from '../services/graph/index';
+import { ErrorCodes } from '../../shared/types/errorCodes';
+import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 

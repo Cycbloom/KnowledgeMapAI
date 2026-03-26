@@ -1,10 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { fsrs, Card, Rating, State, createEmptyCard } from "ts-fsrs";
 import type { StudyCard } from "@/types";
-import { cacheService, CacheKeys } from "../common/cacheService.js";
-import { logger } from "../../utils/logger.js";
-import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../../shared/types/errorCodes.js";
+import { cacheService, CacheKeys } from "../common/cacheService";
+import { logger } from "../../utils/logger";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 interface GetCardsOptions {
   userId: string;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { Logger } from './logger.js';
+import { Logger } from './logger';
 
 const logger = new Logger('Scraper');
 

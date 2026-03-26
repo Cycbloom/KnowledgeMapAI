@@ -1,8 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { graphNodeService } from './graphNodeService.js';
-import { edgeService } from './edgeService.js';
-import { taskService } from '../taskService.js';
-import { logger } from '../../utils/logger.js';
+import { graphNodeService } from './graphNodeService';
+import { edgeService } from './edgeService';
+import { taskService } from '../taskService';
+import { logger } from '../../utils/logger';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 200;

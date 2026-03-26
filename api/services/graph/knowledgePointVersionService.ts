@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { logger } from '../../utils/logger.js';
-import type { KnowledgePoint, KnowledgePointVersion, KnowledgePointVersionDiff, KnowledgePointVersionWithDiff } from '../../../shared/types/index.js';
+import { logger } from '../../utils/logger';
+import type { KnowledgePoint, KnowledgePointVersion, KnowledgePointVersionDiff, KnowledgePointVersionWithDiff } from '../../../shared/types/index';
 
 export interface ListVersionsOptions {
   limit?: number;

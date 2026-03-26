@@ -1,21 +1,21 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { cacheService, CacheKeys } from "../common/cacheService.js";
+import { cacheService, CacheKeys } from "../common/cacheService";
 import {
   buildNodeFromGraphNode,
   GRAPH_NODES_SELECT,
-} from "../../utils/nodeHelpers.js";
-import { softDelete } from "../../utils/softDelete.js";
-import { logger } from "../../utils/logger.js";
-import { getLevelIndex } from "../../utils/levelUtils.js";
-import { withRpcFallback } from "../../utils/rpcFallback.js";
+} from "../../utils/nodeHelpers";
+import { softDelete } from "../../utils/softDelete";
+import { logger } from "../../utils/logger";
+import { getLevelIndex } from "../../utils/levelUtils";
+import { withRpcFallback } from "../../utils/rpcFallback";
 import {
   checkDuplicateGraphTopic,
   GraphTopicCheckResult,
-} from "../../utils/similaritySearch.js";
-import { aiService } from "../ai/index.js";
-import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../../shared/types/errorCodes.js";
-import { supabaseAdmin } from "../../supabase.js";
+} from "../../utils/similaritySearch";
+import { aiService } from "../ai/index";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { supabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
 
 interface GraphWithCount {

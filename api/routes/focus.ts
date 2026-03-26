@@ -1,10 +1,10 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
-import { validate } from '../middleware/validate.js';
-import { focusService } from '../services/focusService.js';
-import { achievementService } from '../services/achievementService.js';
-import { logger } from '../utils/logger.js';
+import { validate } from '../middleware/validate';
+import { focusService } from '../services/focusService';
+import { achievementService } from '../services/achievementService';
+import { logger } from '../utils/logger';
 
 const router = Router();
 

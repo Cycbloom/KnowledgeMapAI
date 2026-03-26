@@ -1,14 +1,14 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { validate } from '../middleware/validate.js';
-import { importDataSchema } from '../schemas/index.js';
-import { cacheService, CacheKeys } from '../services/common/cacheService.js';
-import { AppError } from '../middleware/errorHandler.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
-import { pdfService } from '../services/common/pdfService.js';
-import { parseMarkdownToGraph } from '../utils/markdownParser.js';
-import { logger } from '../utils/logger.js';
-import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { importDataSchema } from '../schemas/index';
+import { cacheService, CacheKeys } from '../services/common/cacheService';
+import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '../../shared/types/errorCodes';
+import { pdfService } from '../services/common/pdfService';
+import { parseMarkdownToGraph } from '../utils/markdownParser';
+import { logger } from '../utils/logger';
+import { createKnowledgePointWithGraphNode } from '../utils/nodeHelpers';
 
 const router = Router();
 

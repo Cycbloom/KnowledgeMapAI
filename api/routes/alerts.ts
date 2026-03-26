@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { alertManager, type AlertRule } from '../utils/alertManager.js';
-import { logger } from '../utils/logger.js';
+import { alertManager, type AlertRule } from '../utils/alertManager';
+import { logger } from '../utils/logger';
 
 const router = Router();
 

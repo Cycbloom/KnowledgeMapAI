@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { supabaseAdmin } from '../../supabase.js';
-import { logger } from '../../utils/logger.js';
+import { supabaseAdmin } from '../../supabase';
+import { logger } from '../../utils/logger';
 
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
 

@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
-import contentRouter from './content.js';
-import chatRouter from './chat.js';
-import documentRouter from './document.js';
-import cardsRouter from './cards.js';
-import ttsRouter from './tts.js';
+import contentRouter from './content';
+import chatRouter from './chat';
+import documentRouter from './document';
+import cardsRouter from './cards';
+import ttsRouter from './tts';
 
 const router = Router();
 

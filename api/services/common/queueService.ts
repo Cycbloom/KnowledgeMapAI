@@ -1,7 +1,7 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
-import { logger } from "../../utils/logger.js";
-import { isRedisAvailable } from "../../utils/redis.js";
+import { logger } from "../../utils/logger";
+import { isRedisAvailable } from "../../utils/redis";
 
 let taskQueue: Queue | null = null;
 

@@ -2,8 +2,8 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { logger } from '../../utils/logger.js';
-import type { UserWithoutPassword } from '../../models/user.js';
+import { logger } from '../../utils/logger';
+import type { UserWithoutPassword } from '../../models/user';
 
 export interface JwtPayload {
   userId: string;

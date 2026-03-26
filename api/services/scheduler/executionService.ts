@@ -2,9 +2,9 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import {
   getPaginationParams,
   PaginationOptions,
-} from "../../utils/pagination.js";
-import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../../shared/types/errorCodes.js";
+} from "../../utils/pagination";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 export interface TaskExecution {
   id: string;

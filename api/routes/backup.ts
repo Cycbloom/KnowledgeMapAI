@@ -1,15 +1,15 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { cacheService, CacheKeys } from "../services/common/cacheService.js";
-import { logger } from "../utils/logger.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { logger } from "../utils/logger";
 import {
   createBackup,
   readBackupFile,
   backupService,
-} from "../services/common/backupService.js";
-import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers.js";
-import { edgeService } from "../services/graph/index.js";
-import { studyService } from "../services/study/studyService.js";
+} from "../services/common/backupService";
+import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers";
+import { edgeService } from "../services/graph/index";
+import { studyService } from "../services/study/studyService";
 import fs from "fs/promises";
 
 const router = Router();

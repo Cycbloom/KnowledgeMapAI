@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index.js';
-import { aiService, type CardDifficulty } from '../ai/index.js';
-import { logger } from '../../utils/logger.js';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { aiService, type CardDifficulty } from '../ai/index';
+import { logger } from '../../utils/logger';
 
 interface QuizGenerationTaskConfig {
   cardTypes: string[];

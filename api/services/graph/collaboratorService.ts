@@ -6,7 +6,7 @@ import type {
   InviteCollaboratorRequest,
   UpdateCollaboratorRoleRequest,
 } from "@shared/types";
-import { logger } from "../../utils/logger.js";
+import { logger } from "../../utils/logger";
 
 export interface CollaboratorServiceResult<T = void> {
   success: boolean;

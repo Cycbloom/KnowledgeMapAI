@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { cacheService, CacheKeys } from '../../services/cache.js';
+import { cacheService, CacheKeys } from '../../services/cache';
 
 describe('Cache Service', () => {
   beforeEach(() => {

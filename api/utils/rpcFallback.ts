@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { logger } from './logger.js';
+import { logger } from './logger';
 
 export interface RPCFallbackOptions<T> {
   rpcName: string;

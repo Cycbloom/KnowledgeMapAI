@@ -1,4 +1,4 @@
-import { logger } from './logger.js';
+import { logger } from './logger';
 
 type AlertSeverity = 'info' | 'warning' | 'error' | 'critical';
 type AlertChannel = 'email' | 'webhook' | 'in-app';

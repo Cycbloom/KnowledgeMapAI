@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getAIProviderForTask } from "../ai/factory.js";
-import { promptService } from "../ai/promptService.js";
-import { logger } from "../../utils/logger.js";
+import { getAIProviderForTask } from "../ai/factory";
+import { promptService } from "../ai/promptService";
+import { logger } from "../../utils/logger";
 
 export interface DiscoveredRelation {
   source_graph_id: string;

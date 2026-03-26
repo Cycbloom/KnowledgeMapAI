@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index.js';
-import { aiService } from '../ai/aiService.js';
-import { logger } from '../../utils/logger.js';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { aiService } from '../ai/aiService';
+import { logger } from '../../utils/logger';
 
 const BATCH_SIZE = 20;
 const EMBEDDING_DELAY_MS = 100;

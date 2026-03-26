@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { State } from 'ts-fsrs';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/logger';
 
 export interface HeatmapItem {
   date: string;

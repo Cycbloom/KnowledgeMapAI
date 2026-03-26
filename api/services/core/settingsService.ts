@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '../../supabase.js';
-import { logger } from '../../utils/logger.js';
+import { supabaseAdmin } from '../../supabase';
+import { logger } from '../../utils/logger';
 
 export class SettingsService {
   private cache: Map<string, { value: any; timestamp: number }> = new Map();

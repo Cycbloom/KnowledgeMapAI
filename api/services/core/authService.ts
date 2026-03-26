@@ -1,7 +1,7 @@
-import { supabaseAdmin } from '../../supabase.js';
-import { logger } from '../../utils/logger.js';
-import { AppError } from '../../middleware/errorHandler.js';
-import { ErrorCodes } from '../../../shared/types/errorCodes.js';
+import { supabaseAdmin } from '../../supabase';
+import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 export interface UserProfile {
   id: string;

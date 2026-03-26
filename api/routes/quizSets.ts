@@ -1,19 +1,19 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
 import {
   createQuizSetSchema,
   updateQuizSetSchema,
   generateQuizSchema,
   regenerateCardSchema,
   uuidParamsSchema,
-} from "../schemas/index.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { taskService } from "../services/taskService.js";
-import { studyService } from "../services/study/studyService.js";
-import { aiService } from "../services/ai/aiService.js";
-import { logger } from "../utils/logger.js";
+} from "../schemas/index";
+import { ErrorCodes } from "../../shared/types/errorCodes";
+import { AppError } from "../middleware/errorHandler";
+import { taskService } from "../services/taskService";
+import { studyService } from "../services/study/studyService";
+import { aiService } from "../services/ai/aiService";
+import { logger } from "../utils/logger";
 
 const router = Router();
 

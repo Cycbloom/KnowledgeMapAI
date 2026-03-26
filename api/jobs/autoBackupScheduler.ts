@@ -1,6 +1,6 @@
-import { supabaseAdmin } from '../supabase.js';
-import { createBackup, cleanupOldSnapshots } from '../services/common/backupService.js';
-import { logger } from '../utils/logger.js';
+import { supabaseAdmin } from '../supabase';
+import { createBackup, cleanupOldSnapshots } from '../services/common/backupService';
+import { logger } from '../utils/logger';
 
 const THIRTY_MINUTES = 30 * 60 * 1000;
 const FIVE_HOURS = 5 * 60 * 60 * 1000;

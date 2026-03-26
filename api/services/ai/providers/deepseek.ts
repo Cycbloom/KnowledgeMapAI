@@ -1,4 +1,4 @@
-import { BaseAIProvider } from './base.js';
+import { BaseAIProvider } from './base';
 import type { AIProviderConfig } from '@shared/types';
 
 export class DeepseekProvider extends BaseAIProvider {

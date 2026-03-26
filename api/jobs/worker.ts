@@ -1,9 +1,9 @@
 import { Worker } from 'bullmq';
 import Redis from 'ioredis';
-import { taskProcessor } from './taskProcessor.js';
-import { supabaseAdmin } from '../supabase.js';
-import { logger } from '../utils/logger.js';
-import { isRedisAvailable } from '../utils/redis.js';
+import { taskProcessor } from './taskProcessor';
+import { supabaseAdmin } from '../supabase';
+import { logger } from '../utils/logger';
+import { isRedisAvailable } from '../utils/redis';
 
 let taskWorker: Worker | null = null;
 

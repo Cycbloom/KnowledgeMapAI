@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { logger } from '../utils/logger.js';
-import redisClient from '../utils/redis.js';
+import { logger } from '../utils/logger';
+import redisClient from '../utils/redis';
 
 const router = Router();
 

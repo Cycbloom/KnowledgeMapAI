@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import os from 'os';
-import { logger } from '../utils/logger.js';
-import redisClient from '../utils/redis.js';
-import { supabaseAdmin } from '../supabase.js';
+import { logger } from '../utils/logger';
+import redisClient from '../utils/redis';
+import { supabaseAdmin } from '../supabase';
 
 const router = Router();
 

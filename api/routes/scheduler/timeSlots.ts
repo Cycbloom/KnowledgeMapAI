@@ -1,12 +1,12 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
-import { validate } from "../../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
 import {
   createTimeSlotSchema,
   updateTimeSlotSchema,
   timeSlotParamsSchema,
-} from "../../schemas/index.js";
-import { logger } from "../../utils/logger.js";
+} from "../../schemas/index";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 

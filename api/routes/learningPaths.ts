@@ -1,15 +1,15 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
-import { learningPathService } from "../services/study/learningPathService.js";
-import { graphService } from "../services/graph/index.js";
-import { getAIProviderForTask } from "../services/ai/factory.js";
-import { promptService } from "../services/ai/promptService.js";
-import { logger } from "../utils/logger.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
+import { learningPathService } from "../services/study/learningPathService";
+import { graphService } from "../services/graph/index";
+import { getAIProviderForTask } from "../services/ai/factory";
+import { promptService } from "../services/ai/promptService";
+import { logger } from "../utils/logger";
 import { z } from "zod";
-import type { LearningPath } from "../services/study/learningPathService.js";
+import type { LearningPath } from "../services/study/learningPathService";
 
 const router = Router();
 

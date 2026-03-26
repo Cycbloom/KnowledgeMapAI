@@ -2,16 +2,16 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import {
   getPaginationParams,
   PaginationOptions,
-} from "../../utils/pagination.js";
+} from "../../utils/pagination";
 import type {
   ScheduledTask,
   TaskExecution,
   TaskSettings,
   CreateTaskData,
   TaskFilters,
-} from "../../../shared/types/index.js";
-import { AppError } from "../../middleware/errorHandler.js";
-import { ErrorCodes } from "../../../shared/types/errorCodes.js";
+} from "../../../shared/types/index";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
 
 export type {
   ScheduledTask,

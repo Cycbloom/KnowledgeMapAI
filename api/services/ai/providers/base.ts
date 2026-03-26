@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import type { AIProvider, AIProviderConfig, AIProviderType } from '@shared/types';
-import { logger } from '../../../utils/logger.js';
+import { logger } from '../../../utils/logger';
 
 export abstract class BaseAIProvider implements AIProvider {
   public client: OpenAI;

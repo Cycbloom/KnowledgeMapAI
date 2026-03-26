@@ -1,8 +1,8 @@
 import { Router, type Response } from 'express';
-import { requireAuth, type AuthRequest } from '../middleware/auth.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
-import { AppError } from '../middleware/errorHandler.js';
-import { dashboardService } from '../services/common/dashboardService.js';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { ErrorCodes } from '../../shared/types/errorCodes';
+import { AppError } from '../middleware/errorHandler';
+import { dashboardService } from '../services/common/dashboardService';
 
 const router = Router();
 

@@ -1,10 +1,10 @@
 import { Router, Response } from 'express';
-import { AuthRequest, requireAuth } from '../middleware/auth.js';
-import { getAIProviderForTask } from '../services/ai/factory.js';
-import { promptService } from '../services/ai/promptService.js';
-import { AppError } from '../middleware/errorHandler.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
-import { logger } from '../utils/logger.js';
+import { AuthRequest, requireAuth } from '../middleware/auth';
+import { getAIProviderForTask } from '../services/ai/factory';
+import { promptService } from '../services/ai/promptService';
+import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '../../shared/types/errorCodes';
+import { logger } from '../utils/logger';
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { aiService } from "./aiService.js";
-import { logger } from "../../utils/logger.js";
+import { aiService } from "./aiService";
+import { logger } from "../../utils/logger";
 
 export interface SearchResult {
   graphs: SearchGraphResult[];

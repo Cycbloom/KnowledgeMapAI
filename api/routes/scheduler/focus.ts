@@ -1,9 +1,9 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
-import { validate } from "../../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
 import { z } from "zod";
-import { focusService } from "../../services/scheduler/focusService.js";
-import { logger } from "../../utils/logger.js";
+import { focusService } from "../../services/scheduler/focusService";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 

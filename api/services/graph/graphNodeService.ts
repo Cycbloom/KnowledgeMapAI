@@ -1,10 +1,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { GraphNode, GraphNodeWithKnowledgePoint, NodeLevel } from '@/types';
-import { buildNodeFromGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers.js';
-import { softDelete, softDeleteBatch } from '../../utils/softDelete.js';
-import { logger } from '../../utils/logger.js';
-import { AppError } from '../../middleware/errorHandler.js';
-import { ErrorCodes } from '../../../shared/types/errorCodes.js';
+import { buildNodeFromGraphNode, GRAPH_NODES_SELECT } from '../../utils/nodeHelpers';
+import { softDelete, softDeleteBatch } from '../../utils/softDelete';
+import { logger } from '../../utils/logger';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 interface AddToGraphData {
   graph_id: string;

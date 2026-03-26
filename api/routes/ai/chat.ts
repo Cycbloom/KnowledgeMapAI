@@ -1,22 +1,22 @@
 import { Router, type Response } from 'express';
 import OpenAI from 'openai';
-import { requireAuth, type AuthRequest } from '../../middleware/auth.js';
-import { validate } from '../../middleware/validate.js';
+import { requireAuth, type AuthRequest } from '../../middleware/auth';
+import { validate } from '../../middleware/validate';
 import { 
   chatSchema,
   tutorChatSchema,
   extractConceptsSchema,
   suggestNextTopicSchema
-} from '../../schemas/index.js';
-import { ErrorCodes } from '../../../shared/types/errorCodes.js';
-import { aiService } from '../../services/ai/aiService.js';
-import { getMockResponse } from '../../services/ai/mock.js';
-import { getAIProviderForTask, getAIProvider } from '../../services/ai/factory.js';
-import { logger } from '../../utils/logger.js';
-import { graphService } from '../../services/graph/index.js';
-import { promptService } from '../../services/ai/promptService.js';
-import { supabaseAdmin } from '../../supabase.js';
-import { setSSEHeaders, sendStreamChunk, sendStreamDone, sendStreamError } from './utils.js';
+} from '../../schemas/index';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { aiService } from '../../services/ai/aiService';
+import { getMockResponse } from '../../services/ai/mock';
+import { getAIProviderForTask, getAIProvider } from '../../services/ai/factory';
+import { logger } from '../../utils/logger';
+import { graphService } from '../../services/graph/index';
+import { promptService } from '../../services/ai/promptService';
+import { supabaseAdmin } from '../../supabase';
+import { setSSEHeaders, sendStreamChunk, sendStreamDone, sendStreamError } from './utils';
 
 const router = Router();
 

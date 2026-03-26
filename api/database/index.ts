@@ -1,5 +1,5 @@
-import type { DatabaseInterface, DatabaseConfig } from './interface.js';
-import { SupabaseAdapter } from './adapters/supabase.js';
+import type { DatabaseInterface, DatabaseConfig } from './interface';
+import { SupabaseAdapter } from './adapters/supabase';
 
 let currentDatabase: DatabaseInterface | null = null;
 
@@ -41,4 +41,4 @@ export async function closeDatabase(): Promise<void> {
 }
 
 export { DatabaseInterface, DatabaseConfig };
-export { SupabaseAdapter } from './adapters/supabase.js';
+export { SupabaseAdapter } from './adapters/supabase';

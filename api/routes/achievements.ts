@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { achievementService } from '../services/achievementService.js';
-import { requireAuth, AuthRequest } from '../middleware/auth.js';
-import { AppError } from '../middleware/errorHandler.js';
+import { achievementService } from '../services/achievementService';
+import { requireAuth, AuthRequest } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
 
 const router = Router();
 

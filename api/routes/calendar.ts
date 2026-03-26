@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { logger } from "../utils/logger.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { logger } from "../utils/logger";
 
 const router = Router();
 

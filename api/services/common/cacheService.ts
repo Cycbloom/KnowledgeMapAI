@@ -1,6 +1,6 @@
 import NodeCache from 'node-cache';
-import redisClient, { isRedisAvailable } from '../../utils/redis.js';
-import { logger } from '../../utils/logger.js';
+import redisClient, { isRedisAvailable } from '../../utils/redis';
+import { logger } from '../../utils/logger';
 
 let localCache: NodeCache | null = null;
 

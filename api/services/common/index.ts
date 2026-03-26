@@ -1,5 +1,5 @@
-export { cacheService, CacheKeys } from "./cacheService.js";
-export { taskQueue } from "./queueService.js";
+export { cacheService, CacheKeys } from "./cacheService";
+export { taskQueue } from "./queueService";
 export {
   backupService,
   createBackup,
@@ -7,22 +7,22 @@ export {
   readBackupFile,
   cleanupOldSnapshots,
   runAutoBackup,
-} from "./backupService.js";
-export type { BackupSnapshot } from "./backupService.js";
-export { syncExistingBackups } from "./backupSyncService.js";
-export { templateService, TEMPLATE_CATEGORIES } from "./templateService.js";
+} from "./backupService";
+export type { BackupSnapshot } from "./backupService";
+export { syncExistingBackups } from "./backupSyncService";
+export { templateService, TEMPLATE_CATEGORIES } from "./templateService";
 export type {
   TaskTemplate,
   CreateTemplateData,
   UpdateTemplateData,
   TemplateFilters,
   ApplyTemplateData,
-} from "./templateService.js";
-export { pdfService } from "./pdfService.js";
-export { dashboardService } from "./dashboardService.js";
+} from "./templateService";
+export { pdfService } from "./pdfService";
+export { dashboardService } from "./dashboardService";
 export type {
   BlindSpot,
   DistributionItem,
   DashboardStats,
-} from "./dashboardService.js";
-export { searchService } from "../ai/searchService.js";
+} from "./dashboardService";
+export { searchService } from "../ai/searchService";

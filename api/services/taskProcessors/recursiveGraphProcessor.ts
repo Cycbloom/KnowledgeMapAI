@@ -1,9 +1,9 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index.js';
-import { getAIProviderForTask } from '../ai/factory.js';
-import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers.js';
-import { logger } from '../../utils/logger.js';
-import { getAutoGraphPrompt } from './utils.js';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { getAIProviderForTask } from '../ai/factory';
+import { createKnowledgePointWithGraphNode } from '../../utils/nodeHelpers';
+import { logger } from '../../utils/logger';
+import { getAutoGraphPrompt } from './utils';
 
 export class RecursiveGraphProcessor implements TaskProcessor {
   async process(

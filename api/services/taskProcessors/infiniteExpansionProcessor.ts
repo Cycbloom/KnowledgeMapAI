@@ -1,11 +1,11 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index.js';
-import { getAIProviderForTask } from '../ai/factory.js';
-import { promptService } from '../ai/promptService.js';
-import { logger } from '../../utils/logger.js';
-import { generateNodesForGraph } from './utils.js';
-import { checkDuplicateGraphTopic } from '../../utils/similaritySearch.js';
-import { aiService } from '../ai/index.js';
+import { TaskProcessor, registerProcessor, UpdateTaskStatusFunction } from './index';
+import { getAIProviderForTask } from '../ai/factory';
+import { promptService } from '../ai/promptService';
+import { logger } from '../../utils/logger';
+import { generateNodesForGraph } from './utils';
+import { checkDuplicateGraphTopic } from '../../utils/similaritySearch';
+import { aiService } from '../ai/index';
 
 export class InfiniteExpansionProcessor implements TaskProcessor {
   async process(

@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/logger';
 
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
 const MAX_AUTO_SNAPSHOTS: Record<string, number> = {

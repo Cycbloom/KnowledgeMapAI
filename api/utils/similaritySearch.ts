@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { aiService } from '../services/ai/aiService.js';
-import { logger } from './logger.js';
+import { aiService } from '../services/ai/aiService';
+import { logger } from './logger';
 
 export interface SimilaritySearchOptions {
   threshold?: number;

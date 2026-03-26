@@ -1,17 +1,17 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
 import {
   createCardSchema,
   createCardsBatchSchema,
   updateCardProgressSchema,
-} from "../schemas/index.js";
-import { cacheService, CacheKeys } from "../services/common/cacheService.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { studyService } from "../services/study/studyService.js";
-import { achievementService } from "../services/achievementService.js";
-import { logger } from "../utils/logger.js";
+} from "../schemas/index";
+import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { ErrorCodes } from "../../shared/types/errorCodes";
+import { AppError } from "../middleware/errorHandler";
+import { studyService } from "../services/study/studyService";
+import { achievementService } from "../services/achievementService";
+import { logger } from "../utils/logger";
 
 const router = Router();
 

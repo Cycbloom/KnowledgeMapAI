@@ -18,7 +18,7 @@ import type {
   CreateStudyCardInput,
   UpdateStudyCardInput,
   CreateFocusSessionInput,
-} from '../interface.js';
+} from '../interface';
 
 import type {
   User,
@@ -32,7 +32,7 @@ import type {
   GraphRelation,
   GraphCollaborator,
   CollaboratorRole,
-} from '../../../shared/types/index.js';
+} from '../../../shared/types/index';
 
 import type {
   ScheduledTask,
@@ -43,7 +43,7 @@ import type {
   UserFocusStats,
   Achievement,
   UserAchievement,
-} from '../../../shared/types/scheduler.js';
+} from '../../../shared/types/scheduler';
 
 import type {
   StudyCard,
@@ -52,9 +52,9 @@ import type {
   Notification,
   NotificationSettings,
   Task,
-} from '../../../shared/types/common.js';
+} from '../../../shared/types/common';
 
-import type { QuizSet } from '../../../shared/types/quiz.js';
+import type { QuizSet } from '../../../shared/types/quiz';
 
 function now(): string {
   return new Date().toISOString();

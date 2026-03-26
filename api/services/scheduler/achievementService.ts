@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { focusService } from './focusService.js';
+import { focusService } from './focusService';
 
 export interface Achievement {
   id: string;

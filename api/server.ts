@@ -1,11 +1,11 @@
 /**
  * local server entry file, for local development
  */
-import app from './app.js';
+import app from './app';
 import './jobs/worker.js'; // Initialize BullMQ Worker (optional, requires Redis)
-import { taskWorker } from './jobs/worker.js';
-import { logger } from './utils/logger.js';
-import { checkEnvOnStartup } from './utils/envValidator.js';
+import { taskWorker } from './jobs/worker';
+import { logger } from './utils/logger';
+import { checkEnvOnStartup } from './utils/envValidator';
 
 /**
  * Validate Environment

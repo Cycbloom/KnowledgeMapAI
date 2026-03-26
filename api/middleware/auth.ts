@@ -1,8 +1,8 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { supabaseAdmin, supabaseAnon, createClientWithToken } from '../supabase.js';
+import { supabaseAdmin, supabaseAnon, createClientWithToken } from '../supabase';
 import { type SupabaseClient } from '@supabase/supabase-js';
-import { AppError } from './errorHandler.js';
-import { ErrorCodes, type ErrorCode } from '../../shared/types/errorCodes.js';
+import { AppError } from './errorHandler';
+import { ErrorCodes, type ErrorCode } from '../../shared/types/errorCodes';
 
 export interface AuthRequest extends Request {
   user?: any;

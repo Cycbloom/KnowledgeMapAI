@@ -1,17 +1,17 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
-import { getAIProviderForTask, getAIProvider } from "../services/ai/factory.js";
-import { promptService } from "../services/ai/promptService.js";
-import { cacheService, CacheKeys } from "../services/common/cacheService.js";
-import { logger } from "../utils/logger.js";
-import { scrapeUrl } from "../utils/scraper.js";
-import { autoGraphService, graphNodeService } from "../services/graph/index.js";
-import { embeddingService } from "../services/ai/embeddingService.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
+import { getAIProviderForTask, getAIProvider } from "../services/ai/factory";
+import { promptService } from "../services/ai/promptService";
+import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { logger } from "../utils/logger";
+import { scrapeUrl } from "../utils/scraper";
+import { autoGraphService, graphNodeService } from "../services/graph/index";
+import { embeddingService } from "../services/ai/embeddingService";
 import { z } from "zod";
-import { saveNodesSchema } from "../schemas/index.js";
+import { saveNodesSchema } from "../schemas/index";
 
 const router = Router();
 

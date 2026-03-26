@@ -1,8 +1,8 @@
 import type { AIProvider, AIProviderType } from '@shared/types';
-import { DeepseekProvider } from './providers/deepseek.js';
-import { VolcengineProvider } from './providers/volcengine.js';
-import { AliyunProvider } from './providers/aliyun.js';
-import { getDefaultProvider, getProviderForTask, getProviderConfig } from './config.js';
+import { DeepseekProvider } from './providers/deepseek';
+import { VolcengineProvider } from './providers/volcengine';
+import { AliyunProvider } from './providers/aliyun';
+import { getDefaultProvider, getProviderForTask, getProviderConfig } from './config';
 
 export const getAIProvider = async (type?: AIProviderType): Promise<AIProvider> => {
   const targetType = type || await getDefaultProvider();

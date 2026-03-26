@@ -1,11 +1,11 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
-import { validate } from "../../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
 import { z } from "zod";
 import {
   createTaskDependencySchema,
   taskDependencyParamsSchema,
-} from "../../schemas/index.js";
+} from "../../schemas/index";
 
 const router = Router();
 

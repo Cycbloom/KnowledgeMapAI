@@ -1,18 +1,18 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
-import { cacheService, CacheKeys } from "../services/common/cacheService.js";
-import { aiService } from "../services/ai/aiService.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
+import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { aiService } from "../services/ai/aiService";
 import {
   knowledgePointService,
   graphNodeService,
   graphService,
   knowledgePointVersionService,
-} from "../services/graph/index.js";
-import { authService } from "../services/core/authService.js";
-import { logger } from "../utils/logger.js";
+} from "../services/graph/index";
+import { authService } from "../services/core/authService";
+import { logger } from "../utils/logger";
 import { z } from "zod";
 
 const router = Router();

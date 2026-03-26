@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
 import {
   createNodeSchema,
   updateNodeSchema,
@@ -8,15 +8,15 @@ import {
   uuidParamsSchema,
   batchDeleteNodesSchema,
   batchUpdatePositionsSchema,
-} from "../schemas/index.js";
-import { cacheService } from "../services/common/cacheService.js";
-import { AppError } from "../middleware/errorHandler.js";
-import { ErrorCodes } from "../../shared/types/errorCodes.js";
-import { aiService } from "../services/ai/aiService.js";
-import { achievementService } from "../services/achievementService.js";
-import { logger } from "../utils/logger.js";
-import { knowledgePointService, graphNodeService, edgeService } from "../services/graph/index.js";
-import { buildNodeFromGraphNode } from "../utils/nodeHelpers.js";
+} from "../schemas/index";
+import { cacheService } from "../services/common/cacheService";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
+import { aiService } from "../services/ai/aiService";
+import { achievementService } from "../services/achievementService";
+import { logger } from "../utils/logger";
+import { knowledgePointService, graphNodeService, edgeService } from "../services/graph/index";
+import { buildNodeFromGraphNode } from "../utils/nodeHelpers";
 
 const router = Router();
 

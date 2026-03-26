@@ -1,10 +1,10 @@
-import { supabaseAdmin } from '../../supabase.js';
-import { AIService } from './aiService.js';
-import { getAIProviderForTask } from './factory.js';
-import { logger } from '../../utils/logger.js';
-import { buildNodeContext, buildNodesContext, NodeData } from './utils.js';
-import { AppError } from '../../middleware/errorHandler.js';
-import { ErrorCodes } from '../../../shared/types/errorCodes.js';
+import { supabaseAdmin } from '../../supabase';
+import { AIService } from './aiService';
+import { getAIProviderForTask } from './factory';
+import { logger } from '../../utils/logger';
+import { buildNodeContext, buildNodesContext, NodeData } from './utils';
+import { AppError } from '../../middleware/errorHandler';
+import { ErrorCodes } from '../../../shared/types/errorCodes';
 
 export interface RAGContext {
   graphId: string;

@@ -1,10 +1,10 @@
-import { supabaseAdmin } from "../supabase.js";
-import { taskService, Task } from "../services/taskService.js";
-import { aiService } from "../services/ai/aiService.js";
-import { getNextLevel } from "../utils/graphUtils.js";
-import { cacheService, CacheKeys } from "../services/common/cacheService.js";
-import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers.js";
-import { logger } from "../utils/logger.js";
+import { supabaseAdmin } from "../supabase";
+import { taskService, Task } from "../services/taskService";
+import { aiService } from "../services/ai/aiService";
+import { getNextLevel } from "../utils/graphUtils";
+import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers";
+import { logger } from "../utils/logger";
 
 class TaskProcessor {
   public async processTask(task: Task) {

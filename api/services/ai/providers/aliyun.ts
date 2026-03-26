@@ -1,8 +1,8 @@
-import { BaseAIProvider } from './base.js';
+import { BaseAIProvider } from './base';
 import type { AIProviderConfig } from '@shared/types';
-import { logger } from '../../../utils/logger.js';
-import { AppError } from '../../../middleware/errorHandler.js';
-import { ErrorCodes } from '../../../../shared/types/errorCodes.js';
+import { logger } from '../../../utils/logger';
+import { AppError } from '../../../middleware/errorHandler';
+import { ErrorCodes } from '../../../../shared/types/errorCodes';
 
 export class AliyunProvider extends BaseAIProvider {
   constructor(config: AIProviderConfig) {

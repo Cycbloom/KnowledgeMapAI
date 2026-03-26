@@ -1,33 +1,33 @@
-export { taskService, TaskService } from "./taskService.js";
-export { executionService, ExecutionService } from "./executionService.js";
-export { focusService, FocusService } from "./focusService.js";
+export { taskService, TaskService } from "./taskService";
+export { executionService, ExecutionService } from "./executionService";
+export { focusService, FocusService } from "./focusService";
 export {
   achievementService,
   AchievementService,
-} from "./achievementService.js";
-export { statsService, StatsService } from "./statsService.js";
-export { settingsService, SettingsService } from "./settingsService.js";
+} from "./achievementService";
+export { statsService, StatsService } from "./statsService";
+export { settingsService, SettingsService } from "./settingsService";
 export {
   periodicTaskService,
   PeriodicTaskService,
-} from "./periodicTaskService.js";
+} from "./periodicTaskService";
 export {
   taskAnalyticsService,
   TaskAnalyticsService,
-} from "./taskAnalyticsService.js";
+} from "./taskAnalyticsService";
 export {
   taskRecommendationService,
   TaskRecommendationService,
-} from "./taskRecommendationService.js";
+} from "./taskRecommendationService";
 
 export type {
   ScheduledTask,
   TaskSettings,
   CreateTaskData,
   TaskFilters,
-} from "./taskService.js";
+} from "./taskService";
 
-export type { TaskExecution, ExecutionFilters } from "./executionService.js";
+export type { TaskExecution, ExecutionFilters } from "./executionService";
 
 export type {
   FocusSession,
@@ -37,22 +37,22 @@ export type {
   WeeklyFocusStats,
   MonthlyFocusStats,
   HeatmapData,
-} from "./focusService.js";
+} from "./focusService";
 
 export type {
   Achievement,
   UserAchievement,
   AchievementCheckResult,
-} from "./achievementService.js";
+} from "./achievementService";
 
-export type { SchedulerStats } from "./statsService.js";
+export type { SchedulerStats } from "./statsService";
 
 export type {
   PeriodicTask,
   PeriodicPass,
   PassReward,
   UserPassProgress,
-} from "./periodicTaskService.js";
+} from "./periodicTaskService";
 
 export type {
   TaskRecommendation,
@@ -60,4 +60,4 @@ export type {
   EfficiencyData,
   RecommendationContext,
   PrioritySuggestion,
-} from "./taskRecommendationService.js";
+} from "./taskRecommendationService";

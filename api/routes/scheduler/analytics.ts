@@ -1,9 +1,9 @@
 import { Router, type Response } from "express";
-import { requireAuth, type AuthRequest } from "../../middleware/auth.js";
-import { validate } from "../../middleware/validate.js";
+import { requireAuth, type AuthRequest } from "../../middleware/auth";
+import { validate } from "../../middleware/validate";
 import { z } from "zod";
-import { logger } from "../../utils/logger.js";
-import { taskAnalyticsService } from "../../services/scheduler/taskAnalyticsService.js";
+import { logger } from "../../utils/logger";
+import { taskAnalyticsService } from "../../services/scheduler/taskAnalyticsService";
 
 const router = Router();
 

@@ -1,10 +1,10 @@
 
 import express from 'express';
-import { requireAuth } from '../middleware/auth.js';
-import { supabaseAdmin } from '../supabase.js';
-import { aiActionService } from '../services/ai/aiActionService.js';
-import { AppError } from '../middleware/errorHandler.js';
-import { ErrorCodes } from '../../shared/types/errorCodes.js';
+import { requireAuth } from '../middleware/auth';
+import { supabaseAdmin } from '../supabase';
+import { aiActionService } from '../services/ai/aiActionService';
+import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '../../shared/types/errorCodes';
 
 const router = express.Router();
 

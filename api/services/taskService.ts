@@ -1,9 +1,9 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { taskQueue } from "./common/queueService.js";
-import { sseService } from "./core/sseService.js";
-import { logger } from "../utils/logger.js";
-import { getProcessor } from "./taskProcessors/index.js";
-import { getPaginationParams, PaginationOptions } from "../utils/pagination.js";
+import { taskQueue } from "./common/queueService";
+import { sseService } from "./core/sseService";
+import { logger } from "../utils/logger";
+import { getProcessor } from "./taskProcessors/index";
+import { getPaginationParams, PaginationOptions } from "../utils/pagination";
 import "./taskProcessors/batchGenerateCardsProcessor.js";
 import "./taskProcessors/recursiveGraphProcessor.js";
 import "./taskProcessors/infiniteExpansionProcessor.js";

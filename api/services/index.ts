@@ -1,4 +1,4 @@
-export { achievementService } from "./achievementService.js";
+export { achievementService } from "./achievementService";
 export {
   aiActionService,
   aiService,
@@ -6,30 +6,30 @@ export {
   promptService,
   ragService,
   searchService,
-} from "./ai/index.js";
-export { focusService } from "./focusService.js";
-export { studyProgressService } from "./study/studyProgressService.js";
-export { studyService } from "./study/studyService.js";
-export { taskService } from "./taskService.js";
-export { reviewService } from "./study/reviewService.js";
-export { periodicTaskService } from "./scheduler/periodicTaskService.js";
-export { taskAnalyticsService } from "./scheduler/taskAnalyticsService.js";
-export { taskRecommendationService } from "./scheduler/taskRecommendationService.js";
+} from "./ai/index";
+export { focusService } from "./focusService";
+export { studyProgressService } from "./study/studyProgressService";
+export { studyService } from "./study/studyService";
+export { taskService } from "./taskService";
+export { reviewService } from "./study/reviewService";
+export { periodicTaskService } from "./scheduler/periodicTaskService";
+export { taskAnalyticsService } from "./scheduler/taskAnalyticsService";
+export { taskRecommendationService } from "./scheduler/taskRecommendationService";
 
-export { aiService as ai } from "./ai/index.js";
+export { aiService as ai } from "./ai/index";
 export {
   taskProcessors,
   registerProcessor,
   getProcessor,
-} from "./taskProcessors/index.js";
+} from "./taskProcessors/index";
 export type {
   TaskProcessor,
   UpdateTaskStatusFunction,
-} from "./taskProcessors/index.js";
+} from "./taskProcessors/index";
 
-export * from "./core/index.js";
-export * from "./graph/index.js";
-export * from "./study/index.js";
+export * from "./core/index";
+export * from "./graph/index";
+export * from "./study/index";
 export {
   cacheService,
   CacheKeys,
@@ -45,7 +45,7 @@ export {
   TEMPLATE_CATEGORIES,
   pdfService,
   dashboardService,
-} from "./common/index.js";
+} from "./common/index";
 export type {
   BackupSnapshot,
   TaskTemplate,
@@ -56,4 +56,4 @@ export type {
   BlindSpot,
   DistributionItem,
   DashboardStats,
-} from "./common/index.js";
+} from "./common/index";

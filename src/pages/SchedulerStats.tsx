@@ -218,7 +218,7 @@ const DurationTrendChart = ({ data }: { data: { date: string; completed: number;
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              formatter={(value: number | undefined) => value !== undefined ? [formatDuration(value), '执行时长'] : ['', '执行时长']}
+              formatter={(value) => value !== undefined ? [formatDuration(value as number), '执行时长'] : ['', '执行时长']}
               labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
             />
             <Line 
@@ -541,7 +541,7 @@ const EfficiencyChart = ({ data }: { data: { date: string; completed: number; du
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              formatter={(value: number | undefined) => value !== undefined ? [`${value} 分钟/任务`, '平均效率'] : ['', '平均效率']}
+              formatter={(value) => value !== undefined ? [`${value} 分钟/任务`, '平均效率'] : ['', '平均效率']}
               labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
             />
             <Bar 

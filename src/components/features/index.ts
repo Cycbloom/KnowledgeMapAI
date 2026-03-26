@@ -1,1 +1,1 @@
-export * from "../Scheduler/index.js";
+export * from "../Scheduler/index";

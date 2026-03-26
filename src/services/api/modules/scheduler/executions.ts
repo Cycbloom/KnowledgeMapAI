@@ -1,5 +1,5 @@
-import { request } from "../../client.js";
-import type { ExecutionFilters } from "./tasks.js";
+import { request } from "../../client";
+import type { ExecutionFilters } from "./tasks";
 
 export const executionsApi = {
   getExecutions: (filters?: ExecutionFilters) => {

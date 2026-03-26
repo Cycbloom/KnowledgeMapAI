@@ -1,25 +1,25 @@
-export { ErrorBoundary, withErrorBoundary } from "./ErrorBoundary.js";
+export { ErrorBoundary, withErrorBoundary } from "./ErrorBoundary";
 export {
   GlobalErrorBoundary,
   withGlobalErrorBoundary,
   useErrorBoundary,
-} from "./GlobalErrorBoundary.js";
-export { LoadingBar } from "./LoadingBar.js";
-export { default as Empty } from "./Empty.js";
-export { CodeBlock, createCodeComponent } from "./CodeBlock.js";
-export { LazyImage, LazyBackground } from "./LazyImage.js";
-export { VirtualList, VirtualGrid } from "./VirtualList.js";
-export { Mermaid } from "./Mermaid.js";
-export { MessageBar } from "./MessageBar.js";
-export { OfflineIndicator } from "./OfflineIndicator.js";
-export { OfflineStatusBar } from "./OfflineStatusBar.js";
-export { ConfirmationModal } from "./ConfirmationModal.js";
-export { FocusTimer } from "./FocusTimer.js";
-export { MobileFocusTimer } from "./MobileFocusTimer.js";
-export { HelpModal } from "./HelpModal.js";
-export { SSEStatusIndicator } from "./SSEStatusIndicator.js";
-export { TagCloud, TagFilter, TagSuggestions, TagInput } from "./TagSystem.js";
-export { TermTooltip } from "./TermTooltip.js";
-export { GlobalSearch } from "./GlobalSearch.js";
-export { ShortcutHelpPanel } from "./ShortcutHelpPanel.js";
-export { SearchResults } from "./SearchResults.js";
+} from "./GlobalErrorBoundary";
+export { LoadingBar } from "./LoadingBar";
+export { default as Empty } from "./Empty";
+export { CodeBlock, createCodeComponent } from "./CodeBlock";
+export { LazyImage, LazyBackground } from "./LazyImage";
+export { VirtualList, VirtualGrid } from "./VirtualList";
+export { Mermaid } from "./Mermaid";
+export { MessageBar } from "./MessageBar";
+export { OfflineIndicator } from "./OfflineIndicator";
+export { OfflineStatusBar } from "./OfflineStatusBar";
+export { ConfirmationModal } from "./ConfirmationModal";
+export { FocusTimer } from "./FocusTimer";
+export { MobileFocusTimer } from "./MobileFocusTimer";
+export { HelpModal } from "./HelpModal";
+export { SSEStatusIndicator } from "./SSEStatusIndicator";
+export { TagCloud, TagFilter, TagSuggestions, TagInput } from "./TagSystem";
+export { TermTooltip } from "./TermTooltip";
+export { GlobalSearch } from "./GlobalSearch";
+export { ShortcutHelpPanel } from "./ShortcutHelpPanel";
+export { SearchResults } from "./SearchResults";

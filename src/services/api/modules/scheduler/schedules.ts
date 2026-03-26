@@ -1,5 +1,5 @@
-import { request } from "../../client.js";
-import type { ProgressMode } from "./tasks.js";
+import { request } from "../../client";
+import type { ProgressMode } from "./tasks";
 
 export interface TaskSchedule {
   id: string;

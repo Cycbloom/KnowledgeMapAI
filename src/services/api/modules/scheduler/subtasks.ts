@@ -1,4 +1,4 @@
-import { request } from "../../client.js";
+import { request } from "../../client";
 
 export interface TaskSubtask {
   id: string;

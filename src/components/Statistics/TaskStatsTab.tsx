@@ -413,7 +413,7 @@ const TagAnalysisChart: React.FC<{
                   border: "none",
                   backgroundColor: isDark ? "#1e293b" : "#fff",
                 }}
-                formatter={(value: string | number | undefined) => [
+                formatter={(value) => [
                   `${Number(value || 0).toFixed(0)}%`,
                   "完成率",
                 ]}

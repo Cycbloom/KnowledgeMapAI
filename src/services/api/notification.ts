@@ -2,7 +2,7 @@ import {
   NotificationSettings,
   CreateNotificationData,
 } from "@shared/types";
-import { request } from "./client.js";
+import { request } from "./client";
 
 export const notificationApi = {
   getNotifications: (params?: { limit?: number; unread_only?: boolean }) => {

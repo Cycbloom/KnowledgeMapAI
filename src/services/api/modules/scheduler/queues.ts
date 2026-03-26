@@ -1,4 +1,4 @@
-import { request } from "../../client.js";
+import { request } from "../../client";
 import type { Queue, CreateQueueData, UpdateQueueData } from "@shared/types";
 
 export type { Queue, CreateQueueData, UpdateQueueData };

@@ -1,4 +1,4 @@
-export { tasksApi } from "./tasks.js";
+export { tasksApi } from "./tasks";
 export type {
   ScheduledTask,
   TaskType,
@@ -13,16 +13,16 @@ export type {
   ExecutionFilters,
   QueueData,
   GenerateTaskDetailsResult,
-} from "./tasks.js";
+} from "./tasks";
 
-export { queuesApi } from "./queues.js";
-export type { Queue, CreateQueueData, UpdateQueueData } from "./queues.js";
+export { queuesApi } from "./queues";
+export type { Queue, CreateQueueData, UpdateQueueData } from "./queues";
 
-export { executionsApi } from "./executions.js";
+export { executionsApi } from "./executions";
 
-export { dependenciesApi } from "./dependencies.js";
+export { dependenciesApi } from "./dependencies";
 
-export { focusApi } from "./focus.js";
+export { focusApi } from "./focus";
 export type {
   FocusSession,
   CreateFocusSessionData,
@@ -30,49 +30,49 @@ export type {
   DailyFocusStats,
   WeeklyFocusStats,
   MonthlyFocusStats,
-} from "./focus.js";
+} from "./focus";
 
-export { schedulesApi } from "./schedules.js";
-export type { TaskSchedule, TaskProgressPlan } from "./schedules.js";
+export { schedulesApi } from "./schedules";
+export type { TaskSchedule, TaskProgressPlan } from "./schedules";
 
-export { settingsApi } from "./settings.js";
+export { settingsApi } from "./settings";
 export type {
   TaskSettings,
   UpdateTaskSettingsData,
   UserTimeSlot,
-} from "./settings.js";
+} from "./settings";
 
-export { subtasksApi } from "./subtasks.js";
-export type { TaskSubtask } from "./subtasks.js";
+export { subtasksApi } from "./subtasks";
+export type { TaskSubtask } from "./subtasks";
 
-export { linksApi } from "./links.js";
-export type { TaskLink, LinkType } from "./links.js";
+export { linksApi } from "./links";
+export type { TaskLink, LinkType } from "./links";
 
-export { knowledgePointsApi } from "./knowledgePoints.js";
-export type { TaskKnowledgePoint } from "./knowledgePoints.js";
+export { knowledgePointsApi } from "./knowledgePoints";
+export type { TaskKnowledgePoint } from "./knowledgePoints";
 
-export { analyticsApi } from "./analytics.js";
-export type { TaskStats, HeatmapData } from "./analytics.js";
+export { analyticsApi } from "./analytics";
+export type { TaskStats, HeatmapData } from "./analytics";
 
-export { achievementsApi } from "./achievements.js";
+export { achievementsApi } from "./achievements";
 export type {
   Achievement,
   UserAchievement,
   AchievementCheckResult,
-} from "./achievements.js";
+} from "./achievements";
 
-import { tasksApi } from "./tasks.js";
-import { queuesApi } from "./queues.js";
-import { executionsApi } from "./executions.js";
-import { dependenciesApi } from "./dependencies.js";
-import { focusApi } from "./focus.js";
-import { schedulesApi } from "./schedules.js";
-import { settingsApi } from "./settings.js";
-import { subtasksApi } from "./subtasks.js";
-import { linksApi } from "./links.js";
-import { knowledgePointsApi } from "./knowledgePoints.js";
-import { analyticsApi } from "./analytics.js";
-import { achievementsApi } from "./achievements.js";
+import { tasksApi } from "./tasks";
+import { queuesApi } from "./queues";
+import { executionsApi } from "./executions";
+import { dependenciesApi } from "./dependencies";
+import { focusApi } from "./focus";
+import { schedulesApi } from "./schedules";
+import { settingsApi } from "./settings";
+import { subtasksApi } from "./subtasks";
+import { linksApi } from "./links";
+import { knowledgePointsApi } from "./knowledgePoints";
+import { analyticsApi } from "./analytics";
+import { achievementsApi } from "./achievements";
 
 export const schedulerApi = {
   ...tasksApi,

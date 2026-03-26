@@ -1,4 +1,4 @@
-import { request } from "../../client.js";
+import { request } from "../../client";
 import type {
   CreateScheduledTaskData,
   UpdateScheduledTaskData,

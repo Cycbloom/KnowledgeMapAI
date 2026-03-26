@@ -1,5 +1,5 @@
-import bcrypt from 'bcrypt';
-import { logger } from '../../utils/logger.js';
+import bcrypt from "bcrypt";
+import { logger } from "../../utils/logger.js";
 
 const SALT_ROUNDS = 12;
 
@@ -9,8 +9,8 @@ export class PasswordService {
       const hash = await bcrypt.hash(password, SALT_ROUNDS);
       return hash;
     } catch (error) {
-      logger.error('Failed to hash password', { error });
-      throw new Error('Failed to hash password');
+      logger.error("Failed to hash password", { error });
+      throw new Error("Failed to hash password");
     }
   }
 
@@ -19,7 +19,7 @@ export class PasswordService {
       const isValid = await bcrypt.compare(password, hash);
       return isValid;
     } catch (error) {
-      logger.error('Failed to verify password', { error });
+      logger.error("Failed to verify password", { error });
       return false;
     }
   }

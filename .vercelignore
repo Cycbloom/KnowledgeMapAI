@@ -1,47 +1,28 @@
-# Ignore all files in api directory except index.ts
-# This prevents Vercel from treating each file as a separate Serverless Function
-
-# Ignore routes directory (handled by Express app)
-api/routes/**
-api/routes/**/*
-
-# Ignore services directory
-api/services/**
-api/services/**/*
-
-# Ignore middleware directory
-api/middleware/**
-
-# Ignore schemas directory
-api/schemas/**
-
-# Ignore config directory
-api/config/**
-
-# Ignore constants directory
-api/constants/**
-
-# Ignore docs directory
-api/docs/**
-
-# Ignore jobs directory
-api/jobs/**
-
-# Ignore utils directory
-api/utils/**
-
-# Ignore types directory
-api/types/**
-
-# Ignore tests
-api/__tests__/**
-
-# Ignore assets
-api/assets/**
-
 # Standard ignores
 node_modules
 .git
 .env.local
 .env.*.local
 dist
+
+# Ignore tests
+api/__tests__/**
+
+# Ignore assets (fonts etc - not needed for serverless)
+api/assets/**
+
+# Ignore development files
+*.log
+.DS_Store
+Thumbs.db
+
+# Ignore test results
+test-results
+playwright-report
+coverage
+
+# Ignore Electron related files
+electron
+android
+release
+dist-electron

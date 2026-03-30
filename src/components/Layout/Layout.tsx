@@ -73,7 +73,7 @@ export const Layout = () => {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const { addMessage } = useMessageStore();
 
@@ -195,11 +195,11 @@ export const Layout = () => {
           `}
           >
             {/* Sidebar Header (Desktop) */}
-            <div className="hidden md:flex p-4 text-xl font-bold border-b border-slate-700 items-center justify-between h-16">
+            <div className={`hidden md:flex p-4 text-xl font-bold border-b border-slate-700 items-center h-16 ${isCollapsed ? "justify-center" : "justify-between"}`}>
               {!isCollapsed && <span className="truncate">知识图谱</span>}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-1 hover:bg-slate-800 rounded transition-colors"
+                className={`p-2 hover:bg-slate-800 rounded transition-colors`}
               >
                 {isCollapsed ? (
                   <ChevronRight size={20} />

@@ -172,7 +172,7 @@ router.post(
 
       res.status(201).json(card);
     } catch (error: any) {
-      console.error("Error creating card:", error);
+      logger.error("Error creating card:", error);
       throw new AppError(
         error.message || "创建学习卡片失败",
         500,
@@ -325,7 +325,7 @@ router.put(
       Promise.all([
         achievementService.addXp(req.user.id, 10),
         achievementService.updateMasteredStats(req.user.id),
-      ]).catch((err) => console.error("Achievement update failed:", err));
+      ]).catch((err) => logger.error("Achievement update failed:", err));
 
       res.json(result.card);
     } catch (error: any) {

@@ -19,7 +19,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": false,
     "noImplicitReturns": false,
-    "noImplicitOverride": false,
+    "noImplicitOverride": true,
     "exactOptionalPropertyTypes": false,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,

@@ -587,7 +587,6 @@ class MobilePromptService {
     if (!template) {
       const defaultPrompt = DEFAULT_PROMPTS[code];
       if (defaultPrompt) {
-        console.log(`[PromptService] Using default prompt for code: ${code}`);
         try {
           content = TemplateEngine.render(defaultPrompt, context);
         } catch (e) {

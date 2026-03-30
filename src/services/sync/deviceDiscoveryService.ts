@@ -11,12 +11,7 @@ class DeviceDiscoveryService {
 
   async start(deviceId: string, _deviceName: string): Promise<void> {
     this.deviceId = deviceId;
-    
-    // 在浏览器环境中，我们使用不同的方法进行设备发现
-    // 由于浏览器限制，我们无法直接使用UDP广播
-    // 所以我们使用定时轮询的方式
     this.startPolling();
-    console.log('Mobile device discovery service started');
   }
 
   async stop(): Promise<void> {
@@ -28,7 +23,6 @@ class DeviceDiscoveryService {
     this.deviceTimeoutIntervals.forEach(interval => clearTimeout(interval));
     this.deviceTimeoutIntervals.clear();
     this.devices.clear();
-    console.log('Mobile device discovery service stopped');
   }
 
   private startPolling(): void {
@@ -38,16 +32,6 @@ class DeviceDiscoveryService {
   }
 
   private async pollForDevices(): Promise<void> {
-    // 在实际实现中，这里可以：
-    // 1. 尝试连接到常见的局域网IP地址范围
-    // 2. 使用WebRTC进行设备发现
-    // 3. 或者使用其他浏览器兼容的设备发现方法
-    
-    // 这里我们模拟设备发现，实际实现需要根据浏览器环境进行调整
-    console.log('Polling for devices...');
-    
-    // 模拟发现设备
-    // 实际实现中，这里应该是真实的设备发现逻辑
   }
 
   // 手动添加设备（用于配对时）
@@ -89,8 +73,6 @@ class DeviceDiscoveryService {
   }
 
   async discoverDevices(): Promise<SyncDevice[]> {
-    // 这里应该实现真实的设备发现逻辑
-    // 由于浏览器限制，我们可能需要使用不同的方法
     await this.pollForDevices();
     return this.getOnlineDevices();
   }

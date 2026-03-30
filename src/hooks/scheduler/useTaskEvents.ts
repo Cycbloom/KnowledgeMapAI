@@ -24,13 +24,13 @@ export const useTaskEvents = () => {
   const connectRef = useRef<((isReconnect?: boolean) => void) | null>(null);
   const lastActivityRef = useRef<number>(0);
   const wasHiddenRef = useRef<boolean>(false);
-
-  if (isCapacitorMobile()) {
-    console.log("[useTaskEvents] Mobile environment detected, SSE disabled");
-    return;
-  }
+  const isMobileRef = useRef(isCapacitorMobile());
 
   useEffect(() => {
+    if (isMobileRef.current) {
+      return;
+    }
+
     const initApiUrl = async () => {
       if (isElectronProduction()) {
         const url = await getElectronApiUrl();
@@ -55,6 +55,9 @@ export const useTaskEvents = () => {
 
   const connect = useCallback(
     (isReconnect = false) => {
+      if (isMobileRef.current) {
+        return;
+      }
       if (!token) {
         console.warn("[SSE] No token available, skipping connection");
         return;
@@ -73,7 +76,6 @@ export const useTaskEvents = () => {
       lastActivityRef.current = Date.now();
 
       const sseUrl = `${apiUrl}/tasks/events`;
-      console.info("[SSE] Attempting to connect to", sseUrl);
 
       try {
         const es = new EventSourcePolyfill(sseUrl, {
@@ -87,7 +89,6 @@ export const useTaskEvents = () => {
         eventSourceRef.current = es;
 
         es.onopen = () => {
-          console.info("[SSE] Connection established successfully");
           setSSEStatus("connected");
           reconnectAttemptsRef.current = 0;
           lastActivityRef.current = Date.now();
@@ -100,13 +101,11 @@ export const useTaskEvents = () => {
             const data = JSON.parse(event.data);
 
             if (data.type === "connected") {
-              console.info("[SSE] Connected message:", data.message);
               return;
             }
 
             if (data.type === "task_update") {
               const { taskId, status, result, error } = data;
-              console.info(`[SSE] Task Update: ${taskId} -> ${status}`);
 
               queryClient.setQueryData(
                 ["tasks"],
@@ -167,9 +166,6 @@ export const useTaskEvents = () => {
               SSE_RECONNECT_DELAY_BASE *
               Math.pow(2, Math.min(reconnectAttemptsRef.current - 1, 5));
 
-            console.info(
-              `[SSE] Reconnection attempt ${reconnectAttemptsRef.current}/${SSE_RECONNECT_MAX_ATTEMPTS} in ${delay}ms`,
-            );
             setSSEStatus(
               "connecting",
               `Reconnecting... (${reconnectAttemptsRef.current}/${SSE_RECONNECT_MAX_ATTEMPTS})`,
@@ -203,6 +199,10 @@ export const useTaskEvents = () => {
   }, [connect]);
 
   useEffect(() => {
+    if (isMobileRef.current) {
+      return;
+    }
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && wasHiddenRef.current) {
         wasHiddenRef.current = false;
@@ -210,9 +210,6 @@ export const useTaskEvents = () => {
         const connectionStale = timeSinceLastActivity > 60000;
 
         if (connectionStale || !eventSourceRef.current) {
-          console.info(
-            "[SSE] Page became visible, reconnecting stale connection",
-          );
           reconnectAttemptsRef.current = 0;
           connect();
         }
@@ -229,6 +226,10 @@ export const useTaskEvents = () => {
   }, [connect]);
 
   useEffect(() => {
+    if (isMobileRef.current) {
+      return;
+    }
+
     if (!token) {
       cleanup();
       setSSEStatus("disconnected");
@@ -243,7 +244,6 @@ export const useTaskEvents = () => {
     return () => {
       cleanup();
       setSSEStatus("disconnected");
-      console.info("[SSE] Connection closed");
     };
   }, [token, apiUrl, connect, cleanup, setSSEStatus]);
 };

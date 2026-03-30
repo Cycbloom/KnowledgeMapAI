@@ -15,6 +15,7 @@ import { AppError } from "../middleware/errorHandler";
 import { achievementService } from "../services/achievementService";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { z } from "zod";
+import { logger } from "../utils/logger";
 
 const createTemplateSchema = z.object({
   name: z.string().min(1, "名称不能为空").max(100),
@@ -139,7 +140,7 @@ router.post(
         .select("id, title");
 
       if (kpError) {
-        console.error(
+        logger.error(
           "Failed to create knowledge points from template:",
           kpError,
         );
@@ -167,7 +168,7 @@ router.post(
             .select("id, knowledge_point_id");
 
           if (gnError) {
-            console.error(
+            logger.error(
               "Failed to create graph nodes from template:",
               gnError,
             );
@@ -213,7 +214,7 @@ router.post(
                 .insert(edgesData);
 
               if (edgeError) {
-                console.error(
+                logger.error(
                   "Failed to create edges from template:",
                   edgeError,
                 );
@@ -224,7 +225,9 @@ router.post(
       }
     }
 
-    achievementService.updateCreationStats(req.user.id).catch(console.error);
+    achievementService.updateCreationStats(req.user.id).catch((err) =>
+      logger.error("Achievement update failed:", err)
+    );
 
     await cacheService.invalidateUserGraphsCache(req.user.id);
 

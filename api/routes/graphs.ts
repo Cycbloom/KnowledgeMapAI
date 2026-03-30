@@ -358,7 +358,9 @@ router.post(
     );
 
     // Update achievements
-    achievementService.updateCreationStats(req.user.id).catch(console.error);
+    achievementService.updateCreationStats(req.user.id).catch((err) =>
+      logger.error("Achievement update failed:", err)
+    );
 
     res.status(201).json(data);
   },

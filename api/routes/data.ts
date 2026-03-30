@@ -187,7 +187,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
         res
       );
     } catch (e: any) {
-      console.error('PDF Generation Error:', e);
+      logger.error('PDF Generation Error:', e);
       if (!res.headersSent) {
          res.status(500).json({ error: 'PDF generation failed' });
       }

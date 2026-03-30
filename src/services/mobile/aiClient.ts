@@ -92,13 +92,6 @@ function cleanJsonString(str: string): string {
   return cleaned.trim();
 }
 
-function maskApiKey(apiKey: string): string {
-  if (apiKey.length <= 8) {
-    return "***";
-  }
-  return apiKey.slice(0, 4) + "****" + apiKey.slice(-4);
-}
-
 export class MobileAIClient {
   private client: OpenAI;
   private config: AIProviderConfig;
@@ -106,16 +99,6 @@ export class MobileAIClient {
   private retryConfig: RetryConfig;
 
   constructor(config: MobileAIConfig, retryConfig?: Partial<RetryConfig>) {
-    console.log("=".repeat(60));
-    console.log("[MobileAIClient] 初始化 AI 客户端");
-    console.log("=".repeat(60));
-    console.log("[MobileAIClient] 输入配置:", {
-      provider: config.provider,
-      hasApiKey: !!config.apiKey,
-      apiKeyLength: config.apiKey?.length || 0,
-      model: config.model,
-    });
-
     validateConfig(config);
 
     this.providerType = config.provider;
@@ -130,21 +113,12 @@ export class MobileAIClient {
       embeddingModel: providerConfig.embeddingModel,
     };
 
-    console.log("[MobileAIClient] 最终配置:", {
-      provider: this.providerType,
-      baseURL: this.config.baseURL,
-      model: this.config.model,
-      maskedApiKey: maskApiKey(this.config.apiKey),
-    });
-    console.log("=".repeat(60));
-
     this.client = new OpenAI({
       apiKey: this.config.apiKey,
       baseURL: this.config.baseURL,
       dangerouslyAllowBrowser: true,
       timeout: 120000,
     });
-    console.log("[MobileAIClient] 超时设置: 120秒");
   }
 
   async chat(
@@ -153,79 +127,16 @@ export class MobileAIClient {
   ): Promise<string> {
     const model = options?.model || this.config.model;
 
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${maskApiKey(this.config.apiKey)}`,
-    };
-
-    console.log("\n" + "=".repeat(60));
-    console.log("[MobileAIClient.chat] 发送请求");
-    console.log("=".repeat(60));
-    console.log("[请求信息]");
-    console.log("  URL:", `${this.config.baseURL}/chat/completions`);
-    console.log("  Method: POST");
-    console.log("  Headers:", JSON.stringify(headers, null, 2));
-    console.log("  API Key (原始):", this.config.apiKey ? "已设置" : "未设置");
-    console.log("  API Key 长度:", this.config.apiKey?.length || 0);
-    console.log(
-      "  Request Body:",
-      JSON.stringify(
-        {
-          model,
-          messages: messages.map((m) => ({
-            role: m.role,
-            content:
-              m.content.slice(0, 100) + (m.content.length > 100 ? "..." : ""),
-          })),
-        },
-        null,
-        2,
-      ),
-    );
-    console.log("=".repeat(60));
-
-    const startTime = Date.now();
-
     try {
       const completion = await this.client.chat.completions.create({
         messages,
         model,
       });
 
-      const elapsed = Date.now() - startTime;
-      const content = completion.choices[0].message.content || "";
-
-      console.log("\n" + "=".repeat(60));
-      console.log("[MobileAIClient.chat] 响应成功");
-      console.log("=".repeat(60));
-      console.log("[响应信息]");
-      console.log("  耗时:", elapsed, "ms");
-      console.log("  响应长度:", content.length, "字符");
-      console.log(
-        "  响应预览:",
-        content.slice(0, 200) + (content.length > 200 ? "..." : ""),
-      );
-      console.log("=".repeat(60));
-
-      return content;
+      return completion.choices[0].message.content || "";
     } catch (error) {
-      const elapsed = Date.now() - startTime;
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-
-      console.log("\n" + "=".repeat(60));
-      console.log("[MobileAIClient.chat] 请求失败");
-      console.log("=".repeat(60));
-      console.log("[错误信息]");
-      console.log("  耗时:", elapsed, "ms");
-      console.log("  错误:", errorMessage);
-      if (error instanceof Error && (error as any).status) {
-        console.log("  HTTP 状态码:", (error as any).status);
-      }
-      if (error instanceof Error && (error as any).response) {
-        console.log("  响应数据:", (error as any).response);
-      }
-      console.log("=".repeat(60));
 
       throw new Error(`AI 请求失败: ${errorMessage}`);
     }
@@ -240,106 +151,22 @@ export class MobileAIClient {
 
     for (let attempt = 0; attempt < this.retryConfig.maxRetries; attempt++) {
       try {
-        const headers = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${maskApiKey(this.config.apiKey)}`,
-        };
-
-        console.log("\n" + "=".repeat(60));
-        console.log(
-          `[MobileAIClient.chatWithJson] 发送请求 (尝试 ${attempt + 1}/${this.retryConfig.maxRetries})`,
-        );
-        console.log("=".repeat(60));
-        console.log("[请求信息]");
-        console.log("  URL:", `${this.config.baseURL}/chat/completions`);
-        console.log("  Method: POST");
-        console.log("  Headers:", JSON.stringify(headers, null, 2));
-        console.log(
-          "  API Key (原始):",
-          this.config.apiKey ? "已设置" : "未设置",
-        );
-        console.log("  API Key 长度:", this.config.apiKey?.length || 0);
-        console.log(
-          "  Request Body:",
-          JSON.stringify(
-            {
-              model,
-              messages: messages.map((m) => ({
-                role: m.role,
-                content:
-                  m.content.slice(0, 100) +
-                  (m.content.length > 100 ? "..." : ""),
-              })),
-              response_format: { type: "json_object" },
-            },
-            null,
-            2,
-          ),
-        );
-        console.log("=".repeat(60));
-
-        const startTime = Date.now();
-
         const completion = await this.client.chat.completions.create({
           messages,
           model,
           response_format: { type: "json_object" },
         });
 
-        const elapsed = Date.now() - startTime;
         const rawContent = completion.choices[0].message.content || "";
-
-        console.log("\n" + "=".repeat(60));
-        console.log("[MobileAIClient.chatWithJson] 响应成功");
-        console.log("=".repeat(60));
-        console.log("[响应信息]");
-        console.log("  耗时:", elapsed, "ms");
-        console.log("  响应长度:", rawContent.length, "字符");
-        console.log(
-          "  响应预览:",
-          rawContent.slice(0, 300) + (rawContent.length > 300 ? "..." : ""),
-        );
-        console.log("=".repeat(60));
-
         const cleanedContent = cleanJsonString(rawContent);
-
         const parsed = JSON.parse(cleanedContent) as T;
-        console.log("[MobileAIClient.chatWithJson] JSON 解析成功");
 
         return parsed;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
-        const isNetworkError =
-          lastError.message.includes("ERR_HTTP2_PROTOCOL_ERROR") ||
-          lastError.message.includes("ERR_CONNECTION") ||
-          lastError.message.includes("network") ||
-          lastError.message.includes("timeout") ||
-          lastError.message.includes("ECONNREFUSED") ||
-          lastError.message.includes("ETIMEDOUT");
-
-        console.log("\n" + "=".repeat(60));
-        console.log(`[MobileAIClient.chatWithJson] 尝试 ${attempt + 1} 失败`);
-        console.log("=".repeat(60));
-        console.log("[错误信息]");
-        console.log("  错误类型:", isNetworkError ? "网络错误" : "API 错误");
-        console.log("  错误消息:", lastError.message);
-        if ((error as any)?.status) {
-          console.log("  HTTP 状态码:", (error as any).status);
-        }
-        if ((error as any)?.response) {
-          console.log("  响应数据:", (error as any).response);
-        }
-        if ((error as any)?.cause) {
-          console.log("  原因:", (error as any).cause);
-        }
-        console.log("=".repeat(60));
-
         if (attempt < this.retryConfig.maxRetries - 1) {
           const backoffDelay = calculateBackoff(attempt, this.retryConfig);
-          console.log(
-            `[MobileAIClient.chatWithJson] 等待 ${backoffDelay}ms 后重试`,
-          );
           await delay(backoffDelay);
         }
       }

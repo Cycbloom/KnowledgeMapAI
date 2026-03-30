@@ -831,18 +831,10 @@ export const LearningMode = () => {
 
     setIsGeneratingCards(true);
     try {
-      console.log("[LearningMode] 开始生成题目:", {
-        nodeId,
-        config,
-        timestamp: new Date().toISOString(),
-      });
-
       const result = await api.ai.batchGenerateCards([nodeId], {
         count: config.count,
         types: config.types,
       });
-
-      console.log("[LearningMode] 题目生成结果:", result);
 
       if (result.success) {
         addMessage({
@@ -952,15 +944,7 @@ export const LearningMode = () => {
 
       setIsGeneratingCards(true);
       try {
-        console.log("[LearningMode] 批量生成题目:", {
-          nodeIds,
-          data,
-          timestamp: new Date().toISOString(),
-        });
-
         const result = await api.ai.batchGenerateCards(nodeIds, data);
-
-        console.log("[LearningMode] 批量生成结果:", result);
 
         if (result.success) {
           addMessage({

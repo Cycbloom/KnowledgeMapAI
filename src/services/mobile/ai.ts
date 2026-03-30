@@ -155,24 +155,13 @@ export const mobileAiApi = {
     const isMobile = isCapacitorMobile();
     const isConfigured = mobileAIService.isConfigured();
 
-    console.log("[Mobile API] generateLearningMaterial 调用", {
-      isMobile,
-      isConfigured,
-      topic: data.topic,
-    });
-
     if (isMobile && isConfigured) {
-      console.log("[Mobile API] 使用本地 AI 服务生成学习资料");
       try {
         const result = await mobileAIService.generateLearningMaterial(
           data.topic,
           data.context || "",
           { level: data.level },
         );
-        console.log("[Mobile API] generateLearningMaterial 成功", {
-          contentLength: result.content?.length || 0,
-          keywordCount: result.keywords?.length || 0,
-        });
         return result;
       } catch (error) {
         console.error("[Mobile API] generateLearningMaterial 本地服务失败:", {
@@ -183,7 +172,6 @@ export const mobileAiApi = {
       }
     }
 
-    console.log("[Mobile API] 使用云端 API 生成学习资料");
     const payload = injectAIConfig(data, "text");
     return mobileAiClient.post("/ai/learning-material", payload);
   },
@@ -202,14 +190,7 @@ export const mobileAiApi = {
     const isMobile = isCapacitorMobile();
     const isConfigured = mobileAIService.isConfigured();
 
-    console.log("[Mobile API] expand 调用", {
-      isMobile,
-      isConfigured,
-      node_title: data.node_title,
-    });
-
     if (isMobile && isConfigured) {
-      console.log("[Mobile API] 使用本地 AI 服务扩展知识节点");
       try {
         const result = await mobileAIService.expandKnowledge(
           data.node_title,
@@ -221,9 +202,6 @@ export const mobileAiApi = {
             expandPrompt: data.expand_prompt,
           },
         );
-        console.log("[Mobile API] expand 成功", {
-          suggestionCount: result.suggestions?.length || 0,
-        });
         return result;
       } catch (error) {
         console.error("[Mobile API] expand 本地服务失败:", {
@@ -275,14 +253,7 @@ export const mobileAiApi = {
   ) => {
     const isMobile = isCapacitorMobile();
 
-    console.log("[Mobile API] batchGenerateCards 调用", {
-      isMobile,
-      nodeCount: node_ids.length,
-    });
-
     if (isMobile) {
-      console.log("[Mobile API] 移动端使用本地 AI 服务生成题目");
-      
       if (!mobileAIService.isConfigured()) {
         throw new Error("请先在设置中配置 AI API Key");
       }
@@ -351,10 +322,6 @@ export const mobileAiApi = {
       }
 
       const successCount = results.filter((r) => r.success).length;
-      console.log("[Mobile API] batchGenerateCards 完成", {
-        totalNodes: results.length,
-        successCount,
-      });
       return {
         success: true,
         taskIds: results.map((r) => r.nodeId),
@@ -366,17 +333,9 @@ export const mobileAiApi = {
     const payloadConfig = injectAIConfig(config, "text");
     const payload = { node_ids, config: payloadConfig };
 
-    console.log("[Mobile API] batchGenerateCards 请求:", {
-      baseURL: getCloudApiBaseUrl() || "(empty, using relative path)",
-      endpoint: "/ai/batch-generate-cards",
-      payload,
-      timestamp: new Date().toISOString(),
-    });
-
     return mobileAiClient
       .post("/ai/batch-generate-cards", payload)
       .then((result) => {
-        console.log("[Mobile API] batchGenerateCards 成功:", result);
         return result;
       })
       .catch((error) => {

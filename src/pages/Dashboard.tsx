@@ -207,20 +207,18 @@ export const Dashboard = () => {
 
     try {
       setFormError(null);
-      let result;
       if (selectedTemplate) {
-        result = await createGraphFromTemplateMutation.mutateAsync({
+        await createGraphFromTemplateMutation.mutateAsync({
           template_id: selectedTemplate.id,
           title: newTitle,
           description: newDescription,
         });
       } else {
-        result = await createGraphMutation.mutateAsync({
+        await createGraphMutation.mutateAsync({
           title: newTitle,
           description: newDescription,
         });
       }
-      console.log("创建图谱返回结果:", result);
       setNewTitle("");
       setNewDescription("");
       setSelectedTemplate(null);

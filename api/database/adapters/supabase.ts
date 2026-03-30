@@ -55,6 +55,7 @@ import type {
 } from '../../../shared/types/common';
 
 import type { QuizSet } from '../../../shared/types/quiz';
+import { logger } from '../../utils/logger';
 
 function now(): string {
   return new Date().toISOString();
@@ -79,7 +80,7 @@ export class SupabaseAdapter implements DatabaseInterface {
   async connect(): Promise<void> {
     const { error } = await this.client.from('users').select('id').limit(1);
     if (error && error.code !== 'PGRST116') {
-      console.warn('Supabase connection check:', error.message);
+      logger.warn('Supabase connection check:', error.message);
     }
     this.connected = true;
   }

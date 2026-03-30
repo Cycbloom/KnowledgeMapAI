@@ -119,7 +119,7 @@ export async function getGraphNodesBatchFromNewTable(
     .is("deleted_at", null);
 
   if (error) {
-    console.error("getGraphNodesBatchFromNewTable error:", error);
+    logger.error("getGraphNodesBatchFromNewTable error:", error);
     return result;
   }
 
@@ -185,7 +185,7 @@ export async function createKnowledgePointWithGraphNode(
     .single();
 
   if (gnError) {
-    console.error("createGraphNode error:", gnError);
+    logger.error("createGraphNode error:", gnError);
     await supabase.from("knowledge_points").delete().eq("id", kp.id);
     return null;
   }

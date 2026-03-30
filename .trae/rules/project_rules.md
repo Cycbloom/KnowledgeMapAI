@@ -226,3 +226,122 @@ tests/
 4. 运行相关测试 `npx playwright test --grep="功能名称"`
 5. 修复发现的问题
 6. 提交代码
+
+## 代码质量规范
+
+### 日志使用规范
+
+**前端日志：**
+
+1. **禁止使用 `console.log` 和 `console.info`** - ESLint 会报错
+2. **允许使用 `console.warn` 和 `console.error`** - 用于警告和错误报告
+3. **调试日志应移除** - 提交前清理所有调试日志
+4. **特殊情况** - `serviceWorker.ts` 和 `performance.ts` 中的日志除外
+
+**后端日志：**
+
+1. **使用统一的 Logger 工具** - 位于 `api/utils/logger.ts`
+2. **导入方式**：
+   ```typescript
+   import { logger } from '../utils/logger';
+   ```
+3. **使用方法**：
+   ```typescript
+   logger.info('信息日志', { context: 'data' });
+   logger.warn('警告日志');
+   logger.error('错误日志', error);
+   logger.debug('调试日志');
+   ```
+4. **禁止直接使用 console** - 后端代码应全部使用 logger
+
+### 类型安全规范
+
+**禁止使用 `any` 类型：**
+
+1. **ESLint 规则** - `@typescript-eslint/no-explicit-any: warn`
+2. **替代方案**：
+   - 使用具体类型：`string`、`number`、`object` 等
+   - 使用泛型：`T`、`Array<T>`、`Record<string, unknown>`
+   - 使用 `unknown` 并进行类型守卫
+   - 定义接口：`interface MyData { ... }`
+
+**禁止非空断言：**
+
+1. **ESLint 规则** - `@typescript-eslint/no-non-null-assertion: warn`
+2. **替代方案**：
+   - 使用可选链：`obj?.property`
+   - 使用空值合并：`value ?? defaultValue`
+   - 添加类型守卫：`if (value) { ... }`
+
+**TypeScript 严格模式：**
+
+项目已启用以下严格选项：
+- `strict: true` - 启用所有严格类型检查
+- `noImplicitAny: true` - 禁止隐式 any
+- `strictNullChecks: true` - 严格的 null 检查
+- `noImplicitReturns: true` - 函数必须有返回值
+- `noImplicitOverride: true` - 重写方法必须使用 override 关键字
+
+### 测试编写规范
+
+**单元测试：**
+
+1. **测试文件位置** - `src/__tests__/` 目录
+2. **命名规范** - `*.test.ts` 或 `*.test.tsx`
+3. **运行命令** - `npm test`
+4. **覆盖范围**：
+   - 核心 hooks（`src/hooks/`）
+   - 核心服务（`src/services/`）
+   - 工具函数（`src/utils/`）
+
+**E2E 测试：**
+
+1. **测试文件位置** - `e2e/` 目录
+2. **命名规范** - `*.spec.ts`
+3. **运行命令** - `npm run test:e2e`
+4. **覆盖范围**：
+   - 登录/注册流程
+   - 图谱创建和编辑
+   - 学习模式
+   - 任务管理
+
+**测试原则：**
+
+1. **独立性** - 每个测试应独立运行
+2. **可重复性** - 测试结果应稳定可重复
+3. **清晰性** - 测试名称应描述预期行为
+4. **快速性** - 单元测试应快速执行
+
+## CI/CD 流程
+
+### CI 检查项
+
+每次提交代码时，CI 会自动运行以下检查：
+
+1. **Lint** - 代码风格检查
+2. **Type Check (Web)** - Web 端类型检查
+3. **Type Check (Electron)** - Electron 端类型检查
+4. **Security Audit** - 依赖安全审计
+5. **Unit Tests** - 单元测试
+6. **Build** - 构建验证
+7. **Build Size Report** - 构建产物大小报告
+8. **E2E Tests** - 端到端测试
+
+### 本地验证
+
+提交代码前，请运行以下命令进行本地验证：
+
+```bash
+# 类型检查
+npm run check
+npm run check:electron
+
+# 代码检查
+npm run lint
+
+# 单元测试
+npm test -- run
+
+# 构建
+npm run build
+```

@@ -27,13 +27,7 @@ function getStoredAIConfig(): MobileAIUserConfig | null {
   try {
     const stored = localStorage.getItem(MOBILE_AI_CONFIG_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
-      console.log("[MobileAIService] 从本地存储加载配置", {
-        provider: parsed.provider,
-        hasApiKey: !!parsed.apiKey,
-        model: parsed.model,
-      });
-      return parsed;
+      return JSON.parse(stored);
     }
   } catch (e) {
     console.error("[MobileAIService] 加载本地存储配置失败:", e);
@@ -44,7 +38,6 @@ function getStoredAIConfig(): MobileAIUserConfig | null {
 function storeAIConfig(config: MobileAIUserConfig): void {
   try {
     localStorage.setItem(MOBILE_AI_CONFIG_KEY, JSON.stringify(config));
-    console.log("[MobileAIService] 配置已保存到本地存储");
   } catch (e) {
     console.error("[MobileAIService] 保存配置到本地存储失败:", e);
   }
@@ -58,11 +51,9 @@ function getAIConfigFromEnv(): MobileAIUserConfig | null {
   const apiKey = ENV_API_KEYS[provider];
 
   if (!apiKey) {
-    console.log("[MobileAIService] 环境变量中未找到 API Key", { provider });
     return null;
   }
 
-  console.log("[MobileAIService] 从环境变量加载配置", { provider });
   return {
     provider,
     model: aiConfig?.model,
@@ -93,7 +84,6 @@ function getAIConfigFromUserSettings(): MobileAIUserConfig | null {
       return null;
     }
 
-    console.log("[MobileAIService] 使用本地存储配置", { provider });
     return {
       provider,
       model: aiConfig?.model || storedConfig.model,
@@ -101,7 +91,6 @@ function getAIConfigFromUserSettings(): MobileAIUserConfig | null {
     };
   }
 
-  console.log("[MobileAIService] 未找到有效配置");
   return null;
 }
 
@@ -340,13 +329,11 @@ const LEARNING_MATERIAL_SYSTEM_PROMPT = `你是一位杰出的教材作者和教
 export const mobileAIService = {
   isConfigured: (): boolean => {
     const config = getAIConfigFromUserSettings();
-    const configured = !!(
+    return !!(
       config &&
       config.apiKey &&
       config.apiKey.trim() !== ""
     );
-    console.log("[MobileAIService.isConfigured] 检查配置状态:", configured);
-    return configured;
   },
 
   getConfig: (): MobileAIUserConfig | null => {
@@ -370,7 +357,6 @@ export const mobileAIService = {
 
   clearConfig: (): void => {
     localStorage.removeItem(MOBILE_AI_CONFIG_KEY);
-    console.log("[MobileAIService] 配置已清除");
   },
 
   generateCards: async (
@@ -467,7 +453,6 @@ Important:
 
         if (renderedPrompt && renderedPrompt.trim()) {
           systemPrompt = renderedPrompt;
-          console.log("[MobileAIService.generateCards] 使用数据库 Prompt 模板", { promptCode });
         }
       } catch (error) {
         console.warn("[MobileAIService.generateCards] 获取 Prompt 模板失败，使用默认模板:", error);
@@ -483,23 +468,12 @@ Important:
     ];
 
     try {
-      console.log("[MobileAIService.generateCards] 开始生成题目", {
-        topic,
-        types,
-        count,
-        difficulty,
-      });
-
       const result = await client.chatWithJson<GenerateCardsResult>(messages);
 
       let cards = result.cards || [];
 
       cards = cards.filter((card: GeneratedCard) => {
         return types.includes(card.type);
-      });
-
-      console.log("[MobileAIService.generateCards] 题目生成成功", {
-        cardCount: cards.length,
       });
 
       return { cards };
@@ -650,12 +624,6 @@ Important:
       level?: string;
     } = {},
   ): Promise<GenerateLearningMaterialResult> => {
-    console.log("[MobileAIService.generateLearningMaterial] 开始生成学习资料", {
-      topic,
-      contextLength: context?.length || 0,
-      level: options.level,
-    });
-
     const client = createAIClient();
     if (!client) {
       console.error("[MobileAIService.generateLearningMaterial] AI 服务未配置");
@@ -674,15 +642,8 @@ ${options.level ? `知识水平：${options.level}` : ""}
     ];
 
     try {
-      console.log("[MobileAIService.generateLearningMaterial] 发送 AI 请求");
-
       const result =
         await client.chatWithJson<GenerateLearningMaterialResult>(messages);
-
-      console.log("[MobileAIService.generateLearningMaterial] 收到 AI 响应", {
-        contentLength: result.content?.length || 0,
-        keywordCount: result.keywords?.length || 0,
-      });
 
       const normalizedKeywords = Array.isArray(result.keywords)
         ? result.keywords.map((k) => ({
@@ -692,10 +653,6 @@ ${options.level ? `知识水平：${options.level}` : ""}
             explanation: k.explanation || "",
           }))
         : [];
-
-      console.log(
-        "[MobileAIService.generateLearningMaterial] 学习资料生成成功",
-      );
 
       return {
         content: result.content || "",
@@ -765,18 +722,9 @@ Please respond in Chinese.`;
     ];
 
     try {
-      console.log("[MobileAIService.expandKnowledge] 开始扩展知识节点", {
-        nodeTitle,
-        contextLevel,
-      });
-
       const result = await client.chatWithJson<{
         suggestions: Array<{ title: string; content: string }>;
       }>(messages);
-
-      console.log("[MobileAIService.expandKnowledge] 知识节点扩展成功", {
-        suggestionCount: result.suggestions?.length || 0,
-      });
 
       return {
         suggestions: Array.isArray(result.suggestions)

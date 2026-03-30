@@ -131,7 +131,7 @@ export class ValidationError extends AppError {
     this.details = details;
   }
 
-  toJSON() {
+  override toJSON() {
     return {
       ...super.toJSON(),
       details: this.details,
@@ -172,7 +172,7 @@ export class RateLimitError extends AppError {
     this.retryAfter = retryAfter;
   }
 
-  toJSON() {
+  override toJSON() {
     return {
       ...super.toJSON(),
       retryAfter: this.retryAfter,

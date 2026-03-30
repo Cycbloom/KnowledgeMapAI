@@ -1,4 +1,4 @@
-name: CI
+﻿﻿name: CI
 
 on:
   push:
@@ -26,14 +26,35 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Type Check
+      - name: Type Check (Web)
         run: npm run check
+
+      - name: Type Check (Electron)
+        run: npm run check:electron
+
+      - name: Security Audit
+        continue-on-error: true
+        run: npm audit
 
       - name: Run Tests
         run: npm test -- run
 
       - name: Build
         run: npm run build
+
+      - name: Build Size Report
+        run: |
+          echo "=== Build Size Report ==="
+          echo "Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          echo "dist/ directory:"
+          du -sh dist/ 2>/dev/null || echo "dist/ not found"
+          echo ""
+          echo "Detailed breakdown:"
+          du -sh dist/*/ 2>/dev/null || echo "No subdirectories in dist/"
+          echo ""
+          echo "Total files count:"
+          find dist/ -type f 2>/dev/null | wc -l || echo "0"
 
   e2e-tests:
     name: E2E Tests (Playwright)

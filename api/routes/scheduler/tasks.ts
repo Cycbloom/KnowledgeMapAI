@@ -8,6 +8,7 @@ import {
   moveTaskSchema,
   reorderTasksSchema,
 } from "../../schemas/index";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 
@@ -84,7 +85,7 @@ router.post(
       .single();
 
     if (error) {
-      console.error("Create task error:", error);
+      logger.error("Create task error:", error);
       return res.status(500).json({ error: "创建任务失败" });
     }
 
@@ -129,7 +130,7 @@ router.get(
     } = await query.range(offset, offset + limit - 1);
 
     if (error) {
-      console.error("Get tasks error:", error);
+      logger.error("Get tasks error:", error);
       return res.status(500).json({ error: "获取任务列表失败" });
     }
 
@@ -414,7 +415,7 @@ router.post(
       .single();
 
     if (execError) {
-      console.error("Create execution error:", execError);
+      logger.error("Create execution error:", execError);
     }
 
     res.json({ success: true, data: { task, execution } });

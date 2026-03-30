@@ -58,7 +58,7 @@ router.get(
       res.json({ success: true, data: recommendations });
     } catch (error) {
       const err = error as Error;
-      console.error("Get recommendations error:", err);
+      logger.error("Get recommendations error:", err);
       res.status(500).json({ error: err.message || "获取任务推荐失败" });
     }
   },
@@ -85,7 +85,7 @@ router.get(
       res.json({ success: true, data: suggestions });
     } catch (error) {
       const err = error as Error;
-      console.error("Get smart suggestions error:", err);
+      logger.error("Get smart suggestions error:", err);
       res.status(500).json({ error: err.message || "获取智能建议失败" });
     }
   },
@@ -139,7 +139,7 @@ router.get(
       res.json({ success: true, data: efficiencyData });
     } catch (error) {
       const err = error as Error;
-      console.error("Get efficiency data error:", err);
+      logger.error("Get efficiency data error:", err);
       res.status(500).json({ error: err.message || "获取效率数据失败" });
     }
   },

@@ -35,13 +35,17 @@ try {
         envPath = tryPath;
         break;
       }
-    } catch {}
+    } catch {
+      logger.debug(`Failed to load .env from ${tryPath}`);
+    }
   }
 
   if (!envPath) {
     dotenv.config();
   }
-} catch {}
+} catch {
+  logger.debug("Failed to initialize environment");
+}
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

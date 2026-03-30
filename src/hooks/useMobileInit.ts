@@ -26,24 +26,19 @@ export function useMobileInit() {
         await SplashScreen.hide();
 
         await StatusBar.hide();
-      } catch (error) {
-        console.log("StatusBar not available:", error);
+      } catch {
+        console.warn("Failed to hide splash screen or status bar");
       }
 
       try {
         const status = await Network.getStatus();
         setIsOnline(status.connected);
-      } catch (error) {
-        console.log("Network status not available:", error);
+      } catch {
+        console.warn("Failed to get network status");
       }
 
       Network.addListener("networkStatusChange", (status) => {
         setIsOnline(status.connected);
-        if (!status.connected) {
-          console.log("Network disconnected");
-        } else {
-          console.log("Network connected");
-        }
       });
     };
 

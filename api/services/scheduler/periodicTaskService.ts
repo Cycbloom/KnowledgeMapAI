@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../supabase';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { logger } from '../../utils/logger';
 
 export interface PeriodicTask {
   id: string;
@@ -192,7 +193,7 @@ export class PeriodicTaskService {
       });
 
     if (error && !error.message.includes('duplicate')) {
-      console.error('Error initializing pass:', error);
+      logger.error('Error initializing pass:', error);
     }
   }
 

@@ -6,6 +6,7 @@ import {
   createTaskDependencySchema,
   taskDependencyParamsSchema,
 } from "../../schemas/index";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 
@@ -119,7 +120,7 @@ router.post(
       .single();
 
     if (error) {
-      console.error("Create dependency error:", error);
+      logger.error("Create dependency error:", error);
       return res.status(500).json({ error: "创建依赖关系失败" });
     }
 
@@ -191,7 +192,7 @@ router.get(
       .eq("user_id", req.user.id);
 
     if (error) {
-      console.error("Get dependencies error:", error);
+      logger.error("Get dependencies error:", error);
       return res.status(500).json({ error: "获取依赖列表失败" });
     }
 
@@ -241,7 +242,7 @@ router.get(
       .eq("user_id", req.user.id);
 
     if (error) {
-      console.error("Get dependents error:", error);
+      logger.error("Get dependents error:", error);
       return res.status(500).json({ error: "获取后置任务列表失败" });
     }
 

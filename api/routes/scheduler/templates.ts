@@ -94,7 +94,7 @@ router.get(
     const { data: templates, error, count } = await query;
 
     if (error) {
-      console.error("Get templates error:", error);
+      logger.error("Get templates error:", error);
       return res.status(500).json({ error: "获取模板列表失败" });
     }
 
@@ -368,7 +368,7 @@ router.post(
       .single();
 
     if (taskError) {
-      console.error("Create task from template error:", taskError);
+      logger.error("Create task from template error:", taskError);
       return res.status(500).json({ error: "从模板创建任务失败" });
     }
 

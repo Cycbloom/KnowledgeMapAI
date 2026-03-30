@@ -36,7 +36,6 @@ export class MobileSyncService {
     this.isRunning = true;
     await deviceDiscoveryService.start(this.deviceId, this.deviceName);
     this.startAutoSync();
-    console.log("Mobile sync service started");
   }
 
   async stop(): Promise<void> {
@@ -47,7 +46,6 @@ export class MobileSyncService {
 
     await deviceDiscoveryService.stop();
     this.isRunning = false;
-    console.log("Mobile sync service stopped");
   }
 
   private startAutoSync(): void {
@@ -65,26 +63,16 @@ export class MobileSyncService {
     }
 
     try {
-      console.log("Starting mobile sync...");
-
-      // 1. Process pending operations
       await this.processPendingOperations();
-
-      // 2. Discover devices
       await this.discoverDevices();
-
-      // 3. Sync with available devices
       const onlineDevices = deviceDiscoveryService.getOnlineDevices();
       for (const device of onlineDevices) {
         await this.syncWithDevice(device);
       }
-
-      // 4. Process conflicts
       await this.processConflicts();
 
       this.lastSync = new Date().toISOString();
       this.lastSyncStatus = "success";
-      console.log("Mobile sync completed successfully");
       return true;
     } catch (error) {
       console.error("Mobile sync failed:", error);
@@ -95,14 +83,11 @@ export class MobileSyncService {
   }
 
   private async processPendingOperations(): Promise<void> {
-    // Get pending operations from offline storage
     const pendingOps = await getOfflineQueue();
     if (pendingOps.length === 0) {
       return;
     }
-    console.log(`Processing ${pendingOps.length} pending operations`);
 
-    // Convert offline operations to sync operations
     this.pendingOperations = pendingOps.map((op) => ({
       id: op.id,
       type: op.type,
@@ -115,25 +100,16 @@ export class MobileSyncService {
   }
 
   private async discoverDevices(): Promise<void> {
-    console.log("Discovering devices...");
     await deviceDiscoveryService.discoverDevices();
-    const devices = deviceDiscoveryService.getOnlineDevices();
-    console.log(`Found ${devices.length} online devices`);
   }
 
   private async syncWithDevice(device: SyncDevice): Promise<void> {
-    console.log(`Syncing with device: ${device.name} (${device.ipAddress})`);
-
-    // Check if device is paired
     if (!syncAuthService.isDevicePaired(device.id)) {
-      console.log(`Device ${device.id} is not paired, skipping sync`);
       return;
     }
 
-    // Generate sync token
     const token = syncAuthService.generateSyncToken(device.id);
     if (!token) {
-      console.log(`Failed to generate sync token for device ${device.id}`);
       return;
     }
 
@@ -221,12 +197,7 @@ export class MobileSyncService {
     }
   }
 
-  private async applyOperation(operation: SyncOperation): Promise<void> {
-    // 模拟应用操作，实际实现需要根据具体的存储机制来处理
-    console.log(
-      `Applying operation: ${operation.type} ${operation.table} ${operation.recordId}`,
-    );
-    // TODO: 实现实际的操作应用逻辑
+  private async applyOperation(_operation: SyncOperation): Promise<void> {
   }
 
   private async getLocalVersion(
@@ -249,22 +220,16 @@ export class MobileSyncService {
     if (this.conflicts.length === 0) {
       return;
     }
-    console.log(`Processing ${this.conflicts.length} conflicts`);
 
-    // Auto-resolve conflicts
     const resolvedOperations = conflictService.autoResolveConflicts(
       this.conflicts,
     );
 
-    // Apply resolved operations
     for (const op of resolvedOperations) {
       await this.applyOperation(op);
     }
 
-    // Clear resolved conflicts
     this.conflicts = this.conflicts.filter((c) => !c.resolved);
-
-    console.log(`Auto-resolved ${resolvedOperations.length} conflicts`);
   }
 
   async addOperation(operation: SyncOperation): Promise<void> {
@@ -273,12 +238,9 @@ export class MobileSyncService {
       type: operation.type,
       entityType: operation.table as any,
       entityId: operation.recordId,
-      graphId: "default", // TODO: Get actual graph ID
+      graphId: "default",
       data: operation.record,
     });
-    console.log(
-      `Added sync operation: ${operation.type} ${operation.table} ${operation.recordId}`,
-    );
   }
 
   async getStatus(): Promise<any> {

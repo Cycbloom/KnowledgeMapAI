@@ -8,7 +8,7 @@ import { logger } from "../utils/logger";
 
 class TaskProcessor {
   public async processTask(task: Task) {
-    console.log(`[TaskProcessor] Processing task ${task.id} (${task.type})`);
+    logger.debug(`[TaskProcessor] Processing task ${task.id} (${task.type})`);
 
     try {
       // Update status to processing
@@ -44,7 +44,7 @@ class TaskProcessor {
         "completed",
         result,
       );
-      console.log(`[TaskProcessor] Task ${task.id} completed`);
+      logger.debug(`[TaskProcessor] Task ${task.id} completed`);
 
       // Invalidate cache
       if (task.type === "expand_graph") {
@@ -54,7 +54,7 @@ class TaskProcessor {
         const { graph_id } = task.payload;
         if (graph_id && task.user_id) {
           await cacheService.del(CacheKeys.GRAPH_NODES(task.user_id, graph_id));
-          console.log(
+          logger.debug(
             `[TaskProcessor] Cache invalidated for graph ${graph_id}`,
           );
         }
@@ -184,7 +184,7 @@ class TaskProcessor {
             .insert(cardsToInsert);
 
           if (error) {
-            console.error(
+            logger.error(
               `[TaskProcessor] Failed to insert cards for type ${type}:`,
               error,
             );
@@ -193,7 +193,7 @@ class TaskProcessor {
             totalCount += cards.length;
           }
         } else {
-          console.warn(`[TaskProcessor] AI returned 0 cards for type ${type}`);
+          logger.warn(`[TaskProcessor] AI returned 0 cards for type ${type}`);
         }
       } catch (err: any) {
         logger.error(`Error generating type ${type}:`, err);

@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'dist-electron', 'dev-dist', 'release', 'node_modules', '**/*.test.ts', '**/*.test.tsx'] },
+  { ignores: ['dist', 'dist-electron', 'dev-dist', 'release', 'node_modules', '**/*.test.ts', '**/*.test.tsx', 'android/**', 'public/workbox-*.js'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -36,7 +36,7 @@ export default tseslint.config(
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'warn',
       'no-var': 'error',
       eqeqeq: ['warn', 'always', { null: 'ignore' }],

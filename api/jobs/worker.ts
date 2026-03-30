@@ -41,14 +41,14 @@ if (redisUrl) {
             .single();
 
           if (error || !task) {
-            console.error(`[Worker] Task ${taskId} not found in DB:`, error);
+            logger.error(`[Worker] Task ${taskId} not found in DB:`, error);
             return;
           }
 
           await taskProcessor.processTask(task);
 
         } catch (err) {
-          console.error(`[Worker] Critical error processing task ${taskId}:`, err);
+          logger.error(`[Worker] Critical error processing task ${taskId}:`, err);
           throw err;
         }
       }, { 

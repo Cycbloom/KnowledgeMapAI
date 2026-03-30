@@ -20,7 +20,7 @@ try {
   dotenv.config({ path: path.join(__dirname, '..', '..', '.env.production') });
   dotenv.config();
 } catch (err) {
-  console.warn('Failed to load .env file in taskService:', err);
+  logger.warn('Failed to load .env file in taskService:', err);
 }
 
 export interface Task {

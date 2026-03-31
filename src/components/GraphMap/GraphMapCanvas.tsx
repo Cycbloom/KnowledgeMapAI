@@ -49,7 +49,8 @@ interface GraphMapCanvasProps {
   fromGraphTitle?: string;
   onReturnToGraph?: () => void;
   multiSelectedGraphIds?: Set<string>;
-  onMultiSelectGraph?: (graphId: string, isMultiSelect: boolean) => void;
+  onMultiSelectGraph?: (graphId: string, isMultiSelect: boolean, isRangeSelect?: boolean) => void;
+  onBoxSelection?: (graphIds: string[]) => void;
 }
 
 interface Transform {
@@ -76,6 +77,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       onReturnToGraph,
       multiSelectedGraphIds,
       onMultiSelectGraph,
+      onBoxSelection,
     },
     ref,
   ) => {
@@ -97,6 +99,12 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     const [showLegend, setShowLegend] = useState(false);
     const [focusedGraphId, setFocusedGraphId] = useState<string | null>(null);
     const [hasMoved, setHasMoved] = useState(false);
+
+    const [isSelecting, setIsSelecting] = useState(false);
+    const [selectionBox, setSelectionBox] = useState<{
+      start: { x: number; y: number };
+      end: { x: number; y: number };
+    } | null>(null);
 
     const mouseDownPos = useRef({ x: 0, y: 0 });
     const touchStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -516,6 +524,17 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             x: e.clientX - transformRef.current.x,
             y: e.clientY - transformRef.current.y,
           };
+
+          if (e.shiftKey) {
+            setIsSelecting(true);
+            const rect = svgRef.current?.getBoundingClientRect();
+            if (rect) {
+              setSelectionBox({
+                start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+                end: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+              });
+            }
+          }
         }
       },
       [],
@@ -523,6 +542,21 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
 
     const handleMouseMove = useCallback(
       (e: React.MouseEvent<SVGSVGElement>) => {
+        if (isSelecting && selectionBox) {
+          const rect = svgRef.current?.getBoundingClientRect();
+          if (rect) {
+            setSelectionBox((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    end: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+                  }
+                : null,
+            );
+          }
+          return;
+        }
+
         if (isDragging) {
           const dx = e.clientX - mouseDownPos.current.x;
           const dy = e.clientY - mouseDownPos.current.y;
@@ -543,12 +577,43 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           updateTransformState(newTransform);
         }
       },
-      [isDragging, updateTransformDOM, updateTransformState],
+      [isDragging, isSelecting, selectionBox, updateTransformDOM, updateTransformState],
     );
 
     const handleMouseUp = useCallback(() => {
+      if (isSelecting && selectionBox && layout && onBoxSelection) {
+        const box = {
+          x: Math.min(selectionBox.start.x, selectionBox.end.x),
+          y: Math.min(selectionBox.start.y, selectionBox.end.y),
+          width: Math.abs(selectionBox.end.x - selectionBox.start.x),
+          height: Math.abs(selectionBox.end.y - selectionBox.start.y),
+        };
+
+        if (box.width > 10 && box.height > 10) {
+          const transform = transformRef.current;
+          const selectedIds = layout.nodes
+            .filter((node) => {
+              const screenX = node.x * transform.k + transform.x;
+              const screenY = node.y * transform.k + transform.y;
+              return (
+                screenX >= box.x &&
+                screenX <= box.x + box.width &&
+                screenY >= box.y &&
+                screenY <= box.y + box.height
+              );
+            })
+            .map((node) => node.id);
+
+          if (selectedIds.length > 0) {
+            onBoxSelection(selectedIds);
+          }
+        }
+      }
+
+      setIsSelecting(false);
+      setSelectionBox(null);
       setIsDragging(false);
-    }, []);
+    }, [isSelecting, selectionBox, layout, onBoxSelection]);
 
     const handleCanvasClick = useCallback(
       (e: React.MouseEvent<SVGSVGElement>) => {
@@ -713,10 +778,11 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
                   zoomLevel={transform.k}
                   onClick={(e) => {
                     if (graph) {
-                      const isMultiSelect = e?.ctrlKey || e?.metaKey;
-                      if (isMultiSelect && onMultiSelectGraph) {
-                        onMultiSelectGraph(node.id, true);
-                      } else if (!isMultiSelect && onGraphClick) {
+                      const isMultiSelect = e?.ctrlKey || e?.metaKey || false;
+                      const isRangeSelect = e?.shiftKey || false;
+                      if ((isMultiSelect || isRangeSelect) && onMultiSelectGraph) {
+                        onMultiSelectGraph(node.id, isMultiSelect, isRangeSelect);
+                      } else if (!isMultiSelect && !isRangeSelect && onGraphClick) {
                         onGraphClick(graph);
                         setFocusedGraphId(node.id);
 
@@ -742,6 +808,20 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
               );
             })}
           </g>
+
+          {isSelecting && selectionBox && (
+            <rect
+              x={Math.min(selectionBox.start.x, selectionBox.end.x)}
+              y={Math.min(selectionBox.start.y, selectionBox.end.y)}
+              width={Math.abs(selectionBox.end.x - selectionBox.start.x)}
+              height={Math.abs(selectionBox.end.y - selectionBox.start.y)}
+              fill="rgba(59, 130, 246, 0.1)"
+              stroke="rgba(59, 130, 246, 0.5)"
+              strokeWidth={2}
+              strokeDasharray="5,5"
+              style={{ pointerEvents: "none" }}
+            />
+          )}
         </svg>
 
         <div className="absolute bottom-[calc(3.5rem+var(--safe-area-inset-bottom))] md:bottom-4 right-4 flex flex-col gap-2">

@@ -18,6 +18,7 @@ export { healthApi } from './health';
 export { backupApi } from './backup';
 export { schedulerApi } from './modules/scheduler';
 export { quizApi } from './quiz';
+export { agentApi } from './agent';
 export type {
   ScheduledTask,
   CreateScheduledTaskData,
@@ -51,6 +52,7 @@ import { healthApi } from './health';
 import { backupApi } from './backup';
 import { schedulerApi } from './modules/scheduler';
 import { quizApi } from './quiz';
+import { agentApi } from './agent';
 
 export const api = {
   aiActions: aiActionsApi,
@@ -82,4 +84,5 @@ export const api = {
   backup: backupApi,
   scheduler: schedulerApi,
   quiz: quizApi,
+  agent: agentApi,
 };

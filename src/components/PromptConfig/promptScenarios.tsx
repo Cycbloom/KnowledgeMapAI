@@ -1,4 +1,4 @@
-import { FileText, BrainCircuit, BookOpen, GraduationCap } from 'lucide-react';
+import { FileText, BrainCircuit, BookOpen, GraduationCap, Network, GitBranch, Route, AlertTriangle } from 'lucide-react';
 
 export interface PromptScenario {
   id: string;
@@ -130,6 +130,157 @@ Context/Background: {{context}}
 - 语言简洁明了
 - 适合学习者理解`,
     category: 'generation',
+  },
+  {
+    id: 'relation_discovery',
+    name: '关系发现分析',
+    description: '发现图谱间潜在关联关系的AI提示词',
+    icon: <Network size={20} />,
+    variables: ['graphs', 'existing_relations', 'concepts', 'max_suggestions'],
+    defaultTemplate: `分析以下知识图谱，发现它们之间潜在的关联关系。
+
+图谱列表：
+{{#each graphs}}
+- {{this.title}}: {{this.description}}
+{{/each}}
+
+已存在的关系：
+{{#each existing_relations}}
+- {{this.source}} -> {{this.target}}: {{this.type}}
+{{/each}}
+
+核心概念：
+{{#each concepts}}
+- {{this}}
+{{/each}}
+
+请分析并发现新的潜在关系，返回JSON格式：
+{
+  "discovered_relations": [
+    {
+      "source_graph_id": "图谱ID",
+      "target_graph_id": "图谱ID",
+      "relation_type": "prerequisite|extension|related|cross_domain",
+      "confidence": 0.0-1.0,
+      "reason": "关系原因说明",
+      "shared_concepts": ["共享概念"]
+    }
+  ]
+}`,
+    category: 'analysis',
+    supportsThreeTier: true,
+  },
+  {
+    id: 'cross_domain_insights',
+    name: '跨学科洞察',
+    description: '分析跨领域知识交叉点的AI提示词',
+    icon: <GitBranch size={20} />,
+    variables: ['graphs', 'domains', 'concepts', 'min_intersection'],
+    defaultTemplate: `分析以下知识图谱，发现跨学科的洞察和交叉点。
+
+图谱列表：
+{{#each graphs}}
+- {{this.title}} (领域: {{this.domain}}): {{this.description}}
+{{/each}}
+
+领域分布：
+{{#each domains}}
+- {{this.name}}: {{this.count}} 个图谱
+{{/each}}
+
+核心概念：
+{{#each concepts}}
+- {{this}}
+{{/each}}
+
+请分析并发现跨学科洞察，返回JSON格式：
+{
+  "cross_domain_insights": [
+    {
+      "domains": ["领域1", "领域2"],
+      "intersection_topics": ["交叉主题"],
+      "insight": "洞察描述",
+      "related_graphs": ["图谱ID"],
+      "potential_connections": "潜在连接说明"
+    }
+  ],
+  "domain_distribution": {"领域": 数量}
+}`,
+    category: 'analysis',
+    supportsThreeTier: true,
+  },
+  {
+    id: 'learning_path_suggestions',
+    name: '学习路径建议',
+    description: '推荐最优学习顺序的AI提示词',
+    icon: <Route size={20} />,
+    variables: ['graphs', 'relations', 'difficulty', 'user_level'],
+    defaultTemplate: `基于以下知识图谱和关系，推荐最优的学习路径。
+
+图谱列表：
+{{#each graphs}}
+- {{this.title}} (难度: {{this.difficulty}}): {{this.description}}
+{{/each}}
+
+图谱关系：
+{{#each relations}}
+- {{this.source}} -> {{this.target}} ({{this.type}})
+{{/each}}
+
+目标难度：{{difficulty}}
+用户水平：{{user_level}}
+
+请生成学习路径建议，返回JSON格式：
+{
+  "learning_path_suggestions": [
+    {
+      "path": ["图谱ID1", "图谱ID2", "..."],
+      "path_titles": ["标题1", "标题2", "..."],
+      "description": "路径描述",
+      "estimated_time": "预计时间",
+      "difficulty": "beginner|intermediate|advanced",
+      "prerequisites": ["前置知识"]
+    }
+  ]
+}`,
+    category: 'analysis',
+    supportsThreeTier: true,
+  },
+  {
+    id: 'knowledge_gaps',
+    name: '知识缺口分析',
+    description: '识别知识体系空白的AI提示词',
+    icon: <AlertTriangle size={20} />,
+    variables: ['graphs', 'concepts', 'relations', 'min_importance'],
+    defaultTemplate: `分析以下知识图谱，识别知识体系中的缺口和空白。
+
+图谱列表：
+{{#each graphs}}
+- {{this.title}}: {{this.description}}
+  概念: {{this.concepts}}
+{{/each}}
+
+已有关系：
+{{#each relations}}
+- {{this.source}} -> {{this.target}}
+{{/each}}
+
+请分析并识别知识缺口，返回JSON格式：
+{
+  "knowledge_gaps": [
+    {
+      "missing_topic": "缺失主题名称",
+      "related_graphs": ["相关图谱ID"],
+      "related_graph_titles": ["相关图谱标题"],
+      "importance": "high|medium|low",
+      "suggested_action": "create|merge|expand",
+      "reason": "原因说明",
+      "concepts_to_add": ["建议添加的概念"]
+    }
+  ]
+}`,
+    category: 'analysis',
+    supportsThreeTier: true,
   },
 ];
 

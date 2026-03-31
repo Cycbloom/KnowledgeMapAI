@@ -615,4 +615,35 @@ export const mobileGraphsApi = {
       source_graphs: [],
     };
   },
+
+  getCrossDomainInsights: async (_options?: {
+    graph_ids?: string[];
+    min_intersection?: number;
+  }) => {
+    return {
+      cross_domain_insights: [],
+      domain_distribution: {},
+      analysis_summary: { total_domains: 0, cross_domain_clusters: 0 },
+    };
+  },
+
+  getLearningPathSuggestions: async (_options?: {
+    graph_ids?: string[];
+    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  }) => {
+    return {
+      learning_path_suggestions: [],
+      analysis_summary: { total_paths: 0, avg_path_length: 0 },
+    };
+  },
+
+  getKnowledgeGaps: async (_options?: {
+    graph_ids?: string[];
+    min_importance?: 'high' | 'medium' | 'low';
+  }) => {
+    return {
+      knowledge_gaps: [],
+      analysis_summary: { total_gaps: 0, high_priority_count: 0 },
+    };
+  },
 };

@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Filter,
   Brain,
+  Bot,
 } from 'lucide-react';
 import type { GraphMapFilterMode } from '../../types';
 import { useIsMobile } from '../../hooks';
@@ -24,6 +25,7 @@ interface GraphMapToolbarProps {
   onCreateGraph: () => void;
   onAnalyze: () => void;
   onIntelligentAnalyze: () => void;
+  onAgentAnalysis: () => void;
   onDomainGenerate: () => void;
   filterMode: GraphMapFilterMode;
   onFilterChange: (mode: GraphMapFilterMode) => void;
@@ -49,6 +51,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
   onCreateGraph,
   onAnalyze,
   onIntelligentAnalyze,
+  onAgentAnalysis,
   onDomainGenerate,
   filterMode,
   onFilterChange,
@@ -218,22 +221,38 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
                 </button>
                 <button
                   onClick={() => { onAnalyze(); setShowMoreMenu(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-150"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <div className="text-left">
-                    <div className="font-medium">基础分析</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">分析孤岛图谱和关系建议</div>
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">基础分析</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">分析孤岛图谱和关系建议</div>
                   </div>
                 </button>
                 <button
                   onClick={() => { onIntelligentAnalyze(); setShowMoreMenu(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-150"
                 >
-                  <Brain className="w-4 h-4" />
-                  <div className="text-left">
-                    <div className="font-medium">智能分析</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">AI发现潜在关系和跨学科关联</div>
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
+                    <Brain className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">智能分析</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">AI发现潜在关系和跨学科关联</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { onAgentAnalysis(); setShowMoreMenu(false); }}
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-150"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">Agent 深度分析</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">渐进式获取信息，深度分析</div>
                   </div>
                 </button>
                 <button
@@ -271,31 +290,47 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
           <div className="relative" ref={analyzeMenuRef}>
             <button
               onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
-              className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg"
+              className="p-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200"
               title="AI 分析图谱地图"
             >
               <Sparkles className="w-5 h-5" />
             </button>
             {showAnalyzeMenu && (
-              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 z-50 min-w-[180px]">
+              <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 min-w-[220px] p-2">
                 <button
                   onClick={() => { onAnalyze(); setShowAnalyzeMenu(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 first:rounded-t-lg"
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:ring-1 hover:ring-purple-200 dark:hover:ring-purple-700 transition-all duration-150"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <div className="text-left">
-                    <div className="font-medium">基础分析</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">分析孤岛图谱和关系建议</div>
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">基础分析</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">分析孤岛图谱和关系建议</div>
                   </div>
                 </button>
                 <button
                   onClick={() => { onIntelligentAnalyze(); setShowAnalyzeMenu(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 last:rounded-b-lg"
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:ring-1 hover:ring-indigo-200 dark:hover:ring-indigo-700 transition-all duration-150"
                 >
-                  <Brain className="w-4 h-4" />
-                  <div className="text-left">
-                    <div className="font-medium">智能分析</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">AI发现潜在关系和跨学科关联</div>
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
+                    <Brain className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">智能分析</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">AI发现潜在关系和跨学科关联</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { onAgentAnalysis(); setShowAnalyzeMenu(false); }}
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:ring-1 hover:ring-emerald-200 dark:hover:ring-emerald-700 transition-all duration-150"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">Agent 深度分析</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">渐进式获取信息，深度分析</div>
                   </div>
                 </button>
               </div>
@@ -342,33 +377,49 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
         <div className="relative" ref={analyzeMenuRef}>
           <button
             onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
-            className="flex items-center gap-2 px-3 py-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200"
             title="AI 分析图谱地图"
           >
             <Sparkles className="w-4 h-4" />
             <span className="text-sm font-medium">AI 分析</span>
-            <ChevronDown className="w-3 h-3" />
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showAnalyzeMenu ? 'rotate-180' : ''}`} />
           </button>
           {showAnalyzeMenu && (
-            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-gray-200 dark:border-slate-600 z-50 min-w-[180px]">
+            <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 min-w-[220px] p-2">
               <button
                 onClick={() => { onAnalyze(); setShowAnalyzeMenu(false); }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 first:rounded-t-lg"
+                className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:ring-1 hover:ring-purple-200 dark:hover:ring-purple-700 transition-all duration-150"
               >
-                <Sparkles className="w-4 h-4" />
-                <div className="text-left">
-                  <div className="font-medium">基础分析</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">分析孤岛图谱和关系建议</div>
+                <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">基础分析</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">分析孤岛图谱和关系建议</div>
                 </div>
               </button>
               <button
                 onClick={() => { onIntelligentAnalyze(); setShowAnalyzeMenu(false); }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 last:rounded-b-lg"
+                className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:ring-1 hover:ring-indigo-200 dark:hover:ring-indigo-700 transition-all duration-150"
               >
-                <Brain className="w-4 h-4" />
-                <div className="text-left">
-                  <div className="font-medium">智能分析</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">AI发现潜在关系和跨学科关联</div>
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
+                  <Brain className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">智能分析</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">AI发现潜在关系和跨学科关联</div>
+                </div>
+              </button>
+              <button
+                onClick={() => { onAgentAnalysis(); setShowAnalyzeMenu(false); }}
+                className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:ring-1 hover:ring-emerald-200 dark:hover:ring-emerald-700 transition-all duration-150"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">Agent 深度分析</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">渐进式获取信息，深度分析</div>
                 </div>
               </button>
             </div>

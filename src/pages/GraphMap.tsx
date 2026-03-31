@@ -17,6 +17,11 @@ import { PromptEditor } from "../components/GraphEditor/panels/PromptEditor";
 import { NodeSelectorModal } from "../components/GraphMap/NodeSelectorModal";
 import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { GraphRelationDiscoveryPanel } from "../components/GraphMap/GraphRelationDiscoveryPanel";
+import { ModularAnalysisPanel } from "../components/GraphMap/ModularAnalysisPanel";
+import { AnalysisResultViewer } from "../components/GraphMap/AnalysisResultViewer";
+import { BatchOperationPanel } from "../components/GraphMap/BatchOperationPanel";
+import { AgentAnalysisPanel } from "../components/GraphMap/AgentAnalysisPanel";
+import { useAnalysisModules } from "../hooks/useAnalysisModules";
 import type {
   Graph,
   GraphRelation,
@@ -27,6 +32,7 @@ import type {
   InfiniteExpansionProgress,
   DiscoveredRelation,
 } from "../types";
+import type { AnalysisModuleState } from "../components/GraphMap/types";
 
 export const GraphMap = () => {
   const navigate = useNavigate();
@@ -44,6 +50,7 @@ export const GraphMap = () => {
   const [multiSelectedGraphIds, setMultiSelectedGraphIds] = useState<
     Set<string>
   >(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
   const [isCreateGraphPanelOpen, setIsCreateGraphPanelOpen] = useState(false);
   const [createGraphRelationType, setCreateGraphRelationType] = useState<
@@ -72,6 +79,16 @@ export const GraphMap = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [isDiscoveryPanelOpen, setIsDiscoveryPanelOpen] = useState(false);
   const [isMobilePanelExpanded, setIsMobilePanelExpanded] = useState(false);
+  const [isModularAnalysisOpen, setIsModularAnalysisOpen] = useState(false);
+  const [viewingModule, setViewingModule] = useState<AnalysisModuleState | null>(null);
+  const [isAgentAnalysisOpen, setIsAgentAnalysisOpen] = useState(false);
+
+  const {
+    modules,
+    toggleModule,
+    executeModules,
+    resetModules,
+  } = useAnalysisModules();
 
   const {
     data: mapData,
@@ -106,26 +123,86 @@ export const GraphMap = () => {
   }, []);
 
   const handleMultiSelectGraph = useCallback(
-    (graphId: string, isMultiSelect: boolean) => {
-      if (isMultiSelect) {
+    (graphId: string, isMultiSelect: boolean, isRangeSelect?: boolean) => {
+      if (isRangeSelect && lastSelectedIndex >= 0) {
+        const currentIndex = graphs.findIndex((g: Graph) => g.id === graphId);
+        if (currentIndex >= 0) {
+          const start = Math.min(lastSelectedIndex, currentIndex);
+          const end = Math.max(lastSelectedIndex, currentIndex);
+          const rangeIds = graphs.slice(start, end + 1).map((g: Graph) => g.id);
+          setMultiSelectedGraphIds(new Set(rangeIds));
+        }
+      } else if (isMultiSelect) {
         setMultiSelectedGraphIds((prev) => {
           const newSet = new Set(prev);
           if (newSet.has(graphId)) {
             newSet.delete(graphId);
           } else {
-            if (newSet.size >= 2) {
-              return newSet;
-            }
             newSet.add(graphId);
           }
           return newSet;
         });
+        setLastSelectedIndex(graphs.findIndex((g: Graph) => g.id === graphId));
       } else {
         setMultiSelectedGraphIds(new Set([graphId]));
+        setLastSelectedIndex(graphs.findIndex((g: Graph) => g.id === graphId));
       }
     },
-    [],
+    [graphs, lastSelectedIndex],
   );
+
+  const clearMultiSelection = useCallback(() => {
+    setMultiSelectedGraphIds(new Set());
+    setLastSelectedIndex(-1);
+  }, []);
+
+  const handleBoxSelection = useCallback((graphIds: string[]) => {
+    setMultiSelectedGraphIds(new Set(graphIds));
+    if (graphIds.length > 0) {
+      setLastSelectedIndex(graphs.findIndex((g: Graph) => g.id === graphIds[graphIds.length - 1]));
+    }
+  }, [graphs]);
+
+  const selectRelatedGraphs = useCallback((graphId: string) => {
+    const relatedIds = new Set<string>([graphId]);
+
+    relations.forEach((r: GraphRelation) => {
+      if (r.source_graph_id === graphId) relatedIds.add(r.target_graph_id);
+      if (r.target_graph_id === graphId) relatedIds.add(r.source_graph_id);
+    });
+
+    setMultiSelectedGraphIds(relatedIds);
+    setSelectedGraphId(null);
+  }, [relations]);
+
+  const handleBatchCreateRelation = useCallback(() => {
+    setIsCreatePanelOpen(true);
+  }, []);
+
+  const handleBatchAnalyze = useCallback(() => {
+    setIsModularAnalysisOpen(true);
+  }, []);
+
+  const handleBatchDelete = useCallback(async () => {
+    const ids = Array.from(multiSelectedGraphIds);
+    if (ids.length === 0) return;
+
+    const confirmMessage = `确定要删除选中的 ${ids.length} 个图谱吗？此操作不可撤销。`;
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      for (const id of ids) {
+        await api.graphs.delete(id);
+      }
+      addMessage({ type: "success", content: `成功删除 ${ids.length} 个图谱` });
+      setMultiSelectedGraphIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "批量删除失败";
+      addMessage({ type: "error", content: message });
+    }
+  }, [multiSelectedGraphIds, addMessage, queryClient]);
 
   const handleCombinedOpen = useCallback(() => {
     const ids = Array.from(multiSelectedGraphIds);
@@ -576,7 +653,8 @@ export const GraphMap = () => {
           setIsAnalysisPanelOpen(true);
           analyzeMutation.mutate();
         }}
-        onIntelligentAnalyze={() => setIsDiscoveryPanelOpen(true)}
+        onIntelligentAnalyze={() => setIsModularAnalysisOpen(true)}
+        onAgentAnalysis={() => setIsAgentAnalysisOpen(true)}
         onDomainGenerate={() => setIsDomainGeneratorOpen(true)}
         filterMode={filterMode}
         onFilterChange={setFilterMode}
@@ -600,6 +678,7 @@ export const GraphMap = () => {
           onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
           multiSelectedGraphIds={multiSelectedGraphIds}
           onMultiSelectGraph={handleMultiSelectGraph}
+          onBoxSelection={handleBoxSelection}
         />
 
         {multiSelectedGraphIds.size === 2 && (
@@ -753,6 +832,16 @@ export const GraphMap = () => {
                           添加关系
                         </button>
                       </div>
+
+                      <button
+                        onClick={() => selectRelatedGraphs(selectedGraphId)}
+                        className="w-full mb-3 px-3 py-2 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg active:bg-purple-200 dark:active:bg-purple-900/50 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        选择关联图谱
+                      </button>
 
                       {isMobilePanelExpanded && (
                         <>
@@ -909,6 +998,16 @@ export const GraphMap = () => {
                           添加关系
                         </button>
                       </div>
+
+                      <button
+                        onClick={() => selectRelatedGraphs(selectedGraphId)}
+                        className="w-full mt-2 px-3 py-1.5 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        选择关联图谱
+                      </button>
 
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
@@ -1270,6 +1369,62 @@ export const GraphMap = () => {
           setIsDiscoveryPanelOpen(false);
         }}
         createdRelationIds={createdRelationIds}
+      />
+
+      <ModularAnalysisPanel
+        isOpen={isModularAnalysisOpen}
+        onClose={() => {
+          setIsModularAnalysisOpen(false);
+          resetModules();
+        }}
+        modules={modules}
+        onToggleModule={toggleModule}
+        onExecuteModules={(selectedIds) => {
+          executeModules(selectedIds, { graph_ids: selectedGraphId ? [selectedGraphId] : undefined });
+        }}
+        onViewResult={(moduleId) => {
+          const module = modules.find(m => m.id === moduleId);
+          if (module) {
+            setViewingModule(module);
+          }
+        }}
+      />
+
+      <AnalysisResultViewer
+        isOpen={viewingModule !== null}
+        onClose={() => setViewingModule(null)}
+        module={viewingModule}
+        onGraphClick={(graphId) => {
+          setSelectedGraphId(graphId);
+          setViewingModule(null);
+        }}
+        onCreateRelation={async (sourceId, targetId, relationType) => {
+          await handleCreateRelation({
+            source_graph_id: sourceId,
+            target_graph_id: targetId,
+            relation_type: relationType as GraphRelationType,
+          });
+        }}
+        onCreateGraph={async (title, domain) => {
+          await handleQuickCreateGraph({
+            title,
+            description: domain ? `领域：${domain}` : undefined,
+          });
+        }}
+      />
+
+      <BatchOperationPanel
+        selectedCount={multiSelectedGraphIds.size}
+        onBatchCreateRelation={handleBatchCreateRelation}
+        onBatchAnalyze={handleBatchAnalyze}
+        onBatchDelete={handleBatchDelete}
+        onClearSelection={clearMultiSelection}
+      />
+
+      <AgentAnalysisPanel
+        isOpen={isAgentAnalysisOpen}
+        onClose={() => setIsAgentAnalysisOpen(false)}
+        selectedGraphIds={Array.from(multiSelectedGraphIds)}
       />
     </div>
   );

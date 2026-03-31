@@ -45,6 +45,7 @@ import relationshipTypesRoutes from "./routes/relationshipTypes";
 import calendarRoutes from "./routes/calendar";
 import quizSetRoutes from "./routes/quizSets";
 import collaboratorRoutes from "./routes/collaborators";
+import agentRoutes from "./routes/agent";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 
@@ -175,6 +176,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/relationship-types", relationshipTypesRoutes);
 app.use("/api/calendar", calendarRoutes);
 app.use("/api/collaborations", collaboratorRoutes);
+app.use("/api/agent", agentRoutes);
 app.use("/api", quizSetRoutes);
 
 /**

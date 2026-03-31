@@ -1367,6 +1367,21 @@ const createRelationFromDiscoverySchema = z.object({
   shared_concepts: z.array(z.string()).optional(),
 });
 
+const crossDomainInsightsSchema = z.object({
+  graph_ids: z.array(z.string().uuid()).optional(),
+  min_intersection: z.number().min(1).max(10).default(2),
+});
+
+const learningPathSuggestionsSchema = z.object({
+  graph_ids: z.array(z.string().uuid()).optional(),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+});
+
+const knowledgeGapsSchema = z.object({
+  graph_ids: z.array(z.string().uuid()).optional(),
+  min_importance: z.enum(["high", "medium", "low"]).optional(),
+});
+
 router.post(
   "/discover-relations",
   requireAuth,
@@ -1431,6 +1446,108 @@ router.post(
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "创建关系失败";
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/cross-domain-insights",
+  requireAuth,
+  validate({ body: crossDomainInsightsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_ids, min_intersection = 2 } = req.body;
+    const userId = req.user.id;
+
+    try {
+      logger.info("Cross-domain insights request", {
+        userId,
+        graph_ids,
+        min_intersection,
+      });
+
+      const result = await relationDiscoveryService.analyzeCrossDomainInsights(
+        req.supabase!,
+        userId,
+        {
+          graph_ids,
+          min_intersection,
+        },
+      );
+
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "跨学科洞察分析失败";
+      logger.error("Cross-domain insights failed", error);
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/learning-path-suggestions",
+  requireAuth,
+  validate({ body: learningPathSuggestionsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_ids, difficulty } = req.body;
+    const userId = req.user.id;
+
+    try {
+      logger.info("Learning path suggestions request", {
+        userId,
+        graph_ids,
+        difficulty,
+      });
+
+      const result = await relationDiscoveryService.generateLearningPathSuggestions(
+        req.supabase!,
+        userId,
+        {
+          graph_ids,
+          difficulty,
+        },
+      );
+
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "学习路径建议生成失败";
+      logger.error("Learning path suggestions failed", error);
+      throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
+    }
+  },
+);
+
+router.post(
+  "/knowledge-gaps",
+  requireAuth,
+  validate({ body: knowledgeGapsSchema }),
+  async (req: AuthRequest, res: Response) => {
+    const { graph_ids, min_importance } = req.body;
+    const userId = req.user.id;
+
+    try {
+      logger.info("Knowledge gaps analysis request", {
+        userId,
+        graph_ids,
+        min_importance,
+      });
+
+      const result = await relationDiscoveryService.analyzeKnowledgeGaps(
+        req.supabase!,
+        userId,
+        {
+          graph_ids,
+          min_importance,
+        },
+      );
+
+      res.json(result);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "知识缺口分析失败";
+      logger.error("Knowledge gaps analysis failed", error);
       throw new AppError(message, 500, ErrorCodes.INTERNAL_ERROR);
     }
   },

@@ -2,7 +2,10 @@ import { request } from './client';
 import type { 
   DiscoveryResult, 
   IntelligentSuggestion,
-  GraphRelationType 
+  GraphRelationType,
+  CrossDomainInsight,
+  LearningPathSuggestion,
+  KnowledgeGap,
 } from '@shared/types/graph';
 
 export interface TopicCheckResult {
@@ -230,4 +233,32 @@ export const graphsApi = {
       : '/graphs/intelligent-suggestions';
     return request(url);
   },
+
+  getCrossDomainInsights: (options?: {
+    graph_ids?: string[];
+    min_intersection?: number;
+  }): Promise<{
+    cross_domain_insights: CrossDomainInsight[];
+    domain_distribution: Record<string, number>;
+    analysis_summary: { total_domains: number; cross_domain_clusters: number };
+  }> => 
+    request('/graphs/cross-domain-insights', { method: 'POST', body: JSON.stringify(options || {}) }),
+
+  getLearningPathSuggestions: (options?: {
+    graph_ids?: string[];
+    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  }): Promise<{
+    learning_path_suggestions: LearningPathSuggestion[];
+    analysis_summary: { total_paths: number; avg_path_length: number };
+  }> => 
+    request('/graphs/learning-path-suggestions', { method: 'POST', body: JSON.stringify(options || {}) }),
+
+  getKnowledgeGaps: (options?: {
+    graph_ids?: string[];
+    min_importance?: 'high' | 'medium' | 'low';
+  }): Promise<{
+    knowledge_gaps: KnowledgeGap[];
+    analysis_summary: { total_gaps: number; high_priority_count: number };
+  }> => 
+    request('/graphs/knowledge-gaps', { method: 'POST', body: JSON.stringify(options || {}) }),
 };

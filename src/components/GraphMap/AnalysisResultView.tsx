@@ -51,7 +51,7 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
     setIsApplying(true);
     try {
       const recsToApply = structuredResult.recommendations.filter(r => selectedRecs.has(r.id));
-      await agentApi.applyRecommendations(recsToApply);
+      await agentApi.applyRecommendations(recsToApply, structuredResult.graphIndex);
       setAppliedRecs(new Set(selectedRecs));
       setSelectedRecs(new Set());
     } catch (error) {

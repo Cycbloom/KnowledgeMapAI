@@ -5,22 +5,6 @@ interface TagInfo {
   count: number;
 }
 
-interface NodeRelation {
-  id: string;
-  title: string;
-  relationshipType: string;
-  direction: 'upstream' | 'downstream';
-}
-
-interface NodeRelationResult {
-  nodeId: string;
-  nodeTitle: string;
-  upstreamNodes: NodeRelation[];
-  downstreamNodes: NodeRelation[];
-  totalRelations: number;
-  depth: number;
-}
-
 export const getGraphTagsTool: AgentTool = {
   name: 'get_graph_tags',
   description: '获取图谱中所有知识点的标签（关键词），返回标签名称和出现次数的统计信息',
@@ -30,6 +14,10 @@ export const getGraphTagsTool: AgentTool = {
       graph_id: {
         type: 'string',
         description: '图谱ID',
+      },
+      summarize: {
+        type: 'boolean',
+        description: '是否返回精简版本，默认true',
       },
     },
     required: ['graph_id'],
@@ -106,6 +94,10 @@ export const getNodeRelationsTool: AgentTool = {
         type: 'number',
         description: '关系网络查询深度，默认为1。深度越大，返回的关系网络越广',
       },
+      summarize: {
+        type: 'boolean',
+        description: '是否返回精简版本，默认true',
+      },
     },
     required: ['node_id'],
   },
@@ -113,6 +105,7 @@ export const getNodeRelationsTool: AgentTool = {
     const { supabase, userId } = context;
     const nodeId = params.node_id as string;
     const depth = (params.depth as number) ?? 1;
+    const summarize = params.summarize !== false;
 
     if (depth < 1 || depth > 5) {
       throw new Error('Depth must be between 1 and 5');
@@ -120,11 +113,7 @@ export const getNodeRelationsTool: AgentTool = {
 
     const { data: kpCheck, error: kpError } = await supabase
       .from('knowledge_points')
-      .select(`
-        id,
-        title,
-        owner_id
-      `)
+      .select('id, title')
       .eq('id', nodeId)
       .single();
 
@@ -160,8 +149,22 @@ export const getNodeRelationsTool: AgentTool = {
     }
 
     const visitedNodes = new Set<string>([nodeId]);
-    const upstreamNodes: NodeRelation[] = [];
-    const downstreamNodes: NodeRelation[] = [];
+    const nodeIdToIdx: Record<string, number> = {};
+    const nodeIdxToTitle: Record<string, string> = {};
+    let idxCounter = 0;
+
+    const assignIdx = (id: string, title: string) => {
+      if (nodeIdToIdx[id] === undefined) {
+        nodeIdToIdx[id] = idxCounter;
+        nodeIdxToTitle[idxCounter] = title;
+        idxCounter++;
+      }
+    };
+
+    assignIdx(nodeId, kpCheck.title);
+
+    const upstreamNodes: Array<{ idx?: number; id?: string; title: string; relationType: string }> = [];
+    const downstreamNodes: Array<{ idx?: number; id?: string; title: string; relationType: string }> = [];
 
     const collectRelations = async (
       currentNodes: string[],
@@ -216,22 +219,29 @@ export const getNodeRelationsTool: AgentTool = {
         visitedNodes.add(relatedNodeId);
         newNodeIds.add(relatedNodeId);
 
-        const { data: relatedKp, error: kpError } = await supabase
+        const { data: relatedKp } = await supabase
           .from('knowledge_points')
           .select('id, title')
           .eq('id', relatedNodeId)
           .single();
 
-        if (kpError || !relatedKp) {
+        if (!relatedKp) {
           continue;
         }
 
-        const relation: NodeRelation = {
-          id: relatedNodeId,
-          title: relatedKp.title,
-          relationshipType: edge.relationship_type,
-          direction,
-        };
+        assignIdx(relatedNodeId, relatedKp.title);
+
+        const relation = summarize
+          ? {
+              idx: nodeIdToIdx[relatedNodeId],
+              title: relatedKp.title,
+              relationType: edge.relationship_type,
+            }
+          : {
+              id: relatedNodeId,
+              title: relatedKp.title,
+              relationType: edge.relationship_type,
+            };
 
         if (direction === 'upstream') {
           upstreamNodes.push(relation);
@@ -250,16 +260,38 @@ export const getNodeRelationsTool: AgentTool = {
       collectRelations([nodeId], 1, 'downstream'),
     ]);
 
-    const result: NodeRelationResult = {
+    if (summarize) {
+      return {
+        node: {
+          idx: 0,
+          title: kpCheck.title,
+        },
+        upstream: upstreamNodes,
+        downstream: downstreamNodes,
+        nodeIndex: nodeIdxToTitle,
+        totalRelations: upstreamNodes.length + downstreamNodes.length,
+        depth,
+      };
+    }
+
+    return {
       nodeId,
       nodeTitle: kpCheck.title,
-      upstreamNodes,
-      downstreamNodes,
+      upstreamNodes: upstreamNodes.map(n => ({
+        id: n.id!,
+        title: n.title,
+        relationshipType: n.relationType,
+        direction: 'upstream' as const,
+      })),
+      downstreamNodes: downstreamNodes.map(n => ({
+        id: n.id!,
+        title: n.title,
+        relationshipType: n.relationType,
+        direction: 'downstream' as const,
+      })),
       totalRelations: upstreamNodes.length + downstreamNodes.length,
       depth,
     };
-
-    return result;
   },
 };
 

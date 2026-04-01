@@ -639,6 +639,10 @@ export const GraphMap = () => {
         }}
         onIntelligentAnalyze={() => setIsModularAnalysisOpen(true)}
         onAgentAnalysis={() => setIsAgentAnalysisOpen(true)}
+        onCustomAnalysis={() => {
+          setAnalysisMode('custom');
+          setIsAgentAnalysisOpen(true);
+        }}
         onDomainGenerate={() => setIsDomainGeneratorOpen(true)}
         filterMode={filterMode}
         onFilterChange={setFilterMode}

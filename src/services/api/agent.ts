@@ -8,9 +8,9 @@ export type RelationType =
 
 export interface GraphRecommendation {
   id: string;
-  source_graph_id: string;
+  source_graph_idx: number;
   source_graph_title: string;
-  target_graph_id: string;
+  target_graph_idx: number;
   target_graph_title: string;
   relation_type: RelationType;
   reason: string;
@@ -30,6 +30,7 @@ export interface StructuredAnalysisResult {
   summary: string;
   recommendations: GraphRecommendation[];
   merge_suggestions?: MergeSuggestion[];
+  graphIndex?: Record<string, string>;
 }
 
 export interface AgentSession {
@@ -121,10 +122,11 @@ export const agentApi = {
 
   applyRecommendations: (
     recommendations: GraphRecommendation[],
+    graphIndex?: Record<string, string>,
   ): Promise<{ success: boolean; created: number }> =>
     request("/agent/recommendations/apply", {
       method: "POST",
-      body: JSON.stringify({ recommendations }),
+      body: JSON.stringify({ recommendations, graphIndex }),
     }),
 
   mergeGraphs: (

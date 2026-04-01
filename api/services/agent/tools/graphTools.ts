@@ -1,58 +1,133 @@
-import type { AgentTool, ToolContext } from '../types';
+import type { AgentTool, ToolContext } from "../types";
+
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};
+
+const extractDomain = (title: string): string => {
+  const keywords = title.split(/[\s\-_\/]/).filter((k) => k.length > 1);
+  return keywords.slice(0, 2).join("/");
+};
+
+const isIndexValue = (value: string): boolean => {
+  return /^\d+$/.test(value) && value.length < 10;
+};
+
+const resolveGraphId = async (
+  idOrIdx: string,
+  context: ToolContext,
+): Promise<string> => {
+  if (!isIndexValue(idOrIdx)) {
+    return idOrIdx;
+  }
+
+  const idx = parseInt(idOrIdx, 10);
+
+  if (context.graphIndexMap?.has(idx)) {
+    return context.graphIndexMap.get(idx)!;
+  }
+
+  const { supabase, userId } = context;
+  const { data: graphs } = await supabase
+    .from("knowledge_graphs")
+    .select("id")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .range(idx, idx);
+
+  if (!graphs || graphs.length === 0) {
+    throw new Error(`Graph index ${idx} not found`);
+  }
+
+  return graphs[0].id;
+};
 
 export const getGraphOverviewTool: AgentTool = {
-  name: 'get_graph_overview',
-  description: '获取用户知识图谱的整体概览，包括图谱数量、节点总数、关系总数等统计信息',
+  name: "get_graph_overview",
+  description:
+    "获取用户知识图谱的整体概览，包括图谱数量、节点总数、关系总数等统计信息",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
       graphIds: {
-        type: 'array',
-        items: { type: 'string' },
-        description: '要查询的图谱ID列表，为空则查询所有图谱',
+        type: "array",
+        items: { type: "string" },
+        description: "要查询的图谱ID列表，为空则查询所有图谱",
+      },
+      summarize: {
+        type: "boolean",
+        description: "是否返回精简版本，默认true",
       },
     },
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
     const graphIds = params.graphIds as string[] | undefined;
-    
+    const summarize = params.summarize !== false;
+
     let query = supabase
-      .from('knowledge_graphs')
-      .select('id, title, description, created_at', { count: 'exact' })
-      .eq('user_id', userId)
-      .is('deleted_at', null);
-    
+      .from("knowledge_graphs")
+      .select("id, title, description, domain", { count: "exact" })
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+
     if (graphIds && graphIds.length > 0) {
-      query = query.in('id', graphIds);
+      query = query.in("id", graphIds);
     }
-    
+
     const { data: graphs, error, count } = await query;
-    
+
     if (error) {
       throw new Error(`Failed to get graph overview: ${error.message}`);
     }
-    
-    const graphIdList = graphs?.map(g => g.id) || [];
-    
+
+    const graphIdList = graphs?.map((g) => g.id) || [];
+
     const { count: nodeCount, error: nodeError } = await supabase
-      .from('graph_nodes')
-      .select('id', { count: 'exact', head: true })
-      .in('graph_id', graphIdList);
-    
+      .from("graph_nodes")
+      .select("graph_id", { count: "exact", head: true })
+      .in("graph_id", graphIdList);
+
     if (nodeError) {
       throw new Error(`Failed to get node count: ${nodeError.message}`);
     }
-    
+
     const { count: edgeCount, error: edgeError } = await supabase
-      .from('edges')
-      .select('id', { count: 'exact', head: true })
-      .in('graph_id', graphIdList);
-    
+      .from("edges")
+      .select("graph_id", { count: "exact", head: true })
+      .in("graph_id", graphIdList);
+
     if (edgeError) {
       throw new Error(`Failed to get edge count: ${edgeError.message}`);
     }
-    
+
+    const nodeCountByGraph: Record<string, number> = {};
+    if (graphIdList.length > 0) {
+      const { data: nodeCounts } = await supabase
+        .from("graph_nodes")
+        .select("graph_id")
+        .in("graph_id", graphIdList);
+
+      nodeCounts?.forEach((n) => {
+        nodeCountByGraph[n.graph_id] = (nodeCountByGraph[n.graph_id] || 0) + 1;
+      });
+    }
+
+    if (summarize) {
+      return {
+        graphCount: count || 0,
+        nodeCount: nodeCount || 0,
+        edgeCount: edgeCount || 0,
+        graphs: (graphs || []).map((g, idx) => ({
+          idx,
+          title: g.title,
+          domain: g.domain || extractDomain(g.title),
+          nodes: nodeCountByGraph[g.id] || 0,
+        })),
+      };
+    }
+
     return {
       graphCount: count || 0,
       nodeCount: nodeCount || 0,
@@ -63,64 +138,93 @@ export const getGraphOverviewTool: AgentTool = {
 };
 
 export const getGraphRelationsTool: AgentTool = {
-  name: 'get_graph_relations',
-  description: '获取图谱之间的关系信息，包括图谱间的连接和依赖',
+  name: "get_graph_relations",
+  description: "获取图谱之间的关系信息，包括图谱间的连接和依赖",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
       graphIds: {
-        type: 'array',
-        items: { type: 'string' },
-        description: '要查询的图谱ID列表',
+        type: "array",
+        items: { type: "string" },
+        description: "要查询的图谱ID列表",
+      },
+      summarize: {
+        type: "boolean",
+        description: "是否返回精简版本，默认true",
       },
     },
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
     const graphIds = params.graphIds as string[] | undefined;
-    
+    const summarize = params.summarize !== false;
+
     const { data: userGraphs, error: graphsError } = await supabase
-      .from('knowledge_graphs')
-      .select('id')
-      .eq('user_id', userId)
-      .is('deleted_at', null);
-    
+      .from("knowledge_graphs")
+      .select("id, title")
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+
     if (graphsError) {
       throw new Error(`Failed to get user graphs: ${graphsError.message}`);
     }
-    
-    const userGraphIds = (userGraphs || []).map(g => g.id);
-    
+
+    const userGraphIds = (userGraphs || []).map((g) => g.id);
+    const graphIdToIdx: Record<string, number> = {};
+    const graphIdxToTitle: Record<string, string> = {};
+    (userGraphs || []).forEach((g, idx) => {
+      graphIdToIdx[g.id] = idx;
+      graphIdxToTitle[idx] = g.title;
+    });
+
     if (userGraphIds.length === 0) {
       return {
         relations: [],
         totalRelations: 0,
       };
     }
-    
+
     const { data: relations, error } = await supabase
-      .from('graph_relations')
-      .select(`
+      .from("graph_relations")
+      .select(
+        `
         id,
         source_graph_id,
         target_graph_id,
         relation_type,
-        context,
-        created_at
-      `)
-      .or(`source_graph_id.in.(${userGraphIds.join(',')}),target_graph_id.in.(${userGraphIds.join(',')})`);
-    
+        context
+      `,
+      )
+      .or(
+        `source_graph_id.in.(${userGraphIds.join(",")}),target_graph_id.in.(${userGraphIds.join(",")})`,
+      );
+
     if (error) {
       throw new Error(`Failed to get graph relations: ${error.message}`);
     }
-    
+
     let filteredRelations = relations || [];
     if (graphIds && graphIds.length > 0) {
       filteredRelations = filteredRelations.filter(
-        r => graphIds.includes(r.source_graph_id) || graphIds.includes(r.target_graph_id)
+        (r) =>
+          graphIds.includes(r.source_graph_id) ||
+          graphIds.includes(r.target_graph_id),
       );
     }
-    
+
+    if (summarize) {
+      return {
+        relations: filteredRelations.map((r) => ({
+          from: graphIdToIdx[r.source_graph_id],
+          to: graphIdToIdx[r.target_graph_id],
+          type: r.relation_type,
+          context: r.context ? truncateText(r.context, 30) : undefined,
+        })),
+        graphIndex: graphIdxToTitle,
+        totalRelations: filteredRelations.length,
+      };
+    }
+
     return {
       relations: filteredRelations,
       totalRelations: filteredRelations.length,
@@ -129,27 +233,33 @@ export const getGraphRelationsTool: AgentTool = {
 };
 
 export const getIsolatedGraphsTool: AgentTool = {
-  name: 'get_isolated_graphs',
-  description: '获取所有孤立的知识图谱（没有与其他图谱建立关系的图谱）',
+  name: "get_isolated_graphs",
+  description: "获取所有孤立的知识图谱（没有与其他图谱建立关系的图谱）",
   parameters: {
-    type: 'object',
-    properties: {},
+    type: "object",
+    properties: {
+      summarize: {
+        type: "boolean",
+        description: "是否返回精简版本，默认true",
+      },
+    },
   },
-  execute: async (_params: Record<string, unknown>, context: ToolContext) => {
+  execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
-    
+    const summarize = params.summarize !== false;
+
     const { data: graphs, error: graphsError } = await supabase
-      .from('knowledge_graphs')
-      .select('id, title, description, created_at')
-      .eq('user_id', userId)
-      .is('deleted_at', null);
-    
+      .from("knowledge_graphs")
+      .select("id, title, description, domain")
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+
     if (graphsError) {
       throw new Error(`Failed to get graphs: ${graphsError.message}`);
     }
-    
-    const graphIds = (graphs || []).map(g => g.id);
-    
+
+    const graphIds = (graphs || []).map((g) => g.id);
+
     if (graphIds.length === 0) {
       return {
         isolatedGraphs: [],
@@ -157,24 +267,53 @@ export const getIsolatedGraphsTool: AgentTool = {
         totalConnected: 0,
       };
     }
-    
+
     const { data: relations, error: relationsError } = await supabase
-      .from('graph_relations')
-      .select('source_graph_id, target_graph_id')
-      .or(`source_graph_id.in.(${graphIds.join(',')}),target_graph_id.in.(${graphIds.join(',')})`);
-    
+      .from("graph_relations")
+      .select("source_graph_id, target_graph_id")
+      .or(
+        `source_graph_id.in.(${graphIds.join(",")}),target_graph_id.in.(${graphIds.join(",")})`,
+      );
+
     if (relationsError) {
       throw new Error(`Failed to get relations: ${relationsError.message}`);
     }
-    
+
     const connectedGraphIds = new Set<string>();
-    (relations || []).forEach(r => {
+    (relations || []).forEach((r) => {
       connectedGraphIds.add(r.source_graph_id);
       connectedGraphIds.add(r.target_graph_id);
     });
-    
-    const isolatedGraphs = (graphs || []).filter(g => !connectedGraphIds.has(g.id));
-    
+
+    const isolatedGraphs = (graphs || []).filter(
+      (g) => !connectedGraphIds.has(g.id),
+    );
+
+    const nodeCountByGraph: Record<string, number> = {};
+    if (graphIds.length > 0) {
+      const { data: nodeCounts } = await supabase
+        .from("graph_nodes")
+        .select("graph_id")
+        .in("graph_id", graphIds);
+
+      nodeCounts?.forEach((n) => {
+        nodeCountByGraph[n.graph_id] = (nodeCountByGraph[n.graph_id] || 0) + 1;
+      });
+    }
+
+    if (summarize) {
+      return {
+        isolatedGraphs: isolatedGraphs.map((g, idx) => ({
+          idx,
+          title: g.title,
+          domain: g.domain || extractDomain(g.title),
+          nodes: nodeCountByGraph[g.id] || 0,
+        })),
+        totalIsolated: isolatedGraphs.length,
+        totalConnected: connectedGraphIds.size,
+      };
+    }
+
     return {
       isolatedGraphs,
       totalIsolated: isolatedGraphs.length,
@@ -184,40 +323,48 @@ export const getIsolatedGraphsTool: AgentTool = {
 };
 
 export const getGraphDetailsTool: AgentTool = {
-  name: 'get_graph_details',
-  description: '获取指定图谱的详细信息，包括节点和边',
+  name: "get_graph_details",
+  description: "获取指定图谱的详细信息，包括节点和边",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
       graphId: {
-        type: 'string',
-        description: '图谱ID',
+        type: "string",
+        description: "图谱ID",
+      },
+      summarize: {
+        type: "boolean",
+        description: "是否返回精简版本，默认true",
       },
     },
-    required: ['graphId'],
+    required: ["graphId"],
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
-    const graphId = params.graphId as string;
-    
+    const graphIdParam = params.graphId as string;
+    const summarize = params.summarize !== false;
+
+    const graphId = await resolveGraphId(graphIdParam, context);
+
     const { data: graph, error: graphError } = await supabase
-      .from('knowledge_graphs')
-      .select('id, title, description, created_at, updated_at')
-      .eq('id', graphId)
-      .eq('user_id', userId)
+      .from("knowledge_graphs")
+      .select("id, title, description, domain")
+      .eq("id", graphId)
+      .eq("user_id", userId)
       .single();
-    
+
     if (graphError) {
       throw new Error(`Failed to get graph: ${graphError.message}`);
     }
-    
+
     if (!graph) {
-      throw new Error('Graph not found');
+      throw new Error("Graph not found");
     }
-    
+
     const { data: nodes, error: nodesError } = await supabase
-      .from('graph_nodes')
-      .select(`
+      .from("graph_nodes")
+      .select(
+        `
         id,
         level,
         knowledge_points (
@@ -225,37 +372,73 @@ export const getGraphDetailsTool: AgentTool = {
           title,
           content
         )
-      `)
-      .eq('graph_id', graphId);
-    
+      `,
+      )
+      .eq("graph_id", graphId);
+
     if (nodesError) {
       throw new Error(`Failed to get nodes: ${nodesError.message}`);
     }
-    
+
     const { data: edges, error: edgesError } = await supabase
-      .from('edges')
-      .select('id, source_knowledge_point_id, target_knowledge_point_id, relationship_type')
-      .eq('graph_id', graphId);
-    
+      .from("edges")
+      .select(
+        "id, source_knowledge_point_id, target_knowledge_point_id, relationship_type",
+      )
+      .eq("graph_id", graphId);
+
     if (edgesError) {
       throw new Error(`Failed to get edges: ${edgesError.message}`);
     }
-    
-    const formattedNodes = (nodes || []).map(n => {
-      const kp = n.knowledge_points as unknown as { id: string; title: string; content: string } | { id: string; title: string; content: string }[] | null;
+
+    const formattedNodes = (nodes || []).map((n) => {
+      const kp = n.knowledge_points as unknown as
+        | { id: string; title: string; content: string }
+        | { id: string; title: string; content: string }[]
+        | null;
       const kpData = Array.isArray(kp) ? kp[0] : kp;
       return {
         id: kpData?.id || n.id,
-        title: kpData?.title || '',
-        content: kpData?.content || '',
+        title: kpData?.title || "",
+        content: kpData?.content || "",
         level: n.level,
       };
     });
-    
+
+    const nodeIdToIdx: Record<string, number> = {};
+    formattedNodes.forEach((n, idx) => {
+      nodeIdToIdx[n.id] = idx;
+    });
+
+    if (summarize) {
+      return {
+        graph: {
+          idx: 0,
+          title: graph.title,
+          domain: graph.domain || extractDomain(graph.title),
+        },
+        nodes: formattedNodes.map((n, idx) => ({
+          idx,
+          title: n.title,
+          level: n.level,
+          summary: truncateText(n.content, 30),
+        })),
+        edges: (edges || [])
+          .map((e) => ({
+            from: nodeIdToIdx[e.source_knowledge_point_id] ?? -1,
+            to: nodeIdToIdx[e.target_knowledge_point_id] ?? -1,
+            type: e.relationship_type,
+          }))
+          .filter((e) => e.from >= 0 && e.to >= 0),
+        nodeCount: formattedNodes.length,
+        edgeCount: edges?.length || 0,
+      };
+    }
+
     return {
       graph,
       nodes: formattedNodes,
-      edges: (edges || []).map(e => ({
+      edges: (edges || []).map((e) => ({
         id: e.id,
         source_id: e.source_knowledge_point_id,
         target_id: e.target_knowledge_point_id,
@@ -268,46 +451,54 @@ export const getGraphDetailsTool: AgentTool = {
 };
 
 export const getGraphNodesTool: AgentTool = {
-  name: 'get_graph_nodes',
-  description: '获取图谱中的节点列表',
+  name: "get_graph_nodes",
+  description: "获取图谱中的节点列表",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
       graphId: {
-        type: 'string',
-        description: '图谱ID',
+        type: "string",
+        description: "图谱ID",
       },
       level: {
-        type: 'string',
-        description: '节点级别过滤（root, core, sub, normal, leaf）',
+        type: "string",
+        description: "节点级别过滤（root, core, sub, normal, leaf）",
       },
       limit: {
-        type: 'number',
-        description: '返回数量限制',
+        type: "number",
+        description: "返回数量限制",
+      },
+      summarize: {
+        type: "boolean",
+        description: "是否返回精简版本，默认true",
       },
     },
-    required: ['graphId'],
+    required: ["graphId"],
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
-    const graphId = params.graphId as string;
+    const graphIdParam = params.graphId as string;
     const level = params.level as string | undefined;
     const limit = params.limit as number | undefined;
-    
+    const summarize = params.summarize !== false;
+
+    const graphId = await resolveGraphId(graphIdParam, context);
+
     const { data: graphCheck } = await supabase
-      .from('knowledge_graphs')
-      .select('id')
-      .eq('id', graphId)
-      .eq('user_id', userId)
+      .from("knowledge_graphs")
+      .select("id")
+      .eq("id", graphId)
+      .eq("user_id", userId)
       .single();
-    
+
     if (!graphCheck) {
-      throw new Error('Graph not found or access denied');
+      throw new Error("Graph not found or access denied");
     }
-    
+
     let query = supabase
-      .from('graph_nodes')
-      .select(`
+      .from("graph_nodes")
+      .select(
+        `
         id,
         level,
         knowledge_points (
@@ -315,34 +506,50 @@ export const getGraphNodesTool: AgentTool = {
           title,
           content
         )
-      `)
-      .eq('graph_id', graphId);
-    
+      `,
+      )
+      .eq("graph_id", graphId);
+
     if (level) {
-      query = query.eq('level', level);
+      query = query.eq("level", level);
     }
-    
+
     if (limit) {
       query = query.limit(limit);
     }
-    
+
     const { data: nodes, error } = await query;
-    
+
     if (error) {
       throw new Error(`Failed to get nodes: ${error.message}`);
     }
-    
-    const formattedNodes = (nodes || []).map(n => {
-      const kp = n.knowledge_points as unknown as { id: string; title: string; content: string } | { id: string; title: string; content: string }[] | null;
+
+    const formattedNodes = (nodes || []).map((n) => {
+      const kp = n.knowledge_points as unknown as
+        | { id: string; title: string; content: string }
+        | { id: string; title: string; content: string }[]
+        | null;
       const kpData = Array.isArray(kp) ? kp[0] : kp;
       return {
         id: kpData?.id || n.id,
-        title: kpData?.title || '',
-        content: kpData?.content || '',
+        title: kpData?.title || "",
+        content: kpData?.content || "",
         level: n.level,
       };
     });
-    
+
+    if (summarize) {
+      return {
+        nodes: formattedNodes.map((n, idx) => ({
+          idx,
+          title: n.title,
+          level: n.level,
+          summary: truncateText(n.content, 30),
+        })),
+        total: formattedNodes.length,
+      };
+    }
+
     return {
       nodes: formattedNodes,
       total: formattedNodes.length,
@@ -351,54 +558,87 @@ export const getGraphNodesTool: AgentTool = {
 };
 
 export const searchGraphsTool: AgentTool = {
-  name: 'search_graphs',
-  description: '搜索图谱和节点',
+  name: "search_graphs",
+  description: "搜索图谱和节点",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
       query: {
-        type: 'string',
-        description: '搜索关键词',
+        type: "string",
+        description: "搜索关键词",
       },
       type: {
-        type: 'string',
-        enum: ['graph', 'node', 'all'],
-        description: '搜索类型',
+        type: "string",
+        enum: ["graph", "node", "all"],
+        description: "搜索类型",
+      },
+      summarize: {
+        type: "boolean",
+        description: "是否返回精简版本，默认true",
       },
     },
-    required: ['query'],
+    required: ["query"],
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
     const query = params.query as string;
-    const type = (params.type as string) || 'all';
-    
+    const type = (params.type as string) || "all";
+    const summarize = params.summarize !== false;
+
     const results: {
-      graphs: Array<{ id: string; title: string; description?: string }>;
-      nodes: Array<{ id: string; title: string; graph_id: string; graph_title?: string }>;
+      graphs: Array<{
+        idx?: number;
+        id?: string;
+        title: string;
+        domain?: string;
+        description?: string;
+      }>;
+      nodes: Array<{
+        idx?: number;
+        id?: string;
+        title: string;
+        graphIdx?: number;
+        graph_id?: string;
+        graph_title?: string;
+      }>;
+      graphIndex?: Record<string, string>;
     } = {
       graphs: [],
       nodes: [],
     };
-    
-    if (type === 'graph' || type === 'all') {
+
+    if (type === "graph" || type === "all") {
       const { data: graphs, error: graphsError } = await supabase
-        .from('knowledge_graphs')
-        .select('id, title, description')
-        .eq('user_id', userId)
-        .is('deleted_at', null)
+        .from("knowledge_graphs")
+        .select("id, title, description, domain")
+        .eq("user_id", userId)
+        .is("deleted_at", null)
         .or(`title.ilike.%${query}%,description.ilike.%${query}%`);
-      
+
       if (graphsError) {
         throw new Error(`Failed to search graphs: ${graphsError.message}`);
       }
-      results.graphs = graphs || [];
+
+      if (summarize) {
+        results.graphs = (graphs || []).map((g, idx) => ({
+          idx,
+          title: g.title,
+          domain: g.domain || extractDomain(g.title),
+        }));
+        results.graphIndex = {};
+        (graphs || []).forEach((g, idx) => {
+          (results.graphIndex as Record<string, string>)[idx] = g.title;
+        });
+      } else {
+        results.graphs = graphs || [];
+      }
     }
-    
-    if (type === 'node' || type === 'all') {
+
+    if (type === "node" || type === "all") {
       const { data: nodes, error: nodesError } = await supabase
-        .from('graph_nodes')
-        .select(`
+        .from("graph_nodes")
+        .select(
+          `
           id,
           knowledge_points (
             id,
@@ -410,26 +650,84 @@ export const searchGraphsTool: AgentTool = {
             title,
             user_id
           )
-        `)
-        .ilike('knowledge_points.title', `%${query}%`)
-        .eq('knowledge_graphs.user_id', userId);
-      
+        `,
+        )
+        .ilike("knowledge_points.title", `%${query}%`)
+        .eq("knowledge_graphs.user_id", userId);
+
       if (nodesError) {
         throw new Error(`Failed to search nodes: ${nodesError.message}`);
       }
-      
-      results.nodes = (nodes || []).map(n => {
-        const graphData = n.knowledge_graphs as unknown as { id: string; title: string; user_id: string };
-        const kpData = n.knowledge_points as unknown as { id: string; title: string };
-        return {
-          id: kpData?.id || n.id,
-          title: kpData?.title || '',
-          graph_id: n.graph_id,
-          graph_title: graphData?.title,
+
+      const graphIdToIdx: Record<string, number> = {};
+      (nodes || []).forEach((n) => {
+        const graphData = n.knowledge_graphs as unknown as {
+          id: string;
+          title: string;
+          user_id: string;
         };
+        if (!graphIdToIdx[graphData.id]) {
+          graphIdToIdx[graphData.id] = Object.keys(graphIdToIdx).length;
+        }
       });
+
+      const graphIdxToTitle: Record<string, string> = {};
+      Object.entries(graphIdToIdx).forEach(([id, idx]) => {
+        const node = (nodes || []).find((n) => {
+          const graphData = n.knowledge_graphs as unknown as {
+            id: string;
+            title: string;
+          };
+          return graphData?.id === id;
+        });
+        if (node) {
+          const graphData = node.knowledge_graphs as unknown as {
+            id: string;
+            title: string;
+          };
+          graphIdxToTitle[idx] = graphData?.title;
+        }
+      });
+
+      if (summarize) {
+        results.nodes = (nodes || []).map((n, idx) => {
+          const graphData = n.knowledge_graphs as unknown as {
+            id: string;
+            title: string;
+            user_id: string;
+          };
+          const kpData = n.knowledge_points as unknown as {
+            id: string;
+            title: string;
+          };
+          return {
+            idx,
+            title: kpData?.title || "",
+            graphIdx: graphIdToIdx[graphData?.id],
+          };
+        });
+        results.graphIndex = { ...results.graphIndex, ...graphIdxToTitle };
+      } else {
+        results.nodes = (nodes || []).map((n) => {
+          const graphData = n.knowledge_graphs as unknown as {
+            id: string;
+            title: string;
+            user_id: string;
+          };
+          const kpData = n.knowledge_points as unknown as {
+            id: string;
+            title: string;
+          };
+          return {
+            id: kpData?.id || n.id,
+            title: kpData?.title || "",
+            graph_id: n.graph_id,
+            graph_title: graphData?.title,
+          };
+        });
+      }
     }
-    
+
     return results;
   },
 };

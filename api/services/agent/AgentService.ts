@@ -480,9 +480,12 @@ export class AgentService {
               (r: GraphRecommendation, index: number) => ({
                 ...r,
                 id: r.id || `rec-${index}`,
+                source_graph_idx: r.source_graph_idx ?? 0,
+                target_graph_idx: r.target_graph_idx ?? 0,
                 confidence: r.confidence ?? 0.8,
               }),
             ),
+            graphIndex: parsed.graphIndex || parsed.graph_index,
           };
         }
       }
@@ -497,9 +500,12 @@ export class AgentService {
               (r: GraphRecommendation, index: number) => ({
                 ...r,
                 id: r.id || `rec-${index}`,
+                source_graph_idx: r.source_graph_idx ?? 0,
+                target_graph_idx: r.target_graph_idx ?? 0,
                 confidence: r.confidence ?? 0.8,
               }),
             ),
+            graphIndex: parsed.graphIndex || parsed.graph_index,
           };
         }
       }

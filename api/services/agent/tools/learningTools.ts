@@ -1,5 +1,43 @@
 import type { AgentTool, ToolContext } from '../types';
 
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return '';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+};
+
+const isIndexValue = (value: string): boolean => {
+  return /^\d+$/.test(value) && value.length < 10;
+};
+
+const resolveGraphId = async (
+  idOrIdx: string,
+  context: ToolContext
+): Promise<string> => {
+  if (!isIndexValue(idOrIdx)) {
+    return idOrIdx;
+  }
+
+  const idx = parseInt(idOrIdx, 10);
+  
+  if (context.graphIndexMap?.has(idx)) {
+    return context.graphIndexMap.get(idx)!;
+  }
+
+  const { supabase, userId } = context;
+  const { data: graphs } = await supabase
+    .from('knowledge_graphs')
+    .select('id')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .range(idx, idx);
+
+  if (!graphs || graphs.length === 0) {
+    throw new Error(`Graph index ${idx} not found`);
+  }
+
+  return graphs[0].id;
+};
+
 export const getStudyProgressTool: AgentTool = {
   name: 'get_study_progress',
   description: '获取用户的学习进度统计，包括已完成、进行中和未开始的图谱数量及总体进度百分比',
@@ -11,11 +49,16 @@ export const getStudyProgressTool: AgentTool = {
         items: { type: 'string' },
         description: '要查询的图谱ID列表，为空则查询所有图谱',
       },
+      summarize: {
+        type: 'boolean',
+        description: '是否返回精简版本，默认true',
+      },
     },
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
     const graphIds = params.graphIds as string[] | undefined;
+    const summarize = params.summarize !== false;
 
     let query = supabase
       .from('knowledge_graphs')
@@ -34,6 +77,12 @@ export const getStudyProgressTool: AgentTool = {
     }
 
     const allGraphIds = (graphs || []).map(g => g.id);
+    const graphIdToIdx: Record<string, number> = {};
+    const graphIdxToTitle: Record<string, string> = {};
+    (graphs || []).forEach((g, idx) => {
+      graphIdToIdx[g.id] = idx;
+      graphIdxToTitle[idx] = g.title;
+    });
 
     if (allGraphIds.length === 0) {
       return {
@@ -80,6 +129,15 @@ export const getStudyProgressTool: AgentTool = {
 
       totalProgress += percentage;
 
+      if (summarize) {
+        return {
+          idx: graphIdToIdx[graph.id],
+          title: graph.title,
+          progress: percentage,
+          status: percentage >= 100 ? 'completed' : percentage > 0 ? 'in_progress' : 'not_started',
+        };
+      }
+
       return {
         graphId: graph.id,
         graphTitle: graph.title,
@@ -94,6 +152,18 @@ export const getStudyProgressTool: AgentTool = {
     const overallProgress = allGraphIds.length > 0
       ? Math.round(totalProgress / allGraphIds.length)
       : 0;
+
+    if (summarize) {
+      return {
+        completedCount,
+        inProgressCount,
+        notStartedCount,
+        totalGraphs: allGraphIds.length,
+        overallProgress,
+        graphIndex: graphIdxToTitle,
+        details,
+      };
+    }
 
     return {
       completedCount,
@@ -116,16 +186,23 @@ export const analyzeDifficultyTool: AgentTool = {
         type: 'string',
         description: '要分析的图谱ID',
       },
+      summarize: {
+        type: 'boolean',
+        description: '是否返回精简版本，默认true',
+      },
     },
     required: ['graphId'],
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
-    const graphId = params.graphId as string;
+    const graphIdParam = params.graphId as string;
+    const summarize = params.summarize !== false;
+
+    const graphId = await resolveGraphId(graphIdParam, context);
 
     const { data: graph, error: graphError } = await supabase
       .from('knowledge_graphs')
-      .select('id, title, description')
+      .select('id, title, description, domain')
       .eq('id', graphId)
       .eq('user_id', userId)
       .single();
@@ -213,15 +290,16 @@ export const analyzeDifficultyTool: AgentTool = {
       factors.push('知识点平均关联度高');
     }
 
-    const { data: prerequisites, error: prereqError } = await supabase
+    const { data: prerequisites } = await supabase
       .from('graph_relations')
       .select('source_graph_id')
       .eq('target_graph_id', graphId)
       .eq('relation_type', 'prerequisite');
 
-    if (!prereqError && prerequisites && prerequisites.length > 0) {
+    const prereqCount = prerequisites?.length || 0;
+    if (prereqCount > 0) {
       difficultyScore += 0.5;
-      factors.push(`需要先学习${prerequisites.length}个前置图谱`);
+      factors.push(`需要先学习${prereqCount}个前置图谱`);
     }
 
     const finalDifficulty = Math.min(5, Math.max(1, Math.round(difficultyScore)));
@@ -233,6 +311,20 @@ export const analyzeDifficultyTool: AgentTool = {
 
     const difficultyLabels = ['入门', '基础', '中等', '进阶', '专家'];
     const suggestedHours = Math.ceil(estimatedMinutes / 60);
+
+    if (summarize) {
+      return {
+        graph: {
+          idx: 0,
+          title: graph.title,
+          domain: graph.domain || '未分类',
+        },
+        difficulty: finalDifficulty,
+        label: difficultyLabels[finalDifficulty - 1],
+        factors,
+        estimatedTime: suggestedHours > 1 ? `${suggestedHours}小时` : `${estimatedMinutes}分钟`,
+      };
+    }
 
     return {
       graphId: graph.id,
@@ -250,7 +342,7 @@ export const analyzeDifficultyTool: AgentTool = {
         edgeCount: totalEdges,
         maxDepth,
         averageConnections: Math.round(avgConnections * 10) / 10,
-        prerequisiteCount: prerequisites?.length || 0,
+        prerequisiteCount: prereqCount,
       },
     };
   },
@@ -266,16 +358,23 @@ export const getPrerequisiteChainTool: AgentTool = {
         type: 'string',
         description: '要查询前置知识链的图谱ID',
       },
+      summarize: {
+        type: 'boolean',
+        description: '是否返回精简版本，默认true',
+      },
     },
     required: ['graphId'],
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
-    const graphId = params.graphId as string;
+    const graphIdParam = params.graphId as string;
+    const summarize = params.summarize !== false;
+
+    const graphId = await resolveGraphId(graphIdParam, context);
 
     const { data: targetGraph, error: graphError } = await supabase
       .from('knowledge_graphs')
-      .select('id, title, description')
+      .select('id, title')
       .eq('id', graphId)
       .eq('user_id', userId)
       .single();
@@ -290,7 +389,7 @@ export const getPrerequisiteChainTool: AgentTool = {
 
     const { data: userGraphs, error: userGraphsError } = await supabase
       .from('knowledge_graphs')
-      .select('id, title, description')
+      .select('id, title')
       .eq('user_id', userId)
       .is('deleted_at', null);
 
@@ -300,6 +399,12 @@ export const getPrerequisiteChainTool: AgentTool = {
 
     const userGraphIds = (userGraphs || []).map(g => g.id);
     const graphMap = new Map((userGraphs || []).map(g => [g.id, g]));
+    const graphIdToIdx: Record<string, number> = {};
+    const graphIdxToTitle: Record<string, string> = {};
+    (userGraphs || []).forEach((g, idx) => {
+      graphIdToIdx[g.id] = idx;
+      graphIdxToTitle[idx] = g.title;
+    });
 
     const { data: relations, error: relationsError } = await supabase
       .from('graph_relations')
@@ -328,13 +433,8 @@ export const getPrerequisiteChainTool: AgentTool = {
     const visited = new Set<string>();
 
     const buildChain = (currentId: string, path: string[]) => {
-      if (visited.has(currentId)) {
-        return;
-      }
-
-      if (path.includes(currentId)) {
-        return;
-      }
+      if (visited.has(currentId)) return;
+      if (path.includes(currentId)) return;
 
       visited.add(currentId);
       const prerequisites = prerequisiteMap.get(currentId) || [];
@@ -361,7 +461,7 @@ export const getPrerequisiteChainTool: AgentTool = {
 
     let order = 1;
     const chainWithDetails = orderedIds.map(id => {
-      const graph = graphMap.get(id);
+      const graphData = graphMap.get(id);
       let reason = '前置知识';
 
       for (const r of relations || []) {
@@ -371,28 +471,53 @@ export const getPrerequisiteChainTool: AgentTool = {
         }
       }
 
+      const progress = progressMap.get(id) || 0;
+
+      if (summarize) {
+        return {
+          idx: graphIdToIdx[id],
+          title: graphData?.title || '未知图谱',
+          order: order++,
+          progress,
+          status: progress >= 100 ? 'completed' : progress > 0 ? 'in_progress' : 'not_started',
+        };
+      }
+
       return {
         graphId: id,
-        graphTitle: graph?.title || '未知图谱',
-        description: graph?.description || '',
+        graphTitle: graphData?.title || '未知图谱',
         reason,
         order: order++,
-        progress: progressMap.get(id) || 0,
-        status: (progressMap.get(id) || 0) >= 100 ? 'completed' :
-                (progressMap.get(id) || 0) > 0 ? 'in_progress' : 'not_started',
+        progress,
+        status: progress >= 100 ? 'completed' : progress > 0 ? 'in_progress' : 'not_started',
       };
     });
+
+    const completedCount = chainWithDetails.filter(c => c.status === 'completed').length;
+
+    if (summarize) {
+      return {
+        target: {
+          idx: graphIdToIdx[graphId],
+          title: targetGraph.title,
+        },
+        chain: chainWithDetails,
+        graphIndex: graphIdxToTitle,
+        totalSteps: chainWithDetails.length,
+        completedSteps: completedCount,
+        ready: completedCount === chainWithDetails.length,
+      };
+    }
 
     return {
       targetGraph: {
         id: targetGraph.id,
         title: targetGraph.title,
-        description: targetGraph.description,
       },
       prerequisiteChain: chainWithDetails,
       totalPrerequisites: chainWithDetails.length,
-      completedPrerequisites: chainWithDetails.filter(c => c.status === 'completed').length,
-      readyToLearn: chainWithDetails.every(c => c.status === 'completed'),
+      completedPrerequisites: completedCount,
+      readyToLearn: completedCount === chainWithDetails.length,
       summary: chainWithDetails.length === 0
         ? '该图谱没有前置知识要求，可以直接开始学习'
         : `需要先学习${chainWithDetails.length}个前置图谱`,
@@ -410,16 +535,23 @@ export const getExtensionSuggestionsTool: AgentTool = {
         type: 'string',
         description: '要获取扩展建议的图谱ID',
       },
+      summarize: {
+        type: 'boolean',
+        description: '是否返回精简版本，默认true',
+      },
     },
     required: ['graphId'],
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
     const { supabase, userId } = context;
-    const graphId = params.graphId as string;
+    const graphIdParam = params.graphId as string;
+    const summarize = params.summarize !== false;
+
+    const graphId = await resolveGraphId(graphIdParam, context);
 
     const { data: sourceGraph, error: graphError } = await supabase
       .from('knowledge_graphs')
-      .select('id, title, description')
+      .select('id, title')
       .eq('id', graphId)
       .eq('user_id', userId)
       .single();
@@ -432,74 +564,35 @@ export const getExtensionSuggestionsTool: AgentTool = {
       throw new Error('Graph not found');
     }
 
-    const { data: extensionRelations, error: relationsError } = await supabase
+    const { data: allRelations, error: relationsError } = await supabase
       .from('graph_relations')
       .select(`
         id,
         target_graph_id,
+        relation_type,
         context,
         confidence,
-        shared_concepts,
         knowledge_graphs!graph_relations_target_graph_id_fkey (
           id,
-          title,
-          description
+          title
         )
       `)
       .eq('source_graph_id', graphId)
-      .eq('relation_type', 'extension');
+      .in('relation_type', ['extension', 'related', 'cross_domain']);
 
     if (relationsError) {
-      throw new Error(`Failed to get extension relations: ${relationsError.message}`);
+      throw new Error(`Failed to get relations: ${relationsError.message}`);
     }
 
-    const { data: relatedRelations, error: relatedError } = await supabase
-      .from('graph_relations')
-      .select(`
-        id,
-        target_graph_id,
-        context,
-        confidence,
-        shared_concepts,
-        knowledge_graphs!graph_relations_target_graph_id_fkey (
-          id,
-          title,
-          description
-        )
-      `)
-      .eq('source_graph_id', graphId)
-      .eq('relation_type', 'related');
+    const targetIds = (allRelations || []).map(r => r.target_graph_id);
 
-    if (relatedError) {
-      throw new Error(`Failed to get related relations: ${relatedError.message}`);
+    if (targetIds.length === 0) {
+      return {
+        suggestions: [],
+        totalSuggestions: 0,
+        summary: '暂无扩展学习建议',
+      };
     }
-
-    const { data: crossDomainRelations, error: crossError } = await supabase
-      .from('graph_relations')
-      .select(`
-        id,
-        target_graph_id,
-        context,
-        confidence,
-        shared_concepts,
-        knowledge_graphs!graph_relations_target_graph_id_fkey (
-          id,
-          title,
-          description
-        )
-      `)
-      .eq('source_graph_id', graphId)
-      .eq('relation_type', 'cross_domain');
-
-    if (crossError) {
-      throw new Error(`Failed to get cross-domain relations: ${crossError.message}`);
-    }
-
-    const targetIds = [
-      ...(extensionRelations || []).map(r => r.target_graph_id),
-      ...(relatedRelations || []).map(r => r.target_graph_id),
-      ...(crossDomainRelations || []).map(r => r.target_graph_id),
-    ];
 
     const { data: progressData } = await supabase
       .from('study_progress')
@@ -512,55 +605,66 @@ export const getExtensionSuggestionsTool: AgentTool = {
       progressMap.set(p.graph_id, p.progress_percentage || 0);
     });
 
-    const formatSuggestion = (
-      relation: typeof extensionRelations extends (infer T)[] ? T : never,
-      type: 'extension' | 'related' | 'cross_domain'
-    ) => {
-      const graphData = relation.knowledge_graphs as unknown as {
-        id: string;
-        title: string;
-        description: string;
-      } | null;
+    const graphIdToIdx: Record<string, number> = {};
+    const graphIdxToTitle: Record<string, string> = {};
+    (allRelations || []).forEach((r, idx) => {
+      const graphData = r.knowledge_graphs as unknown as { id: string; title: string } | null;
+      if (graphData) {
+        graphIdToIdx[graphData.id] = idx;
+        graphIdxToTitle[idx] = graphData.title;
+      }
+    });
 
-      const typeLabels = {
-        extension: '进阶学习',
-        related: '相关知识',
-        cross_domain: '跨领域拓展',
-      };
-
-      const typeReasons = {
-        extension: '是当前图谱的进阶内容，适合深入学习',
-        related: '与当前图谱相关，可以拓展知识面',
-        cross_domain: '跨领域知识，有助于建立更广阔的知识体系',
-      };
-
-      return {
-        graphId: relation.target_graph_id,
-        graphTitle: graphData?.title || '未知图谱',
-        description: graphData?.description || '',
-        suggestionType: type,
-        typeLabel: typeLabels[type],
-        reason: relation.context || typeReasons[type],
-        confidence: relation.confidence || 0.8,
-        sharedConcepts: relation.shared_concepts || [],
-        progress: progressMap.get(relation.target_graph_id) || 0,
-        status: (progressMap.get(relation.target_graph_id) || 0) >= 100 ? 'completed' :
-                (progressMap.get(relation.target_graph_id) || 0) > 0 ? 'in_progress' : 'not_started',
-      };
+    const typeLabels: Record<string, string> = {
+      extension: '进阶学习',
+      related: '相关知识',
+      cross_domain: '跨领域拓展',
     };
 
-    const suggestions = [
-      ...(extensionRelations || []).map(r => formatSuggestion(r, 'extension')),
-      ...(relatedRelations || []).map(r => formatSuggestion(r, 'related')),
-      ...(crossDomainRelations || []).map(r => formatSuggestion(r, 'cross_domain')),
-    ];
+    const suggestions = (allRelations || []).map(r => {
+      const graphData = r.knowledge_graphs as unknown as { id: string; title: string } | null;
+      const progress = progressMap.get(r.target_graph_id) || 0;
+
+      if (summarize) {
+        return {
+          idx: graphIdToIdx[r.target_graph_id],
+          title: graphData?.title || '未知图谱',
+          type: r.relation_type,
+          typeLabel: typeLabels[r.relation_type] || '相关',
+          reason: truncateText(r.context || '', 30),
+          progress,
+        };
+      }
+
+      return {
+        graphId: r.target_graph_id,
+        graphTitle: graphData?.title || '未知图谱',
+        suggestionType: r.relation_type,
+        typeLabel: typeLabels[r.relation_type] || '相关',
+        reason: r.context || '',
+        confidence: r.confidence || 0.8,
+        progress,
+        status: progress >= 100 ? 'completed' : progress > 0 ? 'in_progress' : 'not_started',
+      };
+    });
 
     suggestions.sort((a, b) => {
-      const statusOrder: Record<string, number> = { not_started: 0, in_progress: 1, completed: 2 };
-      const statusDiff = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0);
-      if (statusDiff !== 0) return statusDiff;
-      return b.confidence - a.confidence;
+      const progressA = 'progress' in a ? a.progress : 0;
+      const progressB = 'progress' in b ? b.progress : 0;
+      return progressA - progressB;
     });
+
+    if (summarize) {
+      return {
+        source: {
+          idx: 0,
+          title: sourceGraph.title,
+        },
+        suggestions,
+        graphIndex: graphIdxToTitle,
+        totalSuggestions: suggestions.length,
+      };
+    }
 
     const categorized = {
       extension: suggestions.filter(s => s.suggestionType === 'extension'),
@@ -572,14 +676,10 @@ export const getExtensionSuggestionsTool: AgentTool = {
       sourceGraph: {
         id: sourceGraph.id,
         title: sourceGraph.title,
-        description: sourceGraph.description,
       },
       suggestions,
       categorized,
       totalSuggestions: suggestions.length,
-      notStartedCount: suggestions.filter(s => s.status === 'not_started').length,
-      inProgressCount: suggestions.filter(s => s.status === 'in_progress').length,
-      completedCount: suggestions.filter(s => s.status === 'completed').length,
       summary: suggestions.length === 0
         ? '暂无扩展学习建议，可以尝试创建相关图谱'
         : `发现${suggestions.length}个扩展学习建议`,

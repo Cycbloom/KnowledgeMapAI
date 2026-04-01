@@ -1,41 +1,22 @@
 import type { AgentTool, ToolContext } from "../types";
+import { isIndexValue, resolveId } from "../../../../shared/utils/indexMapping";
 
 const extractDomain = (title: string): string => {
-  const keywords = title.split(/[\s\-_\/]/).filter((k) => k.length > 1);
+  const keywords = title.split(/[\s\-_/]/).filter((k) => k.length > 1);
   return keywords.slice(0, 2).join("/");
 };
 
-const isIndexValue = (value: string): boolean => {
-  return /^\d+$/.test(value) && value.length < 10;
-};
-
-const resolveGraphId = async (
-  idOrIdx: string,
+const resolveGraphId = (
+  idOrIdx: string | number,
   context: ToolContext,
-): Promise<string> => {
-  if (!isIndexValue(idOrIdx)) {
-    return idOrIdx;
+): string => {
+  if (!context.graphIndexMap) {
+    if (typeof idOrIdx === "string" && !isIndexValue(idOrIdx)) {
+      return idOrIdx;
+    }
+    throw new Error("Graph index map not available");
   }
-
-  const idx = parseInt(idOrIdx, 10);
-
-  if (context.graphIndexMap?.has(idx)) {
-    return context.graphIndexMap.get(idx)!;
-  }
-
-  const { supabase, userId } = context;
-  const { data: graphs } = await supabase
-    .from("knowledge_graphs")
-    .select("id")
-    .eq("user_id", userId)
-    .is("deleted_at", null)
-    .range(idx, idx);
-
-  if (!graphs || graphs.length === 0) {
-    throw new Error(`Graph index ${idx} not found`);
-  }
-
-  return graphs[0].id;
+  return resolveId(idOrIdx, context.graphIndexMap);
 };
 
 export const getDomainDistributionTool: AgentTool = {
@@ -105,7 +86,7 @@ export const analyzeGraphStructureTool: AgentTool = {
     const graphIdParam = params.graph_id as string;
     const summarize = params.summarize !== false;
 
-    const graphId = await resolveGraphId(graphIdParam, context);
+    const graphId = resolveGraphId(graphIdParam, context);
 
     const { data: graph, error: graphError } = await supabase
       .from("knowledge_graphs")
@@ -460,7 +441,7 @@ export const getSimilarGraphsTool: AgentTool = {
     const threshold = (params.threshold as number) ?? 0.3;
     const summarize = params.summarize !== false;
 
-    const graphId = await resolveGraphId(graphIdParam, context);
+    const graphId = resolveGraphId(graphIdParam, context);
 
     const { data: targetGraph, error: targetError } = await supabase
       .from("knowledge_graphs")

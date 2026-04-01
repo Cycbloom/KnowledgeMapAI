@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AgentService, SKILLS } from "../services/agent";
 import { allTools } from "../services/agent/tools";
 import { logger } from "../utils/logger";
+import { isIndexValue, buildIndexMap } from "../../shared/utils/indexMapping";
 
 const createSessionSchema = z.object({
   skill_id: z.string().optional(),
@@ -192,10 +193,9 @@ router.post(
         .eq("user_id", userId)
         .is("deleted_at", null);
 
-      const graphIdByIndex = new Map<number, string>();
+      const graphIdByIndex = buildIndexMap(userGraphs || []);
       const graphIdByTitle = new Map<string, string>();
-      (userGraphs || []).forEach((g, idx) => {
-        graphIdByIndex.set(idx, g.id);
+      (userGraphs || []).forEach((g) => {
         graphIdByTitle.set(g.title, g.id);
       });
 
@@ -215,11 +215,10 @@ router.post(
         if (typeof idxOrId === "string" && idxOrId.includes("-")) {
           return idxOrId;
         }
-        if (typeof idxOrId === "number") {
-          return graphIdByIndex.get(idxOrId) || null;
-        }
-        if (typeof idxOrId === "string" && /^\d+$/.test(idxOrId)) {
-          return graphIdByIndex.get(parseInt(idxOrId, 10)) || null;
+        if (isIndexValue(idxOrId)) {
+          const idx =
+            typeof idxOrId === "number" ? idxOrId : parseInt(idxOrId, 10);
+          return graphIdByIndex.get(idx) || null;
         }
         return graphIdByTitle.get(title) || null;
       };

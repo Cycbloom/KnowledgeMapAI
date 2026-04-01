@@ -17,6 +17,7 @@ import { getAIProviderForTask } from "../ai/factory";
 import { logger } from "../../utils/logger";
 import { allTools } from "./tools";
 import { getStrategyForGoal } from "./strategies/ToolSelectionStrategy";
+import { indexMappingService } from "../indexMapping/IndexMappingService";
 
 export class AgentService {
   private toolRegistry: ToolRegistry;
@@ -58,10 +59,16 @@ export class AgentService {
 
     this.sessionManager.update(sessionId, { status: "running" });
 
+    const graphIndexMap = await indexMappingService.buildGraphIndexMap(
+      userId,
+      this.supabase,
+    );
+
     const context: ToolContext = {
       supabase: this.supabase,
       userId,
       graphIds: session.graphIds,
+      graphIndexMap,
     };
 
     const skill = session.skillId
@@ -197,10 +204,16 @@ export class AgentService {
 
     this.sessionManager.update(sessionId, { status: "running" });
 
+    const graphIndexMap = await indexMappingService.buildGraphIndexMap(
+      userId,
+      this.supabase,
+    );
+
     const context: ToolContext = {
       supabase: this.supabase,
       userId,
       graphIds: session.graphIds,
+      graphIndexMap,
     };
 
     try {

@@ -170,8 +170,6 @@ export const graphsApi = {
   deleteRelationById: (relationId: string) => 
     request(`/graph-relations/relations/${relationId}`, { method: 'DELETE' }),
   
-  analyzeMap: () => request('/graphs/map/analyze'),
-  
   infiniteExpand: (graphId: string, data: {
     max_depth?: number;
     max_graphs_per_level?: number;

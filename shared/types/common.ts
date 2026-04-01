@@ -313,27 +313,6 @@ export interface LearningPathNodeDependency {
   created_at: string;
 }
 
-export interface MapAnalysisResult {
-  isolated_graphs: Array<{ id: string; title: string }>;
-  missing_prerequisites: Array<{
-    graph_id: string;
-    graph_title: string;
-    suggested_topics: string[];
-  }>;
-  suggested_paths: Array<{
-    from: string;
-    from_title: string;
-    to: string;
-    to_title: string;
-    via: string[];
-  }>;
-  merge_suggestions: Array<{
-    graph_ids: string[];
-    graph_titles: string[];
-    reason: string;
-  }>;
-}
-
 export interface QuickCreateGraphRequest {
   title: string;
   description?: string;

@@ -554,10 +554,6 @@ export const mobileGraphsApi = {
     return { success: true };
   },
 
-  analyzeMap: async () => {
-    return { recommendations: [] };
-  },
-
   infiniteExpand: async (_graphId: string, _data: any) => {
     return { success: true };
   },

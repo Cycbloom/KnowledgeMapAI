@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, BookOpen, X, ChevronUp, ChevronDown } from "lucide-react";
 import { api } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
@@ -10,7 +10,7 @@ import { GraphMapCanvas } from "../components/GraphMap/GraphMapCanvas";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
 import { QuickCreateGraphPanel } from "../components/GraphMap/QuickCreateGraphPanel";
-import { MapAnalysisPanel } from "../components/GraphMap/MapAnalysisPanel";
+
 import { AIExpansionPanel } from "../components/GraphMap/AIExpansionPanel";
 import { DomainGraphGenerator } from "../components/GraphMap/DomainGraphGenerator";
 import { PromptEditor } from "../components/GraphEditor/panels/PromptEditor";
@@ -28,9 +28,9 @@ import type {
   GraphMapFilterMode,
   GraphRelationType,
   QuickCreateGraphRequest,
-  MapAnalysisResult,
   InfiniteExpansionProgress,
   DiscoveredRelation,
+  AnalysisMode,
 } from "../types";
 import type { AnalysisModuleState } from "../components/GraphMap/types";
 
@@ -56,9 +56,6 @@ export const GraphMap = () => {
   const [createGraphRelationType, setCreateGraphRelationType] = useState<
     GraphRelationType | undefined
   >(undefined);
-  const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
-  const [analysisResult, setAnalysisResult] =
-    useState<MapAnalysisResult | null>(null);
   const [isAIExpansionOpen, setIsAIExpansionOpen] = useState(false);
   const [expansionProgress, setExpansionProgress] =
     useState<InfiniteExpansionProgress | null>(null);
@@ -82,6 +79,7 @@ export const GraphMap = () => {
   const [isModularAnalysisOpen, setIsModularAnalysisOpen] = useState(false);
   const [viewingModule, setViewingModule] = useState<AnalysisModuleState | null>(null);
   const [isAgentAnalysisOpen, setIsAgentAnalysisOpen] = useState(false);
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('quick');
 
   const {
     modules,
@@ -97,16 +95,6 @@ export const GraphMap = () => {
   } = useQuery({
     queryKey: ["graphMap"],
     queryFn: () => api.graphs.getMap(),
-  });
-
-  const analyzeMutation = useMutation({
-    mutationFn: () => api.graphs.analyzeMap(),
-    onSuccess: (data: MapAnalysisResult) => {
-      setAnalysisResult(data);
-    },
-    onError: (error: any) => {
-      addMessage({ type: "error", content: error.message || "分析失败" });
-    },
   });
 
   const graphs = useMemo(() => mapData?.graphs || [], [mapData?.graphs]);
@@ -649,10 +637,6 @@ export const GraphMap = () => {
           setCreateGraphRelationType(undefined);
           setIsCreateGraphPanelOpen(true);
         }}
-        onAnalyze={() => {
-          setIsAnalysisPanelOpen(true);
-          analyzeMutation.mutate();
-        }}
         onIntelligentAnalyze={() => setIsModularAnalysisOpen(true)}
         onAgentAnalysis={() => setIsAgentAnalysisOpen(true)}
         onDomainGenerate={() => setIsDomainGeneratorOpen(true)}
@@ -664,6 +648,8 @@ export const GraphMap = () => {
         fromGraphId={fromGraphId}
         fromGraphTitle={fromGraph?.title}
         onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
+        analysisMode={analysisMode}
+        onAnalysisModeChange={setAnalysisMode}
       />
 
       <div className="flex-1 relative">
@@ -1173,24 +1159,6 @@ export const GraphMap = () => {
           graphs.find((g: Graph) => g.id === selectedGraphId)?.title
         }
         defaultRelationType={createGraphRelationType}
-      />
-
-      <MapAnalysisPanel
-        isOpen={isAnalysisPanelOpen}
-        onClose={() => setIsAnalysisPanelOpen(false)}
-        analysis={analysisResult}
-        isLoading={analyzeMutation.isPending}
-        onGraphClick={(graphId) => {
-          setSelectedGraphId(graphId);
-          setIsAnalysisPanelOpen(false);
-        }}
-        onCreateRelation={(sourceId, targetId, type) => {
-          handleCreateRelation({
-            source_graph_id: sourceId,
-            target_graph_id: targetId,
-            relation_type: type,
-          });
-        }}
       />
 
       <AIExpansionPanel

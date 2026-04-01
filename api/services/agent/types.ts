@@ -83,3 +83,127 @@ export interface ExecuteResult {
   session: AgentSession;
   stream?: ReadableStream<string>;
 }
+
+export type AnalysisGoal = 
+  | 'knowledge_completeness'
+  | 'relation_discovery'
+  | 'learning_optimization'
+  | 'island_detection'
+  | 'cross_domain'
+  | 'custom';
+
+export interface ToolSelectionStrategy {
+  primaryTools: string[];
+  secondaryTools: string[];
+  depthTools: string[];
+}
+
+export interface MergeSuggestion {
+  graph_ids: string[];
+  graph_titles: string[];
+  similarity_score: number;
+  reason: string;
+  suggested_action: 'merge' | 'link' | 'keep_separate';
+  shared_concepts: string[];
+}
+
+export interface DomainDistribution {
+  distribution: Record<string, number>;
+  total_domains: number;
+  total_graphs: number;
+}
+
+export interface KnowledgeCoverage {
+  total_graphs: number;
+  total_nodes: number;
+  connected_graphs: number;
+  isolated_graphs: number;
+  connectivity_rate: string;
+}
+
+export interface GraphStructureAnalysis {
+  graph_id: string;
+  graph_title: string;
+  node_count: number;
+  edge_count: number;
+  level_distribution: Record<string, number>;
+  edge_type_distribution: Record<string, number>;
+  avg_connectivity: number;
+  depth: number;
+  structure_features: string[];
+}
+
+export interface LearningPath {
+  path: string[];
+  path_titles: string[];
+  description: string;
+  estimated_time: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+}
+
+export interface SimilarGraph {
+  graph_id: string;
+  graph_title: string;
+  similarity_score: number;
+  shared_concepts: string[];
+  relation_type: 'similar' | 'related' | 'complementary';
+}
+
+export interface StudyProgress {
+  completed_graphs: number;
+  in_progress_graphs: number;
+  not_started_graphs: number;
+  total_graphs: number;
+  progress_percentage: number;
+}
+
+export interface DifficultyAnalysis {
+  graph_id: string;
+  graph_title: string;
+  difficulty_level: number;
+  difficulty_factors: string[];
+  estimated_study_time: string;
+  prerequisite_count: number;
+}
+
+export interface PrerequisiteChain {
+  target_graph_id: string;
+  target_graph_title: string;
+  chain: Array<{
+    graph_id: string;
+    graph_title: string;
+    order: number;
+    description: string;
+  }>;
+  total_steps: number;
+}
+
+export interface ExtensionSuggestion {
+  graph_id: string;
+  graph_title: string;
+  suggestion_type: 'extension' | 'related' | 'cross_domain';
+  reason: string;
+  shared_topics: string[];
+}
+
+export interface GraphTag {
+  name: string;
+  count: number;
+}
+
+export interface NodeRelation {
+  nodeId: string;
+  nodeTitle: string;
+  upstreamNodes: Array<{
+    id: string;
+    title: string;
+    relationType: string;
+  }>;
+  downstreamNodes: Array<{
+    id: string;
+    title: string;
+    relationType: string;
+  }>;
+  totalRelations: number;
+  depth: number;
+}

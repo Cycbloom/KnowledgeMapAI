@@ -25,6 +25,18 @@ export interface AIActionVariables {
   includeChildren?: boolean;
 }
 
+export type AnalysisMode = 'quick' | 'deep' | 'custom';
+
+export interface AnalysisModeOption {
+  mode: AnalysisMode;
+  label: string;
+  description: string;
+  iconName: string;
+  color: string;
+  bgColor: string;
+  hoverBgColor: string;
+}
+
 export interface AIAction {
   id: string;
   name: string;

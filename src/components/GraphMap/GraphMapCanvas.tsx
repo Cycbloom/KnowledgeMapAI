@@ -49,7 +49,11 @@ interface GraphMapCanvasProps {
   fromGraphTitle?: string;
   onReturnToGraph?: () => void;
   multiSelectedGraphIds?: Set<string>;
-  onMultiSelectGraph?: (graphId: string, isMultiSelect: boolean, isRangeSelect?: boolean) => void;
+  onMultiSelectGraph?: (
+    graphId: string,
+    isMultiSelect: boolean,
+    isRangeSelect?: boolean,
+  ) => void;
   onBoxSelection?: (graphIds: string[]) => void;
 }
 
@@ -88,7 +92,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
 
     const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
     const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
-    const targetTransformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStartRef = useRef({ x: 0, y: 0 });
     const [_hoveredNodeId, _setHoveredNodeId] = useState<string | null>(null);
@@ -179,8 +182,8 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     }, [nodes, edges, containerSize, graphs]);
 
     const nodeMap = useMemo(
-      () => layout ? new Map(layout.nodes.map((n) => [n.id, n])) : new Map(),
-      [layout]
+      () => (layout ? new Map(layout.nodes.map((n) => [n.id, n])) : new Map()),
+      [layout],
     );
 
     const updateTransformDOM = useCallback((t: Transform) => {
@@ -251,39 +254,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       [updateTransformDOM, updateTransformState],
     );
 
-    const smoothAnimationRef = useRef<number | null>(null);
-
-    const startSmoothAnimation = useCallback(() => {
-      const lerpFactor = 0.12;
-
-      const animate = () => {
-        const current = transformRef.current;
-        const target = targetTransformRef.current;
-
-        const dx = target.x - current.x;
-        const dy = target.y - current.y;
-        const dk = target.k - current.k;
-
-        if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01 && Math.abs(dk) < 0.0001) {
-          smoothAnimationRef.current = null;
-          return;
-        }
-
-        const newX = current.x + dx * lerpFactor;
-        const newY = current.y + dy * lerpFactor;
-        const newK = current.k + dk * lerpFactor;
-
-        const newTransform = { x: newX, y: newY, k: newK };
-
-        transformRef.current = newTransform;
-        updateTransformDOM(newTransform);
-
-        smoothAnimationRef.current = requestAnimationFrame(animate);
-      };
-
-      smoothAnimationRef.current = requestAnimationFrame(animate);
-    }, [updateTransformDOM]);
-
     useImperativeHandle(ref, () => ({
       centerNode: (nodeId: string) => {
         if (!layout) return;
@@ -331,22 +301,13 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       updateTransformDOM(transformRef.current);
     }, [updateTransformDOM]);
 
-    useEffect(() => {
-      return () => {
-        if (smoothAnimationRef.current) {
-          cancelAnimationFrame(smoothAnimationRef.current);
-          smoothAnimationRef.current = null;
-        }
-      };
-    }, []);
-
     const handleWheel = useCallback(
       (e: WheelEvent) => {
         e.preventDefault();
         const scaleFactor = 1.1;
         const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
 
-        const prev = targetTransformRef.current;
+        const prev = transformRef.current;
         const newK = Math.max(0.1, Math.min(5, prev.k * delta));
 
         const rect = svgRef.current?.getBoundingClientRect();
@@ -358,14 +319,13 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         const newX = mouseX - (mouseX - prev.x) * delta;
         const newY = mouseY - (mouseY - prev.y) * delta;
 
-        targetTransformRef.current = { x: newX, y: newY, k: newK };
-        updateTransformState({ x: newX, y: newY, k: newK });
+        const newTransform = { x: newX, y: newY, k: newK };
 
-        if (!smoothAnimationRef.current) {
-          startSmoothAnimation();
-        }
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+        updateTransformState(newTransform);
       },
-      [updateTransformState, startSmoothAnimation],
+      [updateTransformDOM, updateTransformState],
     );
 
     const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -439,10 +399,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
             }
           }
 
-          if (
-            touchMovedRef.current &&
-            touchStartTransformRef.current
-          ) {
+          if (touchMovedRef.current && touchStartTransformRef.current) {
             const deltaX = touch.clientX - touchStartPos.current.x;
             const deltaY = touch.clientY - touchStartPos.current.y;
 
@@ -505,42 +462,51 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       [updateTransformDOM, updateTransformState],
     );
 
-    const handleTouchEnd = useCallback((e: TouchEvent) => {
-      if (e.touches.length === 0) {
-        if (!touchMovedRef.current && touchStartOnNodeRef.current && onGraphClick) {
-          const graph = graphs.find((g) => g.id === touchStartOnNodeRef.current);
-          if (graph) {
-            onGraphClick(graph);
-            setFocusedGraphId(touchStartOnNodeRef.current);
+    const handleTouchEnd = useCallback(
+      (e: TouchEvent) => {
+        if (e.touches.length === 0) {
+          if (
+            !touchMovedRef.current &&
+            touchStartOnNodeRef.current &&
+            onGraphClick
+          ) {
+            const graph = graphs.find(
+              (g) => g.id === touchStartOnNodeRef.current,
+            );
+            if (graph) {
+              onGraphClick(graph);
+              setFocusedGraphId(touchStartOnNodeRef.current);
+            }
           }
+
+          setIsDragging(false);
+          touchStartPos.current = null;
+          touchStartDistance.current = null;
+          touchStartMidpoint.current = null;
+          lastTouchRef.current = null;
+          touchMovedRef.current = false;
+          touchStartOnNodeRef.current = null;
+          touchStartTransformRef.current = null;
+        } else if (e.touches.length === 1) {
+          const touch = e.touches[0];
+          touchStartPos.current = {
+            x: touch.clientX,
+            y: touch.clientY,
+          };
+          lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+          touchStartDistance.current = null;
+          touchStartMidpoint.current = null;
+          touchStartTransformRef.current = { ...transformRef.current };
+
+          const target = e.target as SVGElement;
+          const nodeElement = target.closest("[data-node-id]");
+          touchStartOnNodeRef.current = nodeElement
+            ? nodeElement.getAttribute("data-node-id")
+            : null;
         }
-
-        setIsDragging(false);
-        touchStartPos.current = null;
-        touchStartDistance.current = null;
-        touchStartMidpoint.current = null;
-        lastTouchRef.current = null;
-        touchMovedRef.current = false;
-        touchStartOnNodeRef.current = null;
-        touchStartTransformRef.current = null;
-      } else if (e.touches.length === 1) {
-        const touch = e.touches[0];
-        touchStartPos.current = {
-          x: touch.clientX,
-          y: touch.clientY,
-        };
-        lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
-        touchStartDistance.current = null;
-        touchStartMidpoint.current = null;
-        touchStartTransformRef.current = { ...transformRef.current };
-
-        const target = e.target as SVGElement;
-        const nodeElement = target.closest("[data-node-id]");
-        touchStartOnNodeRef.current = nodeElement
-          ? nodeElement.getAttribute("data-node-id")
-          : null;
-      }
-    }, [onGraphClick, graphs]);
+      },
+      [onGraphClick, graphs],
+    );
 
     useEffect(() => {
       const svg = svgRef.current;
@@ -622,12 +588,17 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           };
 
           transformRef.current = newTransform;
-          targetTransformRef.current = newTransform;
           updateTransformDOM(newTransform);
           updateTransformState(newTransform);
         }
       },
-      [isDragging, isSelecting, selectionBox, updateTransformDOM, updateTransformState],
+      [
+        isDragging,
+        isSelecting,
+        selectionBox,
+        updateTransformDOM,
+        updateTransformState,
+      ],
     );
 
     const handleMouseUp = useCallback(() => {
@@ -686,7 +657,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
 
         const newTransform = { x: targetX, y: targetY, k: 1 };
         transformRef.current = newTransform;
-        targetTransformRef.current = newTransform;
         updateTransformDOM(newTransform);
         updateTransformState(newTransform);
       }
@@ -707,7 +677,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         ) {
           const newTransform = { x: targetX, y: targetY, k: 1 };
           transformRef.current = newTransform;
-          targetTransformRef.current = newTransform;
           updateTransformDOM(newTransform);
           updateTransformState(newTransform);
         }
@@ -717,7 +686,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     const handleMiniMapTransformChange = useCallback(
       (newTransform: Transform) => {
         transformRef.current = newTransform;
-        targetTransformRef.current = newTransform;
         updateTransformDOM(newTransform);
         updateTransformState(newTransform);
       },
@@ -831,9 +799,20 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
                     if (graph) {
                       const isMultiSelect = e?.ctrlKey || e?.metaKey || false;
                       const isRangeSelect = e?.shiftKey || false;
-                      if ((isMultiSelect || isRangeSelect) && onMultiSelectGraph) {
-                        onMultiSelectGraph(node.id, isMultiSelect, isRangeSelect);
-                      } else if (!isMultiSelect && !isRangeSelect && onGraphClick) {
+                      if (
+                        (isMultiSelect || isRangeSelect) &&
+                        onMultiSelectGraph
+                      ) {
+                        onMultiSelectGraph(
+                          node.id,
+                          isMultiSelect,
+                          isRangeSelect,
+                        );
+                      } else if (
+                        !isMultiSelect &&
+                        !isRangeSelect &&
+                        onGraphClick
+                      ) {
                         onGraphClick(graph);
                         setFocusedGraphId(node.id);
 

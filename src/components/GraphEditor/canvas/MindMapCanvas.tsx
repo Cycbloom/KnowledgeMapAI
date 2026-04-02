@@ -676,6 +676,15 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
       const prev = transformRef.current;
       const newK = Math.max(0.1, Math.min(5, prev.k * delta));
 
+      // 当已经达到最小或最大缩放级别且用户继续相应方向的滚轮时，不做任何变换
+      // 使用近似比较解决浮点数精度问题
+      const isMinZoom = Math.abs(prev.k - 0.1) < 0.001;
+      const isMaxZoom = Math.abs(prev.k - 5) < 0.001;
+
+      if ((isMinZoom && e.deltaY > 0) || (isMaxZoom && e.deltaY < 0)) {
+        return;
+      }
+
       const rect = svgRef.current?.getBoundingClientRect();
       if (!rect) return;
 
@@ -881,7 +890,11 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
             }
           }
 
-          if (touchMovedRef.current && !touchStartOnNodeRef.current && touchStartTransformRef.current) {
+          if (
+            touchMovedRef.current &&
+            !touchStartOnNodeRef.current &&
+            touchStartTransformRef.current
+          ) {
             const deltaX = touch.clientX - touchStartRef.current.x;
             const deltaY = touch.clientY - touchStartRef.current.y;
 
@@ -944,11 +957,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
           updateTransformState(newTransform);
         }
       },
-      [
-        updateTransformDOM,
-        updateTransformState,
-        scheduleViewportUpdate,
-      ],
+      [updateTransformDOM, updateTransformState, scheduleViewportUpdate],
     );
 
     const handleTouchEnd = useCallback(
@@ -992,7 +1001,9 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
 
           const target = e.target as SVGElement;
           const nodeElement = target.closest("[data-node-id]");
-          touchStartOnNodeRef.current = nodeElement ? nodeElement.getAttribute("data-node-id") : null;
+          touchStartOnNodeRef.current = nodeElement
+            ? nodeElement.getAttribute("data-node-id")
+            : null;
 
           setDragStart({
             x: touch.clientX - transformRef.current.x,

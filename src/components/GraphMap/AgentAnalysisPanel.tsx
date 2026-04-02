@@ -79,21 +79,13 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
   };
 
   const handleMergeGraphs = async (graphIds: string[]) => {
-    try {
-      await agentApi.mergeGraphs(graphIds);
-      onGraphsMerged?.();
-    } catch (err) {
-      throw err;
-    }
+    await agentApi.mergeGraphs(graphIds);
+    onGraphsMerged?.();
   };
 
   const handleLinkGraphs = async (graphIds: string[]) => {
-    try {
-      await agentApi.linkGraphs(graphIds);
-      onGraphsMerged?.();
-    } catch (err) {
-      throw err;
-    }
+    await agentApi.linkGraphs(graphIds);
+    onGraphsMerged?.();
   };
 
   const handleDismissSuggestion = async (graphIds: string[]) => {

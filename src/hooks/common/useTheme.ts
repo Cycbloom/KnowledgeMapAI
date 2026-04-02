@@ -16,15 +16,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // User's selected mode
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     const savedThemeMode = localStorage.getItem('themeMode') as ThemeMode;
-    // Migrate old 'theme' key if exists and 'themeMode' doesn't
-    if (!savedThemeMode) {
-      const oldTheme = localStorage.getItem('theme');
-      if (oldTheme === 'light' || oldTheme === 'dark') {
-        return oldTheme;
-      }
-      return 'system';
-    }
-    return savedThemeMode;
+    return savedThemeMode || 'system';
   });
 
   // The actual active theme (light or dark)
@@ -62,8 +54,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     // Save current mode preference
     localStorage.setItem('themeMode', themeMode);
-    // Maintain 'theme' for compatibility or simple checks
-    localStorage.setItem('theme', resolvedTheme);
   }, [resolvedTheme, themeMode]);
 
   const toggleTheme = () => {

@@ -205,7 +205,6 @@ export const CombinedGraphView: React.FC = () => {
   }, []);
 
   const handleExportImage = useCallback(() => {
-    console.info('Export image');
   }, []);
 
   const handleExportJSON = useCallback(() => {

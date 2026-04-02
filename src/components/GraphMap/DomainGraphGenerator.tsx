@@ -251,7 +251,8 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
     });
 
     try {
-      const created = await onBatchCreate(selectedItems, filteredRelations, domain.trim());
+      const effectiveDomain = mode === 'expand' ? expandDomain.trim() : domain.trim();
+      const created = await onBatchCreate(selectedItems, filteredRelations, effectiveDomain || undefined);
       setCreatedGraphs(created);
       setCreateProgress(prev => ({ ...prev, status: 'completed', current: prev.total }));
       

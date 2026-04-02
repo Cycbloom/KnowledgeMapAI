@@ -30,14 +30,12 @@ if (import.meta.env.PROD && !isElectron) {
   
   registerServiceWorker({
     onUpdate: (registration) => {
-      console.info('[SW] New version available')
       if (confirm('发现新版本，是否立即更新？')) {
         registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
         window.location.reload()
       }
     },
     onSuccess: () => {
-      console.info('[SW] App is ready for offline use')
     },
   })
 

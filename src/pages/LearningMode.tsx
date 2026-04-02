@@ -40,7 +40,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
 import { useTheme, useSpeechRecognition, useNetworkStatus } from "../hooks";
-import { useGraphData, useGraphNodeStatus } from "../hooks/queries";
+import { useGraph, useGraphData, useGraphNodeStatus } from "../hooks/queries";
 import { preprocessMarkdown } from "../utils/markdownUtils";
 import {
   isAppError,
@@ -56,6 +56,8 @@ import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
 import { LearningPathPanel } from "../components/Learning/LearningPathPanel";
 import { LearningPathOutline } from "../components/Learning/LearningPathOutline";
 import { LearningFocusPanel } from "../components/Learning/LearningFocusPanel";
+import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
+import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
 
@@ -104,6 +106,7 @@ export const LearningMode = () => {
   >(null);
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
   const { fontSize, readingMode } = useLearningSettingsStore();
   const queryClient = useQueryClient();
 
@@ -142,6 +145,7 @@ export const LearningMode = () => {
 
   // Fetch Graph Data for Outline
   const { data: graphData } = useGraphData(graphId || "");
+  const { data: graphMeta } = useGraph(graphId || "");
   const { data: _nodeStatus } = useGraphNodeStatus(graphId || "");
 
   // Chat State
@@ -1326,28 +1330,42 @@ export const LearningMode = () => {
                 ) : (
                   <div className="max-w-3xl mx-auto">
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
-                      <div>
-                        <h2
-                          className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate(`/learning?graph_id=${graphId}`)}
+                          className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
+                            isDark
+                              ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          }`}
+                          title="返回概览"
                         >
-                          {nodeTitle}
-                        </h2>
-                        {keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {keywords.slice(0, 5).map((kw, idx) => (
-                              <span
-                                key={idx}
-                                className={`px-2 py-0.5 text-xs rounded-full ${
-                                  isDark
-                                    ? "bg-indigo-900/30 text-indigo-300"
-                                    : "bg-indigo-50 text-indigo-600"
-                                }`}
-                              >
-                                {kw.term}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                          <ArrowLeft size={16} />
+                          <span className="hidden sm:inline">概览</span>
+                        </button>
+                        <div>
+                          <h2
+                            className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                          >
+                            {nodeTitle}
+                          </h2>
+                          {keywords.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {keywords.slice(0, 5).map((kw, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`px-2 py-0.5 text-xs rounded-full ${
+                                    isDark
+                                      ? "bg-indigo-900/30 text-indigo-300"
+                                      : "bg-indigo-50 text-indigo-600"
+                                  }`}
+                                >
+                                  {kw.term}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -1435,28 +1453,12 @@ export const LearningMode = () => {
           </div>
         ) : (
           <div
-            className={`${isMobile ? "hidden" : "flex-1"} flex items-center justify-center text-slate-400 p-8 text-center`}
+            className={`${isMobile ? "hidden" : "flex-1"} flex flex-col overflow-hidden`}
           >
-            <div className="max-w-md">
-              <div
-                className={`w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center ${
-                  isDark
-                    ? "bg-slate-800 text-slate-700"
-                    : "bg-gray-100 text-gray-300"
-                }`}
-              >
-                <BookOpen size={40} />
-              </div>
-              <h2
-                className={`text-xl font-bold mb-2 ${isDark ? "text-slate-200" : "text-gray-900"}`}
-              >
-                开始您的学习之旅
-              </h2>
-              <p className="mb-8">
-                从左侧大纲中选择一个知识点，AI
-                将为您生成专属的学习教材和练习题。
-              </p>
-            </div>
+            <GraphOverviewPanel
+              graph={graphMeta || null}
+              onEdit={() => setIsOverviewEditModalOpen(true)}
+            />
           </div>
         )}
 
@@ -1926,6 +1928,21 @@ export const LearningMode = () => {
         onClose={() => setIsSettingsOpen(false)}
         initialScenarioId="learning_material"
         graphId={graphId || undefined}
+      />
+      <GraphOverviewEditModal
+        isOpen={isOverviewEditModalOpen}
+        onClose={() => setIsOverviewEditModalOpen(false)}
+        graph={graphMeta || null}
+        onSave={async (data) => {
+          if (!graphMeta) return;
+          try {
+            await api.graphs.update(graphMeta.id, data);
+            queryClient.invalidateQueries({ queryKey: ["graph", graphId] });
+            setIsOverviewEditModalOpen(false);
+          } catch (error) {
+            console.error("Failed to save graph overview:", error);
+          }
+        }}
       />
     </div>
   );

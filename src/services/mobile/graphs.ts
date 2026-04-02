@@ -1,5 +1,7 @@
 import { getMobileSupabaseClient } from "./client";
-import type { Graph } from "@shared/types/graph";
+import type { Graph, KnowledgeGraphRow, GraphNodeRow, StudyCardRow } from "@shared/types";
+import { toGraph } from "@shared/types/database";
+import type { NodeStatus } from "@shared/types/graph";
 import { mobileNodesApi } from "./nodes";
 import { mobileEdgesApi } from "./edges";
 
@@ -10,9 +12,8 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data: graphs, error } = await (
-      client.from("knowledge_graphs") as any
-    )
+    const { data: graphs, error } = await client
+      .from("knowledge_graphs")
       .select("*")
       .is("deleted_at", null)
       .order("updated_at", { ascending: false });
@@ -21,26 +22,28 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    const graphIds = (graphs || []).map((g: any) => g.id);
+    const graphRows = (graphs || []) as KnowledgeGraphRow[];
+    const graphIds = graphRows.map((g) => g.id);
 
     if (graphIds.length > 0) {
-      const { data: nodeCounts } = await (client.from("graph_nodes") as any)
+      const { data: nodeCounts } = await client
+        .from("graph_nodes")
         .select("graph_id")
         .in("graph_id", graphIds)
         .is("deleted_at", null);
 
       const countMap = new Map<string, number>();
-      (nodeCounts || []).forEach((n: any) => {
+      ((nodeCounts || []) as Array<{ graph_id: string }>).forEach((n) => {
         countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
       });
 
-      return (graphs || []).map((g: any) => ({
-        ...g,
+      return graphRows.map((g) => ({
+        ...toGraph(g),
         nodes_count: countMap.get(g.id) || 0,
       }));
     }
 
-    return (graphs || []) as Graph[];
+    return graphRows.map(toGraph);
   },
 
   listTrash: async (): Promise<Graph[]> => {
@@ -49,7 +52,8 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("knowledge_graphs") as any)
+    const { data, error } = await client
+      .from("knowledge_graphs")
       .select("*")
       .not("deleted_at", "is", null)
       .order("updated_at", { ascending: false });
@@ -58,7 +62,7 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return data as Graph[];
+    return ((data || []) as KnowledgeGraphRow[]).map(toGraph);
   },
 
   get: async (id: string): Promise<Graph> => {
@@ -67,7 +71,8 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("knowledge_graphs") as any)
+    const { data, error } = await client
+      .from("knowledge_graphs")
       .select("*")
       .eq("id", id)
       .single();
@@ -76,7 +81,7 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return data as Graph;
+    return toGraph(data as KnowledgeGraphRow);
   },
 
   getNodes: async (id: string) => {
@@ -85,7 +90,7 @@ export const mobileGraphsApi = {
     return { nodes, edges };
   },
 
-  getNodeStatus: async (graphId: string) => {
+  getNodeStatus: async (graphId: string): Promise<Record<string, NodeStatus>> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -115,23 +120,21 @@ export const mobileGraphsApi = {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const statusMap: Record<string, any> = {};
+    const statusMap: Record<string, NodeStatus> = {};
 
-    (cards || []).forEach((card: any) => {
+    ((cards || []) as StudyCardRow[]).forEach((card) => {
       const nextReview = card.next_review ? new Date(card.next_review) : null;
-      const isDue = nextReview && nextReview <= now;
-      const isDueToday =
-        nextReview &&
-        nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000);
-      const isMastered = card.fsrs_stability && card.fsrs_stability > 21;
+      const isDue = nextReview ? nextReview <= now : false;
+      const isDueToday = nextReview ? nextReview <= new Date(today.getTime() + 24 * 60 * 60 * 1000) : false;
+      const isMastered = card.fsrs_stability != null && card.fsrs_stability > 21;
 
       statusMap[card.knowledge_point_id] = {
         mastered: isMastered,
         locked: false,
-        review_count: card.review_count || 0,
-        next_review: card.next_review,
+        review_count: card.review_count ?? 0,
+        next_review: card.next_review ?? undefined,
         due: isDue,
-        due_today: isDueToday,
+        due_today: isDueToday ? true : undefined,
       };
     });
 
@@ -159,7 +162,7 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return result as Graph;
+    return toGraph(result as KnowledgeGraphRow);
   },
 
   createFromTemplate: async (data: {
@@ -186,7 +189,7 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return result as Graph;
+    return toGraph(result as KnowledgeGraphRow);
   },
 
   update: async (
@@ -215,7 +218,7 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return result as Graph;
+    return toGraph(result as KnowledgeGraphRow);
   },
 
   delete: async (id: string): Promise<void> => {
@@ -224,7 +227,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("knowledge_graphs") as any)
+    const { error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id);
 
@@ -239,7 +244,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("knowledge_graphs") as any)
+    const { data, error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .update({ deleted_at: null })
       .eq("id", id)
       .select()
@@ -249,7 +256,7 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return data as Graph;
+    return toGraph(data as KnowledgeGraphRow);
   },
 
   permanentDelete: async (id: string): Promise<void> => {
@@ -258,7 +265,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("knowledge_graphs") as any)
+    const { error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .delete()
       .eq("id", id);
 
@@ -273,7 +282,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("knowledge_graphs") as any)
+    const { error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .update({ deleted_at: null })
       .in("id", ids);
 
@@ -290,7 +301,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("knowledge_graphs") as any)
+    const { error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .update({ deleted_at: new Date().toISOString() })
       .in("id", ids);
 
@@ -307,7 +320,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { error } = await (client.from("knowledge_graphs") as any)
+    const { error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .delete()
       .in("id", ids);
 
@@ -343,7 +358,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("knowledge_graphs") as any)
+    const { data, error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .update({ is_favorite })
       .eq("id", id)
       .select()
@@ -353,10 +370,10 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return data as Graph;
+    return toGraph(data as KnowledgeGraphRow);
   },
 
-  getTags: async () => {
+  getTags: async (): Promise<string[]> => {
     const client = getMobileSupabaseClient();
     if (!client) {
       throw new Error("Supabase client not initialized");
@@ -382,7 +399,7 @@ export const mobileGraphsApi = {
     }
 
     const allTags = new Set<string>();
-    (data || []).forEach((g: any) => {
+    ((data || []) as Pick<KnowledgeGraphRow, 'tags'>[]).forEach((g) => {
       (g.tags || []).forEach((tag: string) => allTags.add(tag));
     });
 
@@ -416,7 +433,7 @@ export const mobileGraphsApi = {
     }
 
     const domainMap = new Map<string, number>();
-    (data || []).forEach((g: any) => {
+    ((data || []) as Pick<KnowledgeGraphRow, 'domain'>[]).forEach((g) => {
       if (g.domain) {
         domainMap.set(g.domain, (domainMap.get(g.domain) || 0) + 1);
       }
@@ -440,7 +457,9 @@ export const mobileGraphsApi = {
       throw new Error("Supabase client not initialized");
     }
 
-    const { data, error } = await (client.from("knowledge_graphs") as any)
+    const { data, error } = await (
+      client.from("knowledge_graphs") as any
+    )
       .update({ is_public })
       .eq("id", id)
       .select()
@@ -450,7 +469,7 @@ export const mobileGraphsApi = {
       throw new Error(error.message);
     }
 
-    return data as Graph;
+    return toGraph(data as KnowledgeGraphRow);
   },
 
   getMap: async () => {
@@ -479,11 +498,14 @@ export const mobileGraphsApi = {
       return { graphs: [], relations: [] };
     }
 
-    const graphIds = (graphs || []).map((g: any) => g.id);
+    const graphRows = (graphs || []) as KnowledgeGraphRow[];
+    const graphIds = graphRows.map((g) => g.id);
 
     if (graphIds.length > 0) {
       const [nodeCountsResult, relationsResult] = await Promise.all([
-        (client.from("graph_nodes") as any)
+        (
+          client.from("graph_nodes") as any
+        )
           .select("graph_id")
           .in("graph_id", graphIds)
           .is("deleted_at", null),
@@ -498,23 +520,31 @@ export const mobileGraphsApi = {
       ]);
 
       const countMap = new Map<string, number>();
-      (nodeCountsResult.data || []).forEach((n: any) => {
+      ((nodeCountsResult.data || []) as GraphNodeRow[]).forEach((n) => {
         countMap.set(n.graph_id, (countMap.get(n.graph_id) || 0) + 1);
       });
 
       return {
-        graphs: (graphs || []).map((g: any) => ({
-          ...g,
+        graphs: graphRows.map((g) => ({
+          ...toGraph(g),
           nodes_count: countMap.get(g.id) || 0,
           node_count: countMap.get(g.id) || 0,
         })),
-        relations: relationsResult.data || [],
+        relations: (relationsResult.data || []) as Array<{
+          id: string;
+          source_graph_id: string;
+          target_graph_id: string;
+          relation_type: string;
+          context?: string | null;
+          metadata?: Record<string, unknown> | null;
+          created_at: string;
+        }>,
       };
     }
 
     return {
-      graphs: (graphs || []).map((g: any) => ({
-        ...g,
+      graphs: graphRows.map((g) => ({
+        ...toGraph(g),
         nodes_count: 0,
         node_count: 0,
       })),
@@ -534,11 +564,11 @@ export const mobileGraphsApi = {
     return [];
   },
 
-  createPrerequisiteGraph: async (_id: string, _data: any) => {
+  createPrerequisiteGraph: async (_id: string, _data: unknown) => {
     return { success: true };
   },
 
-  createPrerequisiteGraphs: async (_id: string, _data: any) => {
+  createPrerequisiteGraphs: async (_id: string, _data: unknown) => {
     return { created: [] };
   },
 
@@ -546,7 +576,7 @@ export const mobileGraphsApi = {
     return { success: true };
   },
 
-  createRelation: async (_data: any) => {
+  createRelation: async (_data: unknown) => {
     return { success: true, relation_id: "" };
   },
 
@@ -554,7 +584,7 @@ export const mobileGraphsApi = {
     return { success: true };
   },
 
-  infiniteExpand: async (_graphId: string, _data: any) => {
+  infiniteExpand: async (_graphId: string, _data: unknown) => {
     return { success: true };
   },
 
@@ -562,7 +592,7 @@ export const mobileGraphsApi = {
     return { recommendations: [], relations: [] };
   },
 
-  batchCreateDomainGraphs: async (_data: any) => {
+  batchCreateDomainGraphs: async (_data: unknown) => {
     return { created: [] };
   },
 
@@ -570,7 +600,7 @@ export const mobileGraphsApi = {
     return { success: true, taskId: "", graphId, message: "" };
   },
 
-  batchInitializeGraphs: async (_data: any) => {
+  batchInitializeGraphs: async (_data: unknown) => {
     return {
       success: true,
       results: [],
@@ -578,7 +608,7 @@ export const mobileGraphsApi = {
     };
   },
 
-  discoverRelations: async (_data?: any) => {
+  discoverRelations: async (_data?: unknown) => {
     return {
       discovered_relations: [],
       cross_domain_insights: [],
@@ -591,7 +621,7 @@ export const mobileGraphsApi = {
     };
   },
 
-  createDiscoveredRelation: async (_data: any) => {
+  createDiscoveredRelation: async (_data: unknown) => {
     return { success: true, relation_id: "", message: "" };
   },
 

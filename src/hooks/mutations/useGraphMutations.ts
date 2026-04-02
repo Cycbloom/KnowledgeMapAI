@@ -229,13 +229,7 @@ export const useCreateNodeMutation = () => {
 
       return { previousData };
     },
-    onSuccess: (data, _variables) => {
-      if (data && (data as any)._reused) {
-        console.info(
-          "Node reused existing knowledge point:",
-          (data as any).knowledge_point_id,
-        );
-      }
+    onSuccess: (_data, _variables) => {
     },
     onError: (_err, newNode, context) => {
       if (context?.previousData) {

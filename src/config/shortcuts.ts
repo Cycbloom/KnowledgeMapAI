@@ -331,6 +331,15 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     icon: 'Command'
   },
   {
+    id: 'open-console',
+    name: '打开控制台',
+    description: '打开开发者控制台',
+    category: 'tools',
+    defaultKeys: { key: 'p', ctrl: true, shift: true },
+    action: 'openConsole',
+    icon: 'Terminal'
+  },
+  {
     id: 'search',
     name: '搜索',
     description: '打开搜索面板',

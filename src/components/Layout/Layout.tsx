@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useStore } from "../../store/useStore";
 import { useUser, useTasks } from "../../hooks/queries";
 import { useLogoutMutation } from "../../hooks/mutations";
-import { useTaskEvents } from "../../hooks";
+import { useTaskEvents, useConsole } from "../../hooks";
 import { useMessageStore } from "../../store/useMessageStore";
 import {
   LogOut,
@@ -42,6 +42,8 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { useTheme } from "../../hooks";
 import { useIsMobile } from "../../hooks/common/useIsMobile";
 import { api } from "../../services/api";
+import { Console } from "../Console/Console";
+import { useGlobalShortcuts } from "../../hooks/common/useGlobalShortcuts";
 
 interface SidebarLinkProps {
   to: string;
@@ -80,6 +82,31 @@ export const Layout = () => {
   const isFullScreenPage =
     location.pathname.startsWith("/graph/") ||
     location.pathname === "/learning";
+
+  const {
+    isOpen: isConsoleOpen,
+    isMinimized: isConsoleMinimized,
+    context: consoleContext,
+    open: openConsole,
+    close: closeConsole,
+    toggleMinimize: toggleConsoleMinimize,
+  } = useConsole({
+    userId: user?.id || '',
+    autoRegisterCommands: true,
+  });
+
+  useGlobalShortcuts({
+    handlers: {
+      openConsole: () => {
+        if (isConsoleOpen) {
+          closeConsole();
+        } else {
+          openConsole();
+        }
+      },
+    },
+    enabled: true,
+  });
 
   const { data: userData, isLoading: isUserLoading } = useUser(
     !!token && !user,
@@ -401,6 +428,15 @@ export const Layout = () => {
           <OfflineIndicator />
           {isMobile ? <MobileFocusTimer /> : <FocusTimer />}
           <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+          {user?.id && (
+            <Console
+              isOpen={isConsoleOpen}
+              onClose={closeConsole}
+              context={consoleContext}
+              onToggleMinimize={toggleConsoleMinimize}
+              isMinimized={isConsoleMinimized}
+            />
+          )}
         </div>
       </div>
     </div>

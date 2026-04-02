@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AIService } from "../../services/aiService";
+import { AIService } from "../../services/ai/aiService";
 
 vi.mock("../../services/ai/factory", () => ({
   getAIProviderForTask: vi.fn(),

@@ -4,6 +4,7 @@ import { request } from "../services/api";
 interface CachedApiOptions {
   ttl?: number;
   forceRefresh?: boolean;
+  tags?: string[];
 }
 
 const DEFAULT_TTL = 5 * 60 * 1000;
@@ -13,19 +14,20 @@ export const createCachedApi = <T>(
   fetchFn: () => Promise<T>,
   options: CachedApiOptions = {},
 ): Promise<T> => {
-  const { ttl = DEFAULT_TTL, forceRefresh = false } = options;
+  const { ttl = DEFAULT_TTL, forceRefresh = false, tags } = options;
 
   if (forceRefresh) {
     dataCache.delete(key);
   }
 
-  return dataCache.getOrFetch(key, fetchFn, ttl);
+  return dataCache.getOrFetch(key, fetchFn, ttl, tags);
 };
 
 export const cachedApi = {
   graphs: {
     list: (options?: CachedApiOptions) => {
       const userId = localStorage.getItem("userId") || "anonymous";
+      const tags = [`user:${userId}`];
       return createCachedApi(
         CacheKeys.USER_GRAPHS(userId),
         async () => {
@@ -36,11 +38,12 @@ export const cachedApi = {
             },
           });
         },
-        options,
+        { tags, ...options },
       );
     },
 
     get: (id: string, options?: CachedApiOptions) => {
+      const tags = [`graph:${id}`];
       return createCachedApi(
         CacheKeys.GRAPH(id),
         async () => {
@@ -51,11 +54,12 @@ export const cachedApi = {
             },
           });
         },
-        options,
+        { tags, ...options },
       );
     },
 
     getNodes: (id: string, options?: CachedApiOptions) => {
+      const tags = [`graph:${id}`];
       return createCachedApi(
         CacheKeys.GRAPH_NODES(id),
         async () => {
@@ -66,17 +70,13 @@ export const cachedApi = {
             },
           });
         },
-        options,
+        { tags, ...options },
       );
     },
 
     invalidate: (graphId: string) => {
-      dataCache.delete(CacheKeys.GRAPH(graphId));
-      dataCache.delete(CacheKeys.GRAPH_NODES(graphId));
-      dataCache.delete(CacheKeys.GRAPH_EDGES(graphId));
-      dataCache.delete(CacheKeys.STUDY_CARDS(graphId));
-      dataCache.delete(CacheKeys.LEARNING_PATH(graphId));
-
+      dataCache.deleteByTags([`graph:${graphId}`]);
+      
       const userId = localStorage.getItem("userId") || "anonymous";
       dataCache.delete(CacheKeys.USER_GRAPHS(userId));
     },
@@ -84,6 +84,7 @@ export const cachedApi = {
 
   templates: {
     list: (options?: CachedApiOptions) => {
+      const tags = ['templates'];
       return createCachedApi(
         CacheKeys.TEMPLATES(),
         async () => {
@@ -94,11 +95,12 @@ export const cachedApi = {
             },
           });
         },
-        { ttl: 30 * 60 * 1000, ...options },
+        { ttl: 30 * 60 * 1000, tags, ...options },
       );
     },
 
     get: (id: string, options?: CachedApiOptions) => {
+      const tags = [`template:${id}`, 'templates'];
       return createCachedApi(
         CacheKeys.TEMPLATE(id),
         async () => {
@@ -109,17 +111,18 @@ export const cachedApi = {
             },
           });
         },
-        { ttl: 30 * 60 * 1000, ...options },
+        { ttl: 30 * 60 * 1000, tags, ...options },
       );
     },
 
     invalidate: () => {
-      dataCache.delete(CacheKeys.TEMPLATES());
+      dataCache.deleteByTags(['templates']);
     },
   },
 
   user: {
     getProfile: (userId: string, options?: CachedApiOptions) => {
+      const tags = [`user:${userId}`];
       return createCachedApi(
         CacheKeys.USER_PROFILE(userId),
         async () => {
@@ -130,18 +133,18 @@ export const cachedApi = {
             },
           });
         },
-        options,
+        { tags, ...options },
       );
     },
 
     invalidate: (userId: string) => {
-      dataCache.delete(CacheKeys.USER_PROFILE(userId));
-      dataCache.delete(CacheKeys.USER_GRAPHS(userId));
+      dataCache.deleteByTags([`user:${userId}`]);
     },
   },
 
   study: {
     getCards: (graphId: string, options?: CachedApiOptions) => {
+      const tags = [`graph:${graphId}`, 'study'];
       return createCachedApi(
         CacheKeys.STUDY_CARDS(graphId),
         async () => {
@@ -152,11 +155,12 @@ export const cachedApi = {
             },
           });
         },
-        options,
+        { tags, ...options },
       );
     },
 
     getLearningPath: (graphId: string, options?: CachedApiOptions) => {
+      const tags = [`graph:${graphId}`, 'study'];
       return createCachedApi(
         CacheKeys.LEARNING_PATH(graphId),
         async () => {
@@ -167,13 +171,12 @@ export const cachedApi = {
             },
           });
         },
-        options,
+        { tags, ...options },
       );
     },
 
     invalidate: (graphId: string) => {
-      dataCache.delete(CacheKeys.STUDY_CARDS(graphId));
-      dataCache.delete(CacheKeys.LEARNING_PATH(graphId));
+      dataCache.deleteByTags([`graph:${graphId}`]);
     },
   },
 };

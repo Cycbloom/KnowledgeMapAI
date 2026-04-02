@@ -51,10 +51,16 @@ CREATE TABLE IF NOT EXISTS knowledge_graphs (
   embedding vector(1024),
   deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  reference_books JSONB DEFAULT '[]'::jsonb,
+  external_links JSONB DEFAULT '[]'::jsonb,
+  learning_guide TEXT
 );
 
 COMMENT ON COLUMN knowledge_graphs.domain IS 'The domain/field this graph belongs to, used for star map visualization';
+COMMENT ON COLUMN knowledge_graphs.reference_books IS '参考书籍列表，结构: [{"title": "书籍标题", "author": "作者", "isbn": "ISBN号", "description": "简介", "url": "链接"}]';
+COMMENT ON COLUMN knowledge_graphs.external_links IS '外部链接列表，结构: [{"title": "链接标题", "url": "链接地址", "type": "article|video|course|tool|other", "description": "简介"}]';
+COMMENT ON COLUMN knowledge_graphs.learning_guide IS '学习指南/建议，支持 Markdown 格式';
 
 -- Knowledge points table (独立的知识点实体)
 CREATE TABLE IF NOT EXISTS knowledge_points (

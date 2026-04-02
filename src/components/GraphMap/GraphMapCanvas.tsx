@@ -88,6 +88,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
 
     const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
     const transformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
+    const targetTransformRef = useRef<Transform>({ x: 0, y: 0, k: 1 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStartRef = useRef({ x: 0, y: 0 });
     const [_hoveredNodeId, _setHoveredNodeId] = useState<string | null>(null);
@@ -177,6 +178,11 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       });
     }, [nodes, edges, containerSize, graphs]);
 
+    const nodeMap = useMemo(
+      () => layout ? new Map(layout.nodes.map((n) => [n.id, n])) : new Map(),
+      [layout]
+    );
+
     const updateTransformDOM = useCallback((t: Transform) => {
       if (contentRef.current) {
         contentRef.current.setAttribute(
@@ -245,6 +251,39 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       [updateTransformDOM, updateTransformState],
     );
 
+    const smoothAnimationRef = useRef<number | null>(null);
+
+    const startSmoothAnimation = useCallback(() => {
+      const lerpFactor = 0.12;
+
+      const animate = () => {
+        const current = transformRef.current;
+        const target = targetTransformRef.current;
+
+        const dx = target.x - current.x;
+        const dy = target.y - current.y;
+        const dk = target.k - current.k;
+
+        if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01 && Math.abs(dk) < 0.0001) {
+          smoothAnimationRef.current = null;
+          return;
+        }
+
+        const newX = current.x + dx * lerpFactor;
+        const newY = current.y + dy * lerpFactor;
+        const newK = current.k + dk * lerpFactor;
+
+        const newTransform = { x: newX, y: newY, k: newK };
+
+        transformRef.current = newTransform;
+        updateTransformDOM(newTransform);
+
+        smoothAnimationRef.current = requestAnimationFrame(animate);
+      };
+
+      smoothAnimationRef.current = requestAnimationFrame(animate);
+    }, [updateTransformDOM]);
+
     useImperativeHandle(ref, () => ({
       centerNode: (nodeId: string) => {
         if (!layout) return;
@@ -292,13 +331,22 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       updateTransformDOM(transformRef.current);
     }, [updateTransformDOM]);
 
+    useEffect(() => {
+      return () => {
+        if (smoothAnimationRef.current) {
+          cancelAnimationFrame(smoothAnimationRef.current);
+          smoothAnimationRef.current = null;
+        }
+      };
+    }, []);
+
     const handleWheel = useCallback(
       (e: WheelEvent) => {
         e.preventDefault();
         const scaleFactor = 1.1;
         const delta = e.deltaY > 0 ? 1 / scaleFactor : scaleFactor;
 
-        const prev = transformRef.current;
+        const prev = targetTransformRef.current;
         const newK = Math.max(0.1, Math.min(5, prev.k * delta));
 
         const rect = svgRef.current?.getBoundingClientRect();
@@ -310,13 +358,14 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         const newX = mouseX - (mouseX - prev.x) * delta;
         const newY = mouseY - (mouseY - prev.y) * delta;
 
-        const newTransform = { x: newX, y: newY, k: newK };
+        targetTransformRef.current = { x: newX, y: newY, k: newK };
+        updateTransformState({ x: newX, y: newY, k: newK });
 
-        transformRef.current = newTransform;
-        updateTransformDOM(newTransform);
-        updateTransformState(newTransform);
+        if (!smoothAnimationRef.current) {
+          startSmoothAnimation();
+        }
       },
-      [updateTransformDOM, updateTransformState],
+      [updateTransformState, startSmoothAnimation],
     );
 
     const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -573,6 +622,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
           };
 
           transformRef.current = newTransform;
+          targetTransformRef.current = newTransform;
           updateTransformDOM(newTransform);
           updateTransformState(newTransform);
         }
@@ -636,6 +686,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
 
         const newTransform = { x: targetX, y: targetY, k: 1 };
         transformRef.current = newTransform;
+        targetTransformRef.current = newTransform;
         updateTransformDOM(newTransform);
         updateTransformState(newTransform);
       }
@@ -656,6 +707,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         ) {
           const newTransform = { x: targetX, y: targetY, k: 1 };
           transformRef.current = newTransform;
+          targetTransformRef.current = newTransform;
           updateTransformDOM(newTransform);
           updateTransformState(newTransform);
         }
@@ -665,6 +717,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
     const handleMiniMapTransformChange = useCallback(
       (newTransform: Transform) => {
         transformRef.current = newTransform;
+        targetTransformRef.current = newTransform;
         updateTransformDOM(newTransform);
         updateTransformState(newTransform);
       },
@@ -702,8 +755,6 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         </div>
       );
     }
-
-    const nodeMap = new Map(layout.nodes.map((n) => [n.id, n]));
 
     return (
       <div

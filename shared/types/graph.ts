@@ -99,6 +99,21 @@ export interface KnowledgePointVersionWithDiff extends KnowledgePointVersion {
   previous_version?: KnowledgePointVersion;
 }
 
+export interface ReferenceBook {
+  title: string;
+  author: string;
+  isbn?: string;
+  description?: string;
+  url?: string;
+}
+
+export interface ExternalLink {
+  title: string;
+  url: string;
+  type: "article" | "video" | "course" | "tool" | "other";
+  description?: string;
+}
+
 export interface Graph {
   id: string;
   title: string;
@@ -116,6 +131,9 @@ export interface Graph {
   nodes_count?: number;
   podcast_script?: string;
   is_favorite?: boolean;
+  reference_books?: ReferenceBook[];
+  external_links?: ExternalLink[];
+  learning_guide?: string;
 }
 
 export interface GraphNode {

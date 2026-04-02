@@ -1,0 +1,149 @@
+import React, { useCallback, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Terminal, Settings, FileText, Hash } from 'lucide-react';
+import type { AutocompleteSuggestion } from '@/services/console';
+
+interface CommandAutocompleteProps {
+  suggestions: AutocompleteSuggestion[];
+  selectedIndex: number;
+  onSelect: (suggestion: AutocompleteSuggestion) => void;
+  isDark: boolean;
+}
+
+const getIcon = (type: AutocompleteSuggestion['type']) => {
+  switch (type) {
+    case 'command':
+      return Terminal;
+    case 'option':
+      return Settings;
+    case 'value':
+      return FileText;
+    default:
+      return Hash;
+  }
+};
+
+const getTypeColor = (type: AutocompleteSuggestion['type'], isDark: boolean): string => {
+  switch (type) {
+    case 'command':
+      return isDark ? 'text-blue-400 bg-blue-900/30' : 'text-blue-600 bg-blue-50';
+    case 'option':
+      return isDark ? 'text-purple-400 bg-purple-900/30' : 'text-purple-600 bg-purple-50';
+    case 'value':
+      return isDark ? 'text-green-400 bg-green-900/30' : 'text-green-600 bg-green-50';
+    default:
+      return isDark ? 'text-slate-400 bg-slate-700' : 'text-gray-600 bg-gray-100';
+  }
+};
+
+const getTypeLabel = (type: AutocompleteSuggestion['type']): string => {
+  switch (type) {
+    case 'command':
+      return '命令';
+    case 'option':
+      return '选项';
+    case 'value':
+      return '值';
+    default:
+      return '其他';
+  }
+};
+
+export const CommandAutocomplete: React.FC<CommandAutocompleteProps> = ({
+  suggestions,
+  selectedIndex,
+  onSelect,
+  isDark,
+}) => {
+  const listRef = useRef<HTMLDivElement>(null);
+  const selectedRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (selectedRef.current && listRef.current) {
+      const list = listRef.current;
+      const selected = selectedRef.current;
+      const listRect = list.getBoundingClientRect();
+      const selectedRect = selected.getBoundingClientRect();
+
+      if (selectedRect.top < listRect.top) {
+        selected.scrollIntoView({ block: 'start' });
+      } else if (selectedRect.bottom > listRect.bottom) {
+        selected.scrollIntoView({ block: 'end' });
+      }
+    }
+  }, [selectedIndex]);
+
+  const handleClick = useCallback((suggestion: AutocompleteSuggestion) => {
+    onSelect(suggestion);
+  }, [onSelect]);
+
+  if (suggestions.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.1 }}
+      className={`rounded-lg border shadow-lg overflow-hidden ${
+        isDark
+          ? 'bg-slate-800 border-slate-700'
+          : 'bg-white border-gray-200'
+      }`}
+    >
+      <div
+        ref={listRef}
+        className="max-h-64 overflow-y-auto custom-scrollbar"
+      >
+        {suggestions.map((suggestion, index) => {
+          const Icon = getIcon(suggestion.type);
+          const isSelected = index === selectedIndex;
+          const colorClass = getTypeColor(suggestion.type, isDark);
+
+          return (
+            <button
+              key={`${suggestion.value}-${index}`}
+              ref={isSelected ? selectedRef : null}
+              onClick={() => handleClick(suggestion)}
+              className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-colors ${
+                isSelected
+                  ? isDark
+                    ? 'bg-slate-700/70'
+                    : 'bg-gray-100'
+                  : isDark
+                    ? 'hover:bg-slate-700/50'
+                    : 'hover:bg-gray-50'
+              }`}
+            >
+              <div className={`p-1.5 rounded-md ${colorClass}`}>
+                <Icon size={14} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-mono truncate ${
+                  isDark ? 'text-slate-200' : 'text-gray-800'
+                }`}>
+                  {suggestion.value}
+                </div>
+                <div className={`text-xs truncate ${
+                  isDark ? 'text-slate-500' : 'text-gray-500'
+                }`}>
+                  {suggestion.description}
+                </div>
+              </div>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${colorClass}`}>
+                {getTypeLabel(suggestion.type)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={`px-3 py-1.5 border-t text-[10px] flex items-center justify-between ${
+        isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400'
+      }`}>
+        <span>↑↓ 导航 · Tab/Enter 选择 · Esc 关闭</span>
+        <span>{suggestions.length} 个建议</span>
+      </div>
+    </motion.div>
+  );
+};

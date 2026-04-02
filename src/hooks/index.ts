@@ -4,3 +4,4 @@ export * from "./common";
 export * from "./scheduler";
 export * from "./graphAI";
 export * from "./graphEditor";
+export * from "./useConsole";

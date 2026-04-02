@@ -87,14 +87,13 @@ export const useRenderCount = (_componentName: string) => {
   return renderCount;
 };
 
-export const useWhyDidYouRender = (componentName: string, props: Record<string, unknown>) => {
+export const useWhyDidYouRender = (_componentName: string, props: Record<string, unknown>) => {
   const previousProps = useRef<Record<string, unknown>>(props);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development') return;
 
     const changedProps: Record<string, { from: unknown; to: unknown }> = {};
-    let hasChanges = false;
 
     for (const key in props) {
       if (previousProps.current[key] !== props[key]) {
@@ -102,12 +101,7 @@ export const useWhyDidYouRender = (componentName: string, props: Record<string, 
           from: previousProps.current[key],
           to: props[key],
         };
-        hasChanges = true;
       }
-    }
-
-    if (hasChanges) {
-      console.info(`[${componentName}] Re-rendered due to prop changes:`, changedProps);
     }
 
     previousProps.current = props;

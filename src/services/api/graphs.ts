@@ -110,7 +110,15 @@ export const graphsApi = {
   
   getNodeStatus: (id: string) => request(`/graphs/${id}/node-status`),
   
-  update: (id: string, data: { title?: string; description?: string; domain?: string; settings?: Record<string, unknown> }) => 
+  update: (id: string, data: { 
+    title?: string; 
+    description?: string; 
+    domain?: string; 
+    settings?: Record<string, unknown>;
+    reference_books?: unknown;
+    external_links?: unknown;
+    learning_guide?: string;
+  }) => 
     request(`/graphs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
   togglePublic: (id: string, is_public: boolean) => 

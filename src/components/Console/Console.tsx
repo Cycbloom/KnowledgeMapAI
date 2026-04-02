@@ -1,0 +1,307 @@
+import React, { useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Terminal, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTheme } from '@/hooks';
+import { commandRegistry, type CommandResult, type CommandContext } from '@/services/console';
+import { useConsoleStore } from '@/store/useConsoleStore';
+import { ConsoleInput, type ConsoleInputRef } from './ConsoleInput';
+import { ConsoleOutput, type ConsoleOutputRef } from './ConsoleOutput';
+import { ConsoleHistory } from './ConsoleHistory';
+import { ConfirmDialog, type ConfirmDialogType } from './ConfirmDialog';
+
+interface ConsoleProps {
+  isOpen: boolean;
+  onClose: () => void;
+  context: CommandContext;
+  onToggleMinimize?: () => void;
+  isMinimized?: boolean;
+}
+
+export const Console: React.FC<ConsoleProps> = ({
+  isOpen,
+  onClose,
+  context,
+  onToggleMinimize,
+  isMinimized = false,
+}) => {
+  const { isDark } = useTheme();
+  
+  const {
+    input,
+    setInput,
+    history,
+    output,
+    isLoading,
+    confirmState,
+    setIsOpen,
+    addToHistory,
+    clearHistory,
+    addOutput,
+    clearOutput,
+    setIsLoading,
+    setConfirmState,
+    cancelConfirm,
+  } = useConsoleStore();
+  
+  const [showHistoryPanel, setShowHistoryPanel] = React.useState(false);
+  const outputRef = useRef<ConsoleOutputRef>(null);
+  const inputRef = useRef<ConsoleInputRef>(null);
+  const consoleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsOpen(isOpen);
+  }, [isOpen, setIsOpen]);
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollToBottom();
+    }
+  }, [output]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
+        e.preventDefault();
+        if (isOpen) {
+          onClose();
+        }
+      }
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const getCommandPermission = useCallback((command: string): 'safe' | 'warning' | 'danger' => {
+    const parts = command.trim().split(/\s+/);
+    const commandName = parts[0];
+    const subcommandName = parts[1];
+
+    const cmd = commandRegistry.find(commandName);
+    if (!cmd) return 'safe';
+
+    if (subcommandName && cmd.subcommands) {
+      const subcmd = cmd.subcommands.find((s) => s.name === subcommandName);
+      if (subcmd) return subcmd.permission;
+    }
+
+    return cmd.permission;
+  }, []);
+
+  const getConfirmMessage = useCallback((command: string, permission: 'safe' | 'warning' | 'danger'): string => {
+    const parts = command.trim().split(/\s+/);
+    const commandName = parts[0];
+    const subcommandName = parts[1];
+
+    let operation = command;
+    
+    if (subcommandName) {
+      operation = `${commandName} ${subcommandName}`;
+    }
+
+    if (permission === 'danger') {
+      return `您即将执行危险操作: "${operation}"\n\n此操作可能会造成不可逆的数据变更或删除，请确认您了解操作后果。`;
+    }
+
+    return `您即将执行警告操作: "${operation}"\n\n此操作可能会影响系统状态，请确认是否继续。`;
+  }, []);
+
+  const executeCommandInternal = useCallback(async (command: string) => {
+    if (!command.trim()) return;
+
+    setInput('');
+    addOutput({ type: 'input', content: command });
+    setIsLoading(true);
+
+    try {
+      const result = await commandRegistry.execute(command, context);
+      addOutput({ type: 'output', content: result.message || '', result });
+      addToHistory(command, result);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const result: CommandResult = { success: false, error: errorMessage };
+      addOutput({ type: 'output', content: errorMessage, result });
+      addToHistory(command, result);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [context, setInput, addOutput, addToHistory, setIsLoading]);
+
+  const showConfirmDialog = useCallback((
+    type: ConfirmDialogType,
+    command: string,
+    onConfirm: () => void
+  ) => {
+    const permission = getCommandPermission(command);
+    const message = getConfirmMessage(command, permission);
+
+    setConfirmState({
+      isOpen: true,
+      type,
+      title: type === 'danger' ? '危险操作确认' : '操作确认',
+      message,
+      confirmText: type === 'danger' ? 'CONFIRM' : undefined,
+      onConfirm,
+    });
+  }, [getCommandPermission, getConfirmMessage, setConfirmState]);
+
+  const executeCommand = useCallback(async (command: string) => {
+    if (!command.trim()) return;
+
+    const permission = getCommandPermission(command);
+
+    if (permission === 'safe') {
+      await executeCommandInternal(command);
+      return;
+    }
+
+    const confirmType: ConfirmDialogType = permission === 'danger' ? 'danger' : 'warning';
+
+    showConfirmDialog(confirmType, command, () => {
+      cancelConfirm();
+      executeCommandInternal(command);
+    });
+  }, [getCommandPermission, executeCommandInternal, showConfirmDialog, cancelConfirm]);
+
+  const handleHistorySelect = useCallback((command: string) => {
+    setInput(command);
+    setShowHistoryPanel(false);
+    inputRef.current?.focus();
+  }, [setInput]);
+
+  const handleClearOutput = useCallback(() => {
+    clearOutput();
+  }, [clearOutput]);
+
+  return (
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            ref={consoleRef}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className={`fixed bottom-4 right-4 w-[600px] max-h-[70vh] rounded-xl shadow-2xl border overflow-hidden z-50 flex flex-col ${
+              isDark
+                ? 'bg-slate-900 border-slate-700'
+                : 'bg-white border-gray-200'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between px-4 py-3 border-b cursor-move select-none ${
+                isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Terminal size={18} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
+                <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+                  控制台
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-200 text-gray-500'
+                }`}>
+                  Ctrl+Shift+C
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    showHistoryPanel
+                      ? isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-800'
+                      : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                  }`}
+                  title="历史记录"
+                >
+                  <Clock size={16} />
+                </button>
+                {onToggleMinimize && (
+                  <button
+                    onClick={onToggleMinimize}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                    }`}
+                    title={isMinimized ? '展开' : '最小化'}
+                  >
+                    {isMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                  }`}
+                  title="关闭"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-1 min-h-0">
+              <div className={`flex-1 flex flex-col min-w-0 ${showHistoryPanel ? 'border-r' : ''} ${
+                isDark ? 'border-slate-700' : 'border-gray-200'
+              }`}>
+                <ConsoleOutput
+                  ref={outputRef}
+                  output={output}
+                  isDark={isDark}
+                  onClear={handleClearOutput}
+                />
+                <ConsoleInput
+                  ref={inputRef}
+                  value={input}
+                  onChange={setInput}
+                  onSubmit={executeCommand}
+                  isDark={isDark}
+                  isLoading={isLoading}
+                />
+              </div>
+
+              <AnimatePresence>
+                {showHistoryPanel && (
+                  <motion.div
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 200, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <ConsoleHistory
+                      history={history}
+                      onSelect={handleHistorySelect}
+                      onClear={clearHistory}
+                      isDark={isDark}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        type={confirmState.type}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        onConfirm={confirmState.onConfirm}
+        onCancel={cancelConfirm}
+        isDark={isDark}
+      />
+    </>
+  );
+};

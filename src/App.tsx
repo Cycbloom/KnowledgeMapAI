@@ -6,6 +6,7 @@ import { LoadingBar, ErrorBoundary } from "./components/common";
 import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig } from "./config/authConfig";
+import { toUser } from "@shared/types/database";
 
 // Lazy Load Pages
 const Login = lazy(() =>
@@ -137,10 +138,10 @@ function App() {
 
     const restoreSession = async () => {
       const { data: { session } } = await client.auth.getSession();
-      
+
       if (session?.user) {
         setUser(
-          session.user as any,
+          toUser(session.user),
           session.access_token,
           session.refresh_token
         );
@@ -155,7 +156,7 @@ function App() {
       (_event, session) => {
         if (session?.user) {
           setUser(
-            session.user as any,
+            toUser(session.user),
             session.access_token,
             session.refresh_token
           );

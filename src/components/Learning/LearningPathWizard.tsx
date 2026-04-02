@@ -156,15 +156,11 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         mastery_level: '不了解'
       }));
 
-      console.info('Creating prerequisite graphs:', { graphId, topics, selectedPrerequisites: Array.from(selectedPrerequisites) });
-
       const result = await api.graphs.createPrerequisiteGraphs(graphId, { 
         topics,
         depth: 2,
         style: 'academic'
       });
-      
-      console.info('Create prerequisite graphs result:', result);
 
       setCreatedGraphs(result.created);
       

@@ -278,7 +278,14 @@ export class GraphService {
     supabase: SupabaseClient,
     graphId: string,
     userId: string,
-    updates: { title?: string; description?: string; is_public?: boolean }
+    updates: { 
+      title?: string; 
+      description?: string; 
+      is_public?: boolean;
+      reference_books?: unknown;
+      external_links?: unknown;
+      learning_guide?: string;
+    }
   ) {
     if (updates.title) {
       const duplicateCheck = await checkDuplicateGraphTopic(

@@ -23,7 +23,7 @@ import { GraphSidebarManager } from "../components/GraphEditor/sidebar/GraphSide
 import { GraphAnalysisPanel } from "../components/GraphEditor/panels/GraphAnalysisPanel";
 import { useGraphEffects, useGraphEditorState, useGraphHistoryHandlers, useGraphNodeOperations, useGraphExportOperations, useGraphInteraction, useExplorationPath } from "../hooks/graphEditor";
 import { useGraphAIOperations } from "../hooks/graphAI";
-import { useTheme, useIsMobile, useKeyboardShortcuts, useGlobalShortcuts, useTutorOperations } from "../hooks";
+import { useTheme, useIsMobile, useKeyboardShortcuts, useGlobalShortcuts, useTutorOperations, useConsole } from "../hooks";
 import {
   useGraph,
   useGraphData,
@@ -55,6 +55,7 @@ import {
 } from "../components/GraphEditor/shared/CommandPalette";
 import { ShortcutHelpPanel } from "../components/common";
 import { RAGChatButton } from "../components/GraphEditor/panels/RAGChatPanel";
+import { Console } from "../components/Console/Console";
 import { api, AIAction } from "../services/api";
 import { learningPathsApi } from "../services/api/learningPaths";
 import { useQueryClient } from "@tanstack/react-query";
@@ -85,7 +86,7 @@ const ViewLoader = () => (
 export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { token } = useStore();
+  const { token, user } = useStore();
   const { addMessage } = useMessageStore();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
@@ -120,7 +121,19 @@ export const GraphEditor = () => {
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [isRAGChatOpen, setIsRAGChatOpen] = useState(false);
   const [ragChatWidth, setRagChatWidth] = useState(420);
-  const [isSelectingParent, setIsSelectingParent] = useState(false);
+
+  const {
+    isOpen: isConsoleOpen,
+    isMinimized: isConsoleMinimized,
+    context: consoleContext,
+    open: openConsole,
+    close: closeConsole,
+    toggleMinimize: toggleConsoleMinimize,
+  } = useConsole({
+    userId: user?.id || '',
+    autoRegisterCommands: true,
+  });
+  const [isSelectingParentNode, setIsSelectingParentNode] = useState(false);
   const [isRelationshipTypeSettingsOpen, setIsRelationshipTypeSettingsOpen] =
     useState(false);
   const [selectedLearningPathId, setSelectedLearningPathId] = useState<
@@ -134,11 +147,11 @@ export const GraphEditor = () => {
   >(new Map());
 
   const handleStartSelectingParent = useCallback(() => {
-    setIsSelectingParent(true);
+    setIsSelectingParentNode(true);
   }, []);
 
   const handleCancelSelectingParent = useCallback(() => {
-    setIsSelectingParent(false);
+    setIsSelectingParentNode(false);
   }, []);
 
   const handleSelectLearningPath = useCallback(
@@ -265,7 +278,7 @@ export const GraphEditor = () => {
       sidebarMode === "none" ||
       (sidebarMode !== "create" && sidebarMode !== "edit")
     ) {
-      setIsSelectingParent(false);
+      setIsSelectingParentNode(false);
     }
   }, [sidebarMode]);
 
@@ -520,6 +533,13 @@ export const GraphEditor = () => {
       showHelp: () => setIsShortcutHelpOpen(true),
       openCommandPalette: () => setIsCommandPaletteOpen((prev) => !prev),
       toggleTheme,
+      openConsole: () => {
+        if (isConsoleOpen) {
+          closeConsole();
+        } else {
+          openConsole();
+        }
+      },
       "setViewMode:mindmap": () => setViewMode("mindmap"),
       "setViewMode:timeline": () => setViewMode("timeline"),
       "setViewMode:tree": () => setViewMode("tree"),
@@ -865,7 +885,7 @@ export const GraphEditor = () => {
               onLayoutUpdate={(_positions) => {
                 queryClient.invalidateQueries({ queryKey: ["graphData", id] });
               }}
-              isSelectingParent={isSelectingParent}
+              isSelectingParent={isSelectingParentNode}
               onSelectParent={handleSelectParentFromGraph}
               currentNodeId={selectedNode?.id}
               selectedParentIds={state.nodeForm.parentNodeIds}
@@ -1381,7 +1401,7 @@ export const GraphEditor = () => {
         interactionOps={interactionOps}
         handleCloseSidebar={handleCloseSidebar}
         isExplorationMode={isExplorationMode}
-        isSelectingParent={isSelectingParent}
+        isSelectingParent={isSelectingParentNode}
         onStartSelectingParent={handleStartSelectingParent}
         onCancelSelectingParent={handleCancelSelectingParent}
         onSelectParentFromGraph={handleSelectParentFromGraph}
@@ -1515,6 +1535,15 @@ export const GraphEditor = () => {
               nodeOps.handleDeleteNode(node);
             }
           }}
+        />
+      )}
+      {user?.id && (
+        <Console
+          isOpen={isConsoleOpen}
+          onClose={closeConsole}
+          context={consoleContext}
+          onToggleMinimize={toggleConsoleMinimize}
+          isMinimized={isConsoleMinimized}
         />
       )}
     </div>

@@ -57,7 +57,7 @@ export function useGlobalShortcuts({
 }
 
 function isGlobalShortcut(shortcut: ShortcutDefinition): boolean {
-  const globalActions = ['undo', 'redo', 'save', 'openCommandPalette'];
+  const globalActions = ['undo', 'redo', 'save', 'openCommandPalette', 'openConsole'];
   return globalActions.includes(shortcut.action) || 
          !!(shortcut.defaultKeys.ctrl || shortcut.defaultKeys.meta);
 }

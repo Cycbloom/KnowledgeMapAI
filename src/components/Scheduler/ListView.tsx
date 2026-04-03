@@ -233,8 +233,8 @@ export const ListView: React.FC<ListViewProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+    <div className="h-full flex flex-col min-h-0">
+      <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           <div className="relative flex-1 max-w-sm">
             <Search
@@ -282,7 +282,7 @@ export const ListView: React.FC<ListViewProps> = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="mb-4 overflow-hidden"
+            className="flex-shrink-0 mb-4 overflow-hidden"
           >
             <div className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/30">
               <div className="flex items-center gap-2">
@@ -359,8 +359,8 @@ export const ListView: React.FC<ListViewProps> = ({
         )}
       </AnimatePresence>
 
-      <div className="flex-1 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
-        <div className="overflow-x-auto custom-scrollbar h-full">
+      <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
+        <div className="h-full overflow-x-auto custom-scrollbar">
           <table className="w-full min-w-[900px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-50 dark:bg-slate-800/80">

@@ -140,7 +140,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   };
 
   return (
-    <div className="h-full overflow-x-auto custom-scrollbar">
+    <div className="h-full min-h-0 overflow-x-auto custom-scrollbar">
       <div className="flex gap-3 sm:gap-4 min-w-max h-full p-1">
         <AnimatePresence>
           {columnsData.map((column, index) => {
@@ -225,7 +225,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                   )}
                 </div>
 
-                <div className="flex-1 p-2 sm:p-3 overflow-y-auto custom-scrollbar max-h-[calc(100vh-280px)]">
+                <div className="flex-1 min-h-0 p-2 sm:p-3 overflow-y-auto custom-scrollbar">
                   {column.tasks.length === 0 ? (
                     <div className="text-center py-8 text-slate-400 dark:text-slate-500">
                       <IconComponent

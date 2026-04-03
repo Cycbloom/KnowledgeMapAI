@@ -239,7 +239,7 @@ export const Scheduler: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-y-auto custom-scrollbar">
+    <div className="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
         <div
@@ -249,7 +249,7 @@ export const Scheduler: React.FC = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/5 dark:bg-blue-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 min-h-full flex flex-col">
+      <div className="relative z-10 h-full flex flex-col">
         <header className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl">
           <div className="px-3 sm:px-6 py-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -377,9 +377,9 @@ export const Scheduler: React.FC = () => {
           </div>
         )}
 
-        <main className="flex-1 p-3 sm:p-6">
+        <main className="flex-1 min-h-0 flex flex-col p-3 sm:p-6">
           {isLoading ? (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
                   <div className="w-16 h-16 border-4 border-cyan-500/30 rounded-full animate-spin border-t-cyan-500" />
@@ -394,10 +394,9 @@ export const Scheduler: React.FC = () => {
               </div>
             </div>
           ) : (
-            <>
-              {/* Smart Recommendation Bar - only show when no active task */}
+            <div className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-6">
               {!activeTask && (
-                <div className="mb-6">
+                <div className="flex-shrink-0">
                   <SmartRecommendationBar
                     onStartTask={(taskId) => {
                       const task = findTaskById(taskId);
@@ -413,56 +412,60 @@ export const Scheduler: React.FC = () => {
               )}
 
               {activeTask && (
-                <ActiveTaskPanel
-                  task={activeTask}
-                  timeSlice={activeTaskTimeSlice}
-                  onPause={() => handlePauseTask(activeTask)}
-                  onComplete={() => handleCompleteTask(activeTask)}
-                />
+                <div className="flex-shrink-0">
+                  <ActiveTaskPanel
+                    task={activeTask}
+                    timeSlice={activeTaskTimeSlice}
+                    onPause={() => handlePauseTask(activeTask)}
+                    onComplete={() => handleCompleteTask(activeTask)}
+                  />
+                </div>
               )}
-              <HorizontalQueueView
-                queues={queues}
-                timeSlices={timeSlices}
-                currentView={currentView}
-                onViewChange={(view) => setCurrentView(view as ViewType)}
-                onTaskMove={handleMoveTask}
-                onReorder={(queueLevel, taskIds) =>
-                  handleReorder(queueLevel)(taskIds)
-                }
-                onEditTask={openEditTaskForm}
-                onDeleteTask={handleDeleteTask}
-                onStartTask={handleStartTask}
-                onPauseTask={handlePauseTask}
-                onCompleteTask={handleCompleteTask}
-                onAddTask={openAddTaskForm}
-                onViewTaskDetail={handleViewTaskDetail}
-              >
-                {{
-                  timeline: (
-                    <TimelineView
-                      tasks={allTasks}
-                      onTaskClick={openEditTaskForm}
-                    />
-                  ),
-                  kanban: (
-                    <KanbanView
-                      tasks={allTasks}
-                      onTaskClick={openEditTaskForm}
-                    />
-                  ),
-                  list: (
-                    <ListView
-                      tasks={allTasks}
-                      onEditTask={openEditTaskForm}
-                      onDeleteTask={handleDeleteTask}
-                      onStartTask={handleStartTask}
-                      onPauseTask={handlePauseTask}
-                      onCompleteTask={handleCompleteTask}
-                    />
-                  ),
-                }}
-              </HorizontalQueueView>
-            </>
+              <div className="flex-1 min-h-0">
+                <HorizontalQueueView
+                  queues={queues}
+                  timeSlices={timeSlices}
+                  currentView={currentView}
+                  onViewChange={(view) => setCurrentView(view as ViewType)}
+                  onTaskMove={handleMoveTask}
+                  onReorder={(queueLevel, taskIds) =>
+                    handleReorder(queueLevel)(taskIds)
+                  }
+                  onEditTask={openEditTaskForm}
+                  onDeleteTask={handleDeleteTask}
+                  onStartTask={handleStartTask}
+                  onPauseTask={handlePauseTask}
+                  onCompleteTask={handleCompleteTask}
+                  onAddTask={openAddTaskForm}
+                  onViewTaskDetail={handleViewTaskDetail}
+                >
+                  {{
+                    timeline: (
+                      <TimelineView
+                        tasks={allTasks}
+                        onTaskClick={openEditTaskForm}
+                      />
+                    ),
+                    kanban: (
+                      <KanbanView
+                        tasks={allTasks}
+                        onTaskClick={openEditTaskForm}
+                      />
+                    ),
+                    list: (
+                      <ListView
+                        tasks={allTasks}
+                        onEditTask={openEditTaskForm}
+                        onDeleteTask={handleDeleteTask}
+                        onStartTask={handleStartTask}
+                        onPauseTask={handlePauseTask}
+                        onCompleteTask={handleCompleteTask}
+                      />
+                    ),
+                  }}
+                </HorizontalQueueView>
+              </div>
+            </div>
           )}
         </main>
 

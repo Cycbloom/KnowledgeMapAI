@@ -105,8 +105,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 px-2">
+    <div className="h-full flex flex-col min-h-0">
+      <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 px-2">
         <div className="flex items-center gap-3">
           <h3 className="text-base sm:text-lg font-semibold text-slate-800 dark:text-white">时间轴视图</h3>
           <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -136,8 +136,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto custom-scrollbar">
-        <div className="flex gap-4 pb-4 min-w-max">
+      <div className="flex-1 min-h-0 overflow-x-auto custom-scrollbar">
+        <div className="flex gap-4 pb-4 min-w-max h-full">
           <AnimatePresence>
             {timelineData.map((day, index) => (
               <motion.div
@@ -147,7 +147,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.05 }}
                 className={`
-                  flex-shrink-0 w-64 sm:w-72 rounded-2xl border transition-all duration-300
+                  flex-shrink-0 w-64 sm:w-72 rounded-2xl border transition-all duration-300 flex flex-col
                   ${day.isToday 
                     ? 'border-cyan-500/50 shadow-lg shadow-cyan-500/20' 
                     : day.isPast 
@@ -184,9 +184,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2 space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
+                <div className="p-2 flex-1 min-h-0 space-y-2 overflow-y-auto custom-scrollbar">
                   {day.tasks.length === 0 ? (
-                    <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-sm">
+                    <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
                       {day.isToday ? '暂无任务安排' : '无任务'}
                     </div>
                   ) : (
@@ -226,7 +226,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       </div>
 
       {(overdueTasks.length > 0 || noDeadlineTasks.length > 0) && (
-        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+        <div className="flex-shrink-0 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {overdueTasks.length > 0 && (
               <div className="p-3 sm:p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">

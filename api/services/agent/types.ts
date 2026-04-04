@@ -81,6 +81,7 @@ export interface SkillDefinition {
   systemPrompt: string;
   userPromptTemplate: string;
   tools: string[];
+  maxIterations?: number;
 }
 
 export interface CreateSessionOptions {

@@ -43,9 +43,13 @@ export const getGraphOverviewTool: AgentTool = {
     },
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
-    const { supabase, userId } = context;
-    const graphIds = params.graphIds as string[] | undefined;
+    const { supabase, userId, graphIds: contextGraphIds } = context;
+    const paramGraphIds = params.graphIds as string[] | undefined;
     const summarize = params.summarize !== false;
+
+    const graphIds = paramGraphIds && paramGraphIds.length > 0
+      ? paramGraphIds
+      : contextGraphIds;
 
     let query = supabase
       .from("knowledge_graphs")
@@ -136,15 +140,25 @@ export const getGraphRelationsTool: AgentTool = {
     },
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
-    const { supabase, userId } = context;
-    const graphIds = params.graphIds as string[] | undefined;
+    const { supabase, userId, graphIds: contextGraphIds } = context;
+    const paramGraphIds = params.graphIds as string[] | undefined;
     const summarize = params.summarize !== false;
 
-    const { data: userGraphs, error: graphsError } = await supabase
+    const targetGraphIds = paramGraphIds && paramGraphIds.length > 0
+      ? paramGraphIds
+      : contextGraphIds;
+
+    let query = supabase
       .from("knowledge_graphs")
       .select("id, title")
       .eq("user_id", userId)
       .is("deleted_at", null);
+
+    if (targetGraphIds && targetGraphIds.length > 0) {
+      query = query.in("id", targetGraphIds);
+    }
+
+    const { data: userGraphs, error: graphsError } = await query;
 
     if (graphsError) {
       throw new Error(`Failed to get user graphs: ${graphsError.message}`);
@@ -184,14 +198,11 @@ export const getGraphRelationsTool: AgentTool = {
       throw new Error(`Failed to get graph relations: ${error.message}`);
     }
 
-    let filteredRelations = relations || [];
-    if (graphIds && graphIds.length > 0) {
-      filteredRelations = filteredRelations.filter(
-        (r) =>
-          graphIds.includes(r.source_graph_id) ||
-          graphIds.includes(r.target_graph_id),
-      );
-    }
+    const filteredRelations = (relations || []).filter(
+      (r) =>
+        userGraphIds.includes(r.source_graph_id) &&
+        userGraphIds.includes(r.target_graph_id),
+    );
 
     if (summarize) {
       return {
@@ -226,14 +237,20 @@ export const getIsolatedGraphsTool: AgentTool = {
     },
   },
   execute: async (params: Record<string, unknown>, context: ToolContext) => {
-    const { supabase, userId } = context;
+    const { supabase, userId, graphIds: contextGraphIds } = context;
     const summarize = params.summarize !== false;
 
-    const { data: graphs, error: graphsError } = await supabase
+    let query = supabase
       .from("knowledge_graphs")
       .select("id, title, description, domain")
       .eq("user_id", userId)
       .is("deleted_at", null);
+
+    if (contextGraphIds && contextGraphIds.length > 0) {
+      query = query.in("id", contextGraphIds);
+    }
+
+    const { data: graphs, error: graphsError } = await query;
 
     if (graphsError) {
       throw new Error(`Failed to get graphs: ${graphsError.message}`);

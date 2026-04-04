@@ -94,9 +94,13 @@ export class AgentService {
     });
 
     const aiProvider = await getAIProviderForTask("text");
-    const tools = this.toolRegistry.getToolDefinitions();
+    const allToolsDefinitions = this.toolRegistry.getToolDefinitions();
+    
+    const filteredTools = skill?.tools
+      ? allToolsDefinitions.filter((t) => skill.tools.includes(t.name))
+      : allToolsDefinitions;
 
-    let maxIterations = 20;
+    let maxIterations = skill?.maxIterations || 20;
     let finalResult = "";
 
     while (maxIterations-- > 0 && session.status === "running") {
@@ -105,8 +109,8 @@ export class AgentService {
           messages,
           model: aiProvider.model,
           tools:
-            tools.length > 0
-              ? tools.map((t) => ({
+            filteredTools.length > 0
+              ? filteredTools.map((t) => ({
                   type: "function" as const,
                   function: {
                     name: t.name,
@@ -115,7 +119,7 @@ export class AgentService {
                   },
                 }))
               : undefined,
-          tool_choice: tools.length > 0 ? "auto" : undefined,
+          tool_choice: filteredTools.length > 0 ? "auto" : undefined,
         });
 
         const response = completion.choices[0];
@@ -590,11 +594,92 @@ export class AgentService {
       }
       return prompt;
     }
+    if (graphIds && graphIds.length > 0) {
+      return `请分析我选中的知识图谱（共 ${graphIds.length} 个），重点关注这些图谱之间的关系和结构。`;
+    }
     return "请分析我的知识图谱";
   }
 }
 
 export const SKILLS: SkillDefinition[] = [
+  {
+    id: "quick_analysis",
+    name: "快速分析",
+    description: "快速获取图谱概览和基本建议",
+    systemPrompt: `你是知识图谱快速分析助手。
+
+请快速分析用户的知识图谱，提供简洁的概览和基本建议。
+
+## 分析要求
+1. 使用 get_graph_overview 工具获取图谱概览
+2. 输出简洁明了的分析报告（不超过 500 字）
+3. 如发现明显问题，给出 2-3 条核心建议
+
+## 输出格式
+用简洁的 Markdown 格式输出：
+- **总体概览**：一句话总结
+- **关键发现**：2-3 个要点
+- **建议**：2-3 条核心建议`,
+    userPromptTemplate: "请快速分析我的知识图谱",
+    tools: ["get_graph_overview"],
+    maxIterations: 5,
+  },
+  {
+    id: "deep_analysis",
+    name: "深度分析",
+    description: "深入分析图谱结构和关系",
+    systemPrompt: `你是知识图谱深度分析专家。
+
+请深入分析用户的知识图谱，提供全面详细的分析报告。
+
+## 分析维度
+1. **知识完整性** - 评估知识体系的完整性和覆盖范围
+2. **关系发现** - 发现潜在的图谱关联和知识关系
+3. **孤岛检测** - 发现没有关联的孤立图谱
+4. **跨领域发现** - 发现跨学科知识交叉点
+5. **学习路径** - 规划最优学习顺序
+
+## 分析策略
+1. 首先使用 get_graph_overview 获取全局概览
+2. 根据初步结果，选择合适的工具进行深入分析
+3. 对重点图谱进行结构分析
+4. 综合所有信息生成详细报告
+
+## 输出格式要求
+1. 用 Markdown 格式输出详细分析报告
+2. 包含数据支撑和具体分析
+3. 如果有推荐的图谱关系，在报告末尾用 JSON 格式输出推荐列表：
+\`\`\`json
+{
+  "summary": "分析摘要",
+  "recommendations": [
+    {
+      "source_graph_id": "图谱ID",
+      "source_graph_title": "图谱标题",
+      "target_graph_id": "目标图谱ID",
+      "target_graph_title": "目标图谱标题",
+      "relation_type": "prerequisite|extension|related|cross_domain",
+      "reason": "推荐理由",
+      "confidence": 0.8
+    }
+  ]
+}
+\`\`\``,
+    userPromptTemplate: "请深入分析我的知识图谱，提供全面的分析报告",
+    tools: [
+      "get_graph_overview",
+      "get_graph_details",
+      "get_graph_nodes",
+      "get_graph_relations",
+      "get_isolated_graphs",
+      "get_domain_distribution",
+      "get_knowledge_coverage",
+      "get_similar_graphs",
+      "analyze_graph_structure",
+      "search_graphs",
+    ],
+    maxIterations: 20,
+  },
   {
     id: "island_detection",
     name: "知识孤岛检测",

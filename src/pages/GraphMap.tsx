@@ -1478,6 +1478,13 @@ export const GraphMap = () => {
           isOpen={isAgentAnalysisOpen}
           onClose={() => setIsAgentAnalysisOpen(false)}
           selectedGraphIds={Array.from(multiSelectedGraphIds)}
+          graphTitles={Array.from(multiSelectedGraphIds).map(
+            (id) => graphs.find((g: Graph) => g.id === id)?.title || ""
+          )}
+          analysisMode={analysisMode}
+          onGraphsMerged={() => {
+            queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+          }}
         />
       </Suspense>
     </div>

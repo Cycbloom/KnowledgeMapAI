@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Bot, Loader2, AlertCircle } from "lucide-react";
+import { X, Bot, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import {
   agentApi,
   type AgentSession,
@@ -10,36 +10,89 @@ import { SkillSelector } from "./SkillSelector";
 import { SessionLog } from "./SessionLog";
 import { AnalysisResultView } from "./AnalysisResultView";
 import { MergeSuggestionsSection } from "./MergeSuggestionsSection";
+import { AnalysisConfirmPanel, type AnalysisMode } from "./AnalysisConfirmPanel";
+import { estimateTokenConsumption, type TokenEstimation } from "./utils/tokenEstimation";
+
+type AnalysisStep = 'select' | 'confirm' | 'execute';
+
+interface ConfirmState {
+  mode: AnalysisMode;
+  skill?: SkillDefinition;
+  customPrompt: string;
+}
 
 interface AgentAnalysisPanelProps {
   isOpen: boolean;
   onClose: () => void;
   selectedGraphIds?: string[];
+  graphTitles?: string[];
   onGraphsMerged?: () => void;
+  analysisMode?: AnalysisMode;
 }
 
 export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
   isOpen,
   onClose,
-  selectedGraphIds,
+  selectedGraphIds = [],
+  graphTitles = [],
   onGraphsMerged,
+  analysisMode: initialAnalysisMode,
 }) => {
   const [skills, setSkills] = useState<SkillDefinition[]>([]);
-  const [selectedSkill, setSelectedSkill] = useState<SkillDefinition | null>(
-    null,
-  );
+  const [selectedSkill, setSelectedSkill] = useState<SkillDefinition | null>(null);
   const [session, setSession] = useState<AgentSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(
     new Set(),
   );
+  const [step, setStep] = useState<AnalysisStep>('select');
+  const [confirmState, setConfirmState] = useState<ConfirmState>({
+    mode: 'quick',
+    customPrompt: '',
+  });
+
+  const effectiveGraphIds = useMemo(() => selectedGraphIds, [selectedGraphIds]);
+  const effectiveGraphTitles = useMemo(() => {
+    if (graphTitles.length > 0) return graphTitles;
+    return effectiveGraphIds.map((_, index) => `图谱 ${index + 1}`);
+  }, [graphTitles, effectiveGraphIds]);
+
+  const estimatedTokens: TokenEstimation = useMemo(() => {
+    const graphCount = effectiveGraphIds.length || 1;
+    return estimateTokenConsumption(confirmState.mode, graphCount);
+  }, [confirmState.mode, effectiveGraphIds.length]);
 
   useEffect(() => {
     if (isOpen) {
       loadSkills();
+      setStep('select');
+      setConfirmState({ mode: 'quick', customPrompt: '' });
+      setSelectedSkill(null);
+      setSession(null);
+      setError(null);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && initialAnalysisMode && skills.length > 0) {
+      if (initialAnalysisMode === 'custom') {
+        setConfirmState({ mode: 'custom', customPrompt: '' });
+        setStep('confirm');
+      } else {
+        const defaultSkill = skills.find(s => 
+          (initialAnalysisMode === 'quick' && s.id === 'quick_analysis') ||
+          (initialAnalysisMode === 'deep' && s.id === 'deep_analysis')
+        );
+        if (defaultSkill) {
+          handleSelectSkillForConfirm(defaultSkill, initialAnalysisMode);
+        } else {
+          setConfirmState(prev => ({ ...prev, mode: initialAnalysisMode }));
+          setStep('confirm');
+        }
+      }
+    }
+  }, [skills, isOpen, initialAnalysisMode]);
 
   const loadSkills = async () => {
     try {
@@ -50,15 +103,38 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     }
   };
 
-  const handleSelectSkill = async (skill: SkillDefinition) => {
-    setSelectedSkill(skill);
+  const handleSelectSkillForConfirm = useCallback((skill: SkillDefinition, mode: AnalysisMode = 'quick') => {
+    setConfirmState({
+      mode,
+      skill,
+      customPrompt: '',
+    });
+    setStep('confirm');
+  }, []);
+
+  const handleSelectSkill = useCallback((skill: SkillDefinition) => {
+    handleSelectSkillForConfirm(skill, 'quick');
+  }, [handleSelectSkillForConfirm]);
+
+  const handleConfirmAnalysis = useCallback(async () => {
+    if (!confirmState.skill && confirmState.mode !== 'custom') return;
+
+    const skillToUse = confirmState.skill || skills[0];
+    if (!skillToUse) {
+      setError("No skill available");
+      return;
+    }
+
+    setSelectedSkill(skillToUse);
+    setStep('execute');
     setIsLoading(true);
     setError(null);
 
     try {
       const { session: newSession } = await agentApi.createSession({
-        skill_id: skill.id,
-        graph_ids: selectedGraphIds,
+        skill_id: skillToUse.id,
+        graph_ids: effectiveGraphIds.length > 0 ? effectiveGraphIds : undefined,
+        custom_prompt: confirmState.mode === 'custom' ? confirmState.customPrompt : undefined,
       });
       setSession(newSession);
 
@@ -69,14 +145,25 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [confirmState, skills, effectiveGraphIds]);
 
-  const handleReset = () => {
+  const handleCancelConfirm = useCallback(() => {
+    setStep('select');
+    setConfirmState({ mode: 'quick', customPrompt: '' });
+  }, []);
+
+  const handleCustomPromptChange = useCallback((prompt: string) => {
+    setConfirmState(prev => ({ ...prev, customPrompt: prompt }));
+  }, []);
+
+  const handleReset = useCallback(() => {
     setSelectedSkill(null);
     setSession(null);
     setError(null);
     setDismissedSuggestions(new Set());
-  };
+    setStep('select');
+    setConfirmState({ mode: 'quick', customPrompt: '' });
+  }, []);
 
   const handleMergeGraphs = async (graphIds: string[]) => {
     await agentApi.mergeGraphs(graphIds);
@@ -110,9 +197,17 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
+            {step === 'execute' && selectedSkill && (
+              <button
+                onClick={handleReset}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
             <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Agent 分析
+              {step === 'execute' && selectedSkill ? selectedSkill.name : 'Agent 分析'}
             </h2>
           </div>
           <button
@@ -124,29 +219,37 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {!selectedSkill ? (
+          {step === 'select' && (
             <SkillSelector
               skills={skills}
-              selectedGraphCount={selectedGraphIds?.length || 0}
+              selectedGraphCount={effectiveGraphIds.length}
               onSelect={handleSelectSkill}
             />
-          ) : (
+          )}
+
+          {step === 'confirm' && (
+            <AnalysisConfirmPanel
+              mode={confirmState.mode}
+              skill={confirmState.skill}
+              customPrompt={confirmState.customPrompt}
+              selectedGraphIds={effectiveGraphIds}
+              graphTitles={effectiveGraphTitles}
+              estimatedTokens={estimatedTokens}
+              onConfirm={handleConfirmAnalysis}
+              onCancel={handleCancelConfirm}
+              onCustomPromptChange={handleCustomPromptChange}
+              isLoading={isLoading}
+            />
+          )}
+
+          {step === 'execute' && selectedSkill && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    {selectedSkill.name}
-                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {selectedSkill.description}
                   </p>
                 </div>
-                <button
-                  onClick={handleReset}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                  选择其他
-                </button>
               </div>
 
               {isLoading && !session?.result && (

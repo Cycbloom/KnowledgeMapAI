@@ -60,6 +60,7 @@ import { GraphOverviewPanel } from "../components/Learning/GraphOverviewPanel";
 import { GraphOverviewEditModal } from "../components/Learning/GraphOverviewEditModal";
 import { NodeLevel, Keyword } from "../types";
 import { useFocusStore } from "../store/useFocusStore";
+import { schedulerApi } from "../services/api";
 
 type Message = {
   id: string;
@@ -109,6 +110,26 @@ export const LearningMode = () => {
   const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
   const { fontSize, readingMode } = useLearningSettingsStore();
   const queryClient = useQueryClient();
+  const [sessionStartTime] = useState(Date.now);
+
+  useEffect(() => {
+    if (!nodeId) return;
+
+    const interval = setInterval(() => {
+      const currentDuration = Math.round((Date.now() - sessionStartTime) / 60000);
+
+      if (currentDuration > 0 && currentDuration % 5 === 0) {
+        schedulerApi.syncStudyDuration({
+          taskId: nodeId,
+          duration: currentDuration,
+        }).catch((error: Error) => {
+          console.error("Failed to sync study duration:", error);
+        });
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [nodeId, sessionStartTime]);
 
   const [generateProgress, setGenerateProgress] = useState<{
     current: number;
@@ -497,10 +518,55 @@ export const LearningMode = () => {
     }
   };
 
-  const handleStartChallenge = () => {
-    navigate(
-      `/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`,
+  const handleStartChallenge = async () => {
+    if (!nodeId || !graphId) {
+      addMessage({ type: "warning", content: "缺少必要参数" });
+      return;
+    }
+
+    const finalStudyDuration = Math.round(
+      (Date.now() - sessionStartTime) / 60000
     );
+
+    try {
+      let taskId: string;
+
+      const existingTask = await schedulerApi.getTask(nodeId).catch(() => null);
+      
+      if (existingTask?.id) {
+        taskId = existingTask.id;
+      } else {
+        const newTask = await schedulerApi.createTask({
+          title: nodeTitle || `学习: ${nodeId}`,
+          knowledge_point_id: nodeId,
+          task_type: "learning",
+          queue_level: 1,
+          estimated_duration: finalStudyDuration > 0 ? finalStudyDuration : 30,
+        });
+        taskId = newTask.id;
+      }
+
+      if (finalStudyDuration > 0) {
+        await schedulerApi.syncStudyDuration({
+          taskId: taskId,
+          duration: finalStudyDuration,
+        });
+      }
+
+      await schedulerApi.createFirstReviewTask({
+        knowledge_point_id: nodeId,
+        task_id: taskId,
+      });
+
+      addMessage({
+        type: "success",
+        content: `学习完成！已创建复习任务，将在 1 天后复习`,
+      });
+    } catch (error) {
+      console.error("Failed to create review task:", error);
+    }
+
+    navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`);
   };
 
   const handleRegenerateMaterial = async () => {

@@ -93,6 +93,9 @@ export const tasksApi = {
 
   getSmartRecommendation: () => request("/scheduler/smart-recommendation"),
 
+  getEfficiencyProfile: (days: number = 30) =>
+    request(`/scheduler/efficiency-data?days=${days}`),
+
   getDynamicPriority: (taskId: string) =>
     request(`/scheduler/tasks/${taskId}/dynamic-priority`),
 

@@ -12,6 +12,7 @@ import knowledgePointsRouter from "./knowledgePoints";
 import analyticsRouter from "./analytics";
 import recommendationsRouter from "./recommendations";
 import progressRouter from "./progress";
+import progressSyncRouter from "./progressSync";
 import settingsRouter from "./settings";
 
 const router = Router();
@@ -29,6 +30,7 @@ router.use(knowledgePointsRouter);
 router.use(analyticsRouter);
 router.use(recommendationsRouter);
 router.use(progressRouter);
+router.use(progressSyncRouter);
 router.use(settingsRouter);
 
 export default router;

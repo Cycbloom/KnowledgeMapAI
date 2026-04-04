@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Sparkles,
   Calendar,
+  Route,
+  Filter,
 } from "lucide-react";
 import {
   useSchedulerQueues,
@@ -23,20 +25,67 @@ import {
   useCompleteScheduledTaskMutation,
   useSchedulerSettings,
 } from "../hooks";
+import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
 import { useMessageStore } from "../store/useMessageStore";
-import { HorizontalQueueView } from "../components/Scheduler/HorizontalQueueView";
-import { KanbanView } from "../components/Scheduler/KanbanView";
-import { ListView } from "../components/Scheduler/ListView";
-import { TimelineView } from "../components/Scheduler/TimelineView";
-import { TaskForm } from "../components/Scheduler/TaskForm";
-import { ActiveTaskPanel } from "../components/Scheduler/ActiveTaskPanel";
-import { TimeSlotSettings } from "../components/Scheduler/TimeSlotSettings";
-import { SmartRecommendationBar } from "../components/Scheduler/SmartRecommendationBar";
 import {
   ScheduledTask,
   CreateScheduledTaskData,
   QueueData,
 } from "@shared/types";
+
+const HorizontalQueueView = lazy(() =>
+  import("../components/Scheduler/HorizontalQueueView").then((module) => ({
+    default: module.HorizontalQueueView,
+  })),
+);
+
+const KanbanView = lazy(() =>
+  import("../components/Scheduler/KanbanView").then((module) => ({
+    default: module.KanbanView,
+  })),
+);
+
+const ListView = lazy(() =>
+  import("../components/Scheduler/ListView").then((module) => ({
+    default: module.ListView,
+  })),
+);
+
+const TimelineView = lazy(() =>
+  import("../components/Scheduler/TimelineView").then((module) => ({
+    default: module.TimelineView,
+  })),
+);
+
+const TaskForm = lazy(() =>
+  import("../components/Scheduler/TaskForm").then((module) => ({
+    default: module.TaskForm,
+  })),
+);
+
+const ActiveTaskPanel = lazy(() =>
+  import("../components/Scheduler/ActiveTaskPanel").then((module) => ({
+    default: module.ActiveTaskPanel,
+  })),
+);
+
+const TimeSlotSettings = lazy(() =>
+  import("../components/Scheduler/TimeSlotSettings").then((module) => ({
+    default: module.TimeSlotSettings,
+  })),
+);
+
+const SmartRecommendationBar = lazy(() =>
+  import("../components/Scheduler/SmartRecommendationBar").then((module) => ({
+    default: module.SmartRecommendationBar,
+  })),
+);
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+  </div>
+);
 
 type ViewType = "queue" | "kanban" | "list" | "timeline";
 
@@ -58,6 +107,8 @@ export const Scheduler: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     return (localStorage.getItem("scheduler-view") as ViewType) || "queue";
   });
+  const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
+  const [groupByPath, setGroupByPath] = useState(false);
 
   const {
     data: queuesData,
@@ -67,6 +118,7 @@ export const Scheduler: React.FC = () => {
     isFetching,
   } = useSchedulerQueues();
   const { data: settings } = useSchedulerSettings();
+  const { data: learningPaths = [] } = useLearningPaths("active");
 
   const createTaskMutation = useCreateScheduledTaskMutation();
   const updateTaskMutation = useUpdateScheduledTaskMutation();
@@ -104,6 +156,27 @@ export const Scheduler: React.FC = () => {
     return [...queues.q0, ...queues.q1, ...queues.q2];
   }, [queues]);
 
+  const filteredQueues = useMemo(() => {
+    if (!selectedPathId) return queues;
+
+    const filterByPath = (tasks: ScheduledTask[]) => {
+      return tasks.filter((task) => {
+        const taskPathId = (task as any).learning_path_id;
+        return taskPathId === selectedPathId;
+      });
+    };
+
+    return {
+      q0: filterByPath(queues.q0),
+      q1: filterByPath(queues.q1),
+      q2: filterByPath(queues.q2),
+    };
+  }, [queues, selectedPathId]);
+
+  const filteredTasks = useMemo(() => {
+    return [...filteredQueues.q0, ...filteredQueues.q1, ...filteredQueues.q2];
+  }, [filteredQueues]);
+
   const activeTask = useMemo(() => {
     return allTasks.find((t) => t.status === "in_progress") || null;
   }, [allTasks]);
@@ -115,23 +188,23 @@ export const Scheduler: React.FC = () => {
   }, [activeTask, timeSlices]);
 
   const stats = useMemo(() => {
-    const pending = allTasks.filter((t) => t.status === "pending").length;
-    const inProgress = allTasks.filter(
+    const pending = filteredTasks.filter((t) => t.status === "pending").length;
+    const inProgress = filteredTasks.filter(
       (t) => t.status === "in_progress",
     ).length;
-    const completed = allTasks.filter((t) => t.status === "completed").length;
-    const totalEstimated = allTasks.reduce(
+    const completed = filteredTasks.filter((t) => t.status === "completed").length;
+    const totalEstimated = filteredTasks.reduce(
       (sum, t) => sum + (t.estimated_duration || 0),
       0,
     );
     return {
-      total: allTasks.length,
+      total: filteredTasks.length,
       pending,
       inProgress,
       completed,
       totalEstimated,
     };
-  }, [allTasks]);
+  }, [filteredTasks]);
 
   const findTaskById = useCallback(
     (taskId: string): ScheduledTask | undefined => {
@@ -359,6 +432,57 @@ export const Scheduler: React.FC = () => {
                 </span>
               </div>
             </div>
+
+            {learningPaths.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2">
+                  <Filter size={14} className="text-slate-400" />
+                  <span className="text-xs text-slate-500 dark:text-slate-400">筛选:</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setSelectedPathId(null);
+                      setGroupByPath(false);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      !selectedPathId && !groupByPath
+                        ? "bg-cyan-500 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    全部任务
+                  </button>
+                  {learningPaths.map((path: any) => (
+                    <button
+                      key={path.id}
+                      onClick={() => setSelectedPathId(selectedPathId === path.id ? null : path.id)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        selectedPathId === path.id
+                          ? "bg-indigo-500 text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      <Route size={12} />
+                      {path.title}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 ml-auto">
+                  <button
+                    onClick={() => setGroupByPath(!groupByPath)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                      groupByPath
+                        ? "bg-purple-500 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    <Route size={12} />
+                    按路径分组
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -397,73 +521,85 @@ export const Scheduler: React.FC = () => {
             <div className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-6">
               {!activeTask && (
                 <div className="flex-shrink-0">
-                  <SmartRecommendationBar
-                    onStartTask={(taskId) => {
-                      const task = findTaskById(taskId);
-                      if (task) handleStartTask(task);
-                    }}
-                    onViewTask={(taskId) => {
-                      const task = findTaskById(taskId);
-                      if (task) handleViewTaskDetail(task);
-                    }}
-                    currentTaskId={null}
-                  />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <SmartRecommendationBar
+                      onStartTask={(taskId) => {
+                        const task = findTaskById(taskId);
+                        if (task) handleStartTask(task);
+                      }}
+                      onViewTask={(taskId) => {
+                        const task = findTaskById(taskId);
+                        if (task) handleViewTaskDetail(task);
+                      }}
+                      currentTaskId={null}
+                    />
+                  </Suspense>
                 </div>
               )}
 
               {activeTask && (
                 <div className="flex-shrink-0">
-                  <ActiveTaskPanel
-                    task={activeTask}
-                    timeSlice={activeTaskTimeSlice}
-                    onPause={() => handlePauseTask(activeTask)}
-                    onComplete={() => handleCompleteTask(activeTask)}
-                  />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ActiveTaskPanel
+                      task={activeTask}
+                      timeSlice={activeTaskTimeSlice}
+                      onPause={() => handlePauseTask(activeTask)}
+                      onComplete={() => handleCompleteTask(activeTask)}
+                    />
+                  </Suspense>
                 </div>
               )}
               <div className="flex-1 min-h-0">
-                <HorizontalQueueView
-                  queues={queues}
-                  timeSlices={timeSlices}
-                  currentView={currentView}
-                  onViewChange={(view) => setCurrentView(view as ViewType)}
-                  onTaskMove={handleMoveTask}
-                  onReorder={(queueLevel, taskIds) =>
-                    handleReorder(queueLevel)(taskIds)
-                  }
-                  onEditTask={openEditTaskForm}
-                  onDeleteTask={handleDeleteTask}
-                  onStartTask={handleStartTask}
-                  onPauseTask={handlePauseTask}
-                  onCompleteTask={handleCompleteTask}
-                  onAddTask={openAddTaskForm}
-                  onViewTaskDetail={handleViewTaskDetail}
-                >
-                  {{
-                    timeline: (
-                      <TimelineView
-                        tasks={allTasks}
-                        onTaskClick={openEditTaskForm}
-                      />
-                    ),
-                    kanban: (
-                      <KanbanView
-                        tasks={allTasks}
-                        onTaskClick={openEditTaskForm}
-                      />
-                    ),
-                    list: (
-                      <ListView
-                        tasks={allTasks}
-                        onEditTask={openEditTaskForm}
-                        onDeleteTask={handleDeleteTask}
-                        onStartTask={handleStartTask}
-                        onPauseTask={handlePauseTask}
-                        onCompleteTask={handleCompleteTask}
-                      />
-                    ),
-                  }}
-                </HorizontalQueueView>
+                <Suspense fallback={<LoadingFallback />}>
+                  <HorizontalQueueView
+                    queues={queues}
+                    timeSlices={timeSlices}
+                    currentView={currentView}
+                    onViewChange={(view) => setCurrentView(view as ViewType)}
+                    onTaskMove={handleMoveTask}
+                    onReorder={(queueLevel, taskIds) =>
+                      handleReorder(queueLevel)(taskIds)
+                    }
+                    onEditTask={openEditTaskForm}
+                    onDeleteTask={handleDeleteTask}
+                    onStartTask={handleStartTask}
+                    onPauseTask={handlePauseTask}
+                    onCompleteTask={handleCompleteTask}
+                    onAddTask={openAddTaskForm}
+                    onViewTaskDetail={handleViewTaskDetail}
+                  >
+                    {{
+                      timeline: (
+                        <Suspense fallback={<LoadingFallback />}>
+                          <TimelineView
+                            tasks={allTasks}
+                            onTaskClick={openEditTaskForm}
+                          />
+                        </Suspense>
+                      ),
+                      kanban: (
+                        <Suspense fallback={<LoadingFallback />}>
+                          <KanbanView
+                            tasks={allTasks}
+                            onTaskClick={openEditTaskForm}
+                          />
+                        </Suspense>
+                      ),
+                      list: (
+                        <Suspense fallback={<LoadingFallback />}>
+                          <ListView
+                            tasks={allTasks}
+                            onEditTask={openEditTaskForm}
+                            onDeleteTask={handleDeleteTask}
+                            onStartTask={handleStartTask}
+                            onPauseTask={handlePauseTask}
+                            onCompleteTask={handleCompleteTask}
+                          />
+                        </Suspense>
+                      ),
+                    }}
+                  </HorizontalQueueView>
+                </Suspense>
               </div>
             </div>
           )}
@@ -516,7 +652,9 @@ export const Scheduler: React.FC = () => {
                   </button>
                 </div>
                 <div className="p-4 sm:p-6">
-                  <TimeSlotSettings onClose={() => setShowSettings(false)} />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <TimeSlotSettings onClose={() => setShowSettings(false)} />
+                  </Suspense>
                 </div>
               </motion.div>
             </motion.div>
@@ -539,15 +677,17 @@ export const Scheduler: React.FC = () => {
 
       <AnimatePresence>
         {showTaskForm && (
-          <TaskForm
-            task={editingTask || undefined}
-            onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
-            onCancel={() => {
-              setShowTaskForm(false);
-              setEditingTask(null);
-            }}
-            defaultQueueLevel={defaultQueueLevel}
-          />
+          <Suspense fallback={<LoadingFallback />}>
+            <TaskForm
+              task={editingTask || undefined}
+              onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
+              onCancel={() => {
+                setShowTaskForm(false);
+                setEditingTask(null);
+              }}
+              defaultQueueLevel={defaultQueueLevel}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>

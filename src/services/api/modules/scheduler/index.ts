@@ -1,4 +1,28 @@
-export { tasksApi } from "./tasks";
+export { reviewTasksApi } from "./reviewTasks";
+export type {
+  ReviewTask,
+  CreateReviewTaskData,
+  UpdateReviewTaskData,
+  ReviewTaskStats,
+  PendingReviewTask,
+} from "./reviewTasks";
+
+export { progressSyncApi } from "./progressSync";
+export type {
+  SyncStudyDurationData,
+  SyncTaskCompletionData,
+  BatchSyncStudyDurationItem,
+  TaskProgressSummary,
+} from "./progressSync";
+export { pathTasksApi } from "./pathTasks";
+export type {
+  PathNodeTask,
+  LearningPathNode,
+  CreatePathNodeTaskData,
+  BatchConvertResult,
+  PathTaskWithDetails,
+} from "./pathTasks";
+
 export type {
   ScheduledTask,
   TaskType,
@@ -15,51 +39,11 @@ export type {
   GenerateTaskDetailsResult,
 } from "./tasks";
 
-export { queuesApi } from "./queues";
 export type { Queue, CreateQueueData, UpdateQueueData } from "./queues";
 
-export { executionsApi } from "./executions";
+export type { TaskSettings, UpdateTaskSettingsData, UserTimeSlot } from "./settings";
 
-export { dependenciesApi } from "./dependencies";
-
-export { focusApi } from "./focus";
-export type {
-  FocusSession,
-  CreateFocusSessionData,
-  UserFocusStats,
-  DailyFocusStats,
-  WeeklyFocusStats,
-  MonthlyFocusStats,
-} from "./focus";
-
-export { schedulesApi } from "./schedules";
-export type { TaskSchedule, TaskProgressPlan } from "./schedules";
-
-export { settingsApi } from "./settings";
-export type {
-  TaskSettings,
-  UpdateTaskSettingsData,
-  UserTimeSlot,
-} from "./settings";
-
-export { subtasksApi } from "./subtasks";
-export type { TaskSubtask } from "./subtasks";
-
-export { linksApi } from "./links";
-export type { TaskLink, LinkType } from "./links";
-
-export { knowledgePointsApi } from "./knowledgePoints";
-export type { TaskKnowledgePoint } from "./knowledgePoints";
-
-export { analyticsApi } from "./analytics";
 export type { TaskStats, HeatmapData } from "./analytics";
-
-export { achievementsApi } from "./achievements";
-export type {
-  Achievement,
-  UserAchievement,
-  AchievementCheckResult,
-} from "./achievements";
 
 import { tasksApi } from "./tasks";
 import { queuesApi } from "./queues";
@@ -73,6 +57,9 @@ import { linksApi } from "./links";
 import { knowledgePointsApi } from "./knowledgePoints";
 import { analyticsApi } from "./analytics";
 import { achievementsApi } from "./achievements";
+import { reviewTasksApi } from "./reviewTasks";
+import { progressSyncApi } from "./progressSync";
+import { pathTasksApi } from "./pathTasks";
 
 export const schedulerApi = {
   ...tasksApi,
@@ -87,4 +74,7 @@ export const schedulerApi = {
   ...knowledgePointsApi,
   ...analyticsApi,
   ...achievementsApi,
+  ...reviewTasksApi,
+  ...progressSyncApi,
+  ...pathTasksApi,
 };

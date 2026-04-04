@@ -19,8 +19,6 @@ import { GraphStyleSettings } from "../components/GraphEditor/shared/GraphStyleS
 import { RelationshipTypeSettings } from "../components/GraphEditor/shared/RelationshipTypeSettings";
 
 import { GraphModalManager } from "../components/GraphEditor/modals/GraphModalManager";
-import { GraphSidebarManager } from "../components/GraphEditor/sidebar/GraphSidebarManager";
-import { GraphAnalysisPanel } from "../components/GraphEditor/panels/GraphAnalysisPanel";
 import { useGraphEffects, useGraphEditorState, useGraphHistoryHandlers, useGraphNodeOperations, useGraphExportOperations, useGraphInteraction, useExplorationPath } from "../hooks/graphEditor";
 import { useGraphAIOperations } from "../hooks/graphAI";
 import { useTheme, useIsMobile, useKeyboardShortcuts, useGlobalShortcuts, useTutorOperations, useConsole } from "../hooks";
@@ -54,8 +52,6 @@ import {
   CommandItem,
 } from "../components/GraphEditor/shared/CommandPalette";
 import { ShortcutHelpPanel } from "../components/common";
-import { RAGChatButton } from "../components/GraphEditor/panels/RAGChatPanel";
-import { Console } from "../components/Console/Console";
 import { api, AIAction } from "../services/api";
 import { learningPathsApi } from "../services/api/learningPaths";
 import { useQueryClient } from "@tanstack/react-query";
@@ -74,6 +70,30 @@ const TreeView = lazy(() =>
 const PlanetView = lazy(() =>
   import("../three/PlanetView").then((module) => ({
     default: module.PlanetView,
+  })),
+);
+
+const GraphSidebarManager = lazy(() =>
+  import("../components/GraphEditor/sidebar/GraphSidebarManager").then((module) => ({
+    default: module.GraphSidebarManager,
+  })),
+);
+
+const GraphAnalysisPanel = lazy(() =>
+  import("../components/GraphEditor/panels/GraphAnalysisPanel").then((module) => ({
+    default: module.GraphAnalysisPanel,
+  })),
+);
+
+const RAGChatButton = lazy(() =>
+  import("../components/GraphEditor/panels/RAGChatPanel").then((module) => ({
+    default: module.RAGChatButton,
+  })),
+);
+
+const Console = lazy(() =>
+  import("../components/Console/Console").then((module) => ({
+    default: module.Console,
   })),
 );
 
@@ -1390,49 +1410,53 @@ export const GraphEditor = () => {
         onClose={() => setIsRelationshipTypeSettingsOpen(false)}
       />
 
-      <GraphSidebarManager
-        state={state}
-        nodes={nodes}
-        edges={edges}
-        nodeStatus={nodeStatus}
-        graphStats={graphStats}
-        nodeOps={nodeOps}
-        aiOps={aiOps}
-        interactionOps={interactionOps}
-        handleCloseSidebar={handleCloseSidebar}
-        isExplorationMode={isExplorationMode}
-        isSelectingParent={isSelectingParentNode}
-        onStartSelectingParent={handleStartSelectingParent}
-        onCancelSelectingParent={handleCancelSelectingParent}
-        onSelectParentFromGraph={handleSelectParentFromGraph}
-        onConnectNodes={handleConnectNodes}
-        isReadOnly={isReadOnly}
-      />
+      <Suspense fallback={<ViewLoader />}>
+        <GraphSidebarManager
+          state={state}
+          nodes={nodes}
+          edges={edges}
+          nodeStatus={nodeStatus}
+          graphStats={graphStats}
+          nodeOps={nodeOps}
+          aiOps={aiOps}
+          interactionOps={interactionOps}
+          handleCloseSidebar={handleCloseSidebar}
+          isExplorationMode={isExplorationMode}
+          isSelectingParent={isSelectingParentNode}
+          onStartSelectingParent={handleStartSelectingParent}
+          onCancelSelectingParent={handleCancelSelectingParent}
+          onSelectParentFromGraph={handleSelectParentFromGraph}
+          onConnectNodes={handleConnectNodes}
+          isReadOnly={isReadOnly}
+        />
+      </Suspense>
 
-      <GraphAnalysisPanel
-        graphId={id || ""}
-        isOpen={isAnalysisPanelOpen}
-        onClose={() => setIsAnalysisPanelOpen(false)}
-        nodes={nodes}
-        onNodeClick={(nodeId) => {
-          const node = nodes.find((n) => n.id === nodeId);
-          if (node) handleNodeClick(node);
-        }}
-        onCreateConnection={async (sourceId, targetId) => {
-          try {
-            await mutations.createEdgeMutation.mutateAsync({
-              source_knowledge_point_id: sourceId,
-              target_knowledge_point_id: targetId,
-              graphId: id || "",
-              relationship_type: "related",
-            });
-            addMessage({ content: "连接已创建", type: "success" });
-          } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : "未知错误";
-            addMessage({ content: `创建连接失败: ${message}`, type: "error" });
-          }
-        }}
-      />
+      <Suspense fallback={<ViewLoader />}>
+        <GraphAnalysisPanel
+          graphId={id || ""}
+          isOpen={isAnalysisPanelOpen}
+          onClose={() => setIsAnalysisPanelOpen(false)}
+          nodes={nodes}
+          onNodeClick={(nodeId) => {
+            const node = nodes.find((n) => n.id === nodeId);
+            if (node) handleNodeClick(node);
+          }}
+          onCreateConnection={async (sourceId, targetId) => {
+            try {
+              await mutations.createEdgeMutation.mutateAsync({
+                source_knowledge_point_id: sourceId,
+                target_knowledge_point_id: targetId,
+                graphId: id || "",
+                relationship_type: "related",
+              });
+              addMessage({ content: "连接已创建", type: "success" });
+            } catch (error: unknown) {
+              const message = error instanceof Error ? error.message : "未知错误";
+              addMessage({ content: `创建连接失败: ${message}`, type: "error" });
+            }
+          }}
+        />
+      </Suspense>
 
       <CommandPalette
         isOpen={isCommandPaletteOpen}
@@ -1455,36 +1479,38 @@ export const GraphEditor = () => {
         onClose={() => setIsShortcutHelpOpen(false)}
       />
 
-      <RAGChatButton
-        graphId={id}
-        currentNodeId={selectedNode?.id}
-        currentNodeTitle={selectedNode?.title}
-        onNodeClick={(nodeId) => {
-          const node = nodes.find((n) => n.id === nodeId);
-          if (node) handleNodeClick(node);
-        }}
-        isOpen={isRAGChatOpen}
-        onOpenChange={setIsRAGChatOpen}
-        selectedNodeIds={Array.from(selectedNodeIds)}
-        aiEnabled={aiEnabled}
-        isTutorMode={state.isTutorMode}
-        tutorMode={state.tutorMode}
-        extractedConcepts={state.extractedConcepts}
-        onToggleTutorMode={tutorOps.handleToggleTutorMode}
-        onSwitchTutorMode={state.setTutorMode}
-        onExtractConcepts={tutorOps.handleExtractConcepts}
-        onAddConceptToGraph={tutorOps.handleAddConceptToGraph}
-        onAddAllConcepts={tutorOps.handleAddAllConcepts}
-        onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
-        suggestedNextTopics={state.suggestedNextTopics}
-        onTutorChat={tutorOps.handleTutorChat}
-        width={ragChatWidth}
-        onWidthChange={setRagChatWidth}
-        isMobilePreviewMode={isMobile && isMobilePreviewMode && !!selectedNode}
-        selectedLearningPathId={selectedLearningPathId}
-        onPathSelect={handleSelectLearningPath}
-        onLearningPathNodeClick={handleLearningPathNodeClick}
-      />
+      <Suspense fallback={<ViewLoader />}>
+        <RAGChatButton
+          graphId={id}
+          currentNodeId={selectedNode?.id}
+          currentNodeTitle={selectedNode?.title}
+          onNodeClick={(nodeId) => {
+            const node = nodes.find((n) => n.id === nodeId);
+            if (node) handleNodeClick(node);
+          }}
+          isOpen={isRAGChatOpen}
+          onOpenChange={setIsRAGChatOpen}
+          selectedNodeIds={Array.from(selectedNodeIds)}
+          aiEnabled={aiEnabled}
+          isTutorMode={state.isTutorMode}
+          tutorMode={state.tutorMode}
+          extractedConcepts={state.extractedConcepts}
+          onToggleTutorMode={tutorOps.handleToggleTutorMode}
+          onSwitchTutorMode={state.setTutorMode}
+          onExtractConcepts={tutorOps.handleExtractConcepts}
+          onAddConceptToGraph={tutorOps.handleAddConceptToGraph}
+          onAddAllConcepts={tutorOps.handleAddAllConcepts}
+          onSuggestNextTopics={tutorOps.handleSuggestNextTopics}
+          suggestedNextTopics={state.suggestedNextTopics}
+          onTutorChat={tutorOps.handleTutorChat}
+          width={ragChatWidth}
+          onWidthChange={setRagChatWidth}
+          isMobilePreviewMode={isMobile && isMobilePreviewMode && !!selectedNode}
+          selectedLearningPathId={selectedLearningPathId}
+          onPathSelect={handleSelectLearningPath}
+          onLearningPathNodeClick={handleLearningPathNodeClick}
+        />
+      </Suspense>
 
       {isMobile && (
         <MobileNodeActionMenu
@@ -1538,13 +1564,15 @@ export const GraphEditor = () => {
         />
       )}
       {user?.id && (
-        <Console
-          isOpen={isConsoleOpen}
-          onClose={closeConsole}
-          context={consoleContext}
-          onToggleMinimize={toggleConsoleMinimize}
-          isMinimized={isConsoleMinimized}
-        />
+        <Suspense fallback={<ViewLoader />}>
+          <Console
+            isOpen={isConsoleOpen}
+            onClose={closeConsole}
+            context={consoleContext}
+            onToggleMinimize={toggleConsoleMinimize}
+            isMinimized={isConsoleMinimized}
+          />
+        </Suspense>
       )}
     </div>
   );

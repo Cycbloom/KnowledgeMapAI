@@ -28,9 +28,12 @@ import {
   MoreVertical,
   SkipForward,
   Loader2,
+  CheckSquare,
+  Square,
+  X,
 } from "lucide-react";
-import { api } from "../services/api";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
+import { pathTasksApi } from "../services/api/modules/scheduler";
 import { useMessageStore } from "../store/useMessageStore";
 import { useErrorHandler } from "../hooks";
 
@@ -168,6 +171,9 @@ const LearningPathDetailPage: React.FC = () => {
   );
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [showActions, setShowActions] = useState<string | null>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const [isBatchConverting, setIsBatchConverting] = useState(false);
 
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
@@ -272,18 +278,19 @@ const LearningPathDetailPage: React.FC = () => {
   };
 
   const handleConvertToTask = async (node: LearningPathNode) => {
+    if (!pathId) return;
+
     try {
-      const taskData = {
+      await pathTasksApi.convertNodeToTask({
+        path_id: pathId,
+        node_id: node.id,
         title: node.title,
         description: node.content,
         estimated_duration: node.estimated_minutes,
         knowledge_point_id: node.node_id,
-        tags: ["学习路径", pathDetail?.title || ""],
         priority: node.difficulty_level || 2,
-      };
-
-      const task = await api.scheduler.createTask(taskData);
-      addMessage({ type: "success", content: `已创建任务：${task.title}` });
+      });
+      addMessage({ type: "success", content: `已创建任务：${node.title}` });
       await fetchPathDetail();
     } catch (error) {
       handleError(error, {
@@ -291,6 +298,72 @@ const LearningPathDetailPage: React.FC = () => {
         fallbackMessage: "创建任务失败",
       });
     }
+  };
+
+  const handleBatchConvertToTasks = async () => {
+    if (!pathId || selectedNodeIds.size === 0) return;
+
+    setIsBatchConverting(true);
+    try {
+      const result = await pathTasksApi.batchConvertNodesToTasks(
+        pathId,
+        Array.from(selectedNodeIds)
+      );
+
+      if (result.converted_count > 0) {
+        addMessage({
+          type: "success",
+          content: `成功转换 ${result.converted_count} 个节点为任务`,
+        });
+      }
+
+      if (result.failed_count > 0) {
+        addMessage({
+          type: "warning",
+          content: `${result.failed_count} 个节点转换失败`,
+        });
+      }
+
+      setSelectedNodeIds(new Set());
+      setIsSelectionMode(false);
+      await fetchPathDetail();
+    } catch (error) {
+      handleError(error, {
+        context: "BatchConvertToTasks",
+        fallbackMessage: "批量转换失败",
+      });
+    } finally {
+      setIsBatchConverting(false);
+    }
+  };
+
+  const toggleNodeSelection = (nodeId: string) => {
+    const newSelected = new Set(selectedNodeIds);
+    if (newSelected.has(nodeId)) {
+      newSelected.delete(nodeId);
+    } else {
+      newSelected.add(nodeId);
+    }
+    setSelectedNodeIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (!pathDetail) return;
+
+    const pendingNodes = pathDetail.nodes.filter(
+      (n) => n.status === "pending" && !n.related_task_id
+    );
+
+    if (selectedNodeIds.size === pendingNodes.length) {
+      setSelectedNodeIds(new Set());
+    } else {
+      setSelectedNodeIds(new Set(pendingNodes.map((n) => n.id)));
+    }
+  };
+
+  const exitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedNodeIds(new Set());
   };
 
   const handleAutoSchedule = async () => {
@@ -646,6 +719,64 @@ const LearningPathDetailPage: React.FC = () => {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
+                    {pathDetail.nodes.length > 0 && (
+                      <div className="px-6 py-3 border-b dark:border-slate-700 flex items-center justify-between bg-gray-50 dark:bg-slate-700/30">
+                        <div className="flex items-center gap-3">
+                          {isSelectionMode ? (
+                            <>
+                              <button
+                                onClick={toggleSelectAll}
+                                className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                              >
+                                {selectedNodeIds.size === pathDetail.nodes.filter((n) => n.status === "pending" && !n.related_task_id).length
+                                  ? "取消全选"
+                                  : "全选待学习"}
+                              </button>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                已选择 {selectedNodeIds.size} 个节点
+                              </span>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setIsSelectionMode(true)}
+                              className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                            >
+                              <CheckSquare className="w-4 h-4" />
+                              批量选择
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isSelectionMode && (
+                            <>
+                              <button
+                                onClick={handleBatchConvertToTasks}
+                                disabled={selectedNodeIds.size === 0 || isBatchConverting}
+                                className="px-3 py-1.5 bg-indigo-500 text-white rounded-lg text-sm font-medium hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                              >
+                                {isBatchConverting ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    转换中...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ListTodo className="w-4 h-4" />
+                                    转为任务 ({selectedNodeIds.size})
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={exitSelectionMode}
+                                className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <div className="px-6 pb-4 space-y-2 max-h-[600px] overflow-y-auto">
                       {pathDetail.nodes.length === 0 ? (
                         <div className="text-center py-12">
@@ -677,17 +808,36 @@ const LearningPathDetailPage: React.FC = () => {
                               selectedNode === node.id
                                 ? "ring-2 ring-indigo-500"
                                 : ""
-                            }`}
+                            } ${selectedNodeIds.has(node.id) ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""}`}
                           >
                             <div
-                              onClick={() =>
-                                setSelectedNode(
-                                  selectedNode === node.id ? null : node.id,
-                                )
-                              }
+                              onClick={() => {
+                                if (isSelectionMode) {
+                                  if (node.status === "pending" && !node.related_task_id) {
+                                    toggleNodeSelection(node.id);
+                                  }
+                                } else {
+                                  setSelectedNode(
+                                    selectedNode === node.id ? null : node.id,
+                                  );
+                                }
+                              }}
                               className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 ${STATUS_CONFIG[node.status].bgColor}`}
                             >
                               <div className="flex items-center gap-3">
+                                {isSelectionMode && (
+                                  <div className="flex-shrink-0">
+                                    {node.status === "pending" && !node.related_task_id ? (
+                                      selectedNodeIds.has(node.id) ? (
+                                        <CheckSquare className="w-5 h-5 text-indigo-500" />
+                                      ) : (
+                                        <Square className="w-5 h-5 text-gray-400" />
+                                      )
+                                    ) : (
+                                      <Square className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+                                    )}
+                                  </div>
+                                )}
                                 <div
                                   className={`flex-shrink-0 ${STATUS_CONFIG[node.status].color}`}
                                 >
@@ -729,9 +879,11 @@ const LearningPathDetailPage: React.FC = () => {
                                   >
                                     {STATUS_CONFIG[node.status].label}
                                   </span>
-                                  <ChevronRight
-                                    className={`w-4 h-4 text-gray-400 transition-transform ${selectedNode === node.id ? "rotate-90" : ""}`}
-                                  />
+                                  {!isSelectionMode && (
+                                    <ChevronRight
+                                      className={`w-4 h-4 text-gray-400 transition-transform ${selectedNode === node.id ? "rotate-90" : ""}`}
+                                    />
+                                  )}
                                 </div>
                               </div>
                             </div>

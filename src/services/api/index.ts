@@ -16,25 +16,9 @@ export { ragApi } from './rag';
 export { autoGraphApi } from './autoGraph';
 export { healthApi } from './health';
 export { backupApi } from './backup';
-export { schedulerApi } from './modules/scheduler';
 export { quizApi } from './quiz';
 export { agentApi } from './agent';
-export type {
-  ScheduledTask,
-  CreateScheduledTaskData,
-  UpdateScheduledTaskData,
-  TaskExecution,
-  TaskSettings,
-  UpdateTaskSettingsData,
-  TaskStats,
-  HeatmapData,
-  TaskFilters,
-  ExecutionFilters,
-  QueueData,
-  Queue,
-  CreateQueueData,
-  UpdateQueueData,
-} from './modules/scheduler';
+export { schedulerApi } from './modules/scheduler';
 
 import { authApi } from './auth';
 import { graphsApi } from './graphs';
@@ -50,12 +34,11 @@ import { ragApi } from './rag';
 import { autoGraphApi } from './autoGraph';
 import { healthApi } from './health';
 import { backupApi } from './backup';
-import { schedulerApi } from './modules/scheduler';
 import { quizApi } from './quiz';
 import { agentApi } from './agent';
+import { schedulerApi } from './modules/scheduler';
 
 export const api = {
-  aiActions: aiActionsApi,
   auth: authApi,
   graphs: graphsApi,
   nodes: nodesApi,
@@ -64,12 +47,13 @@ export const api = {
   graphNodes: graphNodesApi,
   combinedView: combinedViewApi,
   ai: aiApi,
+  aiActions: aiActionsApi,
   tts: ttsApi,
   study: studyApi,
   dashboard: dashboardApi,
   statistics: statisticsApi,
-  search: searchApi,
   tasks: tasksApi,
+  search: searchApi,
   data: dataApi,
   templates: templatesApi,
   prompts: promptsApi,
@@ -77,12 +61,37 @@ export const api = {
   achievements: achievementsApi,
   periodicTasks: periodicTasksApi,
   learningPaths: learningPathsApi,
+  learningPath: learningPathApi,
   rag: ragApi,
   autoGraph: autoGraphApi,
-  learningPath: learningPathApi,
   health: healthApi,
   backup: backupApi,
-  scheduler: schedulerApi,
   quiz: quizApi,
   agent: agentApi,
+  scheduler: schedulerApi,
 };
+
+export type {
+  ScheduledTask,
+  CreateScheduledTaskData,
+  UpdateScheduledTaskData,
+  TaskExecution,
+  TaskSettings,
+  UpdateTaskSettingsData,
+  TaskStats,
+  HeatmapData,
+  TaskFilters,
+  ExecutionFilters,
+  QueueData,
+  Queue,
+  CreateQueueData,
+  UpdateQueueData,
+  ReviewTask,
+  CreateReviewTaskData,
+  UpdateReviewTaskData,
+  ReviewTaskStats,
+  PendingReviewTask,
+  SyncStudyDurationData,
+  SyncTaskCompletionData,
+  TaskProgressSummary,
+} from './modules/scheduler';

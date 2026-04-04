@@ -6,17 +6,20 @@ import { VitePWA } from "vite-plugin-pwa";
 function getChunkStrategy(id: string): string | undefined {
   if (!id.includes("node_modules")) return undefined;
 
-  if (id.includes("mermaid")) {
-    return "vendor-mermaid";
-  }
-
-  if (id.includes("dagre") || id.includes("graphlib") || id.includes("elkjs")) {
-    return "vendor-mermaid";
-  }
-
-  if (id.includes("katex")) return "vendor-katex";
-
   if (
+    id.includes("mermaid") ||
+    id.includes("dagre") ||
+    id.includes("graphlib") ||
+    id.includes("elkjs") ||
+    id.includes("d3-") ||
+    id.includes("d3/") ||
+    id.includes("katex") ||
+    id.includes("cytoscape") ||
+    id.includes("khroma") ||
+    id.includes("dompurify") ||
+    id.includes("dayjs") ||
+    id.includes("mdast-util-from-markdown") ||
+    id.includes("non-layered-tidy-tree-layout") ||
     id.includes("react-markdown") ||
     id.includes("remark-") ||
     id.includes("rehype-") ||
@@ -24,44 +27,49 @@ function getChunkStrategy(id: string): string | undefined {
     id.includes("unist-") ||
     id.includes("mdast-") ||
     id.includes("micromark") ||
-    id.includes("decode-named-character-reference")
+    id.includes("decode-named-character-reference") ||
+    id.includes("lodash-es") ||
+    id.includes("uuid") ||
+    id.includes("web-worker")
   ) {
-    return "vendor-markdown";
+    return "vendor-mermaid";
   }
 
-  if (
-    id.includes("@react-three") ||
-    id.includes("three") ||
-    id.includes("postprocessing")
-  ) {
-    return "vendor-three";
-  }
+  if (id.includes("@react-three/drei")) return "vendor-three-drei";
+  if (id.includes("@react-three/fiber")) return "vendor-three-fiber";
+  if (id.includes("@react-three/postprocessing")) return "vendor-three-postprocessing";
+  if (id.includes("three")) return "vendor-three-core";
+  if (id.includes("postprocessing")) return "vendor-postprocessing";
 
   if (id.includes("recharts")) return "vendor-charts";
 
-  if (id.includes("d3-")) return "vendor-d3";
+  if (id.includes("lucide-react")) return "vendor-lucide";
+  if (id.includes("framer-motion")) return "vendor-framer";
 
-  if (id.includes("lucide-react") || id.includes("framer-motion"))
-    return "vendor-ui";
-  if (id.includes("@dnd-kit")) return "vendor-dnd";
+  if (id.includes("@dnd-kit/core")) return "vendor-dnd-core";
+  if (id.includes("@dnd-kit/sortable")) return "vendor-dnd-sortable";
+  if (id.includes("@dnd-kit/utilities")) return "vendor-dnd-utils";
 
-  if (id.includes("zustand") || id.includes("@tanstack/react-query"))
-    return "vendor-state";
+  if (id.includes("zustand")) return "vendor-zustand";
+  if (id.includes("@tanstack/react-query")) return "vendor-react-query";
 
-  if (id.includes("@supabase")) return "vendor-supabase";
+  if (id.includes("@supabase/supabase-js")) return "vendor-supabase-core";
+  if (id.includes("@supabase")) return "vendor-supabase-utils";
 
-  if (id.includes("openai") || id.includes("zod")) return "vendor-ai";
+  if (id.includes("openai")) return "vendor-openai";
+  if (id.includes("zod")) return "vendor-zod";
 
   if (
     id.includes("react") ||
     id.includes("react-dom") ||
     id.includes("react-router") ||
-    id.includes("scheduler")
+    id.includes("scheduler") ||
+    id.includes("react-") ||
+    id.includes("@emotion") ||
+    id.includes("stylis")
   ) {
     return "vendor-react";
   }
-
-  if (id.includes("react-")) return "vendor-react-ecosystem";
 
   if (
     id.includes("clsx") ||
@@ -254,8 +262,14 @@ export default defineConfig({
       : []),
   ],
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.message.includes("Circular chunk")) {
+          return;
+        }
+        warn(warning);
+      },
       output: {
         manualChunks: getChunkStrategy,
         compact: true,

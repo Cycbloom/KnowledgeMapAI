@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, BookOpen, X, ChevronUp, ChevronDown } from "lucide-react";
@@ -6,21 +6,9 @@ import { api } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
 import { queryKeys } from "../hooks/queries/queryConfig";
 import { useIsMobile } from "../hooks/common/useIsMobile";
-import { GraphMapCanvas } from "../components/GraphMap/GraphMapCanvas";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
 import { QuickCreateGraphPanel } from "../components/GraphMap/QuickCreateGraphPanel";
-
-import { AIExpansionPanel } from "../components/GraphMap/AIExpansionPanel";
-import { DomainGraphGenerator } from "../components/GraphMap/DomainGraphGenerator";
-import { PromptEditor } from "../components/GraphEditor/panels/PromptEditor";
-import { NodeSelectorModal } from "../components/GraphMap/NodeSelectorModal";
-import { GenerateCardsModal } from "../components/Learning/GenerateCardsModal";
-import { GraphRelationDiscoveryPanel } from "../components/GraphMap/GraphRelationDiscoveryPanel";
-import { ModularAnalysisPanel } from "../components/GraphMap/ModularAnalysisPanel";
-import { AnalysisResultViewer } from "../components/GraphMap/AnalysisResultViewer";
-import { BatchOperationPanel } from "../components/GraphMap/BatchOperationPanel";
-import { AgentAnalysisPanel } from "../components/GraphMap/AgentAnalysisPanel";
 import { useAnalysisModules } from "../hooks/useAnalysisModules";
 import type {
   Graph,
@@ -33,6 +21,78 @@ import type {
   AnalysisMode,
 } from "../types";
 import type { AnalysisModuleState } from "../components/GraphMap/types";
+
+const GraphMapCanvas = lazy(() =>
+  import("../components/GraphMap/GraphMapCanvas").then((module) => ({
+    default: module.GraphMapCanvas,
+  }))
+);
+
+const AIExpansionPanel = lazy(() =>
+  import("../components/GraphMap/AIExpansionPanel").then((module) => ({
+    default: module.AIExpansionPanel,
+  }))
+);
+
+const DomainGraphGenerator = lazy(() =>
+  import("../components/GraphMap/DomainGraphGenerator").then((module) => ({
+    default: module.DomainGraphGenerator,
+  }))
+);
+
+const PromptEditor = lazy(() =>
+  import("../components/GraphEditor/panels/PromptEditor").then((module) => ({
+    default: module.PromptEditor,
+  }))
+);
+
+const NodeSelectorModal = lazy(() =>
+  import("../components/GraphMap/NodeSelectorModal").then((module) => ({
+    default: module.NodeSelectorModal,
+  }))
+);
+
+const GenerateCardsModal = lazy(() =>
+  import("../components/Learning/GenerateCardsModal").then((module) => ({
+    default: module.GenerateCardsModal,
+  }))
+);
+
+const GraphRelationDiscoveryPanel = lazy(() =>
+  import("../components/GraphMap/GraphRelationDiscoveryPanel").then((module) => ({
+    default: module.GraphRelationDiscoveryPanel,
+  }))
+);
+
+const ModularAnalysisPanel = lazy(() =>
+  import("../components/GraphMap/ModularAnalysisPanel").then((module) => ({
+    default: module.ModularAnalysisPanel,
+  }))
+);
+
+const AnalysisResultViewer = lazy(() =>
+  import("../components/GraphMap/AnalysisResultViewer").then((module) => ({
+    default: module.AnalysisResultViewer,
+  }))
+);
+
+const BatchOperationPanel = lazy(() =>
+  import("../components/GraphMap/BatchOperationPanel").then((module) => ({
+    default: module.BatchOperationPanel,
+  }))
+);
+
+const AgentAnalysisPanel = lazy(() =>
+  import("../components/GraphMap/AgentAnalysisPanel").then((module) => ({
+    default: module.AgentAnalysisPanel,
+  }))
+);
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  </div>
+);
 
 export const GraphMap = () => {
   const navigate = useNavigate();
@@ -657,19 +717,21 @@ export const GraphMap = () => {
       />
 
       <div className="flex-1 relative">
-        <GraphMapCanvas
-          graphs={graphs}
-          relations={relations}
-          selectedGraphId={selectedGraphId}
-          onGraphClick={handleGraphClick}
-          filterMode={filterMode}
-          fromGraphId={fromGraphId}
-          fromGraphTitle={fromGraph?.title}
-          onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
-          multiSelectedGraphIds={multiSelectedGraphIds}
-          onMultiSelectGraph={handleMultiSelectGraph}
-          onBoxSelection={handleBoxSelection}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <GraphMapCanvas
+            graphs={graphs}
+            relations={relations}
+            selectedGraphId={selectedGraphId}
+            onGraphClick={handleGraphClick}
+            filterMode={filterMode}
+            fromGraphId={fromGraphId}
+            fromGraphTitle={fromGraph?.title}
+            onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
+            multiSelectedGraphIds={multiSelectedGraphIds}
+            onMultiSelectGraph={handleMultiSelectGraph}
+            onBoxSelection={handleBoxSelection}
+          />
+        </Suspense>
 
         {multiSelectedGraphIds.size === 2 && (
           <div className="absolute top-4 left-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl p-5 max-w-sm border border-purple-200 dark:border-purple-800">
@@ -1165,27 +1227,29 @@ export const GraphMap = () => {
         defaultRelationType={createGraphRelationType}
       />
 
-      <AIExpansionPanel
-        isOpen={isAIExpansionOpen}
-        onClose={() => setIsAIExpansionOpen(false)}
-        sourceGraphId={selectedGraphId || ""}
-        sourceGraphTitle={
-          graphs.find((g: Graph) => g.id === selectedGraphId)?.title || ""
-        }
-        sourceGraphDescription={
-          graphs.find((g: Graph) => g.id === selectedGraphId)?.description
-        }
-        onDepthExpand={handleDepthExpand}
-        onDepthExpandNode={handleDepthExpandNode}
-        onWidthExpand={handleInfiniteExpand}
-        progress={expansionProgress}
-        isRunning={isExpansionRunning}
-        onEditPrompt={handleOpenPromptEditor}
-        hasNodes={
-          (graphs.find((g: Graph) => g.id === selectedGraphId) as any)
-            ?.node_count > 0
-        }
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <AIExpansionPanel
+          isOpen={isAIExpansionOpen}
+          onClose={() => setIsAIExpansionOpen(false)}
+          sourceGraphId={selectedGraphId || ""}
+          sourceGraphTitle={
+            graphs.find((g: Graph) => g.id === selectedGraphId)?.title || ""
+          }
+          sourceGraphDescription={
+            graphs.find((g: Graph) => g.id === selectedGraphId)?.description
+          }
+          onDepthExpand={handleDepthExpand}
+          onDepthExpandNode={handleDepthExpandNode}
+          onWidthExpand={handleInfiniteExpand}
+          progress={expansionProgress}
+          isRunning={isExpansionRunning}
+          onEditPrompt={handleOpenPromptEditor}
+          hasNodes={
+            (graphs.find((g: Graph) => g.id === selectedGraphId) as any)
+              ?.node_count > 0
+          }
+        />
+      </Suspense>
 
       {isPromptEditorOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -1214,190 +1278,208 @@ export const GraphMap = () => {
                 </button>
               </div>
             )}
-            <PromptEditor
-              key={`${promptEditMode}-${depthPromptType}`}
-              initialContent={promptContent}
-              variables={
-                promptEditMode === "depth"
-                  ? depthPromptType === "init"
-                    ? [
-                        "topic",
-                        "isCustom",
-                        "customPrompt",
-                        "isAcademic",
-                        "isPractical",
-                        "isBeginner",
-                        "hasSources",
-                        "sources",
-                      ]
-                    : [
-                        "nodeTitle",
-                        "nodeContent",
-                        "nodeLevel",
-                        "isCustom",
-                        "customPrompt",
-                        "isAcademic",
-                        "isPractical",
-                        "isBeginner",
-                        "existingChildren",
-                      ]
-                  : ["domainTitle", "domainDescription", "maxGraphsPerLevel"]
-              }
-              onSave={handleSavePrompt}
-              onCancel={() => setIsPromptEditorOpen(false)}
-              title={
-                promptEditMode === "depth"
-                  ? depthPromptType === "init"
-                    ? "编辑图谱初始化提示词"
-                    : "编辑节点展开提示词"
-                  : "编辑宽度拓展提示词"
-              }
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <PromptEditor
+                key={`${promptEditMode}-${depthPromptType}`}
+                initialContent={promptContent}
+                variables={
+                  promptEditMode === "depth"
+                    ? depthPromptType === "init"
+                      ? [
+                          "topic",
+                          "isCustom",
+                          "customPrompt",
+                          "isAcademic",
+                          "isPractical",
+                          "isBeginner",
+                          "hasSources",
+                          "sources",
+                        ]
+                      : [
+                          "nodeTitle",
+                          "nodeContent",
+                          "nodeLevel",
+                          "isCustom",
+                          "customPrompt",
+                          "isAcademic",
+                          "isPractical",
+                          "isBeginner",
+                          "existingChildren",
+                        ]
+                    : ["domainTitle", "domainDescription", "maxGraphsPerLevel"]
+                }
+                onSave={handleSavePrompt}
+                onCancel={() => setIsPromptEditorOpen(false)}
+                title={
+                  promptEditMode === "depth"
+                    ? depthPromptType === "init"
+                      ? "编辑图谱初始化提示词"
+                      : "编辑节点展开提示词"
+                    : "编辑宽度拓展提示词"
+                }
+              />
+            </Suspense>
           </div>
         </div>
       )}
 
-      <DomainGraphGenerator
-        isOpen={isDomainGeneratorOpen}
-        onClose={() => setIsDomainGeneratorOpen(false)}
-        onGenerateDomain={async (domain: string, count: number) => {
-          const result = await api.graphs.analyzeDomain(domain, count);
-          return {
-            graphs: result.recommendations,
-            relations: result.relations,
-          };
-        }}
-        onBatchCreate={async (graphs, relations, domain?: string) => {
-          const result = await api.graphs.batchCreateDomainGraphs({
-            graphs: graphs.map((g) => ({
-              title: g.title,
-              description: g.description,
-            })),
-            relations: relations,
-            domain: domain,
-          });
-          queryClient.invalidateQueries({ queryKey: ["graphMap"] });
-          queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-          addMessage({
-            type: "success",
-            content: `成功创建 ${result.created.length} 个图谱`,
-          });
-          return result.created;
-        }}
-        onInitializeGraphs={async (graphIds: string[]) => {
-          const result = await api.graphs.batchInitializeGraphs({
-            graph_ids: graphIds,
-            style: "academic",
-          });
-          addMessage({
-            type: "success",
-            content: `已提交 ${result.summary.pending} 个图谱的初始化任务，请在任务列表中查看进度`,
-          });
-        }}
-        onLoadSourceGraphs={async () => {
-          const result = await api.graphs.getMap();
-          return { graphs: result.graphs };
-        }}
-        onLoadDomains={async () => {
-          const result = await api.graphs.getDomains();
-          return { domains: result.domains };
-        }}
-        onExpandDomain={async (graphIds: string[], count: number, domain?: string) => {
-          const result = await api.graphs.expandDomain(graphIds, count, domain);
-          return {
-            recommendations: result.recommendations,
-            relations: result.relations,
-          };
-        }}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <DomainGraphGenerator
+          isOpen={isDomainGeneratorOpen}
+          onClose={() => setIsDomainGeneratorOpen(false)}
+          onGenerateDomain={async (domain: string, count: number) => {
+            const result = await api.graphs.analyzeDomain(domain, count);
+            return {
+              graphs: result.recommendations,
+              relations: result.relations,
+            };
+          }}
+          onBatchCreate={async (graphs, relations, domain?: string) => {
+            const result = await api.graphs.batchCreateDomainGraphs({
+              graphs: graphs.map((g) => ({
+                title: g.title,
+                description: g.description,
+              })),
+              relations: relations,
+              domain: domain,
+            });
+            queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+            addMessage({
+              type: "success",
+              content: `成功创建 ${result.created.length} 个图谱`,
+            });
+            return result.created;
+          }}
+          onInitializeGraphs={async (graphIds: string[]) => {
+            const result = await api.graphs.batchInitializeGraphs({
+              graph_ids: graphIds,
+              style: "academic",
+            });
+            addMessage({
+              type: "success",
+              content: `已提交 ${result.summary.pending} 个图谱的初始化任务，请在任务列表中查看进度`,
+            });
+          }}
+          onLoadSourceGraphs={async () => {
+            const result = await api.graphs.getMap();
+            return { graphs: result.graphs };
+          }}
+          onLoadDomains={async () => {
+            const result = await api.graphs.getDomains();
+            return { domains: result.domains };
+          }}
+          onExpandDomain={async (graphIds: string[], count: number, domain?: string) => {
+            const result = await api.graphs.expandDomain(graphIds, count, domain);
+            return {
+              recommendations: result.recommendations,
+              relations: result.relations,
+            };
+          }}
+        />
+      </Suspense>
 
-      <NodeSelectorModal
-        isOpen={isNodeSelectorOpen}
-        onClose={() => setIsNodeSelectorOpen(false)}
-        onConfirm={handleNodeSelectorConfirm}
-        graphId={selectedGraphId || ""}
-        graphTitle={
-          graphs.find((g: Graph) => g.id === selectedGraphId)?.title || ""
-        }
-      />
-
-      <GenerateCardsModal
-        isOpen={isGenerateCardsModalOpen}
-        onClose={() => setIsGenerateCardsModalOpen(false)}
-        onGenerate={handleGenerateCards}
-        nodeTitle={`${selectedNodeIds.length} 个知识点`}
-      />
-
-      <GraphRelationDiscoveryPanel
-        isOpen={isDiscoveryPanelOpen}
-        onClose={() => setIsDiscoveryPanelOpen(false)}
-        discoveryResult={discoveryResult}
-        intelligentSuggestions={intelligentSuggestions}
-        isLoading={isDiscovering}
-        onDiscover={handleDiscoverRelations}
-        onCreateRelation={handleCreateDiscoveredRelation}
-        onGraphClick={(graphId) => {
-          setSelectedGraphId(graphId);
-          setIsDiscoveryPanelOpen(false);
-        }}
-        createdRelationIds={createdRelationIds}
-      />
-
-      <ModularAnalysisPanel
-        isOpen={isModularAnalysisOpen}
-        onClose={() => {
-          setIsModularAnalysisOpen(false);
-          resetModules();
-        }}
-        modules={modules}
-        onToggleModule={toggleModule}
-        onExecuteModules={(selectedIds) => {
-          executeModules(selectedIds, { graph_ids: selectedGraphId ? [selectedGraphId] : undefined });
-        }}
-        onViewResult={(moduleId) => {
-          const module = modules.find(m => m.id === moduleId);
-          if (module) {
-            setViewingModule(module);
+      <Suspense fallback={<LoadingFallback />}>
+        <NodeSelectorModal
+          isOpen={isNodeSelectorOpen}
+          onClose={() => setIsNodeSelectorOpen(false)}
+          onConfirm={handleNodeSelectorConfirm}
+          graphId={selectedGraphId || ""}
+          graphTitle={
+            graphs.find((g: Graph) => g.id === selectedGraphId)?.title || ""
           }
-        }}
-      />
+        />
+      </Suspense>
 
-      <AnalysisResultViewer
-        isOpen={viewingModule !== null}
-        onClose={() => setViewingModule(null)}
-        module={viewingModule}
-        onGraphClick={(graphId) => {
-          setSelectedGraphId(graphId);
-          setViewingModule(null);
-        }}
-        onCreateRelation={async (sourceId, targetId, relationType) => {
-          await handleCreateRelation({
-            source_graph_id: sourceId,
-            target_graph_id: targetId,
-            relation_type: relationType as GraphRelationType,
-          });
-        }}
-        onCreateGraph={async (title, domain) => {
-          await handleQuickCreateGraph({
-            title,
-            description: domain ? `领域：${domain}` : undefined,
-          });
-        }}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <GenerateCardsModal
+          isOpen={isGenerateCardsModalOpen}
+          onClose={() => setIsGenerateCardsModalOpen(false)}
+          onGenerate={handleGenerateCards}
+          nodeTitle={`${selectedNodeIds.length} 个知识点`}
+        />
+      </Suspense>
 
-      <BatchOperationPanel
-        selectedCount={multiSelectedGraphIds.size}
-        onBatchCreateRelation={handleBatchCreateRelation}
-        onBatchAnalyze={handleBatchAnalyze}
-        onBatchDelete={handleBatchDelete}
-        onClearSelection={clearMultiSelection}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <GraphRelationDiscoveryPanel
+          isOpen={isDiscoveryPanelOpen}
+          onClose={() => setIsDiscoveryPanelOpen(false)}
+          discoveryResult={discoveryResult}
+          intelligentSuggestions={intelligentSuggestions}
+          isLoading={isDiscovering}
+          onDiscover={handleDiscoverRelations}
+          onCreateRelation={handleCreateDiscoveredRelation}
+          onGraphClick={(graphId) => {
+            setSelectedGraphId(graphId);
+            setIsDiscoveryPanelOpen(false);
+          }}
+          createdRelationIds={createdRelationIds}
+        />
+      </Suspense>
 
-      <AgentAnalysisPanel
-        isOpen={isAgentAnalysisOpen}
-        onClose={() => setIsAgentAnalysisOpen(false)}
-        selectedGraphIds={Array.from(multiSelectedGraphIds)}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <ModularAnalysisPanel
+          isOpen={isModularAnalysisOpen}
+          onClose={() => {
+            setIsModularAnalysisOpen(false);
+            resetModules();
+          }}
+          modules={modules}
+          onToggleModule={toggleModule}
+          onExecuteModules={(selectedIds) => {
+            executeModules(selectedIds, { graph_ids: selectedGraphId ? [selectedGraphId] : undefined });
+          }}
+          onViewResult={(moduleId) => {
+            const module = modules.find(m => m.id === moduleId);
+            if (module) {
+              setViewingModule(module);
+            }
+          }}
+        />
+      </Suspense>
+
+      <Suspense fallback={<LoadingFallback />}>
+        <AnalysisResultViewer
+          isOpen={viewingModule !== null}
+          onClose={() => setViewingModule(null)}
+          module={viewingModule}
+          onGraphClick={(graphId) => {
+            setSelectedGraphId(graphId);
+            setViewingModule(null);
+          }}
+          onCreateRelation={async (sourceId, targetId, relationType) => {
+            await handleCreateRelation({
+              source_graph_id: sourceId,
+              target_graph_id: targetId,
+              relation_type: relationType as GraphRelationType,
+            });
+          }}
+          onCreateGraph={async (title, domain) => {
+            await handleQuickCreateGraph({
+              title,
+              description: domain ? `领域：${domain}` : undefined,
+            });
+          }}
+        />
+      </Suspense>
+
+      <Suspense fallback={<LoadingFallback />}>
+        <BatchOperationPanel
+          selectedCount={multiSelectedGraphIds.size}
+          onBatchCreateRelation={handleBatchCreateRelation}
+          onBatchAnalyze={handleBatchAnalyze}
+          onBatchDelete={handleBatchDelete}
+          onClearSelection={clearMultiSelection}
+        />
+      </Suspense>
+
+      <Suspense fallback={<LoadingFallback />}>
+        <AgentAnalysisPanel
+          isOpen={isAgentAnalysisOpen}
+          onClose={() => setIsAgentAnalysisOpen(false)}
+          selectedGraphIds={Array.from(multiSelectedGraphIds)}
+        />
+      </Suspense>
     </div>
   );
 };

@@ -453,3 +453,43 @@ export interface AchievementCheckResult {
     percentage: number;
   }>;
 }
+
+export interface ReviewTask {
+  id: string;
+  user_id: string;
+  knowledge_point_id: string;
+  task_id: string;
+  interval_days: number;
+  ease_factor: number;
+  repetitions: number;
+  next_review_date: string;
+  last_review_date: string | null;
+  last_quality_score: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateReviewTaskData {
+  knowledge_point_id: string;
+  task_id: string;
+}
+
+export interface UpdateReviewTaskData {
+  quality: number;
+}
+
+export interface ReviewTaskStats {
+  total: number;
+  overdue: number;
+  today: number;
+  upcoming: number;
+  future: number;
+  averageEaseFactor: number;
+  averageInterval: number;
+  averageRepetitions: number;
+}
+
+export interface PendingReviewTask extends ReviewTask {
+  urgency: "overdue" | "today" | "upcoming" | "future";
+  masteryLevel: number;
+}

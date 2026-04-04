@@ -19,6 +19,15 @@ export {
   taskRecommendationService,
   TaskRecommendationService,
 } from "./taskRecommendationService";
+export {
+  progressSyncService,
+  ProgressSyncService,
+} from "./progressSyncService";
+export { efficiencyService, EfficiencyService } from "./efficiencyService";
+export {
+  reviewTaskService,
+  ReviewTaskService,
+} from "./reviewTaskService";
 
 export type {
   ScheduledTask,
@@ -61,3 +70,45 @@ export type {
   RecommendationContext,
   PrioritySuggestion,
 } from "./taskRecommendationService";
+
+export type {
+  ReviewTask,
+  CreateReviewTaskData,
+  UpdateReviewTaskData,
+  ReviewTaskStats,
+  PendingReviewTask,
+} from "./reviewTaskService";
+
+export type {
+  SyncStudyDurationParams,
+  SyncTaskCompletionParams,
+  KnowledgePointProgress,
+  ProgressSyncResult,
+  TaskKnowledgePointRelation,
+} from "./progressSyncService";
+
+export type {
+  HourlyEfficiency,
+  TagEfficiencyData,
+  QueueEfficiencyData,
+  UserEfficiencyProfile,
+  TaskCompletionData,
+} from "./efficiencyService";
+
+export { pathTaskService, PathTaskService } from "./pathTaskService";
+export type {
+  PathNodeTask,
+  LearningPathNode,
+  CreatePathNodeTaskData,
+  BatchConvertResult,
+  PathTaskWithDetails,
+} from "./pathTaskService";
+
+export { smartSchedulerService, SmartSchedulerService } from "./smartSchedulerService";
+export type {
+  TimeSlotRecommendation,
+  MasteryBasedPriority,
+  DependencyAwareTask,
+  TaskTypeTimeMatch,
+  SmartRecommendation,
+} from "./smartSchedulerService";

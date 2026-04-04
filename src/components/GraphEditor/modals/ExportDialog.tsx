@@ -113,7 +113,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                 
                 {includeScreenshot ? (
                   screenshotPreview ? (
-                    <img src={screenshotPreview} alt="Graph Preview" className="w-full h-32 object-cover rounded mb-6 border border-gray-100" />
+                    <img src={screenshotPreview} alt="Graph Preview" className="w-full h-32 object-cover rounded mb-6 border border-gray-100" loading="lazy" />
                   ) : (
                     <div className="w-full h-32 bg-gray-100 rounded mb-6 flex items-center justify-center text-gray-400 text-xs">
                       无截图预览

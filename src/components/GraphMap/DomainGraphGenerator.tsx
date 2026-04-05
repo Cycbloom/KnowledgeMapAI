@@ -16,6 +16,8 @@ import {
   GitBranch,
   Plus,
   FolderOpen,
+  ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 
 export interface RecommendedGraph {
@@ -37,11 +39,28 @@ interface CreatedGraph {
   isNew: boolean;
 }
 
+interface FailedGraph {
+  title: string;
+  error: string;
+  reason: string;
+}
+
+interface BatchCreateResult {
+  created: CreatedGraph[];
+  failed?: FailedGraph[];
+  summary?: {
+    total: number;
+    success: number;
+    failed: number;
+    skipped: number;
+  };
+}
+
 interface DomainGraphGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
   onGenerateDomain: (domain: string, count: number) => Promise<{ graphs: RecommendedGraph[]; relations: GraphRelation[] }>;
-  onBatchCreate: (graphs: RecommendedGraph[], relations: GraphRelation[], domain?: string) => Promise<CreatedGraph[]>;
+  onBatchCreate: (graphs: RecommendedGraph[], relations: GraphRelation[], domain?: string) => Promise<BatchCreateResult>;
   onInitializeGraphs?: (graphIds: string[]) => Promise<void>;
   onLoadSourceGraphs?: () => Promise<{ graphs: SourceGraph[] }>;
   onLoadDomains?: () => Promise<{ domains: DomainItem[] }>;
@@ -115,6 +134,8 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
   });
   const [error, setError] = useState<string | null>(null);
   const [createdGraphs, setCreatedGraphs] = useState<CreatedGraph[]>([]);
+  const [failedGraphs, setFailedGraphs] = useState<FailedGraph[] | undefined>();
+  const [showFailedDetails, setShowFailedDetails] = useState(false);
   const [sourceGraphs, setSourceGraphs] = useState<SourceGraph[]>([]);
   const [isLoadingSourceGraphs, setIsLoadingSourceGraphs] = useState(false);
 
@@ -252,11 +273,12 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
 
     try {
       const effectiveDomain = mode === 'expand' ? expandDomain.trim() : domain.trim();
-      const created = await onBatchCreate(selectedItems, filteredRelations, effectiveDomain || undefined);
-      setCreatedGraphs(created);
+      const result = await onBatchCreate(selectedItems, filteredRelations, effectiveDomain || undefined);
+      setCreatedGraphs(result.created);
+      setFailedGraphs(result.failed);
       setCreateProgress(prev => ({ ...prev, status: 'completed', current: prev.total }));
       
-      const newGraphs = created.filter(g => g.isNew);
+      const newGraphs = result.created.filter(g => g.isNew);
       if (newGraphs.length > 0 && onInitializeGraphs) {
         setStep('initialize_prompt');
       } else {
@@ -284,10 +306,31 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
       await onInitializeGraphs(newGraphIds);
       setStep('complete');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '初始化失败');
+      setError(err instanceof Error ? err.message : '?????');
       setStep('complete');
     } finally {
       setIsInitializing(false);
+    }
+  };
+
+  const handleRetryFailed = async () => {
+    if (!failedGraphs || failedGraphs.length === 0) return;
+    const retryItems = failedGraphs.map(fg => ({ title: fg.title, description: '', priority: 'medium' as const }));
+    setIsCreating(true);
+    setStep('creating');
+    try {
+      const effectiveDomain = mode === 'expand' ? expandDomain.trim() : domain.trim();
+      const result = await onBatchCreate(retryItems, [], effectiveDomain || undefined);
+      setCreatedGraphs(prev => [...prev, ...result.created]);
+      setFailedGraphs(result.failed);
+      setShowFailedDetails(false);
+      if (!result.failed || result.failed.length === 0) {
+        setStep('complete');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '????');
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -301,6 +344,8 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
       setSelectedGraphs(new Set());
       setSelectedSourceGraphs(new Set());
       setCreatedGraphs([]);
+      setFailedGraphs(undefined);
+      setShowFailedDetails(false);
       setSourceGraphs([]);
       setStep('input');
       setError(null);
@@ -369,8 +414,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                     }`}
                   >
                     <Plus className="w-4 h-4" />
-                    从零开始
-                  </button>
+                    从零开�?                  </button>
                   <button
                     onClick={() => handleModeChange('expand')}
                     className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
@@ -380,16 +424,14 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                     }`}
                   >
                     <FolderOpen className="w-4 h-4" />
-                    从现有图谱扩展
-                  </button>
+                    从现有图谱扩�?                  </button>
                 </div>
 
                 {mode === 'new' && (
                   <>
                     <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
                       <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                        输入一个领域主题，AI 将为您生成推荐的知识图谱列表，并分析它们之间的学习依赖关系。
-                      </p>
+                        输入一个领域主题，AI 将为您生成推荐的知识图谱列表，并分析它们之间的学习依赖关系�?                      </p>
                     </div>
 
                     <div>
@@ -404,7 +446,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                           onChange={e => setDomain(e.target.value)}
                           onKeyDown={handleKeyDown}
                           disabled={isGenerating}
-                          placeholder="例如：机器学习、前端开发、数据结构..."
+                          placeholder="例如：机器学习、前端开发、数据结�?.."
                           className="w-full pl-10 pr-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
                         />
                       </div>
@@ -416,11 +458,9 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                   <>
                     <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                       <p className="text-sm text-purple-700 dark:text-purple-300">
-                        选择现有图谱或选择领域，AI 将基于它们推荐相关的新知识图谱，帮助您扩展知识体系。
-                      </p>
+                        选择现有图谱或选择领域，AI 将基于它们推荐相关的新知识图谱，帮助您扩展知识体系�?                      </p>
                       <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                        可以选择图谱、选择领域，或两者结合
-                      </p>
+                        可以选择图谱、选择领域，或两者结�?                      </p>
                     </div>
 
                     <div>
@@ -442,24 +482,22 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                           <option value="">-- 请选择领域 --</option>
                           {availableDomains.map(domain => (
                             <option key={domain.name} value={domain.name}>
-                              {domain.name} ({domain.count} 个图谱)
+                              {domain.name} ({domain.count} 个图�?
                             </option>
                           ))}
                         </select>
                       ) : (
                         <div className="py-2.5 px-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-sm text-gray-500 dark:text-gray-400">
-                          暂无可选领域，请先为图谱设置领域
-                        </div>
+                          暂无可选领域，请先为图谱设置领�?                        </div>
                       )}
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        选择领域后，AI 会将该领域内的所有图谱信息纳入推荐参考
-                      </p>
+                        选择领域后，AI 会将该领域内的所有图谱信息纳入推荐参�?                      </p>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          选择现有图谱（可选，最多 5 个）
+                          选择现有图谱（可选，最�?5 个）
                         </label>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           已选择 {selectedSourceGraphs.size} / 5
@@ -470,7 +508,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
                           <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                            加载图谱中...
+                            加载图谱�?..
                           </span>
                         </div>
                       ) : (
@@ -508,8 +546,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                                     </p>
                                   )}
                                   <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                    {graph.node_count || 0} 个节点
-                                  </div>
+                                    {graph.node_count || 0} 个节�?                                  </div>
                                 </div>
                               </div>
                             </button>
@@ -562,8 +599,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                         />
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        推荐图谱数量，创建后可选择性初始化知识点
-                      </p>
+                        推荐图谱数量，创建后可选择性初始化知识�?                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -586,14 +622,13 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
                     <Check className="w-4 h-4" />
-                    <span>{mode === 'new' ? `已为「${domain}」` : '已基于选择的图谱'}生成 {recommendedGraphs.length} 个推荐图谱，{graphRelations.length} 个依赖关系</span>
+                    <span>{mode === 'new' ? `???${domain}?` : '????????'}?? {recommendedGraphs.length} ??????{graphRelations.length} ?????</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    已选择 {selectedGraphs.size} / {recommendedGraphs.length} 个
-                  </span>
+                    ??? {selectedGraphs.size} / {recommendedGraphs.length} ?                  </span>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setShowRelations(!showRelations)}
@@ -606,7 +641,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                       onClick={toggleAll}
                       className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
                     >
-                      {selectedGraphs.size === recommendedGraphs.length ? '取消全选' : '全选'}
+                      {selectedGraphs.size === recommendedGraphs.length ? '????' : '??'}
                     </button>
                   </div>
                 </div>
@@ -717,22 +752,20 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
                     <Check className="w-5 h-5" />
-                    <span className="font-medium">图谱创建完成！</span>
+                    <span className="font-medium">???????</span>
                   </div>
                   <p className="text-sm text-green-600 dark:text-green-400">
-                    已成功创建 {createdGraphs.length} 个图谱，其中 {createdGraphs.filter(g => g.isNew).length} 个是新创建的。
-                  </p>
+                    ????? {createdGraphs.length} ?????? {createdGraphs.filter(g => g.isNew).length} ???????                  </p>
                 </div>
 
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-5 h-5 text-blue-500" />
-                    <span className="font-medium text-blue-700 dark:text-blue-300">是否初始化知识点？</span>
+                    <span className="font-medium text-blue-700 dark:text-blue-300">?????????</span>
                   </div>
                   <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
-                    初始化将为每个新创建的图谱生成知识点结构（根节点 → 核心节点 → 子节点）。
-                    这个过程会在后台异步执行，您可以随时查看进度。
-                  </p>
+                    ???????????????????????? ? ???? ? ?????
+                    ???????????????????????                  </p>
                   <div className="flex gap-3">
                     <button
                       onClick={handleInitialize}
@@ -742,7 +775,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                       {isInitializing ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          正在初始化...
+                          正在初始�?..
                         </>
                       ) : (
                         <>
@@ -777,8 +810,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    初始化任务已提交，正在后台异步执行。您可以关闭此窗口，稍后在任务列表中查看进度。
-                  </p>
+                    初始化任务已提交，正在后台异步执行。您可以关闭此窗口，稍后在任务列表中查看进度�?                  </p>
                 </div>
               </motion.div>
             )}
@@ -792,11 +824,63 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
                     <Check className="w-5 h-5" />
-                    <span className="font-medium">操作完成！</span>
+                    <span className="font-medium">?????</span>
                   </div>
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    已成功创建 {createdGraphs.length} 个图谱
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                    ???? {createdGraphs.length} ???
+                    {failedGraphs && failedGraphs.length > 0 && `?${failedGraphs.length} ???`}
                   </p>
+                </div>
+
+                {failedGraphs && failedGraphs.length > 0 && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <button
+                      onClick={() => setShowFailedDetails(!showFailedDetails)}
+                      className="flex items-center justify-between w-full text-left"
+                    >
+                      <span className="text-sm font-medium text-red-700 dark:text-red-300">
+                        失败项目 ({failedGraphs.length})
+                      </span>
+                      {showFailedDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+
+                    {showFailedDetails && (
+                      <div className="mt-2 space-y-1.5 max-h-32 overflow-y-auto">
+                        {failedGraphs.map((fg, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-xs p-2 bg-white dark:bg-gray-800 rounded">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-medium text-red-800 dark:text-red-200">{fg.title}</div>
+                              <div className="text-red-600 dark:text-red-400 mt-0.5">{fg.error}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleRetryFailed}
+                      disabled={isCreating}
+                      className="mt-2 w-full px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isCreating ? 'animate-spin' : ''}`} />
+                      重试失败�?                    </button>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleClose()}
+                    className="flex-1 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    查看已创建图�?                  </button>
+                  <button
+                    onClick={handleClose}
+                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  >
+                    关闭
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -831,7 +915,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                   {isGenerating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      生成中...
+                      生成�?..
                     </>
                   ) : (
                     <>
@@ -865,7 +949,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
                   {isCreating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      创建中...
+                      创建�?..
                     </>
                   ) : (
                     <>
@@ -886,14 +970,7 @@ export const DomainGraphGenerator: React.FC<DomainGraphGeneratorProps> = ({
               </button>
             )}
 
-            {step === 'complete' && (
-              <button
-                onClick={handleClose}
-                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
-              >
-                完成
-              </button>
-            )}
+            {step === 'complete' && null}
           </div>
         </motion.div>
       </motion.div>

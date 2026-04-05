@@ -37,3 +37,7 @@ export {
   type SemanticSearchResult,
 } from "./searchService";
 export { getMockResponse } from "./mock";
+export {
+  domainContextService,
+  DomainContextService,
+} from "./domainContextService";

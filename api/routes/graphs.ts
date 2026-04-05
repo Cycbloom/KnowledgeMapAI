@@ -14,6 +14,7 @@ import {
 import { graphService } from "../services/graph/index";
 import { taskService } from "../services/taskService";
 import { aiService } from "../services/ai/aiService";
+import { domainContextService } from "../services/ai/domainContextService";
 import { ErrorCodes } from "../../shared/types/errorCodes";
 import { AppError } from "../middleware/errorHandler";
 import { achievementService } from "../services/achievementService";
@@ -35,13 +36,14 @@ const batchOperationSchema = z.object({
 const analyzeDomainSchema = z.object({
   domain: z.string().min(2).max(200),
   count: z.number().min(5).max(30).default(10),
+  context_domain_id: z.string().uuid().optional(),
 });
 
 const expandDomainSchema = z
   .object({
-    graph_ids: z.array(z.string().uuid()).max(5).optional(),
-    domain: z.string().min(1).max(200).optional(),
-    count: z.number().min(5).max(30).default(10),
+    graph_ids: z.array(z.string().uuid()).optional(),
+    domain: z.string().uuid().max(100).optional(),
+    count: z.number().int().min(1).max(30).default(10),
   })
   .refine(
     (data) => (data.graph_ids && data.graph_ids.length > 0) || data.domain,
@@ -875,7 +877,7 @@ router.post(
   requireAuth,
   validate({ body: analyzeDomainSchema }),
   async (req: AuthRequest, res: Response) => {
-    const { domain, count = 10 } = req.body;
+    const { domain, count = 10, context_domain_id } = req.body;
     const userId = req.user.id;
 
     try {
@@ -889,7 +891,39 @@ router.post(
         g.title.toLowerCase(),
       );
 
-      const prompt = `你是知识图谱专家。用户想学习「${domain}」领域。
+      let domainContext = "";
+      let domainName = "";
+
+      if (context_domain_id) {
+        try {
+          const context = await domainContextService.getDomainContext(
+            req.supabase!,
+            context_domain_id,
+            userId,
+          );
+          domainContext = context;
+
+          const { data: domainInfo } = await req.supabase!
+            .from("domains")
+            .select("name")
+            .eq("id", context_domain_id)
+            .single();
+          domainName = domainInfo?.name || "";
+
+          logger.info("使用领域上下文进行分析", {
+            domainId: context_domain_id,
+            domainName,
+            userId,
+          });
+        } catch (error) {
+          logger.warn("获取领域上下文失败，将使用全局分析", {
+            domainId: context_domain_id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      const basePrompt = `你是知识图谱专家。用户想学习「${domain}」领域。
 
 请推荐 ${count} 个该领域的知识图谱主题，并分析它们之间的学习依赖关系。
 
@@ -898,6 +932,7 @@ router.post(
 2. 分析主题之间的学习依赖关系（如：学A之前需要先学B）
 3. 优先级：high(核心基础)/medium(重要内容)/low(扩展内容)
 4. 简述不超过60字
+${domainContext ? `5. 基于上述已有内容，推荐新的、不重复的知识点\n6. 避免推荐与已有图谱主题过于相似的内容` : ""}
 
 返回JSON格式：
 {
@@ -916,6 +951,10 @@ router.post(
 
 已有图谱：${existingTitles.length > 0 ? existingTitles.slice(0, 15).join("、") : "无"}`;
 
+      const finalPrompt = domainContext
+        ? domainContextService.buildDomainAwarePrompt(basePrompt, domainContext, domainName)
+        : basePrompt;
+
       const response = await aiService.chat(
         [
           {
@@ -923,7 +962,7 @@ router.post(
             content:
               "你是一个知识图谱专家，擅长分析领域知识结构、推荐学习路径、识别知识点之间的依赖关系。请用中文回复。确保返回有效的JSON格式。",
           },
-          { role: "user", content: prompt },
+          { role: "user", content: finalPrompt },
         ],
         { timeout: 60000 },
       );
@@ -990,6 +1029,26 @@ router.post(
         }
       } catch {
         logger.warn("Failed to parse domain analysis response as JSON");
+      }
+
+      if (domainContext && existingTitles.length > 0) {
+        const beforeCount = recommendations.length;
+        const existingSet = new Set(existingTitles.map((t) => t.toLowerCase()));
+        recommendations = recommendations.filter((rec) => {
+          const titleLower = rec.title.toLowerCase();
+          const isTooSimilar = Array.from(existingSet).some(
+            (existing) =>
+              titleLower.includes(existing) || existing.includes(titleLower),
+          );
+          return !isTooSimilar;
+        });
+
+        if (recommendations.length !== beforeCount) {
+          logger.info("应用领域上下文过滤", {
+            before: beforeCount,
+            after: recommendations.length,
+          });
+        }
       }
 
       const validTitles = new Set(
@@ -1075,6 +1134,38 @@ router.post(
         }
       }
 
+      let targetDomainId: string | null = null;
+      let targetDomainName: string | null = null;
+
+      if (domain) {
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(domain)) {
+          const { data: domainData } = await supabase
+            .from("domains")
+            .select("id, name")
+            .eq("id", domain)
+            .is("deleted_at", null)
+            .single();
+
+          if (domainData) {
+            targetDomainId = domainData.id;
+            targetDomainName = domainData.name;
+          }
+        } else {
+          const { data: domainData } = await supabase
+            .from("domains")
+            .select("id, name")
+            .eq("name", domain)
+            .or(`user_id.eq.${userId},and(is_system.eq.true,user_id.is.null)`)
+            .is("deleted_at", null)
+            .maybeSingle();
+
+          if (domainData) {
+            targetDomainId = domainData.id;
+            targetDomainName = domainData.name;
+          }
+        }
+      }
+
       if (sourceGraphs.length === 0) {
         throw new AppError("未找到选中的图谱或领域", 404, ErrorCodes.NOT_FOUND);
       }
@@ -1089,22 +1180,33 @@ router.post(
         g.title.toLowerCase(),
       );
 
-      const sourceGraphsInfo = sourceGraphs.map((g) => ({
-        id: g.id,
-        title: g.title,
-        description: g.description || "",
-        domain: g.domain || "",
-      }));
+      let domainContext = "";
 
-      const domainInfo =
-        domain && domain.trim()
-          ? `\n\n用户希望扩展的方向/领域：${domain.trim()}`
-          : "";
+      if (targetDomainId) {
+        try {
+          domainContext = await domainContextService.getDomainContext(
+            supabase,
+            targetDomainId,
+            userId
+          );
+          logger.info("扩展分析使用领域上下文", {
+            domainId: targetDomainId,
+            domainName: targetDomainName,
+          });
+        } catch (error) {
+          logger.warn("获取扩展领域上下文失败", { error });
+        }
+      }
 
-      const prompt = `你是知识图谱专家。用户已经有以下知识图谱：
-${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.description}` : ""}${g.domain ? ` [领域: ${g.domain}]` : ""}`).join("\n")}${domainInfo}
+      const basePrompt = `你是知识图谱专家。基于用户已有的知识图谱，推荐相关的扩展学习内容。
 
-请基于这些现有图谱，推荐 ${count} 个相关的新知识图谱，并分析它们之间的学习依赖关系。
+${sourceGraphs.length > 0 ? `用户已有 ${sourceGraphs.length} 个图谱：\n${sourceGraphs.map((g, i) => `${i+1}. ${g.title}${g.description ? ` - ${g.description}` : ''}`).join('\n')}` : ''}
+
+${domainContext ? `\n[目标领域上下文 - ${targetDomainName}]\n${domainContext}\n[/目标领域上下文]` : ''}
+
+${targetDomainName ? `\n请优先推荐与「${targetDomainName}」领域相关的扩展方向。` : ''}
+
+请推荐 ${count} 个扩展知识图谱，并分析它们之间的学习依赖关系。
 
 要求：
 1. 推荐与现有图谱相关的主题，帮助用户扩展知识体系
@@ -1142,7 +1244,7 @@ ${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.
             content:
               "你是一个知识图谱专家，擅长分析领域知识结构、推荐学习路径、识别知识点之间的依赖关系。请用中文回复。确保返回有效的JSON格式。",
           },
-          { role: "user", content: prompt },
+          { role: "user", content: basePrompt },
         ],
         { timeout: 60000 },
       );
@@ -1238,6 +1340,7 @@ ${sourceGraphsInfo.map((g, i) => `${i + 1}. ${g.title}${g.description ? ` - ${g.
         recommendations: recommendations.slice(0, count),
         relations: graphRelations,
         source_graphs: sourceGraphs,
+        ...(targetDomainId ? { target_domain: { id: targetDomainId, name: targetDomainName } } : {}),
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "领域扩展失败";
@@ -1263,14 +1366,29 @@ router.post(
         isNew: boolean;
       }> = [];
 
+      const failedItems: Array<{
+        title: string;
+        error: string;
+        reason: "duplicate" | "db_error" | "invalid_data";
+      }> = [];
+
       const titleToIdMap = new Map<string, string>();
 
       // 先查询所有现有图谱，建立标题到 ID 的映射
-      const { data: allExistingGraphs } = await supabase
+      const { data: allExistingGraphs, error: queryError } = await supabase
         .from("knowledge_graphs")
         .select("id, title")
         .eq("user_id", userId)
         .is("deleted_at", null);
+
+      if (queryError) {
+        logger.error("Failed to query existing graphs:", queryError);
+        throw new AppError(
+          "查询现有图谱失败",
+          500,
+          ErrorCodes.INTERNAL_ERROR,
+        );
+      }
 
       if (allExistingGraphs) {
         for (const g of allExistingGraphs) {
@@ -1279,115 +1397,229 @@ router.post(
       }
 
       for (const graphData of graphs) {
-        const duplicateCheck = await checkDuplicateGraphTopic(
-          supabase,
-          userId,
-          graphData.title,
-          { threshold: 0.85 },
-        );
-
-        if (
-          duplicateCheck.isDuplicate &&
-          duplicateCheck.similarGraphs.length > 0
-        ) {
-          const similarGraph = duplicateCheck.similarGraphs[0];
-          results.push({
-            graphId: similarGraph.id,
-            title: similarGraph.title,
-            isNew: false,
-          });
-          titleToIdMap.set(graphData.title.toLowerCase(), similarGraph.id);
-        } else {
-          const { data: newGraph, error: createError } = await supabase
-            .from("knowledge_graphs")
-            .insert({
-              user_id: userId,
-              title: graphData.title,
-              description: graphData.description || "",
-              domain: domain || null,
-              embedding: duplicateCheck.embedding,
-            })
-            .select()
-            .single();
-
-          if (createError || !newGraph) {
-            logger.error("Failed to create graph:", createError);
-            continue;
-          }
-
-          results.push({
-            graphId: newGraph.id,
-            title: graphData.title,
-            isNew: true,
-          });
-          titleToIdMap.set(graphData.title.toLowerCase(), newGraph.id);
-        }
-      }
-
-      if (relations && relations.length > 0) {
-        logger.info(`Creating ${relations.length} relations between graphs`);
-
-        const relationsToCreate: Array<{
-          source_graph_id: string;
-          target_graph_id: string;
-          relation_type: string;
-          context?: string;
-        }> = [];
-
-        for (const rel of relations) {
-          const sourceId = titleToIdMap.get(rel.from_title.toLowerCase());
-          const targetId = titleToIdMap.get(rel.to_title.toLowerCase());
-
-          if (!sourceId || !targetId) {
-            logger.warn(
-              `Skipping relation: graph not found - from: ${rel.from_title}, to: ${rel.to_title}`,
-            );
-            continue;
-          }
-
-          const { data: existingRelation } = await supabase
-            .from("graph_relations")
-            .select("id")
-            .eq("source_graph_id", sourceId)
-            .eq("target_graph_id", targetId)
-            .maybeSingle();
-
-          if (!existingRelation) {
-            relationsToCreate.push({
-              source_graph_id: sourceId,
-              target_graph_id: targetId,
-              relation_type: rel.type,
-              context: rel.reason,
-            });
-            logger.info(
-              `Relation [${rel.type}]: ${rel.from_title} -> ${rel.to_title}${rel.reason ? ` (${rel.reason})` : ""}`,
-            );
-          } else {
-            logger.info(
-              `Relation already exists: ${rel.from_title} -> ${rel.to_title}`,
+        try {
+          // 数据验证
+          if (!graphData.title || typeof graphData.title !== "string") {
+            throw new Error(
+              `Invalid data: title is required and must be a string`,
             );
           }
-        }
 
-        if (relationsToCreate.length > 0) {
-          logger.info(
-            `Inserting ${relationsToCreate.length} relations into graph_relations`,
+          const duplicateCheck = await checkDuplicateGraphTopic(
+            supabase,
+            userId,
+            graphData.title,
+            { threshold: 0.85 },
           );
-          const { error: relationError } = await supabase
-            .from("graph_relations")
-            .insert(relationsToCreate);
 
-          if (relationError) {
-            logger.error("Failed to create relations:", relationError);
+          if (
+            duplicateCheck.isDuplicate &&
+            duplicateCheck.similarGraphs.length > 0
+          ) {
+            const similarGraph = duplicateCheck.similarGraphs[0];
+            results.push({
+              graphId: similarGraph.id,
+              title: similarGraph.title,
+              isNew: false,
+            });
+            titleToIdMap.set(graphData.title.toLowerCase(), similarGraph.id);
           } else {
-            logger.info(
-              `Successfully created ${relationsToCreate.length} relations`,
-            );
+            const { data: newGraph, error: createError } = await supabase
+              .from("knowledge_graphs")
+              .insert({
+                user_id: userId,
+                title: graphData.title,
+                description: graphData.description || "",
+                domain: domain || null,
+                embedding: duplicateCheck.embedding,
+              })
+              .select()
+              .single();
+
+            if (createError || !newGraph) {
+              throw new Error(
+                `Database error: ${createError?.message || "Failed to create graph"}`,
+              );
+            }
+
+            results.push({
+              graphId: newGraph.id,
+              title: graphData.title,
+              isNew: true,
+            });
+            titleToIdMap.set(graphData.title.toLowerCase(), newGraph.id);
           }
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
+          // 分类错误类型
+          let errorReason: "duplicate" | "db_error" | "invalid_data";
+          if (
+            errorMessage.toLowerCase().includes("duplicate") ||
+            errorMessage.toLowerCase().includes("similar")
+          ) {
+            errorReason = "duplicate";
+          } else if (
+            errorMessage.toLowerCase().includes("database") ||
+            errorMessage.toLowerCase().includes("db") ||
+            errorMessage.toLowerCase().includes("insert") ||
+            errorMessage.toLowerCase().includes("query")
+          ) {
+            errorReason = "db_error";
+          } else {
+            errorReason = "invalid_data";
+          }
+
+          failedItems.push({
+            title: graphData.title || "(unknown)",
+            error: errorMessage,
+            reason: errorReason,
+          });
+
+          logger.warn(
+            `Failed to process graph "${graphData.title}": ${errorMessage}`,
+            { reason: errorReason },
+          );
+
+          // 继续处理下一个，不中断整个流程
+          continue;
         }
       }
 
-      res.json({ created: results });
+      // 计算统计信息
+      const successCount = results.length;
+      const failedCount = failedItems.length;
+      const skippedCount = results.filter((r) => !r.isNew).length;
+      const totalCount = graphs.length;
+
+      logger.info(`Batch create summary:`, {
+        total: totalCount,
+        success: successCount,
+        failed: failedCount,
+        skipped: skippedCount,
+      });
+
+      // 创建关系（带错误保护）
+      if (relations && relations.length > 0) {
+        try {
+          logger.info(`Creating ${relations.length} relations between graphs`);
+
+          const relationsToCreate: Array<{
+            source_graph_id: string;
+            target_graph_id: string;
+            relation_type: string;
+            context?: string;
+          }> = [];
+
+          const failedRelations: Array<{
+            from_title: string;
+            to_title: string;
+            type: string;
+            error: string;
+          }> = [];
+
+          for (const rel of relations) {
+            try {
+              const sourceId = titleToIdMap.get(rel.from_title.toLowerCase());
+              const targetId = titleToIdMap.get(rel.to_title.toLowerCase());
+
+              if (!sourceId || !targetId) {
+                logger.warn(
+                  `Skipping relation: graph not found - from: ${rel.from_title}, to: ${rel.to_title}`,
+                );
+                continue;
+              }
+
+              const { data: existingRelation, error: queryRelError } =
+                await supabase
+                  .from("graph_relations")
+                  .select("id")
+                  .eq("source_graph_id", sourceId)
+                  .eq("target_graph_id", targetId)
+                  .maybeSingle();
+
+              if (queryRelError) {
+                throw new Error(
+                  `Query relation error: ${queryRelError.message}`,
+                );
+              }
+
+              if (!existingRelation) {
+                relationsToCreate.push({
+                  source_graph_id: sourceId,
+                  target_graph_id: targetId,
+                  relation_type: rel.type,
+                  context: rel.reason,
+                });
+                logger.info(
+                  `Relation [${rel.type}]: ${rel.from_title} -> ${rel.to_title}${rel.reason ? ` (${rel.reason})` : ""}`,
+                );
+              } else {
+                logger.info(
+                  `Relation already exists: ${rel.from_title} -> ${rel.to_title}`,
+                );
+              }
+            } catch (error: unknown) {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
+              failedRelations.push({
+                from_title: rel.from_title,
+                to_title: rel.to_title,
+                type: rel.type,
+                error: errorMessage,
+              });
+              logger.error(
+                `Failed to process relation [${rel.type}]: ${rel.from_title} -> ${rel.to_title}: ${errorMessage}`,
+              );
+              // 继续处理下一个关系
+            }
+          }
+
+          if (failedRelations.length > 0) {
+            logger.warn(
+              `${failedRelations.length} relations failed to process`,
+              { failedRelations },
+            );
+          }
+
+          if (relationsToCreate.length > 0) {
+            logger.info(
+              `Inserting ${relationsToCreate.length} relations into graph_relations`,
+            );
+            const { error: relationError } = await supabase
+              .from("graph_relations")
+              .insert(relationsToCreate);
+
+            if (relationError) {
+              logger.error("Failed to create relations:", relationError);
+            } else {
+              logger.info(
+                `Successfully created ${relationsToCreate.length} relations`,
+              );
+            }
+          }
+        } catch (error: unknown) {
+          // 关系创建的整体错误不应该影响主响应
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          logger.error(
+            `Error during relation creation phase: ${errorMessage}`,
+          );
+          // 不抛出错误，继续返回图谱创建结果
+        }
+      }
+
+      res.json({
+        created: results,
+        failed: failedItems,
+        summary: {
+          total: totalCount,
+          success: successCount,
+          failed: failedCount,
+          skipped: skippedCount,
+        },
+      });
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "批量创建图谱失败";

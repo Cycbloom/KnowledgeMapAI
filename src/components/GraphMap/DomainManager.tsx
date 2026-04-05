@@ -9,7 +9,26 @@ import {
   ChevronDown,
   Loader2,
   AlertTriangle,
+  Sparkles,
+  GripVertical,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { domainsApi } from '../../services/api/domains';
 import type { DomainTreeNode } from '@shared/types/graph';
 import { useIsMobile } from '../../hooks';
@@ -41,6 +60,128 @@ const initialFormData: FormData = {
   icon: '',
 };
 
+interface SortableDomainItemProps {
+  domain: DomainTreeNode;
+  onEdit: (domain: DomainTreeNode) => void;
+  onDelete: (domainId: string) => void;
+  depth?: number;
+  isExpanded?: boolean;
+  hasChildrenFn: (node: DomainTreeNode) => boolean;
+  onToggleExpand: (id: string) => void;
+}
+
+function SortableDomainItem({
+  domain,
+  onEdit,
+  onDelete,
+  depth = 0,
+  isExpanded = false,
+  hasChildrenFn,
+  onToggleExpand,
+}: SortableDomainItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: domain.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const showChildren = hasChildrenFn(domain) && isExpanded;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div
+        className={`group flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${
+          depth > 0 ? 'ml-' + Math.min(depth * 4, 16) : ''
+        }`}
+        style={{ paddingLeft: `${depth * 20 + 12}px` }}
+      >
+        <button
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing touch-none p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+
+        {hasChildrenFn(domain) ? (
+          <button
+            onClick={() => onToggleExpand(domain.id)}
+            className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+          </button>
+        ) : (
+          <span className="w-5" />
+        )}
+
+        <span
+          className="w-3 h-3 rounded-full flex-shrink-0"
+          style={{ backgroundColor: domain.color }}
+        />
+
+        <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white truncate min-w-0">
+          {domain.icon && <span className="mr-1">{domain.icon}</span>}
+          {domain.name}
+        </span>
+
+        {domain.graphCount !== undefined && domain.graphCount > 0 && (
+          <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+            {domain.graphCount}
+          </span>
+        )}
+
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {!domain.is_system && (
+            <>
+              <button
+                onClick={() => onEdit(domain)}
+                className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
+                title="编辑"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onDelete(domain.id)}
+                className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
+                title="删除"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {showChildren &&
+        domain.children.map(child => (
+          <SortableDomainItem
+            key={child.id}
+            domain={child}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            depth={depth + 1}
+            isExpanded={false}
+            hasChildrenFn={hasChildrenFn}
+            onToggleExpand={onToggleExpand}
+          />
+        ))
+      }
+    </div>
+  );
+}
+
 export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose }) => {
   const deviceInfo = useIsMobile();
   const isMobile = deviceInfo.isMobile;
@@ -55,6 +196,23 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
   const [submitting, setSubmitting] = useState(false);
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const [aiColorRecommendation, setAiColorRecommendation] = useState<{
+    color: string;
+    reason: string;
+  } | null>(null);
+  const [isGeneratingColor, setIsGeneratingColor] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const fetchDomains = useCallback(async () => {
     setLoading(true);
@@ -168,6 +326,59 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
     setFormData(initialFormData);
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = domains.findIndex(d => d.id === String(active.id));
+    const newIndex = domains.findIndex(d => d.id === String(over.id));
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newDomains = arrayMove(domains, oldIndex, newIndex);
+    setDomains(newDomains);
+
+    try {
+      const reorderItems = newDomains.map((d, index) => ({
+        id: d.id,
+        parent_id: d.parent_id || null,
+        sort_order: index,
+      }));
+
+      await domainsApi.reorder({ reorder_items: reorderItems });
+    } catch (error) {
+      console.error('Failed to reorder domains:', error);
+      setDomains(arrayMove(newDomains, newIndex, oldIndex));
+    }
+  };
+
+  const handleAIGenerateColor = async () => {
+    if (!formData.name) return;
+
+    setIsGeneratingColor(true);
+    setAiColorRecommendation(null);
+
+    try {
+      const result = await domainsApi.generateColor(
+        formData.name,
+        formData.description || undefined
+      );
+      setAiColorRecommendation(result);
+    } catch (error) {
+      console.error('Failed to generate AI color:', error);
+    } finally {
+      setIsGeneratingColor(false);
+    }
+  };
+
+  const handleApplyAiColor = () => {
+    if (aiColorRecommendation) {
+      setFormData(prev => ({ ...prev, color: aiColorRecommendation.color }));
+      setAiColorRecommendation(null);
+    }
+  };
+
   const flattenDomains = (nodes: DomainTreeNode[], depth: number = 0): Array<{ node: DomainTreeNode; depth: number }> => {
     const result: Array<{ node: DomainTreeNode; depth: number }> = [];
     for (const node of nodes) {
@@ -206,6 +417,51 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           />
         ))}
       </div>
+      <button
+        type="button"
+        onClick={handleAIGenerateColor}
+        disabled={isGeneratingColor || !formData.name}
+        className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 transition-all"
+      >
+        {isGeneratingColor ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Sparkles className="w-4 h-4" />
+        )}
+        AI 推荐
+      </button>
+      {aiColorRecommendation && (
+        <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+          <div className="flex items-center gap-3 mb-2">
+            <div
+              className="w-8 h-8 rounded-full border-2 border-white shadow-md"
+              style={{ backgroundColor: aiColorRecommendation.color }}
+            />
+            <div className="flex-1">
+              <div className="text-sm font-mono font-medium text-gray-900 dark:text-white">
+                {aiColorRecommendation.color}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                {aiColorRecommendation.reason}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={handleApplyAiColor}
+              className="flex-1 px-3 py-1.5 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
+            >
+              应用此颜色
+            </button>
+            <button
+              onClick={handleAIGenerateColor}
+              className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              换一个
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <span className="text-xs text-gray-500 dark:text-gray-400">自定义:</span>
         <input
@@ -497,9 +753,73 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                 <p className="text-xs mt-1">点击上方按钮创建第一个领域</p>
               </div>
             ) : (
-              <div className="py-2">
-                {domains.map(domain => renderTreeNode(domain))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={domains.map(d => d.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="py-2">
+                    {domains.map(domain => (
+                      <div key={domain.id}>
+                        <SortableDomainItem
+                          domain={domain}
+                          onEdit={handleEdit}
+                          onDelete={setDeleteConfirmId}
+                          depth={0}
+                          isExpanded={expandedIds.has(domain.id)}
+                          hasChildrenFn={hasChildren}
+                          onToggleExpand={toggleExpand}
+                        />
+
+                        {deleteConfirmId === domain.id && (
+                          <div className="mx-3 mb-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                                  确定删除「{domain.name}」？
+                                </p>
+                                {hasChildren(domain) && (
+                                  <p className="mt-1 text-xs text-red-600 dark:text-red-300">
+                                    该领域包含 {domain.children.length} 个子领域，将一并删除
+                                  </p>
+                                )}
+                                <div className="flex justify-end gap-2 mt-3">
+                                  <button
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    disabled={submitting}
+                                    className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-md transition-colors disabled:opacity-50"
+                                  >
+                                    取消
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(domain.id)}
+                                    disabled={submitting}
+                                    className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                                  >
+                                    {submitting && <Loader2 className="w-3 h-3 animate-spin" />}
+                                    删除
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {editingId === domain.id && (
+                          <div>
+                            {renderForm(true, cancelEdit)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </motion.div>

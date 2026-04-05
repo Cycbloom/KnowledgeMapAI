@@ -5,6 +5,7 @@ import type { GraphRelationType, QuickCreateGraphRequest } from '../../types';
 import type { DomainTreeNode } from '@shared/types/graph';
 import { useTopicCheck } from "../../hooks";
 import { PromptConfigPanel } from '../PromptConfig';
+import { domainsApi } from '../../services/api/domains';
 
 interface QuickCreateGraphPanelProps {
   isOpen: boolean;
@@ -32,6 +33,15 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   const [selectedDomainIds, setSelectedDomainIds] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPromptConfig, setShowPromptConfig] = useState(false);
+  const [aiDomainRecommendations, setAiDomainRecommendations] = useState<Array<{
+    id: string;
+    name: string;
+    confidence: number;
+    reason: string;
+  }>>([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [selectedRecommendedDomains, setSelectedRecommendedDomains] = useState<Set<string>>(new Set());
 
   const { isChecking, isDuplicate, similarGraphs, checkTopic, reset: resetTopicCheck } = useTopicCheck({ debounceMs: 500 });
 
@@ -44,12 +54,43 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   }, [title, checkTopic, resetTopicCheck]);
 
   useEffect(() => {
+    if (!title || title.length <= 2) {
+      setAiDomainRecommendations([]);
+      setShowRecommendations(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsLoadingRecommendations(true);
+      try {
+        const result = await domainsApi.recommendDomains(title, description);
+        if (result.recommendations && result.recommendations.length > 0) {
+          setAiDomainRecommendations(result.recommendations);
+          setShowRecommendations(true);
+        } else {
+          setShowRecommendations(false);
+        }
+      } catch {
+        // 静默失败，不影响手动选择
+      } finally {
+        setIsLoadingRecommendations(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [title, description]);
+
+  useEffect(() => {
     if (!isOpen) {
       setTitle('');
       setDescription('');
       setAutoGenerate(false);
       setSelectedDomainIds(new Set());
       resetTopicCheck();
+      setAiDomainRecommendations([]);
+      setShowRecommendations(false);
+      setIsLoadingRecommendations(false);
+      setSelectedRecommendedDomains(new Set());
     }
   }, [isOpen, resetTopicCheck]);
 
@@ -81,6 +122,28 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const toggleRecommendedDomain = (domainId: string) => {
+    setSelectedRecommendedDomains(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(domainId)) {
+        newSet.delete(domainId);
+        setSelectedDomainIds(prevIds => {
+          const next = new Set(prevIds);
+          next.delete(domainId);
+          return next;
+        });
+      } else {
+        newSet.add(domainId);
+        setSelectedDomainIds(prevIds => {
+          const next = new Set(prevIds);
+          next.add(domainId);
+          return next;
+        });
+      }
+      return newSet;
+    });
   };
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; description: string; color: string }> = [
@@ -228,6 +291,63 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                 <span>使用 AI 自动生成初始内容</span>
               </label>
             </div>
+
+            {showRecommendations && (
+              <div className="mb-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4" />
+                    AI 推荐领域
+                  </span>
+                  <button
+                    onClick={() => setShowRecommendations(false)}
+                    className="text-xs text-blue-500 hover:text-blue-700"
+                  >
+                    忽略
+                  </button>
+                </div>
+
+                {isLoadingRecommendations ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    <span className="text-sm text-blue-600 dark:text-blue-400">正在分析...</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiDomainRecommendations.map((rec) => {
+                      const isSelected = selectedRecommendedDomains.has(rec.id);
+                      const confidencePercent = Math.round(rec.confidence * 100);
+
+                      return (
+                        <button
+                          key={rec.id}
+                          onClick={() => toggleRecommendedDomain(rec.id)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                            isSelected
+                              ? 'bg-blue-500 text-white ring-2 ring-blue-300'
+                              : confidencePercent >= 80
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 hover:bg-blue-200'
+                                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200'
+                          }`}
+                          title={rec.reason}
+                        >
+                          {rec.name}
+                          <span className={`text-[10px] ${
+                            isSelected ? 'text-blue-100' : 'text-gray-400'
+                          }`}>
+                            {confidencePercent}%
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(!domains || domains.length === 0) && !showRecommendations && (
+              <p className="text-xs text-gray-400 dark:text-gray-500">暂无领域，请先在领域管理中创建</p>
+            )}
 
             {domains && domains.length > 0 && (
               <div>

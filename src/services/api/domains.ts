@@ -42,6 +42,30 @@ export const domainsApi = {
 
   ensureUncategorized: () =>
     request<{ id: string; name: string }>('/api/domains/ensure-uncategorized', { method: 'GET' }),
+
+  reorder: (data: {
+    reorder_items: Array<{
+      id: string;
+      parent_id?: string | null;
+      sort_order: number;
+    }>;
+  }) =>
+    request<{ success: boolean; updated_count: number }>('/domains/reorder', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  generateColor: (name: string, description?: string) =>
+    request<{ color: string; reason: string }>('/domains/generate-color', {
+      method: 'POST',
+      body: JSON.stringify({ name, description }),
+    }),
+
+  recommendDomains: (title: string, description?: string) =>
+    request<{ recommendations: Array<{ id: string; name: string; confidence: number; reason: string }> }>('/domains/recommend', {
+      method: 'POST',
+      body: JSON.stringify({ title, description }),
+    }),
 };
 
 export const graphDomainsApi = {

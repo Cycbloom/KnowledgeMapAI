@@ -58,6 +58,17 @@ export interface BatchCreateDomainGraphsResult {
     title: string;
     isNew: boolean;
   }>;
+  failed?: Array<{
+    title: string;
+    error: string;
+    reason: string;
+  }>;
+  summary?: {
+    total: number;
+    success: number;
+    failed: number;
+    skipped: number;
+  };
 }
 
 export interface InitializeGraphResult {

@@ -321,6 +321,7 @@ export interface QuickCreateGraphRequest {
     type: import("./graph.js").GraphRelationType;
   };
   auto_generate_content?: boolean;
+  domains?: Array<{ domain_id: string; is_primary?: boolean }>;
 }
 
 export interface InfiniteExpansionRequest {

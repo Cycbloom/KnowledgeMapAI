@@ -46,6 +46,7 @@ import calendarRoutes from "./routes/calendar";
 import quizSetRoutes from "./routes/quizSets";
 import collaboratorRoutes from "./routes/collaborators";
 import agentRoutes from "./routes/agent";
+import domainRoutes from "./routes/domains";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
 
@@ -145,6 +146,7 @@ app.get("/api/csrf-token", getCsrfToken);
 app.use("/api/auth", rateLimiters.auth, authRoutes);
 app.use("/api/graphs", graphRoutes);
 app.use("/api/graphs", graphRelationsRoutes);
+app.use("/api/domains", domainRoutes);
 app.use("/api", nodeRoutes);
 app.use("/api/ai", rateLimiters.ai, aiRoutes);
 app.use("/api/study", studyRoutes);

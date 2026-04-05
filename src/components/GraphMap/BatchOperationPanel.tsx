@@ -1,11 +1,12 @@
 import React from "react";
-import { X, Link2, Trash2, Sparkles } from "lucide-react";
+import { X, Link2, Trash2, Sparkles, Tag } from "lucide-react";
 
 interface BatchOperationPanelProps {
   selectedCount: number;
   onBatchCreateRelation: () => void;
   onBatchAnalyze: () => void;
   onBatchDelete: () => void;
+  onBatchSetDomain: () => void;
   onClearSelection: () => void;
 }
 
@@ -14,6 +15,7 @@ export const BatchOperationPanel: React.FC<BatchOperationPanelProps> = ({
   onBatchCreateRelation,
   onBatchAnalyze,
   onBatchDelete,
+  onBatchSetDomain,
   onClearSelection,
 }) => {
   if (selectedCount <= 1) return null;
@@ -37,6 +39,13 @@ export const BatchOperationPanel: React.FC<BatchOperationPanelProps> = ({
       >
         <Sparkles className="w-4 h-4" />
         批量分析
+      </button>
+      <button
+        onClick={onBatchSetDomain}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors"
+      >
+        <Tag className="w-4 h-4" />
+        设置领域
       </button>
       <button
         onClick={onBatchDelete}

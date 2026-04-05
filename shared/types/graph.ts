@@ -39,7 +39,11 @@ export type TemplateLayoutType =
   | "flowchart"
   | "mindmap";
 
-export type GraphRelationType = "prerequisite" | "extension" | "related" | "cross_domain";
+export type GraphRelationType =
+  | "prerequisite"
+  | "extension"
+  | "related"
+  | "cross_domain";
 
 export type RelationSource = "manual" | "ai_discovered" | "ai_suggested";
 
@@ -119,6 +123,8 @@ export interface Graph {
   title: string;
   description?: string;
   domain?: string;
+  domainIds?: string[];
+  domains?: Domain[];
   user_id?: string;
   settings?: {
     gamification_enabled?: boolean;
@@ -134,6 +140,43 @@ export interface Graph {
   reference_books?: ReferenceBook[];
   external_links?: ExternalLink[];
   learning_guide?: string;
+}
+
+export interface Domain {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  icon?: string;
+  parent_id?: string | null;
+  sort_order: number;
+  user_id?: string;
+  is_system: boolean;
+  children?: DomainTreeNode[];
+  graphCount?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DomainTreeNode {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  icon?: string;
+  parent_id?: string | null;
+  sort_order: number;
+  is_system: boolean;
+  children: DomainTreeNode[];
+  graphCount?: number;
+}
+
+export interface GraphDomain {
+  id: string;
+  graph_id: string;
+  domain_id: string;
+  is_primary: boolean;
+  created_at: string;
 }
 
 export interface GraphNode {

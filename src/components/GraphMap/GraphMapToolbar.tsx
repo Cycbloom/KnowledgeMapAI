@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import type { GraphMapFilterMode, AnalysisMode } from '../../types';
 import { useIsMobile } from '../../hooks';
+import type { DomainTreeNode } from '@shared/types/graph';
+import { DomainFilter } from './DomainFilter';
 
 interface GraphMapToolbarProps {
   onBack: () => void;
@@ -38,6 +40,10 @@ interface GraphMapToolbarProps {
   onReturnToGraph?: () => void;
   analysisMode: AnalysisMode;
   onAnalysisModeChange: (mode: AnalysisMode) => void;
+  domains?: DomainTreeNode[];
+  selectedDomainIds?: Set<string>;
+  onDomainSelectionChange?: (ids: Set<string>) => void;
+  onManageDomains?: () => void;
 }
 
 const filterOptions: Array<{ value: GraphMapFilterMode; label: string; icon: React.ReactNode }> = [
@@ -104,6 +110,10 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
   onReturnToGraph,
   analysisMode,
   onAnalysisModeChange,
+  domains,
+  selectedDomainIds,
+  onDomainSelectionChange,
+  onManageDomains,
 }) => {
   const deviceInfo = useIsMobile();
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -521,7 +531,23 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
         {renderFilterButtonGroup()}
+        {domains && domains.length > 0 && (
+          <DomainFilter
+            domains={domains}
+            selectedDomainIds={selectedDomainIds || new Set()}
+            onSelectionChange={onDomainSelectionChange || (() => {})}
+          />
+        )}
         {renderActionButtons()}
+        {onManageDomains && domains && domains.length > 0 && (
+          <button
+            onClick={onManageDomains}
+            className="px-2 py-1 text-xs text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            title="管理领域"
+          >
+            管理
+          </button>
+        )}
       </div>
     </div>
   );

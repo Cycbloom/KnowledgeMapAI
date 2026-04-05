@@ -5,6 +5,7 @@ import { cacheService, CacheKeys } from "../common/cacheService";
 import { supabaseAdmin } from "../../supabase";
 import { logger } from "../../utils/logger";
 import { parseAIResponse, buildTutorContext } from "./utils";
+import { performanceMonitor } from "./performanceMonitor";
 import {
   getMockResponse,
   getMockCards,
@@ -22,6 +23,64 @@ import {
 } from "../../utils/retry";
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
+
+interface PerformanceTrackingOptions {
+  operation: string;
+  provider: AIProviderType;
+  model: string;
+  metadata?: {
+    graphId?: string;
+    nodeId?: string;
+    userId?: string;
+  };
+}
+
+function extractTokenUsage(usage: { prompt_tokens?: number; completion_tokens?: number } | undefined): {
+  inputTokens: number;
+  outputTokens: number;
+} {
+  return {
+    inputTokens: usage?.prompt_tokens || 0,
+    outputTokens: usage?.completion_tokens || 0,
+  };
+}
+
+async function withPerformanceTracking<T>(
+  options: PerformanceTrackingOptions,
+  fn: () => Promise<{ result: T; usage?: { prompt_tokens?: number; completion_tokens?: number } }>,
+): Promise<T> {
+  const startTime = Date.now();
+  let success = true;
+  let errorMessage: string | undefined;
+  let inputTokens = 0;
+  let outputTokens = 0;
+
+  try {
+    const { result, usage } = await fn();
+    const tokenUsage = extractTokenUsage(usage);
+    inputTokens = tokenUsage.inputTokens;
+    outputTokens = tokenUsage.outputTokens;
+    return result;
+  } catch (error: unknown) {
+    success = false;
+    const err = error as Error;
+    errorMessage = err.message;
+    throw error;
+  } finally {
+    const duration = Date.now() - startTime;
+    performanceMonitor.recordLog({
+      operation: options.operation,
+      provider: options.provider,
+      model: options.model,
+      inputTokens,
+      outputTokens,
+      duration,
+      success,
+      errorMessage,
+      metadata: options.metadata,
+    });
+  }
+}
 
 const pendingRequests = new Map<string, Promise<unknown>>();
 
@@ -181,24 +240,38 @@ export class AIService {
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const completion = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages,
-              model: options.model || provider.model,
-            }),
+        const model = options.model || provider.model;
+        
+        return withPerformanceTracking(
           {
-            timeout: options.timeout || DEFAULT_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `Chat request retry attempt ${attempt}: ${error.message}`,
-              );
-            },
+            operation: "chat",
+            provider: provider.providerType,
+            model,
+          },
+          async () => {
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages,
+                  model,
+                }),
+              {
+                timeout: options.timeout || DEFAULT_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Chat request retry attempt ${attempt}: ${error.message}`,
+                  );
+                },
+              },
+            );
+
+            return {
+              result: completion.choices[0].message.content || "",
+              usage: completion.usage,
+            };
           },
         );
-
-        return completion.choices[0].message.content || "";
       });
     } catch (error: unknown) {
       const err = error as Error;
@@ -368,51 +441,64 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const promptParts = await Promise.all(
-          types.map(async (type) => {
-            const code = `generate_cards_${type}`;
-            const rendered = await promptService.getRenderedPrompt(
-              supabaseAdmin,
-              code,
-              { count: Math.ceil(count / types.length), difficulty },
-              options.userId,
-              options.graphId,
+        const model = options.model || provider.model;
+        
+        return withPerformanceTracking(
+          {
+            operation: "generateCards",
+            provider: provider.providerType,
+            model,
+            metadata: {
+              graphId: options.graphId,
+              userId: options.userId,
+            },
+          },
+          async () => {
+            const promptParts = await Promise.all(
+              types.map(async (type) => {
+                const code = `generate_cards_${type}`;
+                const rendered = await promptService.getRenderedPrompt(
+                  supabaseAdmin,
+                  code,
+                  { count: Math.ceil(count / types.length), difficulty },
+                  options.userId,
+                  options.graphId,
+                );
+
+                if (rendered && rendered.trim().length > 0) {
+                  return rendered;
+                }
+
+                return typePrompts[type] || "";
+              }),
             );
 
-            if (rendered && rendered.trim().length > 0) {
-              return rendered;
-            }
+            let systemPrompt = promptParts
+              .filter((p) => p.length > 0)
+              .join("\n\n---\n\n");
 
-            return typePrompts[type] || "";
-          }),
-        );
+            const difficultyInstruction =
+              difficultyPrompts[difficulty] || difficultyPrompts.medium;
 
-        let systemPrompt = promptParts
-          .filter((p) => p.length > 0)
-          .join("\n\n---\n\n");
-
-        const difficultyInstruction =
-          difficultyPrompts[difficulty] || difficultyPrompts.medium;
-
-        if (!systemPrompt.trim()) {
-          systemPrompt = await promptService.getRenderedPrompt(
-            supabaseAdmin,
-            "generate_cards",
-            {
-              count,
-              allowedTypes: types.join(", "),
-              context: context ? `Parent/Context Info: ${context}` : "",
-              difficulty,
-            },
-            options.userId,
-            options.graphId,
-          );
-        } else {
-          const typeRestriction = types.length === 1 
-            ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
-            : `Allowed card types: ${types.join(', ')}. Only generate these types.`;
-          
-          systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
+            if (!systemPrompt.trim()) {
+              systemPrompt = await promptService.getRenderedPrompt(
+                supabaseAdmin,
+                "generate_cards",
+                {
+                  count,
+                  allowedTypes: types.join(", "),
+                  context: context ? `Parent/Context Info: ${context}` : "",
+                  difficulty,
+                },
+                options.userId,
+                options.graphId,
+              );
+            } else {
+              const typeRestriction = types.length === 1 
+                ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
+                : `Allowed card types: ${types.join(', ')}. Only generate these types.`;
+              
+              systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
 ${typeRestriction}
 
@@ -421,59 +507,61 @@ ${difficultyInstruction}
 Context: ${context || "None"}\n\n${systemPrompt}
 
 Please respond with a valid JSON object.`;
-        }
+            }
 
-        const completion = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages: [
-                { role: "system", content: systemPrompt },
-                {
-                  role: "user",
-                  content: `Topic: ${topic}\nContent: ${
-                    content || "No detailed content provided."
-                  }`,
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    {
+                      role: "user",
+                      content: `Topic: ${topic}\nContent: ${
+                        content || "No detailed content provided."
+                      }`,
+                    },
+                  ],
+                  model,
+                  response_format: { type: "json_object" },
+                }),
+              {
+                timeout: LONG_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Generate Cards retry attempt ${attempt}: ${error.message}`,
+                  );
                 },
-              ],
-              model: options.model || provider.model,
-              response_format: { type: "json_object" },
-            }),
-          {
-            timeout: LONG_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `Generate Cards retry attempt ${attempt}: ${error.message}`,
-              );
-            },
+              },
+            );
+
+            const result = completion.choices[0].message.content || "";
+            const parsed = parseAIResponse<{ cards: unknown[] }>(
+              result,
+              "Generate Cards",
+            );
+
+            let cards = parsed.cards || [];
+            const originalCount = cards.length;
+            
+            if (originalCount > 0) {
+              cards = cards.filter((card: any) => {
+                const cardType = card.type;
+                return types.includes(cardType);
+              });
+              
+              const filteredCount = cards.length;
+              if (filteredCount !== originalCount) {
+                logger.warn(
+                  `[Generate Cards] Filtered cards: requested types [${types.join(', ')}], ` +
+                  `got ${originalCount}, kept ${filteredCount}`
+                );
+              }
+            }
+
+            return { result: { cards }, usage: completion.usage };
           },
         );
-
-        const result = completion.choices[0].message.content || "";
-        const parsed = parseAIResponse<{ cards: unknown[] }>(
-          result,
-          "Generate Cards",
-        );
-
-        let cards = parsed.cards || [];
-        const originalCount = cards.length;
-        
-        if (originalCount > 0) {
-          cards = cards.filter((card: any) => {
-            const cardType = card.type;
-            return types.includes(cardType);
-          });
-          
-          const filteredCount = cards.length;
-          if (filteredCount !== originalCount) {
-            logger.warn(
-              `[Generate Cards] Filtered cards: requested types [${types.join(', ')}], ` +
-              `got ${originalCount}, kept ${filteredCount}`
-            );
-          }
-        }
-
-        return { cards };
       });
     } catch (error: unknown) {
       const err = error as Error;
@@ -525,86 +613,102 @@ Please respond with a valid JSON object.`;
     }
 
     try {
-      const existingNodesContext =
-        existingNodes && existingNodes.length > 0
-          ? `\nExisting Nodes in Graph: ${existingNodes
-              .slice(0, 300)
-              .join(", ")}`
-          : "";
-
-      const childrenContext =
-        childNodes && childNodes.length > 0
-          ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
-              ", ",
-            )}`
-          : "";
-
-      const contextLevel = options.contextLevel || "normal";
-
-      const templateContext = {
-        customPrompt: options.expandPrompt,
-        nodeTitle,
-        nodeContent: nodeContent || "",
-        existingNodes: existingNodesContext,
-        childrenContext,
-        isRootOrCore: ["root", "core"].includes(contextLevel),
-        isLeaf: contextLevel === "leaf",
-      };
-
-      const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
-        "expand_knowledge",
-        templateContext,
-        options.userId,
-        options.graphId,
-      );
-
-      const completion = await withTimeoutAndRetry(
-        () =>
-          provider.client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content: `Node Title: ${nodeTitle}\nNode Content: ${
-                  nodeContent || ""
-                }${existingNodesContext}${childrenContext}`,
-              },
-            ],
-            model: options.model || provider.model,
-            response_format: { type: "json_object" },
-          }),
+      const model = options.model || provider.model;
+      
+      return withPerformanceTracking(
         {
-          timeout: LONG_TIMEOUT,
-          maxRetries: 3,
-          onRetry: (attempt, error) => {
-            logger.warn(
-              `Expand Knowledge retry attempt ${attempt}: ${error.message}`,
-            );
+          operation: "expandKnowledge",
+          provider: provider.providerType,
+          model,
+          metadata: {
+            graphId: options.graphId,
+            userId: options.userId,
           },
         },
+        async () => {
+          const existingNodesContext =
+            existingNodes && existingNodes.length > 0
+              ? `\nExisting Nodes in Graph: ${existingNodes
+                  .slice(0, 300)
+                  .join(", ")}`
+              : "";
+
+          const childrenContext =
+            childNodes && childNodes.length > 0
+              ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
+                  ", ",
+                )}`
+              : "";
+
+          const contextLevel = options.contextLevel || "normal";
+
+          const templateContext = {
+            customPrompt: options.expandPrompt,
+            nodeTitle,
+            nodeContent: nodeContent || "",
+            existingNodes: existingNodesContext,
+            childrenContext,
+            isRootOrCore: ["root", "core"].includes(contextLevel),
+            isLeaf: contextLevel === "leaf",
+          };
+
+          const systemPrompt = await promptService.getRenderedPrompt(
+            supabaseAdmin,
+            "expand_knowledge",
+            templateContext,
+            options.userId,
+            options.graphId,
+          );
+
+          const completion = await withTimeoutAndRetry(
+            () =>
+              provider.client.chat.completions.create({
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  {
+                    role: "user",
+                    content: `Node Title: ${nodeTitle}\nNode Content: ${
+                      nodeContent || ""
+                    }${existingNodesContext}${childrenContext}`,
+                  },
+                ],
+                model,
+                response_format: { type: "json_object" },
+              }),
+            {
+              timeout: LONG_TIMEOUT,
+              maxRetries: 3,
+              onRetry: (attempt, error) => {
+                logger.warn(
+                  `Expand Knowledge retry attempt ${attempt}: ${error.message}`,
+                );
+              },
+            },
+          );
+
+          const content = completion.choices[0].message.content || "";
+
+          if (!content || content.trim() === "") {
+            logger.error(
+              "[AI] Empty response from AI provider for expandKnowledge",
+            );
+            const mockResult = getMockResponse("expand", nodeTitle) as {
+              suggestions: unknown[];
+            };
+            return { result: mockResult, usage: completion.usage };
+          }
+
+          const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+            content,
+            "Expand Knowledge",
+          );
+          const result = { suggestions: parsed.suggestions || parsed };
+
+          await cacheService.set(cacheKey, result, 60 * 60 * 24);
+
+          return { result, usage: completion.usage };
+        },
       );
-
-      const content = completion.choices[0].message.content || "";
-
-      if (!content || content.trim() === "") {
-        logger.error(
-          "[AI] Empty response from AI provider for expandKnowledge",
-        );
-        return getMockResponse("expand", nodeTitle) as {
-          suggestions: unknown[];
-        };
-      }
-
-      const parsed = parseAIResponse<{ suggestions: unknown[] }>(
-        content,
-        "Expand Knowledge",
-      );
-      const result = { suggestions: parsed.suggestions || parsed };
-
-      await cacheService.set(cacheKey, result, 60 * 60 * 24);
-
-      return result;
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Error:", error);
@@ -1021,19 +1125,32 @@ Your task:
     }
 
     try {
-      const contextText = buildTutorContext(context);
-      const modePrompt =
-        context.mode === "guided"
-          ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step."
-          : "Free Mode: Allow open-ended discussion. Answer questions freely.";
+      const model = options.model || provider.model;
+      
+      return withPerformanceTracking(
+        {
+          operation: "tutorChat",
+          provider: provider.providerType,
+          model,
+          metadata: {
+            graphId: context.graphId,
+            nodeId: context.currentNodeId,
+          },
+        },
+        async () => {
+          const contextText = buildTutorContext(context);
+          const modePrompt =
+            context.mode === "guided"
+              ? "Guided Mode: Follow a structured learning path. Guide the user step-by-step."
+              : "Free Mode: Allow open-ended discussion. Answer questions freely.";
 
-      const completion = await withTimeoutAndRetry(
-        () =>
-          provider.client.chat.completions.create({
-            messages: [
-              {
-                role: "system",
-                content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
+          const completion = await withTimeoutAndRetry(
+            () =>
+              provider.client.chat.completions.create({
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are an intelligent knowledge tutor for a Knowledge Graph application.
 
 ${modePrompt}
 
@@ -1046,26 +1163,31 @@ Instructions:
 3. When explaining concepts, provide examples
 4. Respond in the same language as the user (default to Chinese)
 5. All mathematical formulas must be wrapped in LaTeX: $inline$ or $$block$$`,
+                  },
+                  ...messages.map((msg) => ({
+                    role: msg.role as "user" | "assistant" | "system",
+                    content: msg.content,
+                  })),
+                ],
+                model,
+              }),
+            {
+              timeout: DEFAULT_TIMEOUT,
+              maxRetries: 3,
+              onRetry: (attempt, error) => {
+                logger.warn(
+                  `Tutor Chat retry attempt ${attempt}: ${error.message}`,
+                );
               },
-              ...messages.map((msg) => ({
-                role: msg.role as "user" | "assistant" | "system",
-                content: msg.content,
-              })),
-            ],
-            model: options.model || provider.model,
-          }),
-        {
-          timeout: DEFAULT_TIMEOUT,
-          maxRetries: 3,
-          onRetry: (attempt, error) => {
-            logger.warn(
-              `Tutor Chat retry attempt ${attempt}: ${error.message}`,
-            );
-          },
+            },
+          );
+
+          return {
+            result: completion.choices[0].message.content || "",
+            usage: completion.usage,
+          };
         },
       );
-
-      return completion.choices[0].message.content || "";
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Tutor Chat Error:", error);

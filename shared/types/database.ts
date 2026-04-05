@@ -1,4 +1,4 @@
-import type { Graph } from './graph';
+import type { Graph, Domain, GraphDomain } from './graph';
 import type { User } from './user';
 
 export interface KnowledgeGraphRow {
@@ -69,6 +69,29 @@ export interface GraphRelationRow {
   created_at: string;
 }
 
+export interface DomainRow {
+  id: string;
+  name: string;
+  description?: string | null;
+  color: string;
+  icon?: string | null;
+  parent_id?: string | null;
+  sort_order: number;
+  user_id?: string | null;
+  is_system: boolean;
+  deleted_at?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface GraphDomainRow {
+  id: string;
+  graph_id: string;
+  domain_id: string;
+  is_primary: boolean;
+  created_at: string;
+}
+
 export function toGraph(row: KnowledgeGraphRow): Graph {
   return {
     id: row.id,
@@ -96,5 +119,31 @@ export function toUser(supabaseUser: { id: string; email?: string; user_metadata
       theme: supabaseUser.user_metadata.theme as string | undefined,
       ...supabaseUser.user_metadata,
     } : undefined,
+  };
+}
+
+export function toDomain(row: DomainRow): Domain {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? undefined,
+    color: row.color,
+    icon: row.icon ?? undefined,
+    parent_id: row.parent_id ?? undefined,
+    sort_order: row.sort_order,
+    user_id: row.user_id ?? undefined,
+    is_system: row.is_system,
+    created_at: row.created_at,
+    updated_at: row.updated_at ?? row.created_at,
+  };
+}
+
+export function toGraphDomain(row: GraphDomainRow): GraphDomain {
+  return {
+    id: row.id,
+    graph_id: row.graph_id,
+    domain_id: row.domain_id,
+    is_primary: row.is_primary,
+    created_at: row.created_at,
   };
 }

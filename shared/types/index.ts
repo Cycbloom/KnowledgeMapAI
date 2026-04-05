@@ -7,3 +7,4 @@ export * from "./quiz";
 export * from "./errorCodes";
 export * from "./ai";
 export * from "./database";
+export * from "./performance";

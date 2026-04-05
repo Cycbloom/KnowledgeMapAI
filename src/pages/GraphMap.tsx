@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, BookOpen, X, ChevronUp, ChevronDown } from "lucide-react";
@@ -7,8 +7,11 @@ import { useMessageStore } from "../store/useMessageStore";
 import { queryKeys } from "../hooks/queries/queryConfig";
 import { useIsMobile } from "../hooks/common/useIsMobile";
 import { GraphMapToolbar } from "../components/GraphMap/GraphMapToolbar";
+import { domainsApi, graphDomainsApi } from "../services/api/domains";
+import type { DomainTreeNode } from "@shared/types/graph";
 import { CreateRelationPanel } from "../components/GraphMap/CreateRelationPanel";
 import { QuickCreateGraphPanel } from "../components/GraphMap/QuickCreateGraphPanel";
+import { DomainManager } from "../components/GraphMap/DomainManager";
 import { useAnalysisModules } from "../hooks/useAnalysisModules";
 import type {
   Graph,
@@ -96,7 +99,7 @@ const LoadingFallback = () => (
 
 export const GraphMap = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { addMessage } = useMessageStore();
   const { isMobile } = useIsMobile();
@@ -140,6 +143,24 @@ export const GraphMap = () => {
   const [viewingModule, setViewingModule] = useState<AnalysisModuleState | null>(null);
   const [isAgentAnalysisOpen, setIsAgentAnalysisOpen] = useState(false);
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('quick');
+  const [selectedDomainIds, setSelectedDomainIds] = useState<Set<string>>(() => {
+    const domainParam = searchParams.get('domain');
+    if (!domainParam) return new Set();
+    return new Set(domainParam.split(',').filter(Boolean));
+  });
+  const [isBatchDomainPickerOpen, setIsBatchDomainPickerOpen] = useState(false);
+  const [isBatchSettingDomain, setIsBatchSettingDomain] = useState(false);
+  const [showDomainManager, setShowDomainManager] = useState(false);
+
+  useEffect(() => {
+    if (selectedDomainIds.size > 0) {
+      setSearchParams({ domain: Array.from(selectedDomainIds).join(',') }, { replace: true });
+    } else {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('domain');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [selectedDomainIds]);
 
   const {
     modules,
@@ -157,11 +178,103 @@ export const GraphMap = () => {
     queryFn: () => api.graphs.getMap(),
   });
 
+  const {
+    data: domainTreeRaw,
+  } = useQuery({
+    queryKey: ["domainTree"],
+    queryFn: () => domainsApi.getTree(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const domainTree = useMemo(() => {
+    if (!domainTreeRaw) return [];
+    if (Array.isArray(domainTreeRaw)) return domainTreeRaw;
+    if (domainTreeRaw && 'domains' in domainTreeRaw && Array.isArray((domainTreeRaw as any).domains)) {
+      return (domainTreeRaw as any).domains;
+    }
+    return [];
+  }, [domainTreeRaw]);
+
+  const hasCheckedUncategorized = useRef(false);
+
+  useEffect(() => {
+    if (hasCheckedUncategorized.current) return;
+    if (domainTree && !domainTree.some((d: DomainTreeNode) => d.name === '未分类')) {
+      hasCheckedUncategorized.current = true;
+      domainsApi.ensureUncategorized().catch(() => {});
+    }
+  }, [domainTree]);
+
   const graphs = useMemo(() => mapData?.graphs || [], [mapData?.graphs]);
   const relations = useMemo(
     () => mapData?.relations || [],
     [mapData?.relations],
   );
+
+  // 构建领域 ID -> 颜色 映射
+  const domainColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+
+    function flattenDomains(nodes: DomainTreeNode[]) {
+      nodes.forEach(node => {
+        map.set(node.id, node.color);
+        if (node.children?.length) {
+          flattenDomains(node.children);
+        }
+      });
+    }
+
+    if (domainTree) {
+      flattenDomains(domainTree);
+    }
+    return map;
+  }, [domainTree]);
+
+  // 构建领域 ID -> {name, color} 映射（用于内部逻辑）
+  const domainIdToInfo = useMemo(() => {
+    const map = new Map<string, { name: string; color: string }>();
+
+    function flattenDomains(nodes: DomainTreeNode[]) {
+      nodes.forEach(node => {
+        map.set(node.id, { name: node.name, color: node.color });
+        if (node.children?.length) {
+          flattenDomains(node.children);
+        }
+      });
+    }
+
+    if (domainTree) {
+      flattenDomains(domainTree);
+    }
+    return map;
+  }, [domainTree]);
+
+  // 构建 graphId -> 其所属领域ID集合的映射
+  const graphDomainMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+
+    graphs.forEach((graph: Graph) => {
+      const domainIds = (graph as any).domainIds || [];
+      if (domainIds.length > 0) {
+        map.set(graph.id, new Set(domainIds));
+      } else if (graph.domain) {
+        // 回退：通过名称匹配（兼容旧数据）
+        const matchedId = Array.from(domainIdToInfo.entries()).find(
+          ([, info]) => info.name === graph.domain
+        )?.[0];
+        if (matchedId) {
+          map.set(graph.id, new Set([matchedId]));
+        }
+      }
+    });
+
+    return map;
+  }, [graphs, domainIdToInfo]);
+
+  // 领域筛选变更处理
+  const handleDomainSelectionChange = useCallback((ids: Set<string>) => {
+    setSelectedDomainIds(ids);
+  }, []);
 
   const fromGraph = graphs.find((g: Graph) => g.id === fromGraphId);
 
@@ -249,6 +362,47 @@ export const GraphMap = () => {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "批量删除失败";
       addMessage({ type: "error", content: message });
+    }
+  }, [multiSelectedGraphIds, addMessage, queryClient]);
+
+  const handleBatchSetDomain = useCallback(async (domainId: string) => {
+    const ids = Array.from(multiSelectedGraphIds);
+    if (ids.length === 0) return;
+
+    setIsBatchSettingDomain(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const graphId of ids) {
+        try {
+          await graphDomainsApi.updateByGraphId(graphId, [{ domain_id: domainId }]);
+          successCount++;
+        } catch (error) {
+          failCount++;
+        }
+      }
+
+      if (failCount === 0) {
+        addMessage({ type: "success", content: `成功为 ${successCount} 个图谱设置领域` });
+      } else if (successCount > 0) {
+        addMessage({
+          type: "warning",
+          content: `部分完成：${successCount} 个成功，${failCount} 个失败`,
+        });
+      } else {
+        addMessage({ type: "error", content: `批量设置领域失败` });
+      }
+
+      setMultiSelectedGraphIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ["graphMap"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      setIsBatchDomainPickerOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "批量设置领域失败";
+      addMessage({ type: "error", content: message });
+    } finally {
+      setIsBatchSettingDomain(false);
     }
   }, [multiSelectedGraphIds, addMessage, queryClient]);
 
@@ -688,6 +842,7 @@ export const GraphMap = () => {
   }, []);
 
   return (
+    <>
     <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-slate-900 overflow-hidden">
       <GraphMapToolbar
         onBack={() => navigate("/dashboard")}
@@ -714,6 +869,10 @@ export const GraphMap = () => {
         onReturnToGraph={() => navigate(`/graph/${fromGraphId}`)}
         analysisMode={analysisMode}
         onAnalysisModeChange={setAnalysisMode}
+        domains={domainTree || []}
+        selectedDomainIds={selectedDomainIds}
+        onDomainSelectionChange={handleDomainSelectionChange}
+        onManageDomains={() => setShowDomainManager(true)}
       />
 
       <div className="flex-1 relative">
@@ -730,6 +889,9 @@ export const GraphMap = () => {
             multiSelectedGraphIds={multiSelectedGraphIds}
             onMultiSelectGraph={handleMultiSelectGraph}
             onBoxSelection={handleBoxSelection}
+            selectedDomainIds={selectedDomainIds}
+            domainColorMap={domainColorMap}
+            graphDomainMap={graphDomainMap}
           />
         </Suspense>
 
@@ -1469,6 +1631,7 @@ export const GraphMap = () => {
           onBatchCreateRelation={handleBatchCreateRelation}
           onBatchAnalyze={handleBatchAnalyze}
           onBatchDelete={handleBatchDelete}
+          onBatchSetDomain={() => setIsBatchDomainPickerOpen(true)}
           onClearSelection={clearMultiSelection}
         />
       </Suspense>
@@ -1487,6 +1650,58 @@ export const GraphMap = () => {
           }}
         />
       </Suspense>
+
+      {isBatchDomainPickerOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4">
+            <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">
+              批量设置领域
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              为选中的 {multiSelectedGraphIds.size} 个图谱设置领域
+            </p>
+            {isBatchSettingDomain ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+              </div>
+            ) : (
+              <>
+                <div className="max-h-[300px] overflow-y-auto space-y-1">
+                  {domainTree.map((domain: DomainTreeNode) => (
+                    <button
+                      key={domain.id}
+                      onClick={() => handleBatchSetDomain(domain.id)}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-left"
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: domain.color }}
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {domain.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                  <button
+                    onClick={() => setIsBatchDomainPickerOpen(false)}
+                    className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  >
+                    取消
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+
+    <DomainManager
+      isOpen={showDomainManager}
+      onClose={() => setShowDomainManager(false)}
+    />
+    </>
   );
 };

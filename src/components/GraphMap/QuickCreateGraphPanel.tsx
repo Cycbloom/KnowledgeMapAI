@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Sparkles, ArrowRight, AlertCircle, Settings } from 'lucide-react';
+import { X, Loader2, Sparkles, ArrowRight, AlertCircle, Settings, Check } from 'lucide-react';
 import type { GraphRelationType, QuickCreateGraphRequest } from '../../types';
+import type { DomainTreeNode } from '@shared/types/graph';
 import { useTopicCheck } from "../../hooks";
 import { PromptConfigPanel } from '../PromptConfig';
 
@@ -12,6 +13,7 @@ interface QuickCreateGraphPanelProps {
   relatedGraphId?: string;
   relatedGraphTitle?: string;
   defaultRelationType?: GraphRelationType;
+  domains?: DomainTreeNode[];
 }
 
 export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
@@ -21,11 +23,13 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   relatedGraphId,
   relatedGraphTitle,
   defaultRelationType = 'related',
+  domains,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [relationType, setRelationType] = useState<GraphRelationType>(defaultRelationType);
   const [autoGenerate, setAutoGenerate] = useState(false);
+  const [selectedDomainIds, setSelectedDomainIds] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPromptConfig, setShowPromptConfig] = useState(false);
 
@@ -44,6 +48,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
       setTitle('');
       setDescription('');
       setAutoGenerate(false);
+      setSelectedDomainIds(new Set());
       resetTopicCheck();
     }
   }, [isOpen, resetTopicCheck]);
@@ -61,11 +66,15 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
           type: relationType,
         } : undefined,
         auto_generate_content: autoGenerate,
+        domains: selectedDomainIds.size > 0
+          ? Array.from(selectedDomainIds).map(id => ({ domain_id: id }))
+          : undefined,
       });
       onClose();
       setTitle('');
       setDescription('');
       setAutoGenerate(false);
+      setSelectedDomainIds(new Set());
       resetTopicCheck();
     } catch (error) {
       console.error('Failed to create graph:', error);
@@ -219,6 +228,41 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                 <span>使用 AI 自动生成初始内容</span>
               </label>
             </div>
+
+            {domains && domains.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  所属领域（可选）
+                </label>
+                <div className="max-h-[160px] overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-1.5 space-y-0.5">
+                  {domains.map((domain) => {
+                    const isSelected = selectedDomainIds.has(domain.id);
+                    return (
+                      <button
+                        key={domain.id}
+                        onClick={() => {
+                          const next = new Set(selectedDomainIds);
+                          if (isSelected) next.delete(domain.id);
+                          else next.add(domain.id);
+                          setSelectedDomainIds(next);
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-600'
+                        }`}
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: domain.color || '#94A3B8' }} />
+                        <span className="flex-1 text-left truncate">{domain.name}</span>
+                        {isSelected && (
+                          <Check className="w-4 h-4 flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900/50">

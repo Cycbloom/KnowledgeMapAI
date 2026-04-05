@@ -62,6 +62,40 @@ COMMENT ON COLUMN knowledge_graphs.reference_books IS '参考书籍列表，结�
 COMMENT ON COLUMN knowledge_graphs.external_links IS '外部链接列表，结构: [{"title": "链接标题", "url": "链接地址", "type": "article|video|course|tool|other", "description": "简介"}]';
 COMMENT ON COLUMN knowledge_graphs.learning_guide IS '学习指南/建议，支持 Markdown 格式';
 
+-- Domains table (知识领域表 - 支持层级结构)
+CREATE TABLE IF NOT EXISTS domains (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  color VARCHAR(7) DEFAULT '#6366F1',
+  icon VARCHAR(50),
+  parent_id UUID REFERENCES domains(id) ON DELETE SET NULL,
+  sort_order INTEGER DEFAULT 0,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  is_system BOOLEAN DEFAULT FALSE,
+  deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+COMMENT ON TABLE domains IS '知识领域表，支持树形层级结构';
+COMMENT ON COLUMN domains.name IS '领域名称';
+COMMENT ON COLUMN domains.color IS '领域颜色（HEX格式），用于UI展示和背景着色';
+COMMENT ON COLUMN domains.parent_id IS '父领域ID，为null时表示顶级领域';
+COMMENT ON COLUMN domains.is_system IS '是否为系统预置领域';
+
+-- Graph-Domains association table (图谱-领域多对多关联)
+CREATE TABLE IF NOT EXISTS graph_domains (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  graph_id UUID NOT NULL REFERENCES knowledge_graphs(id) ON DELETE CASCADE,
+  domain_id UUID NOT NULL REFERENCES domains(id) ON DELETE CASCADE,
+  is_primary BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+COMMENT ON TABLE graph_domains IS '图谱与领域的多对多关联表';
+COMMENT ON COLUMN graph_domains.is_primary IS '是否为主领域（用于向后兼容旧的domain字段）';
+
 -- Knowledge points table (独立的知识点实体)
 CREATE TABLE IF NOT EXISTS knowledge_points (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1866,6 +1900,16 @@ COMMENT ON COLUMN notification_settings.deadline_reminder_minutes IS 'Minutes be
 -- INDEXES (continued)
 -- =====================================================
 
+-- Domains
+CREATE UNIQUE INDEX IF NOT EXISTS idx_domains_name_user_deleted ON domains(name, user_id, deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_domains_parent_id ON domains(parent_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_domains_user_id ON domains(user_id) WHERE deleted_at IS NULL;
+
+-- Graph-Domains
+CREATE UNIQUE INDEX IF NOT EXISTS idx_graph_domains_graph_domain ON graph_domains(graph_id, domain_id);
+CREATE INDEX IF NOT EXISTS idx_graph_domains_graph_id ON graph_domains(graph_id);
+CREATE INDEX IF NOT EXISTS idx_graph_domains_domain_id ON graph_domains(domain_id);
+
 -- Notifications
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications(read_at);
@@ -1875,6 +1919,27 @@ CREATE INDEX IF NOT EXISTS idx_notification_settings_user_id ON notification_set
 -- =====================================================
 -- RLS POLICIES (continued)
 -- =====================================================
+
+-- Domains RLS
+ALTER TABLE domains ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own or system domains" ON domains FOR SELECT USING (
+  auth.uid() = user_id OR is_system = TRUE
+);
+CREATE POLICY "Users can insert own domains" ON domains FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own domains" ON domains FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own non-system domains" ON domains FOR DELETE USING (auth.uid() = user_id AND is_system = FALSE);
+
+-- Graph-Domains RLS (通过图谱权限间接控制)
+ALTER TABLE graph_domains ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view graph domains for accessible graphs" ON graph_domains FOR SELECT USING (
+  EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_domains.graph_id AND (user_id = auth.uid() OR is_public = TRUE))
+);
+CREATE POLICY "Users can insert graph domains for own graphs" ON graph_domains FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_domains.graph_id AND user_id = auth.uid())
+);
+CREATE POLICY "Users can delete graph domains for own graphs" ON graph_domains FOR DELETE USING (
+  EXISTS (SELECT 1 FROM knowledge_graphs WHERE id = graph_domains.graph_id AND user_id = auth.uid())
+);
 
 -- Notifications
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;

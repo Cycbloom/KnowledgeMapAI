@@ -19,6 +19,8 @@ export { backupApi } from './backup';
 export { quizApi } from './quiz';
 export { agentApi } from './agent';
 export { schedulerApi } from './modules/scheduler';
+export { performanceApi } from './performance';
+export { domainsApi, graphDomainsApi } from './domains';
 
 import { authApi } from './auth';
 import { graphsApi } from './graphs';
@@ -37,6 +39,8 @@ import { backupApi } from './backup';
 import { quizApi } from './quiz';
 import { agentApi } from './agent';
 import { schedulerApi } from './modules/scheduler';
+import { performanceApi } from './performance';
+import { domainsApi, graphDomainsApi } from './domains';
 
 export const api = {
   auth: authApi,
@@ -69,6 +73,9 @@ export const api = {
   quiz: quizApi,
   agent: agentApi,
   scheduler: schedulerApi,
+  performance: performanceApi,
+  domains: domainsApi,
+  graphDomains: graphDomainsApi,
 };
 
 export type {

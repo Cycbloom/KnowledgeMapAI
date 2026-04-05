@@ -55,6 +55,9 @@ interface GraphMapCanvasProps {
     isRangeSelect?: boolean,
   ) => void;
   onBoxSelection?: (graphIds: string[]) => void;
+  selectedDomainIds?: Set<string>;
+  domainColorMap?: Map<string, string>;
+  graphDomainMap?: Map<string, Set<string>>;
 }
 
 interface Transform {
@@ -82,9 +85,14 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
       multiSelectedGraphIds,
       onMultiSelectGraph,
       onBoxSelection,
+      selectedDomainIds = new Set(),
+      domainColorMap = new Map(),
+      graphDomainMap = new Map(),
     },
     ref,
   ) => {
+    void domainColorMap;
+
     const { isDark } = useTheme();
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -180,6 +188,48 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
         domainGroups,
       });
     }, [nodes, edges, containerSize, graphs]);
+
+    const nodeHighlightState = useMemo(() => {
+      const state = new Map<string, boolean>();
+      if (!layout) return state;
+
+      if (selectedDomainIds.size === 0) {
+        layout.nodes.forEach((node) => state.set(node.id, true));
+        return state;
+      }
+
+      layout.nodes.forEach((node) => {
+        const nodeDomains = graphDomainMap.get(node.id);
+        const isHighlighted = nodeDomains
+          ? [...nodeDomains].some((dId) => selectedDomainIds.has(dId))
+          : false;
+        state.set(node.id, isHighlighted);
+      });
+
+      return state;
+    }, [layout, selectedDomainIds, graphDomainMap]);
+
+    const linkHighlightState = useMemo(() => {
+      const state = new Map<string, boolean>();
+      if (!layout) return state;
+
+      if (selectedDomainIds.size === 0) {
+        layout.links.forEach((link) => state.set(link.id, true));
+        return state;
+      }
+
+      layout.links.forEach((link) => {
+        const sourceId =
+          typeof link.source === "string" ? link.source : link.source.id;
+        const targetId =
+          typeof link.target === "string" ? link.target : link.target.id;
+        const sourceHighlighted = nodeHighlightState.get(sourceId) ?? false;
+        const targetHighlighted = nodeHighlightState.get(targetId) ?? false;
+        state.set(link.id, sourceHighlighted && targetHighlighted);
+      });
+
+      return state;
+    }, [layout, nodeHighlightState]);
 
     const nodeMap = useMemo(
       () => (layout ? new Map(layout.nodes.map((n) => [n.id, n])) : new Map()),
@@ -779,9 +829,9 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
                   link={link}
                   nodes={nodeMap}
                   isDark={isDark}
-                  highlighted={false}
+                  highlighted={linkHighlightState.get(link.id) || false}
                   focused={isFocused}
-                  hasFocusMode={hasFocus}
+                  hasFocusMode={hasFocus || selectedDomainIds.size > 0}
                   linkStyle={linkStyle}
                   linkAnimation={linkAnimation}
                   customColor={edgeColor}
@@ -794,56 +844,65 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
                 ? neighborGraphIds.has(node.id)
                 : false;
               const hasFocus = focusedGraphId !== null;
+              const isNodeHighlighted = nodeHighlightState.get(node.id) ?? true;
 
               return (
-                <MindMapNode
-                  key={node.id}
-                  node={node}
-                  edges={edges}
-                  selected={node.id === selectedGraphId}
-                  multiSelected={multiSelectedGraphIds?.has(node.id) || false}
-                  isDark={isDark}
-                  zoomLevel={transform.k}
-                  onClick={(e) => {
-                    if (graph) {
-                      const isMultiSelect = e?.ctrlKey || e?.metaKey || false;
-                      const isRangeSelect = e?.shiftKey || false;
-                      if (
-                        (isMultiSelect || isRangeSelect) &&
-                        onMultiSelectGraph
-                      ) {
-                        onMultiSelectGraph(
-                          node.id,
-                          isMultiSelect,
-                          isRangeSelect,
-                        );
-                      } else if (
-                        !isMultiSelect &&
-                        !isRangeSelect &&
-                        onGraphClick
-                      ) {
-                        onGraphClick(graph);
-                        setFocusedGraphId(node.id);
-
-                        const visualCenterX = containerSize.width / 2;
-                        const visualCenterY = containerSize.height / 2;
-                        const targetK = transformRef.current.k;
-                        const targetX = visualCenterX - node.x * targetK;
-                        const targetY = visualCenterY - node.y * targetK;
-                        animateCamera(targetX, targetY, targetK, 400);
-                      }
-                    }
+                <g
+                  style={{
+                    opacity: isNodeHighlighted ? 1 : 0.3,
+                    transition: "opacity 0.3s ease",
+                    pointerEvents: isNodeHighlighted ? "auto" : "none",
                   }}
-                  onMouseEnter={() => _setHoveredNodeId(node.id)}
-                  onMouseLeave={() => _setHoveredNodeId(null)}
-                  focused={isFocused}
-                  forceShowText={true}
-                  hasFocusMode={hasFocus}
-                  colorScheme={colorScheme}
-                  nodeSizeMode="fixed"
-                  allNodes={nodes}
-                  coloringMode="level"
-                />
+                >
+                  <MindMapNode
+                    key={node.id}
+                    node={node}
+                    edges={edges}
+                    selected={node.id === selectedGraphId}
+                    multiSelected={multiSelectedGraphIds?.has(node.id) || false}
+                    isDark={isDark}
+                    zoomLevel={transform.k}
+                    onClick={(e) => {
+                      if (graph) {
+                        const isMultiSelect = e?.ctrlKey || e?.metaKey || false;
+                        const isRangeSelect = e?.shiftKey || false;
+                        if (
+                          (isMultiSelect || isRangeSelect) &&
+                          onMultiSelectGraph
+                        ) {
+                          onMultiSelectGraph(
+                            node.id,
+                            isMultiSelect,
+                            isRangeSelect,
+                          );
+                        } else if (
+                          !isMultiSelect &&
+                          !isRangeSelect &&
+                          onGraphClick
+                        ) {
+                          onGraphClick(graph);
+                          setFocusedGraphId(node.id);
+
+                          const visualCenterX = containerSize.width / 2;
+                          const visualCenterY = containerSize.height / 2;
+                          const targetK = transformRef.current.k;
+                          const targetX = visualCenterX - node.x * targetK;
+                          const targetY = visualCenterY - node.y * targetK;
+                          animateCamera(targetX, targetY, targetK, 400);
+                        }
+                      }
+                    }}
+                    onMouseEnter={() => _setHoveredNodeId(node.id)}
+                    onMouseLeave={() => _setHoveredNodeId(null)}
+                    focused={isFocused}
+                    forceShowText={true}
+                    hasFocusMode={hasFocus}
+                    colorScheme={colorScheme}
+                    nodeSizeMode="fixed"
+                    allNodes={nodes}
+                    coloringMode="level"
+                  />
+                </g>
               );
             })}
           </g>

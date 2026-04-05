@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Terminal, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Terminal, Clock, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 import { useTheme } from '@/hooks';
 import { commandRegistry, type CommandResult, type CommandContext } from '@/services/console';
 import { useConsoleStore } from '@/store/useConsoleStore';
@@ -8,6 +8,9 @@ import { ConsoleInput, type ConsoleInputRef } from './ConsoleInput';
 import { ConsoleOutput, type ConsoleOutputRef } from './ConsoleOutput';
 import { ConsoleHistory } from './ConsoleHistory';
 import { ConfirmDialog, type ConfirmDialogType } from './ConfirmDialog';
+import { PerformanceTab } from './PerformanceTab';
+
+type TabType = 'console' | 'performance';
 
 interface ConsoleProps {
   isOpen: boolean;
@@ -44,6 +47,7 @@ export const Console: React.FC<ConsoleProps> = ({
   } = useConsoleStore();
   
   const [showHistoryPanel, setShowHistoryPanel] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState<TabType>('console');
   const outputRef = useRef<ConsoleOutputRef>(null);
   const inputRef = useRef<ConsoleInputRef>(null);
   const consoleRef = useRef<HTMLDivElement>(null);
@@ -199,33 +203,48 @@ export const Console: React.FC<ConsoleProps> = ({
             }`}
           >
             <div
-              className={`flex items-center justify-between px-4 py-3 border-b cursor-move select-none ${
+              className={`flex items-center justify-between px-4 py-2 border-b cursor-move select-none ${
                 isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-gray-50'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <Terminal size={18} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
-                <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-                  控制台
-                </span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  isDark ? 'bg-slate-700 text-slate-400' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  Ctrl+Shift+C
-                </span>
-              </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setShowHistoryPanel(!showHistoryPanel)}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    showHistoryPanel
+                  onClick={() => setActiveTab('console')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'console'
                       ? isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-800'
-                      : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                      : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
-                  title="历史记录"
                 >
-                  <Clock size={16} />
+                  <Terminal size={14} />
+                  控制台
                 </button>
+                <button
+                  onClick={() => setActiveTab('performance')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'performance'
+                      ? isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-800'
+                      : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Activity size={14} />
+                  性能
+                </button>
+              </div>
+              <div className="flex items-center gap-1">
+                {activeTab === 'console' && (
+                  <button
+                    onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      showHistoryPanel
+                        ? isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-800'
+                        : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                    }`}
+                    title="历史记录"
+                  >
+                    <Clock size={16} />
+                  </button>
+                )}
                 {onToggleMinimize && (
                   <button
                     onClick={onToggleMinimize}
@@ -250,43 +269,49 @@ export const Console: React.FC<ConsoleProps> = ({
             </div>
 
             <div className="flex flex-1 min-h-0">
-              <div className={`flex-1 flex flex-col min-w-0 ${showHistoryPanel ? 'border-r' : ''} ${
-                isDark ? 'border-slate-700' : 'border-gray-200'
-              }`}>
-                <ConsoleOutput
-                  ref={outputRef}
-                  output={output}
-                  isDark={isDark}
-                  onClear={handleClearOutput}
-                />
-                <ConsoleInput
-                  ref={inputRef}
-                  value={input}
-                  onChange={setInput}
-                  onSubmit={executeCommand}
-                  isDark={isDark}
-                  isLoading={isLoading}
-                />
-              </div>
-
-              <AnimatePresence>
-                {showHistoryPanel && (
-                  <motion.div
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 200, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <ConsoleHistory
-                      history={history}
-                      onSelect={handleHistorySelect}
-                      onClear={clearHistory}
+              {activeTab === 'console' ? (
+                <>
+                  <div className={`flex-1 flex flex-col min-w-0 ${showHistoryPanel ? 'border-r' : ''} ${
+                    isDark ? 'border-slate-700' : 'border-gray-200'
+                  }`}>
+                    <ConsoleOutput
+                      ref={outputRef}
+                      output={output}
                       isDark={isDark}
+                      onClear={handleClearOutput}
                     />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <ConsoleInput
+                      ref={inputRef}
+                      value={input}
+                      onChange={setInput}
+                      onSubmit={executeCommand}
+                      isDark={isDark}
+                      isLoading={isLoading}
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {showHistoryPanel && (
+                      <motion.div
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: 200, opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <ConsoleHistory
+                          history={history}
+                          onSelect={handleHistorySelect}
+                          onClear={clearHistory}
+                          isDark={isDark}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                <PerformanceTab isDark={isDark} />
+              )}
             </div>
           </motion.div>
         )}

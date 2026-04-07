@@ -1,7 +1,10 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, CheckCircle, XCircle, Info, Trash2 } from 'lucide-react';
+import { ChevronRight, CheckCircle, XCircle, Info, Trash2, ChevronUp } from 'lucide-react';
 import type { CommandResult } from '@/services/console';
+
+const INITIAL_VISIBLE_COUNT = 20;
+const LOAD_MORE_COUNT = 50;
 
 interface OutputItem {
   type: 'input' | 'output';
@@ -39,6 +42,141 @@ const formatValue = (value: unknown, indent: number = 0): string => {
     return `{\n${indentStr}  ${items.join(`,\n${indentStr}  `)}\n${indentStr}}`;
   }
   return String(value);
+};
+
+interface ParsedAsciiTable {
+  headers: string[];
+  rows: string[][];
+  isSubRow?: boolean[];
+}
+
+const TABLE_BORDER_CHARS = '│─┌┐└┘├┤┬┴┼';
+
+const isAsciiTableLine = (line: string): boolean => {
+  return [...TABLE_BORDER_CHARS].some((char) => line.includes(char));
+};
+
+const isTableBorderOnly = (line: string): boolean => {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  const nonBorderChars = trimmed.replace(new RegExp(`[${TABLE_BORDER_CHARS}\\s]`, 'g'), '');
+  return nonBorderChars.length === 0;
+};
+
+const isSubRowLine = (cells: string[]): boolean => {
+  if (cells.length === 0) return false;
+  const firstCell = cells[0].trim();
+  return firstCell.startsWith('└') || firstCell.startsWith('├') ||
+    /^\s{2,}[└├▸→·]/.test(firstCell);
+};
+
+const parseAsciiTable = (text: string): ParsedAsciiTable | null => {
+  const lines = text.split('\n').filter((l) => l.trim() && isAsciiTableLine(l));
+  if (lines.length < 2) return null;
+
+  const dataLines = lines.filter((l) => !isTableBorderOnly(l));
+  if (dataLines.length < 1) return null;
+
+  const parseCells = (line: string): string[] => {
+    return line.split('│')
+      .map((cell) => cell.trim().replace(/^[─┌├└┬┴┼┤┐┘│]+|[─┌├└┬┴┼┤┐┘│]+$/g, '').trim())
+      .filter((cell) => cell !== '');
+  };
+
+  const allRows = dataLines.map(parseCells);
+  if (allRows.length < 1 || allRows.some((r) => r.length === 0)) return null;
+
+  const colCount = Math.max(...allRows.map((r) => r.length));
+  if (colCount < 2) return null;
+
+  const headers = allRows[0];
+  const dataRows = allRows.slice(1).filter((r) => r.length > 0);
+  const isSubRowFlags = dataRows.map((row) => isSubRowLine(row));
+
+  return { headers, rows: dataRows, isSubRow: isSubRowFlags };
+};
+
+const renderAsciiTableHtml = (table: ParsedAsciiTable, isDark: boolean): React.ReactNode => {
+  const { headers, rows, isSubRow = [] } = table;
+  return (
+    <div className={`overflow-x-auto rounded-lg my-2 ${isDark ? 'border-2 border-blue-500/40 shadow-lg shadow-blue-500/10' : 'border-2 border-blue-300 shadow-md'}`}>
+      <table className="min-w-full text-sm">
+        <thead className={isDark ? 'bg-slate-800/90' : 'bg-gray-100'}>
+          <tr>
+            {headers.map((header, i) => (
+              <th key={i} className={`px-3 py-1.5 text-left font-semibold text-xs uppercase tracking-wide ${isDark ? 'text-blue-300 border-b border-blue-500/30' : 'text-blue-700 border-b border-blue-200'} whitespace-nowrap`}>
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className={isDark ? 'divide-y divide-slate-600/50' : 'divide-y divide-gray-300'}>
+          {rows.map((row, rowIndex) => {
+            const isSub = isSubRow[rowIndex] ?? false;
+            return (
+              <tr key={rowIndex} className={`transition-colors ${
+                isSub
+                  ? (isDark ? 'bg-slate-800/30 hover:bg-slate-700/30' : 'bg-gray-50/80 hover:bg-gray-100')
+                  : (isDark ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50')
+              }`}>
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex} className={`px-3 py-1.5 text-xs font-mono whitespace-nowrap ${
+                    isSub
+                      ? (isDark ? 'text-slate-400 italic pl-6' : 'text-gray-500 italic pl-6')
+                      : (isDark ? 'text-slate-200' : 'text-gray-700')
+                  }`}>
+                    {cell.replace(/^[└├▸→·]\s*/, '')}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const renderFormattedContent = (content: string, isDark: boolean): React.ReactNode => {
+  const table = parseAsciiTable(content);
+  if (table) {
+    const parts = content.split('\n');
+    const nonTableLines: React.ReactNode[] = [];
+    let tableRendered = false;
+
+    for (let i = 0; i < parts.length; i++) {
+      const line = parts[i];
+      if (!isAsciiTableLine(line)) {
+        if (line.trim()) {
+          nonTableLines.push(
+            <span key={i} className="block">{line}</span>
+          );
+        } else {
+          nonTableLines.push(<br key={i} />);
+        }
+      } else if (!tableRendered) {
+        nonTableLines.push(
+          <span key={'table-' + i}>
+            {renderAsciiTableHtml(table, isDark)}
+          </span>
+        );
+        tableRendered = true;
+        while (i + 1 < parts.length && isAsciiTableLine(parts[i + 1])) i++;
+      }
+    }
+
+    return (
+      <div className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+        {nonTableLines}
+      </div>
+    );
+  }
+
+  return (
+    <span className={`text-sm whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+      {content}
+    </span>
+  );
 };
 
 const renderTable = (data: Record<string, unknown>[], isDark: boolean): React.ReactNode => {
@@ -119,6 +257,10 @@ const OutputItemComponent: React.FC<{
       );
     }
 
+    if (item.content) {
+      return renderFormattedContent(item.content, isDark);
+    }
+
     if (hasData) {
       const data = result.data;
 
@@ -139,14 +281,6 @@ const OutputItemComponent: React.FC<{
       return (
         <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
           {String(data)}
-        </span>
-      );
-    }
-
-    if (item.content) {
-      return (
-        <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          {item.content}
         </span>
       );
     }
@@ -196,14 +330,84 @@ const OutputItemComponent: React.FC<{
 export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
   ({ output, isDark, onClear }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+    const prevOutputLengthRef = useRef(0);
+    const isLoadingMoreRef = useRef(false);
+
+    const hasMoreLogs = output.length > visibleCount;
+    const visibleOutput = output.slice(-visibleCount);
+    const hiddenCount = output.length - visibleCount;
 
     useImperativeHandle(ref, () => ({
       scrollToBottom: () => {
         if (containerRef.current) {
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
+        setIsAtBottom(true);
       },
     }));
+
+    useEffect(() => {
+      if (output.length > prevOutputLengthRef.current && !isLoadingMoreRef.current) {
+        setVisibleCount((prev) => {
+          const newCount = Math.max(prev, INITIAL_VISIBLE_COUNT);
+          if (output.length <= newCount) return newCount;
+          return output.length;
+        });
+        setIsAtBottom(true);
+        setTimeout(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          }
+        }, 0);
+      }
+      prevOutputLengthRef.current = output.length;
+    }, [output.length]);
+
+    useEffect(() => {
+      if (isAtBottom && containerRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      }
+    }, [visibleOutput, isAtBottom]);
+
+    const loadMore = useCallback(() => {
+      if (!hasMoreLogs || isLoadingMoreRef.current) return;
+
+      isLoadingMoreRef.current = true;
+      const currentScrollHeight = containerRef.current?.scrollHeight ?? 0;
+      const currentScrollTop = containerRef.current?.scrollTop ?? 0;
+
+      setVisibleCount((prev) => Math.min(prev + LOAD_MORE_COUNT, output.length));
+
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          const newScrollHeight = containerRef.current.scrollHeight;
+          containerRef.current.scrollTop = currentScrollTop + (newScrollHeight - currentScrollHeight);
+        }
+        isLoadingMoreRef.current = false;
+      });
+    }, [hasMoreLogs, output.length]);
+
+    const handleScroll = useCallback(() => {
+      if (!containerRef.current || isLoadingMoreRef.current) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+      const atBottom = scrollHeight - scrollTop - clientHeight < 10;
+      setIsAtBottom(atBottom);
+
+      if (scrollTop < 50 && hasMoreLogs && !isLoadingMoreRef.current) {
+        loadMore();
+      }
+    }, [hasMoreLogs, loadMore]);
+
+    useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      container.addEventListener('scroll', handleScroll, { passive: true });
+      return () => container.removeEventListener('scroll', handleScroll);
+    }, [handleScroll]);
 
     return (
       <div className="relative flex-1 min-h-0">
@@ -234,15 +438,32 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
               <p className="text-xs mt-1 opacity-75">Tab 补全 · Ctrl+R 搜索历史 · Esc 关闭</p>
             </div>
           ) : (
-            <div className="space-y-1">
-              {output.map((item, index) => (
-                <OutputItemComponent
-                  key={index}
-                  item={item}
-                  isDark={isDark}
-                  index={index}
-                />
-              ))}
+            <div>
+              {hasMoreLogs && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className={`flex items-center justify-center gap-1.5 py-2 mx-4 mb-1 rounded-md text-xs cursor-pointer transition-colors ${
+                    isDark
+                      ? 'bg-slate-800/80 text-slate-400 hover:bg-slate-700 hover:text-slate-300'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-600'
+                  }`}
+                  onClick={loadMore}
+                >
+                  <ChevronUp size={12} />
+                  <span>向上滚动查看更多历史记录 ({hiddenCount} 条)</span>
+                </motion.div>
+              )}
+              <div className="space-y-1">
+                {visibleOutput.map((item, index) => (
+                  <OutputItemComponent
+                    key={output.indexOf(item)}
+                    item={item}
+                    isDark={isDark}
+                    index={index}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>

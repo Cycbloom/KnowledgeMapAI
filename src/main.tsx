@@ -11,7 +11,7 @@ import { initCsrf } from './services/api'
 import './index.css'
 import 'katex/dist/katex.min.css'
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,

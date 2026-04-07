@@ -40,24 +40,38 @@ const handleHelp = async (args: ParsedArgs, _context: CommandContext): Promise<C
     permission: cmd.permission,
   }));
 
-  let helpText = `${APP_NAME} - 可用命令\n`;
-  helpText += '='.repeat(50) + '\n\n';
+  const permissionBadge = (perm: string): string => {
+    switch (perm) {
+      case 'safe': return '🟢';
+      case 'warning': return '🟡';
+      case 'danger': return '🔴';
+      default: return '⚪';
+    }
+  };
+
+  let helpText = `📖 ${APP_NAME}\n\n`;
+  helpText += `┌────────────────────┬──────────────────────────────┬─────┐\n`;
+  helpText += `│ 命令               │ 描述                          │ 级别│\n`;
+  helpText += `├────────────────────┼──────────────────────────────┼─────┤\n`;
 
   for (const cmd of commands) {
-    helpText += `  ${cmd.name.padEnd(15)} - ${cmd.description}\n`;
+    const nameCol = cmd.name.padEnd(20);
+    const descCol = (cmd.description || '').padEnd(30);
+    helpText += `│ ${nameCol} │ ${descCol} │ ${permissionBadge(cmd.permission)}   │\n`;
 
     if (cmd.subcommands && cmd.subcommands.length > 0) {
       for (const sub of cmd.subcommands) {
-        helpText += `    ${(cmd.name + ' ' + sub.name).padEnd(13)} - ${sub.description}\n`;
+        const fullName = `${cmd.name} ${sub.name}`;
+        const subName = ('  └ ' + fullName).padEnd(20);
+        const subDesc = (sub.description || '').padEnd(30);
+        helpText += `│ ${subName} │ ${subDesc} │ ${permissionBadge(sub.permission || cmd.permission)}   │\n`;
       }
     }
   }
 
-  helpText += '\n使用 help <命令> 查看详细帮助\n';
-  helpText += '\n权限级别说明:\n';
-  helpText += '  safe    - 安全操作，可直接执行\n';
-  helpText += '  warning - 警告操作，需要确认\n';
-  helpText += '  danger  - 危险操作，需要输入确认文本\n';
+  helpText += `└────────────────────┴──────────────────────────────┴─────┘\n\n`;
+  helpText += `使用 help <命令> 查看详细帮助\n\n`;
+  helpText += `权限级别: 🟢安全  🟡警告  🔴危险`;
 
   return {
     success: true,
@@ -87,18 +101,26 @@ const handleHistory = async (args: ParsedArgs, _context: CommandContext): Promis
     success: item.result?.success ?? false,
   }));
 
-  let historyText = '命令历史\n';
-  historyText += '='.repeat(50) + '\n';
+  let historyText = '📜 命令历史\n\n';
 
   if (historyList.length === 0) {
-    historyText += '暂无命令历史\n';
+    historyText += '暂无命令历史记录';
   } else {
+    historyText += `┌────┬───────────────────────────────┬───────────┬──────┐\n`;
+    historyText += `│ #  │ 命令                          │ 时间      │ 状态  │\n`;
+    historyText += `├────┼───────────────────────────────┼───────────┼──────┤\n`;
+
     for (const item of historyList) {
-      const status = item.success ? '✓' : '✗';
-      historyText += `  ${status} ${item.index}. ${item.command}\n`;
+      const status = item.success ? '✅' : '❌';
+      const timeStr = new Date(item.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      const idx = String(item.index).padEnd(2);
+      const cmd = item.command.padEnd(31);
+      const time = timeStr.padEnd(9);
+      historyText += `│ ${idx} │ ${cmd} │ ${time} │ ${status}   │\n`;
     }
-    historyText += `\n共 ${historyList.length} 条命令\n`;
-    historyText += '使用 --clear 清除历史\n';
+
+    historyText += `└────┴───────────────────────────────┴───────────┴──────┘\n\n`;
+    historyText += `共 ${historyList.length} 条记录  ·  使用 --clear 清除历史`;
   }
 
   return {
@@ -128,7 +150,14 @@ const handleVersion = async (_args: ParsedArgs, _context: CommandContext): Promi
     platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown',
   };
 
-  const versionText = `${APP_NAME} v${VERSION}\n构建日期: ${versionInfo.buildDate}\n平台: ${versionInfo.platform}`;
+  let versionText = `📦 ${APP_NAME}\n\n`;
+  versionText += `┌──────────────┬─────────────────────┐\n`;
+  versionText += `│ 属性          │ 值                   │\n`;
+  versionText += `├──────────────┼─────────────────────┤\n`;
+  versionText += `│ 版本          │ v${VERSION.padEnd(19)}│\n`;
+  versionText += `│ 构建日期      │ ${versionInfo.buildDate.padEnd(13)}│\n`;
+  versionText += `│ 平台          │ ${versionInfo.platform.padEnd(13)}│\n`;
+  versionText += `└──────────────┴─────────────────────┘`;
 
   return {
     success: true,

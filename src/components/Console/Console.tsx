@@ -7,7 +7,7 @@ import { useConsoleStore } from '@/store/useConsoleStore';
 import { ConsoleInput, type ConsoleInputRef } from './ConsoleInput';
 import { ConsoleOutput, type ConsoleOutputRef } from './ConsoleOutput';
 import { ConsoleHistory } from './ConsoleHistory';
-import { ConfirmDialog, type ConfirmDialogType } from './ConfirmDialog';
+import { ConfirmDialog } from './ConfirmDialog';
 import { PerformanceTab } from './PerformanceTab';
 
 type TabType = 'console' | 'performance';
@@ -36,14 +36,16 @@ export const Console: React.FC<ConsoleProps> = ({
     output,
     isLoading,
     confirmState,
+    pendingConfirm,
     setIsOpen,
     addToHistory,
     clearHistory,
     addOutput,
     clearOutput,
     setIsLoading,
-    setConfirmState,
     cancelConfirm,
+    setPendingConfirm,
+    clearPendingConfirm,
   } = useConsoleStore();
   
   const [showHistoryPanel, setShowHistoryPanel] = React.useState(false);
@@ -101,24 +103,6 @@ export const Console: React.FC<ConsoleProps> = ({
     return cmd.permission;
   }, []);
 
-  const getConfirmMessage = useCallback((command: string, permission: 'safe' | 'warning' | 'danger'): string => {
-    const parts = command.trim().split(/\s+/);
-    const commandName = parts[0];
-    const subcommandName = parts[1];
-
-    let operation = command;
-    
-    if (subcommandName) {
-      operation = `${commandName} ${subcommandName}`;
-    }
-
-    if (permission === 'danger') {
-      return `您即将执行危险操作: "${operation}"\n\n此操作可能会造成不可逆的数据变更或删除，请确认您了解操作后果。`;
-    }
-
-    return `您即将执行警告操作: "${operation}"\n\n此操作可能会影响系统状态，请确认是否继续。`;
-  }, []);
-
   const executeCommandInternal = useCallback(async (command: string) => {
     if (!command.trim()) return;
 
@@ -140,26 +124,27 @@ export const Console: React.FC<ConsoleProps> = ({
     }
   }, [context, setInput, addOutput, addToHistory, setIsLoading]);
 
-  const showConfirmDialog = useCallback((
-    type: ConfirmDialogType,
-    command: string,
-    onConfirm: () => void
-  ) => {
-    const permission = getCommandPermission(command);
-    const message = getConfirmMessage(command, permission);
-
-    setConfirmState({
-      isOpen: true,
-      type,
-      title: type === 'danger' ? '危险操作确认' : '操作确认',
-      message,
-      confirmText: type === 'danger' ? 'CONFIRM' : undefined,
-      onConfirm,
-    });
-  }, [getCommandPermission, getConfirmMessage, setConfirmState]);
-
   const executeCommand = useCallback(async (command: string) => {
+    if (pendingConfirm.active) {
+      const answer = command.trim().toLowerCase();
+      if (answer === 'y' || answer === 'yes') {
+        addOutput({ type: 'input', content: 'y' });
+        pendingConfirm.onConfirm();
+        clearPendingConfirm();
+      } else {
+        addOutput({ type: 'input', content: command });
+        addOutput({ type: 'output', content: '❌ 操作已取消' });
+        pendingConfirm.onCancel();
+        clearPendingConfirm();
+      }
+      setInput('');
+      return;
+    }
+
     if (!command.trim()) return;
+
+    setInput('');
+    addOutput({ type: 'input', content: command });
 
     const permission = getCommandPermission(command);
 
@@ -168,13 +153,37 @@ export const Console: React.FC<ConsoleProps> = ({
       return;
     }
 
-    const confirmType: ConfirmDialogType = permission === 'danger' ? 'danger' : 'warning';
+    const confirmMessage = permission === 'danger'
+      ? `⚠️ 危险操作确认\n\n您即将执行: "${command}"\n此操作可能会造成不可逆的数据变更或删除。\n\n请输入 y 确认继续，n 取消操作。`
+      : `⚠️ 操作确认\n\n您即将执行: "${command}"\n\n请输入 y 确认继续，n 取消操作。`;
 
-    showConfirmDialog(confirmType, command, () => {
-      cancelConfirm();
-      executeCommandInternal(command);
+    addOutput({ type: 'output', content: confirmMessage });
+
+    setPendingConfirm({
+      active: true,
+      command,
+      message: confirmMessage,
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          const result = await commandRegistry.execute(command, context);
+          addOutput({ type: 'output', content: result.message || '', result });
+          addToHistory(command, result);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const result: CommandResult = { success: false, error: errorMessage };
+          addOutput({ type: 'output', content: errorMessage, result });
+          addToHistory(command, result);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      onCancel: () => {
+        addOutput({ type: 'output', content: '❌ 操作已取消' });
+      },
     });
-  }, [getCommandPermission, executeCommandInternal, showConfirmDialog, cancelConfirm]);
+    inputRef.current?.focus();
+  }, [pendingConfirm, executeCommandInternal, getCommandPermission, addOutput, addToHistory, setInput, setPendingConfirm, clearPendingConfirm, context, setIsLoading]);
 
   const handleHistorySelect = useCallback((command: string) => {
     setInput(command);
@@ -287,6 +296,8 @@ export const Console: React.FC<ConsoleProps> = ({
                       onSubmit={executeCommand}
                       isDark={isDark}
                       isLoading={isLoading}
+                      pendingConfirmActive={pendingConfirm.active}
+                      history={history}
                     />
                   </div>
 

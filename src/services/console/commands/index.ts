@@ -1,7 +1,7 @@
 export { graphCommands, graphCommand, nodeCommand } from './graph';
 export { taskCommands, taskCommand } from './task';
 export { aiCommands, aiCommand } from './ai';
-export { dataCommands, exportCommand, importCommand, backupCommand } from './data';
+export { dataCommands, exportCommand, importCommand, backupCommand, resetCommand } from './data';
 export { systemCommands, helpCommand, historyCommand, clearCommand, versionCommand, homeCommand, addToHistory, getHistory } from './system';
 export { auditCommands, auditCommand } from './audit';
 

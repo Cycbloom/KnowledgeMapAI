@@ -246,4 +246,151 @@ export const backupCommand: Command = {
   ],
 };
 
-export const dataCommands = [exportCommand, importCommand, backupCommand];
+const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<CommandResult> => {
+  const type = (args.options['type'] as string) || 'all';
+  const isDryRun = args.options['dry-run'] as boolean;
+
+  const validTypes = ['all', 'graphs', 'tasks', 'study'];
+  if (!validTypes.includes(type)) {
+    return { success: false, error: `无效的数据类型。有效类型: ${validTypes.join(', ')}` };
+  }
+
+  try {
+    const { getApiUrl } = await import('../../../services/api/client');
+    const { useStore } = await import('../../../store/useStore');
+    const token = useStore.getState().token;
+    const apiUrl = await getApiUrl();
+
+    const callResetApi = async (dryRun: boolean, confirm: boolean = false) => {
+      const response = await fetch(`${apiUrl}/data/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ dry_run: dryRun, confirm, types: [type] }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          useStore.getState().setUser(null, null);
+        }
+        const errorText = await response.text();
+        throw new Error(errorText || '重置操作失败');
+      }
+
+      return response.json();
+    };
+
+    if (isDryRun) {
+      const result = await callResetApi(true);
+      const tables = result.summary?.tables || [];
+      const totalRecords = tables.reduce((sum: number, t: { count: number }) => sum + (t.count || 0), 0);
+
+      const tableRows = tables.map((t: { table: string; count: number }) => {
+        const countStr = String(t.count || 0).padStart(8);
+        return `  │ ${t.table.padEnd(20)} │ ${countStr} │ 待删除`;
+      }).join('\n');
+
+      const output = [
+        '📋 数据重置预览（Dry Run）',
+        '',
+        `  类型: ${type}`,
+        `  模式: 仅预览，不执行删除`,
+        '',
+        '  ┌────────────────────┬──────────┬────────────┐',
+        '  │ 表名               │ 记录数   │ 状态       │',
+        '  ├────────────────────┼──────────┼────────────┤',
+        tableRows || '  │ (无数据)            │          │            │',
+        '  └────────────────────┴──────────┴────────────┘',
+        '',
+        `  总计: ${totalRecords} 条记录将被删除`,
+        '',
+        '💡 直接输入 reset 即可执行删除（会弹出确认对话框）',
+      ].join('\n');
+
+      return {
+        success: true,
+        message: output,
+      };
+    }
+
+    const previewResult = await callResetApi(true);
+    const previewTables = previewResult.summary?.tables || [];
+    const previewTotal = previewTables.reduce((sum: number, t: { count: number }) => sum + (t.count || 0), 0);
+
+    const deleteResult = await callResetApi(false, true);
+    const deletedTables = deleteResult.summary?.tables || [];
+
+    try {
+      const { queryClient } = await import('../../../main');
+      if (type === 'all' || type === 'graphs') {
+        queryClient.invalidateQueries({ queryKey: ['graphs'] });
+      }
+      if (type === 'all') {
+        queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+        queryClient.invalidateQueries({ queryKey: ['statistics'] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      }
+    } catch (_e) {
+    }
+
+    const tableRows = deletedTables.map((t: { table: string; count: number; deleted: number }, index: number) => {
+      const prevCount = previewTables[index]?.count ?? 0;
+      const countStr = String(prevCount).padStart(8);
+      const statusStr = (t.deleted ?? 0) > 0 ? '已删除' : '跳过';
+      return `  │ ${t.table.padEnd(20)} │ ${countStr} │ ${statusStr}`;
+    }).join('\n');
+
+    const output = [
+      '🗑️ 数据重置完成',
+      '',
+      `  类型: ${type}`,
+      `  时间: ${new Date().toLocaleString('zh-CN')}`,
+      '',
+      '  ┌────────────────────┬──────────┬──────────┐',
+      '  │ 表名               │ 删除数量  │ 状态     │',
+      '  ├────────────────────┼──────────┼──────────┤',
+      tableRows || '  │ (无数据)            │          │          │',
+      '  └────────────────────┴──────────┴──────────┘',
+      '',
+      `  总计: 已删除 ${previewTotal} 条记录`,
+    ].join('\n');
+
+    return {
+      success: true,
+      message: output,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '重置操作失败';
+    return { success: false, error: message };
+  }
+};
+
+export const resetCommand: Command = {
+  name: 'reset',
+  description: '清空当前用户的个人数据（调试用途）⚠️危险操作',
+  usage: 'reset [--type <all|graphs|tasks|study>] [--dry-run]',
+  aliases: ['重置', '清除'],
+  permission: 'danger',
+  options: [
+    {
+      name: 'type',
+      alias: 't',
+      type: 'string',
+      description: '数据类型: all(全部), graphs(图谱), tasks(任务), study(学习)',
+      required: false,
+      default: 'all'
+    },
+    {
+      name: 'dry-run',
+      alias: 'd',
+      type: 'boolean',
+      description: '仅预览将要删除的数据，不实际删除',
+      required: false
+    }
+  ],
+  handler: handleReset
+};
+
+export const dataCommands = [exportCommand, importCommand, backupCommand, resetCommand];

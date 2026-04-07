@@ -21,6 +21,14 @@ export interface ConfirmState {
   onConfirm: () => void;
 }
 
+export interface PendingConfirmState {
+  active: boolean;
+  command: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
 interface ConsoleState {
   isOpen: boolean;
   isMinimized: boolean;
@@ -29,6 +37,7 @@ interface ConsoleState {
   output: OutputItem[];
   isLoading: boolean;
   confirmState: ConfirmState;
+  pendingConfirm: PendingConfirmState;
   
   setIsOpen: (isOpen: boolean) => void;
   setIsMinimized: (isMinimized: boolean) => void;
@@ -37,6 +46,7 @@ interface ConsoleState {
   setOutput: (output: OutputItem[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setConfirmState: (state: ConfirmState) => void;
+  setPendingConfirm: (state: PendingConfirmState) => void;
   
   open: () => void;
   close: () => void;
@@ -49,6 +59,7 @@ interface ConsoleState {
   clearOutput: () => void;
   
   cancelConfirm: () => void;
+  clearPendingConfirm: () => void;
 }
 
 const initialConfirmState: ConfirmState = {
@@ -57,6 +68,14 @@ const initialConfirmState: ConfirmState = {
   title: '',
   message: '',
   onConfirm: () => {},
+};
+
+const initialPendingConfirmState: PendingConfirmState = {
+  active: false,
+  command: '',
+  message: '',
+  onConfirm: () => {},
+  onCancel: () => {},
 };
 
 export const useConsoleStore = create<ConsoleState>()(
@@ -69,6 +88,7 @@ export const useConsoleStore = create<ConsoleState>()(
       output: [],
       isLoading: false,
       confirmState: initialConfirmState,
+      pendingConfirm: initialPendingConfirmState,
       
       setIsOpen: (isOpen) => set({ isOpen }),
       setIsMinimized: (isMinimized) => set({ isMinimized }),
@@ -77,6 +97,7 @@ export const useConsoleStore = create<ConsoleState>()(
       setOutput: (output) => set({ output }),
       setIsLoading: (isLoading) => set({ isLoading }),
       setConfirmState: (confirmState) => set({ confirmState }),
+      setPendingConfirm: (pendingConfirm) => set({ pendingConfirm, input: '' }),
       
       open: () => set({ isOpen: true, isMinimized: false }),
       close: () => set({ isOpen: false }),
@@ -110,6 +131,7 @@ export const useConsoleStore = create<ConsoleState>()(
       clearOutput: () => set({ output: [] }),
       
       cancelConfirm: () => set({ confirmState: initialConfirmState }),
+      clearPendingConfirm: () => set({ pendingConfirm: initialPendingConfirmState }),
     }),
     {
       name: 'knowledgeMap-console',

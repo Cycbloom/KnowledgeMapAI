@@ -376,4 +376,176 @@ router.post('/import', requireAuth, validate(importDataSchema), async (req: Auth
   }
 });
 
+// Reset user data (debug only)
+router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { confirm = false, dry_run = false, types = ['all'] } = req.body;
+
+  if (!confirm && !dry_run) {
+    return res.status(400).json({
+      error: '需要设置 confirm=true 或 dry_run=true',
+      hint: '使用 dry_run=true 预览将要删除的数据'
+    });
+  }
+
+  const userId = req.user.id;
+  const isDryRun = dry_run;
+  const willDelete = confirm && !dry_run;
+
+  logger.info('数据重置请求', { userId, confirm, dry_run, types });
+
+  interface TableResult {
+    table: string;
+    count: number;
+    deleted: number;
+    error?: string;
+  }
+
+  const results: TableResult[] = [];
+
+  const processTable = async (
+    table: string,
+    column: string,
+    extraFilter?: { column: string; value: unknown }
+  ): Promise<TableResult> => {
+    const result: TableResult = { table, count: 0, deleted: 0 };
+    try {
+      let query = req.supabase!.from(table).select('*', { count: 'exact', head: true }).eq(column, userId);
+      if (extraFilter) {
+        query = query.eq(extraFilter.column, extraFilter.value);
+      }
+      const { count } = await query;
+      result.count = count || 0;
+
+      if (willDelete && result.count > 0) {
+        let deleteQuery = req.supabase!.from(table).delete().eq(column, userId);
+        if (extraFilter) {
+          deleteQuery = deleteQuery.eq(extraFilter.column, extraFilter.value);
+        }
+        const { error } = await deleteQuery;
+        if (error) {
+          result.error = error.message;
+          logger.warn(`删除表 ${table} 失败`, { error: error.message });
+        } else {
+          result.deleted = result.count;
+        }
+      }
+    } catch (e: any) {
+      result.error = e.message || String(e);
+      logger.warn(`处理表 ${table} 时出错`, { error: e.message });
+    }
+    return result;
+  };
+
+  const shouldProcess = (type: string): boolean =>
+    types.includes('all') || types.includes(type);
+
+  // graphs 类型
+  if (shouldProcess('graphs')) {
+    const graphTables = [
+      { table: 'graph_collaborators', column: 'user_id' },
+      { table: 'learning_path_progress', column: 'user_id' },
+      { table: 'edges', column: 'user_id' },
+      { table: 'graph_nodes', column: 'user_id' },
+      { table: 'graph_domains', column: 'user_id' },
+      { table: 'graph_relations', column: 'user_id' },
+      { table: 'learning_paths', column: 'user_id' },
+      { table: 'learning_path_nodes', column: 'user_id' },
+      { table: 'ai_actions', column: 'user_id' },
+      { table: 'prompt_templates', column: 'user_id', extraFilter: { column: 'scope', value: 'user' } },
+      { table: 'templates', column: 'user_id' },
+      { table: 'knowledge_graphs', column: 'user_id' }
+    ];
+
+    for (const t of graphTables) {
+      results.push(await processTable(t.table, t.column, t.extraFilter));
+    }
+  }
+
+  // tasks 类型
+  if (shouldProcess('tasks')) {
+    const taskTables = [
+      { table: 'task_subtasks', column: 'user_id' },
+      { table: 'task_links', column: 'user_id' },
+      { table: 'task_knowledge_points', column: 'user_id' },
+      { table: 'task_dependencies', column: 'user_id' },
+      { table: 'task_executions', column: 'user_id' },
+      { table: 'task_tags', column: 'user_id' },
+      { table: 'task_settings', column: 'user_id' },
+      { table: 'task_schedules', column: 'user_id' },
+      { table: 'task_progress_plans', column: 'user_id' },
+      { table: 'tasks', column: 'user_id' }
+    ];
+
+    for (const t of taskTables) {
+      results.push(await processTable(t.table, t.column));
+    }
+  }
+
+  // study 类型
+  if (shouldProcess('study')) {
+    const studyTables = [
+      { table: 'user_time_slots', column: 'user_id' },
+      { table: 'user_achievements', column: 'user_id' },
+      { table: 'daily_tasks', column: 'user_id' },
+      { table: 'focus_sessions', column: 'user_id' },
+      { table: 'user_focus_stats', column: 'user_id' },
+      { table: 'user_efficiency_profile', column: 'user_id' },
+      { table: 'user_pass_progress', column: 'user_id' },
+      { table: 'periodic_passes', column: 'user_id' },
+      { table: 'periodic_tasks', column: 'user_id' },
+      { table: 'task_reviews', column: 'user_id' },
+      { table: 'path_node_tasks', column: 'user_id' },
+      { table: 'knowledge_review_tasks', column: 'user_id' },
+      { table: 'quiz_set_cards', column: 'user_id' },
+      { table: 'study_cards', column: 'user_id' },
+      { table: 'study_progress', column: 'user_id' },
+      { table: 'backup_snapshots', column: 'user_id' },
+      { table: 'queues', column: 'user_id' },
+      { table: 'scheduled_tasks', column: 'user_id' }
+    ];
+
+    for (const t of studyTables) {
+      results.push(await processTable(t.table, t.column));
+    }
+  }
+
+  // 公共表（all类型都删）
+  if (types.includes('all')) {
+    const commonTables = [
+      { table: 'knowledge_points', column: 'user_id' },
+      { table: 'knowledge_point_versions', column: 'user_id' },
+      { table: 'domains', column: 'user_id' },
+      { table: 'quiz_sets', column: 'user_id' },
+      { table: 'relationship_types', column: 'created_by', extraFilter: { column: 'is_system', value: false } }
+    ];
+
+    for (const t of commonTables) {
+      results.push(await processTable(t.table, t.column, t.extraFilter));
+    }
+  }
+
+  const totalDeleted = results.reduce((sum, r) => sum + r.deleted, 0);
+  const totalFound = results.reduce((sum, r) => sum + r.count, 0);
+
+  if (willDelete) {
+    await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+    logger.info('用户数据重置完成', { userId, totalDeleted, tablesProcessed: results.length });
+  }
+
+  return res.json({
+    success: true,
+    mode: isDryRun ? 'dry_run' : (willDelete ? 'deleted' : 'preview'),
+    summary: {
+      total_deleted: totalDeleted,
+      total_found: totalFound,
+      tables: results.map(r => ({
+        table: r.table,
+        count: r.count,
+        deleted: r.deleted,
+        ...(r.error ? { error: r.error } : {})
+      }))
+    }
+  });
+});
+
 export default router;

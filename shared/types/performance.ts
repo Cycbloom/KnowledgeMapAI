@@ -13,6 +13,19 @@ export interface AIPerformanceLog {
   duration: number;
   success: boolean;
   errorMessage?: string;
+  
+  cachedInputTokens?: number;
+  uncachedInputTokens?: number;
+  reasoningTokens?: number;
+  cacheHitRate?: number;
+  costBreakdown?: {
+    cachedInputCost: number;
+    uncachedInputCost: number;
+    outputCost: number;
+    totalCost: number;
+    savedByCache: number;
+  };
+  
   metadata?: {
     graphId?: string;
     nodeId?: string;
@@ -23,8 +36,9 @@ export interface AIPerformanceLog {
 export interface AIModelPricing {
   provider: AIProviderType;
   model: string;
-  inputPricePer1k: number;
-  outputPricePer1k: number;
+  cachedInputPricePer1M: number;
+  uncachedInputPricePer1M: number;
+  outputPricePer1M: number;
 }
 
 export interface AIPerformanceStats {
@@ -33,11 +47,15 @@ export interface AIPerformanceStats {
   failedRequests: number;
   totalInputTokens: number;
   totalOutputTokens: number;
+  totalCachedInputTokens: number;
+  totalUncachedInputTokens: number;
   totalTokens: number;
   totalCost: number;
+  totalSavedByCache: number;
   avgDuration: number;
-  byOperation: Record<string, { count: number; tokens: number; cost: number }>;
-  byModel: Record<string, { count: number; tokens: number; cost: number }>;
+  avgCacheHitRate: number;
+  byOperation: Record<string, { count: number; tokens: number; cost: number; cachedTokens: number; savedCost: number }>;
+  byModel: Record<string, { count: number; tokens: number; cost: number; cachedTokens: number; savedCost: number }>;
 }
 
 export interface GetPerformanceLogsQuery {

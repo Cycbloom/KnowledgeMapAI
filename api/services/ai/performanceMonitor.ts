@@ -1,4 +1,4 @@
-import type { AIPerformanceLog, AIPerformanceStats, GetPerformanceLogsQuery, AIProviderType } from '@shared/types';
+import type { AIPerformanceLog, AIPerformanceStats, GetPerformanceLogsQuery } from '@shared/types';
 import { pricingService } from './pricingService';
 
 const MAX_LOGS = 1000;
@@ -6,14 +6,15 @@ const MAX_LOGS = 1000;
 class PerformanceMonitor {
   private logs: AIPerformanceLog[] = [];
 
-  recordLog(log: Omit<AIPerformanceLog, 'id' | 'timestamp' | 'totalTokens' | 'estimatedCost'> & {
-    provider: AIProviderType;
-    model: string;
-    inputTokens: number;
-    outputTokens: number;
-  }): void {
-    const totalTokens = log.inputTokens + log.outputTokens;
-    const estimatedCost = pricingService.calculateCost(log.provider, log.model, log.inputTokens, log.outputTokens);
+  recordLog(log: Omit<AIPerformanceLog, 'id' | 'timestamp'>): void {
+    const totalTokens = (log.totalTokens || log.inputTokens + log.outputTokens);
+    const estimatedCost = log.estimatedCost || pricingService.calculateCost(
+      log.provider,
+      log.model,
+      log.inputTokens,
+      log.outputTokens,
+      log.cachedInputTokens
+    );
     
     const fullLog: AIPerformanceLog = {
       ...log,
@@ -61,34 +62,48 @@ class PerformanceMonitor {
   getStats(query: GetPerformanceLogsQuery = {}): AIPerformanceStats {
     const { logs } = this.getLogs({ ...query, limit: MAX_LOGS });
     
+    const totalCachedInputTokens = logs.reduce((sum, l) => sum + (l.cachedInputTokens || 0), 0);
+    const totalUncachedInputTokens = logs.reduce((sum, l) => sum + (l.uncachedInputTokens || 0), 0);
+    const totalSavedByCache = logs.reduce((sum, l) => sum + (l.costBreakdown?.savedByCache || 0), 0);
+    
     const stats: AIPerformanceStats = {
       totalRequests: logs.length,
       successRequests: logs.filter(l => l.success).length,
       failedRequests: logs.filter(l => !l.success).length,
       totalInputTokens: logs.reduce((sum, l) => sum + l.inputTokens, 0),
       totalOutputTokens: logs.reduce((sum, l) => sum + l.outputTokens, 0),
+      totalCachedInputTokens,
+      totalUncachedInputTokens,
       totalTokens: logs.reduce((sum, l) => sum + l.totalTokens, 0),
       totalCost: logs.reduce((sum, l) => sum + l.estimatedCost, 0),
+      totalSavedByCache,
       avgDuration: logs.length > 0 ? logs.reduce((sum, l) => sum + l.duration, 0) / logs.length : 0,
+      avgCacheHitRate: logs.length > 0 
+        ? logs.reduce((sum, l) => sum + (l.cacheHitRate || 0), 0) / logs.length 
+        : 0,
       byOperation: {},
       byModel: {},
     };
     
     for (const log of logs) {
       if (!stats.byOperation[log.operation]) {
-        stats.byOperation[log.operation] = { count: 0, tokens: 0, cost: 0 };
+        stats.byOperation[log.operation] = { count: 0, tokens: 0, cost: 0, cachedTokens: 0, savedCost: 0 };
       }
       stats.byOperation[log.operation].count++;
       stats.byOperation[log.operation].tokens += log.totalTokens;
       stats.byOperation[log.operation].cost += log.estimatedCost;
+      stats.byOperation[log.operation].cachedTokens += log.cachedInputTokens || 0;
+      stats.byOperation[log.operation].savedCost += log.costBreakdown?.savedByCache || 0;
       
       const modelKey = `${log.provider}/${log.model}`;
       if (!stats.byModel[modelKey]) {
-        stats.byModel[modelKey] = { count: 0, tokens: 0, cost: 0 };
+        stats.byModel[modelKey] = { count: 0, tokens: 0, cost: 0, cachedTokens: 0, savedCost: 0 };
       }
       stats.byModel[modelKey].count++;
       stats.byModel[modelKey].tokens += log.totalTokens;
       stats.byModel[modelKey].cost += log.estimatedCost;
+      stats.byModel[modelKey].cachedTokens += log.cachedInputTokens || 0;
+      stats.byModel[modelKey].savedCost += log.costBreakdown?.savedByCache || 0;
     }
     
     return stats;

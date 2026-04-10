@@ -3,9 +3,12 @@ import { requireAuth, type AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
+import type { AIProviderType } from "@shared/types";
 import { getAIProviderForTask, getAIProvider } from "../services/ai/factory";
 import { promptService } from "../services/ai/promptService";
 import { cacheService, CacheKeys } from "../services/common/cacheService";
+import { performanceMonitor } from "../services/ai/performanceMonitor";
+import { pricingService } from "../services/ai/pricingService";
 import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
 import { autoGraphService, graphNodeService } from "../services/graph/index";
@@ -16,6 +19,86 @@ import { saveNodesSchema } from "../schemas/index";
 const router = Router();
 
 const URL_PATTERN = /^https?:\/\/.+/;
+
+async function withAutoGraphTracking<T>(
+  operation: string,
+  providerType: AIProviderType,
+  model: string,
+  fn: () => Promise<{
+    result: T;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      prompt_tokens_details?: {
+        cached_tokens?: number;
+        audio_tokens?: number;
+      };
+      completion_tokens_details?: {
+        reasoning_tokens?: number;
+        audio_tokens?: number;
+      };
+    };
+  }>,
+  metadata?: { graphId?: string; userId?: string }
+): Promise<T> {
+  const startTime = Date.now();
+  let success = true;
+  let errorMessage: string | undefined;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedInputTokens = 0;
+  let uncachedInputTokens = 0;
+  let reasoningTokens = 0;
+
+  try {
+    const { result, usage } = await fn();
+    inputTokens = usage?.prompt_tokens || 0;
+    outputTokens = usage?.completion_tokens || 0;
+    
+    cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
+    uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
+    reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
+
+    return result;
+  } catch (error: unknown) {
+    success = false;
+    const err = error as Error;
+    errorMessage = err.message;
+    throw error;
+  } finally {
+    const duration = Date.now() - startTime;
+    const totalTokens = inputTokens + outputTokens;
+    const cacheHitRate = inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
+    
+    const costBreakdown = pricingService.calculateDetailedCost(
+      providerType,
+      model,
+      inputTokens,
+      outputTokens,
+      cachedInputTokens
+    );
+
+    performanceMonitor.recordLog({
+      operation,
+      provider: providerType,
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens,
+      estimatedCost: costBreakdown.totalCost,
+      duration,
+      success,
+      errorMessage,
+      metadata,
+      
+      cachedInputTokens,
+      uncachedInputTokens,
+      reasoningTokens,
+      cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
+      costBreakdown,
+    });
+  }
+}
 
 async function processSource(source: string): Promise<string> {
   const trimmed = source.trim();
@@ -142,18 +225,30 @@ router.post(
         );
       }
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `主题：${topic}${processedSources.length > 0 ? `\n\n参考来源：\n${processedSources.join("\n\n---\n\n")}` : ""}`,
-          },
-        ],
-        model: model || provider.model,
-        response_format: { type: "json_object" },
-        max_tokens: 4000,
-      });
+      const completion = await withAutoGraphTracking(
+        "auto_graph_init",
+        provider.providerType,
+        model || provider.model,
+        async () => {
+          const result = await provider.client.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `主题：${topic}${processedSources.length > 0 ? `\n\n参考来源：\n${processedSources.join("\n\n---\n\n")}` : ""}`,
+              },
+            ],
+            model: model || provider.model,
+            response_format: { type: "json_object" },
+            max_tokens: 4000,
+          });
+          return {
+            result,
+            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+          };
+        },
+        { graphId: graph_id, userId: req.user.id }
+      );
 
       const content = completion.choices[0].message.content;
       let parsed;
@@ -260,18 +355,30 @@ router.post(
         );
       }
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `请为「${node_title}」生成子节点。${existing_children && existing_children.length > 0 ? `\n\n已有的子节点：${existing_children.map((c: any) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
-          },
-        ],
-        model: model || provider.model,
-        response_format: { type: "json_object" },
-        max_tokens: 3000,
-      });
+      const completion = await withAutoGraphTracking(
+        "auto_graph_expand",
+        provider.providerType,
+        model || provider.model,
+        async () => {
+          const result = await provider.client.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `请为「${node_title}」生成子节点。${existing_children && existing_children.length > 0 ? `\n\n已有的子节点：${existing_children.map((c: any) => c.title).join("、")}\n请生成新的、不同的子节点。` : ""}`,
+              },
+            ],
+            model: model || provider.model,
+            response_format: { type: "json_object" },
+            max_tokens: 3000,
+          });
+          return {
+            result,
+            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+          };
+        },
+        { graphId: graph_id, userId: req.user.id }
+      );
 
       const content = completion.choices[0].message.content;
       let parsed;
@@ -342,15 +449,27 @@ ${currentPrompt ? `用户当前的自定义规则：\n${currentPrompt}` : "用�
 
 请优化这个规则，使其更适合生成知识图谱节点。`;
 
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-        model: provider.model,
-        response_format: { type: "json_object" },
-        max_tokens: 1000,
-      });
+      const completion = await withAutoGraphTracking(
+        "auto_graph_optimize_prompt",
+        provider.providerType,
+        provider.model,
+        async () => {
+          const result = await provider.client.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+            ],
+            model: provider.model,
+            response_format: { type: "json_object" },
+            max_tokens: 1000,
+          });
+          return {
+            result,
+            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+          };
+        },
+        { userId: req.user.id }
+      );
 
       const content = completion.choices[0].message.content;
       let parsed;

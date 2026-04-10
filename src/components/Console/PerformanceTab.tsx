@@ -59,6 +59,9 @@ const OPERATION_LABELS: Record<string, string> = {
   'branch-suggestions': '分支建议',
   'cross-graph-connections': '跨图谱连接',
   'podcast-script': '播客脚本',
+  'auto_graph_init': '图谱初始化',
+  'auto_graph_expand': '节点展开',
+  'auto_graph_optimize_prompt': '提示词优化',
 };
 
 const StatCard: React.FC<{
@@ -157,18 +160,6 @@ const LogDetailModal: React.FC<{
             </div>
           </div>
           <div>
-            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>输入 Token</div>
-            <div className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-              {formatTokens(log.inputTokens)}
-            </div>
-          </div>
-          <div>
-            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>输出 Token</div>
-            <div className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-              {formatTokens(log.outputTokens)}
-            </div>
-          </div>
-          <div>
             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>总 Token</div>
             <div className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
               {formatTokens(log.totalTokens)}
@@ -193,6 +184,111 @@ const LogDetailModal: React.FC<{
             </div>
           </div>
         </div>
+
+        {(log.cachedInputTokens !== undefined && log.cachedInputTokens > 0) && (
+          <div className={`mt-4 p-3 rounded-lg ${
+            isDark ? 'bg-blue-900/20 border border-blue-700/30' : 'bg-blue-50 border border-blue-200'
+          }`}>
+            <div className={`text-xs font-semibold mb-2 ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+              📊 Token 详细分析（三档定价）
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                  🟢 输入 Token（缓存命中）
+                </span>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                    {formatTokens(log.cachedInputTokens)}
+                  </span>
+                  {log.costBreakdown && (
+                    <span className={`ml-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                      ¥{log.costBreakdown.cachedInputCost.toFixed(4)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                  🔵 输入 Token（未命中缓存）
+                </span>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                    {formatTokens(log.uncachedInputTokens || 0)}
+                  </span>
+                  {log.costBreakdown && (
+                    <span className={`ml-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                      ¥{log.costBreakdown.uncachedInputCost.toFixed(4)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                  🟣 输出 Token
+                </span>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+                    {formatTokens(log.outputTokens)}
+                  </span>
+                  {log.costBreakdown && (
+                    <span className={`ml-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                      ¥{log.costBreakdown.outputCost.toFixed(4)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {log.cacheHitRate !== undefined && (
+                <div className="pt-2 mt-2 border-t" style={{ borderColor: isDark ? '#334155' : '#e5e7eb' }}>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                      缓存命中率
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-16 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                        <div 
+                          className="h-full bg-green-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(log.cacheHitRate, 100)}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                        {log.cacheHitRate.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {log.costBreakdown && log.costBreakdown.savedByCache > 0 && (
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                        💰 缓存节省
+                      </span>
+                      <span className={`text-sm font-bold text-green-500`}>
+                        -¥{log.costBreakdown.savedByCache.toFixed(4)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {log.reasoningTokens !== undefined && log.reasoningTokens > 0 && (
+                <div className="pt-2 mt-2 border-t" style={{ borderColor: isDark ? '#334155' : '#e5e7eb' }}>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                      🧠 推理 Token（DeepSeek Reasoner）
+                    </span>
+                    <span className={`text-sm font-medium ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>
+                      {formatTokens(log.reasoningTokens)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {log.errorMessage && (
           <div>
             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>错误信息</div>

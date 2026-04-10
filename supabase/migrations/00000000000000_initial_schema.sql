@@ -1917,6 +1917,60 @@ CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created
 CREATE INDEX IF NOT EXISTS idx_notification_settings_user_id ON notification_settings(user_id);
 
 -- =====================================================
+-- AI Performance Logs (AI性能监控日志)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS ai_performance_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  timestamp BIGINT NOT NULL,
+  operation VARCHAR(100) NOT NULL,
+  model VARCHAR(100) NOT NULL,
+  provider VARCHAR(50) NOT NULL,
+  
+  -- Token统计
+  input_tokens INTEGER NOT NULL DEFAULT 0,
+  output_tokens INTEGER NOT NULL DEFAULT 0,
+  total_tokens INTEGER NOT NULL DEFAULT 0,
+  
+  -- 缓存详情（可选）
+  cached_input_tokens INTEGER DEFAULT 0,
+  uncached_input_tokens INTEGER DEFAULT 0,
+  reasoning_tokens INTEGER DEFAULT 0,
+  cache_hit_rate DECIMAL(5,2),
+  
+  -- 成本信息
+  estimated_cost DECIMAL(10,6) DEFAULT 0,
+  
+  -- 性能指标
+  duration INTEGER NOT NULL,  -- 耗时（毫秒）
+  success BOOLEAN NOT NULL DEFAULT true,
+  error_message TEXT,
+  
+  -- 成本明细（JSONB）
+  cost_breakdown JSONB,
+  
+  -- 元数据
+  metadata JSONB DEFAULT '{}',
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 索引
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_timestamp ON ai_performance_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_operation ON ai_performance_logs(operation);
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_provider ON ai_performance_logs(provider);
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_model ON ai_performance_logs(model);
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_success ON ai_performance_logs(success);
+CREATE INDEX IF NOT EXISTS idx_ai_perf_logs_created_at ON ai_performance_logs(created_at DESC);
+
+COMMENT ON TABLE ai_performance_logs IS 'AI服务性能监控日志，记录所有AI API调用的详细指标';
+COMMENT ON COLUMN ai_performance_logs.timestamp IS '请求时间戳（毫秒）';
+COMMENT ON COLUMN ai_performance_logs.operation IS '操作类型标识';
+COMMENT ON COLUMN ai_performance_logs.cached_input_tokens IS '缓存命中的输入Token数';
+COMMENT ON COLUMN ai_performance_logs.cache_hit_rate IS '缓存命中率（百分比）';
+COMMENT ON COLUMN ai_performance_logs.cost_breakdown IS '成本明细：{cachedInputCost, uncachedInputCost, outputCost, totalCost, savedByCache}';
+
+-- =====================================================
 -- RLS POLICIES (continued)
 -- =====================================================
 

@@ -6,11 +6,21 @@ import './jobs/worker.js'; // Initialize BullMQ Worker (optional, requires Redis
 import { taskWorker } from './jobs/worker';
 import { logger } from './utils/logger';
 import { checkEnvOnStartup } from './utils/envValidator';
+import { performanceMonitor } from './services/ai/performanceMonitor';
 
 /**
  * Validate Environment
  */
 checkEnvOnStartup();
+
+/**
+ * Initialize Performance Monitor (load historical logs)
+ */
+performanceMonitor.initialize().then(() => {
+  logger.info('[PerformanceMonitor] Initialized successfully');
+}).catch((error) => {
+  logger.error('[PerformanceMonitor] Initialization failed:', error);
+});
 
 /**
  * start server with port

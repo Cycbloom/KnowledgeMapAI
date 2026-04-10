@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 import { buildNodeContext, buildNodesContext, NodeData } from './utils';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { withAIMonitoring } from './aiMonitor';
 
 export interface RAGContext {
   graphId: string;
@@ -316,27 +317,41 @@ ${context || '(暂无相关上下文)'}`;
     try {
       const sourceTitles = sources.slice(0, 3).map(s => s.title).join(', ');
       
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: `基于用户的原始问题和回答，生成 2-3 个相关的后续问题。
+      const completion = await withAIMonitoring(
+        {
+          operation: 'rag_suggest_questions',
+          provider: provider.providerType,
+          model: model || provider.model,
+        },
+        async () => {
+          const result = await provider.client.chat.completions.create({
+            messages: [
+              {
+                role: 'system',
+                content: `基于用户的原始问题和回答，生成 2-3 个相关的后续问题。
 这些问题应该：
 1. 帮助用户深入理解当前话题
 2. 探索相关的知识节点
 3. 具有启发性和探索性
 
 返回 JSON 格式: { "questions": ["问题1", "问题2", "问题3"] }`
-          },
-          {
-            role: 'user',
-            content: `原始问题: ${originalQuestion}\n\n回答摘要: ${answer.substring(0, 500)}\n\n相关节点: ${sourceTitles}`
-          }
-        ],
-        model: model || provider.model,
-        response_format: { type: 'json_object' },
-        max_tokens: 200
-      });
+              },
+              {
+                role: 'user',
+                content: `原始问题: ${originalQuestion}\n\n回答摘要: ${answer.substring(0, 500)}\n\n相关节点: ${sourceTitles}`
+              }
+            ],
+            model: model || provider.model,
+            response_format: { type: 'json_object' },
+            max_tokens: 200
+          });
+          
+          return {
+            result,
+            usage: result.usage as any,
+          };
+        }
+      );
 
       const content = completion.choices[0].message.content || '{"questions": []}';
       const parsed = JSON.parse(content);

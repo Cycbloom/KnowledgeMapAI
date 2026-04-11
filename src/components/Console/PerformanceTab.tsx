@@ -322,6 +322,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   const [filterProvider, setFilterProvider] = useState<AIProviderType | ''>('');
   const [filterSuccess, setFilterSuccess] = useState<string>('');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
+  const [showEmbeddingOps, setShowEmbeddingOps] = useState(false);
 
   const getTimeRangeTimestamp = useCallback(() => {
     const now = Date.now();
@@ -361,6 +362,18 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
   }, [clearLogs, loadData]);
 
   const uniqueOperations = Array.from(new Set(logs.map((log) => log.operation)));
+
+  const isEmbeddingOperation = (operation: string): boolean => {
+    return operation.toLowerCase().includes('embedding');
+  };
+
+  const filteredLogs = showEmbeddingOps 
+    ? logs 
+    : logs.filter((log) => !isEmbeddingOperation(log.operation));
+
+  const filteredUniqueOperations = showEmbeddingOps
+    ? uniqueOperations
+    : uniqueOperations.filter((op) => !isEmbeddingOperation(op));
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -439,12 +452,25 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   }`}
                 >
                   <option value="">全部操作</option>
-                  {uniqueOperations.map((op) => (
+                  {filteredUniqueOperations.map((op) => (
                     <option key={op} value={op}>
                       {OPERATION_LABELS[op] || op}
                     </option>
                   ))}
                 </select>
+                <label className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-md border cursor-pointer select-none ${
+                  isDark
+                    ? 'bg-slate-800 border-slate-700 text-slate-300'
+                    : 'bg-white border-gray-200 text-gray-700'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={showEmbeddingOps}
+                    onChange={(e) => setShowEmbeddingOps(e.target.checked)}
+                    className="w-3 h-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>显示Embedding</span>
+                </label>
                 <select
                   value={filterProvider}
                   onChange={(e) => setFilterProvider(e.target.value as AIProviderType | '')}
@@ -531,7 +557,21 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
           </div>
         ) : (
           <div className="divide-y">
-            {logs.map((log, index) => (
+            {filteredLogs.length === 0 ? (
+              <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                <Activity size={24} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm">暂无性能日志</p>
+                {!showEmbeddingOps && (
+                  <button
+                    onClick={() => setShowEmbeddingOps(true)}
+                    className={`mt-2 text-xs underline ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                  >
+                    显示Embedding操作
+                  </button>
+                )}
+              </div>
+            ) : (
+              filteredLogs.map((log, index) => (
               <motion.button
                 key={log.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -574,7 +614,7 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ isDark }) => {
                   </span>
                 </div>
               </motion.button>
-            ))}
+            )))}
           </div>
         )}
       </div>

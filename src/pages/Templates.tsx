@@ -65,7 +65,7 @@ export const Templates = () => {
   const [newTemplateCategory, setNewTemplateCategory] =
     useState<TemplateCategory>("learning");
 
-  const filteredTemplates = templates.filter((t: Template) => {
+  const filteredTemplates = templates.filter((t) => {
     const matchesSearch =
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.description &&

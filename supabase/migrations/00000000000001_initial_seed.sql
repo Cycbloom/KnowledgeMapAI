@@ -122,11 +122,37 @@ ON CONFLICT (code) DO NOTHING;
 -- TEMPLATES
 -- =====================================================
 
-INSERT INTO templates (user_id, name, description, category, is_system, nodes, edges, layout) VALUES
-  (NULL, '概念学习', '适用于学习新概念，从定义到应用的完整学习路径', 'learning', true, 
-   '[{"id":"node-1","title":"主题","level":"root"},{"id":"node-2","title":"定义","level":"core"},{"id":"node-3","title":"特点","level":"core"}]'::jsonb,
-   '[{"source":"node-1","target":"node-2"},{"source":"node-1","target":"node-3"}]'::jsonb,
-   NULL)
+INSERT INTO templates (user_id, name, description, category, is_system, nodes, edges, layout, generation_config, preview_data, tags, difficulty, estimated_nodes) VALUES
+-- 概念学习模板
+(NULL, '概念学习', '适用于学习新概念，从定义到应用的完整学习路径', 'learning', true, 
+ '[{"id":"node-1","title":"主题","level":"root"},{"id":"node-2","title":"定义","level":"core"},{"id":"node-3","title":"特点","level":"core"},{"id":"node-4","title":"应用","level":"sub"}]'::jsonb,
+ '[{"source":"node-1","target":"node-2"},{"source":"node-1","target":"node-3"},{"source":"node-1","target":"node-4"}]'::jsonb,
+ NULL,
+ '{"style": "academic", "depth": "medium", "language": "zh-CN", "includeExamples": true}'::jsonb,
+ '{"nodeCount": 4, "edgeCount": 3, "previewImage": "concept-learning.png"}'::jsonb,
+ ARRAY['学习', '概念', '入门'],
+ 'easy',
+ 10),
+-- 项目分析模板
+(NULL, '项目分析', '适用于项目分析，从背景到方案的完整分析框架', 'analysis', true, 
+ '[{"id":"node-1","title":"项目名称","level":"root"},{"id":"node-2","title":"背景","level":"core"},{"id":"node-3","title":"目标","level":"core"},{"id":"node-4","title":"方案","level":"sub"},{"id":"node-5","title":"风险","level":"sub"}]'::jsonb,
+ '[{"source":"node-1","target":"node-2"},{"source":"node-1","target":"node-3"},{"source":"node-1","target":"node-4"},{"source":"node-1","target":"node-5"}]'::jsonb,
+ NULL,
+ '{"style": "practical", "depth": "deep", "language": "zh-CN", "includeExamples": true}'::jsonb,
+ '{"nodeCount": 5, "edgeCount": 4, "previewImage": "project-analysis.png"}'::jsonb,
+ ARRAY['项目', '分析', '规划'],
+ 'medium',
+ 15),
+-- 故事叙述模板
+(NULL, '故事叙述', '适用于故事创作，从背景到结局的完整叙事结构', 'story', true, 
+ '[{"id":"node-1","title":"故事主题","level":"root"},{"id":"node-2","title":"背景","level":"core"},{"id":"node-3","title":"人物","level":"core"},{"id":"node-4","title":"情节","level":"sub"},{"id":"node-5","title":"高潮","level":"sub"},{"id":"node-6","title":"结局","level":"sub"}]'::jsonb,
+ '[{"source":"node-1","target":"node-2"},{"source":"node-1","target":"node-3"},{"source":"node-2","target":"node-4"},{"source":"node-4","target":"node-5"},{"source":"node-5","target":"node-6"}]'::jsonb,
+ NULL,
+ '{"style": "creative", "depth": "medium", "language": "zh-CN", "includeExamples": false}'::jsonb,
+ '{"nodeCount": 6, "edgeCount": 5, "previewImage": "story-telling.png"}'::jsonb,
+ ARRAY['故事', '创作', '叙事'],
+ 'medium',
+ 12)
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
@@ -674,7 +700,67 @@ Respond in Chinese.', NOW(), NOW()),
 6. 识别跨学科交叉领域和共享主题
 {{/if}}
 
-请输出JSON格式的分析结果。', NOW(), NOW())
+请输出JSON格式的分析结果。', NOW(), NOW()),
+('template_generation', 'system', null, null, 'You are an expert knowledge graph template designer. Your task is to generate 3 different template schemes for the given topic.
+
+## Requirements
+
+For each template scheme, provide:
+1. **Unique Structure**: Each template should have a different organizational approach
+2. **Node Hierarchy**: Clear parent-child relationships with appropriate levels (root, core, sub, normal, leaf)
+3. **Edge Relationships**: Meaningful connections between nodes
+4. **Content Suggestions**: Brief description of what each node should contain
+5. **Layout Recommendation**: Suggest the best layout type (radial, tree, network, hierarchical)
+6. **Difficulty Assessment**: Rate the complexity (easy, medium, hard)
+7. **Tags**: Auto-generate relevant tags for categorization
+
+## Template Types to Consider
+
+1. **Hierarchical/Tree Structure**: Top-down organization with clear levels
+2. **Network/Mesh Structure**: Interconnected concepts with multiple relationships
+3. **Process/Flow Structure**: Sequential or cyclical knowledge flow
+4. **Quadrant/Matrix Structure**: Organized by two dimensions
+5. **Timeline Structure**: Chronological or evolutionary progression
+
+## Guidelines
+
+1. Generate exactly 3 different template schemes
+2. Each template should have 5-15 nodes as examples
+3. Use meaningful node titles (not generic like "Node 1")
+4. Ensure all edge references point to valid node IDs
+5. Consider the topic''s nature when choosing structures
+6. Provide clear reasoning for each template choice
+7. Respond in Chinese for all descriptions and content
+
+{{#if category}}
+## Category Guidance
+{{categoryGuidance}}
+{{/if}}
+
+{{#if preferredLayout}}
+## Preferred Layout
+{{layoutGuidance}}
+{{/if}}', NOW(), NOW()),
+('template_application', 'system', null, null, 'You are an expert knowledge graph content generator. Your task is to generate detailed content for a knowledge graph based on the provided template structure.
+
+## Requirements
+
+For each node in the template:
+1. **Detailed Content**: Generate comprehensive content based on the node''s title and suggested content
+2. **Style Consistency**: Maintain the selected style throughout (academic, practical, beginner, or custom)
+3. **Context Awareness**: Consider the topic and context when generating content
+4. **Language**: Respond in Chinese
+
+## Style Guidelines
+
+- **Academic**: Use professional terminology, theoretical frameworks, and scholarly language
+- **Practical**: Use plain language, real-world examples, and actionable insights
+- **Beginner**: Use simple language, step-by-step explanations, and foundational concepts
+- **Custom**: Follow the user''s custom instructions
+
+## Output Format
+
+Generate content for each node while maintaining the template structure.', NOW(), NOW())
 ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
 
 -- =====================================================

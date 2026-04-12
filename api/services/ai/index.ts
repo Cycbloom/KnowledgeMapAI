@@ -41,3 +41,12 @@ export {
   domainContextService,
   DomainContextService,
 } from "./domainContextService";
+export {
+  templateGeneratorService,
+  TemplateGeneratorService,
+  type GeneratedTemplateNode,
+  type GeneratedTemplateEdge,
+  type GeneratedTemplateScheme,
+  type GenerateTemplatesOptions,
+  type GenerateTemplatesResult,
+} from "./templateGeneratorService";

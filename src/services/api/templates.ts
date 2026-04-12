@@ -1,15 +1,60 @@
 import { request } from './client';
+import type {
+  Template,
+  TemplateCategory,
+  TemplateNode,
+  TemplateEdge,
+  TemplateLayout,
+  TemplateDifficulty,
+  LayoutSuggestion,
+} from '@shared/types/graph';
+
+export interface SaveTemplateData {
+  name: string;
+  description?: string;
+  category?: TemplateCategory;
+  nodes: TemplateNode[];
+  edges?: TemplateEdge[];
+  layout?: TemplateLayout;
+  tags?: string[];
+  difficulty?: TemplateDifficulty;
+  estimated_nodes?: number;
+  layout_suggestion?: LayoutSuggestion;
+}
+
+export interface UpdateTemplateData {
+  name?: string;
+  description?: string;
+  category?: TemplateCategory;
+  nodes?: TemplateNode[];
+  edges?: TemplateEdge[];
+  layout?: TemplateLayout;
+  tags?: string[];
+  difficulty?: TemplateDifficulty;
+  estimated_nodes?: number;
+  layout_suggestion?: LayoutSuggestion;
+}
 
 export const templatesApi = {
-  list: (category?: string) => request(`/templates${category ? `?category=${category}` : ''}`),
+  list: (category?: TemplateCategory): Promise<Template[]> => 
+    request(`/templates${category ? `?category=${category}` : ''}`),
   
-  get: (id: string) => request(`/templates/${id}`),
+  get: (id: string): Promise<Template> => request(`/templates/${id}`),
   
-  create: (data: unknown) => request('/templates', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: SaveTemplateData): Promise<Template> => 
+    request('/templates', { method: 'POST', body: JSON.stringify(data) }),
   
-  update: (id: string, data: unknown) => request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  update: (id: string, data: UpdateTemplateData): Promise<Template> => 
+    request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   
-  delete: (id: string) => request(`/templates/${id}`, { method: 'DELETE' }),
+  delete: (id: string): Promise<{ message: string }> => 
+    request(`/templates/${id}`, { method: 'DELETE' }),
+
+  saveTemplate: (data: SaveTemplateData): Promise<Template> => 
+    request('/templates', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateTemplate: (id: string, data: UpdateTemplateData): Promise<Template> => 
+    request(`/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 export const promptsApi = {

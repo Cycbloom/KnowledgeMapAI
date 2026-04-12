@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { queryKeys } from "../queries/config";
+import type { TemplateCategory } from "@shared/types/graph";
 
 export const useCreateTemplateMutation = () => {
   const queryClient = useQueryClient();
@@ -16,7 +17,7 @@ export const useCreateTemplateMutation = () => {
 export const useUpdateTemplateMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
       api.templates.update(id, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["templates"] });
@@ -41,7 +42,7 @@ export const usePrefetchTemplates = () => {
   const queryClient = useQueryClient();
 
   return useCallback(
-    (category?: string) => {
+    (category?: TemplateCategory) => {
       queryClient.prefetchQuery({
         queryKey: queryKeys.templates(category),
         queryFn: () => api.templates.list(category),

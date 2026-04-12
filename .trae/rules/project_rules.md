@@ -2,346 +2,266 @@
 
 ## 项目概述
 
-**目标平台：** 本项目以 **Electron 桌面应用** 为主要开发和发布目标，同时支持 Web 端访问。
+**目标平台**：Electron 桌面应用（主要）+ Web 应用（辅助）
 
-- **主要平台**：Electron 桌面应用（Windows、macOS、Linux）
-- **辅助平台**：Web 应用（用于快速预览和开发调试）
+## 开发命令
 
-## Electron 桌面应用开发
-
-### 开发模式
+### Electron 开发
 
 ```bash
-# 启动 Electron 开发模式（同时启动前端、后端和 Electron）
-npm run electron:dev
-
-# 类型检查
-npm run check:electron
+npm run electron:dev          # 开发模式
+npm run check:electron        # 类型检查
+npm run electron:build        # 构建所有平台
+npm run electron:build:win    # 构建 Windows
 ```
 
-### 构建发布
+### 数据库操作
 
 ```bash
-# 构建所有平台
-npm run electron:build
-
-# 构建特定平台
-npm run electron:build:win    # Windows
-npm run electron:build:mac    # macOS
-npm run electron:build:linux  # Linux
+npx supabase db reset         # 重置本地数据库
+npm run db:seed               # 插入测试数据
+npx supabase db diff          # 查看远程数据库状态
 ```
-
-### Electron 代码规范
-
-1. **主进程代码** - 位于 `electron/` 目录，使用 TypeScript 编写
-2. **预加载脚本** - 通过 `contextBridge` 暴露安全的 API 给渲染进程
-3. **IPC 通信** - 使用 `ipcMain` 和 `ipcRenderer` 进行进程间通信
-4. **安全原则**：
-   - 禁用 `nodeIntegration`
-   - 启用 `contextIsolation`
-   - 使用预加载脚本暴露有限 API
-
-### 自动更新
-
-项目使用 `electron-updater` 实现自动更新：
-- 配置 GitHub Releases 作为更新源
-- 支持静默下载和安装
-- 开发模式下自动跳过更新检查
-
-## 数据库操作
-
-### 远程数据库（生产环境）
-
-**项目使用远程 Supabase 数据库作为生产环境：**
-
-#### 远程数据库修改流程
-
-1. **修改 schema 文件**：编辑 `supabase/migrations/00000000000000_initial_schema.sql`
-2. **生成迁移 SQL**：提取需要执行的变更 SQL
-3. **在 Supabase Dashboard 执行**：登录 Supabase Dashboard → SQL Editor → 执行变更 SQL
-
-#### 常用远程数据库操作
-
-```bash
-# 连接远程数据库（需要先 link）
-npx supabase link --project-ref <project-ref>
-
-# 推送本地 schema 到远程（谨慎使用）
-npx supabase db push
-
-# 查看远程数据库状态
-npx supabase db diff --schema public
-```
-
-#### 远程数据库变更 SQL 模板
-
-当需要添加新字段时，在 Supabase Dashboard 的 SQL Editor 中执行：
-
-```sql
--- 添加新字段
-ALTER TABLE table_name ADD COLUMN IF NOT EXISTS column_name data_type;
-
--- 添加索引
-CREATE INDEX IF NOT EXISTS index_name ON table_name(column_name) WHERE condition;
-
--- 添加注释
-COMMENT ON COLUMN table_name.column_name IS 'Column description';
-```
-
-### 本地数据库（开发环境）
-
-**本地开发使用 Docker 运行 Supabase：**
-
-#### 数据库修改流程
-
-1. **修改数据库架构**：直接编辑 `supabase/migrations/00000000000000_initial_schema.sql`
-2. **修改种子数据**：直接编辑 `supabase/migrations/00000000000001_initial_seed.sql`
-3. **重置数据库**：运行 `npx supabase db reset`
-4. **插入测试数据**：运行 `npm run db:seed`
-
-**注意事项：**
-- 不创建新的迁移文件（如 `20250301_xxx.sql`）
-- 所有架构变更直接在 `00000000000000_initial_schema.sql` 中修改
-- 所有种子数据变更直接在 `00000000000001_initial_seed.sql` 中修改
-- db reset 会删除所有本地数据库数据
-- 测试用户: `test@example.com` / `test123456`
-
-### 数据库重置完整流程（本地）
-
-```bash
-# 1. 重置数据库（应用 schema 和 seed 文件）
-npx supabase db reset
-
-# 2. 插入测试数据
-npm run db:seed
-```
-
-### 修改数据库的最佳实践
-
-1. **添加新表**：在 schema 文件的 `TABLES` 部分添加
-2. **添加新字段**：找到对应表定义，添加字段
-3. **添加索引**：在 `INDEXES` 部分添加
-4. **添加 RLS 策略**：在 `ROW LEVEL SECURITY` 部分添加
-5. **添加函数/触发器**：在 `FUNCTIONS` 部分添加
-6. **添加种子数据**：在 seed 文件中添加 INSERT 语句
-
-### 同步本地 Schema 到远程
-
-**推荐流程：**
-
-1. 本地开发完成后，提取变更 SQL
-2. 在 Supabase Dashboard 的 SQL Editor 中执行变更 SQL
-3. 验证远程数据库功能正常
-
-## 自动化测试
-
-### 测试运行时机
-
-**必须运行测试的场景：**
-
-1. **提交代码前** - 必须运行 `npm run lint` 和 `npm run check` 确保代码质量
-2. **功能开发完成后** - 必须运行 `npx playwright test` 确保功能正常
-3. **修改登录/认证相关代码后** - 必须运行登录测试 `npx playwright test --grep="登录"`
-4. **修改 UI 组件后** - 必须运行相关页面的测试用例
-5. **CI/CD 流程中** - 自动运行所有测试
-
-### 测试配置
-
-**环境变量配置：**
-
-在 `.env` 文件中配置测试账号：
-```env
-TEST_USER_EMAIL=test@example.com
-TEST_USER_PASSWORD=test123456
-```
-
-**测试账号管理：**
-
-1. 使用专门的测试账号，不要使用生产账号
-2. 测试账号密码应该简单易记，如 `test123456`
-3. 定期清理测试数据，避免污染数据库
 
 ### 测试命令
 
-**常用测试命令：**
-
 ```bash
-# 运行所有测试
-npx playwright test
-
-# 运行特定浏览器测试
-npx playwright test --project=chromium
-
-# 运行特定测试
-npx playwright test --grep="登录"
-
-# 调试模式
-npx playwright test --debug
-
-# 显示浏览器窗口
-npx playwright test --headed
-
-# 查看测试报告
-npx playwright show-report
+npm run lint                  # 代码检查
+npm run check                 # 类型检查
+npx playwright test           # E2E 测试
+npx playwright test --grep="功能名称"  # 运行特定测试
 ```
 
-### 测试开发规范
+## 数据库规范
 
-**编写测试用例时：**
+### 本地数据库
 
-1. **使用 Page Object Model** - 新的测试应该使用 POM 模式（参考 `tests/pages/LoginPage.ts`）
-2. **语义化选择器** - 优先使用 `data-testid`、`role`、`label` 等语义化属性
-3. **避免硬编码等待** - 使用 Playwright 的自动等待机制，不要使用 `sleep`
-4. **测试独立性** - 每个测试应该独立运行，不依赖其他测试
-5. **清晰的测试名称** - 使用描述性的测试名称，如"应该能够成功登录"
+- **Schema 文件**：`supabase/migrations/00000000000000_initial_schema.sql`
+- **Seed 文件**：`supabase/migrations/00000000000001_initial_seed.sql`
+- **测试用户**：`test@example.com` / `test123456`
+- **不创建新迁移文件**：所有变更直接修改 000 和 001 文件
 
-**测试文件结构：**
+### 远程数据库
 
+- **修改流程**：本地修改 → 提取变更 SQL → Supabase Dashboard 执行
+- **SQL 模板**：
+  ```sql
+  ALTER TABLE table_name ADD COLUMN IF NOT EXISTS column_name data_type;
+  CREATE INDEX IF NOT EXISTS index_name ON table_name(column_name);
+  ```
+
+## 测试规范
+
+### 必须运行测试的场景
+
+1. 提交代码前：`npm run lint` + `npm run check`
+2. 功能开发完成后：`npx playwright test`
+3. 修改登录/认证代码后：`npx playwright test --grep="登录"`
+
+### 测试原则
+
+- 使用 Page Object Model
+- 语义化选择器（`data-testid`、`role`、`label`）
+- 避免硬编码等待
+- 测试独立性
+
+## 代码规范
+
+### 日志规范
+
+- **前端**：禁止 `console.log/info`，允许 `warn/error`
+- **后端**：使用 `logger` 工具，禁止 `console`
+
+### 类型安全
+
+- 禁止 `any` 类型
+- 禁止非空断言（`!`）
+- 使用可选链（`?.`）和空值合并（`??`）
+
+## AI 服务规范
+
+### Prompt 管理
+
+- **必须从数据库读取**：禁止硬编码
+- **三层管理**：System < User < Graph（优先级递增）
+- **使用方式**：
+  ```typescript
+  const prompt = await promptService.getRenderedPrompt(
+    supabaseAdmin,
+    "prompt_code",
+    { variable: "value" },
+  );
+  ```
+
+### AI 监控
+
+- **必须记录性能数据**：token 使用、成本、时长
+- **使用方式**：
+  ```typescript
+  await performanceMonitor.recordLog({
+    operation: "operation_name",
+    provider: "openai",
+    model: "gpt-4",
+    inputTokens: 100,
+    outputTokens: 200,
+    duration: 1500,
+    success: true,
+  });
+  ```
+
+## 缓存机制
+
+### 架构
+
+- **生产**：Redis
+- **开发/降级**：NodeCache
+- **自动降级**：Redis 不可用时自动切换
+
+### 使用规范
+
+```typescript
+// 基本使用
+await cacheService.set(key, value, ttl);
+const data = await cacheService.get(key);
+
+// 请求去重（推荐）
+const data = await cacheService.getOrSet(
+  CacheKeys.GRAPH_NODES(userId, graphId),
+  () => fetchFromDB(),
+  300,
+);
+
+// 标签化缓存
+await cacheService.set(key, value, 300, ["graph", `user-${userId}`]);
+await cacheService.delByTags(["graph"]);
+
+// 业务缓存失效
+await cacheService.invalidateGraphCache(userId, graphId);
 ```
-tests/
-├── pages/              # Page Object Model
-│   └── LoginPage.ts
-├── utils/              # 测试辅助函数
-│   └── testHelpers.ts
-└── *.spec.ts          # 测试用例文件
+
+### 最佳实践
+
+1. 优先使用 `getOrSet`
+2. 使用标签便于批量失效
+3. TTL 随机化防止缓存雪崩
+
+## 错误处理
+
+### 自定义错误
+
+```typescript
+throw new AppError(ErrorCodes.NOT_FOUND, {
+  context: { userId: "123", resource: "graph" },
+});
 ```
 
-### 测试失败处理
+### 常用错误代码
 
-**测试失败时的处理流程：**
+- `VALIDATION_REQUIRED_FIELD_MISSING` (400)
+- `NOT_FOUND` (404)
+- `UNAUTHORIZED` (401)
+- `FORBIDDEN` (403)
 
-1. 查看测试报告 `npx playwright show-report`
-2. 检查失败截图和视频
-3. 使用 Trace 文件分析问题 `npx playwright show-trace test-results/...`
-4. 修复代码或测试用例
-5. 重新运行测试验证
+### 特性
 
-### 开发工作流
+- 自动过滤敏感信息
+- 请求 ID 追踪
 
-**推荐的开发流程：**
+## 重试机制
 
-1. 编写代码
-2. 运行类型检查 `npm run check`
-3. 运行代码检查 `npm run lint`
-4. 运行相关测试 `npx playwright test --grep="功能名称"`
-5. 修复发现的问题
-6. 提交代码
+### 使用方式
 
-## 代码质量规范
+```typescript
+// 组合使用（推荐）
+await withTimeoutAndRetry(() => callAI(), {
+  timeout: LONG_TIMEOUT, // 3分钟
+  maxRetries: 3,
+  initialDelay: 1000,
+  maxDelay: 10000,
+});
+```
 
-### 日志使用规范
+### 使用场景
 
-**前端日志：**
+- AI 服务调用
+- 外部 API 调用
+- 数据库操作
 
-1. **禁止使用 `console.log` 和 `console.info`** - ESLint 会报错
-2. **允许使用 `console.warn` 和 `console.error`** - 用于警告和错误报告
-3. **调试日志应移除** - 提交前清理所有调试日志
-4. **特殊情况** - `serviceWorker.ts` 和 `performance.ts` 中的日志除外
+## 任务队列
 
-**后端日志：**
+### 架构
 
-1. **使用统一的 Logger 工具** - 位于 `api/utils/logger.ts`
-2. **导入方式**：
-   ```typescript
-   import { logger } from '../utils/logger';
-   ```
-3. **使用方法**：
-   ```typescript
-   logger.info('信息日志', { context: 'data' });
-   logger.warn('警告日志');
-   logger.error('错误日志', error);
-   logger.debug('调试日志');
-   ```
-4. **禁止直接使用 console** - 后端代码应全部使用 logger
+- **队列**：BullMQ
+- **存储**：Redis
+- **Worker**：独立进程，并发数 5
 
-### 类型安全规范
+### 任务类型
 
-**禁止使用 `any` 类型：**
+- `expand_graph`（高优先级）
+- `generate_questions`（中优先级）
+- `embedding_generation`（低优先级）
 
-1. **ESLint 规则** - `@typescript-eslint/no-explicit-any: warn`
-2. **替代方案**：
-   - 使用具体类型：`string`、`number`、`object` 等
-   - 使用泛型：`T`、`Array<T>`、`Record<string, unknown>`
-   - 使用 `unknown` 并进行类型守卫
-   - 定义接口：`interface MyData { ... }`
+### 使用方式
 
-**禁止非空断言：**
+```typescript
+await queueService.addTask({
+  type: "expand_graph",
+  userId: "user-123",
+  payload: { nodeId: "node-456" },
+});
+```
 
-1. **ESLint 规则** - `@typescript-eslint/no-non-null-assertion: warn`
-2. **替代方案**：
-   - 使用可选链：`obj?.property`
-   - 使用空值合并：`value ?? defaultValue`
-   - 添加类型守卫：`if (value) { ... }`
+## SSE 实时通信
 
-**TypeScript 严格模式：**
+### 使用方式
 
-项目已启用以下严格选项：
-- `strict: true` - 启用所有严格类型检查
-- `noImplicitAny: true` - 禁止隐式 any
-- `strictNullChecks: true` - 严格的 null 检查
-- `noImplicitReturns: true` - 函数必须有返回值
-- `noImplicitOverride: true` - 重写方法必须使用 override 关键字
+```typescript
+// 服务端发送
+sseService.sendToUser(userId, {
+  type: "notification",
+  message: "Task completed",
+});
 
-### 测试编写规范
+// 客户端接收
+const eventSource = new EventSource("/api/sse");
+eventSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+};
+```
 
-**单元测试：**
+### 特性
 
-1. **测试文件位置** - `src/__tests__/` 目录
-2. **命名规范** - `*.test.ts` 或 `*.test.tsx`
-3. **运行命令** - `npm test`
-4. **覆盖范围**：
-   - 核心 hooks（`src/hooks/`）
-   - 核心服务（`src/services/`）
-   - 工具函数（`src/utils/`）
+- 用户级连接管理
+- 心跳保活（25秒）
+- 自动清理断开连接
 
-**E2E 测试：**
+## 任务调度
 
-1. **测试文件位置** - `e2e/` 目录
-2. **命名规范** - `*.spec.ts`
-3. **运行命令** - `npm run test:e2e`
-4. **覆盖范围**：
-   - 登录/注册流程
-   - 图谱创建和编辑
-   - 学习模式
-   - 任务管理
+### SM2 算法
 
-**测试原则：**
+```typescript
+const nextReview = sm2Service.calculateNextReview(
+  quality, // 0-5
+  interval, // 当前间隔
+  easeFactor, // 难度因子
+);
+```
 
-1. **独立性** - 每个测试应独立运行
-2. **可重复性** - 测试结果应稳定可重复
-3. **清晰性** - 测试名称应描述预期行为
-4. **快速性** - 单元测试应快速执行
+### 智能推荐
 
-## CI/CD 流程
+```typescript
+const recommendations = await taskRecommendationService.getRecommendations(
+  client,
+  userId,
+);
+```
 
-### CI 检查项
+## 自动备份
 
-每次提交代码时，CI 会自动运行以下检查：
+- **定时备份**：定期自动备份
+- **增量备份**：只备份变更数据
+- **自动清理**：保留最近 30 天
 
-1. **Lint** - 代码风格检查
-2. **Type Check (Web)** - Web 端类型检查
-3. **Type Check (Electron)** - Electron 端类型检查
-4. **Security Audit** - 依赖安全审计
-5. **Unit Tests** - 单元测试
-6. **Build** - 构建验证
-7. **Build Size Report** - 构建产物大小报告
-8. **E2E Tests** - 端到端测试
-
-### 本地验证
-
-提交代码前，请运行以下命令进行本地验证：
-
-```bash
-# 类型检查
-npm run check
-npm run check:electron
-
-# 代码检查
-npm run lint
-
-# 单元测试
-npm test -- run
-
-# 构建
-npm run build
+```typescript
+const backup = await exportUserData(userId);
 ```

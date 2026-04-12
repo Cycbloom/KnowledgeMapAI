@@ -36,7 +36,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   const filteredTemplates = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    return templates.filter((t: Template) => {
+    return templates.filter((t) => {
       const matchesSearch = t.name.toLowerCase().includes(query) ||
         (t.description && t.description.toLowerCase().includes(query));
       const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;

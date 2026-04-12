@@ -149,13 +149,14 @@ Return a JSON object with the following structure:
   ]
 }
 
+ 
 Important:
 - Generate 3-4 suggested goals with different difficulty levels
-- Generate 3-5 prerequisite questions relevant to the topic
-- Goals should be specific and motivating
-- Questions should identify knowledge that helps learn this topic
-- Always use the exact 4 options: 不了解, 了解一点, 比较熟悉, 非常熟悉
-- Respond in Chinese`,
+- generate 3-5 prerequisite questions relevant to the topic
+- goals should be specific and motivating
+- questions should identify knowledge that helps learn this topic
+- always use the exact 4 options: 不了解, 了解一点, 比较熟悉, 非常熟悉
+- respond in Chinese`,
 
   generate_cards: GENERATE_CARDS_SCHEMA,
   generate_cards_qa: GENERATE_CARDS_SCHEMA,
@@ -166,15 +167,83 @@ Important:
   generate_cards_essay: GENERATE_CARDS_SCHEMA,
 
   branch_suggestions: `
-Return a JSON object with a 'suggestions' array. Each object must have:
-- 'id': Unique identifier for this suggestion
-- 'title': Brief, catchy title for the branch (max 20 chars)
-- 'description': Short description explaining what this branch explores (max 100 chars)
-- 'priority': 'high', 'medium', or 'low' based on importance
-- 'estimatedDifficulty': Number from 1-5 indicating difficulty
-- 'relatedTopics': Array of 2-3 related topic keywords
-Example format: { "suggestions": [{ "id": "branch_1", "title": "深入原理", "description": "探索核心原理", "priority": "high", "estimatedDifficulty": 4, "relatedTopics": ["theory", "fundamentals"] }] }
-Please respond in Chinese.`,
+return a json object with a 'suggestions' array. Each object must have:
+- 'id': Unique identifier for the branch
+- 'title': Branch title
+- 'content': Brief description of the branch direction
+- 'existingNodes': Array of existing node titles to link to (if any)
+- 'linkingStrategy': 'hierarchical' or 'network'
+- 'priority': 1-5 (1 is highest)
+- 'reason': Why this branch is interesting
+
+Important:
+- Generate 3-5 branches
+- Each branch should be distinct and represent different perspectives
+- Consider linking to existing nodes if relevant
+- Respond in Chinese`,
+
+  template_generation: `
+return a JSON object with the following structure:
+{
+  "templates": [
+    {
+      "id": "template-1",
+      "name": "Template Name",
+      "description": "Brief description of this template approach",
+      "nodes": [
+        {
+          "id": "node-1",
+          "title": "Node Title",
+          "description": "What this node represents",
+          "level": "root|core|sub|normal|leaf",
+          "parentId": null or "parent-node-id",
+          "suggestedContent": "Brief suggestion for content",
+          "color": "#hexcolor"
+        }
+      ],
+      "edges": [
+        {
+          "source": "node-id",
+          "target": "node-id",
+          "relationship_type": "contains|related|prerequisite",
+          "description": "Why this connection exists"
+        }
+      ],
+      "layoutSuggestion": "radial|tree|network|hierarchical",
+      "estimatedNodes": 10,
+      "difficulty": "easy|medium|hard",
+      "tags": ["tag1", "tag2"],
+      "reasoning": "Why this structure works for the topic"
+    }
+  ]
+}
+
+Important:
+- Generate exactly 3 different template schemes
+- Each template should have 5-15 nodes as examples
+- Use meaningful node titles (not generic like "Node 1")
+- Ensure all edge references point to valid node IDs
+- Consider the topic's nature when choosing structures
+- provide clear reasoning for each template choice
+- respond in Chinese`,
+
+  template_application: `
+Return a JSON object with the following structure:
+{
+  "nodes": [
+    {
+      "id": "node-1",
+      "title": "Node Title",
+      "content": "Detailed content for this node (100-200 words)"
+    }
+  ]
+}
+
+Important:
+- Generate content for each node in the template
+- Maintain the template structure
+- Follow the selected style (academic, practical, beginner, custom)
+- respond in Chinese`,
 
   text_to_graph: `
 Return a JSON object with 'nodes' and 'edges' arrays.

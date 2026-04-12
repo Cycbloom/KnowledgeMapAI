@@ -14,6 +14,13 @@ export { learningPathsApi, learningPathApi } from './learningPaths';
 export type { LearningPathStatus, NodeStatus, GoalType } from './learningPaths';
 export { ragApi } from './rag';
 export { autoGraphApi } from './autoGraph';
+export type {
+  GenerateTemplatesData,
+  GenerateTemplatesResult,
+  GeneratedTemplate,
+  ApplyTemplateData,
+  ApplyTemplateResult,
+} from './autoGraph';
 export { healthApi } from './health';
 export { backupApi } from './backup';
 export { quizApi } from './quiz';

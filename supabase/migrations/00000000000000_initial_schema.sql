@@ -283,9 +283,21 @@ CREATE TABLE IF NOT EXISTS templates (
   nodes JSONB NOT NULL,
   edges JSONB DEFAULT '[]',
   layout JSONB,
+  generation_config JSONB,
+  preview_data JSONB,
+  tags TEXT[] DEFAULT '{}',
+  difficulty VARCHAR(20) DEFAULT 'medium',
+  estimated_nodes INTEGER DEFAULT 10,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+COMMENT ON TABLE templates IS '知识图谱模板表，存储预设和用户自定义模板';
+COMMENT ON COLUMN templates.generation_config IS 'AI生成配置：风格、深度、语言等';
+COMMENT ON COLUMN templates.preview_data IS '预览数据：示例节点和边的缩略图数据';
+COMMENT ON COLUMN templates.tags IS '模板标签数组，用于分类和搜索';
+COMMENT ON COLUMN templates.difficulty IS '模板难度：easy, medium, hard';
+COMMENT ON COLUMN templates.estimated_nodes IS '预计生成的节点数量';
 
 -- Prompt templates table
 CREATE TABLE IF NOT EXISTS prompt_templates (

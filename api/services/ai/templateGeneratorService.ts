@@ -1,0 +1,548 @@
+import type { AIProviderType } from "@shared/types";
+import type {
+  TemplateNode,
+  TemplateEdge,
+  TemplateDifficulty,
+  TemplateCategory,
+  LayoutSuggestion,
+  NodeLevel,
+} from "@shared/types/graph";
+import { getAIProviderForTask, getAIProvider } from "./factory";
+import { promptService } from "./promptService";
+import { logger } from "../../utils/logger";
+import { parseAIResponse } from "./utils";
+import {
+  withTimeoutAndRetry,
+  TimeoutError,
+  RetryError,
+  LONG_TIMEOUT,
+} from "../../utils/retry";
+import { AppError } from "../../middleware/errorHandler";
+import { ErrorCodes } from "../../../shared/types/errorCodes";
+import { supabaseAdmin } from "../../supabase";
+
+export interface GeneratedTemplateNode extends TemplateNode {
+  suggestedContent?: string;
+}
+
+export interface GeneratedTemplateEdge extends TemplateEdge {
+  description?: string;
+}
+
+export interface GeneratedTemplateScheme {
+  id: string;
+  name: string;
+  description: string;
+  nodes: GeneratedTemplateNode[];
+  edges: GeneratedTemplateEdge[];
+  layoutSuggestion: LayoutSuggestion;
+  estimatedNodes: number;
+  difficulty: TemplateDifficulty;
+  tags: string[];
+  reasoning: string;
+}
+
+export interface GenerateTemplatesOptions {
+  topic: string;
+  context?: string;
+  category?: TemplateCategory;
+  provider?: AIProviderType;
+  model?: string;
+  userId?: string;
+  graphId?: string;
+  maxNodes?: number;
+  preferredLayout?: LayoutSuggestion;
+}
+
+export interface GenerateTemplatesResult {
+  templates: GeneratedTemplateScheme[];
+  metadata: {
+    topic: string;
+    generatedAt: string;
+    provider: string;
+    model: string;
+  };
+}
+
+const TEMPLATE_GENERATION_PROMPT = `You are an expert knowledge graph template designer. Your task is to generate 3 different template schemes for the given topic.
+
+## Requirements
+
+For each template scheme, provide:
+1. **Unique Structure**: Each template should have a different organizational approach
+2. **Node Hierarchy**: Clear parent-child relationships with appropriate levels (root, core, sub, normal, leaf)
+3. **Edge Relationships**: Meaningful connections between nodes
+4. **Content Suggestions**: Brief description of what each node should contain
+5. **Layout Recommendation**: Suggest the best layout type (radial, tree, network, hierarchical)
+6. **Difficulty Assessment**: Rate the complexity (easy, medium, hard)
+7. **Tags**: Auto-generate relevant tags for categorization
+
+## Template Types to Consider
+
+1. **Hierarchical/Tree Structure**: Top-down organization with clear levels
+2. **Network/Mesh Structure**: Interconnected concepts with multiple relationships
+3. **Process/Flow Structure**: Sequential or cyclical knowledge flow
+4. **Quadrant/Matrix Structure**: Organized by two dimensions
+5. **Timeline Structure**: Chronological or evolutionary progression
+
+## Output Format
+
+Return a JSON object with the following structure:
+{
+  "templates": [
+    {
+      "id": "template-1",
+      "name": "Template Name",
+      "description": "Brief description of this template approach",
+      "nodes": [
+        {
+          "id": "node-1",
+          "title": "Node Title",
+          "description": "What this node represents",
+          "level": "root|core|sub|normal|leaf",
+          "parentId": null or "parent-node-id",
+          "suggestedContent": "Brief suggestion for content",
+          "color": "#hexcolor"
+        }
+      ],
+      "edges": [
+        {
+          "source": "node-id",
+          "target": "node-id",
+          "relationship_type": "contains|related|prerequisite",
+          "description": "Why this connection exists"
+        }
+      ],
+      "layoutSuggestion": "radial|tree|network|hierarchical",
+      "estimatedNodes": 10,
+      "difficulty": "easy|medium|hard",
+      "tags": ["tag1", "tag2"],
+      "reasoning": "Why this structure works for the topic"
+    }
+  ]
+}
+
+## Guidelines
+
+1. Generate exactly 3 different template schemes
+2. Each template should have 5-15 nodes as examples
+3. Use meaningful node titles (not generic like "Node 1")
+4. Ensure all edge references point to valid node IDs
+5. Consider the topic's nature when choosing structures
+6. Provide clear reasoning for each template choice
+7. Respond in Chinese for all descriptions and content`;
+
+const TEMPLATE_VALIDATION_RULES = {
+  minNodes: 3,
+  maxNodes: 50,
+  validLevels: ["root", "core", "sub", "normal", "leaf"] as NodeLevel[],
+  validDifficulties: ["easy", "medium", "hard"] as TemplateDifficulty[],
+  validLayouts: ["radial", "tree", "network", "hierarchical"] as LayoutSuggestion[],
+};
+
+function validateNode(node: unknown, index: number): GeneratedTemplateNode | null {
+  if (typeof node !== "object" || node === null) {
+    logger.warn(`[Template Generator] Invalid node at index ${index}: not an object`);
+    return null;
+  }
+
+  const n = node as Record<string, unknown>;
+
+  if (typeof n.id !== "string" || !n.id.trim()) {
+    logger.warn(`[Template Generator] Invalid node at index ${index}: missing id`);
+    return null;
+  }
+
+  if (typeof n.title !== "string" || !n.title.trim()) {
+    logger.warn(`[Template Generator] Invalid node at index ${index}: missing title`);
+    return null;
+  }
+
+  const level = n.level as NodeLevel;
+  if (!TEMPLATE_VALIDATION_RULES.validLevels.includes(level)) {
+    logger.warn(`[Template Generator] Invalid node at index ${index}: invalid level "${level}"`);
+    return null;
+  }
+
+  return {
+    id: n.id as string,
+    title: n.title as string,
+    description: n.description as string | undefined,
+    level,
+    parentId: n.parentId as string | undefined,
+    aiPrompt: n.aiPrompt as string | undefined,
+    color: n.color as string | undefined,
+    suggestedContent: n.suggestedContent as string | undefined,
+  };
+}
+
+function validateEdge(edge: unknown, validNodeIds: Set<string>, index: number): GeneratedTemplateEdge | null {
+  if (typeof edge !== "object" || edge === null) {
+    logger.warn(`[Template Generator] Invalid edge at index ${index}: not an object`);
+    return null;
+  }
+
+  const e = edge as Record<string, unknown>;
+
+  if (typeof e.source !== "string" || !validNodeIds.has(e.source)) {
+    logger.warn(`[Template Generator] Invalid edge at index ${index}: invalid source "${e.source}"`);
+    return null;
+  }
+
+  if (typeof e.target !== "string" || !validNodeIds.has(e.target)) {
+    logger.warn(`[Template Generator] Invalid edge at index ${index}: invalid target "${e.target}"`);
+    return null;
+  }
+
+  return {
+    source: e.source as string,
+    target: e.target as string,
+    relationship_type: e.relationship_type as string | undefined,
+    description: e.description as string | undefined,
+  };
+}
+
+function validateTemplate(template: unknown, index: number): GeneratedTemplateScheme | null {
+  if (typeof template !== "object" || template === null) {
+    logger.warn(`[Template Generator] Invalid template at index ${index}: not an object`);
+    return null;
+  }
+
+  const t = template as Record<string, unknown>;
+
+  if (typeof t.name !== "string" || !t.name.trim()) {
+    logger.warn(`[Template Generator] Invalid template at index ${index}: missing name`);
+    return null;
+  }
+
+  if (!Array.isArray(t.nodes) || t.nodes.length < TEMPLATE_VALIDATION_RULES.minNodes) {
+    logger.warn(`[Template Generator] Invalid template at index ${index}: insufficient nodes`);
+    return null;
+  }
+
+  const validNodes: GeneratedTemplateNode[] = [];
+  for (let i = 0; i < t.nodes.length; i++) {
+    const validatedNode = validateNode(t.nodes[i], i);
+    if (validatedNode) {
+      validNodes.push(validatedNode);
+    }
+  }
+
+  if (validNodes.length < TEMPLATE_VALIDATION_RULES.minNodes) {
+    logger.warn(`[Template Generator] Template "${t.name}" has too few valid nodes`);
+    return null;
+  }
+
+  const validNodeIds = new Set(validNodes.map((n) => n.id));
+
+  const validEdges: GeneratedTemplateEdge[] = [];
+  if (Array.isArray(t.edges)) {
+    for (let i = 0; i < t.edges.length; i++) {
+      const validatedEdge = validateEdge(t.edges[i], validNodeIds, i);
+      if (validatedEdge) {
+        validEdges.push(validatedEdge);
+      }
+    }
+  }
+
+  const layoutSuggestion = t.layoutSuggestion as LayoutSuggestion;
+  const validLayout = TEMPLATE_VALIDATION_RULES.validLayouts.includes(layoutSuggestion)
+    ? layoutSuggestion
+    : "radial";
+
+  const difficulty = t.difficulty as TemplateDifficulty;
+  const validDifficulty = TEMPLATE_VALIDATION_RULES.validDifficulties.includes(difficulty)
+    ? difficulty
+    : "medium";
+
+  const tags = Array.isArray(t.tags)
+    ? (t.tags as string[]).filter((tag) => typeof tag === "string").slice(0, 10)
+    : [];
+
+  return {
+    id: (t.id as string) || `template-${index + 1}`,
+    name: t.name as string,
+    description: (t.description as string) || "",
+    nodes: validNodes,
+    edges: validEdges,
+    layoutSuggestion: validLayout,
+    estimatedNodes: Math.min(
+      TEMPLATE_VALIDATION_RULES.maxNodes,
+      Math.max(TEMPLATE_VALIDATION_RULES.minNodes, (t.estimatedNodes as number) || validNodes.length)
+    ),
+    difficulty: validDifficulty,
+    tags,
+    reasoning: (t.reasoning as string) || "",
+  };
+}
+
+function getMockTemplates(topic: string): GenerateTemplatesResult {
+  const mockTemplates: GeneratedTemplateScheme[] = [
+    {
+      id: "mock-template-1",
+      name: `${topic} - 层级结构`,
+      description: "采用自上而下的层级结构，适合系统性学习",
+      nodes: [
+        { id: "root", title: topic, level: "root", parentId: undefined, suggestedContent: `${topic}的核心概念和定义` },
+        { id: "core-1", title: "基础概念", level: "core", parentId: "root", suggestedContent: "基本定义和术语" },
+        { id: "core-2", title: "核心原理", level: "core", parentId: "root", suggestedContent: "核心理论和方法" },
+        { id: "sub-1", title: "应用场景", level: "sub", parentId: "core-2", suggestedContent: "实际应用案例" },
+        { id: "sub-2", title: "进阶内容", level: "sub", parentId: "core-2", suggestedContent: "深入研究方向" },
+      ],
+      edges: [
+        { source: "root", target: "core-1", relationship_type: "contains" },
+        { source: "root", target: "core-2", relationship_type: "contains" },
+        { source: "core-2", target: "sub-1", relationship_type: "contains" },
+        { source: "core-2", target: "sub-2", relationship_type: "contains" },
+      ],
+      layoutSuggestion: "tree",
+      estimatedNodes: 10,
+      difficulty: "medium",
+      tags: ["层级结构", "系统学习", topic],
+      reasoning: "适合初学者建立知识体系",
+    },
+    {
+      id: "mock-template-2",
+      name: `${topic} - 网络结构`,
+      description: "采用网络状结构，展示概念间的关联",
+      nodes: [
+        { id: "center", title: topic, level: "root", parentId: undefined, suggestedContent: "中心主题" },
+        { id: "node-1", title: "相关概念A", level: "core", parentId: "center", suggestedContent: "关联知识" },
+        { id: "node-2", title: "相关概念B", level: "core", parentId: "center", suggestedContent: "关联知识" },
+        { id: "node-3", title: "相关概念C", level: "core", parentId: "center", suggestedContent: "关联知识" },
+        { id: "node-4", title: "交叉领域", level: "sub", parentId: "node-1", suggestedContent: "跨领域知识" },
+      ],
+      edges: [
+        { source: "center", target: "node-1", relationship_type: "related" },
+        { source: "center", target: "node-2", relationship_type: "related" },
+        { source: "center", target: "node-3", relationship_type: "related" },
+        { source: "node-1", target: "node-4", relationship_type: "related" },
+        { source: "node-2", target: "node-3", relationship_type: "related" },
+      ],
+      layoutSuggestion: "network",
+      estimatedNodes: 12,
+      difficulty: "medium",
+      tags: ["网络结构", "关联学习", topic],
+      reasoning: "适合理解概念间的复杂关系",
+    },
+    {
+      id: "mock-template-3",
+      name: `${topic} - 流程结构`,
+      description: "采用流程化结构，展示知识的演进过程",
+      nodes: [
+        { id: "start", title: `${topic}入门`, level: "root", parentId: undefined, suggestedContent: "入门基础" },
+        { id: "step-1", title: "第一步：理解基础", level: "core", parentId: "start", suggestedContent: "基础知识" },
+        { id: "step-2", title: "第二步：掌握方法", level: "core", parentId: "step-1", suggestedContent: "核心方法" },
+        { id: "step-3", title: "第三步：实践应用", level: "sub", parentId: "step-2", suggestedContent: "实践练习" },
+        { id: "end", title: "高级进阶", level: "leaf", parentId: "step-3", suggestedContent: "高级内容" },
+      ],
+      edges: [
+        { source: "start", target: "step-1", relationship_type: "prerequisite" },
+        { source: "step-1", target: "step-2", relationship_type: "prerequisite" },
+        { source: "step-2", target: "step-3", relationship_type: "prerequisite" },
+        { source: "step-3", target: "end", relationship_type: "prerequisite" },
+      ],
+      layoutSuggestion: "hierarchical",
+      estimatedNodes: 8,
+      difficulty: "easy",
+      tags: ["流程结构", "循序渐进", topic],
+      reasoning: "适合按步骤学习",
+    },
+  ];
+
+  return {
+    templates: mockTemplates,
+    metadata: {
+      topic,
+      generatedAt: new Date().toISOString(),
+      provider: "mock",
+      model: "mock",
+    },
+  };
+}
+
+export class TemplateGeneratorService {
+  async generateTemplates(
+    options: GenerateTemplatesOptions
+  ): Promise<GenerateTemplatesResult> {
+    const { topic, provider: providerType } = options;
+
+    const provider = providerType
+      ? await getAIProvider(providerType)
+      : await getAIProviderForTask("text");
+
+    if (!provider.hasKey) {
+      logger.info("[Template Generator] No API key configured, returning mock templates");
+      return getMockTemplates(topic);
+    }
+
+    try {
+      const result = await this.callAI(provider, options);
+      return result;
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("[Template Generator] AI Error:", error);
+
+      if (err instanceof TimeoutError) {
+        throw new AppError(ErrorCodes.AI_TIMEOUT);
+      }
+      if (err instanceof RetryError) {
+        throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+          message: `AI 请求失败，已重试 ${err.attempts} 次: ${err.lastError.message}`,
+        });
+      }
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: err.message || "AI template generation failed",
+      });
+    }
+  }
+
+  private async callAI(
+    provider: { providerType: AIProviderType; model: string; hasKey: boolean; client: unknown },
+    options: GenerateTemplatesOptions
+  ): Promise<GenerateTemplatesResult> {
+    const { topic, context, category, preferredLayout } = options;
+    const model = options.model || provider.model;
+
+    const systemPrompt = await this.buildSystemPrompt(category, preferredLayout);
+
+    const userPrompt = this.buildUserPrompt(topic, context);
+
+    const client = provider.client as {
+      chat: {
+        completions: {
+          create: (params: {
+            messages: Array<{ role: string; content: string }>;
+            model: string;
+            response_format?: { type: string };
+            max_tokens?: number;
+          }) => Promise<{
+            choices: Array<{ message: { content: string | null } }>;
+            usage?: {
+              prompt_tokens?: number;
+              completion_tokens?: number;
+            };
+          }>;
+        };
+      };
+    };
+
+    const completion = await withTimeoutAndRetry(
+      () =>
+        client.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          model,
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
+        }),
+      {
+        timeout: LONG_TIMEOUT,
+        maxRetries: 3,
+        onRetry: (attempt, error) => {
+          logger.warn(
+            `[Template Generator] Retry attempt ${attempt}: ${error.message}`
+          );
+        },
+      }
+    );
+
+    const content = completion.choices[0].message.content;
+
+    if (!content) {
+      logger.error("[Template Generator] Empty response from AI");
+      throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
+        message: "AI 返回了空响应",
+      });
+    }
+
+    const parsed = parseAIResponse<{ templates: unknown[] }>(
+      content,
+      "Template Generation"
+    );
+
+    const validatedTemplates: GeneratedTemplateScheme[] = [];
+    const templates = parsed.templates || [];
+
+    for (let i = 0; i < templates.length; i++) {
+      const validated = validateTemplate(templates[i], i);
+      if (validated) {
+        validatedTemplates.push(validated);
+      }
+    }
+
+    if (validatedTemplates.length === 0) {
+      logger.warn("[Template Generator] No valid templates generated, using mock");
+      return getMockTemplates(topic);
+    }
+
+    return {
+      templates: validatedTemplates.slice(0, 3),
+      metadata: {
+        topic,
+        generatedAt: new Date().toISOString(),
+        provider: provider.providerType,
+        model,
+      },
+    };
+  }
+
+  private async buildSystemPrompt(
+    category?: TemplateCategory,
+    preferredLayout?: LayoutSuggestion
+  ): Promise<string> {
+    const customPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      "template_generation",
+      {
+        category: category || "custom",
+        preferredLayout: preferredLayout || "radial",
+      }
+    );
+
+    if (customPrompt && customPrompt.trim().length > 0) {
+      return customPrompt;
+    }
+
+    let categoryGuidance = "";
+    if (category) {
+      const categoryGuides: Record<TemplateCategory, string> = {
+        learning: "Focus on educational structure with clear learning paths and prerequisites.",
+        story: "Focus on narrative structure with characters, events, and plot development.",
+        project: "Focus on project management structure with tasks, milestones, and dependencies.",
+        analysis: "Focus on analytical structure with factors, comparisons, and conclusions.",
+        custom: "Use a flexible structure that adapts to the specific topic.",
+      };
+      categoryGuidance = `\n\n## Category Guidance\n${categoryGuides[category] || categoryGuides.custom}`;
+    }
+
+    let layoutGuidance = "";
+    if (preferredLayout) {
+      const layoutGuides: Record<LayoutSuggestion, string> = {
+        radial: "Center the main topic with related concepts radiating outward.",
+        tree: "Use a hierarchical tree structure with clear parent-child relationships.",
+        network: "Create an interconnected network showing relationships between concepts.",
+        hierarchical: "Use a top-down hierarchical structure with clear levels.",
+      };
+      layoutGuidance = `\n\n## Preferred Layout\n${layoutGuides[preferredLayout] || ""}`;
+    }
+
+    return `${TEMPLATE_GENERATION_PROMPT}${categoryGuidance}${layoutGuidance}`;
+  }
+
+  private buildUserPrompt(topic: string, context?: string): string {
+    let prompt = `主题：${topic}`;
+
+    if (context && context.trim()) {
+      prompt += `\n\n背景信息：\n${context}`;
+    }
+
+    prompt += `\n\n请为这个主题生成 3 个不同的知识图谱模板方案。`;
+
+    return prompt;
+  }
+}
+
+export const templateGeneratorService = new TemplateGeneratorService();

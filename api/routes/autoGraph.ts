@@ -13,6 +13,8 @@ import { logger } from "../utils/logger";
 import { scrapeUrl } from "../utils/scraper";
 import { autoGraphService, graphNodeService } from "../services/graph/index";
 import { embeddingService } from "../services/ai/embeddingService";
+import { templateGeneratorService } from "../services/ai/templateGeneratorService";
+import type { TemplateCategory, LayoutSuggestion } from "@shared/types/graph";
 import { z } from "zod";
 import { saveNodesSchema } from "../schemas/index";
 
@@ -154,6 +156,64 @@ const expandNodeSchema = z.object({
 const optimizePromptSchema = z.object({
   topic: z.string().min(1),
   currentPrompt: z.string().optional(),
+});
+
+const generateTemplatesSchema = z.object({
+  topic: z.string().min(2).max(200),
+  context: z.string().max(1000).optional(),
+  category: z
+    .enum(["learning", "story", "project", "analysis", "custom"])
+    .optional(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+  graph_id: z.string().uuid().optional(),
+  maxNodes: z.number().min(5).max(50).optional(),
+  preferredLayout: z
+    .enum(["radial", "tree", "network", "hierarchical"])
+    .optional(),
+});
+
+const applyTemplateSchema = z.object({
+  template: z
+    .object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      description: z.string().optional(),
+      nodes: z.array(
+        z.object({
+          id: z.string().min(1),
+          title: z.string().min(1),
+          description: z.string().optional(),
+          level: z.enum(["root", "core", "sub", "normal", "leaf"]),
+          parentId: z.string().optional(),
+          suggestedContent: z.string().optional(),
+          color: z.string().optional(),
+        })
+      ),
+      edges: z.array(
+        z.object({
+          source: z.string().min(1),
+          target: z.string().min(1),
+          relationship_type: z.string().optional(),
+          description: z.string().optional(),
+        })
+      ),
+      layoutSuggestion: z.enum(["radial", "tree", "network", "hierarchical"]),
+      estimatedNodes: z.number().optional(),
+      difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+      tags: z.array(z.string()).optional(),
+      reasoning: z.string().optional(),
+    })
+    .optional(),
+  templateId: z.string().optional(),
+  topic: z.string().min(2).max(200),
+  style: z
+    .enum(["academic", "practical", "beginner", "custom"])
+    .default("academic"),
+  customPrompt: z.string().optional(),
+  graph_id: z.string().uuid(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
 });
 
 router.post(
@@ -607,5 +667,263 @@ router.get("/embedding-status", async (req: AuthRequest, res) => {
     );
   }
 });
+
+router.post(
+  "/generate-templates",
+  requireAuth,
+  validate(generateTemplatesSchema),
+  async (req: AuthRequest, res: Response) => {
+    const {
+      topic,
+      context,
+      category,
+      provider: providerType,
+      model,
+      graph_id,
+      maxNodes,
+      preferredLayout,
+    } = req.body;
+
+    const startTime = Date.now();
+
+    try {
+      logger.info("Generating templates", {
+        topic,
+        category,
+        userId: req.user.id,
+        graphId: graph_id,
+      });
+
+      const result = await templateGeneratorService.generateTemplates({
+        topic,
+        context,
+        category: category as TemplateCategory | undefined,
+        provider: providerType as AIProviderType | undefined,
+        model,
+        userId: req.user.id,
+        graphId: graph_id,
+        maxNodes,
+        preferredLayout: preferredLayout as LayoutSuggestion | undefined,
+      });
+
+      const duration = Date.now() - startTime;
+
+      logger.info("Templates generated successfully", {
+        topic,
+        templateCount: result.templates.length,
+        provider: result.metadata.provider,
+        model: result.metadata.model,
+        duration,
+      });
+
+      res.json(result);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("Generate templates error:", {
+        topic,
+        error: err.message,
+        stack: err.stack,
+      });
+
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        err.message || "模板生成失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  }
+);
+
+router.post(
+  "/apply-template",
+  requireAuth,
+  validate(applyTemplateSchema),
+  async (req: AuthRequest, res: Response) => {
+    const {
+      template,
+      templateId,
+      topic,
+      style,
+      customPrompt,
+      graph_id,
+      provider: providerType,
+      model,
+    } = req.body;
+
+    const supabase = req.supabase!;
+    const startTime = Date.now();
+
+    if (!template && !templateId) {
+      throw new AppError(
+        "必须提供 template 或 templateId 参数",
+        400,
+        ErrorCodes.VALIDATION_ERROR,
+      );
+    }
+
+    const provider = providerType
+      ? await getAIProvider(providerType)
+      : await getAIProviderForTask("text");
+
+    if (!provider.hasKey) {
+      throw new AppError(
+        "AI provider not configured",
+        503,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+
+    try {
+      logger.info("Applying template", {
+        topic,
+        templateId: template?.id || templateId,
+        style,
+        userId: req.user.id,
+        graphId: graph_id,
+      });
+
+      let selectedTemplate = template;
+
+      if (!selectedTemplate && templateId) {
+        const { data: storedTemplate, error: fetchError } = await supabase
+          .from("graph_templates")
+          .select("*")
+          .eq("id", templateId)
+          .single();
+
+        if (fetchError || !storedTemplate) {
+          throw new AppError(
+            "模板不存在或无权访问",
+            404,
+            ErrorCodes.NOT_FOUND,
+          );
+        }
+
+        selectedTemplate = {
+          id: storedTemplate.id,
+          name: storedTemplate.name,
+          description: storedTemplate.description || undefined,
+          nodes: storedTemplate.template_data?.nodes || [],
+          edges: storedTemplate.template_data?.edges || [],
+          layoutSuggestion:
+            storedTemplate.layout_suggestion || "radial",
+          estimatedNodes: storedTemplate.estimated_nodes,
+          difficulty: storedTemplate.difficulty || "medium",
+          tags: storedTemplate.tags || [],
+          reasoning: undefined,
+        };
+      }
+
+      const systemPrompt = await promptService.getRenderedPrompt(
+        supabase,
+        "apply_template",
+        {
+          topic,
+          template: selectedTemplate,
+          style,
+          isCustom: style === "custom",
+          customPrompt: customPrompt || "",
+          isAcademic: style === "academic",
+          isPractical: style === "practical",
+          isBeginner: style === "beginner",
+        },
+        req.user.id,
+        graph_id
+      );
+
+      const completion = await withAutoGraphTracking(
+        "apply_template",
+        provider.providerType,
+        model || provider.model,
+        async () => {
+          const result = await provider.client.chat.completions.create({
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `主题：${topic}\n\n模板名称：${selectedTemplate!.name}\n模板结构：\n${JSON.stringify(
+                  {
+                    nodes: selectedTemplate!.nodes.map((n: { id: string; title: string; level: string; parentId?: string }) => ({
+                      id: n.id,
+                      title: n.title,
+                      level: n.level,
+                      parentId: n.parentId,
+                    })),
+                    edges: selectedTemplate!.edges,
+                  },
+                  null,
+                  2
+                )}\n\n请根据模板结构生成完整的知识图谱内容。`,
+              },
+            ],
+            model: model || provider.model,
+            response_format: { type: "json_object" },
+            max_tokens: 6000,
+          });
+          return {
+            result,
+            usage: result.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined,
+          };
+        },
+        { graphId: graph_id, userId: req.user.id }
+      );
+
+      const content = completion.choices[0].message.content;
+      let parsed;
+      try {
+        parsed = JSON.parse(content || '{"nodes": [], "edges": []}');
+      } catch (e) {
+        logger.error("JSON Parse Error in apply-template:", {
+          content: content?.slice(-200),
+        });
+        throw new AppError(
+          "AI 生成内容解析失败",
+          422,
+          ErrorCodes.INTERNAL_ERROR,
+        );
+      }
+
+      const duration = Date.now() - startTime;
+
+      logger.info("Template applied successfully", {
+        topic,
+        templateId: selectedTemplate!.id,
+        nodeCount: parsed.nodes?.length || 0,
+        edgeCount: parsed.edges?.length || 0,
+        duration,
+      });
+
+      res.json({
+        templateId: selectedTemplate!.id,
+        templateName: selectedTemplate!.name,
+        nodes: parsed.nodes || [],
+        edges: parsed.edges || [],
+        layoutSuggestion: selectedTemplate!.layoutSuggestion,
+        metadata: {
+          topic,
+          style,
+          generatedAt: new Date().toISOString(),
+          provider: provider.providerType,
+          model: model || provider.model,
+        },
+      });
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error("Apply template error:", {
+        topic,
+        error: err.message,
+        stack: err.stack,
+      });
+
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        err.message || "模板应用失败",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+      );
+    }
+  }
+);
 
 export default router;

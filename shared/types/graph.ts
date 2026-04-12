@@ -39,6 +39,10 @@ export type TemplateLayoutType =
   | "flowchart"
   | "mindmap";
 
+export type TemplateDifficulty = "easy" | "medium" | "hard";
+
+export type LayoutSuggestion = "radial" | "tree" | "network" | "hierarchical";
+
 export type GraphRelationType =
   | "prerequisite"
   | "extension"
@@ -279,6 +283,7 @@ export interface EdgeStrength {
 export interface TemplateNode {
   id: string;
   title: string;
+  description?: string;
   level: NodeLevel;
   parentId?: string;
   aiPrompt?: string;
@@ -316,6 +321,30 @@ export interface TemplateLayout {
   };
 }
 
+export interface GenerationConfig {
+  style?: "academic" | "casual" | "professional" | "creative";
+  depth?: "overview" | "detailed" | "comprehensive";
+  language?: string;
+  target_audience?: string;
+  content_focus?: string[];
+  custom_instructions?: string;
+}
+
+export interface PreviewData {
+  thumbnail_url?: string;
+  sample_nodes?: Array<{
+    id: string;
+    title: string;
+    level: NodeLevel;
+  }>;
+  sample_edges?: Array<{
+    source: string;
+    target: string;
+  }>;
+  node_count?: number;
+  edge_count?: number;
+}
+
 export interface Template {
   id: string;
   name: string;
@@ -326,6 +355,12 @@ export interface Template {
   nodes: TemplateNode[];
   edges: TemplateEdge[];
   layout?: TemplateLayout;
+  generation_config?: GenerationConfig;
+  preview_data?: PreviewData;
+  tags?: string[];
+  difficulty?: TemplateDifficulty;
+  estimated_nodes?: number;
+  layout_suggestion?: LayoutSuggestion;
   preview_image?: string;
   created_at?: string;
   updated_at?: string;
@@ -338,6 +373,27 @@ export interface CreateTemplateData {
   nodes: TemplateNode[];
   edges: TemplateEdge[];
   layout?: TemplateLayout;
+  generation_config?: GenerationConfig;
+  preview_data?: PreviewData;
+  tags?: string[];
+  difficulty?: TemplateDifficulty;
+  estimated_nodes?: number;
+  layout_suggestion?: LayoutSuggestion;
+}
+
+export interface UpdateTemplateData {
+  name?: string;
+  description?: string;
+  category?: TemplateCategory;
+  nodes?: TemplateNode[];
+  edges?: TemplateEdge[];
+  layout?: TemplateLayout;
+  generation_config?: GenerationConfig;
+  preview_data?: PreviewData;
+  tags?: string[];
+  difficulty?: TemplateDifficulty;
+  estimated_nodes?: number;
+  layout_suggestion?: LayoutSuggestion;
 }
 
 export interface CreateGraphFromTemplateData {

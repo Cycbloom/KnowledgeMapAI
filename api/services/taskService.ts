@@ -23,14 +23,36 @@ try {
   logger.warn('Failed to load .env file in taskService:', err);
 }
 
+export interface TaskPayload {
+  [key: string]: unknown;
+  graph_id?: string;
+  knowledge_point_id?: string;
+  node_id?: string;
+  node_title?: string;
+  node_content?: string;
+  provider?: string;
+  model?: string;
+  config?: {
+    types?: string[];
+    count?: number;
+    pack_template?: string;
+    provider?: string;
+    model?: string;
+  };
+}
+
+export interface TaskResult {
+  [key: string]: unknown;
+}
+
 export interface Task {
   id: string;
   user_id: string;
   type: string;
   name?: string;
   status: "pending" | "processing" | "completed" | "failed";
-  payload: any;
-  result?: any;
+  payload: TaskPayload;
+  result?: TaskResult;
   error?: string;
   created_at: string;
   updated_at: string;
@@ -46,7 +68,7 @@ export interface UpdateTaskStatusOptions {
   taskId: string;
   status: string;
   progress?: TaskProgress | null;
-  result?: any;
+  result?: TaskResult;
   error?: string;
   userId?: string;
   client?: SupabaseClient;
@@ -71,7 +93,7 @@ try {
 }
 
 export class TaskService {
-  async createTask(userId: string, type: string, payload?: any, name?: string) {
+  async createTask(userId: string, type: string, payload?: TaskPayload, name?: string) {
     const supabase = defaultClient;
 
     const { data, error } = await supabase
@@ -92,7 +114,7 @@ export class TaskService {
       await taskQueue.add(type, { taskId: data.id });
     } else {
       logger.info("Task queue not available, processing task synchronously");
-      this.processTaskAsync(data.id, userId, type, payload).catch((err) => {
+      this.processTaskAsync(data.id, userId, type, payload || {}).catch((err) => {
         logger.error(`Failed to process task ${data.id} synchronously:`, err);
       });
     }
@@ -104,7 +126,7 @@ export class TaskService {
     taskId: string,
     userId: string,
     type: string,
-    payload: any,
+    payload: TaskPayload,
   ) {
     try {
       await this.processTask(taskId, userId, type, payload);
@@ -118,7 +140,7 @@ export class TaskService {
     arg2?: string,
     arg3?: string,
     arg4?: TaskProgress | null,
-    arg5?: any,
+    arg5?: TaskResult,
     arg6?: string,
     arg7?: string,
   ) {
@@ -126,7 +148,7 @@ export class TaskService {
     let taskId: string;
     let status: string;
     let progress: TaskProgress | null | undefined;
-    let result: any;
+    let result: TaskResult | undefined;
     let errorMsg: string | undefined;
     let userId: string | undefined;
 
@@ -152,15 +174,15 @@ export class TaskService {
         supabase = defaultClient;
         taskId = arg1 as string;
         status = arg2!;
-        result = arg3;
-        errorMsg = arg4 as any;
+        result = arg3 as TaskResult | undefined;
+        errorMsg = arg4 as string | undefined;
         userId = arg5 as string | undefined;
         progress = undefined;
       }
     }
 
-    const updateData: any = { status, updated_at: new Date().toISOString() };
-    if (progress !== undefined && progress !== null) updateData.result = { ...result, ...progress };
+    const updateData: { status: string; updated_at: string; result?: TaskResult; error?: string } = { status, updated_at: new Date().toISOString() };
+    if (progress !== undefined && progress !== null && result) updateData.result = { ...result, ...progress };
     else if (result !== undefined) updateData.result = result;
     if (errorMsg !== undefined) updateData.error = errorMsg;
 
@@ -296,21 +318,19 @@ export class TaskService {
     taskId: string,
     userId: string,
     type: string,
-    payload: any,
+    payload: TaskPayload,
   ) {
     const supabase = defaultClient;
     const processor = getProcessor(type);
 
     if (!processor) {
       logger.error(`No processor found for task type: ${type}`);
-      await this.updateTaskStatus(
-        supabase,
+      await this.updateTaskStatus({
         taskId,
-        "failed",
-        null,
-        `Unknown task type: ${type}`,
+        status: "failed",
+        error: `Unknown task type: ${type}`,
         userId,
-      );
+      });
       return;
     }
 

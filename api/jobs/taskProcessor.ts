@@ -5,6 +5,7 @@ import { getNextLevel } from "../utils/graphUtils";
 import { cacheService, CacheKeys } from "../services/common/cacheService";
 import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers";
 import { logger } from "../utils/logger";
+import type { AIProviderType } from "@shared/types";
 
 class TaskProcessor {
   public async processTask(task: Task) {
@@ -72,7 +73,8 @@ class TaskProcessor {
   }
 
   private async handleGenerateQuestions(task: Task) {
-    const { knowledge_point_id, node_id, node_title, node_content, config } = task.payload;
+    const { knowledge_point_id, node_id, node_title, node_content, config } =
+      task.payload;
     const nodeId = knowledge_point_id || node_id;
     let totalCount = 0;
     const errors: string[] = [];
@@ -88,7 +90,7 @@ class TaskProcessor {
     // Truncate content to avoid context overflow
     const MAX_CONTENT_LENGTH = 15000;
     const truncatedContent = node_content
-      ? node_content.substring(0, MAX_CONTENT_LENGTH)
+      ? String(node_content).substring(0, MAX_CONTENT_LENGTH)
       : "";
 
     // Determine types and counts
@@ -147,12 +149,12 @@ class TaskProcessor {
       try {
         // Generate for specific type
         const aiResult = await aiService.generateCards(
-          node_title,
+          node_title || "",
           truncatedContent,
           {
             type: type as any,
             count,
-            provider,
+            provider: provider as AIProviderType | undefined,
             model,
           },
         );
@@ -270,9 +272,18 @@ class TaskProcessor {
 
     const latestExistingNodes =
       allGraphNodes
-        ?.map((gn: any) => gn.knowledge_points?.title)
-        .filter(Boolean) ||
-      existing_nodes ||
+        ?.map(
+          (gn: {
+            knowledge_points?: { title: string } | { title: string }[];
+          }) => {
+            const kp = Array.isArray(gn.knowledge_points)
+              ? gn.knowledge_points[0]
+              : gn.knowledge_points;
+            return kp?.title;
+          },
+        )
+        .filter((t): t is string => Boolean(t)) ||
+      (Array.isArray(existing_nodes) ? (existing_nodes as string[]) : []) ||
       [];
 
     const { data: currentEdges } = await supabaseAdmin
@@ -283,7 +294,10 @@ class TaskProcessor {
 
     let latestChildNodes: string[] = [];
     if (currentEdges && currentEdges.length > 0) {
-      const targetIds = currentEdges.map((e: any) => e.target_knowledge_point_id);
+      const targetIds = currentEdges.map(
+        (e: { target_knowledge_point_id: string }) =>
+          e.target_knowledge_point_id,
+      );
       const { data: childGraphNodeData } = await supabaseAdmin
         .from("graph_nodes")
         .select(
@@ -297,10 +311,21 @@ class TaskProcessor {
         .is("deleted_at", null);
       latestChildNodes =
         childGraphNodeData
-          ?.map((gn: any) => gn.knowledge_points?.title)
-          .filter(Boolean) || [];
+          ?.map(
+            (gn: {
+              knowledge_points?: { title: string } | { title: string }[];
+            }) => {
+              const kp = Array.isArray(gn.knowledge_points)
+                ? gn.knowledge_points[0]
+                : gn.knowledge_points;
+              return kp?.title;
+            },
+          )
+          .filter((t): t is string => Boolean(t)) || [];
     } else {
-      latestChildNodes = child_nodes || [];
+      latestChildNodes = Array.isArray(child_nodes)
+        ? (child_nodes as string[])
+        : [];
     }
 
     const { data: currentGraphNode } = await supabaseAdmin
@@ -313,12 +338,12 @@ class TaskProcessor {
     if (!currentGraphNode) throw new Error("Source node not found");
 
     const aiResult = await aiService.expandKnowledge(
-      node_title,
-      node_content,
+      node_title || "",
+      node_content as string | undefined,
       latestExistingNodes,
       latestChildNodes,
       {
-        provider,
+        provider: provider as AIProviderType | undefined,
         model,
         contextLevel: currentGraphNode.level,
         userId: task.user_id,
@@ -386,7 +411,7 @@ class TaskProcessor {
             supabaseAdmin,
             task.user_id,
             {
-              graph_id,
+              graph_id: graph_id || "",
               title: suggestion.title,
               content: suggestion.content || "",
               x_position: x,

@@ -287,12 +287,17 @@ class PerformanceMonitor {
       this.logs = this.logs.filter(l => l.timestamp >= beforeTimestamp);
       
       // 异步清理数据库
-      supabaseAdmin
-        .from('ai_performance_logs')
-        .delete()
-        .lt('timestamp', beforeTimestamp)
-        .then(() => logger.info(`[PerformanceMonitor] Cleared database logs before ${new Date(beforeTimestamp).toISOString()}`))
-        .catch((error: Error) => logger.error('[PerformanceMonitor] Failed to clear database logs:', error));
+      (async () => {
+        try {
+          await supabaseAdmin
+            .from('ai_performance_logs')
+            .delete()
+            .lt('timestamp', beforeTimestamp);
+          logger.info(`[PerformanceMonitor] Cleared database logs before ${new Date(beforeTimestamp).toISOString()}`);
+        } catch (error) {
+          logger.error('[PerformanceMonitor] Failed to clear database logs:', error);
+        }
+      })();
       
       return beforeCount - this.logs.length;
     }
@@ -301,14 +306,17 @@ class PerformanceMonitor {
 
     // 清理所有数据库记录（可选：只清理30天前的）
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    supabaseAdmin
-      .from('ai_performance_logs')
-      .delete()
-      .lt('timestamp', thirtyDaysAgo)
-      .then(({ count: deletedCount }: { count: number | null }) => {
-        logger.info(`[PerformanceMonitor] Cleared ${deletedCount} old logs from database (kept last 30 days)`);
-      })
-      .catch((error: Error) => logger.error('[PerformanceMonitor] Failed to clear old database logs:', error));
+    (async () => {
+        try {
+          await supabaseAdmin
+            .from('ai_performance_logs')
+            .delete()
+            .lt('timestamp', thirtyDaysAgo);
+          logger.info(`[PerformanceMonitor] Cleared old logs from database (kept last 30 days)`);
+      } catch (error) {
+        logger.error('[PerformanceMonitor] Failed to clear old database logs:', error);
+      }
+    })();
     
     return count;
   }
@@ -342,13 +350,13 @@ class PerformanceMonitor {
       .from('ai_performance_logs')
       .select('total_tokens, estimated_cost');
 
-    const totalTokens = (aggData || []).reduce((sum: number, row: DatabaseLogRow) => sum + (row.total_tokens || 0), 0);
-    const totalCost = (aggData || []).reduce((sum: number, row: DatabaseLogRow) => sum + parseFloat(String(row.estimated_cost || 0)), 0);
+    const totalTokens = (aggData || []).reduce((sum: number, row: { total_tokens?: number; estimated_cost?: number }) => sum + (row.total_tokens || 0), 0);
+    const totalCost = (aggData || []).reduce((sum: number, row: { total_tokens?: number; estimated_cost?: number }) => sum + parseFloat(String(row.estimated_cost || 0)), 0);
 
     return {
       totalRecords: totalRecords || 0,
-      oldestRecord: oldest ? new Date(oldest.timestamp).toISOString() : null,
-      newestRecord: newest ? new Date(newest.timestamp).toISOString() : null,
+      oldestRecord: oldest ? new Date((oldest as { timestamp: number }).timestamp).toISOString() : null,
+      newestRecord: newest ? new Date((newest as { timestamp: number }).timestamp).toISOString() : null,
       totalCost,
       totalTokens,
     };

@@ -1,11 +1,45 @@
 import { supabaseAdmin } from '../../supabase';
 import { AIService } from './aiService';
 import { getAIProviderForTask } from './factory';
+import type { AIProvider } from '@shared/types';
 import { logger } from '../../utils/logger';
 import { buildNodeContext, buildNodesContext, NodeData } from './utils';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { withAIMonitoring } from './aiMonitor';
+
+interface GraphNodeRow {
+  knowledge_point_id: string;
+}
+
+interface GraphRow {
+  id: string;
+}
+
+interface KnowledgePointRow {
+  id: string;
+  title: string;
+  content: string | null;
+  embedding: number[] | null;
+}
+
+interface GraphNodeWithKnowledge {
+  knowledge_point_id: string;
+  level: string;
+  knowledge_points: KnowledgePointRow | KnowledgePointRow[];
+}
+
+interface EdgeRow {
+  source_knowledge_point_id: string;
+  target_knowledge_point_id: string;
+}
+
+interface NodeInfo {
+  id: string;
+  title: string;
+  content: string;
+  level: string;
+}
 
 export interface RAGContext {
   graphId: string;
@@ -67,7 +101,7 @@ export class RAGService {
           .is('deleted_at', null);
         
         if (graphNodes && graphNodes.length > 0) {
-          const kpIds = graphNodes.map((gn: any) => gn.knowledge_point_id);
+          const kpIds = (graphNodes as GraphNodeRow[]).map((gn) => gn.knowledge_point_id);
           query_builder = query_builder.in('id', kpIds);
         } else {
           return [];
@@ -80,7 +114,7 @@ export class RAGService {
           .is('deleted_at', null);
         
         if (userGraphs && userGraphs.length > 0) {
-          const graphIds = userGraphs.map((g: any) => g.id);
+          const graphIds = (userGraphs as GraphRow[]).map((g) => g.id);
           const { data: graphNodes } = await supabaseAdmin
             .from('graph_nodes')
             .select('knowledge_point_id')
@@ -88,7 +122,7 @@ export class RAGService {
             .is('deleted_at', null);
           
           if (graphNodes && graphNodes.length > 0) {
-            const kpIds = graphNodes.map((gn: any) => gn.knowledge_point_id);
+            const kpIds = (graphNodes as GraphNodeRow[]).map((gn) => gn.knowledge_point_id);
             query_builder = query_builder.in('id', kpIds);
           } else {
             return [];
@@ -105,9 +139,9 @@ export class RAGService {
         return [];
       }
 
-      const results: RAGSearchResult[] = knowledgePoints
-        .map((kp: any) => {
-          const similarity = this.cosineSimilarity(queryEmbedding, kp.embedding);
+      const results: RAGSearchResult[] = (knowledgePoints as KnowledgePointRow[])
+        .map((kp) => {
+          const similarity = this.cosineSimilarity(queryEmbedding, kp.embedding || []);
           return {
             id: kp.id,
             title: kp.title,
@@ -116,8 +150,8 @@ export class RAGService {
             graphId: graphId || ''
           };
         })
-        .filter((r: any) => r.similarity >= matchThreshold)
-        .sort((a: any, b: any) => b.similarity - a.similarity)
+        .filter((r) => r.similarity >= matchThreshold)
+        .sort((a, b) => b.similarity - a.similarity)
         .slice(0, matchCount);
 
       return results;
@@ -291,10 +325,10 @@ ${context || '(暂无相关上下文)'}`;
         sources: sources.slice(0, 5),
         suggestedQuestions
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('RAG Chat Error:', error);
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
-        message: error.message || 'RAG chat failed',
+        message: error instanceof Error ? error.message : 'RAG chat failed',
       });
     }
   }
@@ -303,7 +337,7 @@ ${context || '(暂无相关上下文)'}`;
     originalQuestion: string,
     answer: string,
     sources: RAGSearchResult[],
-    provider: any,
+    provider: AIProvider,
     model?: string
   ): Promise<string[]> {
     if (sources.length === 0) {
@@ -348,7 +382,7 @@ ${context || '(暂无相关上下文)'}`;
           
           return {
             result,
-            usage: result.usage as any,
+            usage: result.usage ?? undefined,
           };
         }
       );
@@ -435,10 +469,10 @@ ${context || '(暂无相关上下文)'}`;
       }
 
       return sources.slice(0, 5);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('RAG Stream Chat Error:', error);
       throw new AppError(ErrorCodes.AI_PROVIDER_ERROR, {
-        message: error.message || 'RAG stream chat failed',
+        message: error instanceof Error ? error.message : 'RAG stream chat failed',
       });
     }
   }
@@ -468,14 +502,14 @@ ${context || '(暂无相关上下文)'}`;
       return { gaps: [], suggestions: [] };
     }
 
-    const nodes = graphNodes.map((gn: any) => {
+    const nodes = (graphNodes as GraphNodeWithKnowledge[]).map((gn) => {
       const kp = Array.isArray(gn.knowledge_points) ? gn.knowledge_points[0] : gn.knowledge_points;
       return {
         id: kp?.id || gn.knowledge_point_id,
         title: kp?.title || '',
         content: kp?.content || '',
         level: gn.level
-      };
+      } as NodeInfo;
     });
 
     const { data: edges } = await supabaseAdmin
@@ -487,18 +521,18 @@ ${context || '(暂无相关上下文)'}`;
     const connectedNodes = new Set<string>();
     
     if (edges) {
-      edges.forEach((e: any) => {
+      (edges as EdgeRow[]).forEach((e) => {
         connectedNodes.add(e.source_knowledge_point_id);
         connectedNodes.add(e.target_knowledge_point_id);
       });
     }
 
-    const isolatedNodes = nodes.filter((n: any) => !connectedNodes.has(n.id));
-    const nodesWithoutContent = nodes.filter((n: any) => !n.content || n.content.length < 50);
+    const isolatedNodes = nodes.filter((n) => !connectedNodes.has(n.id));
+    const nodesWithoutContent = nodes.filter((n) => !n.content || n.content.length < 50);
 
     const gaps: Array<{ topic: string; reason: string; priority: 'high' | 'medium' | 'low' }> = [];
 
-    isolatedNodes.forEach((n: any) => {
+    isolatedNodes.forEach((n) => {
       gaps.push({
         topic: n.title,
         reason: '该节点没有与其他节点建立连接',
@@ -506,7 +540,7 @@ ${context || '(暂无相关上下文)'}`;
       });
     });
 
-    nodesWithoutContent.forEach((n: any) => {
+    nodesWithoutContent.forEach((n) => {
       gaps.push({
         topic: n.title,
         reason: '该节点缺少详细内容描述',
@@ -519,7 +553,7 @@ ${context || '(暂无相关上下文)'}`;
 
     if (aiProvider.hasKey && nodes.length > 3) {
       try {
-        const nodeTitles = nodes.map((n: any) => n.title).join(', ');
+        const nodeTitles = nodes.map((n) => n.title).join(', ');
         
         const completion = await aiProvider.client.chat.completions.create({
           messages: [

@@ -366,7 +366,11 @@ router.get("/tags", requireAuth, async (req: AuthRequest, res: Response) => {
 
 // Get all domains from user's graphs
 router.get("/domains", requireAuth, async (req: AuthRequest, res: Response) => {
-  const supabase = req.supabase!;
+  const supabase = req.supabase;
+  if (!supabase) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
   const userId = req.user.id;
 
   const { data: graphs } = await supabase

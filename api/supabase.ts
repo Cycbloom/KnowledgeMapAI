@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -6,20 +6,21 @@ import { logger } from "./utils/logger";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-let envPath = null;
+let envPath: string | null = null;
 
 try {
   const isPackaged =
     process.mainModule?.filename?.includes("app.asar") ||
-    (process as any).resourcesPath?.includes("resources");
+    (process as { resourcesPath?: string }).resourcesPath?.includes(
+      "resources",
+    );
 
-  const possiblePaths = [];
+  const possiblePaths: string[] = [];
 
   if (isPackaged) {
-    if ((process as any).resourcesPath) {
-      possiblePaths.push(
-        path.join((process as any).resourcesPath, ".env.production"),
-      );
+    const resourcesPath = (process as { resourcesPath?: string }).resourcesPath;
+    if (resourcesPath) {
+      possiblePaths.push(path.join(resourcesPath, ".env.production"));
     }
     possiblePaths.push(path.join(__dirname, "..", ".env.production"));
     possiblePaths.push(path.join(__dirname, "..", "..", ".env.production"));
@@ -59,30 +60,35 @@ if (!supabaseUrl || !supabaseServiceKey) {
   );
 }
 
-let supabaseAdmin: any = null;
-let supabaseAnon: any = null;
-
-try {
+function createSupabaseClients(): {
+  admin: SupabaseClient;
+  anon: SupabaseClient;
+} {
   const validUrl = supabaseUrl || "https://placeholder.supabase.co";
   const validKey = supabaseServiceKey || "placeholder-key";
   const validAnonKey = supabaseAnonKey || validKey;
 
-  supabaseAdmin = createClient(validUrl, validKey);
-  supabaseAnon = createClient(validUrl, validAnonKey);
-
-  logger.info("Supabase clients initialized successfully");
-} catch (error) {
-  logger.error("Failed to initialize Supabase clients:", error);
-  const validUrl = "https://placeholder.supabase.co";
-  const validKey = "placeholder-key";
-
-  supabaseAdmin = createClient(validUrl, validKey);
-  supabaseAnon = createClient(validUrl, validKey);
+  try {
+    const admin = createClient(validUrl, validKey);
+    const anon = createClient(validUrl, validAnonKey);
+    logger.info("Supabase clients initialized successfully");
+    return { admin, anon };
+  } catch (error) {
+    logger.error("Failed to initialize Supabase clients:", error);
+    const placeholderUrl = "https://placeholder.supabase.co";
+    const placeholderKey = "placeholder-key";
+    return {
+      admin: createClient(placeholderUrl, placeholderKey),
+      anon: createClient(placeholderUrl, placeholderKey),
+    };
+  }
 }
+
+const { admin: supabaseAdmin, anon: supabaseAnon } = createSupabaseClients();
 
 export { supabaseAdmin, supabaseAnon };
 
-export const createClientWithToken = (token: string) => {
+export const createClientWithToken = (token: string): SupabaseClient => {
   const validUrl = supabaseUrl || "https://placeholder.supabase.co";
   const validAnonKey = supabaseAnonKey || "placeholder-key";
 

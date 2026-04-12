@@ -333,6 +333,7 @@ const handleReset = async (args: ParsedArgs, _context: CommandContext): Promise<
         queryClient.invalidateQueries({ queryKey: ['tasks'] });
       }
     } catch (_e) {
+      // Ignore cache invalidation errors
     }
 
     const tableRows = deletedTables.map((t: { table: string; count: number; deleted: number }, index: number) => {

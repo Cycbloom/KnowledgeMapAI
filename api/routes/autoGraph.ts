@@ -230,7 +230,12 @@ router.post(
       provider: providerType,
       model,
     } = req.body;
-    const supabase = req.supabase!;
+    const supabase = req.supabase;
+    if (!supabase) {
+      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+        message: "Unauthorized: No Supabase client",
+      });
+    }
     const provider = providerType
       ? await getAIProvider(providerType)
       : await getAIProviderForTask("text");

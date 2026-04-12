@@ -4,6 +4,7 @@ import { searchSimilarKnowledgePoints } from '../../utils/similaritySearch';
 import { PaginationOptions, getPaginationParams } from '../../utils/pagination';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
+import { cacheService, CacheKeys } from '../common/cacheService';
 import type { KnowledgePoint, KnowledgePointVisibility } from '../../../shared/types/index';
 
 export type { KnowledgePoint, KnowledgePointVisibility };
@@ -118,18 +119,27 @@ export class KnowledgePointService {
   }
 
   async get(supabase: SupabaseClient, id: string): Promise<KnowledgePoint | null> {
-    const { data, error } = await supabase
-      .from('knowledge_points')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+    const cacheKey = CacheKeys.KNOWLEDGE_POINT(id);
 
-    if (error) {
-      logger.error('Get knowledge point error:', error);
-      throw error;
-    }
+    return cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await supabase
+          .from('knowledge_points')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
 
-    return data as KnowledgePoint | null;
+        if (error) {
+          logger.error('Get knowledge point error:', error);
+          throw error;
+        }
+
+        return data as KnowledgePoint | null;
+      },
+      300,
+      ['knowledge_point', `kp_${id}`]
+    );
   }
 
   async update(
@@ -153,6 +163,8 @@ export class KnowledgePointService {
       logger.error('Update knowledge point error:', error);
       throw error;
     }
+
+    await cacheService.del(CacheKeys.KNOWLEDGE_POINT(id));
 
     return updatedKp as KnowledgePoint;
   }

@@ -34,6 +34,8 @@ export const CacheKeys = {
   AI_EXPAND: (title: string, level: string) => `ai_expand_${title}_${level}`,
   AI_CARDS: (topic: string, types: string[], count: number) => `ai_cards_${topic}_${types.sort().join('_')}_${count}`,
   LEARNING_PATH: (graphId: string) => `learning_path_${graphId}`,
+  KNOWLEDGE_POINT: (id: string) => `knowledge_point_${id}`,
+  USER_SETTINGS: (userId: string) => `user_settings_${userId}`,
 };
 
 const DEFAULT_TTL = 300;

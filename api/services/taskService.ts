@@ -4,6 +4,8 @@ import { sseService } from "./core/sseService";
 import { logger } from "../utils/logger";
 import { getProcessor } from "./taskProcessors/index";
 import { getPaginationParams, PaginationOptions } from "../utils/pagination";
+import { AppError } from "../middleware/errorHandler";
+import { ErrorCodes } from "../../shared/types/errorCodes";
 import "./taskProcessors/batchGenerateCardsProcessor.js";
 import "./taskProcessors/recursiveGraphProcessor.js";
 import "./taskProcessors/infiniteExpansionProcessor.js";
@@ -108,7 +110,7 @@ export class TaskService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to create task: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to create task: ${error.message}` });
 
     if (taskQueue) {
       await taskQueue.add(type, { taskId: data.id });
@@ -228,7 +230,7 @@ export class TaskService {
     }
 
     const { data, error, count } = await query;
-    if (error) throw new Error(`Failed to fetch tasks: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch tasks: ${error.message}` });
     return { tasks: data as Task[], total: count || 0 };
   }
 
@@ -245,7 +247,7 @@ export class TaskService {
       .single();
 
     if (error && error.code !== "PGRST116")
-      throw new Error(`Failed to fetch task: ${error.message}`);
+      throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to fetch task: ${error.message}` });
     return data as Task | null;
   }
 
@@ -269,7 +271,7 @@ export class TaskService {
       .eq("user_id", userId)
       .single();
 
-    if (fetchError || !task) throw new Error("Task not found");
+    if (fetchError || !task) throw new AppError(ErrorCodes.NOT_FOUND, { message: "Task not found" });
 
     const { data, error } = await client
       .from("tasks")
@@ -283,7 +285,7 @@ export class TaskService {
       .select()
       .single();
 
-    if (error) throw new Error(`Failed to retry task: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to retry task: ${error.message}` });
 
     if (taskQueue) {
       await taskQueue.add(data.type, { taskId: data.id });
@@ -311,7 +313,7 @@ export class TaskService {
       .eq("id", taskId)
       .eq("user_id", userId);
 
-    if (error) throw new Error(`Failed to delete task: ${error.message}`);
+    if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to delete task: ${error.message}` });
   }
 
   async processTask(

@@ -404,21 +404,6 @@ export class AIService {
     context: string,
     language: string = "zh",
   ): Promise<string> {
-    const prompt = `You are a professional podcast host. 
-Your task is to create an engaging, educational podcast script based on the provided knowledge graph content.
-The script should be:
-1. Conversational and easy to listen to.
-2. Structured with an intro, key points (deep dive), and a conclusion.
-3. About 3-5 minutes long when spoken.
-4. Written in ${language} (if the content is mixed, prefer ${language}).
-5. Use clear markers for the speaker (e.g., "Host:").
-
-Content to cover:
-${context}
-
-Please output the script in raw Markdown format.
-IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \`\`\`). Just return the raw Markdown text directly.`;
-
     const provider = await getAIProviderForTask("text");
 
     if (!provider.hasKey) {
@@ -429,12 +414,24 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
 **主持人**: 请配置好 API Key 后，我将为你带来精彩的深度解读！`;
     }
 
+    const systemPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      "podcast_system",
+      {},
+    );
+    const userPrompt = await promptService.getRenderedPrompt(
+      supabaseAdmin,
+      "podcast_script",
+      { context, language },
+    );
+
     const requestKey = generateRequestKey("generatePodcastScript", {
       context: context.slice(0, 200),
       language,
       model: provider.model,
     });
 
+    const startTime = Date.now();
     try {
       return await dedupedRequest(requestKey, async () => {
         const completion = await withTimeoutAndRetry(
@@ -443,9 +440,9 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
               messages: [
                 {
                   role: "system",
-                  content: "You are an expert podcast script writer.",
+                  content: systemPrompt,
                 },
-                { role: "user", content: prompt },
+                { role: "user", content: userPrompt },
               ],
               model: provider.model,
             }),
@@ -460,11 +457,46 @@ IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \
           },
         );
 
+        const inputTokens = completion.usage?.prompt_tokens || 0;
+        const outputTokens = completion.usage?.completion_tokens || 0;
+        const totalTokens = inputTokens + outputTokens;
+        const estimatedCost = pricingService.calculateCost(
+          provider.providerType,
+          provider.model,
+          inputTokens,
+          outputTokens,
+        );
+
+        await performanceMonitor.recordLog({
+          operation: "generate_podcast_script",
+          provider: provider.providerType,
+          model: provider.model,
+          inputTokens,
+          outputTokens,
+          totalTokens,
+          estimatedCost,
+          duration: Date.now() - startTime,
+          success: true,
+        });
+
         return completion.choices[0].message.content || "";
       });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("Generate Podcast Script Error:", error);
+
+      await performanceMonitor.recordLog({
+        operation: "generate_podcast_script",
+        provider: provider.providerType,
+        model: provider.model,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        estimatedCost: 0,
+        duration: Date.now() - startTime,
+        success: false,
+        errorMessage: err.message,
+      });
 
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);

@@ -48,6 +48,69 @@ Formatting:
 Topic: {{topic}}
 Context/Background: {{context}}
 {{#if level}}Knowledge Level: {{level}}{{/if}}`,
+
+  podcast_script: `You are a professional podcast host. 
+Your task is to create an engaging, educational podcast script based on the provided knowledge graph content.
+The script should be:
+1. Conversational and easy to listen to.
+2. Structured with an intro, key points (deep dive), and a conclusion.
+3. About 3-5 minutes long when spoken.
+4. Written in {{language}} (if the content is mixed, prefer {{language}}).
+5. Use clear markers for the speaker (e.g., "Host:").
+
+Content to cover:
+{{context}}
+
+Please output the script in raw Markdown format.
+IMPORTANT: Do NOT wrap the output in a code block (e.g., no \`\`\`markdown ... \`\`\`). Just return the raw Markdown text directly.`,
+
+  podcast_system: `You are an expert podcast script writer.`,
+
+  generate_cards: `You are an educational expert. Generate {{count}} flashcards based on the provided topic.
+
+{{typeRestriction}}
+
+{{difficultyInstruction}}
+
+Context: {{context}}
+
+Topic: {{topic}}
+Content: {{content}}
+
+Please respond with a valid JSON object.`,
+
+  rag_chat: `你是一个智能知识图谱助手，专门帮助用户理解和探索知识图谱中的内容。
+
+你的能力：
+1. 基于提供的知识上下文回答用户问题
+2. 如果上下文中没有相关信息，可以基于你的知识回答，但要明确说明
+3. 帮助用户发现知识之间的关联
+4. 建议用户可能感兴趣的相关问题
+
+回答规则：
+1. 优先使用提供的知识上下文回答问题
+2. 如果上下文不足以回答，可以补充你的知识，但要说明"根据我的知识..."
+3. 使用清晰的 Markdown 格式组织回答
+4. 如果涉及数学公式，使用 LaTeX 格式: $inline$ 或 $$block$$
+5. 在回答末尾，可以建议 1-3 个相关的后续问题
+6. 用中文回答
+
+知识上下文：
+{{context}}`,
+
+  knowledge_gap_analysis: `你是一个知识图谱分析专家。分析给定的知识节点列表，找出可能缺失的知识领域或概念。
+
+返回 JSON 格式: { "suggestions": ["建议1", "建议2", "建议3"] }
+
+每个建议应该是一个简短的知识领域或概念名称。`,
+
+  suggest_questions: `基于用户的原始问题和回答，生成 2-3 个相关的后续问题。
+这些问题应该：
+1. 帮助用户深入理解当前话题
+2. 探索相关的知识节点
+3. 具有启发性和探索性
+
+返回 JSON 格式: { "questions": ["问题1", "问题2", "问题3"] }`,
 };
 
 // Fixed output schemas (Hidden from user editing)

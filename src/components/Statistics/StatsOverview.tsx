@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
 
 interface StatsOverviewProps {
@@ -7,6 +8,7 @@ interface StatsOverviewProps {
 }
 
 export const StatsOverview: React.FC<StatsOverviewProps> = ({ data }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
 
   return (
@@ -14,7 +16,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ data }) => {
       isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
     }`}>
       <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
-        知识掌握分布
+        {t('statistics.knowledgeDistribution')}
       </h3>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">

@@ -1054,6 +1054,7 @@
     "forgettingCurveDesc": "Theoretical model based on FSRS algorithm (average stability: {{stability}} days)",
     "memoryRetention": "Memory Retention",
     "dayN": "Day {{day}}",
+    "knowledgeDistribution": "Knowledge Mastery Distribution",
     "target": "Target",
     "loadingStats": "Loading statistics...",
     "loadStatsFailed": "Failed to load statistics"

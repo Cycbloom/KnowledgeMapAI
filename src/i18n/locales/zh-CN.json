@@ -189,6 +189,9 @@
       "saveProgressFailed": "保存进度失败，请重试"
     }
   },
+  "statistics": {
+    "knowledgeDistribution": "知识掌握分布"
+  },
   "errors": {
     "AUTH_HEADER_MISSING": "缺少认证头",
     "AUTH_TOKEN_MISSING": "缺少令牌",

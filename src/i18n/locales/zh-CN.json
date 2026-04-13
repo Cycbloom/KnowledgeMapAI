@@ -78,6 +78,117 @@
       "enterOutline": "进入大纲"
     }
   },
+  "study": {
+    "loading": "加载中...",
+    "title": "学习中心",
+    "mode": {
+      "singlePoint": "单点复习",
+      "pathTraining": "路径训练",
+      "fullReview": "全面复习"
+    },
+    "tabs": {
+      "overview": "概览",
+      "bank": "题库",
+      "focus": "专注模式",
+      "quizzes": "测验"
+    },
+    "enterGraph": "请先选择一个知识图谱",
+    "stats": {
+      "totalCards": "总卡片数",
+      "mastered": "已掌握",
+      "due": "待复习",
+      "streak": "连续",
+      "days": "天",
+      "weeklyStudy": "本周学习"
+    },
+    "todayDue": "今日待复习",
+    "fsrsDescription": "基于 FSRS 算法的智能复习调度",
+    "startNow": "开始复习 ({{count}} 张)",
+    "noReviewTasks": "暂无待复习任务",
+    "freePractice": "自由练习",
+    "freePracticeDescription": "从所有卡片中随机抽取练习",
+    "startSelfTest": "开始自测 ({{count}} 张)",
+    "noCards": "暂无卡片",
+    "weakPoints": {
+      "title": "薄弱知识点",
+      "empty": "暂无薄弱点数据"
+    },
+    "priority": {
+      "high": "高优先级",
+      "medium": "中优先级",
+      "low": "低优先级"
+    },
+    "predictions": {
+      "title": "学习预测",
+      "empty": "暂无预测数据"
+    },
+    "days": {
+      "sun": "日",
+      "mon": "一",
+      "tue": "二",
+      "wed": "三",
+      "thu": "四",
+      "fri": "五",
+      "sat": "六"
+    },
+    "cardList": {
+      "title": "卡片列表",
+      "due": "待复习",
+      "all": "全部",
+      "searchPlaceholder": "搜索卡片...",
+      "noCardsFound": "未找到匹配的卡片"
+    },
+    "completed": {
+      "levelComplete": "本轮完成！",
+      "sessionComplete": "本次学习完成！",
+      "levelCompleteDesc": "您已完成本轮所有复习任务。",
+      "sessionCompleteDesc": "本次共复习 {{count}} 张卡片，继续加油！",
+      "backToLearning": "返回学习中心",
+      "backToCenter": "返回首页",
+      "practiceAgain": "再练一轮"
+    },
+    "quiz": {
+      "exit": "退出",
+      "mode": "答题模式",
+      "swipeHint": "左右滑动切换卡片",
+      "nextCard": "下一张",
+      "question": "题目",
+      "correct": "正确",
+      "incorrect": "错误",
+      "answer": "答案",
+      "fillContent": "填写内容",
+      "standardAnswer": "标准答案",
+      "explanation": "解析",
+      "showAnswer": "显示答案",
+      "submitAnswer": "提交答案",
+      "selectOption": "请选择选项",
+      "rateMemory": "记忆程度评价"
+    },
+    "cardTypes": {
+      "new": "新卡",
+      "learning": "学习中",
+      "review": "复习",
+      "relearning": "重新学习"
+    },
+    "cardType": {
+      "qa": "问答",
+      "choice": "单选",
+      "multiChoice": "多选",
+      "trueFalse": "判断",
+      "fillBlank": "填空",
+      "essay": "简答"
+    },
+    "rating": {
+      "again": "忘记",
+      "hard": "困难",
+      "good": "良好",
+      "easy": "简单"
+    },
+    "messages": {
+      "noCardsToReview": "没有需要复习的卡片",
+      "saveProgressFailed": "保存进度失败，请重试"
+    }
+  },
   "errors": {
     "AUTH_HEADER_MISSING": "缺少认证头",
     "AUTH_TOKEN_MISSING": "缺少令牌",

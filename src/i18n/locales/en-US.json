@@ -78,6 +78,117 @@
       "enterOutline": "Enter Outline"
     }
   },
+  "study": {
+    "loading": "Loading...",
+    "title": "Study Center",
+    "mode": {
+      "singlePoint": "Single Point Review",
+      "pathTraining": "Path Training",
+      "fullReview": "Full Review"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "bank": "Question Bank",
+      "focus": "Focus Mode",
+      "quizzes": "Quizzes"
+    },
+    "enterGraph": "Please select a knowledge graph first",
+    "stats": {
+      "totalCards": "Total Cards",
+      "mastered": "Mastered",
+      "due": "Due for Review",
+      "streak": "Streak",
+      "days": "days",
+      "weeklyStudy": "Weekly Study"
+    },
+    "todayDue": "Today's Due",
+    "fsrsDescription": "Intelligent review scheduling based on FSRS algorithm",
+    "startNow": "Start Review ({{count}} cards)",
+    "noReviewTasks": "No pending review tasks",
+    "freePractice": "Free Practice",
+    "freePracticeDescription": "Randomly practice from all cards",
+    "startSelfTest": "Start Self-Test ({{count}} cards)",
+    "noCards": "No cards available",
+    "weakPoints": {
+      "title": "Weak Points",
+      "empty": "No weak point data"
+    },
+    "priority": {
+      "high": "High Priority",
+      "medium": "Medium Priority",
+      "low": "Low Priority"
+    },
+    "predictions": {
+      "title": "Learning Predictions",
+      "empty": "No prediction data"
+    },
+    "days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "cardList": {
+      "title": "Card List",
+      "due": "Due",
+      "all": "All",
+      "searchPlaceholder": "Search cards...",
+      "noCardsFound": "No matching cards found"
+    },
+    "completed": {
+      "levelComplete": "Round Complete!",
+      "sessionComplete": "Session Complete!",
+      "levelCompleteDesc": "You have completed all tasks in this round.",
+      "sessionCompleteDesc": "Reviewed {{count}} cards this session, keep it up!",
+      "backToLearning": "Back to Study Center",
+      "backToCenter": "Back to Home",
+      "practiceAgain": "Practice Again"
+    },
+    "quiz": {
+      "exit": "Exit",
+      "mode": "Quiz Mode",
+      "swipeHint": "Swipe left/right to switch cards",
+      "nextCard": "Next Card",
+      "question": "Question",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "answer": "Answer",
+      "fillContent": "Fill in content",
+      "standardAnswer": "Standard Answer",
+      "explanation": "Explanation",
+      "showAnswer": "Show Answer",
+      "submitAnswer": "Submit Answer",
+      "selectOption": "Select an option",
+      "rateMemory": "Rate Memory"
+    },
+    "cardTypes": {
+      "new": "New",
+      "learning": "Learning",
+      "review": "Review",
+      "relearning": "Re-learning"
+    },
+    "cardType": {
+      "qa": "Q&A",
+      "choice": "Multiple Choice",
+      "multiChoice": "Multi-Choice",
+      "trueFalse": "True/False",
+      "fillBlank": "Fill in Blank",
+      "essay": "Essay"
+    },
+    "rating": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "messages": {
+      "noCardsToReview": "No cards to review",
+      "saveProgressFailed": "Failed to save progress, please retry"
+    }
+  },
   "errors": {
     "AUTH_HEADER_MISSING": "Missing authentication header",
     "AUTH_TOKEN_MISSING": "Missing token",
@@ -921,79 +1032,6 @@
       "mindMap": "Mind Map",
       "enterMindMap": "Enter 3D Mind Map"
     }
-  },
-  "study": {
-    "title": "Study Center",
-    "singlePointBreakthrough": "Single Point Breakthrough",
-    "pathTraining": "Path Training",
-    "fullGraphReview": "Full Graph Review",
-    "overview": "Overview",
-    "questionBank": "Question Bank",
-    "focus": "Focus",
-    "quiz": "Quiz",
-    "enterGraph": "Enter Challenge Graph",
-    "totalCards": "Total Cards",
-    "mastered": "Mastered",
-    "dueForReview": "Due for Review",
-    "consecutiveStudy": "Consecutive Study",
-    "weeklyStudy": "Weekly Study",
-    "todayDue": "Today's Due",
-    "fsrsPlan": "Optimal review plan customized for you based on FSRS algorithm",
-    "startNow": "Start Now",
-    "noReviewTasks": "No review tasks",
-    "freePractice": "Free Practice",
-    "randomQuiz": "Random quiz of all content in current scope, reinforce basics",
-    "startSelfTest": "Start Self-Test",
-    "noCardData": "No card data",
-    "weakPoints": "Weak Points",
-    "noWeakPoints": "No weak points, keep it up!",
-    "highPriority": "High Priority",
-    "mediumPriority": "Medium Priority",
-    "lowPriority": "Low Priority",
-    "sevenDayForecast": "7-Day Forecast",
-    "noForecastData": "No forecast data",
-    "cardList": "Card List",
-    "due": "Due",
-    "all": "All",
-    "searchQuestionOrAnswer": "Search question or answer...",
-    "noMatchingCards": "No matching cards found",
-    "levelChallengeSuccess": "Level Challenge Complete!",
-    "studySessionComplete": "Study Session Complete!",
-    "completedAllCards": "You have completed all quiz cards for this knowledge point.",
-    "reviewedAllCards": "You have reviewed all {{count}} cards in this session.",
-    "returnToLearning": "Return to Challenge Learning",
-    "returnToStudyCenter": "Return to Study Center",
-    "practiceAgain": "Practice Again",
-    "exit": "Exit",
-    "studyMode": "Study Mode",
-    "swipeToRate": "Swipe left/right to rate quickly",
-    "nextCard": "Next",
-    "question": "Question",
-    "correct": "Correct",
-    "incorrect": "Incorrect",
-    "answer": "Answer:",
-    "qaCard": "Q&A",
-    "singleChoice": "Single Choice",
-    "multipleChoice": "Multiple Choice",
-    "trueFalse": "True/False",
-    "fillBlank": "Fill in Blank",
-    "essay": "Essay",
-    "standardAnswer": "Standard Answer",
-    "fillContent": "Fill Content",
-    "questionAnalysis": "Question Analysis",
-    "showAnswer": "Show Answer",
-    "submitAnswer": "Submit Answer",
-    "selectOptionToSeeAnswer": "Select an option to see the answer",
-    "rateMemory": "Rate Your Memory",
-    "again": "Again",
-    "hard": "Hard",
-    "good": "Good",
-    "easy": "Easy",
-    "swipeInstructions": "Swipe cards left/right to rate quickly (Left: Again, Right: Good)",
-    "loadingResources": "Loading study resources...",
-    "noCardsToReview": "No cards to review!",
-    "saveProgressFailed": "Failed to save progress",
-    "days": "days"
   },
   "statistics": {
     "title": "Learning Statistics Analysis",

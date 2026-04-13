@@ -1,43 +1,50 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronRight, Home } from "lucide-react";
 import { useTheme } from "../../hooks";
 
-const routeMap: Record<string, string> = {
-  "/": "首页",
-  "/graph-map": "图谱地图",
-  "/study": "学习中心",
-  "/learning": "学习模式",
-  "/statistics": "统计中心",
-  "/calendar": "日历",
-  "/achievements": "成就系统",
-  "/templates": "模板管理",
-  "/tasks": "任务中心",
-  "/profile": "个人设置",
-  "/trash": "回收站",
-};
-
 export const Breadcrumb: React.FC = () => {
   const location = useLocation();
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const path = location.pathname;
+
+  const getRouteLabel = (routePath: string): string => {
+    switch (routePath) {
+      case "/": return t('layout.breadcrumb.home');
+      case "/graph-map": return t('layout.breadcrumb.graphMap');
+      case "/study": return t('layout.breadcrumb.studyCenter');
+      case "/learning": return t('layout.breadcrumb.learningMode');
+      case "/statistics": return t('layout.breadcrumb.statistics');
+      case "/calendar": return t('layout.breadcrumb.calendar');
+      case "/achievements": return t('layout.breadcrumb.achievements');
+      case "/templates": return t('layout.breadcrumb.templates');
+      case "/tasks": return t('layout.breadcrumb.tasks');
+      case "/profile": return t('layout.breadcrumb.profile');
+      case "/trash": return t('layout.breadcrumb.trash');
+      case "/graph": return t('layout.breadcrumb.graphEditor');
+      case "/scheduler": return t('layout.breadcrumb.scheduler');
+      case "/learning-paths": return t('layout.breadcrumb.learningPaths');
+      default: return routePath;
+    }
+  };
 
   const getBreadcrumbs = () => {
     const breadcrumbs: { path: string; label: string }[] = [];
 
-    breadcrumbs.push({ path: "/", label: "首页" });
+    breadcrumbs.push({ path: "/", label: getRouteLabel("/") });
 
     if (path === "/") {
       return breadcrumbs;
     }
 
     if (path.startsWith("/graph/")) {
-      breadcrumbs.push({ path: "/graph", label: "图谱编辑" });
+      breadcrumbs.push({ path: "/graph", label: getRouteLabel("/graph") });
     } else if (path.startsWith("/learning")) {
-      const label = routeMap[path] || "学习模式";
-      breadcrumbs.push({ path, label });
+      breadcrumbs.push({ path, label: getRouteLabel(path) || getRouteLabel("/learning") });
     } else {
-      const label = routeMap[path];
+      const label = getRouteLabel(path);
       if (label) {
         breadcrumbs.push({ path, label });
       }

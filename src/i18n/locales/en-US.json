@@ -1,4 +1,83 @@
 {
+  "dashboard": {
+    "title": "My Knowledge Graphs",
+    "subtitle": "Build, visualize, and explore your personalized knowledge network.",
+    "stats": {
+      "graphs": "graphs",
+      "nodes": "nodes",
+      "created": "You have created",
+      "graphsUnit": "knowledge graphs",
+      "contains": "containing",
+      "nodesUnit": "nodes",
+      "keepGoing": ". Keep it up, build your knowledge system!",
+      "statistics": "Statistics"
+    },
+    "search": {
+      "placeholder": "Search graphs and nodes...",
+      "keyword": "Keyword",
+      "semantic": "Semantic"
+    },
+    "view": {
+      "cardView": "Card View",
+      "listView": "List View"
+    },
+    "actions": {
+      "select": "Select",
+      "cancelSelect": "Cancel Selection",
+      "cancel": "Cancel",
+      "import": "Import",
+      "importing": "Importing...",
+      "graphMap": "Graph Map",
+      "newGraph": "New Graph",
+      "aiGenerate": "AI Generate"
+    },
+    "create": {
+      "title": "Create New Graph",
+      "fromTemplate": "Create from Template",
+      "nodeCount": "{{count}} nodes",
+      "noDescription": "No description",
+      "graphName": "Graph Name",
+      "namePlaceholder": "e.g., JavaScript Core Concepts",
+      "duplicateTopic": "Duplicate Topic",
+      "similarTo": "{{similarity}}% similar to existing graph \"{{title}}\"",
+      "description": "Description",
+      "optional": "optional",
+      "descriptionPlaceholder": "Briefly describe the content of this graph...",
+      "creating": "Creating...",
+      "createNow": "Create Now"
+    },
+    "batch": {
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "selected": "{{count}} items selected",
+      "deleting": "Deleting...",
+      "batchDelete": "Batch Delete"
+    },
+    "empty": {
+      "noResults": "No matching graphs found",
+      "startJourney": "Start Your Knowledge Journey",
+      "tryDifferent": "Try different search keywords",
+      "createOrImport": "Create a new knowledge graph, or import existing Markdown/JSON/OPML files.",
+      "createFirst": "Create First Graph"
+    },
+    "list": {
+      "title": "Title",
+      "description": "Description",
+      "nodes": "Nodes",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "actions": "Actions"
+    },
+    "card": {
+      "noDescription": "No description",
+      "nodes": "nodes",
+      "openMindMap": "Open Mind Map",
+      "favorite": "Favorite Graph",
+      "unfavorite": "Unfavorite",
+      "delete": "Delete Graph",
+      "enterOutline": "Enter Outline"
+    }
+  },
   "errors": {
     "AUTH_HEADER_MISSING": "Missing authentication header",
     "AUTH_TOKEN_MISSING": "Missing token",
@@ -220,7 +299,43 @@
     "taskCompleted": "Task completed",
     "taskFailed": "Task failed",
     "autoGenerateQuestions": "Auto-generate questions",
-    "autoExpandGraph": "Auto-expand graph"
+    "autoExpandGraph": "Auto-expand graph",
+    "greeting": {
+      "lateNight": "Good night",
+      "morning": "Good morning",
+      "noon": "Good noon",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "user": "User",
+      "streakDays": "{{count}} day streak",
+      "dueToday": "{{count}} due today"
+    },
+    "sse": {
+      "connected": "Connected",
+      "connectedTooltip": "Real-time connection active",
+      "connecting": "Connecting",
+      "connectingTooltip": "Establishing connection...",
+      "error": "Connection failed",
+      "errorTooltip": "Connection failed, please refresh",
+      "disconnected": "Disconnected",
+      "disconnectedTooltip": "Real-time connection lost"
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "graphMap": "Graph Map",
+      "studyCenter": "Study Center",
+      "learningMode": "Learning Mode",
+      "statistics": "Statistics",
+      "calendar": "Calendar",
+      "achievements": "Achievements",
+      "templates": "Templates",
+      "tasks": "Tasks",
+      "profile": "Profile",
+      "trash": "Trash",
+      "graphEditor": "Graph Editor",
+      "scheduler": "Scheduler",
+      "learningPaths": "Learning Paths"
+    }
   },
   "console": {
     "tabs": {

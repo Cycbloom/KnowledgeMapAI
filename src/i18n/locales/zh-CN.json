@@ -1,4 +1,83 @@
 {
+  "dashboard": {
+    "title": "我的知识图谱",
+    "subtitle": "构建、可视化并探索您的个性化知识网络。",
+    "stats": {
+      "graphs": "个图谱",
+      "nodes": "节点",
+      "created": "您已创建",
+      "graphsUnit": "个知识图谱",
+      "contains": "包含",
+      "nodesUnit": "个节点",
+      "keepGoing": "。继续保持，完善您的知识体系！",
+      "statistics": "统计"
+    },
+    "search": {
+      "placeholder": "搜索图谱和节点...",
+      "keyword": "关键词",
+      "semantic": "语义"
+    },
+    "view": {
+      "cardView": "卡片视图",
+      "listView": "列表视图"
+    },
+    "actions": {
+      "select": "选择",
+      "cancelSelect": "取消选择",
+      "cancel": "取消",
+      "import": "导入",
+      "importing": "导入中...",
+      "graphMap": "图谱地图",
+      "newGraph": "新建图谱",
+      "aiGenerate": "AI 生成"
+    },
+    "create": {
+      "title": "创建新图谱",
+      "fromTemplate": "从模板创建图谱",
+      "nodeCount": "{{count}} 个节点",
+      "noDescription": "暂无描述",
+      "graphName": "图谱名称",
+      "namePlaceholder": "例如：JavaScript 核心概念",
+      "duplicateTopic": "主题重复",
+      "similarTo": "与现有图谱「{{title}}」相似度为 {{similarity}}%",
+      "description": "描述",
+      "optional": "可选",
+      "descriptionPlaceholder": "简要描述该图谱的内容...",
+      "creating": "创建中...",
+      "createNow": "立即创建"
+    },
+    "batch": {
+      "selectAll": "全选",
+      "deselectAll": "取消全选",
+      "selected": "已选择 {{count}} 项",
+      "deleting": "删除中...",
+      "batchDelete": "批量删除"
+    },
+    "empty": {
+      "noResults": "未找到相关图谱",
+      "startJourney": "开始您的知识之旅",
+      "tryDifferent": "尝试更换搜索关键词",
+      "createOrImport": "创建一个新的知识图谱，或导入现有的 Markdown/JSON/OPML 文件。",
+      "createFirst": "创建第一个图谱"
+    },
+    "list": {
+      "title": "标题",
+      "description": "描述",
+      "nodes": "节点",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "actions": "操作"
+    },
+    "card": {
+      "noDescription": "暂无描述",
+      "nodes": "节点",
+      "openMindMap": "打开思维导图",
+      "favorite": "收藏图谱",
+      "unfavorite": "取消收藏",
+      "delete": "删除图谱",
+      "enterOutline": "进入大纲"
+    }
+  },
   "errors": {
     "AUTH_HEADER_MISSING": "缺少认证头",
     "AUTH_TOKEN_MISSING": "缺少令牌",
@@ -220,7 +299,43 @@
     "taskCompleted": "任务完成",
     "taskFailed": "任务失败",
     "autoGenerateQuestions": "自动生成题目",
-    "autoExpandGraph": "自动扩展图谱"
+    "autoExpandGraph": "自动扩展图谱",
+    "greeting": {
+      "lateNight": "夜深了",
+      "morning": "早上好",
+      "noon": "中午好",
+      "afternoon": "下午好",
+      "evening": "晚上好",
+      "user": "用户",
+      "streakDays": "连续 {{count}} 天",
+      "dueToday": "今日 {{count}} 张"
+    },
+    "sse": {
+      "connected": "已连接",
+      "connectedTooltip": "实时连接正常",
+      "connecting": "连接中",
+      "connectingTooltip": "正在建立连接...",
+      "error": "连接失败",
+      "errorTooltip": "连接失败，请刷新页面",
+      "disconnected": "未连接",
+      "disconnectedTooltip": "实时连接已断开"
+    },
+    "breadcrumb": {
+      "home": "首页",
+      "graphMap": "图谱地图",
+      "studyCenter": "学习中心",
+      "learningMode": "学习模式",
+      "statistics": "统计中心",
+      "calendar": "日历",
+      "achievements": "成就系统",
+      "templates": "模板管理",
+      "tasks": "任务中心",
+      "profile": "个人设置",
+      "trash": "回收站",
+      "graphEditor": "图谱编辑",
+      "scheduler": "任务调度",
+      "learningPaths": "学习路径"
+    }
   },
   "console": {
     "tabs": {

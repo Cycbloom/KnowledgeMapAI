@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { useGraphs, useDashboardStats, queryKeys } from "../hooks/queries";
 import {
   useCreateGraphMutation,
@@ -48,6 +49,7 @@ import { useTheme, useIsMobile, useTopicCheck, useSearch } from "../hooks";
 import { api } from "../services/api";
 
 export const Dashboard = () => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile, isTablet } = useIsMobile();
   const location = useLocation();
@@ -446,12 +448,12 @@ export const Dashboard = () => {
           <div className="flex flex-col gap-4 lg:gap-6">
             <div className="space-y-1 flex-shrink-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                我的知识图谱
+                {t('dashboard.title')}
               </h1>
               <p
                 className={`${isDark ? "text-slate-400" : "text-gray-500"} text-xs sm:text-sm md:text-base`}
               >
-                构建、可视化并探索您的个性化知识网络。
+                {t('dashboard.subtitle')}
               </p>
             </div>
 
@@ -476,27 +478,27 @@ export const Dashboard = () => {
                     {isMobile ? (
                       <>
                         <span className="font-semibold">{graphs.length}</span>{" "}
-                        个图谱 ·{" "}
+                        {t('dashboard.stats.graphs')} ·{" "}
                         <span className="font-semibold">
                           {graphs.reduce(
                             (acc, g) => acc + (g.nodes_count || 0),
                             0,
                           )}
                         </span>{" "}
-                        节点
+                        {t('dashboard.stats.nodes')}
                       </>
                     ) : (
                       <>
-                        您已创建{" "}
+                        {t('dashboard.stats.created')}{" "}
                         <span className="font-semibold">{graphs.length}</span>{" "}
-                        个知识图谱，包含{" "}
+                        {t('dashboard.stats.graphsUnit')}，{t('dashboard.stats.contains')}{" "}
                         <span className="font-semibold">
                           {graphs.reduce(
                             (acc, g) => acc + (g.nodes_count || 0),
                             0,
                           )}
                         </span>{" "}
-                        个节点。继续保持，完善您的知识体系！
+                        {t('dashboard.stats.nodesUnit')}{t('dashboard.stats.keepGoing')}
                       </>
                     )}
                   </p>
@@ -509,7 +511,7 @@ export const Dashboard = () => {
                       : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                   }`}
                 >
-                  统计
+                  {t('dashboard.stats.statistics')}
                   <ArrowRight size={12} className="hidden sm:block" />
                 </Link>
               </div>
@@ -527,7 +529,7 @@ export const Dashboard = () => {
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="搜索图谱和节点..."
+                placeholder={t('dashboard.search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() =>
@@ -548,7 +550,7 @@ export const Dashboard = () => {
                       : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   }`}
                 >
-                  关键词
+                  {t('dashboard.search.keyword')}
                 </button>
                 <button
                   onClick={() => setSearchMode("semantic")}
@@ -559,7 +561,7 @@ export const Dashboard = () => {
                   }`}
                 >
                   <Sparkles size={12} />
-                  <span className="hidden sm:inline">语义</span>
+                  <span className="hidden sm:inline">{t('dashboard.search.semantic')}</span>
                 </button>
               </div>
 
@@ -615,7 +617,7 @@ export const Dashboard = () => {
                           ? "text-slate-400 hover:text-slate-300"
                           : "text-gray-400 hover:text-gray-600"
                     }`}
-                    title="卡片视图"
+                    title={t('dashboard.view.cardView')}
                   >
                     <LayoutGrid size={18} />
                   </button>
@@ -630,7 +632,7 @@ export const Dashboard = () => {
                           ? "text-slate-400 hover:text-slate-300"
                           : "text-gray-400 hover:text-gray-600"
                     }`}
-                    title="列表视图"
+                    title={t('dashboard.view.listView')}
                   >
                     <List size={18} />
                   </button>
@@ -644,10 +646,10 @@ export const Dashboard = () => {
                         ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                         : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                     }`}
-                    title="选择"
+                    title={t('dashboard.actions.select')}
                   >
                     <CheckSquare size={16} />
-                    <span className="hidden lg:inline">选择</span>
+                    <span className="hidden lg:inline">{t('dashboard.actions.select')}</span>
                   </button>
                 )}
 
@@ -659,10 +661,10 @@ export const Dashboard = () => {
                         ? "bg-red-900/30 border-red-800 text-red-400 hover:bg-red-900/50"
                         : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
                     }`}
-                    title="取消选择"
+                    title={t('dashboard.actions.cancelSelect')}
                   >
                     <X size={16} />
-                    <span className="hidden lg:inline">取消</span>
+                    <span className="hidden lg:inline">{t('dashboard.actions.cancel')}</span>
                   </button>
                 )}
 
@@ -674,11 +676,11 @@ export const Dashboard = () => {
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   } disabled:opacity-50`}
-                  title="导入"
+                  title={t('dashboard.actions.import')}
                 >
                   <Upload size={16} />
                   <span className="hidden lg:inline">
-                    {importGraphMutation.isPending ? "导入中..." : "导入"}
+                    {importGraphMutation.isPending ? t('dashboard.actions.importing') : t('dashboard.actions.import')}
                   </span>
                 </button>
 
@@ -689,28 +691,28 @@ export const Dashboard = () => {
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   }`}
-                  title="图谱地图"
+                  title={t('dashboard.actions.graphMap')}
                 >
                   <Network size={16} />
-                  <span className="hidden lg:inline">图谱地图</span>
+                  <span className="hidden lg:inline">{t('dashboard.actions.graphMap')}</span>
                 </Link>
 
                 <button
                   onClick={handleOpenTemplateSelector}
                   className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
-                  title="新建图谱"
+                  title={t('dashboard.actions.newGraph')}
                 >
                   <Plus size={16} />
-                  <span className="hidden lg:inline">新建图谱</span>
+                  <span className="hidden lg:inline">{t('dashboard.actions.newGraph')}</span>
                 </button>
 
                 <button
                   onClick={handleOpenAIGenerator}
                   className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
-                  title="AI 生成"
+                  title={t('dashboard.actions.aiGenerate')}
                 >
                   <Sparkles size={16} />
-                  <span className="hidden lg:inline">AI 生成</span>
+                  <span className="hidden lg:inline">{t('dashboard.actions.aiGenerate')}</span>
                 </button>
               </div>
             )}
@@ -731,7 +733,7 @@ export const Dashboard = () => {
                   className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium"
                 >
                   <Plus size={18} />
-                  <span>新建图谱</span>
+                  <span>{t('dashboard.actions.newGraph')}</span>
                 </button>
 
                 <button
@@ -739,7 +741,7 @@ export const Dashboard = () => {
                   className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium"
                 >
                   <Sparkles size={18} />
-                  <span>AI 生成</span>
+                  <span>{t('dashboard.actions.aiGenerate')}</span>
                 </button>
 
                 <div className="relative" ref={moreMenuRef}>
@@ -775,7 +777,7 @@ export const Dashboard = () => {
                           }`}
                         >
                           <CheckSquare size={18} />
-                          <span>选择</span>
+                          <span>{t('dashboard.actions.select')}</span>
                         </button>
                       )}
 
@@ -792,7 +794,7 @@ export const Dashboard = () => {
                           }`}
                         >
                           <X size={18} />
-                          <span>取消选择</span>
+                          <span>{t('dashboard.actions.cancelSelect')}</span>
                         </button>
                       )}
 
@@ -807,7 +809,7 @@ export const Dashboard = () => {
                       >
                         <Upload size={18} />
                         <span>
-                          {importGraphMutation.isPending ? "导入中..." : "导入"}
+                          {importGraphMutation.isPending ? t('dashboard.actions.importing') : t('dashboard.actions.import')}
                         </span>
                       </button>
 
@@ -821,7 +823,7 @@ export const Dashboard = () => {
                         }`}
                       >
                         <Network size={18} />
-                        <span>图谱地图</span>
+                        <span>{t('dashboard.actions.graphMap')}</span>
                       </Link>
                     </div>
                   )}
@@ -857,7 +859,7 @@ export const Dashboard = () => {
                 className={`flex justify-between items-center p-4 md:p-6 border-b ${isDark ? "border-slate-700" : "border-gray-100"} ${isMobile ? "sticky top-0 z-10" : ""}`}
               >
                 <h3 className="text-lg md:text-xl font-bold">
-                  {selectedTemplate ? "从模板创建图谱" : "创建新图谱"}
+                  {selectedTemplate ? t('dashboard.create.fromTemplate') : t('dashboard.create.title')}
                 </h3>
                 <button
                   onClick={() => {
@@ -882,13 +884,13 @@ export const Dashboard = () => {
                         {selectedTemplate.name}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {selectedTemplate.nodes?.length ?? 0} 个节点
+                        {t('dashboard.create.nodeCount', { count: selectedTemplate.nodes?.length ?? 0 })}
                       </span>
                     </div>
                     <p
                       className={`text-sm ${isDark ? "text-slate-300" : "text-gray-600"}`}
                     >
-                      {selectedTemplate.description || "暂无描述"}
+                      {selectedTemplate.description || t('dashboard.create.noDescription')}
                     </p>
                   </div>
                 )}
@@ -898,14 +900,14 @@ export const Dashboard = () => {
                     <label
                       className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                     >
-                      图谱名称
+                      {t('dashboard.create.graphName')}
                     </label>
                     <div className="relative">
                       <input
                         type="text"
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
-                        placeholder="例如：JavaScript 核心概念"
+                        placeholder={t('dashboard.create.namePlaceholder')}
                         className={`w-full px-4 py-3 rounded-xl border outline-none transition-all text-base ${
                           isDuplicate
                             ? "border-amber-500 focus:ring-amber-500"
@@ -929,10 +931,9 @@ export const Dashboard = () => {
                       >
                         <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                         <div className="text-sm">
-                          <p className="font-medium">主题重复</p>
+                          <p className="font-medium">{t('dashboard.create.duplicateTopic')}</p>
                           <p className="mt-1">
-                            与现有图谱「{similarGraphs[0].title}」相似度为{" "}
-                            {(similarGraphs[0].similarity * 100).toFixed(1)}%
+                            {t('dashboard.create.similarTo', { title: similarGraphs[0].title, similarity: (similarGraphs[0].similarity * 100).toFixed(1) })}
                           </p>
                         </div>
                       </div>
@@ -943,12 +944,12 @@ export const Dashboard = () => {
                     <label
                       className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                     >
-                      描述（可选）
+                      {t('dashboard.create.description')}（{t('dashboard.create.optional')}）
                     </label>
                     <textarea
                       value={newDescription}
                       onChange={(e) => setNewDescription(e.target.value)}
-                      placeholder="简要描述该图谱的内容..."
+                      placeholder={t('dashboard.create.descriptionPlaceholder')}
                       className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none text-base ${
                         isDark
                           ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -983,7 +984,7 @@ export const Dashboard = () => {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  取消
+                  {t('dashboard.actions.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -999,8 +1000,8 @@ export const Dashboard = () => {
                 >
                   {createGraphMutation.isPending ||
                   createGraphFromTemplateMutation.isPending
-                    ? "创建中..."
-                    : "立即创建"}
+                    ? t('dashboard.create.creating')
+                    : t('dashboard.create.createNow')}
                 </button>
               </div>
             </div>
@@ -1067,7 +1068,7 @@ export const Dashboard = () => {
                 <Square className="w-5 h-5" />
               )}
               <span className="text-sm">
-                {isAllSelected ? "取消全选" : "全选"}
+                {isAllSelected ? t('dashboard.batch.deselectAll') : t('dashboard.batch.selectAll')}
               </span>
             </button>
 
@@ -1076,7 +1077,7 @@ export const Dashboard = () => {
                 <span
                   className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
                 >
-                  已选择 {selectedCount} 项
+                  {t('dashboard.batch.selected', { count: selectedCount })}
                 </span>
                 <div className="flex-1" />
                 <button
@@ -1089,7 +1090,7 @@ export const Dashboard = () => {
                   } disabled:opacity-50`}
                 >
                   <Trash2 size={16} />
-                  {batchDeleteGraphsMutation.isPending ? "删除中..." : "批量删除"}
+                  {batchDeleteGraphsMutation.isPending ? t('dashboard.batch.deleting') : t('dashboard.batch.batchDelete')}
                 </button>
                 <button
                   onClick={clearSelection}
@@ -1125,21 +1126,21 @@ export const Dashboard = () => {
               <h3
                 className={`text-lg sm:text-xl font-bold mb-2 ${isDark ? "text-slate-300" : "text-gray-900"}`}
               >
-                {searchQuery ? "未找到相关图谱" : "开始您的知识之旅"}
+                {searchQuery ? t('dashboard.empty.noResults') : t('dashboard.empty.startJourney')}
               </h3>
               <p
                 className={`text-center max-w-md mb-6 sm:mb-8 px-4 text-sm ${isDark ? "text-slate-500" : "text-gray-500"}`}
               >
                 {searchQuery
-                  ? "尝试更换搜索关键词"
-                  : "创建一个新的知识图谱，或导入现有的 Markdown/JSON/OPML 文件。"}
+                  ? t('dashboard.empty.tryDifferent')
+                  : t('dashboard.empty.createOrImport')}
               </p>
               {!searchQuery && (
                 <button
                   onClick={() => setIsCreating(true)}
                   className="min-h-[48px] px-6 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
                 >
-                  创建第一个图谱
+                  {t('dashboard.empty.createFirst')}
                 </button>
               )}
             </div>
@@ -1172,12 +1173,12 @@ export const Dashboard = () => {
                           </button>
                         </th>
                       )}
-                      <th className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>标题</th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>描述</th>
-                      <th className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>节点</th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>创建时间</th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>更新时间</th>
-                      <th className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>操作</th>
+                      <th className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.title')}</th>
+                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.description')}</th>
+                      <th className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.nodes')}</th>
+                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.createdAt')}</th>
+                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.updatedAt')}</th>
+                      <th className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1242,7 +1243,7 @@ export const Dashboard = () => {
                           </div>
                         </td>
                         <td className={`px-4 py-3 hidden lg:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                          <span className="line-clamp-1 text-sm">{graph.description || "暂无描述"}</span>
+                          <span className="line-clamp-1 text-sm">{graph.description || t('dashboard.card.noDescription')}</span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className={`flex items-center justify-center gap-1 text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
@@ -1272,7 +1273,7 @@ export const Dashboard = () => {
                                   ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                   : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
                               }`}
-                              title="打开思维导图"
+                              title={t('dashboard.card.openMindMap')}
                             >
                               <Network size={16} />
                             </Link>
@@ -1289,7 +1290,7 @@ export const Dashboard = () => {
                                     ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
                                     : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
                               }`}
-                              title={graph.is_favorite ? "取消收藏" : "收藏图谱"}
+                              title={graph.is_favorite ? t('dashboard.card.unfavorite') : t('dashboard.card.favorite')}
                             >
                               <Star size={16} fill={graph.is_favorite ? "currentColor" : "none"} />
                             </button>
@@ -1304,7 +1305,7 @@ export const Dashboard = () => {
                                   ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                   : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                               }`}
-                              title="删除图谱"
+                              title={t('dashboard.card.delete')}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -1363,12 +1364,12 @@ export const Dashboard = () => {
                             )}
                           </div>
                           <p className={`text-xs sm:text-sm mb-2 line-clamp-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                            {graph.description || "暂无描述"}
+                            {graph.description || t('dashboard.card.noDescription')}
                           </p>
                           <div className="flex items-center gap-3 text-xs">
                             <div className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}>
                               <Network size={12} />
-                              <span>{graph.nodes_count || 0} 节点</span>
+                              <span>{graph.nodes_count || 0} {t('dashboard.card.nodes')}</span>
                             </div>
                             <div className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}>
                               <Calendar size={12} />
@@ -1499,7 +1500,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                 : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
                             }`}
-                            title="打开思维导图"
+                            title={t('dashboard.card.openMindMap')}
                           >
                             <Network size={18} />
                           </Link>
@@ -1514,7 +1515,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                 : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                             }`}
-                            title="删除图谱"
+                            title={t('dashboard.card.delete')}
                           >
                             <Trash2 size={18} />
                           </button>
@@ -1530,7 +1531,7 @@ export const Dashboard = () => {
                                   ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
                                   : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
                               }`}
-                              title="收藏图谱"
+                              title={t('dashboard.card.favorite')}
                             >
                               <Star size={18} />
                             </button>
@@ -1549,7 +1550,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                 : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
                             }`}
-                            title="打开思维导图"
+                            title={t('dashboard.card.openMindMap')}
                           >
                             <Network size={18} />
                           </Link>
@@ -1564,7 +1565,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                 : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                             }`}
-                            title="删除图谱"
+                            title={t('dashboard.card.delete')}
                           >
                             <Trash2 size={18} />
                           </button>
@@ -1580,7 +1581,7 @@ export const Dashboard = () => {
                             handleToggleFavorite(graph.id, true);
                           }}
                           className={`p-2 rounded-lg text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors ${isMobile ? "min-h-[44px] min-w-[44px] flex items-center justify-center" : ""}`}
-                          title="取消收藏"
+                          title={t('dashboard.card.unfavorite')}
                         >
                           <Star size={18} fill="currentColor" />
                         </button>
@@ -1601,7 +1602,7 @@ export const Dashboard = () => {
                       isDark ? "text-slate-400" : "text-gray-500"
                     }`}
                   >
-                    {graph.description || "暂无描述"}
+                    {graph.description || t('dashboard.card.noDescription')}
                   </p>
 
                   <div
@@ -1616,7 +1617,7 @@ export const Dashboard = () => {
                         }`}
                       >
                         <Network size={14} />
-                        <span>{graph.nodes_count || 0} 节点</span>
+                        <span>{graph.nodes_count || 0} {t('dashboard.card.nodes')}</span>
                       </div>
                     </div>
 
@@ -1627,7 +1628,7 @@ export const Dashboard = () => {
                           : "text-indigo-600 group-hover:text-indigo-700"
                       }`}
                     >
-                      <span>进入大纲</span>
+                      <span>{t('dashboard.card.enterOutline')}</span>
                       <ArrowRight
                         size={14}
                         className="transition-transform group-hover:translate-x-1"

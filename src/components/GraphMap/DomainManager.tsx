@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -148,14 +149,14 @@ function SortableDomainItem({
               <button
                 onClick={() => onEdit(domain)}
                 className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
-                title="编辑"
+                title="Edit"
               >
                 <Pencil className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(domain.id)}
                 className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
-                title="删除"
+                title="Delete"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -183,6 +184,7 @@ function SortableDomainItem({
 }
 
 export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const deviceInfo = useIsMobile();
   const isMobile = deviceInfo.isMobile;
 
@@ -428,7 +430,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         ) : (
           <Sparkles className="w-4 h-4" />
         )}
-        AI 推荐
+        {t('graphMap.domainManager.aiRecommend')}
       </button>
       {aiColorRecommendation && (
         <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
@@ -451,19 +453,19 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
               onClick={handleApplyAiColor}
               className="flex-1 px-3 py-1.5 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
             >
-              应用此颜色
+              {t('graphMap.domainManager.applyColor')}
             </button>
             <button
               onClick={handleAIGenerateColor}
               className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
-              换一个
+              {t('graphMap.domainManager.tryAnother')}
             </button>
           </div>
         </div>
       )}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-500 dark:text-gray-400">自定义:</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{t('graphMap.domainManager.customColor')}</span>
         <input
           type="text"
           value={value}
@@ -479,13 +481,13 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
     <div className="p-4 bg-gray-50 dark:bg-slate-700/50 border-t border-b border-gray-200 dark:border-gray-600 space-y-3">
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          名称 <span className="text-red-500">*</span>
+          {t('graphMap.domainManager.nameRequired')} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           value={formData.name}
           onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-          placeholder="输入领域名称..."
+          placeholder={t('graphMap.domainManager.descriptionPlaceholder')}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           autoFocus
         />
@@ -493,12 +495,12 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          描述（可选）
+          {t('graphMap.domainManager.descriptionOptional')}
         </label>
         <textarea
           value={formData.description}
           onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="描述这个知识领域..."
+          placeholder={t('graphMap.domainManager.descriptionPlaceholder')}
           rows={2}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
         />
@@ -506,21 +508,21 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          颜色 <span className="text-red-500">*</span>
+          {t('graphMap.domainManager.colorRequired')} <span className="text-red-500">*</span>
         </label>
         {renderColorPicker(formData.color, color => setFormData(prev => ({ ...prev, color })))}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          父级领域（可选）
+          {t('graphMap.domainManager.parentOptional')}
         </label>
         <select
           value={formData.parent_id || ''}
           onChange={e => setFormData(prev => ({ ...prev, parent_id: e.target.value || null }))}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
-          <option value="">无（顶级领域）</option>
+          <option value="">{t('graphMap.domainManager.noParent')}</option>
           {getAllDomainsFlat(domains)
             .filter(d => d.id !== editingId)
             .map(d => (
@@ -534,13 +536,13 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          图标（可选）
+          {t('graphMap.domainManager.iconOptional')}
         </label>
         <input
           type="text"
           value={formData.icon}
           onChange={e => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-          placeholder="输入图标名称或 emoji..."
+          placeholder={t('graphMap.domainManager.iconPlaceholder')}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
@@ -551,7 +553,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           disabled={submitting}
           className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50"
         >
-          取消
+          {t('common.cancel')}
         </button>
         <button
           onClick={isEdit ? handleUpdate : handleCreate}
@@ -559,7 +561,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
           {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isEdit ? '保存' : '创建'}
+          {isEdit ? t('common.save') : t('common.create')}
         </button>
       </div>
     </div>
@@ -627,14 +629,14 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                 <button
                   onClick={() => handleEdit(node)}
                   className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
-                  title="编辑"
+                  title={t('common.edit')}
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setDeleteConfirmId(node.id)}
                   className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
-                  title="删除"
+                  title={t('common.delete')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -652,11 +654,11 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
               <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                  确定删除「{node.name}」？
+                  {t('graphMap.domainManager.confirmDelete', { name: node.name })}
                 </p>
                 {hasChildren(node) && (
                   <p className="mt-1 text-xs text-red-600 dark:text-red-300">
-                    该领域包含 {node.children.length} 个子领域，将一并删除
+                    {t('graphMap.domainManager.hasChildren', { count: node.children.length })}
                   </p>
                 )}
                 <div className="flex justify-end gap-2 mt-3">
@@ -665,7 +667,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                     disabled={submitting}
                     className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-md transition-colors disabled:opacity-50"
                   >
-                    取消
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={() => handleDelete(node.id)}
@@ -673,7 +675,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                     className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
                   >
                     {submitting && <Loader2 className="w-3 h-3 animate-spin" />}
-                    删除
+                    {t('common.delete')}
                   </button>
                 </div>
               </div>
@@ -716,7 +718,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              领域管理
+              {t('graphMap.domainManager.title')}
             </h2>
             <button
               onClick={onClose}
@@ -736,7 +738,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              新建领域
+              {t('graphMap.domainManager.createDomain')}
             </button>
           </div>
 
@@ -749,8 +751,8 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
               </div>
             ) : domains.length === 0 ? (
               <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                <p className="text-sm">暂无领域</p>
-                <p className="text-xs mt-1">点击上方按钮创建第一个领域</p>
+                <p className="text-sm">{t('graphMap.domainManager.noDomains')}</p>
+                <p className="text-xs mt-1">{t('graphMap.domainManager.noDomainsHint')}</p>
               </div>
             ) : (
               <DndContext
@@ -781,11 +783,11 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                               <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                                  确定删除「{domain.name}」？
+                                  {t('graphMap.domainManager.confirmDelete', { name: domain.name })}
                                 </p>
                                 {hasChildren(domain) && (
                                   <p className="mt-1 text-xs text-red-600 dark:text-red-300">
-                                    该领域包含 {domain.children.length} 个子领域，将一并删除
+                                    {t('graphMap.domainManager.hasChildren', { count: domain.children.length })}
                                   </p>
                                 )}
                                 <div className="flex justify-end gap-2 mt-3">
@@ -794,7 +796,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                                     disabled={submitting}
                                     className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-md transition-colors disabled:opacity-50"
                                   >
-                                    取消
+                                    {t('common.cancel')}
                                   </button>
                                   <button
                                     onClick={() => handleDelete(domain.id)}
@@ -802,7 +804,7 @@ export const DomainManager: React.FC<DomainManagerProps> = ({ isOpen, onClose })
                                     className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
                                   >
                                     {submitting && <Loader2 className="w-3 h-3 animate-spin" />}
-                                    删除
+                                    {t('common.delete')}
                                   </button>
                                 </div>
                               </div>

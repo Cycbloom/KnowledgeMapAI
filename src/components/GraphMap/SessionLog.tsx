@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Bot, Wrench, CheckCircle2, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { AgentSession } from '../../services/api/agent';
 
 interface SessionLogProps {
@@ -7,6 +8,7 @@ interface SessionLogProps {
 }
 
 export const SessionLog: React.FC<SessionLogProps> = ({ session }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -20,8 +22,8 @@ export const SessionLog: React.FC<SessionLogProps> = ({ session }) => {
         ) : (
           <ChevronRight className="w-4 h-4" />
         )}
-        <span>分析过程</span>
-        <span className="text-xs">({session.toolCalls.length} 个工具调用)</span>
+        <span>{t('graphMap.sessionLog.analysisProcess')}</span>
+        <span className="text-xs">({t('graphMap.sessionLog.toolCalls', { count: session.toolCalls.length })})</span>
       </button>
       
       {isExpanded && (
@@ -44,7 +46,7 @@ export const SessionLog: React.FC<SessionLogProps> = ({ session }) => {
                 <div className="flex-1 min-w-0">
                   {message.role === 'tool' && message.toolName && (
                     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      调用工具: {message.toolName}
+                      {t('graphMap.sessionLog.callTool', { tool: message.toolName })}
                     </div>
                   )}
                   <div className="text-gray-600 dark:text-gray-400 line-clamp-2">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, Image, List, Check, Download, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useMessageStore } from '../../../store/useMessageStore';
 
 interface ExportDialogProps {
@@ -11,6 +12,7 @@ interface ExportDialogProps {
 }
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, graphId, graphTitle, getScreenshot }) => {
+  const { t } = useTranslation();
   const { addMessage } = useMessageStore();
   const [loading, setLoading] = useState(false);
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
@@ -78,11 +80,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      addMessage({ type: 'success', content: '导出成功！' });
+      addMessage({ type: 'success', content: t('graphEditor.export.success') });
       onClose();
     } catch (error) {
       console.error('Export error:', error);
-      addMessage({ type: 'error', content: '导出失败，请重试' });
+      addMessage({ type: 'error', content: t('graphEditor.export.failed') });
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <FileText className="text-blue-600" size={20} />
-            导出 PDF 报告
+            {t('graphEditor.export.title')}
           </h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
             <X size={20} className="text-gray-500" />
@@ -116,12 +118,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                     <img src={screenshotPreview} alt="Graph Preview" className="w-full h-32 object-cover rounded mb-6 border border-gray-100" loading="lazy" />
                   ) : (
                     <div className="w-full h-32 bg-gray-100 rounded mb-6 flex items-center justify-center text-gray-400 text-xs">
-                      无截图预览
+                      {t('graphEditor.export.noPreview')}
                     </div>
                   )
                 ) : (
                    <div className="w-full h-32 border-2 border-dashed border-gray-200 rounded mb-6 flex items-center justify-center text-gray-300">
-                     截图已隐藏
+                     {t('graphEditor.export.screenshotHidden')}
                    </div>
                 )}
                 
@@ -141,13 +143,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                 )}
              </div>
              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-               <span className="bg-black/70 text-white text-xs px-2 py-1 rounded">预览</span>
+               <span className="bg-black/70 text-white text-xs px-2 py-1 rounded">{t('graphEditor.export.preview')}</span>
              </div>
           </div>
 
           {/* Options */}
           <div className="space-y-3">
-             <h3 className="text-sm font-semibold text-gray-700">导出选项</h3>
+             <h3 className="text-sm font-semibold text-gray-700">{t('graphEditor.export.options')}</h3>
              
              <label className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-colors">
                <div className="flex items-center gap-3">
@@ -155,8 +157,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                    <Image size={18} />
                  </div>
                  <div className="text-sm">
-                   <div className="font-medium text-gray-800">包含当前视图截图</div>
-                   <div className="text-gray-500 text-xs">将当前知识图谱的画面作为封面图</div>
+                   <div className="font-medium text-gray-800">{t('graphEditor.export.includeScreenshot')}</div>
+                   <div className="text-gray-500 text-xs">{t('graphEditor.export.screenshotDesc')}</div>
                  </div>
                </div>
                <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${includeScreenshot ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
@@ -171,8 +173,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
                    <List size={18} />
                  </div>
                  <div className="text-sm">
-                   <div className="font-medium text-gray-800">包含详细节点内容</div>
-                   <div className="text-gray-500 text-xs">附带完整的节点描述与关联关系</div>
+                   <div className="font-medium text-gray-800">{t('graphEditor.export.includeDetails')}</div>
+                   <div className="text-gray-500 text-xs">{t('graphEditor.export.detailsDesc')}</div>
                  </div>
                </div>
                <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${includeDetails ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
@@ -189,7 +191,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-200/50 rounded-lg transition-colors"
           >
-            取消
+            {t('graphEditor.export.cancel')}
           </button>
           <button 
             onClick={handleExport}
@@ -197,7 +199,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
             className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            {loading ? '生成中...' : '生成并下载 PDF'}
+            {loading ? t('graphEditor.export.generating') : t('graphEditor.export.download')}
           </button>
         </div>
       </div>

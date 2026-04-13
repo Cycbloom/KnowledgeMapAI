@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Clock, Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ScheduledTask } from '@shared/types';
 import { TaskCard } from './TaskCard';
 
@@ -21,6 +22,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   onTaskClick,
   onTaskMove,
 }) => {
+  const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
 
@@ -46,11 +48,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       const isPast = date < today;
       
       const label = isToday 
-        ? '今天' 
+        ? t('scheduler.timeline.today') 
         : isPast 
           ? `${date.getMonth() + 1}/${date.getDate()}`
           : i === 1 
-            ? '明天' 
+            ? t('scheduler.timeline.tomorrow') 
             : `${date.getMonth() + 1}/${date.getDate()}`;
       
       days.push({ date, label, tasks: dayTasks, isToday, isPast });
@@ -108,7 +110,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     <div className="h-full flex flex-col min-h-0">
       <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 px-2">
         <div className="flex items-center gap-3">
-          <h3 className="text-base sm:text-lg font-semibold text-slate-800 dark:text-white">时间轴视图</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-slate-800 dark:text-white">{t('scheduler.timeline.viewTitle')}</h3>
           <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             <Calendar size={14} />
             <span>{currentDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}</span>
@@ -125,7 +127,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             onClick={() => setCurrentDate(new Date())}
             className="px-4 py-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-sm font-medium hover:bg-cyan-200 dark:hover:bg-cyan-500/30 transition-all min-h-[44px]"
           >
-            今天
+            {t('scheduler.timeline.today')}
           </button>
           <button
             onClick={() => navigateDate('next')}
@@ -176,18 +178,18 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       </span>
                     </div>
                     <span className="text-xs text-slate-400 dark:text-slate-500">
-                      {['日', '一', '二', '三', '四', '五', '六'][day.date.getDay()]}
+                      {t('scheduler.timeline.weekDay' + day.date.getDay())}
                     </span>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {day.tasks.length} 个任务
+                    {t('scheduler.timeline.taskCount', { count: day.tasks.length })}
                   </div>
                 </div>
 
                 <div className="p-2 flex-1 min-h-0 space-y-2 overflow-y-auto custom-scrollbar">
                   {day.tasks.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
-                      {day.isToday ? '暂无任务安排' : '无任务'}
+                      {day.isToday ? t('scheduler.timeline.noTasksToday') : t('scheduler.timeline.noTasks')}
                     </div>
                   ) : (
                     <Reorder.Group
@@ -232,7 +234,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               <div className="p-3 sm:p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">
                 <div className="flex items-center gap-2 mb-2 sm:mb-3">
                   <AlertCircle size={16} className="text-red-500 dark:text-red-400" />
-                  <span className="text-sm font-medium text-red-600 dark:text-red-400">已过期 ({overdueTasks.length})</span>
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">{t('scheduler.timeline.overdue')} ({overdueTasks.length})</span>
                 </div>
                 <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
                   {overdueTasks.map((task) => (
@@ -259,7 +261,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               <div className="p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
                 <div className="flex items-center gap-2 mb-2 sm:mb-3">
                   <Clock size={16} className="text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">未设置截止日期 ({noDeadlineTasks.length})</span>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{t('scheduler.timeline.noDeadline')} ({noDeadlineTasks.length})</span>
                 </div>
                 <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
                   {noDeadlineTasks.map((task) => (

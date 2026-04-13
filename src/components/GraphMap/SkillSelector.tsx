@@ -1,5 +1,6 @@
 import React from 'react';
 import { Network, Route, GitBranch, AlertTriangle, Link2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { SkillDefinition } from '../../services/api/agent';
 
 const SKILL_ICONS: Record<string, React.ReactNode> = {
@@ -21,15 +22,16 @@ export const SkillSelector: React.FC<SkillSelectorProps> = ({
   selectedGraphCount,
   onSelect,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       {selectedGraphCount > 0 && (
         <div className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 p-3 rounded-lg text-sm">
-          已选择 {selectedGraphCount} 个图谱进行分析
+          {t('graphMap.skillSelector.selectedForAnalysis', { count: selectedGraphCount })}
         </div>
       )}
 
-      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">选择分析类型</h3>
+      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('graphMap.skillSelector.selectType')}</h3>
 
       <div className="space-y-2">
         {skills.map((skill) => (

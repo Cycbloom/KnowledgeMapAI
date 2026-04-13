@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useTemplates } from "../hooks/queries";
 import {
   useCreateTemplateMutation,
@@ -33,17 +34,10 @@ const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
   custom: <Sparkles size={20} />,
 };
 
-const categoryLabels: Record<TemplateCategory, string> = {
-  learning: "学习",
-  story: "故事",
-  project: "项目",
-  analysis: "分析",
-  custom: "自定义",
-};
-
 type TemplateTab = "knowledge" | "task";
 
 export const Templates = () => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { data: templates = [], isLoading } = useTemplates();
@@ -87,12 +81,12 @@ export const Templates = () => {
         nodes: [
           {
             id: "node-1",
-            title: "主题",
+            title: t("templates.node.root"),
             level: "root",
           },
           {
             id: "node-2",
-            title: "子主题",
+            title: t("templates.node.sub"),
             level: "core",
             parentId: "node-1",
           },
@@ -102,31 +96,33 @@ export const Templates = () => {
       setNewTemplateName("");
       setNewTemplateDescription("");
       setIsCreating(false);
-      addMessage({ type: "success", content: "模板创建成功!" });
-    } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "创建模板失败" });
+      addMessage({ type: "success", content: t("templates.message.createSuccess") });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("templates.message.createFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
   const handleDeleteTemplate = async (template: Template) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: "系统预设模板不能删除" });
+      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotDelete") });
       return;
     }
 
-    if (!confirm(`确定要删除模板 "${template.name}" 吗？`)) return;
+    if (!confirm(`${t("common.confirm")}${t("common.delete")} "${template.name}"?`)) return;
 
     try {
       await deleteTemplateMutation.mutateAsync(template.id);
-      addMessage({ type: "success", content: "模板已删除" });
-    } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "删除模板失败" });
+      addMessage({ type: "success", content: t("templates.message.deleteSuccess") });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("templates.message.deleteFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
   const handleEditTemplate = (template: Template) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: "系统预设模板不能编辑" });
+      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotEdit") });
       return;
     }
     setEditingTemplate(template);
@@ -153,9 +149,10 @@ export const Templates = () => {
       setIsEditing(false);
       setNewTemplateName("");
       setNewTemplateDescription("");
-      addMessage({ type: "success", content: "模板更新成功!" });
-    } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "更新模板失败" });
+      addMessage({ type: "success", content: t("templates.message.updateSuccess") });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : t("templates.message.updateFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
@@ -174,11 +171,10 @@ export const Templates = () => {
               isDark ? "text-white" : "text-gray-900"
             }`}
           >
-            模板管理
+            {t("templates.title")}
           </h1>
         </div>
 
-        {/* Tab 切换 */}
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setActiveTab("knowledge")}
@@ -191,7 +187,7 @@ export const Templates = () => {
             }`}
           >
             <Network size={18} />
-            <span>知识图谱模板</span>
+            <span>{t("templates.knowledgeTemplates")}</span>
           </button>
           <button
             onClick={() => setActiveTab("task")}
@@ -204,11 +200,10 @@ export const Templates = () => {
             }`}
           >
             <CheckSquare size={18} />
-            <span>任务模板</span>
+            <span>{t("templates.taskTemplates")}</span>
           </button>
         </div>
 
-        {/* 根据选中的 Tab 显示不同内容 */}
         {activeTab === "task" ? (
           <TaskTemplates />
         ) : (
@@ -224,7 +219,7 @@ export const Templates = () => {
                 className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
               >
                 <Plus size={20} />
-                <span>新建模板</span>
+                <span>{t("templates.createTemplate")}</span>
               </button>
             </div>
 
@@ -236,7 +231,7 @@ export const Templates = () => {
                 />
                 <input
                   type="text"
-                  placeholder="搜索模板..."
+                  placeholder={t("templates.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
@@ -269,7 +264,7 @@ export const Templates = () => {
                           : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    {cat === "all" ? "全部" : categoryLabels[cat]}
+                    {cat === "all" ? t("templates.filter.all") : t(`templates.category.${cat}`)}
                   </button>
                 ))}
               </div>
@@ -281,8 +276,8 @@ export const Templates = () => {
               </div>
             ) : filteredTemplates.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-                <p className="text-lg mb-2">未找到匹配的模板</p>
-                <p className="text-sm">尝试更换搜索关键词或分类</p>
+                <p className="text-lg mb-2">{t("templates.empty.noTemplates")}</p>
+                <p className="text-sm">{t("templates.empty.noTemplatesHint")}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -321,12 +316,8 @@ export const Templates = () => {
                             {template.name}
                           </h3>
                           <span className="text-xs text-gray-500">
-                            {
-                              categoryLabels[
-                                template.category as TemplateCategory
-                              ]
-                            }
-                            模板
+                            {t(`templates.category.${template.category as TemplateCategory}`)}
+                            {t("templates.template")}
                           </span>
                         </div>
                       </div>
@@ -336,14 +327,14 @@ export const Templates = () => {
                             <button
                               onClick={() => handleEditTemplate(template)}
                               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                              title="编辑"
+                              title={t("templates.button.edit")}
                             >
                               <Pencil size={16} className="text-gray-500" />
                             </button>
                             <button
                               onClick={() => handleDeleteTemplate(template)}
                               className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title="删除"
+                              title={t("templates.button.delete")}
                             >
                               <Trash2 size={16} className="text-red-500" />
                             </button>
@@ -351,7 +342,7 @@ export const Templates = () => {
                         )}
                         {template.is_system && (
                           <span className="text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                            系统预设
+                            {t("templates.system")}
                           </span>
                         )}
                       </div>
@@ -362,11 +353,11 @@ export const Templates = () => {
                         isDark ? "text-slate-300" : "text-gray-600"
                       }`}
                     >
-                      {template.description || "暂无描述"}
+                      {template.description || t("common.noData")}
                     </p>
 
                     <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                      <span>{template.nodes?.length ?? 0} 个节点</span>
+                      <span>{t("templates.nodeCount", { count: template.nodes?.length ?? 0 })}</span>
                       {template.layout && (
                         <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700">
                           {template.layout.type}
@@ -378,7 +369,7 @@ export const Templates = () => {
                       onClick={() => handleUseTemplate(template)}
                       className="w-full px-4 py-2.5 rounded-xl font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                     >
-                      使用此模板
+                      {t("templates.button.use")}
                     </button>
                   </div>
                 ))}
@@ -396,7 +387,7 @@ export const Templates = () => {
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">创建新模板</h3>
+              <h3 className="text-xl font-bold">{t("templates.createTemplate")}</h3>
               <button
                 onClick={() => setIsCreating(false)}
                 className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${
@@ -416,13 +407,13 @@ export const Templates = () => {
                     isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
-                  模板名称
+                  {t("templates.form.name")}
                 </label>
                 <input
                   type="text"
                   value={newTemplateName}
                   onChange={(e) => setNewTemplateName(e.target.value)}
-                  placeholder="例如：我的学习模板"
+                  placeholder={t("templates.form.namePlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
                       ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -438,12 +429,12 @@ export const Templates = () => {
                     isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
-                  描述（可选）
+                  {t("templates.form.descriptionOptional")}
                 </label>
                 <textarea
                   value={newTemplateDescription}
                   onChange={(e) => setNewTemplateDescription(e.target.value)}
-                  placeholder="简要描述该模板的用途..."
+                  placeholder={t("templates.form.descriptionPlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none ${
                     isDark
                       ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -459,7 +450,7 @@ export const Templates = () => {
                     isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
-                  分类
+                  {t("templates.form.category")}
                 </label>
                 <select
                   value={newTemplateCategory}
@@ -472,11 +463,11 @@ export const Templates = () => {
                       : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   }`}
                 >
-                  <option value="learning">学习</option>
-                  <option value="story">故事</option>
-                  <option value="project">项目</option>
-                  <option value="analysis">分析</option>
-                  <option value="custom">自定义</option>
+                  <option value="learning">{t("templates.category.learning")}</option>
+                  <option value="story">{t("templates.category.story")}</option>
+                  <option value="project">{t("templates.category.project")}</option>
+                  <option value="analysis">{t("templates.category.analysis")}</option>
+                  <option value="custom">{t("templates.category.custom")}</option>
                 </select>
               </div>
 
@@ -490,7 +481,7 @@ export const Templates = () => {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  取消
+                  {t("templates.button.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -499,7 +490,7 @@ export const Templates = () => {
                     createTemplateMutation.isPending || !newTemplateName
                   }
                 >
-                  {createTemplateMutation.isPending ? "创建中..." : "立即创建"}
+                  {createTemplateMutation.isPending ? `${t("common.generating")}` : t("templates.button.create")}
                 </button>
               </div>
             </form>
@@ -515,7 +506,7 @@ export const Templates = () => {
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">编辑模板</h3>
+              <h3 className="text-xl font-bold">{t("templates.button.edit")}</h3>
               <button
                 onClick={() => {
                   setIsEditing(false);
@@ -538,7 +529,7 @@ export const Templates = () => {
                     isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
-                  模板名称
+                  {t("templates.form.name")}
                 </label>
                 <input
                   type="text"
@@ -560,13 +551,13 @@ export const Templates = () => {
                     isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
-                  描述（可选）
+                  {t("templates.form.descriptionOptional")}
                 </label>
                 <textarea
                   value={newTemplateDescription}
                   onChange={(e) => setNewTemplateDescription(e.target.value)}
                   placeholder={
-                    editingTemplate.description || "简要描述该模板的用途..."
+                    editingTemplate.description || t("templates.form.descriptionPlaceholder")
                   }
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none ${
                     isDark
@@ -583,7 +574,7 @@ export const Templates = () => {
                     isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
-                  分类
+                  {t("templates.form.category")}
                 </label>
                 <select
                   value={newTemplateCategory}
@@ -596,11 +587,11 @@ export const Templates = () => {
                       : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   }`}
                 >
-                  <option value="learning">学习</option>
-                  <option value="story">故事</option>
-                  <option value="project">项目</option>
-                  <option value="analysis">分析</option>
-                  <option value="custom">自定义</option>
+                  <option value="learning">{t("templates.category.learning")}</option>
+                  <option value="story">{t("templates.category.story")}</option>
+                  <option value="project">{t("templates.category.project")}</option>
+                  <option value="analysis">{t("templates.category.analysis")}</option>
+                  <option value="custom">{t("templates.category.custom")}</option>
                 </select>
               </div>
 
@@ -617,7 +608,7 @@ export const Templates = () => {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  取消
+                  {t("templates.button.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -626,7 +617,7 @@ export const Templates = () => {
                     updateTemplateMutation.isPending || !newTemplateName
                   }
                 >
-                  {updateTemplateMutation.isPending ? "更新中..." : "保存修改"}
+                  {updateTemplateMutation.isPending ? `${t("common.generating")}` : t("templates.button.save")}
                 </button>
               </div>
             </form>

@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Lightbulb,
 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 
 interface SmartRecommendation {
@@ -80,6 +81,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
   onViewTask,
   currentTaskId,
 }) => {
+  const { t } = useTranslation();
   const [recommendation, setRecommendation] =
     useState<SmartRecommendation | null>(null);
   const [efficiencyProfile, setEfficiencyProfile] =
@@ -144,17 +146,17 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     switch (level) {
       case "high":
         return {
-          label: "效率高峰",
+          label: t('scheduler.recommendation.peakEfficiency'),
           color: "text-green-500 bg-green-100 dark:bg-green-500/20",
         };
       case "low":
         return {
-          label: "效率低谷",
+          label: t('scheduler.recommendation.lowEfficiency'),
           color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-500/20",
         };
       default:
         return {
-          label: "效率正常",
+          label: t('scheduler.recommendation.normalEfficiency'),
           color: "text-blue-500 bg-blue-100 dark:bg-blue-500/20",
         };
     }
@@ -288,7 +290,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
           </div>
           <div className="flex-1">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              暂无待处理任务，干得漂亮！🎉
+              {t('scheduler.recommendation.noPendingTasks')}
             </p>
           </div>
         </div>
@@ -315,7 +317,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-slate-900 dark:text-white">
-              智能推荐
+              {t('scheduler.recommendation.title')}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {currentContext.timeSlot.label} · {efficiencyBadge.label}
@@ -375,12 +377,12 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                           Q{recommendedTask.task.queue_level}
                         </span>
                         <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                          优先级 {recommendedTask.task.priority}
+                          {t('scheduler.recommendation.priority', { level: recommendedTask.task.priority })}
                         </span>
                         {recommendedTask.task.estimated_duration && (
                           <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                             <Clock className="w-3 h-3" />
-                            {recommendedTask.task.estimated_duration}分钟
+                            {t('scheduler.recommendation.minutes', { count: recommendedTask.task.estimated_duration })}
                           </span>
                         )}
                       </div>
@@ -390,13 +392,13 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                         onClick={handleViewTask}
                         className="px-3 py-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 rounded-lg transition-colors"
                       >
-                        查看详情
+                        {t('scheduler.recommendation.viewDetails')}
                       </button>
                       <button
                         onClick={handleAcceptRecommendation}
                         className="px-4 py-1.5 text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
                       >
-                        开始任务
+                        {t('scheduler.recommendation.startTask')}
                       </button>
                     </div>
                   </div>
@@ -419,7 +421,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                         className="flex items-center gap-2 text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors mb-3"
                       >
                         <Lightbulb className="w-4 h-4" />
-                        推荐详情分析
+                        {t('scheduler.recommendation.recommendationDetails')}
                         <ChevronRight
                           className={`w-4 h-4 transition-transform ${showDetails ? "rotate-90" : ""}`}
                         />

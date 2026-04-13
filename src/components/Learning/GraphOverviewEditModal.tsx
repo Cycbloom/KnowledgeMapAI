@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Link2, FileText, Plus, Pencil, Trash2, Save, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Graph, ReferenceBook, ExternalLink } from '../../../shared/types/graph';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 
@@ -27,20 +28,22 @@ const emptyLink: ExternalLink = {
   description: '',
 };
 
-const linkTypeOptions = [
-  { value: 'article', label: '文章' },
-  { value: 'video', label: '视频' },
-  { value: 'course', label: '课程' },
-  { value: 'tool', label: '工具' },
-  { value: 'other', label: '其他' },
-];
-
 export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
   isOpen,
   onClose,
   graph,
   onSave,
 }) => {
+  const { t } = useTranslation();
+
+  const linkTypeOptions = [
+    { value: 'article', label: t('learning.overviewEdit.typeArticle') },
+    { value: 'video', label: t('learning.overviewEdit.typeVideo') },
+    { value: 'course', label: t('learning.overviewEdit.typeCourse') },
+    { value: 'tool', label: t('learning.overviewEdit.typeTool') },
+    { value: 'other', label: t('learning.overviewEdit.typeOther') },
+  ];
+
   const [activeTab, setActiveTab] = useState<TabType>('books');
   const [books, setBooks] = useState<ReferenceBook[]>([]);
   const [links, setLinks] = useState<ExternalLink[]>([]);
@@ -79,13 +82,13 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
   const validateBook = (book: ReferenceBook): boolean => {
     const errors: Partial<Record<keyof ReferenceBook, string>> = {};
     if (!book.title.trim()) {
-      errors.title = '请输入书名';
+      errors.title = t('learning.overviewEdit.validation.bookTitleRequired');
     }
     if (!book.author.trim()) {
-      errors.author = '请输入作者';
+      errors.author = t('learning.overviewEdit.validation.authorRequired');
     }
     if (book.url && !isValidUrl(book.url)) {
-      errors.url = '请输入有效的 URL';
+      errors.url = t('learning.overviewEdit.validation.invalidUrl');
     }
     setBookErrors(errors);
     return Object.keys(errors).length === 0;
@@ -94,12 +97,12 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
   const validateLink = (link: ExternalLink): boolean => {
     const errors: Partial<Record<keyof ExternalLink, string>> = {};
     if (!link.title.trim()) {
-      errors.title = '请输入标题';
+      errors.title = t('learning.overviewEdit.validation.linkTitleRequired');
     }
     if (!link.url.trim()) {
-      errors.url = '请输入 URL';
+      errors.url = t('learning.overviewEdit.validation.urlRequired');
     } else if (!isValidUrl(link.url)) {
-      errors.url = '请输入有效的 URL';
+      errors.url = t('learning.overviewEdit.validation.invalidUrl');
     }
     setLinkErrors(errors);
     return Object.keys(errors).length === 0;
@@ -213,12 +216,12 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
       <div className="space-y-3">
         <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
           <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-          {editingBookIndex !== null ? '编辑书籍' : '添加新书籍'}
+          {editingBookIndex !== null ? t('learning.overviewEdit.editBook') : t('learning.overviewEdit.addBook')}
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              书名 <span className="text-red-500">*</span>
+              {t('learning.overviewEdit.bookTitle')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -227,7 +230,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 bookErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
-              placeholder="输入书名"
+              placeholder={t('learning.overviewEdit.bookTitlePlaceholder')}
             />
             {bookErrors.title && (
               <p className="text-xs text-red-500 mt-1">{bookErrors.title}</p>
@@ -235,7 +238,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              作者 <span className="text-red-500">*</span>
+              {t('learning.overviewEdit.author')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -244,24 +247,24 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 bookErrors.author ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
-              placeholder="输入作者"
+              placeholder={t('learning.overviewEdit.authorPlaceholder')}
             />
             {bookErrors.author && (
               <p className="text-xs text-red-500 mt-1">{bookErrors.author}</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">ISBN</label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.isbn')}</label>
             <input
               type="text"
               value={bookForm.isbn || ''}
               onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
               className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="输入 ISBN"
+              placeholder={t('learning.overviewEdit.isbnPlaceholder')}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">链接 URL</label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.linkUrl')}</label>
             <input
               type="url"
               value={bookForm.url || ''}
@@ -276,13 +279,13 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             )}
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">描述</label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.description')}</label>
             <textarea
               value={bookForm.description || ''}
               onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
               className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               rows={2}
-              placeholder="输入书籍描述"
+              placeholder={t('learning.overviewEdit.bookDescriptionPlaceholder')}
             />
           </div>
         </div>
@@ -294,13 +297,13 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
               >
                 <Save size={16} />
-                更新书籍
+                {t('learning.overviewEdit.updateBook')}
               </button>
               <button
                 onClick={handleCancelEdit}
                 className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition-colors"
               >
-                取消
+                {t('learning.overviewEdit.cancel')}
               </button>
             </>
           ) : (
@@ -309,7 +312,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
             >
               <Plus size={16} />
-              添加书籍
+              {t('learning.overviewEdit.addBookButton')}
             </button>
           )}
         </div>
@@ -319,7 +322,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
         <div className="space-y-2">
           <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-            已添加书籍 ({books.length})
+            {t('learning.overviewEdit.addedBooks', { count: books.length })}
           </h4>
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
             {books.map((book, index) => (
@@ -361,12 +364,12 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
       <div className="space-y-3">
         <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
           <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-          {editingLinkIndex !== null ? '编辑链接' : '添加新链接'}
+          {editingLinkIndex !== null ? t('learning.overviewEdit.editLink') : t('learning.overviewEdit.addLink')}
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              标题 <span className="text-red-500">*</span>
+              {t('learning.overviewEdit.linkTitle')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -375,7 +378,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 linkErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-600'
               }`}
-              placeholder="输入链接标题"
+              placeholder={t('learning.overviewEdit.linkTitlePlaceholder')}
             />
             {linkErrors.title && (
               <p className="text-xs text-red-500 mt-1">{linkErrors.title}</p>
@@ -383,7 +386,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              类型
+              {t('learning.overviewEdit.type')}
             </label>
             <select
               value={linkForm.type}
@@ -415,13 +418,13 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             )}
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">描述</label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{t('learning.overviewEdit.description')}</label>
             <textarea
               value={linkForm.description || ''}
               onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
               className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               rows={2}
-              placeholder="输入链接描述"
+              placeholder={t('learning.overviewEdit.linkDescriptionPlaceholder')}
             />
           </div>
         </div>
@@ -433,13 +436,13 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
               >
                 <Save size={16} />
-                更新链接
+                {t('learning.overviewEdit.updateLink')}
               </button>
               <button
                 onClick={handleCancelEdit}
                 className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition-colors"
               >
-                取消
+                {t('learning.overviewEdit.cancel')}
               </button>
             </>
           ) : (
@@ -448,7 +451,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
             >
               <Plus size={16} />
-              添加链接
+              {t('learning.overviewEdit.addLinkButton')}
             </button>
           )}
         </div>
@@ -458,7 +461,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
         <div className="space-y-2">
           <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-            已添加链接 ({links.length})
+            {t('learning.overviewEdit.addedLinks', { count: links.length })}
           </h4>
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
             {links.map((link, index) => (
@@ -509,14 +512,14 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
           <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-          学习指南
+          {t('learning.overviewEdit.learningGuide')}
         </h4>
         <button
           onClick={() => setShowPreview(!showPreview)}
           className="flex items-center gap-1 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
         >
           {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
-          {showPreview ? '编辑' : '预览'}
+          {showPreview ? t('learning.overviewEdit.edit') : t('learning.overviewEdit.preview')}
         </button>
       </div>
       
@@ -525,7 +528,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           {learningGuide ? (
             <div className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{learningGuide}</div>
           ) : (
-            <p className="text-slate-400 dark:text-slate-500 italic">暂无学习指南内容</p>
+            <p className="text-slate-400 dark:text-slate-500 italic">{t('learning.overviewEdit.noGuideContent')}</p>
           )}
         </div>
       ) : (
@@ -533,7 +536,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
           value={learningGuide}
           onChange={(e) => setLearningGuide(e.target.value)}
           className="w-full min-h-[300px] px-4 py-3 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y font-mono"
-          placeholder="输入学习指南内容...&#10;&#10;支持 Markdown 格式：&#10;- 使用 # 表示标题&#10;- 使用 - 或 * 表示列表&#10;- 使用 **粗体** 和 *斜体*&#10;- 使用 `代码` 表示代码片段"
+          placeholder={t('learning.overviewEdit.guidePlaceholder')}
         />
       )}
     </div>
@@ -550,9 +553,9 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
                   <BookOpen size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">编辑图谱概览</h2>
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{t('learning.overviewEdit.title')}</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                    {graph?.title || '未命名图谱'}
+                    {graph?.title || t('learning.overviewEdit.unnamedGraph')}
                   </p>
                 </div>
               </div>
@@ -575,7 +578,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               }`}
             >
               <BookOpen size={16} />
-              参考书籍
+              {t('learning.overviewEdit.referenceBooks')}
               {books.length > 0 && (
                 <span className="px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full">
                   {books.length}
@@ -591,7 +594,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               }`}
             >
               <Link2 size={16} />
-              外部链接
+              {t('learning.overviewEdit.externalLinks')}
               {links.length > 0 && (
                 <span className="px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full">
                   {links.length}
@@ -607,7 +610,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               }`}
             >
               <FileText size={16} />
-              学习指南
+              {t('learning.overviewEdit.learningGuide')}
             </button>
           </div>
 
@@ -623,7 +626,7 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               disabled={isSaving}
               className="px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-sm font-bold transition-colors"
             >
-              取消
+              {t('learning.overviewEdit.cancel')}
             </button>
             <button
               onClick={handleSave}
@@ -633,12 +636,12 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
               {isSaving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  保存中...
+                  {t('learning.overviewEdit.saving')}
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  保存更改
+                  {t('learning.overviewEdit.saveChanges')}
                 </>
               )}
             </button>
@@ -659,9 +662,9 @@ export const GraphOverviewEditModal: React.FC<GraphOverviewEditModalProps> = ({
             setDeleteConfirm(null);
           }
         }}
-        title={`确认删除${deleteConfirm?.type === 'book' ? '书籍' : '链接'}`}
-        message={`确定要删除"${deleteConfirm?.title}"吗？此操作无法撤销。`}
-        confirmText="删除"
+        title={deleteConfirm?.type === 'book' ? t('learning.overviewEdit.confirmDeleteBook') : t('learning.overviewEdit.confirmDeleteLink')}
+        message={t('learning.overviewEdit.confirmDeleteMessage', { title: deleteConfirm?.title || '' })}
+        confirmText={t('learning.overviewEdit.delete')}
         isDangerous
       />
     </>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   BookOpen,
   Network,
@@ -20,7 +21,7 @@ import {
 interface NavItem {
   to: string;
   icon: LucideIcon;
-  label: string;
+  labelKey: string;
 }
 
 interface MobileBottomNavProps {
@@ -29,27 +30,28 @@ interface MobileBottomNavProps {
 }
 
 const mainNavItems: NavItem[] = [
-  { to: "/", icon: BookOpen, label: "我的图谱" },
-  { to: "/graph-map", icon: Network, label: "图谱地图" },
-  { to: "/study", icon: GraduationCap, label: "学习中心" },
-  { to: "/statistics", icon: BarChart3, label: "统计中心" },
+  { to: "/", icon: BookOpen, labelKey: "layout.myGraphs" },
+  { to: "/graph-map", icon: Network, labelKey: "layout.graphMap" },
+  { to: "/study", icon: GraduationCap, labelKey: "layout.studyCenter" },
+  { to: "/statistics", icon: BarChart3, labelKey: "layout.statistics" },
 ];
 
 const moreNavItems: NavItem[] = [
-  { to: "/learning-paths", icon: Route, label: "学习路径" },
-  { to: "/calendar", icon: Calendar, label: "日历" },
-  { to: "/achievements", icon: Trophy, label: "成就系统" },
-  { to: "/templates", icon: Sparkles, label: "模板管理" },
-  { to: "/tasks", icon: ListChecks, label: "任务中心" },
-  { to: "/scheduler", icon: Zap, label: "任务调度" },
-  { to: "/profile", icon: User, label: "个人设置" },
-  { to: "/trash", icon: Trash2, label: "回收站" },
+  { to: "/learning-paths", icon: Route, labelKey: "layout.learningPaths" },
+  { to: "/calendar", icon: Calendar, labelKey: "layout.calendar" },
+  { to: "/achievements", icon: Trophy, labelKey: "layout.achievements" },
+  { to: "/templates", icon: Sparkles, labelKey: "layout.templates" },
+  { to: "/tasks", icon: ListChecks, labelKey: "layout.tasks" },
+  { to: "/scheduler", icon: Zap, labelKey: "layout.scheduler" },
+  { to: "/profile", icon: User, labelKey: "layout.profile" },
+  { to: "/trash", icon: Trash2, labelKey: "layout.trash" },
 ];
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   isDark,
   currentPath,
 }) => {
+  const { t } = useTranslation();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -118,7 +120,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         {mainNavItems.map((item) => (
           <Link key={item.to} to={item.to} className={getNavItemClass(item.to)}>
             <item.icon size={20} strokeWidth={isActive(item.to) ? 2.5 : 2} />
-            <span className="text-[10px] font-medium">{item.label}</span>
+            <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
           </Link>
         ))}
 
@@ -131,7 +133,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               size={20}
               strokeWidth={isMoreActive || isMoreOpen ? 2.5 : 2}
             />
-            <span className="text-[10px] font-medium">更多</span>
+            <span className="text-[10px] font-medium">{t('common.more')}</span>
           </button>
 
           {isMoreOpen && (
@@ -158,7 +160,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                     }`}
                   >
                     <item.icon size={16} strokeWidth={isActive(item.to) ? 2.5 : 2} />
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-sm">{t(item.labelKey)}</span>
                   </Link>
                 ))}
               </div>

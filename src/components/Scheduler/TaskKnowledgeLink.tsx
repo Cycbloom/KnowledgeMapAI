@@ -8,6 +8,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { knowledgePointsApi } from "../../services/api/knowledgePoints";
 import type { TaskKnowledgePoint } from "@shared/types/scheduler";
 
@@ -29,6 +30,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
   selectedKnowledgePoints,
   onChange,
 }) => {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -131,10 +133,10 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
       <div className="flex items-center justify-between mb-3">
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
           <BookOpen size={14} className="inline mr-1.5" />
-          关联知识点
+          {t('scheduler.taskLink.linkedKnowledge')}
           {selectedKnowledgePoints.length > 0 && (
             <span className="ml-1.5 text-slate-400 dark:text-slate-500 font-normal">
-              {selectedKnowledgePoints.length} 个
+              {t('scheduler.taskLink.count', { count: selectedKnowledgePoints.length })}
             </span>
           )}
         </label>
@@ -144,7 +146,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
           className="flex items-center gap-1 px-3 py-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-lg transition-colors"
         >
           <Plus size={14} />
-          添加
+          {t('scheduler.taskLink.add')}
         </button>
       </div>
 
@@ -159,7 +161,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜索知识点..."
+              placeholder={t('scheduler.taskLink.searchPlaceholder')}
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
               autoFocus
             />
@@ -173,7 +175,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
           {searchError && (
             <p className="mt-2 text-sm text-red-500 dark:text-red-400 flex items-center gap-1">
               <AlertCircle size={14} />
-              {searchError}
+              {t('scheduler.taskLink.searchFailed')}
             </p>
           )}
 
@@ -209,7 +211,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
 
           {searchQuery && !isSearching && searchResults.length === 0 && !searchError && (
             <p className="mt-2 text-sm text-slate-400 dark:text-slate-500 text-center py-4">
-              未找到匹配的知识点
+              {t('scheduler.taskLink.noResults')}
             </p>
           )}
 
@@ -219,7 +221,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
               onClick={handleCancelAdd}
               className="px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm"
             >
-              取消
+              {t('scheduler.taskLink.cancel')}
             </button>
           </div>
         </div>
@@ -239,11 +241,11 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-medium text-slate-900 dark:text-white truncate">
-                  {kp.knowledge_point?.title || "未知知识点"}
+                  {kp.knowledge_point?.title || t('scheduler.taskLink.unknownKnowledge')}
                 </p>
                 {kp.is_primary && (
                   <span className="px-1.5 py-0.5 text-xs bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 rounded">
-                    主要
+                    {t('scheduler.taskLink.primary')}
                   </span>
                 )}
               </div>
@@ -254,7 +256,7 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
               )}
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-xs text-slate-400 dark:text-slate-500">
-                  关联度: {kp.relevance_score}%
+                  {t('scheduler.taskLink.relevance')}: {kp.relevance_score}%
                 </span>
               </div>
             </div>
@@ -284,13 +286,13 @@ export const TaskKnowledgeLink: React.FC<TaskKnowledgeLinkProps> = ({
         {selectedKnowledgePoints.length === 0 && !isAdding && (
           <div className="text-center py-6 text-slate-400 dark:text-slate-500">
             <BookOpen size={28} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">暂无关联的知识点</p>
+            <p className="text-sm">{t('scheduler.taskLink.noLinkedKnowledge')}</p>
             <button
               type="button"
               onClick={() => setIsAdding(true)}
               className="mt-2 text-sm text-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400"
             >
-              添加知识点关联
+              {t('scheduler.taskLink.addLink')}
             </button>
           </div>
         )}

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, Link as LinkIcon, Loader2 } from 'lucide-react';
 import type { Graph, GraphRelationType } from '../../types';
@@ -23,6 +24,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
   onSubmit,
   initialSourceId,
 }) => {
+  const { t } = useTranslation();
   const [sourceId, setSourceId] = useState(initialSourceId || '');
   const [targetId, setTargetId] = useState('');
   const [relationType, setRelationType] = useState<GraphRelationType>('related');
@@ -57,9 +59,9 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
   };
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; description: string; color: string }> = [
-    { value: 'prerequisite', label: '前置知识', description: '学习目标图谱前需要先掌握', color: 'bg-blue-500' },
-    { value: 'extension', label: '扩展知识', description: '掌握目标图谱后可深入学习', color: 'bg-green-500' },
-    { value: 'related', label: '相关知识', description: '两个图谱有相关性', color: 'bg-amber-500' },
+    { value: 'prerequisite', label: t('createRelation.prerequisite'), description: t('createRelation.prerequisiteDesc'), color: 'bg-blue-500' },
+    { value: 'extension', label: t('createRelation.extension'), description: t('createRelation.extensionDesc'), color: 'bg-green-500' },
+    { value: 'related', label: t('createRelation.related'), description: t('createRelation.relatedDesc'), color: 'bg-amber-500' },
   ];
 
   if (!isOpen) return null;
@@ -83,7 +85,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <LinkIcon className="w-5 h-5" />
-              创建图谱关系
+              {t('createRelation.title')}
             </h2>
             <button
               onClick={onClose}
@@ -96,14 +98,14 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
           <div className="p-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                源图谱
+                {t('createRelation.sourceGraph')}
               </label>
               <select
                 value={sourceId}
                 onChange={e => setSourceId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">选择图谱...</option>
+                <option value="">{t('createRelation.selectSource')}</option>
                 {graphs.map(graph => (
                   <option key={graph.id} value={graph.id}>
                     {graph.title}
@@ -118,14 +120,14 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                目标图谱
+                {t('createRelation.targetGraph')}
               </label>
               <select
                 value={targetId}
                 onChange={e => setTargetId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">选择图谱...</option>
+                <option value="">{t('createRelation.selectTarget')}</option>
                 {availableTargets.map(graph => (
                   <option key={graph.id} value={graph.id}>
                     {graph.title}
@@ -136,7 +138,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                关系类型
+                {t('createRelation.relationType')}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {relationTypeOptions.map(option => (
@@ -165,12 +167,12 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                关系描述（可选）
+                {t('createRelation.contextOptional')}
               </label>
               <textarea
                 value={context}
                 onChange={e => setContext(e.target.value)}
-                placeholder="描述这个关系的原因或背景..."
+                placeholder={t('createRelation.contextPlaceholder')}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
@@ -182,7 +184,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -190,7 +192,7 @@ export const CreateRelationPanel: React.FC<CreateRelationPanelProps> = ({
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              创建关系
+              {isSubmitting ? t('createRelation.creating') : t('createRelation.create')}
             </button>
           </div>
         </motion.div>

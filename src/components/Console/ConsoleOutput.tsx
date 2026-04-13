@@ -1,6 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, CheckCircle, XCircle, Info, Trash2, ChevronUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { CommandResult } from '@/services/console';
 
 const INITIAL_VISIBLE_COUNT = 20;
@@ -329,6 +330,7 @@ const OutputItemComponent: React.FC<{
 
 export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
   ({ output, isDark, onClear }, ref) => {
+    const { t } = useTranslation();
     const containerRef = useRef<HTMLDivElement>(null);
     const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
     const [isAtBottom, setIsAtBottom] = useState(true);
@@ -419,7 +421,7 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
                 ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
             }`}
-            title="清空输出"
+            title={t('console.output.clear')}
           >
             <Trash2 size={14} />
           </button>
@@ -434,8 +436,8 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
           {output.length === 0 ? (
             <div className={`text-center px-4 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
               <Terminal className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">输入 help 查看可用命令</p>
-              <p className="text-xs mt-1 opacity-75">Tab 补全 · Ctrl+R 搜索历史 · Esc 关闭</p>
+              <p className="text-sm">{t('console.output.helpHint')}</p>
+              <p className="text-xs mt-1 opacity-75">{t('console.output.shortcutHint')}</p>
             </div>
           ) : (
             <div>
@@ -451,7 +453,7 @@ export const ConsoleOutput = forwardRef<ConsoleOutputRef, ConsoleOutputProps>(
                   onClick={loadMore}
                 >
                   <ChevronUp size={12} />
-                  <span>向上滚动查看更多历史记录 ({hiddenCount} 条)</span>
+                  <span>{t('console.output.scrollMore', { count: hiddenCount })}</span>
                 </motion.div>
               )}
               <div className="space-y-1">

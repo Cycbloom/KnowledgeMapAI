@@ -15,6 +15,7 @@ import {
   Play,
   Pause,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import { useMessageStore } from "../../store/useMessageStore";
 import { useErrorHandler } from "../../hooks";
@@ -93,6 +94,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   onPathSelect,
   selectedPathId,
 }) => {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [tempPath, setTempPath] = useState<TempLearningPath | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -132,7 +134,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
         <Route className="w-12 h-12 mb-4 text-gray-300" />
-        <p className="text-sm">请先选择一个知识图谱</p>
+        <p className="text-sm">{t("learning.learningPath.selectGraph")}</p>
       </div>
     );
   }
@@ -149,7 +151,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     } catch (error) {
       handleError(error, {
         context: "LearningPath",
-        fallbackMessage: "获取学习路径失败",
+        fallbackMessage: t("learning.learningPath.generateFailed"),
       });
     } finally {
       setIsGenerating(false);
@@ -163,15 +165,15 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     dailyTimeMinutes: number;
   }) => {
     setIsGenerating(true);
-    setGenerationStep("正在分析图谱结构...");
-    addMessage({ type: "info", content: "AI 正在分析您的知识图谱，请稍候..." });
+    setGenerationStep(t("learning.learningPath.analyzingGraph"));
+    addMessage({ type: "info", content: t("learning.learningPath.aiAnalyzing") });
 
     try {
       const knowledgeStr = Object.entries(data.currentKnowledge)
         .map(([k, v]) => `${k}: ${v}`)
         .join("；");
 
-      setGenerationStep("正在规划学习路径...");
+      setGenerationStep(t("learning.learningPath.planningPath"));
       const result = await api.learningPath.generate({
         graph_id: graphId,
         learning_style: data.learningStyle,
@@ -180,18 +182,17 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         current_knowledge: knowledgeStr,
       });
 
-      setGenerationStep("正在优化路径顺序...");
+      setGenerationStep(t("learning.learningPath.optimizingOrder"));
       setTempPath(result);
       setViewMode("create");
       addMessage({
         type: "success",
-        content:
-          'AI 学习路径已生成！请点击"保存路径"将其保存到您的学习计划中。',
+        content: t("learning.learningPath.pathGenerated"),
       });
     } catch (error) {
       handleError(error, {
         context: "AIPath",
-        fallbackMessage: "AI 路径生成失败",
+        fallbackMessage: t("learning.learningPath.aiGenerateFailed"),
       });
     } finally {
       setIsGenerating(false);
@@ -218,7 +219,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
       await createMutation.mutateAsync({
         title: tempPath.targetGoal || `学习路径 - ${tempPath.graphTitle}`,
-        description: `AI 生成的学习路径，预计 ${Math.round(tempPath.estimatedTotalTime / 60)} 小时完成。`,
+        description: t("learning.learningPath.pathDescription", { hours: Math.round(tempPath.estimatedTotalTime / 60) }),
         goal: tempPath.targetGoal,
         source_graph_id: graphId,
         total_estimated_time: tempPath.estimatedTotalTime,
@@ -229,11 +230,11 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
       setTempPath(null);
       setViewMode("list");
-      addMessage({ type: "success", content: "学习路径已保存！" });
+      addMessage({ type: "success", content: t("learning.learningPath.pathSaved") });
     } catch (error) {
       handleError(error, {
         context: "SavePath",
-        fallbackMessage: "保存学习路径失败",
+        fallbackMessage: t("learning.learningPath.saveFailed"),
       });
     } finally {
       setIsGenerating(false);
@@ -241,18 +242,18 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   };
 
   const handleDeletePath = async (pathId: string) => {
-    if (!window.confirm("确定要删除此学习路径吗？")) return;
+    if (!window.confirm(t("learning.learningPath.confirmDelete"))) return;
 
     try {
       await deleteMutation.mutateAsync(pathId);
-      addMessage({ type: "success", content: "学习路径已删除" });
+      addMessage({ type: "success", content: t("learning.learningPath.pathDeleted") });
       if (selectedPath?.id === pathId) {
         setSelectedPath(null);
       }
     } catch (error) {
       handleError(error, {
         context: "DeletePath",
-        fallbackMessage: "删除失败",
+        fallbackMessage: t("learning.learningPath.deleteFailed"),
       });
     }
   };
@@ -266,12 +267,12 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
       });
       addMessage({
         type: "success",
-        content: `学习路径已${newStatus === "active" ? "继续" : "暂停"}`,
+        content: newStatus === "active" ? t("learning.learningPath.pathResumed") : t("learning.learningPath.pathPaused"),
       });
     } catch (error) {
       handleError(error, {
         context: "UpdateStatus",
-        fallbackMessage: "更新状态失败",
+        fallbackMessage: t("learning.learningPath.updateFailed"),
       });
     }
   };
@@ -292,11 +293,11 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
       case "high":
-        return "高优先";
+        return t("learning.learningPath.priorityHigh");
       case "medium":
-        return "中优先";
+        return t("learning.learningPath.priorityMedium");
       case "low":
-        return "低优先";
+        return t("learning.learningPath.priorityLow");
       default:
         return priority;
     }
@@ -307,25 +308,25 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
       case "active":
         return (
           <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            进行中
+            {t("learning.learningPath.statusActive")}
           </span>
         );
       case "paused":
         return (
           <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-            已暂停
+            {t("learning.learningPath.statusPaused")}
           </span>
         );
       case "completed":
         return (
           <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-            已完成
+            {t("learning.learningPath.statusCompleted")}
           </span>
         );
       case "archived":
         return (
           <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-            已归档
+            {t("learning.learningPath.statusArchived")}
           </span>
         );
       default:
@@ -341,6 +342,13 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
     );
   }
 
+  const learningStyles = [
+    { value: "sequential", label: t("learning.learningPath.styleSequential") },
+    { value: "exploratory", label: t("learning.learningPath.styleExploratory") },
+    { value: "focused", label: t("learning.learningPath.styleFocused") },
+    { value: "custom", label: t("learning.learningPath.styleCustom") },
+  ];
+
   return (
     <div className="learning-path-panel h-full flex flex-col space-y-4 relative overflow-hidden">
       {isGenerating && (
@@ -352,10 +360,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             </div>
             <div className="text-center">
               <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                {generationStep || "正在生成学习路径..."}
+                {generationStep || t("learning.learningPath.generating")}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                AI 正在为您规划最优学习路径
+                {t("learning.learningPath.aiPlanning")}
               </p>
             </div>
             <div className="flex items-center gap-1">
@@ -390,7 +398,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  预览学习路径
+                  {t("learning.learningPath.previewPath")}
                 </h2>
                 <p className="text-sm text-gray-500">{tempPath.graphTitle}</p>
               </div>
@@ -401,7 +409,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex-shrink-0">
               <Sparkles size={14} className="text-purple-500" />
               <span className="text-xs text-purple-600 dark:text-purple-400">
-                AI 生成 · 目标：{tempPath.targetGoal}
+                {t("learning.learningPath.aiGeneratedTarget", { goal: tempPath.targetGoal })}
               </span>
             </div>
           )}
@@ -411,19 +419,19 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               <div className="text-2xl font-bold text-blue-500">
                 {tempPath.totalNodes}
               </div>
-              <div className="text-xs text-gray-500">总知识点</div>
+              <div className="text-xs text-gray-500">{t("learning.learningPath.totalNodes")}</div>
             </div>
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-green-500">
                 {tempPath.completedNodes}
               </div>
-              <div className="text-xs text-gray-500">已掌握</div>
+              <div className="text-xs text-gray-500">{t("learning.learningPath.mastered")}</div>
             </div>
             <div className="bg-white dark:bg-slate-700 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-purple-500">
                 {Math.round(tempPath.estimatedTotalTime / 60)}h
               </div>
-              <div className="text-xs text-gray-500">预计时间</div>
+              <div className="text-xs text-gray-500">{t("learning.learningPath.estimatedTime")}</div>
             </div>
           </div>
 
@@ -442,7 +450,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <Clock className="w-3 h-3" />
-                  {stage.estimatedTime}分钟
+                  {stage.estimatedTime}{t("learning.learningPath.minutes")}
                 </div>
                 <span
                   className={`text-xs px-2 py-0.5 rounded ${getPriorityColor(stage.priority)}`}
@@ -458,7 +466,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               onClick={() => setViewMode("wizard")}
               className="flex-1 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600"
             >
-              重新规划
+              {t("learning.learningPath.replan")}
             </button>
             <button
               onClick={handleSavePath}
@@ -468,12 +476,12 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               {isGenerating ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  保存中...
+                  {t("learning.learningPath.saving")}
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  保存路径
+                  {t("learning.learningPath.savePath")}
                 </>
               )}
             </button>
@@ -488,12 +496,12 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  学习路径
+                  {t("learning.learningPath.title")}
                 </h2>
                 <p className="text-sm text-gray-500">
                   {graphPaths.length > 0
-                    ? `${graphPaths.length} 个学习路径`
-                    : "暂无保存的学习路径"}
+                    ? t("learning.learningPath.pathCount", { count: graphPaths.length })
+                    : t("learning.learningPath.noPaths")}
                 </p>
               </div>
             </div>
@@ -503,7 +511,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600"
               >
                 <Wand2 size={14} />
-                AI 规划
+                {t("learning.learningPath.aiPlan")}
               </button>
               <button
                 onClick={() => setShowSettings(!showSettings)}
@@ -524,15 +532,10 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
               >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    学习风格
+                    {t("learning.learningPath.learningStyle")}
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: "sequential", label: "顺序学习" },
-                      { value: "exploratory", label: "探索学习" },
-                      { value: "focused", label: "专注学习" },
-                      { value: "custom", label: "自定义" },
-                    ].map((style) => (
+                    {learningStyles.map((style) => (
                       <button
                         key={style.value}
                         onClick={() => setSelectedStyle(style.value as any)}
@@ -549,7 +552,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    每日学习时间: {dailyTime} 分钟
+                    {t("learning.learningPath.dailyTime", { minutes: dailyTime })}
                   </label>
                   <input
                     type="range"
@@ -565,7 +568,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                   onClick={() => generateTempPath()}
                   className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
-                  生成预览
+                  {t("learning.learningPath.generatePreview")}
                 </button>
               </motion.div>
             )}
@@ -604,7 +607,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                       <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
                         <span className="flex items-center gap-1">
                           <BookOpen className="w-3 h-3" />
-                          {path.nodes_count || 0} 节点
+                          {t("learning.learningPath.nodeCount", { count: path.nodes_count || 0 })}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -644,21 +647,21 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                           }`}
                         >
                           <Route className="w-3 h-3" />
-                          {isSelected ? "取消选择" : "切换到此路径"}
+                          {isSelected ? t("learning.learningPath.deselect") : t("learning.learningPath.switchToPath")}
                         </button>
                         <button
                           onClick={() =>
                             window.open(`/learning-paths/${path.id}`, "_blank")
                           }
                           className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
-                          title="查看详情"
+                          title={t("learning.learningPath.viewDetails")}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleToggleStatus(path)}
                           className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
-                          title={path.status === "active" ? "暂停" : "继续"}
+                          title={path.status === "active" ? t("learning.learningPath.pause") : t("learning.learningPath.resume")}
                         >
                           {path.status === "active" ? (
                             <Pause className="w-4 h-4" />
@@ -669,7 +672,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                         <button
                           onClick={() => handleDeletePath(path.id)}
                           className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
-                          title="删除"
+                          title={t("learning.learningPath.delete")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -678,7 +681,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                       {isSelected && selectedPathDetail?.nodes && selectedPathDetail.nodes.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                           <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">
-                            学习顺序
+                            {t("learning.learningPath.learningOrder")}
                           </div>
                           <div className="space-y-1 max-h-48 overflow-y-auto">
                             {selectedPathDetail.nodes.map((node: any, index: number) => {
@@ -716,7 +719,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                                   {node.estimated_time && (
                                     <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
                                       <Clock className="w-2.5 h-2.5" />
-                                      {node.estimated_time}分
+                                      {node.estimated_time}{t("learning.learningPath.min")}
                                     </span>
                                   )}
                                 </div>
@@ -737,17 +740,17 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                 <Route className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                暂无学习路径
+                {t("learning.learningPath.noLearningPath")}
               </h3>
               <p className="text-xs text-gray-500 mb-4">
-                使用 AI 规划创建个性化学习路径
+                {t("learning.learningPath.useAIToCreate")}
               </p>
               <button
                 onClick={() => setViewMode("wizard")}
                 className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-sm hover:from-indigo-600 hover:to-purple-600 flex items-center gap-2 mx-auto"
               >
                 <Wand2 className="w-4 h-4" />
-                开始 AI 规划
+                {t("learning.learningPath.startAIPlan")}
               </button>
             </div>
           )}
@@ -756,26 +759,26 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
             <div className="border-t dark:border-slate-700 pt-4 flex-shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  预览路径
+                  {t("learning.learningPath.previewPath")}
                 </span>
                 <button
                   onClick={() => setTempPath(null)}
                   className="text-xs text-gray-400 hover:text-gray-600"
                 >
-                  清除
+                  {t("learning.learningPath.clear")}
                 </button>
               </div>
               <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-4 h-4 text-purple-500" />
                   <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                    {tempPath.targetGoal || "AI 生成的路径"}
+                    {tempPath.targetGoal || t("learning.learningPath.aiGeneratedPath")}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-purple-600 dark:text-purple-400 mb-2">
-                  <span>{tempPath.totalNodes} 个知识点</span>
+                  <span>{t("learning.learningPath.knowledgePoints", { count: tempPath.totalNodes })}</span>
                   <span>
-                    {Math.round(tempPath.estimatedTotalTime / 60)} 小时
+                    {t("learning.learningPath.hours", { hours: Math.round(tempPath.estimatedTotalTime / 60) })}
                   </span>
                 </div>
                 <button
@@ -783,7 +786,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
                   disabled={isGenerating}
                   className="w-full py-1.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600 disabled:opacity-50"
                 >
-                  {isGenerating ? "保存中..." : "保存此路径"}
+                  {isGenerating ? t("learning.learningPath.saving") : t("learning.learningPath.saveThisPath")}
                 </button>
               </div>
             </div>

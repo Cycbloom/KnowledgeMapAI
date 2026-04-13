@@ -33,6 +33,7 @@ import {
   Brain,
   Settings,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useLearningSettingsStore } from "../store/useLearningSettingsStore";
 import { LearningSettingsPanel } from "../components/Learning/LearningSettingsPanel";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,6 +73,7 @@ type Message = {
 type OutlineMode = "graph" | "learning-path";
 
 export const LearningMode = () => {
+  const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
   const { addMessage } = useMessageStore();
   const navigate = useNavigate();
@@ -157,25 +159,21 @@ export const LearningMode = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // On mobile, if no nodeId is selected, we should show the outline
   useEffect(() => {
     if (isMobile && !nodeId) {
       setIsOutlineOpen(true);
     }
   }, [isMobile, nodeId]);
 
-  // Fetch Graph Data for Outline
   const { data: graphData } = useGraphData(graphId || "");
   const { data: graphMeta } = useGraph(graphId || "");
   const { data: _nodeStatus } = useGraphNodeStatus(graphId || "");
 
-  // Chat State
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
-      content:
-        "你好！我是你的专属学习导师。正在为你生成课程内容，稍后你可以随时向我提问。",
+      content: t("learning.chat.welcome"),
     },
   ]);
   const [input, setInput] = useState("");
@@ -183,7 +181,6 @@ export const LearningMode = () => {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Speech Recognition
   const {
     isListening,
     transcript,
@@ -195,35 +192,33 @@ export const LearningMode = () => {
 
   useEffect(() => {
     if (speechError) {
-      const isNetworkError = speechError.includes("网络连接错误");
+      const isNetworkError = speechError.includes(t("learning.speech.networkError"));
       addMessage({
         type: "error",
         content: speechError,
         duration: isNetworkError ? 8000 : 5000,
         action: isNetworkError
           ? {
-              label: "查看解决方法",
+              label: t("learning.speech.viewSolution"),
               onClick: () => {
                 alert(
-                  "语音识别失败原因排查：\n1. 浏览器限制：Chrome 依赖 Google 服务，若网络环境限制访问 Google，会导致此错误。\n2. 尝试建议：请检查网络代理设置，或尝试使用 Edge 浏览器（通常在某些环境下更稳定）。\n3. 离线支持：当前浏览器暂不支持离线语音识别。",
+                  t("learning.speech.solutionDetail"),
                 );
               },
             }
           : undefined,
       });
     }
-  }, [speechError, addMessage]);
+  }, [speechError, addMessage, t]);
 
   useEffect(() => {
     if (isListening) {
-      // While listening, show what was typed before + current transcript
       setInput(
         inputBeforeVoice +
           (inputBeforeVoice && transcript ? " " : "") +
           transcript,
       );
     } else if (transcript) {
-      // When stopped, sync the final transcript
       setInput(
         inputBeforeVoice +
           (inputBeforeVoice && transcript ? " " : "") +
@@ -237,7 +232,7 @@ export const LearningMode = () => {
     if (!hasRecognitionSupport) {
       addMessage({
         type: "warning",
-        content: "您的浏览器不支持语音识别功能，请尝试使用 Chrome 浏览器。",
+        content: t("learning.speech.notSupported"),
       });
       return;
     }
@@ -250,7 +245,6 @@ export const LearningMode = () => {
     }
   };
 
-  // Helper for manual card generation
   const handleGenerateCards = async (targetNodeId: string) => {
     setIsGeneratingCards(true);
     try {
@@ -268,23 +262,22 @@ export const LearningMode = () => {
       if (result.success) {
         addMessage({
           type: "success",
-          content: "题目自动生成任务已提交至后台",
+          content: t("learning.cards.taskSubmitted"),
           duration: 5000,
           action: {
-            label: "查看任务",
+            label: t("learning.cards.viewTasks"),
             onClick: () => navigate("/tasks"),
           },
         });
       }
     } catch (cardError) {
       console.error("Failed to generate cards:", cardError);
-      addMessage({ type: "error", content: "题目生成失败" });
+      addMessage({ type: "error", content: t("learning.cards.generateFailed") });
     } finally {
       setIsGeneratingCards(false);
     }
   };
 
-  // Load Node and Generate Content
   useEffect(() => {
     if (!nodeId) {
       setNodeTitle("");
@@ -300,7 +293,7 @@ export const LearningMode = () => {
         const node = await api.nodes.get(nodeId);
 
         if (!node) {
-          addMessage({ type: "error", content: "节点数据加载失败，请重试" });
+          addMessage({ type: "error", content: t("learning.node.loadFailed") });
           return;
         }
 
@@ -318,7 +311,7 @@ export const LearningMode = () => {
             {
               id: `existing-${Date.now()}`,
               role: "assistant",
-              content: `欢迎回来！这是为您准备的 "${node.title}" 学习教材。如果您有任何疑问，请随时提问。`,
+              content: t("learning.node.welcomeBack", { title: node.title }),
             },
           ]);
           setIsGenerating(false);
@@ -345,10 +338,10 @@ export const LearningMode = () => {
 
             addMessage({
               type: "success",
-              content: "学习教材已生成",
+              content: t("learning.material.generated"),
               duration: 8000,
               action: {
-                label: "生成练习题",
+                label: t("learning.material.generateCards"),
                 onClick: () => handleGenerateCards(nodeId),
               },
             });
@@ -356,7 +349,7 @@ export const LearningMode = () => {
             console.error("Failed to save learning material:", saveError);
             addMessage({
               type: "error",
-              content: "教材保存失败，下次进入将重新生成",
+              content: t("learning.material.saveFailed"),
             });
           }
 
@@ -365,15 +358,15 @@ export const LearningMode = () => {
             {
               id: `generated-${Date.now()}`,
               role: "assistant",
-              content: `课程内容已生成！请仔细阅读左侧的教材。如果有任何疑问，或想深入了解某个概念，请直接问我。`,
+              content: t("learning.material.contentGenerated"),
             },
           ]);
         } else {
-          addMessage({ type: "error", content: "AI 生成内容失败，请重试" });
+          addMessage({ type: "error", content: t("learning.material.aiFailed") });
         }
       } catch (error) {
         console.error("Failed to load learning material:", error);
-        addMessage({ type: "error", content: "生成学习内容失败，请重试" });
+        addMessage({ type: "error", content: t("learning.material.generateFailed") });
       } finally {
         setIsGenerating(false);
       }
@@ -383,7 +376,6 @@ export const LearningMode = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId]);
 
-  // Chat Logic
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -397,7 +389,7 @@ export const LearningMode = () => {
     if (!input.trim() || isChatLoading) return;
 
     if (!isOnline) {
-      addMessage({ type: "error", content: "离线模式下无法使用 AI 助教" });
+      addMessage({ type: "error", content: t("learning.chat.offline") });
       return;
     }
 
@@ -431,7 +423,7 @@ export const LearningMode = () => {
       await api.ai.chatStream(
         {
           message: userMessage.content,
-          graph_id: graphId || "", // Might be empty if not passed, handled by backend gracefully?
+          graph_id: graphId || "",
           history,
           context_node_ids: nodeId ? [nodeId] : undefined,
         },
@@ -459,7 +451,7 @@ export const LearningMode = () => {
           msg.id === assistantMessageId
             ? {
                 ...msg,
-                content: "抱歉，我现在无法回答。请稍后再试。",
+                content: t("learning.chat.error"),
                 isStreaming: false,
               }
             : msg,
@@ -472,7 +464,7 @@ export const LearningMode = () => {
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) {
-      addMessage({ type: "warning", content: "请输入节点标题" });
+      addMessage({ type: "warning", content: t("learning.node.enterTitle") });
       return;
     }
 
@@ -496,7 +488,7 @@ export const LearningMode = () => {
         });
       }
 
-      addMessage({ type: "success", content: "节点创建成功" });
+      addMessage({ type: "success", content: t("learning.node.createSuccess") });
 
       setNewNodeTitle("");
       setNewNodeContent("");
@@ -514,13 +506,13 @@ export const LearningMode = () => {
       }
     } catch (error) {
       console.error("Failed to create node:", error);
-      addMessage({ type: "error", content: "节点创建失败，请重试" });
+      addMessage({ type: "error", content: t("learning.node.createFailed") });
     }
   };
 
   const handleStartChallenge = async () => {
     if (!nodeId || !graphId) {
-      addMessage({ type: "warning", content: "缺少必要参数" });
+      addMessage({ type: "warning", content: t("learning.challenge.missingParams") });
       return;
     }
 
@@ -560,7 +552,7 @@ export const LearningMode = () => {
 
       addMessage({
         type: "success",
-        content: `学习完成！已创建复习任务，将在 1 天后复习`,
+        content: t("learning.challenge.completed"),
       });
     } catch (error) {
       console.error("Failed to create review task:", error);
@@ -571,12 +563,12 @@ export const LearningMode = () => {
 
   const handleRegenerateMaterial = async () => {
     if (!nodeId || !graphId) {
-      addMessage({ type: "warning", content: "缺少必要参数" });
+      addMessage({ type: "warning", content: t("learning.challenge.missingParams") });
       return;
     }
 
     if (!isOnline) {
-      addMessage({ type: "error", content: "离线模式下无法重新生成" });
+      addMessage({ type: "error", content: t("learning.material.regenerateOffline") });
       return;
     }
 
@@ -604,20 +596,20 @@ export const LearningMode = () => {
 
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
 
-        addMessage({ type: "success", content: "学习资料已重新生成" });
+        addMessage({ type: "success", content: t("learning.material.regenerated") });
 
         setMessages((prev) => [
           ...prev,
           {
             id: `regenerated-${Date.now()}`,
             role: "assistant",
-            content: `学习资料已重新生成！请查看更新后的内容。`,
+            content: t("learning.material.regeneratedMessage"),
           },
         ]);
       }
     } catch (error) {
       console.error("Failed to regenerate learning material:", error);
-      addMessage({ type: "error", content: "重新生成失败，请重试" });
+      addMessage({ type: "error", content: t("learning.material.regenerateFailed") });
     } finally {
       setIsGenerating(false);
     }
@@ -628,12 +620,12 @@ export const LearningMode = () => {
     types: string[];
   }) => {
     if (!nodeId) {
-      addMessage({ type: "warning", content: "请先选择知识点" });
+      addMessage({ type: "warning", content: t("learning.cards.selectNode") });
       return;
     }
 
     if (!isOnline) {
-      addMessage({ type: "error", content: "离线模式下无法生成题目" });
+      addMessage({ type: "error", content: t("learning.cards.offline") });
       return;
     }
 
@@ -643,9 +635,9 @@ export const LearningMode = () => {
       if (!mobileAIService.isConfigured()) {
         addMessage({
           type: "error",
-          content: "请先在设置中配置 AI API Key",
+          content: t("learning.cards.configureApiKey"),
           action: {
-            label: "前往设置",
+            label: t("learning.cards.goToSettings"),
             onClick: () => navigate("/settings?tab=ai"),
           },
         });
@@ -678,12 +670,12 @@ export const LearningMode = () => {
 
         if (gnError) {
           console.error("查询 graph_nodes 失败:", gnError);
-          addMessage({ type: "error", content: "查询知识点数据失败" });
+          addMessage({ type: "error", content: t("learning.cards.queryFailed") });
           return;
         }
 
         if (!graphNodes || graphNodes.length === 0) {
-          addMessage({ type: "error", content: "未找到知识点数据" });
+          addMessage({ type: "error", content: t("learning.cards.nodeNotFound") });
           return;
         }
 
@@ -716,7 +708,7 @@ export const LearningMode = () => {
           if (signal.aborted) {
             addMessage({
               type: "info",
-              content: `已取消生成，已生成 ${savedCount} 道题目`,
+              content: t("learning.cards.cancelled", { count: savedCount }),
             });
             break;
           }
@@ -732,7 +724,11 @@ export const LearningMode = () => {
 
           addMessage({
             type: "info",
-            content: `正在生成第 ${generatedCount + 1}-${generatedCount + currentBatchSize} 题（共 ${totalCards} 题）`,
+            content: t("learning.cards.generating", { 
+              start: generatedCount + 1, 
+              end: generatedCount + currentBatchSize, 
+              total: totalCards 
+            }),
             duration: 3000,
           });
 
@@ -761,7 +757,7 @@ export const LearningMode = () => {
             console.error(`Batch ${i + 1} failed:`, batchError);
             addMessage({
               type: "warning",
-              content: `第 ${i + 1} 批次生成失败，继续尝试...`,
+              content: t("learning.cards.batchFailed", { batch: i + 1 }),
               duration: 3000,
             });
           }
@@ -770,10 +766,10 @@ export const LearningMode = () => {
         if (!signal.aborted && savedCount > 0) {
           addMessage({
             type: "success",
-            content: `成功生成 ${savedCount} 道题目`,
+            content: t("learning.cards.generateSuccess", { count: savedCount }),
             duration: 5000,
             action: {
-              label: "开始挑战",
+              label: t("learning.cards.startChallenge"),
               onClick: handleStartChallenge,
             },
           });
@@ -794,7 +790,7 @@ export const LearningMode = () => {
                 content: error.message,
                 duration: 8000,
                 action: {
-                  label: "前往设置",
+                  label: t("learning.cards.goToSettings"),
                   onClick: () => navigate("/settings?tab=ai"),
                 },
               });
@@ -819,7 +815,7 @@ export const LearningMode = () => {
                 content: error.message,
                 duration: 5000,
                 action: {
-                  label: "稍后重试",
+                  label: t("learning.cards.retryLater"),
                   onClick: () => setIsGenModalOpen(true),
                 },
               });
@@ -832,7 +828,7 @@ export const LearningMode = () => {
                 content: error.message,
                 duration: 5000,
                 action: {
-                  label: "重试",
+                  label: t("learning.cards.retry"),
                   onClick: () => handleManualGenerateCards(config),
                 },
               });
@@ -850,7 +846,7 @@ export const LearningMode = () => {
                 duration: 8000,
                 action: error.retryable
                   ? {
-                      label: "重试",
+                      label: t("learning.cards.retry"),
                       onClick: () => handleManualGenerateCards(config),
                     }
                   : undefined,
@@ -863,7 +859,7 @@ export const LearningMode = () => {
                 content: error.message,
                 duration: 5000,
                 action: {
-                  label: "重试",
+                  label: t("learning.cards.retry"),
                   onClick: () => handleManualGenerateCards(config),
                 },
               });
@@ -877,7 +873,7 @@ export const LearningMode = () => {
               });
           }
         } else {
-          let errorMessage = "题目生成失败";
+          let errorMessage = t("learning.cards.generateFailed");
           if (error instanceof Error) {
             errorMessage = error.message;
           }
@@ -886,7 +882,7 @@ export const LearningMode = () => {
             content: errorMessage,
             duration: 5000,
             action: {
-              label: "重试",
+              label: t("learning.cards.retry"),
               onClick: () => handleManualGenerateCards(config),
             },
           });
@@ -909,17 +905,17 @@ export const LearningMode = () => {
       if (result.success) {
         addMessage({
           type: "success",
-          content: "题目生成任务已提交至后台",
+          content: t("learning.cards.taskSubmitted"),
           duration: 5000,
           action: {
-            label: "查看任务",
+            label: t("learning.cards.viewTasks"),
             onClick: () => navigate("/tasks"),
           },
         });
       } else {
-        const errorMsg = result.message || result.error || "未知错误";
+        const errorMsg = result.message || result.error || t("learning.cards.unknownError");
         console.error("[LearningMode] 任务提交失败:", errorMsg);
-        addMessage({ type: "error", content: `任务提交失败: ${errorMsg}` });
+        addMessage({ type: "error", content: t("learning.cards.submitFailed", { error: errorMsg }) });
       }
     } catch (error) {
       console.error("[LearningMode] 题目生成异常:", {
@@ -928,18 +924,18 @@ export const LearningMode = () => {
         stack: error instanceof Error ? error.stack : undefined,
       });
 
-      let errorMessage = "题目生成提交失败";
+      let errorMessage = t("learning.cards.submitFailedShort");
 
       if (isNetworkError(error)) {
-        errorMessage = "网络连接失败，请检查网络设置";
+        errorMessage = t("learning.cards.networkError");
       } else if (isAuthError(error)) {
-        errorMessage = "登录已过期，请重新登录";
+        errorMessage = t("learning.cards.authError");
       } else if (isValidationError(error)) {
-        errorMessage = "请求参数格式错误，请刷新页面后重试";
+        errorMessage = t("learning.cards.validationError");
       } else if (isAppError(error)) {
-        errorMessage = `提交失败: ${error.message}`;
+        errorMessage = t("learning.cards.submitFailed", { error: error.message });
       } else if (error instanceof Error) {
-        errorMessage = `提交失败: ${error.message}`;
+        errorMessage = t("learning.cards.submitFailed", { error: error.message });
       }
 
       addMessage({ type: "error", content: errorMessage });
@@ -951,7 +947,7 @@ export const LearningMode = () => {
   const handleCancelGenerate = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      addMessage({ type: "info", content: "正在取消题目生成..." });
+      addMessage({ type: "info", content: t("learning.cards.cancelling") });
     }
   };
 
@@ -961,7 +957,7 @@ export const LearningMode = () => {
   ) => {
     const nodeIds = Array.from(selectedNodeIds);
     if (nodeIds.length === 0) {
-      addMessage({ type: "warning", content: "请先选择节点" });
+      addMessage({ type: "warning", content: t("learning.batch.selectNodes") });
       return;
     }
 
@@ -970,7 +966,7 @@ export const LearningMode = () => {
         await api.nodes.batchDelete(nodeIds);
         addMessage({
           type: "success",
-          content: `已删除 ${nodeIds.length} 个节点`,
+          content: t("learning.batch.deleteSuccess", { count: nodeIds.length }),
         });
         setSelectedNodeIds(new Set());
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
@@ -979,11 +975,11 @@ export const LearningMode = () => {
         });
       } catch (error) {
         console.error("Batch delete failed:", error);
-        addMessage({ type: "error", content: "批量删除失败，请重试" });
+        addMessage({ type: "error", content: t("learning.batch.deleteFailed") });
       }
     } else if (action === "expand_graph") {
       if (!isOnline) {
-        addMessage({ type: "error", content: "离线模式下无法拓展图谱" });
+        addMessage({ type: "error", content: t("learning.batch.expandOffline") });
         return;
       }
       try {
@@ -991,24 +987,24 @@ export const LearningMode = () => {
         if (result.success) {
           addMessage({
             type: "success",
-            content: `已为 ${nodeIds.length} 个节点提交拓展任务`,
+            content: t("learning.batch.expandSuccess", { count: nodeIds.length }),
             duration: 5000,
             action: {
-              label: "查看任务",
+              label: t("learning.cards.viewTasks"),
               onClick: () => navigate("/tasks"),
             },
           });
           setSelectedNodeIds(new Set());
         } else {
-          addMessage({ type: "error", content: "任务提交失败，请重试" });
+          addMessage({ type: "error", content: t("learning.batch.submitFailed") });
         }
       } catch (error) {
         console.error("Batch expand failed:", error);
-        addMessage({ type: "error", content: "批量拓展失败，请稍后重试" });
+        addMessage({ type: "error", content: t("learning.batch.expandError") });
       }
     } else if (action === "batch_generate_questions" && data) {
       if (!isOnline) {
-        addMessage({ type: "error", content: "离线模式下无法生成题目" });
+        addMessage({ type: "error", content: t("learning.cards.offline") });
         return;
       }
 
@@ -1019,18 +1015,18 @@ export const LearningMode = () => {
         if (result.success) {
           addMessage({
             type: "success",
-            content: `已为 ${nodeIds.length} 个节点提交生成任务`,
+            content: t("learning.batch.generateSuccess", { count: nodeIds.length }),
             duration: 5000,
             action: {
-              label: "查看任务",
+              label: t("learning.cards.viewTasks"),
               onClick: () => navigate("/tasks"),
             },
           });
           setSelectedNodeIds(new Set());
         } else {
-          const errorMsg = result.message || result.error || "未知错误";
+          const errorMsg = result.message || result.error || t("learning.cards.unknownError");
           console.error("[LearningMode] 批量生成失败:", errorMsg);
-          addMessage({ type: "error", content: `任务提交失败: ${errorMsg}` });
+          addMessage({ type: "error", content: t("learning.cards.submitFailed", { error: errorMsg }) });
         }
       } catch (error) {
         console.error("[LearningMode] 批量生成异常:", {
@@ -1039,14 +1035,14 @@ export const LearningMode = () => {
           stack: error instanceof Error ? error.stack : undefined,
         });
 
-        let errorMessage = "批量生成失败";
+        let errorMessage = t("learning.batch.generateFailed");
 
         if (isNetworkError(error)) {
-          errorMessage = "网络连接失败，请检查网络设置";
+          errorMessage = t("learning.cards.networkError");
         } else if (isAuthError(error)) {
-          errorMessage = "登录已过期，请重新登录";
+          errorMessage = t("learning.cards.authError");
         } else if (isValidationError(error)) {
-          errorMessage = "请求参数格式错误，请刷新页面后重试";
+          errorMessage = t("learning.cards.validationError");
         } else if (isAppError(error)) {
           errorMessage = error.message;
         } else if (error instanceof Error) {
@@ -1076,7 +1072,6 @@ export const LearningMode = () => {
           <button
             onClick={() => {
               if (isMobile && nodeId) {
-                // Clear nodeId to go back to outline
                 navigate(`/learning?graph_id=${graphId}`);
               } else {
                 window.history.back();
@@ -1087,7 +1082,7 @@ export const LearningMode = () => {
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
             }`}
-            title="返回上一页"
+            title={t("learning.header.back")}
           >
             <ArrowLeft size={isMobile ? 18 : 20} />
           </button>
@@ -1099,7 +1094,7 @@ export const LearningMode = () => {
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
             }`}
-            title="返回首页"
+            title={t("learning.header.home")}
           >
             <Home size={isMobile ? 18 : 20} />
           </button>
@@ -1111,7 +1106,7 @@ export const LearningMode = () => {
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
             }`}
-            title={isOutlineOpen ? "收起大纲" : "展开大纲"}
+            title={isOutlineOpen ? t("learning.header.collapseOutline") : t("learning.header.expandOutline")}
           >
             {isOutlineOpen ? (
               <PanelLeftClose size={20} />
@@ -1128,13 +1123,13 @@ export const LearningMode = () => {
             </div>
             <div className={isMobile && nodeId ? "hidden sm:block" : "block"}>
               <h1 className="font-bold text-sm lg:text-lg whitespace-nowrap">
-                闯关学习
+                {t("learning.header.title")}
               </h1>
               {!isMobile && (
                 <p
                   className={`text-[10px] lg:text-xs ${isDark ? "text-slate-500" : "text-gray-500"} truncate max-w-[150px]`}
                 >
-                  {nodeTitle || (graphData ? "请选择课程章节" : "加载中...")}
+                  {nodeTitle || (graphData ? t("learning.header.selectChapter") : t("learning.header.loading"))}
                 </p>
               )}
             </div>
@@ -1147,7 +1142,7 @@ export const LearningMode = () => {
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
             }`}
-            title={isChatOpen ? "隐藏 AI 助手" : "显示 AI 助手"}
+            title={isChatOpen ? t("learning.header.hideAI") : t("learning.header.showAI")}
           >
             <MessageSquare
               size={isMobile ? 18 : 20}
@@ -1168,7 +1163,7 @@ export const LearningMode = () => {
                 ? "hover:bg-slate-800 text-amber-400"
                 : "hover:bg-gray-100 text-indigo-600"
             }`}
-            title={isDark ? "切换到浅色模式" : "切换到深色模式"}
+            title={isDark ? t("learning.header.lightMode") : t("learning.header.darkMode")}
           >
             {isDark ? (
               <Sun size={isMobile ? 18 : 20} />
@@ -1186,7 +1181,7 @@ export const LearningMode = () => {
                   ? "hover:bg-slate-800 text-slate-400"
                   : "hover:bg-gray-100 text-gray-600"
               }`}
-              title="设置"
+              title={t("learning.header.settings")}
             >
               <Settings size={isMobile ? 18 : 20} />
             </button>
@@ -1211,12 +1206,12 @@ export const LearningMode = () => {
                 }`}
                 title={
                   !nodeId || !articleContent
-                    ? "请先选择学习内容"
-                    : "进入专注模式"
+                    ? t("learning.focus.selectContent")
+                    : t("learning.focus.enter")
                 }
               >
                 <Brain size={18} />
-                <span className="hidden sm:inline">专注模式</span>
+                <span className="hidden sm:inline">{t("learning.focus.title")}</span>
               </button>
               <button
                 onClick={() => {
@@ -1230,10 +1225,10 @@ export const LearningMode = () => {
                       ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
-                title="学习路径"
+                title={t("learning.path.title")}
               >
                 <Route size={18} />
-                <span className="hidden sm:inline">学习路径</span>
+                <span className="hidden sm:inline">{t("learning.path.title")}</span>
               </button>
               <button
                 onClick={() => navigate(`/graph/${graphId}`)}
@@ -1242,10 +1237,10 @@ export const LearningMode = () => {
                     ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
-                title="进入 3D 思维导图"
+                title={t("learning.header.mindMap")}
               >
                 <Network size={18} />
-                <span className="hidden sm:inline">思维导图</span>
+                <span className="hidden sm:inline">{t("learning.header.mindMap")}</span>
               </button>
             </>
           )}
@@ -1262,14 +1257,14 @@ export const LearningMode = () => {
                       ? "bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30"
                       : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
                 }`}
-                title={isOnline ? "配置并生成题目" : "离线模式不可用"}
+                title={isOnline ? t("learning.cards.configure") : t("learning.cards.offlineUnavailable")}
               >
                 <BrainCircuit size={isMobile ? 16 : 18} />
-                <span className="hidden md:inline">生成题目</span>
+                <span className="hidden md:inline">{t("learning.cards.generate")}</span>
               </button>
               {!isOnline && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                  离线不可用
+                  {t("learning.cards.offlineUnavailable")}
                 </div>
               )}
             </div>
@@ -1280,19 +1275,19 @@ export const LearningMode = () => {
               {generateProgress?.isGenerating && (
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
-                    <Sparkles size={10} /> 正在生成第 {generateProgress.current}/{generateProgress.total} 题
+                    <Sparkles size={10} /> {t("learning.cards.generatingProgress", { current: generateProgress.current, total: generateProgress.total })}
                   </span>
                   <button
                     onClick={handleCancelGenerate}
                     className="text-[10px] px-2 py-0.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                   >
-                    取消
+                    {t("learning.cards.cancel")}
                   </button>
                 </div>
               )}
               {isGeneratingCards && !generateProgress?.isGenerating && !isMobile && (
                 <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
-                  <Sparkles size={10} /> 正在生成挑战题...
+                  <Sparkles size={10} /> {t("learning.cards.generatingChallenge")}
                 </span>
               )}
               <button
@@ -1301,10 +1296,10 @@ export const LearningMode = () => {
                 className={`flex items-center justify-center ${isMobile ? "p-2" : "space-x-2 px-3 lg:px-6 py-2"} bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all ${isMobile ? "" : "hover:scale-105 active:scale-95"} ${
                   isGeneratingCards ? "opacity-70 cursor-not-allowed" : ""
                 }`}
-                title="开始挑战"
+                title={t("learning.challenge.start")}
               >
                 <GraduationCap size={isMobile ? 18 : 18} />
-                <span className="hidden sm:inline">完成学习，开始挑战</span>
+                <span className="hidden sm:inline">{t("learning.challenge.complete")}</span>
               </button>
             </div>
           )}
@@ -1353,7 +1348,7 @@ export const LearningMode = () => {
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400">
                 <Loader2 className="animate-spin mr-2" />
-                加载中...
+                {t("learning.header.loading")}
               </div>
             )}
           </div>
@@ -1384,12 +1379,12 @@ export const LearningMode = () => {
                       <h3
                         className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
                       >
-                        AI 正在为您编写教材...
+                        {t("learning.material.generating")}
                       </h3>
                       <p
                         className={isDark ? "text-slate-400" : "text-gray-500"}
                       >
-                        正在生成关于 "{nodeTitle}" 的深度学习内容
+                        {t("learning.material.generatingTopic", { title: nodeTitle })}
                       </p>
                     </div>
                   </div>
@@ -1404,10 +1399,10 @@ export const LearningMode = () => {
                               ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
                               : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                           }`}
-                          title="返回概览"
+                          title={t("learning.overview.back")}
                         >
                           <ArrowLeft size={16} />
-                          <span className="hidden sm:inline">概览</span>
+                          <span className="hidden sm:inline">{t("learning.overview.title")}</span>
                         </button>
                         <div>
                           <h2
@@ -1445,14 +1440,14 @@ export const LearningMode = () => {
                                 : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
                           }`}
                           title={
-                            isOnline ? "重新生成学习资料" : "离线模式不可用"
+                            isOnline ? t("learning.material.regenerate") : t("learning.cards.offlineUnavailable")
                           }
                         >
                           <RefreshCw
                             size={16}
                             className={isGenerating ? "animate-spin" : ""}
                           />
-                          <span className="hidden sm:inline">重新生成</span>
+                          <span className="hidden sm:inline">{t("learning.material.regenerate")}</span>
                         </button>
                       </div>
                     </div>
@@ -1528,7 +1523,7 @@ export const LearningMode = () => {
           </div>
         )}
 
-        {/* Right: AI Tutor - 独立于节点选择状态 */}
+        {/* Right: AI Tutor */}
         <AnimatePresence>
           {isChatOpen && (
             <>
@@ -1568,11 +1563,11 @@ export const LearningMode = () => {
                     </div>
                     <div>
                       <h3 className="font-bold text-sm">
-                        {rightPanelMode === "chat" ? "AI 助教" : "学习路径"}
+                        {rightPanelMode === "chat" ? t("learning.chat.aiTutor") : t("learning.path.title")}
                       </h3>
                       <div className="flex items-center text-[10px] text-green-500">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
-                        {rightPanelMode === "chat" ? "在线" : "AI 驱动"}
+                        {rightPanelMode === "chat" ? t("learning.chat.online") : t("learning.path.aiDriven")}
                       </div>
                     </div>
                   </div>
@@ -1587,7 +1582,7 @@ export const LearningMode = () => {
                               ? "hover:bg-slate-700 text-slate-400"
                               : "hover:bg-gray-100 text-gray-500"
                         }`}
-                        title="AI 助教"
+                        title={t("learning.chat.aiTutor")}
                       >
                         <MessageCircle size={14} />
                       </button>
@@ -1600,7 +1595,7 @@ export const LearningMode = () => {
                               ? "hover:bg-slate-700 text-slate-400"
                               : "hover:bg-gray-100 text-gray-500"
                         }`}
-                        title="学习路径"
+                        title={t("learning.path.title")}
                       >
                         <Route size={14} />
                       </button>
@@ -1612,14 +1607,14 @@ export const LearningMode = () => {
                             {
                               id: "welcome",
                               role: "assistant",
-                              content: "你好！我是你的专属学习导师。",
+                              content: t("learning.chat.welcomeShort"),
                             },
                           ]);
                         }
                       }}
                       className={`p-1.5 rounded-md transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
                       title={
-                        rightPanelMode === "chat" ? "清空对话" : "刷新路径"
+                        rightPanelMode === "chat" ? t("learning.chat.clear") : t("learning.path.refresh")
                       }
                     >
                       <RefreshCw size={14} />
@@ -1773,7 +1768,7 @@ export const LearningMode = () => {
                             handleChatSubmit(e);
                           }
                         }}
-                        placeholder="有问题尽管问我..."
+                        placeholder={t("learning.chat.placeholder")}
                         className={`w-full p-3 pr-20 pl-4 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all ${
                           isDark
                             ? "bg-slate-800 text-white placeholder-slate-500 border-slate-700"
@@ -1792,7 +1787,7 @@ export const LearningMode = () => {
                                 ? "text-slate-400 hover:bg-slate-700 hover:text-indigo-400"
                                 : "text-gray-400 hover:bg-gray-100 hover:text-indigo-600"
                           }`}
-                          title={isListening ? "停止录音" : "语音提问"}
+                          title={isListening ? t("learning.speech.stop") : t("learning.speech.start")}
                         >
                           {isListening ? (
                             <Mic size={18} />
@@ -1820,7 +1815,7 @@ export const LearningMode = () => {
                     <p
                       className={`text-[10px] mt-2 text-center ${isDark ? "text-slate-500" : "text-gray-400"}`}
                     >
-                      由 AI 导师提供支持，内容仅供参考
+                      {t("learning.chat.disclaimer")}
                     </p>
                   </div>
                 )}
@@ -1849,7 +1844,7 @@ export const LearningMode = () => {
                 <h3
                   className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}
                 >
-                  创建新节点
+                  {t("learning.node.createTitle")}
                 </h3>
                 <button
                   onClick={() => setIsCreateNodeModalOpen(false)}
@@ -1864,13 +1859,13 @@ export const LearningMode = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    节点标题 <span className="text-red-500">*</span>
+                    {t("learning.node.titleLabel")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={newNodeTitle}
                     onChange={(e) => setNewNodeTitle(e.target.value)}
-                    placeholder="输入节点标题"
+                    placeholder={t("learning.node.titlePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all ${
                       isDark
                         ? "bg-slate-700 border-slate-600 text-white placeholder-slate-400"
@@ -1883,12 +1878,12 @@ export const LearningMode = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    节点内容
+                    {t("learning.node.contentLabel")}
                   </label>
                   <textarea
                     value={newNodeContent}
                     onChange={(e) => setNewNodeContent(e.target.value)}
-                    placeholder="输入节点内容（可选）"
+                    placeholder={t("learning.node.contentPlaceholder")}
                     rows={4}
                     className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all resize-none ${
                       isDark
@@ -1902,7 +1897,7 @@ export const LearningMode = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    节点等级
+                    {t("learning.node.levelLabel")}
                   </label>
                   <select
                     value={newNodeLevel}
@@ -1915,11 +1910,11 @@ export const LearningMode = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     }`}
                   >
-                    <option value="root">根节点</option>
-                    <option value="core">核心</option>
-                    <option value="sub">次级</option>
-                    <option value="normal">普通</option>
-                    <option value="leaf">叶子</option>
+                    <option value="root">{t("learning.node.levelRoot")}</option>
+                    <option value="core">{t("learning.node.levelCore")}</option>
+                    <option value="sub">{t("learning.node.levelSub")}</option>
+                    <option value="normal">{t("learning.node.levelNormal")}</option>
+                    <option value="leaf">{t("learning.node.levelLeaf")}</option>
                   </select>
                 </div>
 
@@ -1927,7 +1922,7 @@ export const LearningMode = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    父节点（可选）
+                    {t("learning.node.parentLabel")}
                   </label>
                   <select
                     value={selectedParentNodeId}
@@ -1938,7 +1933,7 @@ export const LearningMode = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     }`}
                   >
-                    <option value="">无父节点</option>
+                    <option value="">{t("learning.node.noParent")}</option>
                     {graphData?.nodes.map((node) => (
                       <option key={node.id} value={node.id}>
                         {node.title}
@@ -1957,7 +1952,7 @@ export const LearningMode = () => {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  取消
+                  {t("learning.node.cancel")}
                 </button>
                 <button
                   onClick={handleCreateNode}
@@ -1969,7 +1964,7 @@ export const LearningMode = () => {
                   }`}
                 >
                   <Plus size={18} />
-                  创建节点
+                  {t("learning.node.createButton")}
                 </button>
               </div>
             </div>

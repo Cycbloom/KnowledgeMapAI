@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -36,14 +37,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
   custom: <Star size={20} />,
 };
 
-const categoryLabels: Record<string, string> = {
-  study: "学习",
-  work: "工作",
-  life: "生活",
-  health: "健康",
-  custom: "自定义",
-};
-
 interface TaskTemplatesProps {
   onSelectTemplate?: (template: TaskTemplate) => void;
 }
@@ -51,6 +44,7 @@ interface TaskTemplatesProps {
 export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
   onSelectTemplate,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const { addMessage } = useMessageStore();
 
@@ -90,7 +84,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
   const handleCreateTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.title_template) {
-      addMessage({ type: "error", content: "请填写模板名称和标题模板" });
+      addMessage({ type: "error", content: t("templates.message.nameAndTitleRequired") });
       return;
     }
 
@@ -98,19 +92,20 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       await templateApi.createTemplate({
         name: formData.name,
         description: formData.description,
-        category: formData.category as any,
+        category: formData.category as never,
         title_template: formData.title_template,
         description_template: formData.description_template,
         estimated_duration: formData.estimated_duration,
         tags: formData.tags,
         priority: formData.priority,
       });
-      addMessage({ type: "success", content: "模板创建成功!" });
+      addMessage({ type: "success", content: t("templates.message.createSuccess") });
       closeAllModals();
       resetForm();
       loadTemplates();
-    } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "创建模板失败" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t("templates.message.createFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
@@ -122,36 +117,38 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       await templateApi.updateTemplate(editingTemplate.id, {
         name: formData.name,
         description: formData.description,
-        category: formData.category as any,
+        category: formData.category as never,
         title_template: formData.title_template,
         description_template: formData.description_template,
         estimated_duration: formData.estimated_duration,
         tags: formData.tags,
         priority: formData.priority,
       });
-      addMessage({ type: "success", content: "模板更新成功!" });
+      addMessage({ type: "success", content: t("templates.message.updateSuccess") });
       closeAllModals();
       resetForm();
       loadTemplates();
-    } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "更新模板失败" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t("templates.message.updateFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
   const handleDeleteTemplate = async (template: TaskTemplate) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: "系统预设模板不能删除" });
+      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotDelete") });
       return;
     }
 
-    if (!confirm(`确定要删除模板 "${template.name}" 吗？`)) return;
+    if (!confirm(`${t("common.confirm")}${t("common.delete")} "${template.name}"?`)) return;
 
     try {
       await templateApi.deleteTemplate(template.id);
-      addMessage({ type: "success", content: "模板已删除" });
+      addMessage({ type: "success", content: t("templates.message.deleteSuccess") });
       loadTemplates();
-    } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "删除模板失败" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t("templates.message.deleteFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
@@ -159,12 +156,13 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
     try {
       await templateApi.duplicateTemplate(
         template.id,
-        `${template.name} (副本)`,
+        `${template.name} (${t("templates.button.duplicate")})`,
       );
-      addMessage({ type: "success", content: "模板已复制" });
+      addMessage({ type: "success", content: t("templates.message.duplicateSuccess") });
       loadTemplates();
-    } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "复制模板失败" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t("templates.message.duplicateFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
@@ -175,19 +173,20 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       await templateApi.applyTemplate(applyingTemplate.id, {
         placeholders: placeholderValues,
       });
-      addMessage({ type: "success", content: "任务已创建!" });
+      addMessage({ type: "success", content: t("templates.message.applySuccess") });
       closeAllModals();
       if (onSelectTemplate) {
         onSelectTemplate(applyingTemplate);
       }
-    } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "应用模板失败" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t("templates.message.applyFailed");
+      addMessage({ type: "error", content: errorMessage });
     }
   };
 
   const handleOpenEditModal = (template: TaskTemplate) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: "系统预设模板不能编辑" });
+      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotEdit") });
       return;
     }
     setFormDataForEdit({
@@ -224,14 +223,14 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         <h2
           className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
         >
-          任务模板
+          {t("templates.taskTemplates")}
         </h2>
         <button
           onClick={handleOpenCreateModal}
           className="px-4 py-2 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all font-medium text-sm"
         >
           <Plus size={18} />
-          <span>新建模板</span>
+          <span>{t("templates.createTemplate")}</span>
         </button>
       </div>
 
@@ -243,7 +242,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
           />
           <input
             type="text"
-            placeholder="搜索任务模板..."
+            placeholder={t("templates.searchTaskPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
@@ -267,7 +266,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
-              {cat === "all" ? "全部" : categoryLabels[cat]}
+              {cat === "all" ? t("templates.filter.all") : t(`templates.category.${cat}`)}
             </button>
           ))}
         </div>
@@ -279,8 +278,8 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         </div>
       ) : filteredTemplates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-          <p className="text-lg mb-2">未找到匹配的模板</p>
-          <p className="text-sm">尝试更换搜索关键词或分类</p>
+          <p className="text-lg mb-2">{t("templates.empty.noTemplates")}</p>
+          <p className="text-sm">{t("templates.empty.noTemplatesHint")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -319,14 +318,14 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       {template.name}
                     </h3>
                     <span className="text-xs text-gray-500">
-                      {categoryLabels[template.category]}
+                      {t(`templates.category.${template.category}`)}
                     </span>
                   </div>
                 </div>
                 <div className="flex gap-1">
                   {template.is_system && (
                     <span className="text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
-                      系统
+                      {t("templates.system")}
                     </span>
                   )}
                 </div>
@@ -342,16 +341,16 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 {template.estimated_duration && (
                   <span className="flex items-center gap-1">
                     <Clock size={12} />
-                    {template.estimated_duration}分钟
+                    {t("templates.minutes", { count: template.estimated_duration })}
                   </span>
                 )}
                 {template.tags && template.tags.length > 0 && (
                   <span className="flex items-center gap-1">
                     <Tag size={12} />
-                    {template.tags.length}个标签
+                    {t("templates.tagsCount", { count: template.tags.length })}
                   </span>
                 )}
-                <span>使用 {template.usage_count} 次</span>
+                <span>{t("templates.usageCount", { count: template.usage_count })}</span>
               </div>
 
               <div className="flex gap-2">
@@ -359,12 +358,12 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   onClick={() => openApplyModal(template)}
                   className="flex-1 px-3 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors text-sm"
                 >
-                  使用模板
+                  {t("templates.button.useTemplate")}
                 </button>
                 <button
                   onClick={() => handleDuplicateTemplate(template)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                  title="复制"
+                  title={t("templates.button.duplicate")}
                 >
                   <Copy size={16} className="text-gray-500" />
                 </button>
@@ -373,14 +372,14 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     <button
                       onClick={() => handleOpenEditModal(template)}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                      title="编辑"
+                      title={t("templates.button.edit")}
                     >
                       <Pencil size={16} className="text-gray-500" />
                     </button>
                     <button
                       onClick={() => handleDeleteTemplate(template)}
                       className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="删除"
+                      title={t("templates.button.delete")}
                     >
                       <Trash2 size={16} className="text-red-500" />
                     </button>
@@ -392,7 +391,6 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         </div>
       )}
 
-      {/* Create/Edit Modal */}
       <AnimatePresence>
         {(isCreating || isEditing) && (
           <motion.div
@@ -411,7 +409,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold">
-                  {isEditing ? "编辑模板" : "创建任务模板"}
+                  {isEditing ? t("templates.button.edit") : t("templates.createTemplate")}
                 </h3>
                 <button
                   onClick={handleCloseModals}
@@ -433,13 +431,13 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <label
                     className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    模板名称 *
+                    {t("templates.form.name")} *
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => updateField("name", e.target.value)}
-                    placeholder="例如：每日学习"
+                    placeholder={t("templates.form.namePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
                         ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
@@ -452,12 +450,12 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <label
                     className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    描述
+                    {t("templates.form.description")}
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => updateField("description", e.target.value)}
-                    placeholder="模板描述..."
+                    placeholder={t("templates.form.descriptionPlaceholder")}
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
                       isDark
@@ -472,7 +470,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     <label
                       className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                     >
-                      分类
+                      {t("templates.form.category")}
                     </label>
                     <select
                       value={formData.category}
@@ -483,9 +481,9 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                           : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500"
                       }`}
                     >
-                      {Object.entries(categoryLabels).map(([value, label]) => (
+                      {["study", "work", "life", "health", "custom"].map((value) => (
                         <option key={value} value={value}>
-                          {label}
+                          {t(`templates.category.${value}`)}
                         </option>
                       ))}
                     </select>
@@ -495,7 +493,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                     <label
                       className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                     >
-                      预计时长（分钟）
+                      {t("templates.form.estimatedDuration")}
                     </label>
                     <input
                       type="number"
@@ -516,16 +514,16 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <label
                     className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    标题模板 *{" "}
+                    {t("templates.form.titleTemplate")} *{" "}
                     <span className="text-xs text-gray-400">
-                      (支持 {"{{topic}}"} 等变量)
+                      ({t("templates.form.titleTemplateHint")})
                     </span>
                   </label>
                   <input
                     type="text"
                     value={formData.title_template}
                     onChange={(e) => updateField("title_template", e.target.value)}
-                    placeholder="例如：学习：{{topic}}"
+                    placeholder={t("templates.form.titleTemplatePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                       isDark
                         ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
@@ -538,12 +536,12 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <label
                     className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    描述模板
+                    {t("templates.form.descriptionTemplate")}
                   </label>
                   <textarea
                     value={formData.description_template}
                     onChange={(e) => updateField("description_template", e.target.value)}
-                    placeholder="例如：深入学习 {{topic}}，理解核心概念..."
+                    placeholder={t("templates.form.descriptionTemplatePlaceholder")}
                     rows={2}
                     className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 resize-none ${
                       isDark
@@ -557,7 +555,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <label
                     className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    标签
+                    {t("templates.form.tags")}
                   </label>
                   <div className="flex gap-2 mt-1">
                     <input
@@ -567,7 +565,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       onKeyPress={(e) =>
                         e.key === "Enter" && (e.preventDefault(), addTag())
                       }
-                      placeholder="添加标签"
+                      placeholder={t("templates.form.tagsPlaceholder")}
                       className={`flex-1 px-4 py-2 rounded-xl border outline-none transition-all ${
                         isDark
                           ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
@@ -579,7 +577,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       onClick={addTag}
                       className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
                     >
-                      添加
+                      {t("templates.button.add")}
                     </button>
                   </div>
                   {formData.tags.length > 0 && (
@@ -617,13 +615,13 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
-                    取消
+                    {t("templates.button.cancel")}
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
                   >
-                    {isEditing ? "更新" : "创建"}
+                    {isEditing ? t("templates.button.update") : t("templates.button.create")}
                   </button>
                 </div>
               </form>
@@ -632,7 +630,6 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Apply Template Modal */}
       <AnimatePresence>
         {isApplying && applyingTemplate && (
           <motion.div
@@ -651,7 +648,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold">
-                  使用模板：{applyingTemplate.name}
+                  {t("templates.button.useTemplate")}: {applyingTemplate.name}
                 </h3>
                 <button
                   onClick={handleCloseModals}
@@ -670,7 +667,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                   <h4
                     className={`text-sm font-medium mb-3 ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    填写变量
+                    {t("templates.fillVariables")}
                   </h4>
                   <div className="space-y-3">
                     {extractPlaceholders(applyingTemplate).map(
@@ -687,7 +684,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                             onChange={(e) =>
                               updatePlaceholderValue(placeholder, e.target.value)
                             }
-                            placeholder={`输入 ${placeholder}`}
+                            placeholder={t("templates.input", { name: placeholder })}
                             className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all mt-1 ${
                               isDark
                                 ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500"
@@ -707,7 +704,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 <h4
                   className={`text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
                 >
-                  预览
+                  {t("templates.preview.title")}
                 </h4>
                 <p
                   className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}
@@ -724,9 +721,9 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                 <div className="flex gap-4 mt-2 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <Clock size={12} />
-                    {applyingTemplate.estimated_duration}分钟
+                    {t("templates.minutes", { count: applyingTemplate.estimated_duration })}
                   </span>
-                  <span>优先级: {applyingTemplate.priority}</span>
+                  <span>{t("templates.priority")}: {applyingTemplate.priority}</span>
                 </div>
               </div>
 
@@ -739,14 +736,14 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  取消
+                  {t("templates.button.cancel")}
                 </button>
                 <button
                   onClick={handleApplyTemplate}
                   className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
                   <Check size={16} />
-                  创建任务
+                  {t("templates.button.createTask")}
                 </button>
               </div>
             </motion.div>

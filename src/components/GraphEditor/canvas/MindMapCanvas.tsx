@@ -7,6 +7,7 @@ import React, {
   useImperativeHandle,
   forwardRef,
 } from "react";
+import { useTranslation } from 'react-i18next';
 import html2canvas from "html2canvas";
 import type {
   Node,
@@ -164,6 +165,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
     },
     ref,
   ) => {
+    const { t } = useTranslation();
     const { isDark } = useTheme();
     const svgRef = useRef<SVGSVGElement>(null);
 
@@ -1113,17 +1115,17 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
               <>
                 <div className="text-6xl mb-4">📊</div>
                 <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  暂无节点
+                  {t('graphEditor.mindMap.noNodes')}
                 </p>
                 <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  点击工具栏的"+"按钮添加第一个节点
+                  {t('graphEditor.mindMap.addNodeHint')}
                 </p>
               </>
             ) : (
               <>
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-600 dark:text-gray-400">
-                  正在加载思维导图...
+                  {t('graphEditor.mindMap.loading')}
                 </p>
               </>
             )}
@@ -1328,7 +1330,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
               <button
                 onClick={onNavigateToGraphMap}
                 className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-                title="查看图谱地图"
+                title={t('graphEditor.mindMap.viewGraphMap')}
               >
                 <svg
                   width="20"
@@ -1357,7 +1359,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
             <button
               onClick={() => setShowMiniMap(!showMiniMap)}
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title={showMiniMap ? "隐藏小地图" : "显示小地图"}
+              title={showMiniMap ? t('graphEditor.mindMap.hideMiniMap') : t('graphEditor.mindMap.showMiniMap')}
             >
               <svg
                 width="20"
@@ -1385,7 +1387,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                 );
               }}
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title="放大"
+              title={t('graphEditor.mindMap.zoomIn')}
             >
               <svg
                 width="20"
@@ -1413,7 +1415,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                 );
               }}
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title="缩小"
+              title={t('graphEditor.mindMap.zoomOut')}
             >
               <svg
                 width="20"
@@ -1434,7 +1436,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
             <button
               onClick={handleResetView}
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title="重置视角"
+              title={t('graphEditor.mindMap.resetView')}
             >
               <svg
                 width="20"
@@ -1502,7 +1504,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
                 );
               }}
               className="p-2 bg-white dark:bg-slate-800 rounded shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
-              title="适应屏幕"
+              title={t('graphEditor.mindMap.fitScreen')}
             >
               <svg
                 width="20"
@@ -1525,7 +1527,7 @@ export const MindMapCanvas = forwardRef<any, MindMapCanvasProps>(
         <div
           className={`absolute left-4 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded backdrop-blur-sm pointer-events-none transition-all duration-300 ${isMobilePreviewMode && selectedNodeId ? "bottom-72" : "bottom-4"}`}
         >
-          缩放: {Math.round(transform.k * 100)}%
+          {t('graphEditor.mindMap.zoom', { percent: Math.round(transform.k * 100) })}
         </div>
 
         {showPreview &&

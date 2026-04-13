@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Terminal, Clock, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks';
 import { commandRegistry, type CommandResult, type CommandContext } from '@/services/console';
 import { useConsoleStore } from '@/store/useConsoleStore';
@@ -27,6 +28,7 @@ export const Console: React.FC<ConsoleProps> = ({
   onToggleMinimize,
   isMinimized = false,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   
   const {
@@ -133,7 +135,7 @@ export const Console: React.FC<ConsoleProps> = ({
         clearPendingConfirm();
       } else {
         addOutput({ type: 'input', content: command });
-        addOutput({ type: 'output', content: '❌ 操作已取消' });
+        addOutput({ type: 'output', content: t('console.confirm.cancelled') });
         pendingConfirm.onCancel();
         clearPendingConfirm();
       }
@@ -154,8 +156,8 @@ export const Console: React.FC<ConsoleProps> = ({
     }
 
     const confirmMessage = permission === 'danger'
-      ? `⚠️ 危险操作确认\n\n您即将执行: "${command}"\n此操作可能会造成不可逆的数据变更或删除。\n\n请输入 y 确认继续，n 取消操作。`
-      : `⚠️ 操作确认\n\n您即将执行: "${command}"\n\n请输入 y 确认继续，n 取消操作。`;
+      ? `${t('console.confirm.dangerTitle')}\n\n${t('console.confirm.dangerDesc', { command })}\n\n${t('console.confirm.prompt')}`
+      : `${t('console.confirm.warningTitle')}\n\n${t('console.confirm.warningDesc', { command })}\n\n${t('console.confirm.prompt')}`;
 
     addOutput({ type: 'output', content: confirmMessage });
 
@@ -179,7 +181,7 @@ export const Console: React.FC<ConsoleProps> = ({
         }
       },
       onCancel: () => {
-        addOutput({ type: 'output', content: '❌ 操作已取消' });
+        addOutput({ type: 'output', content: t('console.confirm.cancelled') });
       },
     });
     inputRef.current?.focus();
@@ -226,7 +228,7 @@ export const Console: React.FC<ConsoleProps> = ({
                   }`}
                 >
                   <Terminal size={14} />
-                  控制台
+                  {t('console.tabs.console')}
                 </button>
                 <button
                   onClick={() => setActiveTab('performance')}
@@ -237,7 +239,7 @@ export const Console: React.FC<ConsoleProps> = ({
                   }`}
                 >
                   <Activity size={14} />
-                  性能
+                  {t('console.tabs.performance')}
                 </button>
               </div>
               <div className="flex items-center gap-1">
@@ -249,7 +251,7 @@ export const Console: React.FC<ConsoleProps> = ({
                         ? isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-200 text-gray-800'
                         : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                     }`}
-                    title="历史记录"
+                    title={t('console.toolbar.history')}
                   >
                     <Clock size={16} />
                   </button>
@@ -260,7 +262,7 @@ export const Console: React.FC<ConsoleProps> = ({
                     className={`p-1.5 rounded-md transition-colors ${
                       isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                     }`}
-                    title={isMinimized ? '展开' : '最小化'}
+                    title={isMinimized ? t('console.toolbar.expand') : t('console.toolbar.minimize')}
                   >
                     {isMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </button>
@@ -270,7 +272,7 @@ export const Console: React.FC<ConsoleProps> = ({
                   className={`p-1.5 rounded-md transition-colors ${
                     isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                   }`}
-                  title="关闭"
+                  title={t('console.toolbar.close')}
                 >
                   <X size={16} />
                 </button>

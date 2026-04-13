@@ -34,6 +34,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   useFocusStore,
   WhiteNoiseType,
@@ -90,6 +91,8 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   isMobile = false,
   keywords,
 }) => {
+  const { t } = useTranslation();
+
   const {
     isActive,
     timeLeft,
@@ -232,7 +235,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-100 dark:bg-cyan-500/20 border border-cyan-300 dark:border-cyan-500/30">
                 <Brain size={16} className="text-cyan-600 dark:text-cyan-400" />
                 <span className="text-sm text-cyan-700 dark:text-cyan-300 font-medium">
-                  专注模式
+                  {t("learning.focusMode.title")}
                 </span>
               </div>
               {nodeTitle && (
@@ -253,7 +256,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                 }`}
               >
                 <Highlighter size={14} />
-                <span className="hidden sm:inline">高亮</span>
+                <span className="hidden sm:inline">{t("learning.focusMode.highlight")}</span>
               </button>
 
               <motion.button
@@ -270,7 +273,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                 className={`p-2 rounded-lg transition-colors ${isLocked ? "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/30 dark:text-cyan-300" : "bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"}`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title={isLocked ? "解锁" : "锁定"}
+                title={isLocked ? t("learning.focusMode.unlock") : t("learning.focusMode.lock")}
               >
                 {isLocked ? <Lock size={16} /> : <Unlock size={16} />}
               </motion.button>
@@ -322,12 +325,12 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                   <div>
                     <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                       <Highlighter size={16} className="text-yellow-500" />
-                      智能高亮
+                      {t("learning.focusMode.smartHighlight")}
                     </h3>
                     <div className="space-y-3">
                       <label className="flex items-center justify-between">
                         <span className="text-sm text-slate-600 dark:text-slate-400">
-                          启用高亮
+                          {t("learning.focusMode.enableHighlight")}
                         </span>
                         <input
                           type="checkbox"
@@ -341,7 +344,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       {highlightEnabled && (
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs text-slate-500 dark:text-slate-500">
-                            <span>高亮强度</span>
+                            <span>{t("learning.focusMode.highlightIntensity")}</span>
                             <span>{Math.round(highlightIntensity * 100)}%</span>
                           </div>
                           <input
@@ -364,7 +367,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                     <div>
                       <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                         <Brain size={16} className="text-purple-500" />
-                        关键词 ({keywords.length})
+                        {t("learning.focusMode.keywords")} ({keywords.length})
                       </h3>
                       <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                         {keywords.map((keyword, index) => {
@@ -413,7 +416,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                         size={16}
                         className="text-cyan-500 dark:text-cyan-400"
                       />
-                      白噪声
+                      {t("learning.focusMode.whiteNoise")}
                     </h3>
 
                     <div className="space-y-4">
@@ -472,7 +475,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       <div className="mt-4 space-y-2">
                         <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
                           <Volume2 size={12} />
-                          当前混合 ({mixedNoises.length})
+                          {t("learning.focusMode.currentMix")} ({mixedNoises.length})
                         </h4>
                         <div className="space-y-2">
                           {mixedNoises.map((noise) => {
@@ -514,14 +517,14 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           onClick={clearAllNoises}
                           className="w-full text-xs text-slate-400 hover:text-red-500 py-1 transition-colors"
                         >
-                          清除全部
+                          {t("learning.focusMode.clearAll")}
                         </button>
                       </div>
                     )}
 
                     <div className="mt-4 space-y-2">
                       <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                        预设场景
+                        {t("learning.focusMode.presets")}
                       </h4>
                       <div className="grid grid-cols-2 gap-2">
                         {allPresets.map((preset) => (
@@ -543,13 +546,13 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                       {mixedNoises.length > 0 && (
                         <button
                           onClick={() => {
-                            const name = prompt("输入预设名称");
+                            const name = prompt(t("learning.focusMode.enterPresetName"));
                             if (name) saveCurrentAsPreset(name);
                           }}
                           className="w-full flex items-center justify-center gap-1.5 p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs transition-colors"
                         >
                           <Save size={14} />
-                          保存为预设
+                          {t("learning.focusMode.saveAsPreset")}
                         </button>
                       )}
                     </div>
@@ -590,7 +593,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                               : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
                           }`}
                         >
-                          {m === "focus" ? "专注" : "休息"}
+                          {m === "focus" ? t("learning.focusMode.focus") : t("learning.focusMode.break")}
                         </button>
                       ))}
                     </div>
@@ -632,7 +635,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           {formatTime(timeLeft)}
                         </span>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                          {isActive ? "进行中" : "已暂停"}
+                          {isActive ? t("learning.focusMode.inProgress") : t("learning.focusMode.paused")}
                         </span>
                       </div>
                     </div>
@@ -678,7 +681,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 
                   <div className="mt-3 text-xs text-slate-500 dark:text-slate-500 flex items-center justify-center gap-1">
                     <CheckCircleIcon size={12} />
-                    <span>本次已完成 {sessionsCompleted} 个专注时段</span>
+                    <span>{t("learning.focusMode.sessionsCompleted", { count: sessionsCompleted })}</span>
                   </div>
                 </div>
               </motion.div>

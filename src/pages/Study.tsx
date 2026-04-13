@@ -1,5 +1,6 @@
 import { useLayoutEffect, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useStudyCards } from "../hooks/queries";
 import { useUpdateCardProgressMutation } from "../hooks/mutations";
 import { StudyCard } from "../types";
@@ -54,6 +55,7 @@ interface Prediction {
 }
 
 export const Study = () => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
   const { addMessage } = useMessageStore();
@@ -196,10 +198,26 @@ export const Study = () => {
   }, [allCards, dueCards]);
 
   const pieData = [
-    { name: "新卡片", value: stats.distribution.new, color: "#94a3b8" }, // Slate-400
-    { name: "学习中", value: stats.distribution.learning, color: "#60a5fa" }, // Blue-400
-    { name: "复习中", value: stats.distribution.review, color: "#34d399" }, // Emerald-400
-    { name: "重学中", value: stats.distribution.relearning, color: "#fbbf24" }, // Amber-400
+    {
+      name: t("study.cardTypes.new"),
+      value: stats.distribution.new,
+      color: "#94a3b8",
+    },
+    {
+      name: t("study.cardTypes.learning"),
+      value: stats.distribution.learning,
+      color: "#60a5fa",
+    },
+    {
+      name: t("study.cardTypes.review"),
+      value: stats.distribution.review,
+      color: "#34d399",
+    },
+    {
+      name: t("study.cardTypes.relearning"),
+      value: stats.distribution.relearning,
+      color: "#fbbf24",
+    },
   ].filter((d) => d.value > 0);
 
   const tableCards = useMemo(
@@ -228,7 +246,10 @@ export const Study = () => {
     const next = [...selected];
 
     if (next.length === 0) {
-      addMessage({ content: "没有需要复习的卡片！", type: "info" });
+      addMessage({
+        content: t("study.messages.noCardsToReview"),
+        type: "info",
+      });
       return;
     }
 
@@ -261,7 +282,10 @@ export const Study = () => {
       handleNextCard();
     } catch (err) {
       console.error(err);
-      addMessage({ type: "error", content: "保存进度失败" });
+      addMessage({
+        type: "error",
+        content: t("study.messages.saveProgressFailed"),
+      });
     }
   };
 
@@ -275,7 +299,10 @@ export const Study = () => {
       });
     } catch (err) {
       console.error(err);
-      addMessage({ type: "error", content: "保存进度失败" });
+      addMessage({
+        type: "error",
+        content: t("study.messages.saveProgressFailed"),
+      });
     }
   };
 
@@ -370,7 +397,7 @@ export const Study = () => {
       <div
         className={`min-h-full flex items-center justify-center ${isMobile ? "p-4" : "p-8"} ${isDark ? "text-slate-400" : "text-gray-500"}`}
       >
-        正在加载学习资源...
+        {t("study.loading")}
       </div>
     );
 
@@ -409,12 +436,16 @@ export const Study = () => {
                 <h1
                   className={`${isMobile ? "text-lg" : "text-2xl"} font-bold`}
                 >
-                  学习中心
+                  {t("study.title")}
                 </h1>
                 <p
                   className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
                 >
-                  {nodeId ? "单点突破" : nodeIds ? "路径特训" : "全图复习"}
+                  {nodeId
+                    ? t("study.mode.singlePoint")
+                    : nodeIds
+                      ? t("study.mode.pathTraining")
+                      : t("study.mode.fullReview")}
                 </p>
               </div>
             </div>
@@ -437,7 +468,7 @@ export const Study = () => {
                         : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  概览
+                  {t("study.tabs.overview")}
                 </button>
                 <button
                   onClick={() => setViewState("bank")}
@@ -451,7 +482,7 @@ export const Study = () => {
                         : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  题库
+                  {t("study.tabs.bank")}
                 </button>
                 <button
                   onClick={() => setViewState("focus")}
@@ -465,7 +496,7 @@ export const Study = () => {
                         : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  专注
+                  {t("study.tabs.focus")}
                 </button>
                 <button
                   onClick={() => setViewState("quizzes")}
@@ -479,7 +510,7 @@ export const Study = () => {
                         : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  测验
+                  {t("study.tabs.quizzes")}
                 </button>
               </div>
 
@@ -496,7 +527,7 @@ export const Study = () => {
                 >
                   <LayoutGrid size={18} />
                   <span className={`${isMobile ? "hidden" : "inline"}`}>
-                    进入闯关图谱
+                    {t("study.enterGraph")}
                   </span>
                 </button>
               )}
@@ -549,7 +580,7 @@ export const Study = () => {
                         <p
                           className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? "text-slate-400" : "text-gray-500"}`}
                         >
-                          总卡片
+                          {t("study.stats.totalCards")}
                         </p>
                         <p
                           className={`${isMobile ? "text-base" : "text-xl"} font-black`}
@@ -578,7 +609,7 @@ export const Study = () => {
                         <p
                           className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? "text-slate-400" : "text-gray-500"}`}
                         >
-                          已掌握
+                          {t("study.stats.mastered")}
                         </p>
                         <p
                           className={`${isMobile ? "text-base" : "text-xl"} font-black`}
@@ -607,7 +638,7 @@ export const Study = () => {
                         <p
                           className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? "text-slate-400" : "text-gray-500"}`}
                         >
-                          待复习
+                          {t("study.stats.due")}
                         </p>
                         <p
                           className={`${isMobile ? "text-base" : "text-xl"} font-black text-amber-500`}
@@ -636,12 +667,13 @@ export const Study = () => {
                         <p
                           className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? "text-slate-400" : "text-gray-500"}`}
                         >
-                          连续学习
+                          {t("study.stats.streak")}
                         </p>
                         <p
                           className={`${isMobile ? "text-base" : "text-xl"} font-black`}
                         >
-                          {streakDays}天
+                          {streakDays}
+                          {t("study.stats.days")}
                         </p>
                       </div>
                     </motion.div>
@@ -665,7 +697,7 @@ export const Study = () => {
                         <p
                           className={`text-[10px] md:text-xs font-medium whitespace-nowrap ${isDark ? "text-slate-400" : "text-gray-500"}`}
                         >
-                          本周学习
+                          {t("study.stats.weeklyStudy")}
                         </p>
                         <p
                           className={`${isMobile ? "text-base" : "text-xl"} font-black`}
@@ -714,12 +746,12 @@ export const Study = () => {
                       <h3
                         className={`${isMobile ? "text-xl" : "text-2xl"} font-black mb-1 md:mb-2 ${isDark ? "text-indigo-300" : "text-indigo-900"}`}
                       >
-                        今日待复习
+                        {t("study.todayDue")}
                       </h3>
                       <p
                         className={`mb-4 md:mb-8 max-w-[280px] ${isMobile ? "text-xs" : "text-sm"} font-medium ${isDark ? "text-indigo-400/80" : "text-indigo-700/70"}`}
                       >
-                        基于 FSRS 算法为您定制的最佳复习计划
+                        {t("study.fsrsDescription")}
                       </p>
                       <div
                         className={`${isMobile ? "px-5 py-2" : "px-8 py-3"} rounded-2xl font-black ${isMobile ? "text-base" : "text-lg"} transition-all ${
@@ -729,8 +761,8 @@ export const Study = () => {
                         }`}
                       >
                         {dueCards.length > 0
-                          ? `立即开始 (${dueCards.length})`
-                          : "暂无复习任务"}
+                          ? t("study.startNow", { count: dueCards.length })
+                          : t("study.noReviewTasks")}
                       </div>
                     </motion.button>
 
@@ -762,12 +794,12 @@ export const Study = () => {
                       <h3
                         className={`${isMobile ? "text-xl" : "text-2xl"} font-black mb-1 md:mb-2`}
                       >
-                        自由练习
+                        {t("study.freePractice")}
                       </h3>
                       <p
                         className={`mb-4 md:mb-8 max-w-[280px] ${isMobile ? "text-xs" : "text-sm"} font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}
                       >
-                        随机测验当前范围内的所有内容，巩固基础
+                        {t("study.freePracticeDescription")}
                       </p>
                       <div
                         className={`${isMobile ? "px-5 py-2" : "px-8 py-3"} rounded-2xl font-black ${isMobile ? "text-base" : "text-lg"} transition-all ${
@@ -779,8 +811,8 @@ export const Study = () => {
                         }`}
                       >
                         {allCards.length > 0
-                          ? `开始自测 (${allCards.length})`
-                          : "暂无卡片数据"}
+                          ? t("study.startSelfTest", { count: allCards.length })
+                          : t("study.noCards")}
                       </div>
                     </motion.button>
                   </div>
@@ -804,13 +836,13 @@ export const Study = () => {
                 >
                   <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                     <AlertTriangle className="text-amber-500" size={20} />
-                    薄弱知识点
+                    {t("study.weakPoints.title")}
                   </h3>
                   {weakPoints.length === 0 ? (
                     <p
                       className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
                     >
-                      暂无薄弱知识点，继续保持！
+                      {t("study.weakPoints.empty")}
                     </p>
                   ) : (
                     <div className="space-y-3">
@@ -833,10 +865,10 @@ export const Study = () => {
                               }`}
                             >
                               {point.priority === "high"
-                                ? "高优先"
+                                ? t("study.priority.high")
                                 : point.priority === "medium"
-                                  ? "中优先"
-                                  : "低优先"}
+                                  ? t("study.priority.medium")
+                                  : t("study.priority.low")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -865,26 +897,26 @@ export const Study = () => {
                 >
                   <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                     <TrendingUp className="text-blue-500" size={20} />
-                    未来7天预测
+                    {t("study.predictions.title")}
                   </h3>
                   {predictions.length === 0 ? (
                     <p
                       className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
                     >
-                      暂无预测数据
+                      {t("study.predictions.empty")}
                     </p>
                   ) : (
                     <div className="grid grid-cols-7 gap-2">
                       {predictions.slice(0, 7).map((pred, idx) => {
                         const date = new Date(pred.date);
                         const dayName = [
-                          "日",
-                          "一",
-                          "二",
-                          "三",
-                          "四",
-                          "五",
-                          "六",
+                          t("study.days.sun"),
+                          t("study.days.mon"),
+                          t("study.days.tue"),
+                          t("study.days.wed"),
+                          t("study.days.thu"),
+                          t("study.days.fri"),
+                          t("study.days.sat"),
                         ][date.getDay()];
                         const isToday =
                           new Date().toDateString() === date.toDateString();
@@ -941,7 +973,7 @@ export const Study = () => {
                       className="text-indigo-500"
                       size={isMobile ? 20 : 24}
                     />
-                    卡片列表
+                    {t("study.cardList.title")}
                   </h2>
 
                   <div
@@ -962,7 +994,7 @@ export const Study = () => {
                               : "text-gray-500 hover:text-gray-700"
                         }`}
                       >
-                        待复习 ({dueCards.length})
+                        {t("study.cardList.due")} ({dueCards.length})
                       </button>
                       <button
                         onClick={() => setTableMode("all")}
@@ -976,7 +1008,7 @@ export const Study = () => {
                               : "text-gray-500 hover:text-gray-700"
                         }`}
                       >
-                        全部 ({allCards.length})
+                        {t("study.cardList.all")} ({allCards.length})
                       </button>
                     </div>
 
@@ -987,7 +1019,7 @@ export const Study = () => {
                       />
                       <input
                         type="text"
-                        placeholder="搜索题目或答案..."
+                        placeholder={t("study.cardList.searchPlaceholder")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className={`pl-10 pr-4 py-2.5 rounded-xl text-sm border focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isMobile ? "w-full" : "w-full md:w-64"} ${
@@ -1012,7 +1044,7 @@ export const Study = () => {
                       }`}
                     >
                       <Search className="mx-auto mb-3 opacity-20" size={48} />
-                      <p>没有找到匹配的卡片</p>
+                      <p>{t("study.cardList.noCardsFound")}</p>
                     </div>
                   ) : (
                     paginatedCards.map((card) => (
@@ -1158,14 +1190,18 @@ export const Study = () => {
           <h2
             className={`${isMobile ? "text-2xl" : "text-3xl"} font-bold mb-2 ${isDark ? "text-slate-100" : "text-gray-900"}`}
           >
-            {nodeId ? "关卡挑战成功!" : "本次学习完成!"}
+            {nodeId
+              ? t("study.completed.levelComplete")
+              : t("study.completed.sessionComplete")}
           </h2>
           <p
             className={`mb-6 md:mb-8 ${isMobile ? "text-base" : "text-lg"} ${isDark ? "text-slate-400" : "text-gray-500"}`}
           >
             {nodeId
-              ? `你已经完成了该知识点的所有测验卡片。`
-              : `你已经复习了本次所有的 ${quizCards.length} 张卡片。`}
+              ? t("study.completed.levelCompleteDesc")
+              : t("study.completed.sessionCompleteDesc", {
+                  count: quizCards.length,
+                })}
           </p>
 
           <div className="space-y-3">
@@ -1173,14 +1209,16 @@ export const Study = () => {
               onClick={handleBackToDashboard}
               className={`w-full bg-indigo-600 text-white ${isMobile ? "py-4" : "py-3"} rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center ${isMobile ? "text-lg" : ""}`}
             >
-              {from === "learning" ? "返回闯关学习" : "返回学习中心"}
+              {from === "learning"
+                ? t("study.completed.backToLearning")
+                : t("study.completed.backToCenter")}
             </button>
             <button
               onClick={handleRestart}
               className={`w-full ${isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-gray-50 text-gray-600 hover:bg-gray-100"} ${isMobile ? "py-4" : "py-3"} rounded-xl font-bold transition-all flex items-center justify-center ${isMobile ? "text-lg" : ""}`}
             >
               <RefreshCw className="mr-2" size={isMobile ? 20 : 18} />
-              再练一次
+              {t("study.completed.practiceAgain")}
             </button>
           </div>
         </div>
@@ -1223,19 +1261,19 @@ export const Study = () => {
               className={isMobile ? "" : "mr-1"}
             />
             <span className={`font-medium ${isMobile ? "hidden" : "inline"}`}>
-              退出
+              {t("study.quiz.exit")}
             </span>
           </button>
           <div className="text-center">
             <h2
               className={`${isMobile ? "text-base" : "text-lg"} font-bold ${isDark ? "text-slate-200" : "text-gray-800"}`}
             >
-              学习模式
+              {t("study.quiz.mode")}
             </h2>
             <p
               className={`text-xs ${isDark ? "text-slate-500" : "text-gray-400"} ${isMobile ? "hidden" : ""}`}
             >
-              左右滑动可快速评分
+              {t("study.quiz.swipeHint")}
             </p>
           </div>
           <span
@@ -1313,7 +1351,7 @@ export const Study = () => {
                             : "bg-gray-100 text-gray-500"
                         }`}
                       >
-                        下一张
+                        {t("study.quiz.nextCard")}
                       </div>
                       <div className="flex-1 overflow-hidden mt-2">
                         <h3
@@ -1323,7 +1361,7 @@ export const Study = () => {
                               : "bg-indigo-50 text-indigo-600"
                           }`}
                         >
-                          问题
+                          {t("study.quiz.question")}
                         </h3>
                         <div
                           className={`text-base md:text-lg font-semibold leading-snug mb-3 line-clamp-2 ${
@@ -1402,7 +1440,7 @@ export const Study = () => {
                                   : "bg-gray-50 text-gray-600"
                               }`}
                             >
-                              正确
+                              {t("study.quiz.correct")}
                             </div>
                             <div
                               className={`flex-1 p-2 rounded-lg text-center text-sm font-medium ${
@@ -1411,7 +1449,7 @@ export const Study = () => {
                                   : "bg-gray-50 text-gray-600"
                               }`}
                             >
-                              错误
+                              {t("study.quiz.incorrect")}
                             </div>
                           </div>
                         )}
@@ -1425,7 +1463,7 @@ export const Study = () => {
                             }`}
                           >
                             <span className="text-xs font-medium opacity-70">
-                              答案：
+                              {t("study.quiz.answer")}：
                             </span>
                             <span className="ml-1 line-clamp-1">
                               {stackCard.answer}
@@ -1514,16 +1552,16 @@ export const Study = () => {
                 }`}
               >
                 {isQA
-                  ? "问答题"
+                  ? t("study.cardType.qa")
                   : isChoice
-                    ? "单选题"
+                    ? t("study.cardType.choice")
                     : isMultiChoice
-                      ? "多选题"
+                      ? t("study.cardType.multiChoice")
                       : isTrueFalse
-                        ? "判断题"
+                        ? t("study.cardType.trueFalse")
                         : isFillBlank
-                          ? "填空题"
-                          : "解答题"}
+                          ? t("study.cardType.fillBlank")
+                          : t("study.cardType.essay")}
               </div>
 
               <div
@@ -1538,7 +1576,7 @@ export const Study = () => {
                         : "bg-indigo-50 text-indigo-600"
                     }`}
                   >
-                    问题
+                    {t("study.quiz.question")}
                   </h3>
                   <div
                     className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-semibold leading-snug ${isDark ? "text-slate-100" : "text-gray-900"}`}
@@ -1562,7 +1600,9 @@ export const Study = () => {
                                 : "bg-emerald-50 text-emerald-600"
                             }`}
                           >
-                            {isFillBlank ? "填空内容" : "标准答案"}
+                            {isFillBlank
+                              ? t("study.quiz.fillContent")
+                              : t("study.quiz.standardAnswer")}
                           </h3>
                           <div
                             className={`${isMobile ? "text-base" : "text-lg md:text-xl"} font-medium ${isDark ? "text-slate-200" : "text-gray-800"} whitespace-pre-wrap`}
@@ -1579,7 +1619,7 @@ export const Study = () => {
                           <div className="flex items-center gap-2 mb-3 md:mb-4 text-indigo-500">
                             <Brain size={isMobile ? 16 : 18} />
                             <h4 className="font-bold tracking-wider text-xs md:text-sm uppercase">
-                              题目解析
+                              {t("study.quiz.explanation")}
                             </h4>
                           </div>
                           <div
@@ -1782,7 +1822,9 @@ export const Study = () => {
                             <span
                               className={`${isMobile ? "text-xl" : "text-lg"} font-bold`}
                             >
-                              {option === "True" ? "正确" : "错误"}
+                              {option === "True"
+                                ? t("study.quiz.correct")
+                                : t("study.quiz.incorrect")}
                             </span>
                             <span
                               className={`text-xs opacity-50 uppercase tracking-wider`}
@@ -1829,7 +1871,7 @@ export const Study = () => {
                         >
                           <BookOpen size={isMobile ? 22 : 20} />
                           <span className={isMobile ? "text-lg" : ""}>
-                            显示答案
+                            {t("study.quiz.showAnswer")}
                           </span>
                         </button>
                       ) : isMultiChoice ? (
@@ -1841,13 +1883,13 @@ export const Study = () => {
                           }
                           className={`w-full ${isMobile ? "py-4" : "py-4"} bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none ${isMobile ? "text-lg" : ""}`}
                         >
-                          提交答案
+                          {t("study.quiz.submitAnswer")}
                         </button>
                       ) : (
                         <div
                           className={`text-center py-4 ${isMobile ? "text-base" : "text-sm"} font-medium ${isDark ? "text-slate-500" : "text-gray-400"}`}
                         >
-                          请选择一个选项以查看答案
+                          {t("study.quiz.selectOption")}
                         </div>
                       )}
                     </motion.div>
@@ -1864,7 +1906,7 @@ export const Study = () => {
                       >
                         <Check size={14} />
                         <h4 className="font-bold tracking-wider text-[10px] uppercase">
-                          评价记忆程度
+                          {t("study.quiz.rateMemory")}
                         </h4>
                       </div>
                       <div
@@ -1884,7 +1926,7 @@ export const Study = () => {
                             className={isMobile ? "mb-1" : "mb-1"}
                           />
                           <span className={isMobile ? "text-xs" : "text-xs"}>
-                            重来
+                            {t("study.rating.again")}
                           </span>
                         </button>
                         <button
@@ -1897,7 +1939,7 @@ export const Study = () => {
                           disabled={updateProgressMutation.isPending}
                         >
                           <span className={isMobile ? "text-xs" : "text-xs"}>
-                            困难
+                            {t("study.rating.hard")}
                           </span>
                         </button>
                         <button
@@ -1914,7 +1956,7 @@ export const Study = () => {
                             className={isMobile ? "mb-1" : "mb-1"}
                           />
                           <span className={isMobile ? "text-xs" : "text-xs"}>
-                            良好
+                            {t("study.rating.good")}
                           </span>
                         </button>
                         <button
@@ -1927,7 +1969,7 @@ export const Study = () => {
                           disabled={updateProgressMutation.isPending}
                         >
                           <span className={isMobile ? "text-xs" : "text-xs"}>
-                            简单
+                            {t("study.rating.easy")}
                           </span>
                         </button>
                       </div>
@@ -1945,7 +1987,7 @@ export const Study = () => {
             <p
               className={`text-sm font-medium ${isDark ? "text-slate-500" : "text-gray-400"}`}
             >
-              左右滑动卡片快速评分 (左: 重来, 右: 良好)
+              {t("study.quiz.swipeInstruction")}
             </p>
           </div>
         )}

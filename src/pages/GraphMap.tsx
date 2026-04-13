@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, Layers, Loader2, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../services/api";
@@ -117,6 +118,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
   onConfirm,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(currentDomains.map((d) => d.id)),
   );
@@ -150,7 +152,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-            设置领域
+            {t('graphMap.domainPicker.title')}
           </h3>
           <button
             onClick={onClose}
@@ -195,7 +197,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
                 );
               })}
               {allDomainList.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">暂无可用领域</p>
+                <p className="text-sm text-gray-400 text-center py-4">{t('graphMap.domainPicker.noDomains')}</p>
               )}
             </div>
 
@@ -204,14 +206,14 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => onConfirm(Array.from(selectedIds))}
                 disabled={isSetting}
                 className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
               >
-                确认
+                {t('common.confirm')}
               </button>
             </div>
           </>
@@ -222,6 +224,7 @@ const SingleGraphDomainPicker: React.FC<SingleGraphDomainPickerProps> = ({
 };
 
 export const GraphMap = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -478,22 +481,22 @@ export const GraphMap = () => {
     const ids = Array.from(multiSelectedGraphIds);
     if (ids.length === 0) return;
 
-    const confirmMessage = `确定要删除选中的 ${ids.length} 个图谱吗？此操作不可撤销。`;
+    const confirmMessage = t('graphMap.batch.deleteConfirm', { count: ids.length });
     if (!window.confirm(confirmMessage)) return;
 
     try {
       for (const id of ids) {
         await api.graphs.delete(id);
       }
-      addMessage({ type: "success", content: `成功删除 ${ids.length} 个图谱` });
+      addMessage({ type: "success", content: t('graphMap.batch.deleteSuccess', { count: ids.length }) });
       setMultiSelectedGraphIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "批量删除失败";
+      const message = error instanceof Error ? error.message : t('graphMap.batch.deleteFailed');
       addMessage({ type: "error", content: message });
     }
-  }, [multiSelectedGraphIds, addMessage, queryClient]);
+  }, [multiSelectedGraphIds, addMessage, queryClient, t]);
 
   const handleBatchSetDomain = useCallback(async (domainId: string) => {
     const ids = Array.from(multiSelectedGraphIds);
@@ -514,14 +517,14 @@ export const GraphMap = () => {
       }
 
       if (failCount === 0) {
-        addMessage({ type: "success", content: `成功为 ${successCount} 个图谱设置领域` });
+        addMessage({ type: "success", content: t('graphMap.batch.setDomainSuccess', { count: successCount }) });
       } else if (successCount > 0) {
         addMessage({
           type: "warning",
-          content: `部分完成：${successCount} 个成功，${failCount} 个失败`,
+          content: t('graphMap.batch.setDomainPartial', { success: successCount, fail: failCount }),
         });
       } else {
-        addMessage({ type: "error", content: `批量设置领域失败` });
+        addMessage({ type: "error", content: t('graphMap.batch.setDomainFailed') });
       }
 
       setMultiSelectedGraphIds(new Set());
@@ -529,12 +532,12 @@ export const GraphMap = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       setIsBatchDomainPickerOpen(false);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "批量设置领域失败";
+      const message = error instanceof Error ? error.message : t('graphMap.batch.setDomainFailed');
       addMessage({ type: "error", content: message });
     } finally {
       setIsBatchSettingDomain(false);
     }
-  }, [multiSelectedGraphIds, addMessage, queryClient]);
+  }, [multiSelectedGraphIds, addMessage, queryClient, t]);
 
   const handleSetSingleGraphDomains = useCallback(async (domainIds: string[]) => {
     const graphId = singleGraphDomainPicker.graphId;
@@ -546,17 +549,17 @@ export const GraphMap = () => {
         graphId,
         domainIds.map((id) => ({ domain_id: id })),
       );
-      addMessage({ type: "success", content: "领域设置成功" });
+      addMessage({ type: "success", content: t('graphMap.domainPicker.setSuccess') });
       queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       setSingleGraphDomainPicker({ graphId: '', open: false });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "设置领域失败";
+      const message = error instanceof Error ? error.message : t('graphMap.domainPicker.setFailed');
       addMessage({ type: "error", content: message });
     } finally {
       setIsSettingSingleGraphDomain(false);
     }
-  }, [singleGraphDomainPicker.graphId, addMessage, queryClient]);
+  }, [singleGraphDomainPicker.graphId, addMessage, queryClient, t]);
 
   const handleCombinedOpen = useCallback(() => {
     const ids = Array.from(multiSelectedGraphIds);
@@ -574,29 +577,29 @@ export const GraphMap = () => {
     }) => {
       try {
         await api.graphs.createRelation(data);
-        addMessage({ type: "success", content: "关系创建成功" });
+        addMessage({ type: "success", content: t('graphMap.relation.createSuccess') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "创建关系失败";
+        const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
         addMessage({ type: "error", content: message });
         throw error;
       }
     },
-    [addMessage, queryClient],
+    [addMessage, queryClient, t],
   );
 
   const handleDeleteRelation = useCallback(
     async (relationId: string) => {
       try {
         await api.graphs.deleteRelationById(relationId);
-        addMessage({ type: "success", content: "关系已删除" });
+        addMessage({ type: "success", content: t('graphMap.relation.deleteSuccess') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "删除关系失败";
+        const message = error instanceof Error ? error.message : t('graphMap.relation.deleteFailed');
         addMessage({ type: "error", content: message });
       }
     },
-    [addMessage, queryClient],
+    [addMessage, queryClient, t],
   );
 
   const handleQuickCreateGraph = useCallback(
@@ -624,20 +627,20 @@ export const GraphMap = () => {
           });
         }
 
-        addMessage({ type: "success", content: "图谱创建成功" });
+        addMessage({ type: "success", content: t('graphMap.graphCreation.success') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
 
         if (data.auto_generate_content) {
-          addMessage({ type: "info", content: "正在生成初始内容..." });
+          addMessage({ type: "info", content: t('graphMap.graphCreation.generatingContent') });
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "创建图谱失败";
+        const message = error instanceof Error ? error.message : t('graphMap.graphCreation.failed');
         addMessage({ type: "error", content: message });
         throw error;
       }
     },
-    [addMessage, queryClient],
+    [addMessage, queryClient, t],
   );
 
   const handleCreateRelatedGraph = useCallback(
@@ -660,7 +663,7 @@ export const GraphMap = () => {
 
       try {
         await api.graphs.infiniteExpand(selectedGraphId, config);
-        addMessage({ type: "success", content: "无限扩展任务已启动" });
+        addMessage({ type: "success", content: t('graphMap.expansion.started') });
         setIsExpansionRunning(true);
         setExpansionProgress({
           status: "running",
@@ -674,12 +677,12 @@ export const GraphMap = () => {
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "启动扩展失败";
+        const message = error instanceof Error ? error.message : t('graphMap.expansion.startFailed');
         addMessage({ type: "error", content: message });
         throw error;
       }
     },
-    [selectedGraphId, addMessage, queryClient],
+    [selectedGraphId, addMessage, queryClient, t],
   );
 
   const handleDepthExpand = useCallback(
@@ -742,12 +745,12 @@ export const GraphMap = () => {
         }
         return null;
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "深度拓展失败";
+        const message = error instanceof Error ? error.message : t('graphMap.expansion.depthFailed');
         addMessage({ type: "error", content: message });
         throw error;
       }
     },
-    [selectedGraphId, graphs, addMessage, queryClient],
+    [selectedGraphId, graphs, addMessage, queryClient, t],
   );
 
   const handleDepthExpandNode = useCallback(
@@ -793,12 +796,12 @@ export const GraphMap = () => {
         }
         return null;
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "展开节点失败";
+        const message = error instanceof Error ? error.message : t('graphMap.expansion.nodeExpandFailed');
         addMessage({ type: "error", content: message });
         throw error;
       }
     },
-    [selectedGraphId, addMessage, queryClient],
+    [selectedGraphId, addMessage, queryClient, t],
   );
 
   const handleOpenPromptEditor = useCallback(
@@ -833,11 +836,11 @@ export const GraphMap = () => {
         setIsPromptEditorOpen(true);
       } catch (error: unknown) {
         const message =
-          error instanceof Error ? error.message : "获取提示词失败";
+          error instanceof Error ? error.message : t('graphMap.prompt.fetchFailed');
         addMessage({ type: "error", content: message });
       }
     },
-    [addMessage],
+    [addMessage, t],
   );
 
   const handleSwitchDepthPrompt = useCallback(
@@ -857,11 +860,11 @@ export const GraphMap = () => {
         setDepthPromptType(type);
       } catch (error: unknown) {
         const message =
-          error instanceof Error ? error.message : "获取提示词失败";
+          error instanceof Error ? error.message : t('graphMap.prompt.fetchFailed');
         addMessage({ type: "error", content: message });
       }
     },
-    [addMessage],
+    [addMessage, t],
   );
 
   const handleSavePrompt = useCallback(
@@ -881,15 +884,15 @@ export const GraphMap = () => {
           scope: "user",
           template_content: content,
         });
-        addMessage({ type: "success", content: "提示词已保存" });
+        addMessage({ type: "success", content: t('graphMap.prompt.saveSuccess') });
       } catch (error: unknown) {
         const message =
-          error instanceof Error ? error.message : "保存提示词失败";
+          error instanceof Error ? error.message : t('graphMap.prompt.saveFailed');
         addMessage({ type: "error", content: message });
         throw error;
       }
     },
-    [promptEditMode, depthPromptType, addMessage],
+    [promptEditMode, depthPromptType, addMessage, t],
   );
 
   const handleNodeSelectorConfirm = useCallback((nodeIds: string[]) => {
@@ -919,13 +922,13 @@ export const GraphMap = () => {
         );
         setIntelligentSuggestions(suggestions);
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "关系发现失败";
+        const message = error instanceof Error ? error.message : t('graphMap.relation.discoveryFailed');
         addMessage({ type: "error", content: message });
       } finally {
         setIsDiscovering(false);
       }
     },
-    [addMessage],
+    [addMessage, t],
   );
 
   const handleCrossDomainAnalysis = useCallback(async () => {
@@ -936,15 +939,15 @@ export const GraphMap = () => {
       });
       setCrossDomainResult(result as unknown as CrossDomainAnalysisResult);
       setShowCrossDomainInsights(true);
-      addMessage({ type: "success", content: "跨域分析完成" });
+      addMessage({ type: "success", content: t('graphMap.crossDomain.analyzeComplete') });
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : "跨域分析失败";
+        error instanceof Error ? error.message : t('graphMap.crossDomain.analyzeFailed');
       addMessage({ type: "error", content: message });
     } finally {
       setIsAnalyzingCrossDomain(false);
     }
-  }, [addMessage]);
+  }, [addMessage, t]);
 
   const handleCreateDiscoveredRelation = useCallback(
     async (relation: DiscoveredRelation) => {
@@ -959,15 +962,15 @@ export const GraphMap = () => {
         });
         const key = `${relation.source_graph_id}-${relation.target_graph_id}-${relation.relation_type}`;
         setCreatedRelationIds((prev) => new Set(prev).add(key));
-        addMessage({ type: "success", content: "关系创建成功" });
+        addMessage({ type: "success", content: t('graphMap.relation.createSuccess') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "创建关系失败";
+        const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
         addMessage({ type: "error", content: message });
         throw error;
       }
     },
-    [addMessage, queryClient],
+    [addMessage, queryClient, t],
   );
 
   const handleGenerateCards = useCallback(
@@ -983,20 +986,20 @@ export const GraphMap = () => {
         if (result.success) {
           addMessage({
             type: "success",
-            content: "题目自动生成任务已提交至后台",
+            content: t('graphMap.cards.taskSubmitted'),
             duration: 5000,
             action: {
-              label: "查看任务",
+              label: t('graphMap.cards.viewTasks'),
               onClick: () => navigate("/tasks"),
             },
           });
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "题目生成失败";
+        const message = error instanceof Error ? error.message : t('graphMap.cards.generateFailed');
         addMessage({ type: "error", content: message });
       }
     },
-    [selectedNodeIds, addMessage, navigate],
+    [selectedNodeIds, addMessage, navigate, t],
   );
 
   useEffect(() => {
@@ -1084,7 +1087,7 @@ export const GraphMap = () => {
                 </svg>
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white">
-                联立视图模式
+                {t('graphMap.combinedView.title')}
               </h3>
             </div>
             <div className="space-y-2 mb-4">
@@ -1124,7 +1127,7 @@ export const GraphMap = () => {
                   d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
                 />
               </svg>
-              联立打开
+              {t('graphMap.combinedView.openCombined')}
             </button>
             <button
               onClick={() => setMultiSelectedGraphIds(new Set())}
@@ -1143,7 +1146,7 @@ export const GraphMap = () => {
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              取消选择
+              {t('graphMap.combinedView.cancelSelection')}
             </button>
           </div>
         )}
@@ -1185,7 +1188,7 @@ export const GraphMap = () => {
                             {graph.title}
                           </h3>
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {(graph as any).node_count || 0} 个节点 · {graphRelations.length} 个关系
+                            {t('graphMap.graph.nodeCount', { count: (graph as any).node_count || 0 })} · {t('graphMap.graph.relationCount', { count: graphRelations.length })}
                           </div>
                         </div>
                         <button
@@ -1228,7 +1231,7 @@ export const GraphMap = () => {
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
-                              设置领域
+                              {t('graphMap.graph.setDomain')}
                             </button>
                           )}
                         </div>
@@ -1241,7 +1244,7 @@ export const GraphMap = () => {
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
-                          设置领域
+                          {t('graphMap.graph.setDomain')}
                         </button>
                       )}
 
@@ -1250,13 +1253,13 @@ export const GraphMap = () => {
                           onClick={() => navigate(`/graph/${graph.id}`)}
                           className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg active:bg-blue-600 transition-colors"
                         >
-                          打开图谱
+                          {t('graphMap.graph.openGraph')}
                         </button>
                         <button
                           onClick={() => setIsCreatePanelOpen(true)}
                           className="px-3 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg active:bg-gray-200 dark:active:bg-slate-600 transition-colors"
                         >
-                          添加关系
+                          {t('graphMap.graph.addRelation')}
                         </button>
                       </div>
 
@@ -1267,33 +1270,33 @@ export const GraphMap = () => {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                         </svg>
-                        选择关联图谱
+                        {t('graphMap.graph.selectRelated')}
                       </button>
 
                       {isMobilePanelExpanded && (
                         <>
                           <div className="mb-3">
                             <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                              快速创建关联图谱
+                              {t('graphMap.graph.quickCreate')}
                             </h4>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleCreateRelatedGraph("prerequisite")}
                                 className="flex-1 px-2 py-2 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg active:bg-blue-100 dark:active:bg-blue-900/50 transition-colors"
                               >
-                                + 前置知识
+                                + {t('graphMap.graph.prerequisite')}
                               </button>
                               <button
                                 onClick={() => handleCreateRelatedGraph("extension")}
                                 className="flex-1 px-2 py-2 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg active:bg-green-100 dark:active:bg-green-900/50 transition-colors"
                               >
-                                + 扩展知识
+                                + {t('graphMap.graph.extension')}
                               </button>
                               <button
                                 onClick={() => handleCreateRelatedGraph("related")}
                                 className="flex-1 px-2 py-2 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg active:bg-amber-100 dark:active:bg-amber-900/50 transition-colors"
                               >
-                                + 相关知识
+                                + {t('graphMap.graph.related')}
                               </button>
                             </div>
                           </div>
@@ -1304,21 +1307,21 @@ export const GraphMap = () => {
                               className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg flex items-center justify-center gap-2"
                             >
                               <Sparkles className="w-4 h-4" />
-                              AI 拓展
+                              {t('graphMap.graph.aiExpand')}
                             </button>
                             <button
                               onClick={() => setIsNodeSelectorOpen(true)}
                               className="flex-1 px-3 py-2 text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg flex items-center justify-center gap-2"
                             >
                               <BookOpen className="w-4 h-4" />
-                              生成题目
+                              {t('graphMap.graph.generateQuestions')}
                             </button>
                           </div>
 
                           {graphRelations.length > 0 && (
                             <div>
                               <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                                相关图谱
+                                {t('graphMap.graph.relatedGraphs')}
                               </h4>
                               <div className="space-y-1 max-h-32 overflow-y-auto">
                                 {graphRelations.slice(0, 5).map((relation: GraphRelation) => {
@@ -1370,12 +1373,12 @@ export const GraphMap = () => {
                         {isMobilePanelExpanded ? (
                           <>
                             <ChevronDown className="w-4 h-4" />
-                            收起
+                            {t('graphMap.graph.collapse')}
                           </>
                         ) : (
                           <>
                             <ChevronUp className="w-4 h-4" />
-                            展开更多
+                            {t('graphMap.graph.expandMore')}
                           </>
                         )}
                       </button>
@@ -1406,8 +1409,8 @@ export const GraphMap = () => {
                         </p>
                       )}
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                        {(graph as any).node_count || 0} 个节点 ·{" "}
-                        {graphRelations.length} 个关系
+                        {t('graphMap.graph.nodeCount', { count: (graph as any).node_count || 0 })} ·{" "}
+                        {t('graphMap.graph.relationCount', { count: graphRelations.length })}
                       </div>
 
                       {graph.domains && graph.domains.length > 0 && (
@@ -1436,7 +1439,7 @@ export const GraphMap = () => {
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
-                              设置领域
+                              {t('graphMap.graph.setDomain')}
                             </button>
                           )}
                         </div>
@@ -1450,7 +1453,7 @@ export const GraphMap = () => {
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
-                            设置领域
+                            {t('graphMap.graph.setDomain')}
                           </button>
                         </div>
                       )}
@@ -1460,7 +1463,7 @@ export const GraphMap = () => {
                           onClick={() => navigate(`/graph/${graph.id}`)}
                           className="flex-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
                         >
-                          打开图谱
+                          {t('graphMap.graph.openGraph')}
                         </button>
                         <button
                           onClick={() => {
@@ -1468,7 +1471,7 @@ export const GraphMap = () => {
                           }}
                           className="px-3 py-1.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                         >
-                          添加关系
+                          {t('graphMap.graph.addRelation')}
                         </button>
                       </div>
 
@@ -1479,31 +1482,31 @@ export const GraphMap = () => {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                         </svg>
-                        选择关联图谱
+                        {t('graphMap.graph.selectRelated')}
                       </button>
 
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                          快速创建关联图谱
+                          {t('graphMap.graph.quickCreate')}
                         </h4>
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleCreateRelatedGraph("prerequisite")}
                             className="flex-1 px-2 py-1.5 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                           >
-                            + 前置知识
+                            + {t('graphMap.graph.prerequisite')}
                           </button>
                           <button
                             onClick={() => handleCreateRelatedGraph("extension")}
                             className="flex-1 px-2 py-1.5 text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
                           >
-                            + 扩展知识
+                            + {t('graphMap.graph.extension')}
                           </button>
                           <button
                             onClick={() => handleCreateRelatedGraph("related")}
                             className="flex-1 px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
                           >
-                            + 相关知识
+                            + {t('graphMap.graph.related')}
                           </button>
                         </div>
                       </div>
@@ -1514,10 +1517,10 @@ export const GraphMap = () => {
                           className="w-full px-3 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center gap-2"
                         >
                           <Sparkles className="w-4 h-4" />
-                          AI 智能拓展
+                          {t('graphMap.graph.aiSmartExpand')}
                         </button>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                          生成知识点或相关知识网络
+                          {t('graphMap.graph.aiExpandDesc')}
                         </p>
                       </div>
 
@@ -1527,17 +1530,17 @@ export const GraphMap = () => {
                           className="w-full px-3 py-2 text-sm bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg hover:from-indigo-600 hover:to-violet-600 transition-all flex items-center justify-center gap-2"
                         >
                           <BookOpen className="w-4 h-4" />
-                          生成题目
+                          {t('graphMap.graph.generateQuestions')}
                         </button>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                          为该图谱知识点生成学习题目
+                          {t('graphMap.graph.generateQuestionsDesc')}
                         </p>
                       </div>
 
                       {graphRelations.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                            相关图谱
+                            {t('graphMap.graph.relatedGraphs')}
                           </h4>
                           <div className="space-y-1 max-h-32 overflow-y-auto">
                             {graphRelations
@@ -1598,31 +1601,31 @@ export const GraphMap = () => {
 
         <div className="hidden md:block absolute bottom-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-3">
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-            关系类型图例
+            {t('graphMap.legend.title')}
           </h4>
           <div className="flex gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-blue-500" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                前置知识
+                {t('graphMap.legend.prerequisite')}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-green-500" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                扩展知识
+                {t('graphMap.legend.extension')}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-amber-500" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                相关知识
+                {t('graphMap.legend.related')}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-purple-500" />
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                跨学科
+                {t('graphMap.legend.crossDomain')}
               </span>
             </div>
           </div>
@@ -1640,12 +1643,12 @@ export const GraphMap = () => {
           {isAnalyzingCrossDomain ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin text-white" />
-              <span className="text-white font-medium">分析中...</span>
+              <span className="text-white font-medium">{t('graphMap.crossDomain.analyzing')}</span>
             </>
           ) : (
             <>
               <Layers className="w-5 h-5 text-white" />
-              <span className="text-white font-medium">跨域分析</span>
+              <span className="text-white font-medium">{t('graphMap.crossDomain.analyze')}</span>
             </>
           )}
         </button>
@@ -1707,7 +1710,7 @@ export const GraphMap = () => {
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   }`}
                 >
-                  图谱初始化 (auto_graph_init)
+                  {t('graphMap.prompt.graphInit')}
                 </button>
                 <button
                   onClick={() => handleSwitchDepthPrompt("expand")}
@@ -1717,7 +1720,7 @@ export const GraphMap = () => {
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   }`}
                 >
-                  节点展开 (auto_graph_expand)
+                  {t('graphMap.prompt.nodeExpand')}
                 </button>
               </div>
             )}
@@ -1756,9 +1759,9 @@ export const GraphMap = () => {
                 title={
                   promptEditMode === "depth"
                     ? depthPromptType === "init"
-                      ? "编辑图谱初始化提示词"
-                      : "编辑节点展开提示词"
-                    : "编辑宽度拓展提示词"
+                      ? t('graphMap.prompt.editInitPrompt')
+                      : t('graphMap.prompt.editExpandPrompt')
+                    : t('graphMap.prompt.editWidthPrompt')
                 }
               />
             </Suspense>
@@ -1790,7 +1793,7 @@ export const GraphMap = () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
             addMessage({
               type: "success",
-              content: `成功创建 ${result.created.length} 个图谱${result.failed?.length ? `，${result.failed.length} 个失败` : ''}`,
+              content: t('graphMap.graphCreation.batchCreateSuccess', { count: result.created.length, failed: result.failed?.length || 0 }),
             });
             return result;
           }}
@@ -1801,7 +1804,7 @@ export const GraphMap = () => {
             });
             addMessage({
               type: "success",
-              content: `已提交 ${result.summary.pending} 个图谱的初始化任务，请在任务列表中查看进度`,
+              content: t('graphMap.graphCreation.initTaskSubmitted', { count: result.summary.pending }),
             });
           }}
           onLoadSourceGraphs={async () => {
@@ -1839,7 +1842,7 @@ export const GraphMap = () => {
           isOpen={isGenerateCardsModalOpen}
           onClose={() => setIsGenerateCardsModalOpen(false)}
           onGenerate={handleGenerateCards}
-          nodeTitle={`${selectedNodeIds.length} 个知识点`}
+          nodeTitle={t('graphMap.cards.knowledgePoints', { count: selectedNodeIds.length })}
         />
       </Suspense>
 
@@ -1936,10 +1939,10 @@ export const GraphMap = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 p-4">
             <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">
-              批量设置领域
+              {t('graphMap.domainPicker.batchTitle')}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-              为选中的 {multiSelectedGraphIds.size} 个图谱设置领域
+              {t('graphMap.domainPicker.batchDesc', { count: multiSelectedGraphIds.size })}
             </p>
             {isBatchSettingDomain ? (
               <div className="flex items-center justify-center py-8">
@@ -1969,7 +1972,7 @@ export const GraphMap = () => {
                     onClick={() => setIsBatchDomainPickerOpen(false)}
                     className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                   >
-                    取消
+                    {t('common.cancel')}
                   </button>
                 </div>
               </>
@@ -2017,7 +2020,7 @@ export const GraphMap = () => {
             <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Layers className="w-5 h-5 text-purple-500" />
-                跨学科洞察分析
+                {t('graphMap.crossDomain.title')}
               </h3>
               <button
                 onClick={() => setShowCrossDomainInsights(false)}
@@ -2046,13 +2049,13 @@ export const GraphMap = () => {
                 className="px-4 py-2 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${isAnalyzingCrossDomain ? 'animate-spin' : ''}`} />
-                重新分析
+                {t('graphMap.crossDomain.reanalyze')}
               </button>
               <button
                 onClick={() => setShowCrossDomainInsights(false)}
                 className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
               >
-                关闭
+                {t('common.close')}
               </button>
             </div>
           </motion.div>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -33,71 +34,6 @@ interface TemplateGeneratorProps {
   onClose?: () => void;
 }
 
-const categoryOptions: Array<{
-  value: TemplateCategory;
-  label: string;
-  icon: React.ElementType;
-  description: string;
-}> = [
-  {
-    value: 'learning',
-    label: '学习',
-    icon: BookOpen,
-    description: '适合系统性学习知识',
-  },
-  {
-    value: 'story',
-    label: '故事',
-    icon: FileText,
-    description: '适合叙事性内容',
-  },
-  {
-    value: 'project',
-    label: '项目',
-    icon: Briefcase,
-    description: '适合项目管理场景',
-  },
-  {
-    value: 'analysis',
-    label: '分析',
-    icon: PieChart,
-    description: '适合分析性内容',
-  },
-  {
-    value: 'custom',
-    label: '自定义',
-    icon: Sparkles,
-    description: '灵活适配主题',
-  },
-];
-
-const styleOptions = [
-  {
-    value: 'academic',
-    label: '学术风格',
-    icon: GraduationCap,
-    details: '专业术语，理论框架',
-  },
-  {
-    value: 'practical',
-    label: '实用风格',
-    icon: Briefcase,
-    details: '通俗易懂，实际应用',
-  },
-  {
-    value: 'beginner',
-    label: '入门风格',
-    icon: BookOpen,
-    details: '简单易懂，循序渐进',
-  },
-  {
-    value: 'custom',
-    label: '自定义',
-    icon: PenTool,
-    details: '自己编写生成规则',
-  },
-];
-
 const layoutIcons: Record<LayoutSuggestion, React.ElementType> = {
   radial: CircleDot,
   tree: GitBranch,
@@ -105,23 +41,10 @@ const layoutIcons: Record<LayoutSuggestion, React.ElementType> = {
   hierarchical: LayoutGrid,
 };
 
-const layoutLabels: Record<LayoutSuggestion, string> = {
-  radial: '放射状',
-  tree: '树形',
-  network: '网络',
-  hierarchical: '层级',
-};
-
 const difficultyColors: Record<TemplateDifficulty, string> = {
   easy: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300',
   medium: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300',
   hard: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300',
-};
-
-const difficultyLabels: Record<TemplateDifficulty, string> = {
-  easy: '简单',
-  medium: '中等',
-  hard: '困难',
 };
 
 const getLevelColor = (level?: string) => {
@@ -146,9 +69,10 @@ const TemplateSchemeCard: React.FC<{
   isSelected: boolean;
   isMobile: boolean;
   isDark: boolean;
+  t: (key: string, options?: Record<string, unknown>) => string;
   onClick: () => void;
   onPreview: () => void;
-}> = ({ template, isSelected, isMobile, isDark, onClick, onPreview }) => {
+}> = ({ template, isSelected, isMobile, isDark, t, onClick, onPreview }) => {
   const LayoutIcon = layoutIcons[template.layoutSuggestion];
 
   return (
@@ -191,7 +115,7 @@ const TemplateSchemeCard: React.FC<{
               ? 'hover:bg-slate-700 text-slate-400'
               : 'hover:bg-gray-100 text-gray-500'
           }`}
-          title="预览结构"
+          title={t("templates.generator.previewStructure")}
         >
           <Eye size={isMobile ? 14 : 16} />
         </button>
@@ -203,7 +127,7 @@ const TemplateSchemeCard: React.FC<{
             difficultyColors[template.difficulty || 'medium']
           }`}
         >
-          {difficultyLabels[template.difficulty || 'medium']}
+          {t(`templates.difficulty.${template.difficulty || 'medium'}`)}
         </span>
         <span
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] md:text-xs ${
@@ -213,7 +137,7 @@ const TemplateSchemeCard: React.FC<{
           }`}
         >
           <LayoutIcon size={12} />
-          {layoutLabels[template.layoutSuggestion || 'radial']}
+          {t(`templates.layout.${template.layoutSuggestion || 'radial'}`)}
         </span>
         <span
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] md:text-xs ${
@@ -222,7 +146,7 @@ const TemplateSchemeCard: React.FC<{
               : 'bg-gray-100 text-gray-600'
           }`}
         >
-          {template.nodes.length} 节点
+          {template.nodes.length} {t("templates.nodeCountLabel", { count: template.nodes.length }).split(' ')[1]}
         </span>
       </div>
 
@@ -247,8 +171,9 @@ const TemplatePreviewModal: React.FC<{
   template: GeneratedTemplate;
   isMobile: boolean;
   isDark: boolean;
+  t: (key: string, options?: Record<string, unknown>) => string;
   onClose: () => void;
-}> = ({ template, isMobile, isDark, onClose }) => {
+}> = ({ template, isMobile, isDark, t, onClose }) => {
   const nodeMap = useMemo(() => {
     const map = new Map<string, GeneratedTemplate['nodes'][number]>();
     template.nodes.forEach((node) => map.set(node.id, node));
@@ -332,7 +257,7 @@ const TemplatePreviewModal: React.FC<{
                 isDark ? 'text-white' : 'text-gray-900'
               }`}
             >
-              节点结构
+              {t("templates.generator.nodeStructure")}
             </h4>
             <div className="space-y-1">
               {rootNodes.map((node) => renderNode(node, 0))}
@@ -346,7 +271,7 @@ const TemplatePreviewModal: React.FC<{
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}
               >
-                关联关系 ({template.edges.length})
+                {t("templates.generator.relations")} ({template.edges.length})
               </h4>
               <div className="space-y-1">
                 {template.edges.slice(0, 10).map((edge, index) => {
@@ -398,7 +323,7 @@ const TemplatePreviewModal: React.FC<{
                   <p
                     className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}
                   >
-                    还有 {template.edges.length - 10} 条关联...
+                    {t("templates.generator.moreRelations", { count: template.edges.length - 10 })}
                   </p>
                 )}
               </div>
@@ -415,6 +340,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
   onTemplateApplied,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { isMobile } = useIsMobile();
   const { isDark } = useTheme();
   const [topic, setTopic] = useState('');
@@ -439,9 +365,74 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
   const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
+  const categoryOptions: Array<{
+    value: TemplateCategory;
+    label: string;
+    icon: React.ElementType;
+    description: string;
+  }> = [
+    {
+      value: 'learning',
+      label: t('templates.category.learning'),
+      icon: BookOpen,
+      description: t('templates.generator.templateCategory'),
+    },
+    {
+      value: 'story',
+      label: t('templates.category.story'),
+      icon: FileText,
+      description: t('templates.generator.templateCategory'),
+    },
+    {
+      value: 'project',
+      label: t('templates.category.project'),
+      icon: Briefcase,
+      description: t('templates.generator.templateCategory'),
+    },
+    {
+      value: 'analysis',
+      label: t('templates.category.analysis'),
+      icon: PieChart,
+      description: t('templates.generator.templateCategory'),
+    },
+    {
+      value: 'custom',
+      label: t('templates.category.custom'),
+      icon: Sparkles,
+      description: t('templates.generator.templateCategory'),
+    },
+  ];
+
+  const styleOptions = [
+    {
+      value: 'academic',
+      label: t('templates.style.academic'),
+      icon: GraduationCap,
+      details: t('templates.style.academicDetails'),
+    },
+    {
+      value: 'practical',
+      label: t('templates.style.practical'),
+      icon: Briefcase,
+      details: t('templates.style.practicalDetails'),
+    },
+    {
+      value: 'beginner',
+      label: t('templates.style.beginner'),
+      icon: BookOpen,
+      details: t('templates.style.beginnerDetails'),
+    },
+    {
+      value: 'custom',
+      label: t('templates.style.custom'),
+      icon: PenTool,
+      details: t('templates.style.customDetails'),
+    },
+  ];
+
   const handleGenerateTemplates = useCallback(async () => {
     if (!topic.trim()) {
-      addMessage({ type: 'warning', content: '请输入主题' });
+      addMessage({ type: 'warning', content: t("templates.message.enterTopic") });
       return;
     }
 
@@ -462,20 +453,20 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         setStep('templates');
         addMessage({
           type: 'success',
-          content: `已生成 ${result.templates.length} 个模板方案`,
+          content: t("templates.generator.templateGenerated", { count: result.templates.length }),
         });
       } else {
-        addMessage({ type: 'warning', content: '未能生成模板，请重试' });
+        addMessage({ type: 'warning', content: t("templates.generator.generateFailed") });
       }
     } catch (error) {
       handleError(error, {
         context: 'GenerateTemplates',
-        fallbackMessage: '模板生成失败',
+        fallbackMessage: t("templates.generator.generateFailed"),
       });
     } finally {
       setIsGenerating(false);
     }
-  }, [topic, context, category, graphId, addMessage, handleError]);
+  }, [topic, context, category, graphId, addMessage, handleError, t]);
 
   const handleSelectTemplate = useCallback((template: GeneratedTemplate) => {
     setSelectedTemplate(template);
@@ -484,12 +475,12 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
 
   const handleApplyTemplate = useCallback(async () => {
     if (!selectedTemplate || !graphId) {
-      addMessage({ type: 'warning', content: '请选择模板' });
+      addMessage({ type: 'warning', content: t("templates.message.selectTemplate") });
       return;
     }
 
     if (style === 'custom' && !customPrompt.trim()) {
-      addMessage({ type: 'warning', content: '请输入自定义生成规则' });
+      addMessage({ type: 'warning', content: t("templates.message.enterCustomRules") });
       return;
     }
 
@@ -504,13 +495,13 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         graph_id: graphId,
       });
 
-      addMessage({ type: 'success', content: '模板应用成功' });
+      addMessage({ type: 'success', content: t("templates.generator.applySuccess") });
       onTemplateApplied?.(result.nodes, result.edges);
       onClose?.();
     } catch (error) {
       handleError(error, {
         context: 'ApplyTemplate',
-        fallbackMessage: '模板应用失败',
+        fallbackMessage: t("templates.message.applyFailed"),
       });
     } finally {
       setIsApplying(false);
@@ -525,6 +516,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     handleError,
     onTemplateApplied,
     onClose,
+    t,
   ]);
 
   const handleSaveToLibrary = useCallback(async () => {
@@ -545,16 +537,16 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         tags: selectedTemplate.tags,
       });
 
-      addMessage({ type: 'success', content: '模板已保存到模板库' });
+      addMessage({ type: 'success', content: t("templates.message.saveToLibrarySuccess") });
     } catch (error) {
       handleError(error, {
         context: 'SaveTemplate',
-        fallbackMessage: '保存模板失败',
+        fallbackMessage: t("templates.message.saveFailed"),
       });
     } finally {
       setIsSaving(false);
     }
-  }, [selectedTemplate, category, addMessage, handleError]);
+  }, [selectedTemplate, category, addMessage, handleError, t]);
 
   const handleBack = useCallback(() => {
     if (step === 'style') {
@@ -591,14 +583,14 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                 isMobile ? 'text-lg' : 'text-xl'
               } font-bold text-gray-900 dark:text-white`}
             >
-              AI 模板生成器
+              {t("templates.generator.title")}
             </h2>
             <p
               className={`${
                 isMobile ? 'text-xs' : 'text-sm'
               } text-gray-500 dark:text-gray-400`}
             >
-              智能生成知识图谱模板
+              {t("templates.generator.subtitle")}
             </p>
           </div>
         </div>
@@ -645,13 +637,13 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     isMobile ? 'text-xs' : 'text-sm'
                   } font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
                 >
-                  主题 <span className="text-red-500">*</span>
+                  {t("templates.generator.topic")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="例如：机器学习基础、量子计算入门"
+                  placeholder={t("templates.generator.topicPlaceholder")}
                   className={`w-full ${
                     isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-3'
                   } border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white`}
@@ -665,7 +657,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     isMobile ? 'text-xs' : 'text-sm'
                   } font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
                 >
-                  模板分类
+                  {t("templates.generator.templateCategory")}
                 </label>
                 <div
                   className={`grid ${
@@ -724,7 +716,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                 ) : (
                   <ChevronDown size={isMobile ? 14 : 16} />
                 )}
-                背景信息（可选）
+                {t("templates.generator.backgroundInfo")}
               </button>
 
               <AnimatePresence>
@@ -738,7 +730,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     <textarea
                       value={context}
                       onChange={(e) => setContext(e.target.value)}
-                      placeholder="提供更多背景信息，帮助 AI 生成更贴合的模板..."
+                      placeholder={t("templates.generator.backgroundPlaceholder")}
                       className={`w-full ${
                         isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'
                       } border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${
@@ -762,12 +754,12 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     <Loader2
                       className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} animate-spin`}
                     />
-                    正在生成模板...
+                    {t("templates.generator.generating")}
                   </>
                 ) : (
                   <>
                     <Sparkles className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                    生成模板方案
+                    {t("templates.generator.generate")}
                   </>
                 )}
               </button>
@@ -788,14 +780,14 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     isMobile ? 'text-base' : 'text-lg'
                   } font-semibold text-gray-900 dark:text-white`}
                 >
-                  选择模板方案
+                  {t("templates.generator.selectScheme")}
                 </h3>
                 <span
                   className={`${isMobile ? 'text-xs' : 'text-sm'} ${
                     isDark ? 'text-slate-400' : 'text-gray-500'
                   }`}
                 >
-                  {templates.length} 个方案
+                  {t("templates.generator.schemeCount", { count: templates.length })}
                 </span>
               </div>
 
@@ -807,6 +799,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     isSelected={selectedTemplate?.id === template.id}
                     isMobile={isMobile}
                     isDark={isDark}
+                    t={t}
                     onClick={() => handleSelectTemplate(template)}
                     onPreview={() => setPreviewTemplate(template)}
                   />
@@ -835,7 +828,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                         isMobile ? 'text-xs' : 'text-sm'
                       } ${isDark ? 'text-slate-400' : 'text-gray-500'}`}
                     >
-                      已选择：
+                      {t("templates.selected")}
                     </span>
                     <span
                       className={`font-medium ${
@@ -852,7 +845,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     } text-blue-500 hover:text-blue-600`}
                   >
                     <Eye size={isMobile ? 12 : 14} />
-                    预览
+                    {t("templates.generator.previewStructure")}
                   </button>
                 </div>
               </div>
@@ -863,7 +856,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                     isMobile ? 'text-xs' : 'text-sm'
                   } font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}
                 >
-                  生成风格
+                  {t("templates.generator.generationStyle")}
                 </label>
                 <div
                   className={`grid ${
@@ -949,13 +942,13 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                             isMobile ? 'text-xs' : 'text-sm'
                           } font-medium text-gray-700 dark:text-gray-300`}
                         >
-                          自定义生成规则
+                          {t("templates.style.customRules")}
                         </label>
                       </div>
                       <textarea
                         value={customPrompt}
                         onChange={(e) => setCustomPrompt(e.target.value)}
-                        placeholder="例如：请用简单的语言解释概念，每个节点不超过50字..."
+                        placeholder={t("templates.style.customRulesPlaceholder")}
                         className={`w-full ${
                           isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'
                         } border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${
@@ -983,12 +976,12 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                           isMobile ? 'w-3 h-3' : 'w-4 h-4'
                         } animate-spin`}
                       />
-                      正在应用模板...
+                      {t("templates.generator.applying")}
                     </>
                   ) : (
                     <>
                       <Check className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                      应用模板到图谱
+                      {t("templates.button.apply")}
                     </>
                   )}
                 </button>
@@ -1007,12 +1000,12 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
                           isMobile ? 'w-3 h-3' : 'w-4 h-4'
                         } animate-spin`}
                       />
-                      保存中...
+                      {t("templates.generator.saving")}
                     </>
                   ) : (
                     <>
                       <Save className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                      保存到模板库
+                      {t("templates.button.saveToLibrary")}
                     </>
                   )}
                 </button>
@@ -1028,6 +1021,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
             template={previewTemplate}
             isMobile={isMobile}
             isDark={isDark}
+            t={t}
             onClose={() => setPreviewTemplate(null)}
           />
         )}

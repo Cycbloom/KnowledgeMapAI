@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from 'react';
-import { Template, TemplateNode, TemplateDifficulty, LayoutSuggestion } from '../../types';
+import { useTranslation } from 'react-i18next';
+import { Template, TemplateNode, TemplateDifficulty } from '../../types';
 import { ChevronRight, Edit3, Check, Save, Tag, Layers, LayoutGrid, GitBranch } from 'lucide-react';
 import { useTheme } from "../../hooks";
 
@@ -10,12 +11,6 @@ interface TemplatePreviewProps {
   onSave?: () => void;
   onEdit?: () => void;
 }
-
-const difficultyLabels: Record<TemplateDifficulty, string> = {
-  easy: '简单',
-  medium: '中等',
-  hard: '困难',
-};
 
 const difficultyColors = (isDark: boolean): Record<TemplateDifficulty, string> => {
   if (isDark) {
@@ -30,13 +25,6 @@ const difficultyColors = (isDark: boolean): Record<TemplateDifficulty, string> =
     medium: 'bg-yellow-50 text-yellow-600 border-yellow-200',
     hard: 'bg-red-50 text-red-600 border-red-200',
   };
-};
-
-const layoutLabels: Record<LayoutSuggestion, string> = {
-  radial: '放射状',
-  tree: '树形',
-  network: '网状',
-  hierarchical: '层级',
 };
 
 const getNodeLevelColor = (level: string, isDark: boolean) => {
@@ -69,11 +57,11 @@ const getNodeLevelColor = (level: string, isDark: boolean) => {
 };
 
 const levelLabels: Record<string, string> = {
-  root: '根',
-  core: '核心',
-  sub: '子',
-  leaf: '叶',
-  normal: '普通',
+  root: 'R',
+  core: 'C',
+  sub: 'S',
+  leaf: 'L',
+  normal: 'N',
 };
 
 const TreeNode: React.FC<{
@@ -162,6 +150,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
   onSave,
   onEdit,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const nodes = template.nodes || [];
   const edges = template.edges || [];
@@ -193,7 +182,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
       <div
         className={`p-6 text-center ${isDark ? 'text-slate-500' : 'text-gray-500'}`}
       >
-        暂无节点结构
+        {t("templates.empty.noNodes")}
       </div>
     );
   }
@@ -247,14 +236,14 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
                 difficultyColors(isDark)[difficulty]
               }`}
             >
-              {difficultyLabels[difficulty]}
+              {t(`templates.difficulty.${difficulty}`)}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <Layers size={12} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
             <span className={isDark ? 'text-slate-400' : 'text-gray-600'}>
-              {estimatedNodes} 个节点
+              {t("templates.preview.nodeCount", { count: estimatedNodes })}
             </span>
           </div>
 
@@ -262,7 +251,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
             <div className="flex items-center gap-1.5">
               <LayoutGrid size={12} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
               <span className={isDark ? 'text-slate-400' : 'text-gray-600'}>
-                {layoutLabels[layoutSuggestion]}
+                {t(`templates.layout.${layoutSuggestion}`)}
               </span>
             </div>
           )}
@@ -270,7 +259,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
           <div className="flex items-center gap-1.5">
             <GitBranch size={12} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
             <span className={isDark ? 'text-slate-400' : 'text-gray-600'}>
-              {edges.length} 条边
+              {t("templates.preview.edgeCount", { count: edges.length })}
             </span>
           </div>
         </div>
@@ -287,7 +276,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
           <h4
             className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}
           >
-            结构预览
+            {t("templates.preview.structure")}
           </h4>
           <div className="flex gap-2 text-[10px]">
             {Object.entries(nodeCountByLevel).map(([level, count]) => {
@@ -309,7 +298,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
             <TreeNode node={rootNode} allNodes={nodes} depth={0} isDark={isDark} />
           ) : (
             <div className={isDark ? 'text-slate-500' : 'text-gray-500'}>
-              未找到根节点
+              {t("templates.preview.rootNodeNotFound")}
             </div>
           )}
         </div>
@@ -327,7 +316,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
               }`}
             >
               <Edit3 size={16} />
-              编辑
+              {t("templates.button.edit")}
             </button>
           )}
           {onSelect && (
@@ -336,7 +325,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               <Check size={16} />
-              选择
+              {t("templates.select")}
             </button>
           )}
           {onSave && (
@@ -349,7 +338,7 @@ const TemplatePreviewComponent: React.FC<TemplatePreviewProps> = ({
               }`}
             >
               <Save size={16} />
-              保存
+              {t("templates.button.save")}
             </button>
           )}
         </div>

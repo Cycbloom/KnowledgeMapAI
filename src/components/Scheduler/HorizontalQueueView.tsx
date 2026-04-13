@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { motion } from "framer-motion";
 import { LayoutGrid, Calendar, Columns, List, ChevronDown } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { ScheduledTask, QueueData } from "@shared/types";
 import { HorizontalQueue } from "./HorizontalQueue";
 
@@ -30,29 +31,6 @@ interface HorizontalQueueViewProps {
   };
 }
 
-const VIEW_CONFIG = {
-  queue: {
-    icon: LayoutGrid,
-    label: "队列",
-    description: "横向队列视图",
-  },
-  timeline: {
-    icon: Calendar,
-    label: "时间轴",
-    description: "按时间排列",
-  },
-  kanban: {
-    icon: Columns,
-    label: "看板",
-    description: "状态看板",
-  },
-  list: {
-    icon: List,
-    label: "列表",
-    description: "详细列表",
-  },
-};
-
 export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
   queues,
   timeSlices,
@@ -69,10 +47,40 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
   onViewChange,
   children,
 }) => {
+  const { t } = useTranslation();
   const [localQueues, setLocalQueues] = useState<QueueData | null>(null);
   const [collapsedQueues, setCollapsedQueues] = useState<Set<number>>(
     new Set(),
   );
+
+  const VIEW_CONFIG = {
+    queue: {
+      icon: LayoutGrid,
+      label: t('scheduler.queue.queue'),
+      description: t('scheduler.queue.queueDesc'),
+    },
+    timeline: {
+      icon: Calendar,
+      label: t('scheduler.queue.timeline'),
+      description: t('scheduler.queue.timelineDesc'),
+    },
+    kanban: {
+      icon: Columns,
+      label: t('scheduler.queue.kanban'),
+      description: t('scheduler.queue.kanbanDesc'),
+    },
+    list: {
+      icon: List,
+      label: t('scheduler.queue.list'),
+      description: t('scheduler.queue.listDesc'),
+    },
+  };
+
+  const queueTitles = {
+    0: t('scheduler.queue.urgent'),
+    1: t('scheduler.queue.important'),
+    2: t('scheduler.queue.todo'),
+  };
 
   const displayQueues = localQueues || queues;
 
@@ -159,12 +167,6 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
     });
   };
 
-  const queueTitles = {
-    0: "紧急队列",
-    1: "重要队列",
-    2: "待办队列",
-  };
-
   const renderQueueView = () => (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="flex flex-col gap-4 p-1">
@@ -212,7 +214,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
                       {queueTitles[level as keyof typeof queueTitles]}
                     </span>
                     <span className="text-sm text-slate-500 dark:text-slate-400">
-                      {displayQueues[queueKey].length} 个任务
+                      {t('scheduler.queue.taskCount', { count: displayQueues[queueKey].length })}
                     </span>
                   </div>
                   <ChevronDown
@@ -282,7 +284,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
                 <span className="text-slate-500 dark:text-slate-400">
-                  待处理
+                  {t('scheduler.queue.pending')}
                 </span>
                 <span className="font-bold text-cyan-600 dark:text-cyan-400">
                   {stats.pending}
@@ -291,7 +293,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
                 <span className="text-slate-500 dark:text-slate-400">
-                  进行中
+                  {t('scheduler.queue.inProgress')}
                 </span>
                 <span className="font-bold text-blue-600 dark:text-blue-400">
                   {stats.inProgress}
@@ -300,7 +302,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                 <span className="text-slate-500 dark:text-slate-400">
-                  已完成
+                  {t('scheduler.queue.completed')}
                 </span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {stats.completed}
@@ -324,7 +326,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
           >
             {children?.timeline || (
               <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
-                时间轴视图
+                {t('scheduler.queue.timelineView')}
               </div>
             )}
           </motion.div>
@@ -340,7 +342,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
           >
             {children?.kanban || (
               <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
-                看板视图
+                {t('scheduler.queue.kanbanView')}
               </div>
             )}
           </motion.div>
@@ -356,7 +358,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
           >
             {children?.list || (
               <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
-                列表视图
+                {t('scheduler.queue.listView')}
               </div>
             )}
           </motion.div>

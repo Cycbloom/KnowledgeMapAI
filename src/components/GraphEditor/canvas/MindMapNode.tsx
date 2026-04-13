@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import type {
   LayoutNode,
   NodeLevel,
@@ -128,6 +129,7 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   isInLearningPath = false,
   learningPathHighlighted = false,
 }) => {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
   const level = getLevel(node, edges);
   const tags = useMemo(
@@ -135,8 +137,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
     [node.tags, node.properties],
   );
   const titleInfo = useMemo(
-    () => truncateText(node.title || "未命名"),
-    [node.title],
+    () => truncateText(node.title || t('graphEditor.mindMap.unnamed')),
+    [node.title, t],
   );
 
   const dynamicSize = useMemo(() => {

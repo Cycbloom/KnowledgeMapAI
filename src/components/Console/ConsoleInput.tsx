@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { commandRegistry, type AutocompleteSuggestion, type CommandHistoryItem } from '@/services/console';
 import { CommandAutocomplete } from './CommandAutocomplete';
 
@@ -20,6 +21,7 @@ export interface ConsoleInputRef {
 
 export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
   ({ value, onChange, onSubmit, isDark, isLoading = false, pendingConfirmActive = false, history = [] }, ref) => {
+    const { t } = useTranslation();
     const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -162,13 +164,13 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
           {isSearchMode ? (
             <div className="flex-1 flex items-center gap-2 ml-2">
               <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                搜索历史:
+                {t('console.input.searchHistory')}
               </span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="输入搜索关键词..."
+                placeholder={t('console.input.searchPlaceholder')}
                 className={`flex-1 bg-transparent outline-none text-sm ${
                   isDark ? 'text-slate-200 placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
                 }`}
@@ -182,7 +184,7 @@ export const ConsoleInput = forwardRef<ConsoleInputRef, ConsoleInputProps>(
               value={value}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={pendingConfirmActive ? '输入 y 确认 / n 取消' : '输入命令... (Tab 补全, Ctrl+R 搜索历史)'}
+              placeholder={pendingConfirmActive ? t('console.input.confirmPlaceholder') : t('console.input.commandPlaceholder')}
               className={`flex-1 bg-transparent outline-none text-sm ml-2 ${
                 isDark ? 'text-slate-200 placeholder-slate-500' : 'text-gray-800 placeholder-gray-400'
               } ${pendingConfirmActive ? (isDark ? 'text-yellow-300 placeholder-yellow-600' : 'text-yellow-700 placeholder-yellow-500') : ''}`}

@@ -44,7 +44,6 @@ export const Settings = () => {
   const [retention, setRetention] = useState(0.9);
   const [maxInterval, setMaxInterval] = useState(36500);
 
-  // AI Configuration State
   const [textConfig, setTextConfig] = useState({
     provider: "deepseek",
     model: "deepseek-chat",
@@ -58,7 +57,6 @@ export const Settings = () => {
     model: "qwen-max",
   });
 
-  // Available Models State
   const [availableModels, setAvailableModels] = useState<AvailableModels>({
     deepseek: ["deepseek-chat", "deepseek-reasoner"],
     volcengine: ["doubao-pro-4k", "doubao-pro-32k", "doubao-embedding-1.5"],
@@ -68,7 +66,6 @@ export const Settings = () => {
   const [selectedProviderForAdd, setSelectedProviderForAdd] =
     useState("deepseek");
 
-  // Mobile AI Configuration State
   const isMobile = isCapacitorMobile();
   const [mobileAIConfig, setMobileAIConfig] =
     useState<MobileAIUserConfig | null>(null);
@@ -129,10 +126,10 @@ export const Settings = () => {
           available_models: availableModels,
         },
       });
-      addMessage({ type: "success", content: "系统配置已保存" });
+      addMessage({ type: "success", content: t("settings.saveSuccess") });
     } catch (e) {
       console.error(e);
-      addMessage({ type: "error", content: "保存失败" });
+      addMessage({ type: "error", content: t("settings.saveFailed") });
     }
   };
 
@@ -142,7 +139,7 @@ export const Settings = () => {
     const currentModels = availableModels[provider] || [];
 
     if (currentModels.includes(newModelName.trim())) {
-      addMessage({ type: "warning", content: "该模型已存在" });
+      addMessage({ type: "warning", content: t("settings.modelExists") });
       return;
     }
 
@@ -151,7 +148,10 @@ export const Settings = () => {
       [provider]: [...(prev[provider] || []), newModelName.trim()],
     }));
     setNewModelName("");
-    addMessage({ type: "success", content: `已添加模型: ${newModelName}` });
+    addMessage({
+      type: "success",
+      content: `${t("settings.modelAdded")}: ${newModelName}`,
+    });
   };
 
   const handleDeleteModel = (provider: string, model: string) => {
@@ -163,7 +163,7 @@ export const Settings = () => {
 
   const handleSaveMobileAIConfig = () => {
     if (!mobileApiKey.trim()) {
-      addMessage({ type: "warning", content: "请输入 API Key" });
+      addMessage({ type: "warning", content: t("settings.enterApiKey") });
       return;
     }
 
@@ -175,14 +175,14 @@ export const Settings = () => {
 
     mobileAIService.setConfig(config);
     setMobileAIConfig(config);
-    addMessage({ type: "success", content: "移动端 AI 配置已保存" });
+    addMessage({ type: "success", content: t("settings.mobileConfigSaved") });
   };
 
   const handleClearMobileAIConfig = () => {
     mobileAIService.clearConfig();
     setMobileAIConfig(null);
     setMobileApiKey("");
-    addMessage({ type: "success", content: "移动端 AI 配置已清除" });
+    addMessage({ type: "success", content: t("settings.mobileConfigCleared") });
   };
 
   return (
@@ -197,10 +197,10 @@ export const Settings = () => {
           </button>
           <div className="flex-1">
             <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              系统设置
+              {t("settings.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm md:text-base">
-              管理外观、AI 模型与学习算法
+              {t("settings.subtitle")}
             </p>
           </div>
           <div>
@@ -211,18 +211,19 @@ export const Settings = () => {
             >
               <Save className="w-4 h-4" />
               <span className="hidden md:inline">
-                {updateProfileMutation.isPending ? "保存中..." : "保存所有更改"}
+                {updateProfileMutation.isPending
+                  ? t("settings.saving")
+                  : t("settings.saveAll")}
               </span>
             </button>
           </div>
         </div>
 
-        {/* Appearance Settings */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <Palette className="w-5 h-5 text-pink-600 dark:text-pink-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              外观设置
+              {t("settings.appearance")}
             </h2>
           </div>
 
@@ -236,7 +237,9 @@ export const Settings = () => {
               }`}
             >
               <Sun className="w-6 h-6 mb-2" />
-              <span className="font-medium text-sm">浅色模式</span>
+              <span className="font-medium text-sm">
+                {t("settings.lightMode")}
+              </span>
             </button>
 
             <button
@@ -248,7 +251,9 @@ export const Settings = () => {
               }`}
             >
               <Moon className="w-6 h-6 mb-2" />
-              <span className="font-medium text-sm">深色模式</span>
+              <span className="font-medium text-sm">
+                {t("settings.darkMode")}
+              </span>
             </button>
 
             <button
@@ -260,23 +265,24 @@ export const Settings = () => {
               }`}
             >
               <Monitor className="w-6 h-6 mb-2" />
-              <span className="font-medium text-sm">跟随系统</span>
+              <span className="font-medium text-sm">
+                {t("settings.followSystem")}
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Language Settings */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {t('settings.language')}
+              {t("settings.language")}
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
-              onClick={() => i18n.changeLanguage('zh-CN')}
+              onClick={() => i18n.changeLanguage("zh-CN")}
               className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 i18n.language === "zh-CN" || i18n.language.startsWith("zh")
                   ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
@@ -284,11 +290,13 @@ export const Settings = () => {
               }`}
             >
               <span className="text-2xl mb-2">中</span>
-              <span className="font-medium text-sm">{t('settings.chinese')}</span>
+              <span className="font-medium text-sm">
+                {t("settings.chinese")}
+              </span>
             </button>
 
             <button
-              onClick={() => i18n.changeLanguage('en-US')}
+              onClick={() => i18n.changeLanguage("en-US")}
               className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
                 i18n.language === "en-US" || i18n.language.startsWith("en")
                   ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
@@ -296,32 +304,32 @@ export const Settings = () => {
               }`}
             >
               <span className="text-2xl mb-2">A</span>
-              <span className="font-medium text-sm">{t('settings.english')}</span>
+              <span className="font-medium text-sm">
+                {t("settings.english")}
+              </span>
             </button>
           </div>
         </div>
 
-        {/* AI Settings */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Cpu className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                AI 状态与配置
+                {t("settings.aiStatus")}
               </h2>
             </div>
           </div>
 
-          {/* Model Management Section */}
           <div className="mb-8 p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50">
             <div className="flex items-center gap-2 mb-4">
               <Brain className="w-4 h-4 text-indigo-700 dark:text-indigo-400" />
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                可用模型库管理
+                {t("settings.modelManagement")}
               </h3>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              在此添加各服务商支持的模型，以便在下方任务中选择。
+              {t("settings.modelManagementDesc")}
             </p>
 
             <div className="flex flex-col gap-2 mb-4">
@@ -339,7 +347,7 @@ export const Settings = () => {
                   type="text"
                   value={newModelName}
                   onChange={(e) => setNewModelName(e.target.value)}
-                  placeholder="输入模型名称 (如 deepseek-chat)"
+                  placeholder={t("settings.inputModelName")}
                   className="flex-1 p-3 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
                 />
                 <button
@@ -347,7 +355,7 @@ export const Settings = () => {
                   disabled={!newModelName.trim()}
                   className="px-4 py-3 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1 transition-colors whitespace-nowrap min-h-[44px]"
                 >
-                  <Plus className="w-4 h-4" /> 添加
+                  <Plus className="w-4 h-4" /> {t("settings.addModel")}
                 </button>
               </div>
             </div>
@@ -380,7 +388,7 @@ export const Settings = () => {
                     ))}
                     {models.length === 0 && (
                       <div className="text-xs text-gray-300 dark:text-gray-600 italic">
-                        无模型
+                        {t("settings.noModels")}
                       </div>
                     )}
                   </div>
@@ -390,20 +398,19 @@ export const Settings = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Text Task Config */}
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-700 dark:text-blue-400">
                   <Brain className="w-4 h-4" />
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  文本生成任务 (对话/卡片/扩充)
+                  {t("settings.textTask")}
                 </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    提供方
+                    {t("settings.provider")}
                   </label>
                   <select
                     value={textConfig.provider}
@@ -423,7 +430,7 @@ export const Settings = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    模型名称
+                    {t("settings.modelName")}
                   </label>
                   <select
                     value={textConfig.model}
@@ -439,7 +446,7 @@ export const Settings = () => {
                     ))}
                     {!availableModels[textConfig.provider]?.length && (
                       <option value="" disabled>
-                        该提供方暂无模型
+                        {t("settings.noProviderModels")}
                       </option>
                     )}
                   </select>
@@ -447,20 +454,19 @@ export const Settings = () => {
               </div>
             </div>
 
-            {/* Embedding Task Config */}
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded text-green-700 dark:text-green-400">
                   <Cpu className="w-4 h-4" />
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  向量化任务 (搜索/相似度)
+                  {t("settings.embeddingTask")}
                 </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    提供方
+                    {t("settings.provider")}
                   </label>
                   <select
                     value={embeddingConfig.provider}
@@ -480,7 +486,7 @@ export const Settings = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    模型名称
+                    {t("settings.modelName")}
                   </label>
                   <select
                     value={embeddingConfig.model}
@@ -499,7 +505,7 @@ export const Settings = () => {
                     ))}
                     {!availableModels[embeddingConfig.provider]?.length && (
                       <option value="" disabled>
-                        该提供方暂无模型
+                        {t("settings.noProviderModels")}
                       </option>
                     )}
                   </select>
@@ -507,20 +513,19 @@ export const Settings = () => {
               </div>
             </div>
 
-            {/* Reasoning Task Config */}
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded text-orange-700 dark:text-orange-400">
                   <KeyRound className="w-4 h-4" />
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  推理任务 (复杂逻辑/规划)
+                  {t("settings.reasoningTask")}
                 </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    提供方
+                    {t("settings.provider")}
                   </label>
                   <select
                     value={reasoningConfig.provider}
@@ -540,7 +545,7 @@ export const Settings = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    模型名称
+                    {t("settings.modelName")}
                   </label>
                   <select
                     value={reasoningConfig.model}
@@ -559,7 +564,7 @@ export const Settings = () => {
                     ))}
                     {!availableModels[reasoningConfig.provider]?.length && (
                       <option value="" disabled>
-                        该提供方暂无模型
+                        {t("settings.noProviderModels")}
                       </option>
                     )}
                   </select>
@@ -573,10 +578,11 @@ export const Settings = () => {
               <div className="flex items-start gap-2">
                 <KeyRound className="w-4 h-4 mt-0.5" />
                 <div>
-                  <div className="font-semibold">配置方式</div>
+                  <div className="font-semibold">
+                    {t("settings.configMethod")}
+                  </div>
                   <div className="mt-1 leading-relaxed text-amber-800 dark:text-amber-300">
-                    在服务端环境变量中配置 AI_API_KEY 或
-                    DEEPSEEK_API_KEY，然后重启服务端进程。未配置时：文本分析/对话会进入模拟模式，文档解析与智能推荐将不可用。
+                    {t("settings.configDesc")}
                   </div>
                 </div>
               </div>
@@ -584,24 +590,23 @@ export const Settings = () => {
           )}
         </div>
 
-        {/* Mobile AI Configuration */}
         {isMobile && (
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
             <div className="flex items-center gap-2 mb-4">
               <Smartphone className="w-5 h-5 text-green-600 dark:text-green-400" />
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                移动端 AI 配置
+                {t("settings.mobileAIConfig")}
               </h2>
             </div>
 
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              移动端应用直接调用 AI 服务商 API，需要配置您自己的 API Key。
+              {t("settings.mobileAIConfigDesc")}
             </p>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  AI 服务商
+                  {t("settings.aiServiceProvider")}
                 </label>
                 <select
                   value={mobileProvider}
@@ -620,7 +625,7 @@ export const Settings = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  模型
+                  {t("settings.model")}
                 </label>
                 <select
                   value={mobileModel}
@@ -637,14 +642,14 @@ export const Settings = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  API Key
+                  {t("settings.apiKey")}
                 </label>
                 <div className="relative">
                   <input
                     type={showMobileApiKey ? "text" : "password"}
                     value={mobileApiKey}
                     onChange={(e) => setMobileApiKey(e.target.value)}
-                    placeholder="输入您的 API Key"
+                    placeholder={t("settings.enterApiKey")}
                     className="w-full p-3 pr-20 rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
                   />
                   <button
@@ -652,7 +657,7 @@ export const Settings = () => {
                     onClick={() => setShowMobileApiKey(!showMobileApiKey)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   >
-                    {showMobileApiKey ? "隐藏" : "显示"}
+                    {showMobileApiKey ? t("settings.hide") : t("settings.show")}
                   </button>
                 </div>
               </div>
@@ -663,7 +668,7 @@ export const Settings = () => {
                   className="flex-1 px-4 py-3 rounded-md bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-2 transition-colors shadow-sm min-h-[44px]"
                 >
                   <Save className="w-4 h-4" />
-                  保存配置
+                  {t("settings.saveConfig")}
                 </button>
                 {mobileAIConfig && (
                   <button
@@ -671,7 +676,7 @@ export const Settings = () => {
                     className="px-4 py-3 rounded-md border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors min-h-[44px]"
                   >
                     <Trash2 className="w-4 h-4" />
-                    清除
+                    {t("settings.clear")}
                   </button>
                 )}
               </div>
@@ -679,7 +684,8 @@ export const Settings = () => {
               {mobileAIConfig && (
                 <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm">
                   <div className="text-green-700 dark:text-green-300">
-                    ✓ 已配置: {mobileAIConfig.provider} / {mobileAIConfig.model}
+                    ✓ {t("settings.configured")}: {mobileAIConfig.provider} /{" "}
+                    {mobileAIConfig.model}
                   </div>
                 </div>
               )}
@@ -687,13 +693,12 @@ export const Settings = () => {
           </div>
         )}
 
-        {/* FSRS Settings */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                学习算法配置 (FSRS)
+                {t("settings.fsrsConfig")}
               </h2>
             </div>
           </div>
@@ -702,7 +707,7 @@ export const Settings = () => {
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
               <div className="flex justify-between items-center mb-2">
                 <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                  目标保留率 (Request Retention)
+                  {t("settings.requestRetention")}
                 </label>
                 <input
                   type="number"
@@ -728,15 +733,14 @@ export const Settings = () => {
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                设定您希望在复习时记住的概率。值越高，复习越频繁，记忆越牢固。建议范围：0.80
-                - 0.95。
+                {t("settings.requestRetentionDesc")}
               </p>
             </div>
 
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 transition-colors">
               <div className="flex justify-between items-center mb-2">
                 <label className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                  最大复习间隔 (天)
+                  {t("settings.maxReviewInterval")}
                 </label>
                 <input
                   type="number"
@@ -761,7 +765,7 @@ export const Settings = () => {
                 className="w-full h-3 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                限制卡片复习的最大间隔天数。默认 36500 天（100年）。
+                {t("settings.maxIntervalDesc")}
               </p>
             </div>
           </div>

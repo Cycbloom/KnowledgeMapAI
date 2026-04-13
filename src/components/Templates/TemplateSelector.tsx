@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Template, TemplateCategory } from '../../types';
 import { TemplateCard } from './TemplateCard';
 import { TemplatePreview } from './TemplatePreview';
@@ -11,20 +12,13 @@ interface TemplateSelectorProps {
   onCancel: () => void;
 }
 
-const categoryLabels: Record<TemplateCategory, string> = {
-  learning: '学习',
-  story: '故事',
-  project: '项目',
-  analysis: '分析',
-  custom: '自定义',
-};
-
 const CATEGORIES = ['all', 'learning', 'story', 'project', 'analysis', 'custom'] as const;
 
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onSelectTemplate,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
   const { data: templates = [], isLoading } = useTemplates();
@@ -92,7 +86,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       }`}>
         <div className={`p-4 md:p-6 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <div className="flex items-center justify-between mb-3 md:mb-4">
-            <h2 className={`text-lg md:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>选择模板</h2>
+            <h2 className={`text-lg md:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t("templates.selectTemplate")}</h2>
             <button
               onClick={onCancel}
               className={`p-2 rounded-full transition-colors ${
@@ -108,7 +102,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} size={isMobile ? 16 : 18} />
               <input
                 type="text"
-                placeholder="搜索模板..."
+                placeholder={t("templates.searchPlaceholder")}
                 value={searchQuery}
                 onChange={handleSearchChange}
                 className={`w-full ${isMobile ? 'pl-9 pr-3 py-2 text-sm' : 'pl-10 pr-4 py-2.5'} rounded-xl border outline-none transition-all ${
@@ -134,7 +128,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {cat === 'all' ? '全部' : categoryLabels[cat]}
+                  {cat === 'all' ? t("templates.filter.all") : t(`templates.category.${cat}`)}
                 </button>
               ))}
             </div>
@@ -147,13 +141,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>加载模板中...</p>
+                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>{t("common.loading")}</p>
                 </div>
               </div>
             ) : filteredTemplates.length === 0 ? (
               <div className={`flex flex-col items-center justify-center h-full ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                <p className={`${isMobile ? 'text-base' : 'text-lg'} mb-2`}>未找到匹配的模板</p>
-                <p className="text-sm">尝试更换搜索关键词或分类</p>
+                <p className={`${isMobile ? 'text-base' : 'text-lg'} mb-2`}>{t("templates.empty.noTemplates")}</p>
+                <p className="text-sm">{t("templates.empty.noTemplatesHint")}</p>
               </div>
             ) : (
               <>
@@ -199,7 +193,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
           {selectedTemplate && !isMobile && (
             <div className={`w-80 border-l p-6 overflow-y-auto ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
-              <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>模板预览</h3>
+              <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>{t("templates.preview.title")}</h3>
               <TemplatePreview template={selectedTemplate} />
             </div>
           )}
@@ -208,8 +202,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         {selectedTemplate && isMobile && (
           <div className={`p-3 border-t ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-50'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>已选择: {selectedTemplate.name}</span>
-              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{selectedTemplate.nodes?.length ?? 0} 个节点</span>
+              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{t("templates.selected")} {selectedTemplate.name}</span>
+              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t("templates.nodeCount", { count: selectedTemplate.nodes?.length ?? 0 })}</span>
             </div>
           </div>
         )}
@@ -221,14 +215,14 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-gray-700 hover:bg-gray-100'
             }`}
           >
-            跳过，创建空白图谱
+            {t("templates.button.skip")}
           </button>
           <button
             onClick={handleConfirm}
             disabled={!selectedTemplate}
             className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${isMobile ? 'w-full shadow-lg shadow-blue-600/20' : 'shadow-lg shadow-blue-600/20'}`}
           >
-            使用此模板
+            {t("templates.button.use")}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Template,
   TemplateNode,
@@ -21,22 +22,6 @@ interface TemplateEditorProps {
   onSave: (template: Template) => void;
   onCancel: () => void;
 }
-
-const CATEGORY_OPTIONS: { value: TemplateCategory; label: string }[] = [
-  { value: 'learning', label: '学习型' },
-  { value: 'project', label: '项目型' },
-  { value: 'story', label: '故事型' },
-  { value: 'analysis', label: '分析型' },
-  { value: 'custom', label: '自定义' },
-];
-
-const NODE_LEVEL_OPTIONS: { value: NodeLevel; label: string }[] = [
-  { value: 'root', label: '根节点' },
-  { value: 'core', label: '核心节点' },
-  { value: 'sub', label: '子节点' },
-  { value: 'normal', label: '普通节点' },
-  { value: 'leaf', label: '叶节点' },
-];
 
 const generateId = () => `node-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -78,6 +63,7 @@ const TreeNodeItem: React.FC<{
   allNodes: TemplateNode[];
   depth: number;
   isDark: boolean;
+  t: (key: string, options?: Record<string, unknown>) => string;
   onUpdate: (id: string, updates: Partial<TemplateNode>) => void;
   onDelete: (id: string) => void;
   onAddChild: (parentId: string) => void;
@@ -86,6 +72,7 @@ const TreeNodeItem: React.FC<{
   allNodes,
   depth,
   isDark,
+  t,
   onUpdate,
   onDelete,
   onAddChild,
@@ -136,7 +123,7 @@ const TreeNodeItem: React.FC<{
               type="text"
               value={node.title}
               onChange={(e) => onUpdate(node.id, { title: e.target.value })}
-              placeholder="节点标题"
+              placeholder={t("templates.node.title")}
               className={`flex-1 px-2 py-1 text-sm rounded border outline-none transition-all ${
                 isDark
                   ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500'
@@ -154,11 +141,11 @@ const TreeNodeItem: React.FC<{
                   : 'bg-white border-gray-200 text-gray-900'
               }`}
             >
-              {NODE_LEVEL_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
+              <option value="root">{t("templates.node.root")}</option>
+              <option value="core">{t("templates.node.core")}</option>
+              <option value="sub">{t("templates.node.sub")}</option>
+              <option value="normal">{t("templates.node.normal")}</option>
+              <option value="leaf">{t("templates.node.leaf")}</option>
             </select>
             <span
               className={`text-xs font-medium px-2 py-0.5 rounded ${getNodeLevelColor(
@@ -173,7 +160,7 @@ const TreeNodeItem: React.FC<{
           <textarea
             value={node.description || ''}
             onChange={(e) => onUpdate(node.id, { description: e.target.value })}
-            placeholder="建议内容描述（可选）"
+            placeholder={t("templates.node.contentDescription")}
             rows={2}
             className={`w-full px-2 py-1 text-xs rounded border outline-none transition-all resize-none ${
               isDark
@@ -192,7 +179,7 @@ const TreeNodeItem: React.FC<{
               }`}
             >
               <Plus size={12} />
-              添加子节点
+              {t("templates.node.addChild")}
             </button>
             <button
               onClick={() => onDelete(node.id)}
@@ -203,7 +190,7 @@ const TreeNodeItem: React.FC<{
               }`}
             >
               <Trash2 size={12} />
-              删除
+              {t("templates.button.delete")}
             </button>
           </div>
         </div>
@@ -218,6 +205,7 @@ const TreeNodeItem: React.FC<{
               allNodes={allNodes}
               depth={depth + 1}
               isDark={isDark}
+              t={t}
               onUpdate={onUpdate}
               onDelete={onDelete}
               onAddChild={onAddChild}
@@ -234,9 +222,10 @@ const EdgeItem: React.FC<{
   edgeIndex: number;
   nodes: TemplateNode[];
   isDark: boolean;
+  t: (key: string, options?: Record<string, unknown>) => string;
   onUpdate: (updates: Partial<TemplateEdge>) => void;
   onDelete: () => void;
-}> = ({ edge, nodes, isDark, onUpdate, onDelete }) => {
+}> = ({ edge, nodes, isDark, t, onUpdate, onDelete }) => {
   return (
     <div
       className={`flex items-center gap-2 p-2 rounded-lg ${
@@ -252,7 +241,7 @@ const EdgeItem: React.FC<{
             : 'bg-white border-gray-200 text-gray-900'
         }`}
       >
-        <option value="">选择源节点</option>
+        <option value="">{t("templates.edge.sourceNode")}</option>
         {nodes.map((n) => (
           <option key={n.id} value={n.id}>
             {n.title}
@@ -273,7 +262,7 @@ const EdgeItem: React.FC<{
             : 'bg-white border-gray-200 text-gray-900'
         }`}
       >
-        <option value="">选择目标节点</option>
+        <option value="">{t("templates.edge.targetNode")}</option>
         {nodes.map((n) => (
           <option key={n.id} value={n.id}>
             {n.title}
@@ -285,7 +274,7 @@ const EdgeItem: React.FC<{
         type="text"
         value={edge.relationship_type || ''}
         onChange={(e) => onUpdate({ relationship_type: e.target.value })}
-        placeholder="关系类型"
+        placeholder={t("templates.edge.relationshipType")}
         className={`w-24 px-2 py-1 text-sm rounded border outline-none ${
           isDark
             ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500'
@@ -312,6 +301,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
 
@@ -438,7 +428,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 isDark ? 'text-white' : 'text-gray-900'
               }`}
             >
-              编辑模板
+              {t("templates.button.edit")}
             </h2>
             <button
               onClick={onCancel}
@@ -467,7 +457,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   isDark ? 'text-slate-300' : 'text-gray-700'
                 }`}
               >
-                基本信息
+                {t("templates.basicInfo")}
               </h3>
               <div className="space-y-4">
                 <div>
@@ -476,13 +466,13 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       isDark ? 'text-slate-400' : 'text-gray-600'
                     }`}
                   >
-                    模板名称
+                    {t("templates.form.name")}
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="输入模板名称"
+                    placeholder={t("templates.form.name")}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all ${
                       isDark
                         ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500'
@@ -496,12 +486,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       isDark ? 'text-slate-400' : 'text-gray-600'
                     }`}
                   >
-                    描述
+                    {t("templates.form.description")}
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="输入模板描述"
+                    placeholder={t("templates.form.description")}
                     rows={2}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all resize-none ${
                       isDark
@@ -516,7 +506,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       isDark ? 'text-slate-400' : 'text-gray-600'
                     }`}
                   >
-                    分类
+                    {t("templates.form.category")}
                   </label>
                   <select
                     value={category}
@@ -527,11 +517,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         : 'bg-white border-gray-200 text-gray-900'
                     }`}
                   >
-                    {CATEGORY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
+                    <option value="learning">{t("templates.category.learning")}</option>
+                    <option value="story">{t("templates.category.story")}</option>
+                    <option value="project">{t("templates.category.project")}</option>
+                    <option value="analysis">{t("templates.category.analysis")}</option>
+                    <option value="custom">{t("templates.category.custom")}</option>
                   </select>
                 </div>
               </div>
@@ -550,7 +540,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     isDark ? 'text-slate-300' : 'text-gray-700'
                   }`}
                 >
-                  节点列表 ({nodes.length})
+                  {t("templates.nodeList", { count: nodes.length })}
                 </h3>
                 <button
                   onClick={() => handleAddNode()}
@@ -561,7 +551,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   }`}
                 >
                   <Plus size={14} />
-                  添加节点
+                  {t("templates.node.addChild")}
                 </button>
               </div>
 
@@ -571,7 +561,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     isDark ? 'text-slate-500' : 'text-gray-500'
                   }`}
                 >
-                  暂无节点，点击上方按钮添加
+                  {t("templates.noNodesClickToAdd")}
                 </div>
               ) : (
                 <div
@@ -588,6 +578,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       allNodes={nodes}
                       depth={0}
                       isDark={isDark}
+                      t={t}
                       onUpdate={handleUpdateNode}
                       onDelete={handleDeleteNode}
                       onAddChild={handleAddChildNode}
@@ -610,7 +601,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     isDark ? 'text-slate-300' : 'text-gray-700'
                   }`}
                 >
-                  边关系 ({edges.length})
+                  {t("templates.edgeList", { count: edges.length })}
                 </h3>
                 <button
                   onClick={handleAddEdge}
@@ -622,7 +613,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   }`}
                 >
                   <Plus size={14} />
-                  添加边
+                  {t("templates.edge.addEdge")}
                 </button>
               </div>
 
@@ -632,7 +623,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     isDark ? 'text-slate-500' : 'text-gray-500'
                   }`}
                 >
-                  暂无边关系
+                  {t("templates.empty.noEdges")}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -643,6 +634,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       edgeIndex={index}
                       nodes={nodes}
                       isDark={isDark}
+                      t={t}
                       onUpdate={(updates) => handleUpdateEdge(index, updates)}
                       onDelete={() => handleDeleteEdge(index)}
                     />
@@ -668,7 +660,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
           >
-            取消
+            {t("templates.button.cancel")}
           </button>
           <button
             onClick={handleSave}
@@ -677,7 +669,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               isMobile ? 'w-full shadow-lg shadow-blue-600/20' : ''
             }`}
           >
-            保存修改
+            {t("templates.button.save")}
           </button>
         </div>
       </div>

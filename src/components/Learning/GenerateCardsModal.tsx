@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2, BrainCircuit, Settings, AlertCircle, Cloud, CloudUpload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { isCapacitorMobile } from '../../config/mobileApiConfig';
 import { mobileAIService } from '../../services/mobile/aiService';
 
@@ -25,6 +26,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
   nodeTitle,
   generateProgress
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [types, setTypes] = useState<string[]>(['qa', 'choice', 'true_false', 'multi_choice', 'fill_in_the_blank']);
   const [count, setCount] = useState(10);
@@ -77,6 +79,15 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
 
   if (!isOpen) return null;
 
+  const cardTypes = [
+    { id: 'qa', label: t('learning.generateCards.typeQA') },
+    { id: 'choice', label: t('learning.generateCards.typeChoice') },
+    { id: 'true_false', label: t('learning.generateCards.typeTrueFalse') },
+    { id: 'multi_choice', label: t('learning.generateCards.typeMultiChoice') },
+    { id: 'fill_in_the_blank', label: t('learning.generateCards.typeFillBlank') },
+    { id: 'essay', label: t('learning.generateCards.typeEssay') }
+  ];
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border dark:border-slate-800">
@@ -84,14 +95,14 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
                <BrainCircuit size={24} />
-               <h3 className="text-xl font-bold">题目生成配置</h3>
+               <h3 className="text-xl font-bold">{t('learning.generateCards.title')}</h3>
              </div>
              <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
                <X size={20} />
              </button>
           </div>
           <p className="text-sm text-slate-500 mt-2">
-            正在为 <span className="font-semibold text-slate-700 dark:text-slate-300">"{nodeTitle}"</span> 配置挑战题目
+            {t('learning.generateCards.configuring', { title: nodeTitle })}
           </p>
         </div>
         
@@ -100,17 +111,10 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
           <div className="space-y-4">
             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-              题目类型选择
+              {t('learning.generateCards.typeSelect')}
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'qa', label: '问答题' },
-                { id: 'choice', label: '单选题' },
-                { id: 'true_false', label: '判断题' },
-                { id: 'multi_choice', label: '多选题' },
-                { id: 'fill_in_the_blank', label: '填空题' },
-                { id: 'essay', label: '解答题' }
-              ].map(type => (
+              {cardTypes.map(type => (
                 <button 
                   key={type.id}
                   onClick={() => handleToggleType(type.id)}
@@ -131,9 +135,9 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
             <div className="flex justify-between items-center">
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-                  生成数量
+                  {t('learning.generateCards.countLabel')}
                 </label>
-                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-bold">{count} 题</span>
+                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-bold">{t('learning.generateCards.countUnit', { count })}</span>
             </div>
             <div className="px-2">
               <input 
@@ -159,9 +163,9 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 <AlertCircle size={12} className="text-red-600 dark:text-red-300" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold mb-1">请先在设置中配置 AI API Key</p>
+                <p className="font-semibold mb-1">{t('learning.generateCards.configureApiKey')}</p>
                 <p className="leading-relaxed opacity-80">
-                  移动端需要在设置中配置 AI 服务才能生成题目。
+                  {t('learning.generateCards.mobileAIRequired')}
                 </p>
               </div>
             </div>
@@ -183,8 +187,8 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
               </div>
               <p className="leading-relaxed">
                 {isMobile
-                  ? '题目将在本地生成并同步到云端。'
-                  : '任务将转入后台处理，您可以继续学习其他内容。'}
+                  ? t('learning.generateCards.localGenerate')
+                  : t('learning.generateCards.backgroundProcess')}
               </p>
             </div>
           )}
@@ -196,10 +200,10 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    正在生成题目...
+                    {t('learning.generateCards.generating')}
                   </span>
                   <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                    {generateProgress.current} / {generateProgress.total} 题
+                    {t('learning.generateCards.progress', { current: generateProgress.current, total: generateProgress.total })}
                   </span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
@@ -209,14 +213,14 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   />
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 text-center">
-                  请保持应用在前台运行
+                  {t('learning.generateCards.keepForeground')}
                 </p>
               </div>
               <button
                 onClick={onClose}
                 className="px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-sm font-bold transition-colors"
               >
-                隐藏
+                {t('learning.generateCards.hide')}
               </button>
             </>
           ) : (
@@ -226,7 +230,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                 disabled={isLoading}
                 className="px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-sm font-bold transition-colors"
               >
-                取消
+                {t('learning.generateCards.cancel')}
               </button>
               {isMobile && !isMobileAIConfigured ? (
                 <button
@@ -234,7 +238,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Settings size={18} />
-                  前往设置
+                  {t('learning.generateCards.goToSettings')}
                 </button>
               ) : (
                 <button
@@ -243,7 +247,7 @@ export const GenerateCardsModal: React.FC<GenerateCardsModalProps> = ({
                   className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                  开始生成
+                  {t('learning.generateCards.startGenerate')}
                 </button>
               )}
             </>

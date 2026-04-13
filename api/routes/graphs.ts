@@ -63,6 +63,7 @@ const batchCreateDomainGraphsSchema = z.object({
     .min(1)
     .max(30),
   domain: z.string().max(255).optional(),
+  domain_id: z.string().uuid().optional(),
   relations: z
     .array(
       z.object({
@@ -1359,7 +1360,7 @@ router.post(
   requireAuth,
   validate({ body: batchCreateDomainGraphsSchema }),
   async (req: AuthRequest, res: Response) => {
-    const { graphs, domain, relations } = req.body;
+    const { graphs, domain, domain_id, relations } = req.body;
     const userId = req.user.id;
     const supabase = req.supabase!;
 
@@ -1378,7 +1379,55 @@ router.post(
 
       const titleToIdMap = new Map<string, string>();
 
-      // 先查询所有现有图谱，建立标题到 ID 的映射
+      let resolvedDomainId: string | null = null;
+      let resolvedDomainName: string | null = null;
+
+      if (domain_id) {
+        const { data: existingDomain, error: domainError } = await supabase
+          .from("domains")
+          .select("id, name")
+          .eq("id", domain_id)
+          .maybeSingle();
+
+        if (domainError) {
+          logger.error("Failed to query domain by ID:", domainError);
+        } else if (existingDomain) {
+          resolvedDomainId = existingDomain.id;
+          resolvedDomainName = existingDomain.name;
+        }
+      } else if (domain) {
+        const { data: existingDomain, error: domainError } = await supabase
+          .from("domains")
+          .select("id, name")
+          .eq("name", domain)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (domainError) {
+          logger.error("Failed to query domain by name:", domainError);
+        } else if (existingDomain) {
+          resolvedDomainId = existingDomain.id;
+          resolvedDomainName = existingDomain.name;
+        } else {
+          const { data: newDomain, error: createDomainError } = await supabase
+            .from("domains")
+            .insert({
+              name: domain,
+              user_id: userId,
+              color: "#6366F1",
+            })
+            .select("id, name")
+            .single();
+
+          if (createDomainError || !newDomain) {
+            logger.warn("Failed to create domain:", createDomainError);
+          } else {
+            resolvedDomainId = newDomain.id;
+            resolvedDomainName = newDomain.name;
+          }
+        }
+      }
+
       const { data: allExistingGraphs, error: queryError } = await supabase
         .from("knowledge_graphs")
         .select("id, title")
@@ -1402,7 +1451,6 @@ router.post(
 
       for (const graphData of graphs) {
         try {
-          // 数据验证
           if (!graphData.title || typeof graphData.title !== "string") {
             throw new Error(
               `Invalid data: title is required and must be a string`,
@@ -1434,7 +1482,7 @@ router.post(
                 user_id: userId,
                 title: graphData.title,
                 description: graphData.description || "",
-                domain: domain || null,
+                domain: resolvedDomainName || null,
                 embedding: duplicateCheck.embedding,
               })
               .select()
@@ -1444,6 +1492,24 @@ router.post(
               throw new Error(
                 `Database error: ${createError?.message || "Failed to create graph"}`,
               );
+            }
+
+            if (resolvedDomainId) {
+              const { error: domainAssocError } = await supabase
+                .from("graph_domains")
+                .insert({
+                  graph_id: newGraph.id,
+                  domain_id: resolvedDomainId,
+                  is_primary: true,
+                });
+
+              if (domainAssocError) {
+                logger.warn("Failed to create graph_domains association:", {
+                  graphId: newGraph.id,
+                  domainId: resolvedDomainId,
+                  error: domainAssocError.message,
+                });
+              }
             }
 
             results.push({
@@ -1457,7 +1523,6 @@ router.post(
           const errorMessage =
             error instanceof Error ? error.message : String(error);
 
-          // 分类错误类型
           let errorReason: "duplicate" | "db_error" | "invalid_data";
           if (
             errorMessage.toLowerCase().includes("duplicate") ||
@@ -1486,7 +1551,6 @@ router.post(
             { reason: errorReason },
           );
 
-          // 继续处理下一个，不中断整个流程
           continue;
         }
       }

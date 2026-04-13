@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Bot, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   agentApi,
   type AgentSession,
@@ -38,6 +39,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
   onGraphsMerged,
   analysisMode: initialAnalysisMode,
 }) => {
+  const { t } = useTranslation();
   const [skills, setSkills] = useState<SkillDefinition[]>([]);
   const [selectedSkill, setSelectedSkill] = useState<SkillDefinition | null>(null);
   const [session, setSession] = useState<AgentSession | null>(null);
@@ -55,8 +57,8 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
   const effectiveGraphIds = useMemo(() => selectedGraphIds, [selectedGraphIds]);
   const effectiveGraphTitles = useMemo(() => {
     if (graphTitles.length > 0) return graphTitles;
-    return effectiveGraphIds.map((_, index) => `图谱 ${index + 1}`);
-  }, [graphTitles, effectiveGraphIds]);
+    return effectiveGraphIds.map((_, index) => t('graphMap.agentAnalysis.graphNumber', { number: index + 1 }));
+  }, [graphTitles, effectiveGraphIds, t]);
 
   const estimatedTokens: TokenEstimation = useMemo(() => {
     const graphCount = effectiveGraphIds.length || 1;
@@ -207,7 +209,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
             )}
             <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {step === 'execute' && selectedSkill ? selectedSkill.name : 'Agent 分析'}
+              {step === 'execute' && selectedSkill ? selectedSkill.name : t('graphMap.agentAnalysis.title')}
             </h2>
           </div>
           <button
@@ -255,7 +257,7 @@ export const AgentAnalysisPanel: React.FC<AgentAnalysisPanelProps> = ({
               {isLoading && !session?.result && (
                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>正在分析...</span>
+                  <span>{t('graphMap.agentAnalysis.analyzing')}</span>
                 </div>
               )}
 

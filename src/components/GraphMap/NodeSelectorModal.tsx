@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search, Check, ChevronDown, ChevronRight, Loader2, Network, BookOpen } from 'lucide-react';
 import { useTheme } from '../../hooks';
 import { useGraphData } from '../../hooks/queries';
@@ -28,14 +29,6 @@ const levelColors: Record<string, string> = {
   leaf: 'bg-green-500',
 };
 
-const levelLabels: Record<string, string> = {
-  root: '核心主题',
-  core: '主要概念',
-  sub: '细分知识',
-  normal: '具体内容',
-  leaf: '实例细节',
-};
-
 export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
   isOpen,
   onClose,
@@ -43,6 +36,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
   graphId,
   graphTitle,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,7 +53,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
     graphData.nodes.forEach((node: Node) => {
       nodeMap.set(node.knowledge_point_id, {
         id: node.knowledge_point_id,
-        title: node.title || '未命名节点',
+        title: node.title || t('nodeSelector.unnamedNode'),
         level: node.level || 'leaf',
         children: [],
       });
@@ -81,7 +75,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
     });
 
     return rootNodes;
-  }, [graphData]);
+  }, [graphData, t]);
 
   const filteredNodes = useMemo(() => {
     if (!searchTerm) return null;
@@ -156,6 +150,10 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
     }
   };
 
+  const getLevelLabel = (level: string) => {
+    return t(`nodeSelector.levelLabels.${level}`, { defaultValue: level });
+  };
+
   const renderTreeNode = (node: TreeNode, depth: number = 0) => {
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedIds.includes(node.id);
@@ -205,7 +203,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
 
           <div
             className={`w-2 h-2 rounded-full ${levelColors[node.level] || 'bg-gray-400'}`}
-            title={levelLabels[node.level] || node.level}
+            title={getLevelLabel(node.level)}
           />
 
           <span
@@ -237,7 +235,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
     if (filteredNodes.length === 0) {
       return (
         <div className={`text-center py-8 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-          没有找到匹配的知识点
+          {t('nodeSelector.noResults')}
         </div>
       );
     }
@@ -274,7 +272,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
 
               <div
                 className={`w-2 h-2 rounded-full ${levelColors[node.level || 'leaf']}`}
-                title={levelLabels[node.level || 'leaf']}
+                title={getLevelLabel(node.level || 'leaf')}
               />
 
               <div className="flex-1 min-w-0">
@@ -305,14 +303,14 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
               <BookOpen size={24} />
-              <h3 className="text-xl font-bold">选择知识点</h3>
+              <h3 className="text-xl font-bold">{t('nodeSelector.title')}</h3>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
               <X size={20} />
             </button>
           </div>
           <p className="text-sm text-slate-500 mt-2">
-            从 <span className="font-semibold text-slate-700 dark:text-slate-300">"{graphTitle}"</span> 选择要生成题目的知识点
+            {t('nodeSelector.selectFrom', { title: graphTitle })}
           </p>
         </div>
 
@@ -324,8 +322,8 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
           ) : nodeCount === 0 ? (
             <div className={`text-center py-12 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
               <Network size={48} className="mx-auto mb-3 opacity-50" />
-              <p className="text-lg font-medium">该图谱暂无知识点</p>
-              <p className="text-sm mt-1">请先在图谱编辑器中添加知识点</p>
+              <p className="text-lg font-medium">{t('nodeSelector.noNodes')}</p>
+              <p className="text-sm mt-1">{t('nodeSelector.noNodesHint')}</p>
             </div>
           ) : (
             <>
@@ -336,7 +334,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
                 />
                 <input
                   type="text"
-                  placeholder="搜索知识点..."
+                  placeholder={t('nodeSelector.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={`w-full pl-9 pr-4 py-2 rounded-lg border text-sm ${
@@ -349,13 +347,13 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
 
               <div className="flex items-center justify-between">
                 <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  已选择 <span className="font-bold text-indigo-600">{selectedIds.length}</span> 个知识点
+                  {t('nodeSelector.selected', { count: selectedIds.length })}
                 </div>
                 <button
                   onClick={toggleSelectAll}
                   className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                  {selectedIds.length === nodeCount ? '取消全选' : '全选'}
+                  {selectedIds.length === nodeCount ? t('nodeSelector.deselectAll') : t('nodeSelector.selectAll')}
                 </button>
               </div>
 
@@ -372,7 +370,7 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
                   ) : (
                     <div className={`text-center py-8 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
                       <Network size={32} className="mx-auto mb-2 opacity-50" />
-                      <p>该图谱暂无知识点</p>
+                      <p>{t('nodeSelector.noNodes')}</p>
                     </div>
                   )}
                 </div>
@@ -387,14 +385,14 @@ export const NodeSelectorModal: React.FC<NodeSelectorModalProps> = ({
               onClick={onClose}
               className="px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-sm font-bold transition-colors"
             >
-              取消
+              {t('nodeSelector.cancel')}
             </button>
             <button
               onClick={handleConfirm}
               disabled={selectedIds.length === 0}
               className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98]"
             >
-              确认选择
+              {t('nodeSelector.confirm')}
               {selectedIds.length > 0 && (
                 <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
                   {selectedIds.length}

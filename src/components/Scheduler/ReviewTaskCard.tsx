@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Calendar,
 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import type { PendingReviewTask } from "@shared/types";
 
 interface ReviewTaskCardProps {
@@ -19,98 +20,99 @@ interface ReviewTaskCardProps {
   onSkip: () => void;
 }
 
-const URGENCY_CONFIG = {
-  overdue: {
-    label: "已过期",
-    color: "text-red-500 dark:text-red-400",
-    bg: "bg-red-100 dark:bg-red-500/20",
-    border: "border-red-300 dark:border-red-400",
-    icon: AlertTriangle,
-  },
-  today: {
-    label: "今天",
-    color: "text-amber-500 dark:text-amber-400",
-    bg: "bg-amber-100 dark:bg-amber-500/20",
-    border: "border-amber-300 dark:border-amber-400",
-    icon: Clock,
-  },
-  upcoming: {
-    label: "即将到期",
-    color: "text-blue-500 dark:text-blue-400",
-    bg: "bg-blue-100 dark:bg-blue-500/20",
-    border: "border-blue-300 dark:border-blue-400",
-    icon: Calendar,
-  },
-  future: {
-    label: "计划中",
-    color: "text-emerald-500 dark:text-emerald-400",
-    bg: "bg-emerald-100 dark:bg-emerald-500/20",
-    border: "border-emerald-300 dark:border-emerald-400",
-    icon: CheckCircle2,
-  },
-};
-
-const QUALITY_LABELS = [
-  { value: 0, label: "完全忘记", color: "text-red-500" },
-  { value: 1, label: "印象模糊", color: "text-orange-500" },
-  { value: 2, label: "勉强记得", color: "text-amber-500" },
-  { value: 3, label: "基本掌握", color: "text-yellow-500" },
-  { value: 4, label: "熟练掌握", color: "text-lime-500" },
-  { value: 5, label: "完全掌握", color: "text-green-500" },
-];
-
-const getMasteryLabel = (level: number): { label: string; color: string } => {
-  if (level < 0.2) return { label: "初学", color: "text-slate-500" };
-  if (level < 0.4) return { label: "入门", color: "text-blue-500" };
-  if (level < 0.6) return { label: "熟悉", color: "text-cyan-500" };
-  if (level < 0.8) return { label: "熟练", color: "text-emerald-500" };
-  return { label: "精通", color: "text-purple-500" };
-};
-
-const formatNextReviewDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = date.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) return `已过期 ${Math.abs(diffDays)} 天`;
-  if (diffDays === 0) return "今天";
-  if (diffDays === 1) return "明天";
-  if (diffDays <= 7) return `${diffDays} 天后`;
-  if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} 周后`;
-  return `${Math.ceil(diffDays / 30)} 个月后`;
-};
-
-const estimateNextInterval = (
-  quality: number,
-  currentInterval: number,
-  easeFactor: number
-): number => {
-  if (quality < 3) return 1;
-  
-  let newEaseFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  newEaseFactor = Math.max(1.3, newEaseFactor);
-
-  let newInterval: number;
-  if (currentInterval === 0) {
-    newInterval = 1;
-  } else if (currentInterval === 1) {
-    newInterval = 6;
-  } else {
-    newInterval = Math.round(currentInterval * newEaseFactor);
-  }
-
-  return newInterval;
-};
-
 export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
   task,
   knowledgePointTitle,
   onComplete,
   onSkip,
 }) => {
+  const { t } = useTranslation();
   const [selectedQuality, setSelectedQuality] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const URGENCY_CONFIG = {
+    overdue: {
+      label: t('scheduler.review.overdue'),
+      color: "text-red-500 dark:text-red-400",
+      bg: "bg-red-100 dark:bg-red-500/20",
+      border: "border-red-300 dark:border-red-400",
+      icon: AlertTriangle,
+    },
+    today: {
+      label: t('scheduler.review.today'),
+      color: "text-amber-500 dark:text-amber-400",
+      bg: "bg-amber-100 dark:bg-amber-500/20",
+      border: "border-amber-300 dark:border-amber-400",
+      icon: Clock,
+    },
+    upcoming: {
+      label: t('scheduler.review.upcoming'),
+      color: "text-blue-500 dark:text-blue-400",
+      bg: "bg-blue-100 dark:bg-blue-500/20",
+      border: "border-blue-300 dark:border-blue-400",
+      icon: Calendar,
+    },
+    future: {
+      label: t('scheduler.review.planned'),
+      color: "text-emerald-500 dark:text-emerald-400",
+      bg: "bg-emerald-100 dark:bg-emerald-500/20",
+      border: "border-emerald-300 dark:border-emerald-400",
+      icon: CheckCircle2,
+    },
+  };
+
+  const QUALITY_LABELS = [
+    { value: 0, label: t('scheduler.review.quality.0'), color: "text-red-500" },
+    { value: 1, label: t('scheduler.review.quality.1'), color: "text-orange-500" },
+    { value: 2, label: t('scheduler.review.quality.2'), color: "text-amber-500" },
+    { value: 3, label: t('scheduler.review.quality.3'), color: "text-yellow-500" },
+    { value: 4, label: t('scheduler.review.quality.4'), color: "text-lime-500" },
+    { value: 5, label: t('scheduler.review.quality.5'), color: "text-green-500" },
+  ];
+
+  const getMasteryLabel = (level: number): { label: string; color: string } => {
+    if (level < 0.2) return { label: t('scheduler.review.mastery.beginner'), color: "text-slate-500" };
+    if (level < 0.4) return { label: t('scheduler.review.mastery.introductory'), color: "text-blue-500" };
+    if (level < 0.6) return { label: t('scheduler.review.mastery.familiar'), color: "text-cyan-500" };
+    if (level < 0.8) return { label: t('scheduler.review.mastery.proficient'), color: "text-emerald-500" };
+    return { label: t('scheduler.review.mastery.master'), color: "text-purple-500" };
+  };
+
+  const formatNextReviewDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return t('scheduler.review.daysOverdue', { count: Math.abs(diffDays) });
+    if (diffDays === 0) return t('scheduler.review.today');
+    if (diffDays === 1) return t('scheduler.review.tomorrow');
+    if (diffDays <= 7) return t('scheduler.review.daysLater', { count: diffDays });
+    if (diffDays <= 30) return t('scheduler.review.weeksLater', { count: Math.ceil(diffDays / 7) });
+    return t('scheduler.review.monthsLater', { count: Math.ceil(diffDays / 30) });
+  };
+
+  const estimateNextInterval = (
+    quality: number,
+    currentInterval: number,
+    easeFactor: number
+  ): number => {
+    if (quality < 3) return 1;
+    
+    let newEaseFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    newEaseFactor = Math.max(1.3, newEaseFactor);
+
+    let newInterval: number;
+    if (currentInterval === 0) {
+      newInterval = 1;
+    } else if (currentInterval === 1) {
+      newInterval = 6;
+    } else {
+      newInterval = Math.round(currentInterval * newEaseFactor);
+    }
+
+    return newInterval;
+  };
 
   const urgencyConfig = URGENCY_CONFIG[task.urgency];
   const UrgencyIcon = urgencyConfig.icon;
@@ -156,27 +158,27 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             {urgencyConfig.label}
           </span>
           <span className="text-xs text-slate-400">
-            下次复习: {nextReviewText}
+            {t('scheduler.review.nextReview')}: {nextReviewText}
           </span>
         </div>
 
         <h4 className="font-medium text-slate-900 dark:text-white mb-3 text-lg">
-          {knowledgePointTitle || `知识点 #${task.knowledge_point_id.slice(0, 8)}`}
+          {knowledgePointTitle || t('scheduler.review.knowledgePoint', { id: task.knowledge_point_id.slice(0, 8) })}
         </h4>
 
         <div className="flex items-center gap-4 mb-4 text-sm">
           <div className="flex items-center gap-1.5">
             <Brain size={14} className="text-purple-500" />
-            <span className="text-slate-600 dark:text-slate-400">掌握程度:</span>
+            <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.masteryLevel')}:</span>
             <span className={`font-medium ${masteryInfo.color}`}>
               {masteryInfo.label}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <TrendingUp size={14} className="text-cyan-500" />
-            <span className="text-slate-600 dark:text-slate-400">间隔:</span>
+            <span className="text-slate-600 dark:text-slate-400">{t('scheduler.review.interval')}:</span>
             <span className="font-medium text-slate-700 dark:text-slate-300">
-              {task.interval_days} 天
+              {t('scheduler.review.days', { count: task.interval_days })}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -191,7 +193,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              回忆质量评分
+              {t('scheduler.review.qualityRating')}
             </span>
             {selectedQuality !== null && (
               <span
@@ -222,8 +224,8 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             ))}
           </div>
           <div className="flex justify-between mt-1 px-1">
-            <span className="text-[10px] text-slate-400">完全忘记</span>
-            <span className="text-[10px] text-slate-400">完全掌握</span>
+            <span className="text-[10px] text-slate-400">{t('scheduler.review.quality.0')}</span>
+            <span className="text-[10px] text-slate-400">{t('scheduler.review.quality.5')}</span>
           </div>
         </div>
 
@@ -236,12 +238,12 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             <div className="flex items-center gap-2 text-sm">
               <Calendar size={14} className="text-cyan-500" />
               <span className="text-slate-600 dark:text-slate-400">
-                预计下次复习:
+                {t('scheduler.review.estimatedNextReview')}:
               </span>
               <span className="font-medium text-slate-700 dark:text-slate-300">
                 {estimatedNextInterval === 1
-                  ? "明天"
-                  : `${estimatedNextInterval} 天后`}
+                  ? t('scheduler.review.tomorrow')
+                  : t('scheduler.review.daysLater', { count: estimatedNextInterval })}
               </span>
             </div>
           </motion.div>
@@ -266,7 +268,7 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             ) : (
               <>
                 <CheckCircle2 size={16} />
-                完成复习
+                {t('scheduler.review.completeReview')}
               </>
             )}
           </button>
@@ -281,14 +283,14 @@ export const ReviewTaskCard: React.FC<ReviewTaskCardProps> = ({
             "
           >
             <SkipForward size={16} />
-            跳过
+            {t('scheduler.review.skip')}
           </button>
         </div>
 
         {task.last_quality_score !== null && (
           <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <span>上次评分:</span>
+              <span>{t('scheduler.review.lastScore')}:</span>
               <div className="flex items-center gap-0.5">
                 {[0, 1, 2, 3, 4, 5].map((i) => {
                   const lastScore = task.last_quality_score;

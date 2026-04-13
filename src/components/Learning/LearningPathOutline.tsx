@@ -13,6 +13,7 @@ import {
   Loader2,
   Target,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useLearningPath } from "../../hooks/queries/useLearningPathQueries";
 import { NodeStatus } from "../../services/api/learningPaths";
 
@@ -24,36 +25,6 @@ interface LearningPathOutlineProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<
-  NodeStatus,
-  { label: string; color: string; bgColor: string; icon: React.ReactNode }
-> = {
-  pending: {
-    label: "待学习",
-    color: "text-gray-500",
-    bgColor: "bg-gray-100 dark:bg-gray-700",
-    icon: <Circle className="w-4 h-4" />,
-  },
-  in_progress: {
-    label: "学习中",
-    color: "text-blue-500",
-    bgColor: "bg-blue-100 dark:bg-blue-900/30",
-    icon: <Play className="w-4 h-4" />,
-  },
-  completed: {
-    label: "已完成",
-    color: "text-green-500",
-    bgColor: "bg-green-100 dark:bg-green-900/30",
-    icon: <CheckCircle2 className="w-4 h-4" />,
-  },
-  skipped: {
-    label: "已跳过",
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
-    icon: <SkipForward className="w-4 h-4" />,
-  },
-};
-
 export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
   learningPathId,
   currentNodeId,
@@ -61,9 +32,50 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
   onBackToGraph,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const { data: pathDetail, isLoading } = useLearningPath(learningPathId);
   const [clickedNodeId, setClickedNodeId] = useState<string | null>(null);
   const currentNodeRef = useRef<HTMLDivElement>(null);
+
+  const getStatusConfig = (status: NodeStatus) => {
+    switch (status) {
+      case "pending":
+        return {
+          label: t("learning.pathOutline.statusPending"),
+          color: "text-gray-500",
+          bgColor: "bg-gray-100 dark:bg-gray-700",
+          icon: <Circle className="w-4 h-4" />,
+        };
+      case "in_progress":
+        return {
+          label: t("learning.pathOutline.statusInProgress"),
+          color: "text-blue-500",
+          bgColor: "bg-blue-100 dark:bg-blue-900/30",
+          icon: <Play className="w-4 h-4" />,
+        };
+      case "completed":
+        return {
+          label: t("learning.pathOutline.statusCompleted"),
+          color: "text-green-500",
+          bgColor: "bg-green-100 dark:bg-green-900/30",
+          icon: <CheckCircle2 className="w-4 h-4" />,
+        };
+      case "skipped":
+        return {
+          label: t("learning.pathOutline.statusSkipped"),
+          color: "text-yellow-500",
+          bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+          icon: <SkipForward className="w-4 h-4" />,
+        };
+      default:
+        return {
+          label: status,
+          color: "text-gray-500",
+          bgColor: "bg-gray-100 dark:bg-gray-700",
+          icon: <Circle className="w-4 h-4" />,
+        };
+    }
+  };
 
   useEffect(() => {
     if (currentNodeRef.current) {
@@ -93,7 +105,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
       >
         <div className="flex flex-col items-center justify-center h-64 text-gray-500">
           <Route className="w-12 h-12 mb-4 text-gray-300" />
-          <p className="text-sm">学习路径不存在</p>
+          <p className="text-sm">{t("learning.pathOutline.pathNotFound")}</p>
         </div>
       </div>
     );
@@ -107,11 +119,13 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
   };
 
   const formatTime = (minutes: number) => {
-    if (!minutes) return "未知";
-    if (minutes < 60) return `${minutes}分钟`;
+    if (!minutes) return t("learning.pathOutline.unknown");
+    if (minutes < 60) return t("learning.pathOutline.minutesOnly", { minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+    return mins > 0 
+      ? t("learning.pathOutline.hoursAndMinutes", { hours, minutes: mins }) 
+      : t("learning.pathOutline.hoursOnly", { hours });
   };
 
   return (
@@ -125,7 +139,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
             className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-3 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            返回图谱大纲
+            {t("learning.pathOutline.backToGraph")}
           </button>
         )}
 
@@ -138,7 +152,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
               {pathDetail.title}
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {progress.completed_nodes} / {progress.total_nodes} 节点已完成
+              {t("learning.pathOutline.nodesCompleted", { completed: progress.completed_nodes, total: progress.total_nodes })}
             </p>
           </div>
         </div>
@@ -146,7 +160,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
         <div className="mt-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              学习进度
+              {t("learning.pathOutline.learningProgress")}
             </span>
             <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
               {(progress.progress_percentage || 0).toFixed(0)}%
@@ -166,7 +180,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
           <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <Target className="w-3 h-3" />
             <span>
-              目标完成日期：
+              {t("learning.pathOutline.targetDate")}
               {new Date(pathDetail.target_completion_date).toLocaleDateString(
                 "zh-CN",
               )}
@@ -179,12 +193,12 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
         <div className="space-y-1 px-2">
           {nodes.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
-              暂无学习节点
+              {t("learning.pathOutline.noNodes")}
             </div>
           ) : (
             nodes.map((node: any, index: number) => {
               const status: NodeStatus = node.status || "pending";
-              const statusConfig = STATUS_CONFIG[status];
+              const statusConfig = getStatusConfig(status);
               const isCurrentNode =
                 node.knowledge_point_id === currentNodeId ||
                 node.id === currentNodeId;
@@ -284,7 +298,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
                       {node.difficulty_level && (
                         <span className="flex items-center gap-1">
                           <BarChart3 className="w-3 h-3" />
-                          难度 {node.difficulty_level}/5
+                          {t("learning.pathOutline.difficulty", { level: node.difficulty_level })}
                         </span>
                       )}
                     </div>
@@ -321,7 +335,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
               {nodes.filter((n: any) => n.status === "completed").length}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
-              已完成
+              {t("learning.pathOutline.completed")}
             </div>
           </div>
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
@@ -329,7 +343,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
               {nodes.filter((n: any) => n.status === "in_progress").length}
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
-              学习中
+              {t("learning.pathOutline.inProgress")}
             </div>
           </div>
           <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
@@ -340,7 +354,7 @@ export const LearningPathOutline: React.FC<LearningPathOutlineProps> = ({
               }
             </div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">
-              待学习
+              {t("learning.pathOutline.pending")}
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import {
   PauseCircle,
   Clock,
 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { ScheduledTask } from "@shared/types";
 import { TaskCard } from "./TaskCard";
 
@@ -17,67 +18,69 @@ interface KanbanViewProps {
   onTaskClick?: (task: ScheduledTask) => void;
 }
 
-const KANBAN_COLUMNS = [
-  {
-    id: "pending",
-    title: "待办",
-    icon: Circle,
-    color: "slate",
-    gradient:
-      "from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600",
-    border: "border-slate-300 dark:border-slate-500/30",
-    bg: "bg-slate-100 dark:bg-slate-500/10",
-    text: "text-slate-600 dark:text-slate-400",
-  },
-  {
-    id: "in_progress",
-    title: "进行中",
-    icon: PlayCircle,
-    color: "blue",
-    gradient: "from-blue-400 to-cyan-400 dark:from-blue-500 dark:to-cyan-500",
-    border: "border-blue-300 dark:border-blue-500/30",
-    bg: "bg-blue-100 dark:bg-blue-500/10",
-    text: "text-blue-600 dark:text-blue-400",
-  },
-  {
-    id: "paused",
-    title: "已暂停",
-    icon: PauseCircle,
-    color: "amber",
-    gradient:
-      "from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500",
-    border: "border-amber-300 dark:border-amber-500/30",
-    bg: "bg-amber-100 dark:bg-amber-500/10",
-    text: "text-amber-600 dark:text-amber-400",
-  },
-  {
-    id: "completed",
-    title: "已完成",
-    icon: CheckCircle2,
-    color: "emerald",
-    gradient:
-      "from-emerald-400 to-teal-400 dark:from-emerald-500 dark:to-teal-500",
-    border: "border-emerald-300 dark:border-emerald-500/30",
-    bg: "bg-emerald-100 dark:bg-emerald-500/10",
-    text: "text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    id: "cancelled",
-    title: "已取消",
-    icon: XCircle,
-    color: "red",
-    gradient: "from-red-400 to-rose-400 dark:from-red-500 dark:to-rose-500",
-    border: "border-red-300 dark:border-red-500/30",
-    bg: "bg-red-100 dark:bg-red-500/10",
-    text: "text-red-600 dark:text-red-400",
-  },
-];
-
 export const KanbanView: React.FC<KanbanViewProps> = ({
   tasks,
   onTaskMove,
   onTaskClick,
 }) => {
+  const { t } = useTranslation();
+
+  const KANBAN_COLUMNS = [
+    {
+      id: "pending",
+      title: t('scheduler.kanban.todo'),
+      icon: Circle,
+      color: "slate",
+      gradient:
+        "from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600",
+      border: "border-slate-300 dark:border-slate-500/30",
+      bg: "bg-slate-100 dark:bg-slate-500/10",
+      text: "text-slate-600 dark:text-slate-400",
+    },
+    {
+      id: "in_progress",
+      title: t('scheduler.kanban.inProgress'),
+      icon: PlayCircle,
+      color: "blue",
+      gradient: "from-blue-400 to-cyan-400 dark:from-blue-500 dark:to-cyan-500",
+      border: "border-blue-300 dark:border-blue-500/30",
+      bg: "bg-blue-100 dark:bg-blue-500/10",
+      text: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      id: "paused",
+      title: t('scheduler.kanban.paused'),
+      icon: PauseCircle,
+      color: "amber",
+      gradient:
+        "from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500",
+      border: "border-amber-300 dark:border-amber-500/30",
+      bg: "bg-amber-100 dark:bg-amber-500/10",
+      text: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      id: "completed",
+      title: t('scheduler.kanban.completed'),
+      icon: CheckCircle2,
+      color: "emerald",
+      gradient:
+        "from-emerald-400 to-teal-400 dark:from-emerald-500 dark:to-teal-500",
+      border: "border-emerald-300 dark:border-emerald-500/30",
+      bg: "bg-emerald-100 dark:bg-emerald-500/10",
+      text: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      id: "cancelled",
+      title: t('scheduler.kanban.cancelled'),
+      icon: XCircle,
+      color: "red",
+      gradient: "from-red-400 to-rose-400 dark:from-red-500 dark:to-rose-500",
+      border: "border-red-300 dark:border-red-500/30",
+      bg: "bg-red-100 dark:bg-red-500/10",
+      text: "text-red-600 dark:text-red-400",
+    },
+  ];
+
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(
     null,
   );
@@ -198,7 +201,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                           {column.title}
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {column.tasks.length} 个任务
+                          {t('scheduler.kanban.taskCount', { count: column.tasks.length })}
                         </p>
                       </div>
                     </div>
@@ -216,7 +219,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                     <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
                       <Clock size={12} className={column.text} />
                       <span>
-                        预计:{" "}
+                        {t('scheduler.kanban.estimated')}{" "}
                         <span className="text-slate-800 dark:text-white font-medium">
                           {formatDuration(estimatedTime)}
                         </span>
@@ -232,10 +235,10 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
                         size={28}
                         className="mx-auto mb-2 opacity-30"
                       />
-                      <p className="text-sm">暂无任务</p>
+                      <p className="text-sm">{t('scheduler.kanban.noTasks')}</p>
                       {draggedTask && (
                         <p className="text-xs mt-1 text-slate-400 dark:text-slate-600">
-                          拖拽任务到此处
+                          {t('scheduler.kanban.dragHere')}
                         </p>
                       )}
                     </div>

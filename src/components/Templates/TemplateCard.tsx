@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Template, TemplateCategory } from '../../types';
 import { BookOpen, FileText, Briefcase, PieChart, Sparkles } from 'lucide-react';
 import { useTheme, useIsMobile } from "../../hooks";
@@ -36,19 +37,12 @@ const getCategoryColors = (isDark: boolean): Record<TemplateCategory, string> =>
   };
 };
 
-const categoryLabels: Record<TemplateCategory, string> = {
-  learning: '学习',
-  story: '故事',
-  project: '项目',
-  analysis: '分析',
-  custom: '自定义',
-};
-
 const TemplateCardComponent: React.FC<TemplateCardProps> = ({
   template,
   isSelected = false,
   onClick,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
   const categoryColors = getCategoryColors(isDark);
@@ -69,7 +63,7 @@ const TemplateCardComponent: React.FC<TemplateCardProps> = ({
       {template.is_system && (
         <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-3 right-3'}`}>
           <span className={`font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
-            系统预设
+            {t("templates.system")}
           </span>
         </div>
       )}
@@ -80,16 +74,16 @@ const TemplateCardComponent: React.FC<TemplateCardProps> = ({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className={`font-bold truncate ${isMobile ? 'text-sm' : ''} ${isDark ? 'text-white' : 'text-gray-900'}`}>{template.name}</h3>
-          <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>{categoryLabels[template.category]}模板</span>
+          <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>{t(`templates.category.${template.category}`)}{t("templates.template")}</span>
         </div>
       </div>
 
       <p className={`${isMobile ? 'text-xs line-clamp-1' : 'text-sm line-clamp-2'} ${isMobile ? '' : 'mb-3'} ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-        {template.description || '暂无描述'}
+        {template.description || t("common.noData")}
       </p>
 
       <div className={`flex items-center justify-between ${isMobile ? 'text-[10px]' : 'text-xs'} ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-        <span>{template.nodes?.length ?? 0} 个节点</span>
+        <span>{t("templates.nodeCount", { count: template.nodes?.length ?? 0 })}</span>
         {template.layout && (
           <span className={`px-2 py-1 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
             {template.layout.type}

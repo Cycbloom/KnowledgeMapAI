@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, AlertCircle, X, Check } from 'lucide-react';
 
@@ -25,6 +26,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   isDark,
 }) => {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -157,7 +159,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                       isDark ? 'text-slate-400' : 'text-gray-500'
                     }`}
                   >
-                    请输入 "{requiredText}" 以确认操作
+                    {t('confirmDialog.enterToConfirm', { text: requiredText })}
                   </label>
                   <input
                     ref={inputRef}
@@ -165,7 +167,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={`输入 ${requiredText}`}
+                    placeholder={t('confirmDialog.enterPlaceholder', { text: requiredText })}
                     className={`w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors ${
                       isDark
                         ? 'bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500 focus:border-red-500'
@@ -184,7 +186,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  取消
+                  {t('confirmDialog.cancel')}
                 </button>
                 <button
                   onClick={handleConfirm}
@@ -200,7 +202,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                   }`}
                 >
                   <Check size={14} />
-                  确认
+                  {t('confirmDialog.confirm')}
                 </button>
               </div>
             </div>

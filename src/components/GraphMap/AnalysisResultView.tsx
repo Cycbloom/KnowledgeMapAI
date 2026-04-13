@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Copy, Check, Link2, ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useTranslation } from 'react-i18next';
 import type { StructuredAnalysisResult } from '../../services/api/agent';
 import { agentApi } from '../../services/api/agent';
 
@@ -9,18 +10,19 @@ interface AnalysisResultViewProps {
   structuredResult?: StructuredAnalysisResult;
 }
 
-const relationTypeLabels: Record<string, string> = {
-  prerequisite: '前置依赖',
-  extension: '扩展',
-  related: '相关',
-  cross_domain: '跨领域',
-};
-
 export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, structuredResult }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [selectedRecs, setSelectedRecs] = useState<Set<string>>(new Set());
   const [isApplying, setIsApplying] = useState(false);
   const [appliedRecs, setAppliedRecs] = useState<Set<string>>(new Set());
+
+  const relationTypeLabels: Record<string, string> = {
+    prerequisite: t('graphMap.analysisResult.relationTypes.prerequisite'),
+    extension: t('graphMap.analysisResult.relationTypes.extension'),
+    related: t('graphMap.analysisResult.relationTypes.related'),
+    cross_domain: t('graphMap.analysisResult.relationTypes.crossDomain'),
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(result);
@@ -68,14 +70,14 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
           <CheckCircle2 className="w-5 h-5" />
-          <span className="font-medium">分析完成</span>
+          <span className="font-medium">{t('graphMap.analysisResult.complete')}</span>
         </div>
         <button
           onClick={handleCopy}
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          {copied ? '已复制' : '复制'}
+          {copied ? t('graphMap.analysisResult.copied') : t('graphMap.analysisResult.copy')}
         </button>
       </div>
 
@@ -88,18 +90,18 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
               <Link2 className="w-4 h-4" />
-              推荐的图谱关联
+              {t('graphMap.analysisResult.recommendedRelations')}
             </h4>
             <div className="flex items-center gap-2">
               <button
                 onClick={selectAll}
                 className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                全选
+                {t('common.selectAll')}
               </button>
               <span className="text-xs text-gray-400">|</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                已选择 {selectedRecs.size} 项
+                {t('graphMap.analysisResult.selected', { count: selectedRecs.size })}
               </span>
             </div>
           </div>
@@ -169,12 +171,12 @@ export const AnalysisResultView: React.FC<AnalysisResultViewProps> = ({ result, 
               {isApplying ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  应用中...
+                  {t('graphMap.analysisResult.applying')}
                 </>
               ) : (
                 <>
                   <Link2 className="w-4 h-4" />
-                  应用选中项 ({selectedRecs.size})
+                  {t('graphMap.analysisResult.applySelected', { count: selectedRecs.size })}
                 </>
               )}
             </button>

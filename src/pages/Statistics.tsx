@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStatistics, useUser, useGraphs } from '../hooks/queries';
 import { ActivityHeatmap } from '../components/Statistics/ActivityHeatmap';
 import {
@@ -12,7 +13,6 @@ import {
 } from 'recharts';
 import { BookOpen, Brain, Clock, TrendingUp } from 'lucide-react';
 
-// --- Metric Card Component ---
 const MetricCard = ({ title, value, subtext, icon: Icon, color }: any) => (
   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-start justify-between">
     <div>
@@ -26,17 +26,16 @@ const MetricCard = ({ title, value, subtext, icon: Icon, color }: any) => (
   </div>
 );
 
-// --- Forecast Chart Component ---
-const ForecastChart = ({ data }: { data: any[] }) => (
+const ForecastChart = ({ data, t }: { data: any[], t: any }) => (
   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
-    <h3 className="text-lg font-bold text-gray-800 mb-6">未来7天复习预测</h3>
+    <h3 className="text-lg font-bold text-gray-800 mb-6">{t('statistics.forecast.title')}</h3>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis 
             dataKey="date" 
-            tickFormatter={(value) => `${new Date(value).getDate().toString()  }日`}
+            tickFormatter={(value) => `${new Date(value).getDate().toString()}${t('statistics.day')}`}
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#64748b', fontSize: 12 }}
@@ -51,17 +50,16 @@ const ForecastChart = ({ data }: { data: any[] }) => (
             cursor={{ fill: '#f8fafc' }}
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
           />
-          <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} name="复习卡片数" />
+          <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} name={t('statistics.forecast.reviewCards')} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   </div>
 );
 
-// --- Growth Chart Component ---
-const GrowthChart = ({ data }: { data: any[] }) => (
+const GrowthChart = ({ data, t }: { data: any[], t: any }) => (
   <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
-    <h3 className="text-lg font-bold text-gray-800 mb-6">知识积累趋势 (近30天)</h3>
+    <h3 className="text-lg font-bold text-gray-800 mb-6">{t('statistics.growth.title')}</h3>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
@@ -74,7 +72,7 @@ const GrowthChart = ({ data }: { data: any[] }) => (
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <XAxis 
             dataKey="date" 
-            tickFormatter={(value, index) => index % 5 === 0 ? `${new Date(value).getMonth() + 1  }/${  new Date(value).getDate()}` : ''}
+            tickFormatter={(value, index) => index % 5 === 0 ? `${new Date(value).getMonth() + 1}/${new Date(value).getDate()}` : ''}
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#64748b', fontSize: 12 }}
@@ -95,7 +93,7 @@ const GrowthChart = ({ data }: { data: any[] }) => (
             strokeWidth={3}
             fillOpacity={1} 
             fill="url(#colorGrowth)" 
-            name="新增卡片"
+            name={t('statistics.growth.newCards')}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -103,15 +101,14 @@ const GrowthChart = ({ data }: { data: any[] }) => (
   </div>
 );
 
-// --- Forgetting Curve Chart Component ---
-const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionThreshold: number, avgStability: number }) => {
+const ForgettingCurveChart = ({ retentionThreshold, avgStability, t }: { retentionThreshold: number, avgStability: number, t: any }) => {
   const data = useMemo(() => {
     const points = [];
-    const stability = avgStability > 0 ? avgStability : 7; // Use real stability or default to 7
-    for (let t = 0; t <= 30; t += 0.5) {
-      const r = Math.exp(-t / stability);
+    const stability = avgStability > 0 ? avgStability : 7;
+    for (let i = 0; i <= 30; i += 0.5) {
+      const r = Math.exp(-i / stability);
       points.push({
-        day: t,
+        day: i,
         retention: Math.round(r * 100),
       });
     }
@@ -120,9 +117,9 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionT
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 h-80 flex flex-col">
-      <h3 className="text-lg font-bold text-gray-800 mb-2">遗忘曲线与记忆阈值</h3>
+      <h3 className="text-lg font-bold text-gray-800 mb-2">{t('statistics.forgettingCurve.title')}</h3>
       <p className="text-gray-500 text-xs mb-6">
-        基于 FSRS 算法的理论模型 (平均稳定性: {avgStability > 0 ? avgStability.toFixed(1) : 7}天)
+        {t('statistics.forgettingCurve.description', { stability: avgStability > 0 ? avgStability.toFixed(1) : 7 })}
       </p>
       <div className="flex-1 w-full min-h-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -142,15 +139,15 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionT
               tickFormatter={(val) => `${val}%`}
             />
             <RechartsTooltip 
-              formatter={(value) => [`${value}%`, '记忆保留率']}
-              labelFormatter={(label) => `第 ${label} 天`}
+              formatter={(value) => [`${value}%`, t('statistics.forgettingCurve.retentionRate')]}
+              labelFormatter={(label) => t('statistics.forgettingCurve.dayLabel', { day: label })}
               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
             />
             <ReferenceLine 
               y={retentionThreshold * 100} 
               stroke="#ef4444" 
               strokeDasharray="3 3" 
-              label={{ value: `目标 ${retentionThreshold * 100}%`, position: 'right', fill: '#ef4444', fontSize: 10 }} 
+              label={{ value: t('statistics.forgettingCurve.target', { percent: retentionThreshold * 100 }), position: 'right', fill: '#ef4444', fontSize: 10 }} 
             />
             <Line 
               type="monotone" 
@@ -158,7 +155,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionT
               stroke="#6366f1" 
               strokeWidth={3} 
               dot={false}
-              name="记忆保留率"
+              name={t('statistics.forgettingCurve.retentionRate')}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -168,6 +165,7 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability }: { retentionT
 };
 
 export const Statistics = () => {
+  const { t } = useTranslation();
   const { data: stats, isLoading, error } = useStatistics();
   const { data: userData } = useUser();
   const { data: graphsData } = useGraphs();
@@ -198,18 +196,17 @@ export const Statistics = () => {
     }));
   }, [stats]);
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">加载统计数据中...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">无法加载统计数据</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500">{t('statistics.loading')}</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{t('statistics.loadError')}</div>;
   if (!stats) return null;
 
   return (
     <div className="h-full overflow-y-auto p-8 bg-slate-50 dark:bg-slate-900">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">学习统计分析</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">全面掌握您的学习进度和知识库状态</p>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t('statistics.title')}</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">{t('statistics.subtitle')}</p>
       </div>
 
-      {/* Tab Navigation */}
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setActiveTab('overview')}
@@ -219,7 +216,7 @@ export const Statistics = () => {
               : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
           }`}
         >
-          总览
+          {t('statistics.tabs.overview')}
         </button>
         <button
           onClick={() => setActiveTab('graphs')}
@@ -229,66 +226,62 @@ export const Statistics = () => {
               : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
           }`}
         >
-          图谱分析
+          {t('statistics.tabs.graphs')}
         </button>
       </div>
 
       {activeTab === 'overview' ? (
         <>
-          {/* 1. Key Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <MetricCard 
-              title="总卡片数" 
+              title={t('statistics.metrics.totalCards')} 
               value={stats.metrics.totalCards} 
-              subtext="累计创建的知识点"
+              subtext={t('statistics.metrics.totalCardsSubtext')}
               icon={BookOpen} 
               color="bg-blue-500" 
             />
             <MetricCard 
-              title="今日待复习" 
+              title={t('statistics.metrics.dueToday')} 
               value={stats.metrics.dueToday} 
-              subtext="保持记忆的关键"
+              subtext={t('statistics.metrics.dueTodaySubtext')}
               icon={Clock} 
               color="bg-amber-500" 
             />
             <MetricCard 
-              title="已掌握/学习中" 
+              title={t('statistics.metrics.learning')} 
               value={stats.metrics.learning} 
-              subtext="正在内化的知识"
+              subtext={t('statistics.metrics.learningSubtext')}
               icon={Brain} 
               color="bg-green-500" 
             />
             <MetricCard 
-              title="平均记忆稳定性" 
+              title={t('statistics.metrics.avgStability')} 
               value={stats.metrics.avgStability} 
-              subtext="天 (FSRS算法估算)"
+              subtext={t('statistics.metrics.avgStabilitySubtext')}
               icon={TrendingUp} 
               color="bg-indigo-500" 
             />
           </div>
 
-          {/* 2. Activity Heatmap */}
           <div className="mb-8">
             <ActivityHeatmap data={stats.heatmap || []} />
           </div>
 
-          {/* 3. Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <ForecastChart data={stats.forecast || []} />
+            <ForecastChart data={stats.forecast || []} t={t} />
             <ForgettingCurveChart 
               retentionThreshold={retention} 
               avgStability={stats.metrics.avgStability}
+              t={t}
             />
           </div>
 
-          {/* 4. Growth Chart (Full Width) */}
           <div className="mb-8">
-            <GrowthChart data={stats.growth || []} />
+            <GrowthChart data={stats.growth || []} t={t} />
           </div>
         </>
       ) : (
         <>
-          {/* Graph Analysis Tab */}
           <div className="mb-8">
             <QuickStatsCards 
               totalNodes={totalNodesCount}

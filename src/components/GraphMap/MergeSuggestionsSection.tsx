@@ -10,6 +10,7 @@ import {
   CheckCircle,
   Layers,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { MergeSuggestion } from '../../services/api/agent';
 
 interface MergeSuggestionsSectionProps {
@@ -18,30 +19,6 @@ interface MergeSuggestionsSectionProps {
   onLink: (graphIds: string[]) => Promise<void>;
   onDismiss: (graphIds: string[]) => Promise<void>;
 }
-
-const actionConfig = {
-  merge: {
-    label: '合并',
-    icon: GitMerge,
-    color: 'text-purple-600 dark:text-purple-400',
-    bg: 'bg-purple-100 dark:bg-purple-900/30',
-    border: 'border-purple-200 dark:border-purple-800',
-  },
-  link: {
-    label: '关联',
-    icon: Link2,
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
-    border: 'border-blue-200 dark:border-blue-800',
-  },
-  keep_separate: {
-    label: '保持独立',
-    icon: XCircle,
-    color: 'text-gray-600 dark:text-gray-400',
-    bg: 'bg-gray-100 dark:bg-gray-700',
-    border: 'border-gray-200 dark:border-gray-600',
-  },
-};
 
 const getSimilarityColor = (score: number) => {
   if (score >= 0.8) return 'text-green-600 dark:text-green-400';
@@ -55,9 +32,34 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
   onLink,
   onDismiss,
 }) => {
+  const { t } = useTranslation();
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [completedActions, setCompletedActions] = useState<Map<string, 'merge' | 'link' | 'dismiss'>>(new Map());
+
+  const actionConfig = {
+    merge: {
+      label: t('graphMap.mergeSuggestions.actions.merge'),
+      icon: GitMerge,
+      color: 'text-purple-600 dark:text-purple-400',
+      bg: 'bg-purple-100 dark:bg-purple-900/30',
+      border: 'border-purple-200 dark:border-purple-800',
+    },
+    link: {
+      label: t('graphMap.mergeSuggestions.actions.link'),
+      icon: Link2,
+      color: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-100 dark:bg-blue-900/30',
+      border: 'border-blue-200 dark:border-blue-800',
+    },
+    keep_separate: {
+      label: t('graphMap.mergeSuggestions.actions.keepSeparate'),
+      icon: XCircle,
+      color: 'text-gray-600 dark:text-gray-400',
+      bg: 'bg-gray-100 dark:bg-gray-700',
+      border: 'border-gray-200 dark:border-gray-600',
+    },
+  };
 
   const toggleItem = (idx: number) => {
     setExpandedItems((prev) => {
@@ -110,9 +112,9 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-        <h4 className="font-medium text-gray-900 dark:text-white">合并建议</h4>
+        <h4 className="font-medium text-gray-900 dark:text-white">{t('graphMap.mergeSuggestions.title')}</h4>
         <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-          {suggestions.length} 项
+          {t('graphMap.mergeSuggestions.itemCount', { count: suggestions.length })}
         </span>
       </div>
 
@@ -160,7 +162,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                       ))}
                       {suggestion.graph_titles.length > 2 && (
                         <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                          +{suggestion.graph_titles.length - 2} 个
+                          {t('graphMap.mergeSuggestions.moreItems', { count: suggestion.graph_titles.length - 2 })}
                         </span>
                       )}
                     </div>
@@ -204,7 +206,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                     {suggestion.shared_concepts.length > 0 && (
                       <div className="mb-3">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                          共享概念
+                          {t('graphMap.mergeSuggestions.sharedConcepts')}
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {suggestion.shared_concepts.map((concept, i) => (
@@ -237,7 +239,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                         ) : (
                           <GitMerge className="w-3 h-3" />
                         )}
-                        合并
+                        {t('graphMap.mergeSuggestions.merge')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -256,7 +258,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                         ) : (
                           <Link2 className="w-3 h-3" />
                         )}
-                        关联
+                        {t('graphMap.mergeSuggestions.link')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -267,7 +269,7 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                         className="px-3 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-1"
                       >
                         <XCircle className="w-3 h-3" />
-                        忽略
+                        {t('graphMap.mergeSuggestions.dismiss')}
                       </button>
                     </div>
                   </div>
@@ -278,9 +280,9 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
                 <div className="px-3 pb-3">
                   <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
                     <CheckCircle className="w-3 h-3" />
-                    {completedAction === 'merge' && '已合并图谱'}
-                    {completedAction === 'link' && '已创建关联'}
-                    {completedAction === 'dismiss' && '已忽略建议'}
+                    {completedAction === 'merge' && t('graphMap.mergeSuggestions.merged')}
+                    {completedAction === 'link' && t('graphMap.mergeSuggestions.linked')}
+                    {completedAction === 'dismiss' && t('graphMap.mergeSuggestions.dismissed')}
                   </div>
                 </div>
               )}
@@ -291,8 +293,8 @@ export const MergeSuggestionsSection: React.FC<MergeSuggestionsSectionProps> = (
 
       <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
         <p className="text-xs text-purple-700 dark:text-purple-300">
-          <span className="font-medium">提示：</span>
-          合并将把选中的图谱合并为一个，关联则会创建图谱间的关系链接
+          <span className="font-medium">{t('graphMap.mergeSuggestions.tip')}</span>
+          {t('graphMap.mergeSuggestions.tipContent')}
         </p>
       </div>
     </div>

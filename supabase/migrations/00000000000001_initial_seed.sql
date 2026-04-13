@@ -602,6 +602,18 @@ Respond in Chinese.', NOW(), NOW()),
 {{#if domainDescription}}
 领域描述：{{domainDescription}}
 {{/if}}
+{{#if domainContext}}
+
+## 领域知识上下文
+
+{{domainContext}}
+{{/if}}
+{{#if parentDomainName}}
+
+## 父领域信息
+
+当前领域属于「{{parentDomainName}}」的子领域。在建议新领域时，请考虑领域层级关系。
+{{/if}}
 
 ## 注意事项
 
@@ -610,6 +622,7 @@ Respond in Chinese.', NOW(), NOW()),
 3. 生成的领域应该足够"大"，可以独立成为一个知识图谱
 4. 如果某个方向没有合适的独立领域，可以返回空数组
 5. 描述应该说明该领域包含什么内容，而不是它与当前领域的关系
+6. **领域归属建议**：为每个建议的领域提供一个 suggested_domain，表示该领域应该归属的父领域名称
 
 请用中文回复。', NOW(), NOW()),
 ('cross_graph_connection_analysis', 'system', null, null, '你是一个知识图谱专家。你的任务是分析两个知识图谱之间的节点关系，找出潜在的连接。

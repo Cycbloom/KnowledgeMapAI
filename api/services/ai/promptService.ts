@@ -421,13 +421,28 @@ Please respond in Chinese.`,
 Return a JSON object with the following structure:
 {
   "prerequisite": [
-    { "title": "领域名称", "description": "该领域的简要描述（说明包含什么内容）", "reason": "为什么是前置知识" }
+    { 
+      "title": "领域名称", 
+      "description": "该领域的简要描述（说明包含什么内容）", 
+      "reason": "为什么是前置知识",
+      "suggested_domain": "建议归属的父领域名称（可选，基于领域层级关系）"
+    }
   ],
   "extension": [
-    { "title": "领域名称", "description": "该领域的简要描述（说明包含什么内容）", "reason": "为什么是扩展知识" }
+    { 
+      "title": "领域名称", 
+      "description": "该领域的简要描述（说明包含什么内容）", 
+      "reason": "为什么是扩展知识",
+      "suggested_domain": "建议归属的父领域名称（可选，基于领域层级关系）"
+    }
   ],
   "related": [
-    { "title": "领域名称", "description": "该领域的简要描述（说明包含什么内容）", "reason": "为什么是相关知识" }
+    { 
+      "title": "领域名称", 
+      "description": "该领域的简要描述（说明包含什么内容）", 
+      "reason": "为什么是相关知识",
+      "suggested_domain": "建议归属的父领域名称（可选，基于领域层级关系）"
+    }
   ]
 }
 
@@ -436,6 +451,8 @@ Important:
 - title should be a concise domain name (2-10 characters preferred)
 - description should explain what the domain contains, NOT its relationship to the current domain
 - reason should explain why this domain has this relationship type
+- suggested_domain should be based on domain hierarchy (e.g., if current domain is "机器学习", a new domain "深度学习" could suggest "机器学习" as parent)
+- If the new domain is a sub-domain of current domain, set suggested_domain to current domain name
 - Respond in Chinese`,
 
   cross_graph_connection_analysis: `

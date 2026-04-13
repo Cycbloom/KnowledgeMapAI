@@ -1,5 +1,6 @@
 import React from 'react';
 import { Target, BarChart3, Zap, Loader2, Sparkles, FileText, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { TokenEstimation } from './utils/tokenEstimation';
 import { formatTokenCount, getTokenWarningLevel } from './utils/tokenEstimation';
 
@@ -24,30 +25,6 @@ interface AnalysisConfirmPanelProps {
   isLoading?: boolean;
 }
 
-const MODE_CONFIG: Record<AnalysisMode, { label: string; description: string; icon: React.ReactNode; color: string; bgColor: string }> = {
-  quick: {
-    label: '快速分析',
-    description: '快速扫描图谱，提供基础分析结果',
-    icon: <Zap className="w-4 h-4" />,
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-100 dark:bg-amber-900/40',
-  },
-  deep: {
-    label: '深度分析',
-    description: '渐进式获取信息，深度分析知识结构',
-    icon: <Target className="w-4 h-4" />,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-100 dark:bg-purple-900/40',
-  },
-  custom: {
-    label: '自定义分析',
-    description: '根据自定义目标进行针对性分析',
-    icon: <FileText className="w-4 h-4" />,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/40',
-  },
-};
-
 export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
   mode,
   skill,
@@ -60,10 +37,36 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
   onCustomPromptChange,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
+
+  const MODE_CONFIG: Record<AnalysisMode, { label: string; description: string; icon: React.ReactNode; color: string; bgColor: string }> = {
+    quick: {
+      label: t('graphMap.analysisConfirm.mode.quick'),
+      description: t('graphMap.analysisConfirm.mode.quickDesc'),
+      icon: <Zap className="w-4 h-4" />,
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-100 dark:bg-amber-900/40',
+    },
+    deep: {
+      label: t('graphMap.analysisConfirm.mode.deep'),
+      description: t('graphMap.analysisConfirm.mode.deepDesc'),
+      icon: <Target className="w-4 h-4" />,
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-100 dark:bg-purple-900/40',
+    },
+    custom: {
+      label: t('graphMap.analysisConfirm.mode.custom'),
+      description: t('graphMap.analysisConfirm.mode.customDesc'),
+      icon: <FileText className="w-4 h-4" />,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-100 dark:bg-blue-900/40',
+    },
+  };
+
   const modeConfig = MODE_CONFIG[mode];
   const warningLevel = getTokenWarningLevel(estimatedTokens);
   const displayTitles = graphTitles.length > 5 
-    ? [...graphTitles.slice(0, 5), `...还有 ${graphTitles.length - 5} 个图谱`]
+    ? [...graphTitles.slice(0, 5), t('graphMap.analysisConfirm.moreGraphs', { count: graphTitles.length - 5 })]
     : graphTitles;
 
   const warningColors = {
@@ -84,7 +87,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
         </button>
         <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Target className="w-5 h-5 text-indigo-500" />
-          确认分析
+          {t('graphMap.analysisConfirm.title')}
         </h3>
       </div>
 
@@ -94,7 +97,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
             {modeConfig.icon}
           </span>
           <span className="font-medium text-gray-700 dark:text-gray-300">
-            分析类型：
+            {t('graphMap.analysisConfirm.analysisType')}
           </span>
           <span className="text-gray-900 dark:text-white font-medium">
             {modeConfig.label}
@@ -108,7 +111,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
       {mode === 'custom' && onCustomPromptChange && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            分析目标
+            {t('graphMap.analysisConfirm.analysisGoal')}
           </label>
           <textarea
             value={customPrompt || ''}
@@ -116,10 +119,10 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
             disabled={isLoading}
             rows={3}
             className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 resize-none"
-            placeholder="描述你的分析目标，例如：分析这些图谱之间的知识关联，找出可以合并的重复内容..."
+            placeholder={t('graphMap.analysisConfirm.analysisGoalPlaceholder')}
           />
           {!customPrompt?.trim() && (
-            <p className="text-xs text-red-500 mt-1">请输入分析目标</p>
+            <p className="text-xs text-red-500 mt-1">{t('graphMap.analysisConfirm.enterAnalysisGoal')}</p>
           )}
         </div>
       )}
@@ -127,7 +130,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
       <div>
         <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           <BarChart3 className="w-4 h-4 text-indigo-500" />
-          <span>分析范围：已选择 {selectedGraphIds.length} 个图谱</span>
+          <span>{t('graphMap.analysisConfirm.analysisScope', { count: selectedGraphIds.length })}</span>
         </div>
         {selectedGraphIds.length === 0 && (
           <div className="mb-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -135,10 +138,10 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
               <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                  未选中任何图谱
+                  {t('graphMap.analysisConfirm.noGraphSelected')}
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                  请在图谱地图上选择要分析的图谱，或将分析全部图谱（消耗较多 TOKEN）
+                  {t('graphMap.analysisConfirm.noGraphSelectedHint')}
                 </p>
               </div>
             </div>
@@ -164,14 +167,14 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
       <div className={`p-3 rounded-lg border ${warningColors[warningLevel]}`}>
         <div className="flex items-center gap-2 text-sm font-medium">
           <Zap className="w-4 h-4" />
-          <span>预估消耗：</span>
+          <span>{t('graphMap.analysisConfirm.estimatedConsumption')}</span>
           <span>
-            约 {formatTokenCount(estimatedTokens.min)} - {formatTokenCount(estimatedTokens.max)} tokens
+            {t('graphMap.analysisConfirm.tokenRange', { min: formatTokenCount(estimatedTokens.min), max: formatTokenCount(estimatedTokens.max) })}
           </span>
         </div>
         {warningLevel === 'high' && (
           <p className="text-xs mt-1 opacity-80">
-            建议减少图谱数量或选择快速分析模式
+            {t('graphMap.analysisConfirm.highTokenWarning')}
           </p>
         )}
       </div>
@@ -182,7 +185,7 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
           disabled={isLoading}
           className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50"
         >
-          取消
+          {t('common.cancel')}
         </button>
         <button
           onClick={onConfirm}
@@ -192,12 +195,12 @@ export const AnalysisConfirmPanel: React.FC<AnalysisConfirmPanelProps> = ({
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              分析中...
+              {t('graphMap.analysisConfirm.analyzing')}
             </>
           ) : (
             <>
               <Sparkles className="w-4 h-4" />
-              开始分析
+              {t('graphMap.analysisConfirm.startAnalysis')}
             </>
           )}
         </button>

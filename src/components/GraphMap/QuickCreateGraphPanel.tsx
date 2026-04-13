@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, ArrowRight, AlertCircle, Settings, Check } from 'lucide-react';
 import type { GraphRelationType, QuickCreateGraphRequest } from '../../types';
@@ -26,6 +27,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   defaultRelationType = 'related',
   domains,
 }) => {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [relationType, setRelationType] = useState<GraphRelationType>(defaultRelationType);
@@ -71,7 +73,6 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
           setShowRecommendations(false);
         }
       } catch {
-        // 静默失败，不影响手动选择
       } finally {
         setIsLoadingRecommendations(false);
       }
@@ -147,9 +148,9 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
   };
 
   const relationTypeOptions: Array<{ value: GraphRelationType; label: string; description: string; color: string }> = [
-    { value: 'prerequisite', label: '前置知识', description: '新图谱是当前图谱的前置知识', color: 'bg-blue-500' },
-    { value: 'extension', label: '扩展知识', description: '新图谱是当前图谱的扩展知识', color: 'bg-green-500' },
-    { value: 'related', label: '相关知识', description: '新图谱与当前图谱相关', color: 'bg-amber-500' },
+    { value: 'prerequisite', label: t('quickCreate.relation.prerequisite'), description: t('quickCreate.relation.prerequisiteDesc'), color: 'bg-blue-500' },
+    { value: 'extension', label: t('quickCreate.relation.extension'), description: t('quickCreate.relation.extensionDesc'), color: 'bg-green-500' },
+    { value: 'related', label: t('quickCreate.relation.related'), description: t('quickCreate.relation.relatedDesc'), color: 'bg-amber-500' },
   ];
 
   if (!isOpen) return null;
@@ -172,13 +173,13 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              创建新图谱
+              {t('quickCreate.title')}
             </h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowPromptConfig(true)}
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded"
-                title="Prompt 配置管理"
+                title={t('quickCreate.promptConfig')}
               >
                 <Settings className="w-5 h-5" />
               </button>
@@ -194,14 +195,14 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
           <div className="p-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                图谱名称 <span className="text-red-500">*</span>
+                {t('quickCreate.graphName')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  placeholder="输入图谱名称..."
+                  placeholder={t('quickCreate.namePlaceholder')}
                   className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent ${
                     isDuplicate 
                       ? 'border-amber-500 focus:ring-amber-500' 
@@ -217,9 +218,9 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                 <div className="mt-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <div className="text-sm">
-                    <p className="font-medium">主题重复</p>
+                    <p className="font-medium">{t('quickCreate.duplicateTopic')}</p>
                     <p className="mt-0.5">
-                      与现有图谱「{similarGraphs[0].title}」相似度为 {(similarGraphs[0].similarity * 100).toFixed(1)}%
+                      {t('quickCreate.similarTo', { title: similarGraphs[0].title, similarity: (similarGraphs[0].similarity * 100).toFixed(1) })}
                     </p>
                   </div>
                 </div>
@@ -228,12 +229,12 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                描述（可选）
+                {t('quickCreate.descriptionOptional')}
               </label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="描述这个知识领域..."
+                placeholder={t('quickCreate.descriptionPlaceholder')}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
@@ -244,12 +245,12 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                 <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <span className="truncate max-w-[150px]">{relatedGraphTitle}</span>
                   <ArrowRight className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">新图谱</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-medium">{t('quickCreate.newGraph')}</span>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    关系类型
+                    {t('quickCreate.relationType')}
                   </label>
                   <div className="space-y-2">
                     {relationTypeOptions.map(option => (
@@ -288,7 +289,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
               />
               <label htmlFor="autoGenerate" className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                 <Sparkles className="w-4 h-4 text-purple-500" />
-                <span>使用 AI 自动生成初始内容</span>
+                <span>{t('quickCreate.autoGenerate')}</span>
               </label>
             </div>
 
@@ -297,20 +298,20 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4" />
-                    AI 推荐领域
+                    {t('quickCreate.aiRecommendDomains')}
                   </span>
                   <button
                     onClick={() => setShowRecommendations(false)}
                     className="text-xs text-blue-500 hover:text-blue-700"
                   >
-                    忽略
+                    {t('quickCreate.ignore')}
                   </button>
                 </div>
 
                 {isLoadingRecommendations ? (
                   <div className="flex items-center gap-2 py-2">
                     <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                    <span className="text-sm text-blue-600 dark:text-blue-400">正在分析...</span>
+                    <span className="text-sm text-blue-600 dark:text-blue-400">{t('quickCreate.analyzing')}</span>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
@@ -346,13 +347,13 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
             )}
 
             {(!domains || domains.length === 0) && !showRecommendations && (
-              <p className="text-xs text-gray-400 dark:text-gray-500">暂无领域，请先在领域管理中创建</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t('quickCreate.noDomains')}</p>
             )}
 
             {domains && domains.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  所属领域（可选）
+                  {t('quickCreate.domainsOptional')}
                 </label>
                 <div className="max-h-[160px] overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-1.5 space-y-0.5">
                   {domains.map((domain) => {
@@ -390,7 +391,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -398,7 +399,7 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              创建图谱
+              {t('quickCreate.create')}
             </button>
           </div>
         </motion.div>

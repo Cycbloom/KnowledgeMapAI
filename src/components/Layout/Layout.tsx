@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
 import { useUser, useTasks } from "../../hooks/queries";
 import { useLogoutMutation } from "../../hooks/mutations";
@@ -70,6 +71,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 );
 
 export const Layout = () => {
+  const { t } = useTranslation();
   const { user, setUser, token } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -138,7 +140,6 @@ export const Layout = () => {
     }
   }, [userData, isUserLoading, setUser, token, handleLogout]);
 
-  // Daily Check-in
   useEffect(() => {
     if (user?.id) {
       const today = new Date().toISOString().split("T")[0];
@@ -167,8 +168,8 @@ export const Layout = () => {
     }
 
     const typeLabel = (type: string) => {
-      if (type === "generate_questions") return "自动生成题目";
-      if (type === "expand_graph") return "自动扩展图谱";
+      if (type === "generate_questions") return t('layout.autoGenerateQuestions');
+      if (type === "expand_graph") return t('layout.autoExpandGraph');
       return type;
     };
 
@@ -180,17 +181,17 @@ export const Layout = () => {
         if (t.status === "completed") {
           addMessage({
             type: "success",
-            content: `任务完成：${typeLabel(t.type)}`,
+            content: `${t('layout.taskCompleted')}：${typeLabel(t.type)}`,
             duration: 8000,
-            action: { label: "查看", onClick: () => navigate("/tasks") },
+            action: { label: t('common.view'), onClick: () => navigate("/tasks") },
           });
         }
         if (t.status === "failed") {
           addMessage({
             type: "error",
-            content: `任务失败：${typeLabel(t.type)}${t.error ? `（${t.error}）` : ""}`,
+            content: `${t('layout.taskFailed')}：${typeLabel(t.type)}${t.error ? `（${t.error}）` : ""}`,
             duration: 10000,
-            action: { label: "查看", onClick: () => navigate("/tasks") },
+            action: { label: t('common.view'), onClick: () => navigate("/tasks") },
           });
         }
       }
@@ -198,12 +199,12 @@ export const Layout = () => {
     }
 
     lastTaskStatusRef.current = updated;
-  }, [tasksData, addMessage, navigate]);
+  }, [tasksData, addMessage, navigate, t]);
 
   if (!!token && !user && isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="text-xl text-gray-600">加载中...</div>
+        <div className="text-xl text-gray-600">{t('common.loading')}</div>
       </div>
     );
   }
@@ -213,7 +214,6 @@ export const Layout = () => {
       className={`flex h-screen flex-col ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}
     >
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        {/* Sidebar - Desktop Only */}
         {!isFullScreenPage && !isMobile && (
           <div
             className={`
@@ -221,9 +221,8 @@ export const Layout = () => {
             ${isCollapsed ? "w-20" : "w-64"}
           `}
           >
-            {/* Sidebar Header (Desktop) */}
             <div className={`hidden md:flex p-4 text-xl font-bold border-b border-slate-700 items-center h-16 ${isCollapsed ? "justify-center" : "justify-between"}`}>
-              {!isCollapsed && <span className="truncate">知识图谱</span>}
+              {!isCollapsed && <span className="truncate">{t('layout.appName')}</span>}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className={`p-2 hover:bg-slate-800 rounded transition-colors`}
@@ -236,111 +235,107 @@ export const Layout = () => {
               </button>
             </div>
 
-            {/* Navigation Links */}
             <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
               <SidebarLink
                 to="/"
                 icon={BookOpen}
-                label="我的图谱"
+                label={t('layout.myGraphs')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/graph-map"
                 icon={Network}
-                label="图谱地图"
+                label={t('layout.graphMap')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/study"
                 icon={GraduationCap}
-                label="学习中心"
+                label={t('layout.studyCenter')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/learning-paths"
                 icon={Route}
-                label="学习路径"
+                label={t('layout.learningPaths')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/statistics"
                 icon={BarChart3}
-                label="统计中心"
+                label={t('layout.statistics')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/calendar"
                 icon={Calendar}
-                label="日历"
+                label={t('layout.calendar')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/achievements"
                 icon={Trophy}
-                label="成就系统"
+                label={t('layout.achievements')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/templates"
                 icon={Sparkles}
-                label="模板管理"
+                label={t('layout.templates')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/tasks"
                 icon={ListChecks}
-                label="任务中心"
+                label={t('layout.tasks')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/scheduler"
                 icon={Zap}
-                label="任务调度"
+                label={t('layout.scheduler')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/profile"
                 icon={User}
-                label="个人设置"
+                label={t('layout.profile')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
               <SidebarLink
                 to="/trash"
                 icon={Trash2}
-                label="回收站"
+                label={t('layout.trash')}
                 isCollapsed={isCollapsed}
                 isDark={isDark}
               />
             </nav>
 
-            {/* Sidebar Footer */}
             <div className="p-4 border-t border-slate-700 pb-[var(--safe-area-inset-bottom)]">
               <button
                 onClick={handleLogout}
                 className={`flex items-center ${isCollapsed ? "justify-center" : "space-x-2"} text-gray-400 hover:text-white w-full p-2 hover:bg-slate-800 rounded transition-colors`}
-                title="退出登录"
+                title={t('layout.logout')}
               >
                 <LogOut size={20} />
-                {!isCollapsed && <span>退出登录</span>}
+                {!isCollapsed && <span>{t('layout.logout')}</span>}
               </button>
             </div>
           </div>
         )}
 
-        {/* Main Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col w-full relative">
-          {/* Top Header */}
           {!isFullScreenPage && (
             <header
               className={`h-12 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-sm transition-colors border-b relative ${
@@ -349,17 +344,14 @@ export const Layout = () => {
                   : "bg-white border-gray-200"
               }`}
             >
-              {/* Left: Breadcrumb */}
               <div className="flex-shrink-0 flex items-center gap-2">
                 <Breadcrumb />
               </div>
 
-              {/* Center: Greeting & Stats - 绝对定位居中，移动端隐藏 */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
                 <HeaderGreeting />
               </div>
 
-              {/* Right: Status & User */}
               <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
                 <SSEStatusIndicator />
                 <NotificationCenter />
@@ -370,7 +362,7 @@ export const Layout = () => {
                       ? "text-slate-400 hover:text-yellow-400 hover:bg-slate-800"
                       : "text-gray-500 hover:text-yellow-600 hover:bg-yellow-50"
                   }`}
-                  title={isDark ? "切换到浅色模式" : "切换到深色模式"}
+                  title={isDark ? t('layout.switchToLightMode') : t('layout.switchToDarkMode')}
                 >
                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -381,7 +373,7 @@ export const Layout = () => {
                       ? "text-slate-400 hover:text-blue-400 hover:bg-slate-800"
                       : "text-gray-500 hover:text-blue-600 hover:bg-blue-50"
                   }`}
-                  title="操作指南"
+                  title={t('layout.helpGuide')}
                 >
                   <HelpCircle size={18} />
                 </button>

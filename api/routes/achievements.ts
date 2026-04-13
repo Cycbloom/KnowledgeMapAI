@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { achievementService } from '../services/achievementService';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '../../shared/types/errorCodes';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const achievements = await achievementService.getAchievements(userId);
     res.json(achievements);
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -23,13 +24,13 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
     const { type, value } = req.body;
     
     if (!type || value === undefined) {
-      throw new AppError('Missing type or value', 400);
+      throw new AppError(ErrorCodes.MISSING_TYPE_OR_VALUE);
     }
 
     const newUnlocks = await achievementService.checkAndUnlock(userId, type, value);
     res.json({ newUnlocks });
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -40,7 +41,7 @@ router.get('/daily-tasks', requireAuth, async (req: Request, res: Response) => {
     const tasks = await achievementService.getDailyTasks(userId);
     res.json(tasks);
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -54,7 +55,7 @@ router.post('/daily-tasks/check-in', requireAuth, async (req: Request, res: Resp
     await achievementService.updateDailyTask(userId, 'login', 1);
     res.json({ success: true });
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

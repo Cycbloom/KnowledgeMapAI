@@ -36,15 +36,15 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase!;
 
   if (!code || !scope || !template_content) {
-    throw new AppError('Missing required fields', 400, ErrorCodes.VALIDATION_ERROR);
+    throw new AppError(ErrorCodes.MISSING_REQUIRED_FIELDS);
   }
 
   if (scope === 'system') {
-    throw new AppError('Cannot modify system templates directly', 403, ErrorCodes.FORBIDDEN);
+    throw new AppError(ErrorCodes.CANNOT_MODIFY_SYSTEM_TEMPLATE);
   }
 
   if (scope === 'graph' && !graph_id) {
-    throw new AppError('Graph ID required for graph scope', 400, ErrorCodes.VALIDATION_ERROR);
+    throw new AppError(ErrorCodes.GRAPH_ID_REQUIRED);
   }
 
   try {

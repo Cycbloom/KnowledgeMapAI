@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { periodicTaskService } from '../services/scheduler/periodicTaskService';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { ErrorCodes } from '../../shared/types/errorCodes';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const tasks = await periodicTaskService.getPeriodicTasks(userId);
     res.json(tasks);
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -21,13 +22,13 @@ router.post('/check', requireAuth, async (req: Request, res: Response) => {
     const { taskType, value } = req.body;
     
     if (!taskType || value === undefined) {
-      throw new AppError('Missing taskType or value', 400);
+      throw new AppError(ErrorCodes.MISSING_TASK_TYPE_OR_VALUE);
     }
     
     const completedTasks = await periodicTaskService.updatePeriodicTaskProgress(userId, taskType, value);
     res.json({ completedTasks });
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -37,7 +38,7 @@ router.get('/pass', requireAuth, async (req: Request, res: Response) => {
     const progress = await periodicTaskService.getPassProgress(userId);
     res.json(progress);
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -47,13 +48,13 @@ router.post('/pass/claim', requireAuth, async (req: Request, res: Response) => {
     const { passId, level } = req.body;
     
     if (!passId || !level) {
-      throw new AppError('缺少通行证ID或等级', 400);
+      throw new AppError(ErrorCodes.MISSING_PASS_ID_OR_LEVEL);
     }
     
     const result = await periodicTaskService.claimPassReward(userId, passId, level);
     res.json(result);
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 
@@ -63,7 +64,7 @@ router.post('/streak/check', requireAuth, async (req: Request, res: Response) =>
     const result = await periodicTaskService.checkDailyTaskStreak(userId);
     res.json(result);
   } catch (error: any) {
-    throw new AppError(error.message, 500);
+    throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
   }
 });
 

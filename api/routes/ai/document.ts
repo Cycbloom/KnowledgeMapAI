@@ -268,15 +268,11 @@ router.post(
     );
 
     if (!file) {
-      throw new AppError("No file uploaded", 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(ErrorCodes.NO_FILE_UPLOADED);
     }
 
     if (!provider.hasKey) {
-      throw new AppError(
-        "AI provider not configured",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-      );
+      throw new AppError(ErrorCodes.AI_PROVIDER_NOT_CONFIGURED);
     }
 
     try {
@@ -389,7 +385,7 @@ router.post(
     const file = req.file;
 
     if (!file) {
-      throw new AppError("No image uploaded", 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(ErrorCodes.NO_IMAGE_UPLOADED);
     }
 
     try {

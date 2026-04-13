@@ -182,7 +182,7 @@ router.get(
     }
 
     if (!graphNode) {
-      throw new AppError("Node not found", 404, ErrorCodes.NODE_NOT_FOUND);
+      throw new AppError("节点不存在", 404, ErrorCodes.NODE_NOT_FOUND);
     }
 
     res.json(buildNodeFromGraphNode(graphNode));
@@ -361,7 +361,7 @@ router.get(
       }
 
       if (!graphNode) {
-        throw new AppError("Node not found", 404, ErrorCodes.NODE_NOT_FOUND);
+        throw new AppError("节点不存在", 404, ErrorCodes.NODE_NOT_FOUND);
       }
 
       const kp = graphNode.knowledge_points as any;

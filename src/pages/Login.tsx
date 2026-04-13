@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useLoginMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../hooks';
@@ -8,7 +9,13 @@ import { getAuthModeDisplay } from '../config/authConfig';
 import { credentialStorage } from '../utils/credentialStorage';
 import { getSupabaseClient, resetSupabaseClient } from '../lib/supabase';
 
+interface ApiErrorResponse {
+  code?: string;
+  message?: string;
+}
+
 export const Login = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -34,6 +41,25 @@ export const Login = () => {
     }
   };
 
+  const getErrorMessage = (err: any): string => {
+    if (err.response?.data) {
+      const apiError = err.response.data as ApiErrorResponse;
+      if (apiError.code) {
+        return t(`errors.${apiError.code}`, { defaultValue: apiError.message || t('errors.UNKNOWN_ERROR') });
+      }
+      if (apiError.message) {
+        return apiError.message;
+      }
+    }
+    if (err.message) {
+      if (err.message.includes('Invalid login credentials') || err.message.includes('invalid')) {
+        return t('errors.INVALID_CREDENTIALS');
+      }
+      return err.message;
+    }
+    return t('errors.UNKNOWN_ERROR');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -57,7 +83,7 @@ export const Login = () => {
       navigate('/');
     } catch (err: any) {
       console.error('[Login] 登录失败:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
     }
   };
 

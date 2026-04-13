@@ -195,7 +195,7 @@ router.all('/export/:format', requireAuth, async (req: AuthRequest, res: Respons
     return;
   }
 
-  throw new AppError('Unsupported format', 400, ErrorCodes.VALIDATION_ERROR);
+  throw new AppError('不支持的导出格式', 400, ErrorCodes.VALIDATION_ERROR);
 });
 
 // Import Markdown

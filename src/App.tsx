@@ -7,6 +7,7 @@ import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig } from "./config/authConfig";
 import { toUser } from "@shared/types/database";
+import "./i18n";
 
 // Lazy Load Pages
 const Login = lazy(() =>

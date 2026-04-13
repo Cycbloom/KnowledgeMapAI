@@ -84,14 +84,14 @@ router.post('/optimize', requireAuth, async (req: AuthRequest, res: Response) =>
   const { template_content, instruction } = req.body;
   
   if (!template_content) {
-    throw new AppError('Template content required', 400, ErrorCodes.VALIDATION_ERROR);
+    throw new AppError('模板内容不能为空', 400, ErrorCodes.VALIDATION_ERROR);
   }
 
   try {
     const provider = await getAIProviderForTask('text');
     
     if (!provider.hasKey) {
-      throw new AppError('AI Provider not configured', 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError('AI服务未配置', 500, ErrorCodes.INTERNAL_ERROR);
     }
 
     const messages: any[] = [

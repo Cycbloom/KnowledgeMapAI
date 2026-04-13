@@ -203,7 +203,7 @@ router.put(
       );
 
       if (!isOwner) {
-        throw new AppError("Permission denied", 403, ErrorCodes.FORBIDDEN);
+        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
       }
 
       const data = await knowledgePointService.update(
@@ -479,7 +479,7 @@ router.post(
         );
       }
       if (error.message === "Permission denied") {
-        throw new AppError("Permission denied", 403, ErrorCodes.FORBIDDEN);
+        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
       }
       throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
     }
@@ -495,7 +495,7 @@ router.get(
     const userProfile = await authService.getProfile(req.user.id);
 
     if (!userProfile || userProfile.role !== "admin") {
-      throw new AppError("Admin access required", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("需要管理员权限", 403, ErrorCodes.FORBIDDEN);
     }
 
     try {
@@ -520,7 +520,7 @@ router.post(
     const userProfile = await authService.getProfile(req.user.id);
 
     if (!userProfile || userProfile.role !== "admin") {
-      throw new AppError("Admin access required", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("需要管理员权限", 403, ErrorCodes.FORBIDDEN);
     }
 
     try {
@@ -558,7 +558,7 @@ router.post(
     const userProfile = await authService.getProfile(req.user.id);
 
     if (!userProfile || userProfile.role !== "admin") {
-      throw new AppError("Admin access required", 403, ErrorCodes.FORBIDDEN);
+      throw new AppError("需要管理员权限", 403, ErrorCodes.FORBIDDEN);
     }
 
     try {
@@ -757,7 +757,7 @@ router.post(
       );
 
       if (!isOwner) {
-        throw new AppError("Permission denied", 403, ErrorCodes.FORBIDDEN);
+        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
       }
 
       const result = await knowledgePointVersionService.rollback(
@@ -801,7 +801,7 @@ router.post(
       );
 
       if (!isOwner) {
-        throw new AppError("Permission denied", 403, ErrorCodes.FORBIDDEN);
+        throw new AppError("没有权限执行此操作", 403, ErrorCodes.FORBIDDEN);
       }
 
       const version = await knowledgePointVersionService.createManualVersion(

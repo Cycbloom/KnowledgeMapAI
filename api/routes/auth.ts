@@ -5,7 +5,7 @@ import { authService } from '../services/core/authService';
 import { validate } from '../middleware/validate';
 import { registerSchema, loginSchema, updateProfileSchema } from '../schemas/index';
 import { AppError } from '../middleware/errorHandler';
-import { ErrorCodes } from '../../shared/types/errorCodes';
+import { ErrorCodes, type ErrorCode } from '../../shared/types/errorCodes';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -48,31 +48,30 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
         errorStatus: (authError as any).status,
       });
       
-      const errorMap: Record<string, { message: string; status: number }> = {
-        'user_already_exists': { message: '该邮箱已被注册', status: 409 },
-        'email_address_invalid': { message: '邮箱格式不正确', status: 400 },
-        'invalid_password': { message: '密码不符合要求，请确保密码至少8位，包含大小写字母和数字', status: 400 },
-        'weak_password': { message: '密码强度不足，请使用更复杂的密码', status: 400 },
-        'signup_disabled': { message: '注册功能已禁用，请联系管理员', status: 403 },
-        'email_not_confirmed': { message: '请检查邮箱完成验证', status: 200 },
+      const errorMap: Record<string, ErrorCode> = {
+        'user_already_exists': ErrorCodes.EMAIL_ALREADY_EXISTS,
+        'email_address_invalid': ErrorCodes.INVALID_EMAIL,
+        'invalid_password': ErrorCodes.PASSWORD_REQUIREMENTS,
+        'weak_password': ErrorCodes.WEAK_PASSWORD,
+        'signup_disabled': ErrorCodes.SIGNUP_DISABLED,
       };
       
-      const errorCode = (authError as any).code || '';
-      const mappedError = errorMap[errorCode];
+      const supabaseErrorCode = (authError as any).code || '';
+      const errorCode = errorMap[supabaseErrorCode];
       
-      if (mappedError) {
-        throw new AppError(mappedError.message, mappedError.status, ErrorCodes.VALIDATION_ERROR);
+      if (errorCode) {
+        throw new AppError(errorCode);
       }
       
       if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
-        throw new AppError('该邮箱已被注册', 409, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(ErrorCodes.EMAIL_ALREADY_EXISTS);
       }
       
       if (authError.message.includes('password')) {
-        throw new AppError('密码不符合要求，请确保密码至少8位，包含大小写字母和数字', 400, ErrorCodes.VALIDATION_ERROR);
+        throw new AppError(ErrorCodes.PASSWORD_REQUIREMENTS);
       }
       
-      throw new AppError(authError.message, 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(ErrorCodes.REGISTER_FAILED);
     }
 
     if (!authData.user) {
@@ -174,8 +173,21 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response,
         errorCode: (error as any).code,
         errorStatus: (error as any).status,
       });
-      res.status(401).json({ error: error.message });
-      return;
+      
+      const errorMap: Record<string, ErrorCode> = {
+        'invalid_credentials': ErrorCodes.INVALID_CREDENTIALS,
+        'invalid_login_credentials': ErrorCodes.INVALID_CREDENTIALS,
+        'email_not_confirmed': ErrorCodes.EMAIL_NOT_CONFIRMED,
+        'too_many_requests': ErrorCodes.TOO_MANY_REQUESTS,
+        'user_not_found': ErrorCodes.USER_NOT_FOUND,
+        'invalid_password': ErrorCodes.INVALID_CREDENTIALS,
+        'sign_in_not_allowed': ErrorCodes.AUTH_FORBIDDEN,
+      };
+      
+      const supabaseErrorCode = (error as any).code || '';
+      const errorCode = errorMap[supabaseErrorCode] || ErrorCodes.LOGIN_FAILED;
+      
+      throw new AppError(errorCode);
     }
 
     logger.info('Login successful', {
@@ -218,7 +230,7 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
     const { refreshToken } = req.body;
     
     if (!refreshToken) {
-      throw new AppError('Refresh token missing', 400, ErrorCodes.VALIDATION_ERROR);
+      throw new AppError(ErrorCodes.MISSING_REFRESH_TOKEN);
     }
 
     const { data, error } = await supabaseAdmin.auth.refreshSession({
@@ -226,11 +238,11 @@ router.post('/refresh', async (req: Request, res: Response, next: import('expres
     });
 
     if (error) {
-      throw new AppError(error.message || 'Session refresh failed', 401, ErrorCodes.INVALID_TOKEN);
+      throw new AppError(ErrorCodes.TOKEN_REFRESH_EXPIRED);
     }
 
     if (!data.session) {
-       throw new AppError('Session refresh failed', 401, ErrorCodes.INVALID_TOKEN);
+       throw new AppError(ErrorCodes.SESSION_REFRESH_FAILED);
     }
 
     res.json({ session: data.session, user: data.user });
@@ -245,10 +257,10 @@ router.post('/logout', requireAuth, async (req: AuthRequest, res: Response, next
     const { error } = await supabaseAdmin.auth.admin.signOut(req.user.id);
 
     if (error) {
-      throw new AppError(error.message, 500, ErrorCodes.INTERNAL_ERROR);
+      throw new AppError(ErrorCodes.LOGOUT_FAILED);
     }
 
-    res.json({ message: 'Logged out successfully' });
+    res.json({ message: '退出登录成功' });
   } catch (error) {
     next(error);
   }

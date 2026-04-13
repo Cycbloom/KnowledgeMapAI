@@ -27,7 +27,7 @@ router.post('/', requireAuth, async (req, res) => {
       action.user_id = userId;
   } else if (action.scope === 'graph') {
       // Verify graph ownership
-    if (!action.graph_id) throw new AppError('Graph ID required for graph scope', 400, ErrorCodes.VALIDATION_ERROR);
+    if (!action.graph_id) throw new AppError('图谱级别操作需要提供图谱ID', 400, ErrorCodes.VALIDATION_ERROR);
     
     // Check if user owns graph
     const { data: graph, error } = await supabaseAdmin
@@ -37,11 +37,11 @@ router.post('/', requireAuth, async (req, res) => {
       .single();
 
     if (error || !graph) {
-      throw new AppError('Graph not found', 404, ErrorCodes.RESOURCE_NOT_FOUND);
+      throw new AppError('图谱不存在', 404, ErrorCodes.RESOURCE_NOT_FOUND);
     }
 
     if (graph.user_id !== userId) {
-      throw new AppError('Not authorized to create action for this graph', 403, ErrorCodes.FORBIDDEN);
+      throw new AppError('没有权限为此图谱创建操作', 403, ErrorCodes.FORBIDDEN);
     }
 
     action.user_id = userId; // Assign creator

@@ -1,5 +1,6 @@
 import { useState, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
 import { useUpdateProfileMutation } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
@@ -18,6 +19,7 @@ import {
   Trash2,
   ArrowLeft,
   Smartphone,
+  Globe,
 } from "lucide-react";
 import { AvailableModels } from "../types";
 import type { AIProviderType } from "@shared/types";
@@ -27,6 +29,7 @@ import type { MobileAIUserConfig } from "../services/mobile/aiService";
 
 export const Settings = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { token } = useStore();
   const { themeMode, setTheme } = useTheme();
   const { addMessage } = useMessageStore();
@@ -258,6 +261,42 @@ export const Settings = () => {
             >
               <Monitor className="w-6 h-6 mb-2" />
               <span className="font-medium text-sm">跟随系统</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Language Settings */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+          <div className="flex items-center gap-2 mb-4">
+            <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              {t('settings.language')}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => i18n.changeLanguage('zh-CN')}
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
+                i18n.language === "zh-CN" || i18n.language.startsWith("zh")
+                  ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
+                  : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+              }`}
+            >
+              <span className="text-2xl mb-2">中</span>
+              <span className="font-medium text-sm">{t('settings.chinese')}</span>
+            </button>
+
+            <button
+              onClick={() => i18n.changeLanguage('en-US')}
+              className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all min-h-[88px] ${
+                i18n.language === "en-US" || i18n.language.startsWith("en")
+                  ? "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
+                  : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100 dark:bg-slate-900/50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-700"
+              }`}
+            >
+              <span className="text-2xl mb-2">A</span>
+              <span className="font-medium text-sm">{t('settings.english')}</span>
             </button>
           </div>
         </div>

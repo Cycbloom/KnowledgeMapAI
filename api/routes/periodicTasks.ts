@@ -47,7 +47,7 @@ router.post('/pass/claim', requireAuth, async (req: Request, res: Response) => {
     const { passId, level } = req.body;
     
     if (!passId || !level) {
-      throw new AppError('Missing passId or level', 400);
+      throw new AppError('缺少通行证ID或等级', 400);
     }
     
     const result = await periodicTaskService.claimPassReward(userId, passId, level);

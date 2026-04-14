@@ -1671,6 +1671,7 @@ export const GraphMap = () => {
           graphs.find((g: Graph) => g.id === selectedGraphId)?.title
         }
         defaultRelationType={createGraphRelationType}
+        domains={domainTree}
       />
 
       <Suspense fallback={<LoadingFallback />}>

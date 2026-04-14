@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
 import {
   useCreateLearningPathMutation,
@@ -30,34 +31,34 @@ type PathStatus = LearningPathStatus | "all";
 
 const statusConfig: Record<
   PathStatus,
-  { label: string; color: string; bgColor: string; icon: React.ReactNode }
+  { labelKey: string; color: string; bgColor: string; icon: React.ReactNode }
 > = {
   all: {
-    label: "全部",
+    labelKey: "learningPaths.status.all",
     color: "text-gray-600 dark:text-gray-300",
     bgColor: "bg-gray-100 dark:bg-slate-700",
     icon: <Route size={16} />,
   },
   active: {
-    label: "进行中",
+    labelKey: "learningPaths.status.active",
     color: "text-blue-600 dark:text-blue-400",
     bgColor: "bg-blue-50 dark:bg-blue-900/20",
     icon: <Play size={16} />,
   },
   completed: {
-    label: "已完成",
+    labelKey: "learningPaths.status.completed",
     color: "text-green-600 dark:text-green-400",
     bgColor: "bg-green-50 dark:bg-green-900/20",
     icon: <CheckCircle2 size={16} />,
   },
   paused: {
-    label: "已暂停",
+    labelKey: "learningPaths.status.paused",
     color: "text-yellow-600 dark:text-yellow-400",
     bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
     icon: <Pause size={16} />,
   },
   archived: {
-    label: "已归档",
+    labelKey: "learningPaths.status.archived",
     color: "text-gray-500 dark:text-gray-400",
     bgColor: "bg-gray-100 dark:bg-slate-700",
     icon: <Archive size={16} />,
@@ -82,6 +83,7 @@ interface LearningPathItem {
 }
 
 export const LearningPaths = () => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { data: paths = [], isLoading } = useLearningPaths();
@@ -128,23 +130,23 @@ export const LearningPaths = () => {
       setNewPathDailyMinutes(30);
       setNewPathTargetDate("");
       setIsCreating(false);
-      addMessage({ type: "success", content: "学习路径创建成功!" });
+      addMessage({ type: "success", content: t("learningPaths.messages.createSuccess") });
     } catch (err: any) {
       addMessage({
         type: "error",
-        content: err.message || "创建学习路径失败",
+        content: err.message || t("learningPaths.messages.createFailed"),
       });
     }
   };
 
   const handleDeletePath = async (path: LearningPathItem) => {
-    if (!confirm(`确定要删除学习路径 "${path.title}" 吗？`)) return;
+    if (!confirm(t("learningPaths.messages.deleteConfirm", { title: path.title }))) return;
 
     try {
       await deleteMutation.mutateAsync(path.id);
-      addMessage({ type: "success", content: "学习路径已删除" });
+      addMessage({ type: "success", content: t("learningPaths.messages.deleteSuccess") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "删除学习路径失败" });
+      addMessage({ type: "error", content: err.message || t("learningPaths.messages.deleteFailed") });
     }
   };
 
@@ -157,9 +159,9 @@ export const LearningPaths = () => {
         id: path.id,
         data: { status: newStatus },
       });
-      addMessage({ type: "success", content: "状态已更新" });
+      addMessage({ type: "success", content: t("learningPaths.messages.statusUpdated") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "更新状态失败" });
+      addMessage({ type: "error", content: err.message || t("learningPaths.messages.statusUpdateFailed") });
     }
   };
 
@@ -168,10 +170,12 @@ export const LearningPaths = () => {
   };
 
   const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes < 60) return t("learningPaths.time.minutes", { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+    return mins > 0 
+      ? t("learningPaths.time.hoursMinutes", { hours, minutes: mins }) 
+      : t("learningPaths.time.hours", { count: hours });
   };
 
   const formatDate = (dateStr: string) => {
@@ -204,9 +208,9 @@ export const LearningPaths = () => {
               <h1
                 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                学习路径
+                {t("learningPaths.title")}
               </h1>
-              <p className="text-sm text-gray-500">管理你的学习计划</p>
+              <p className="text-sm text-gray-500">{t("learningPaths.subtitle")}</p>
             </div>
           </div>
           <button
@@ -221,7 +225,7 @@ export const LearningPaths = () => {
             className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
           >
             <Plus size={20} />
-            <span>新建路径</span>
+            <span>{t("learningPaths.actions.newPath")}</span>
           </button>
         </div>
 
@@ -233,7 +237,7 @@ export const LearningPaths = () => {
             />
             <input
               type="text"
-              placeholder="搜索学习路径..."
+              placeholder={t("learningPaths.search.placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all ${
@@ -258,7 +262,7 @@ export const LearningPaths = () => {
                 }`}
               >
                 {statusConfig[status].icon}
-                <span>{statusConfig[status].label}</span>
+                <span>{t(statusConfig[status].labelKey)}</span>
               </button>
             ))}
           </div>
@@ -273,20 +277,20 @@ export const LearningPaths = () => {
             <Route className="w-16 h-16 mb-4 opacity-30" />
             <p className="text-lg mb-2">
               {searchQuery || selectedStatus !== "all"
-                ? "未找到匹配的学习路径"
-                : "还没有学习路径"}
+                ? t("learningPaths.empty.noResults")
+                : t("learningPaths.empty.noPaths")}
             </p>
             <p className="text-sm mb-4">
               {searchQuery || selectedStatus !== "all"
-                ? "尝试更换搜索条件"
-                : "点击上方按钮创建你的第一个学习路径"}
+                ? t("learningPaths.empty.tryDifferent")
+                : t("learningPaths.empty.createFirst")}
             </p>
             {!searchQuery && selectedStatus === "all" && (
               <button
                 onClick={() => setIsCreating(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
               >
-                创建学习路径
+                {t("learningPaths.actions.createPath")}
               </button>
             )}
           </div>
@@ -321,7 +325,7 @@ export const LearningPaths = () => {
                         <span
                           className={`text-xs px-2 py-0.5 rounded-full ${statusConfig[path.status].bgColor} ${statusConfig[path.status].color}`}
                         >
-                          {statusConfig[path.status].label}
+                          {t(statusConfig[path.status].labelKey)}
                         </span>
                         {path.ai_generated && (
                           <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
@@ -338,7 +342,7 @@ export const LearningPaths = () => {
                       handleDeletePath(path);
                     }}
                     className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="删除"
+                    title={t("learningPaths.actions.delete")}
                   >
                     <Trash2 size={16} className="text-red-500" />
                   </button>
@@ -347,12 +351,12 @@ export const LearningPaths = () => {
                 <p
                   className={`text-sm mb-4 line-clamp-2 ${isDark ? "text-slate-300" : "text-gray-600"}`}
                 >
-                  {path.description || path.goal || "暂无描述"}
+                  {path.description || path.goal || t("learningPaths.card.noDescription")}
                 </p>
 
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-gray-500">学习进度</span>
+                    <span className="text-gray-500">{t("learningPaths.card.progress")}</span>
                     <span className="font-medium text-gray-700 dark:text-gray-300">
                       {path.progress_percentage ?? 0}%
                     </span>
@@ -368,7 +372,7 @@ export const LearningPaths = () => {
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Target size={14} />
-                    <span>{path.node_count ?? 0} 个节点</span>
+                    <span>{t("learningPaths.card.nodes", { count: path.node_count ?? 0 })}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Clock size={14} />
@@ -376,7 +380,7 @@ export const LearningPaths = () => {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <TrendingUp size={14} />
-                    <span>每日 {path.daily_minutes_target} 分钟</span>
+                    <span>{t("learningPaths.card.dailyMinutes", { count: path.daily_minutes_target })}</span>
                   </div>
                   {path.target_date && (
                     <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -399,7 +403,7 @@ export const LearningPaths = () => {
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
-                      暂停
+                      {t("learningPaths.actions.pause")}
                     </button>
                     <button
                       onClick={(e) => {
@@ -408,7 +412,7 @@ export const LearningPaths = () => {
                       }}
                       className="flex-1 py-2 rounded-xl font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
                     >
-                      完成
+                      {t("learningPaths.actions.complete")}
                     </button>
                   </div>
                 )}
@@ -421,7 +425,7 @@ export const LearningPaths = () => {
                     }}
                     className="w-full py-2 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   >
-                    继续学习
+                    {t("learningPaths.actions.continue")}
                   </button>
                 )}
               </div>
@@ -438,7 +442,7 @@ export const LearningPaths = () => {
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">创建学习路径</h3>
+              <h3 className="text-xl font-bold">{t("learningPaths.createDialog.title")}</h3>
               <button
                 onClick={() => setIsCreating(false)}
                 className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${
@@ -456,13 +460,13 @@ export const LearningPaths = () => {
                 <label
                   className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                 >
-                  路径名称 <span className="text-red-500">*</span>
+                  {t("learningPaths.createDialog.pathName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={newPathTitle}
                   onChange={(e) => setNewPathTitle(e.target.value)}
-                  placeholder="例如：React 进阶学习"
+                  placeholder={t("learningPaths.createDialog.pathNamePlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
                       ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -476,12 +480,12 @@ export const LearningPaths = () => {
                 <label
                   className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                 >
-                  描述（可选）
+                  {t("learningPaths.createDialog.description")} ({t("common.optional")})
                 </label>
                 <textarea
                   value={newPathDescription}
                   onChange={(e) => setNewPathDescription(e.target.value)}
-                  placeholder="简要描述该学习路径..."
+                  placeholder={t("learningPaths.createDialog.descriptionPlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none ${
                     isDark
                       ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -495,13 +499,13 @@ export const LearningPaths = () => {
                 <label
                   className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                 >
-                  学习目标（可选）
+                  {t("learningPaths.createDialog.goal")} ({t("common.optional")})
                 </label>
                 <input
                   type="text"
                   value={newPathGoal}
                   onChange={(e) => setNewPathGoal(e.target.value)}
-                  placeholder="例如：掌握 React Hooks 和状态管理"
+                  placeholder={t("learningPaths.createDialog.goalPlaceholder")}
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
                     isDark
                       ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -515,7 +519,7 @@ export const LearningPaths = () => {
                   <label
                     className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    每日学习时间
+                    {t("learningPaths.createDialog.dailyStudyTime")}
                   </label>
                   <select
                     value={newPathDailyMinutes}
@@ -526,12 +530,12 @@ export const LearningPaths = () => {
                         : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     }`}
                   >
-                    <option value={15}>15 分钟</option>
-                    <option value={30}>30 分钟</option>
-                    <option value={45}>45 分钟</option>
-                    <option value={60}>1 小时</option>
-                    <option value={90}>1.5 小时</option>
-                    <option value={120}>2 小时</option>
+                    <option value={15}>{t("learningPaths.time.minutes", { count: 15 })}</option>
+                    <option value={30}>{t("learningPaths.time.minutes", { count: 30 })}</option>
+                    <option value={45}>{t("learningPaths.time.minutes", { count: 45 })}</option>
+                    <option value={60}>{t("learningPaths.time.hours", { count: 1 })}</option>
+                    <option value={90}>{t("learningPaths.time.hours", { count: 1.5 })}</option>
+                    <option value={120}>{t("learningPaths.time.hours", { count: 2 })}</option>
                   </select>
                 </div>
 
@@ -539,7 +543,7 @@ export const LearningPaths = () => {
                   <label
                     className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    目标完成日期
+                    {t("learningPaths.createDialog.targetDate")}
                   </label>
                   <input
                     type="date"
@@ -565,14 +569,14 @@ export const LearningPaths = () => {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  取消
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-3 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                   disabled={createMutation.isPending || !newPathTitle.trim()}
                 >
-                  {createMutation.isPending ? "创建中..." : "立即创建"}
+                  {createMutation.isPending ? t("learningPaths.createDialog.creating") : t("learningPaths.createDialog.createNow")}
                 </button>
               </div>
             </form>

@@ -454,7 +454,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
     }
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={onRefresh}
           disabled={isLoading}
@@ -466,19 +466,16 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
         <button
           onClick={onDomainGenerate}
-          className="flex items-center gap-2 px-3 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+          className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
           title={t("graphMap.toolbar.domainGenerate")}
         >
-          <Globe className="w-4 h-4" />
-          <span className="text-sm font-medium">
-            {t("graphMap.toolbar.domainGenerate")}
-          </span>
+          <Globe className="w-5 h-5" />
         </button>
 
         <div className="relative" ref={analyzeMenuRef}>
           <button
             onClick={() => setShowAnalyzeMenu(!showAnalyzeMenu)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200"
             title={t("graphMap.analysis.title")}
           >
             <Sparkles className="w-4 h-4" />
@@ -486,7 +483,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
               {t("graphMap.analysis.title")}
             </span>
             <ChevronDown
-              className={`w-4 h-4 transition-transform duration-200 ${showAnalyzeMenu ? "rotate-180" : ""}`}
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${showAnalyzeMenu ? "rotate-180" : ""}`}
             />
           </button>
           {showAnalyzeMenu && (
@@ -534,18 +531,15 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
         <button
           onClick={onCreateGraph}
-          className="flex items-center gap-2 px-3 py-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+          className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
           title={t("graphMap.toolbar.createGraph")}
         >
-          <Plus className="w-4 h-4" />
-          <span className="text-sm font-medium">
-            {t("graphMap.toolbar.createGraph")}
-          </span>
+          <Plus className="w-5 h-5" />
         </button>
 
         <button
           onClick={onCreateRelation}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           <Network className="w-4 h-4" />
           <span className="text-sm font-medium">
@@ -558,7 +552,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
   return (
     <div className="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-2 sm:px-4 gap-2">
-      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
         <button
           onClick={onBack}
           className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
@@ -567,7 +561,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
           <Network className="w-5 h-5 text-blue-500 flex-shrink-0" />
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
             {t("graphMap.title")}
@@ -576,9 +570,9 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
         {!isMobile && (
           <>
-            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden lg:block flex-shrink-0" />
 
-            <div className="text-sm text-gray-500 dark:text-gray-400 hidden md:flex items-center whitespace-nowrap">
+            <div className="text-sm text-gray-500 dark:text-gray-400 hidden lg:flex items-center whitespace-nowrap flex-shrink-0">
               <span>
                 {t("graphMap.stats.graphCount", { count: graphCount })}
               </span>
@@ -590,10 +584,10 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
 
             {fromGraphId && onReturnToGraph && (
               <>
-                <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden lg:block" />
+                <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden xl:block flex-shrink-0" />
                 <button
                   onClick={onReturnToGraph}
-                  className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium max-w-[150px]"
+                  className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium max-w-[120px]"
                   title={fromGraphTitle || ""}
                 >
                   <ArrowRightLeft className="w-4 h-4 flex-shrink-0" />
@@ -605,7 +599,7 @@ export const GraphMapToolbar: React.FC<GraphMapToolbarProps> = ({
         )}
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         {renderFilterButtonGroup()}
         {domains && domains.length > 0 && (
           <DomainFilter

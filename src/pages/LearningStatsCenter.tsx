@@ -6,7 +6,7 @@ import {
   MasteryDistributionChart,
   QuickStatsCards
 } from '../components/Statistics/LearningStatsEnhanced';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, LineChart, Line, ReferenceLine
 } from 'recharts';
@@ -14,6 +14,7 @@ import { BookOpen, Brain, Clock, TrendingUp, Zap, Target } from 'lucide-react';
 import { useTheme } from '../hooks';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: any) => (
   <div className={`p-3 md:p-4 rounded-xl shadow-sm border flex items-start justify-between ${
@@ -30,46 +31,46 @@ const MetricCard = ({ title, value, subtext, icon: Icon, color, isDark }: any) =
   </div>
 );
 
-const ForecastChart = ({ data, isDark }: { data: any[], isDark: boolean }) => (
+const ForecastChart = ({ data, isDark, t }: { data: any[], isDark: boolean, t: (key: string) => string }) => (
   <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
   }`}>
-    <h3 className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? 'text-white' : 'text-gray-800'}`}>未来7天复习预测</h3>
+    <h3 className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.forecast.title')}</h3>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-          <XAxis 
-            dataKey="date" 
-            tickFormatter={(value) => `${new Date(value).getDate()}日`}
+          <XAxis
+            dataKey="date"
+            tickFormatter={(value) => `${new Date(value).getDate()}${t('learningStats.forecast.day')}`}
             axisLine={false}
             tickLine={false}
             tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
             dy={10}
           />
-          <YAxis 
+          <YAxis
             axisLine={false}
             tickLine={false}
             tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
             width={30}
           />
-          <RechartsTooltip 
+          <RechartsTooltip
             cursor={{ fill: isDark ? '#1e293b' : '#f8fafc' }}
-            contentStyle={{ 
-              borderRadius: '8px', 
-              border: 'none', 
+            contentStyle={{
+              borderRadius: '8px',
+              border: 'none',
               boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
               backgroundColor: isDark ? '#1e293b' : '#fff'
             }}
           />
-          <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={24} name="复习卡片数" />
+          <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={24} name={t('learningStats.forecast.reviewCards')} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   </div>
 );
 
-const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark }: { retentionThreshold: number, avgStability: number, isDark: boolean }) => {
+const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark, t }: { retentionThreshold: number, avgStability: number, isDark: boolean, t: (key: string) => string }) => {
   const data = useMemo(() => {
     const points = [];
     const stability = avgStability > 0 ? avgStability : 7;
@@ -87,51 +88,51 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark }: { re
     <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
       isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
     }`}>
-      <h3 className={`text-base md:text-lg font-bold mb-1 md:mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>遗忘曲线与记忆阈值</h3>
+      <h3 className={`text-base md:text-lg font-bold mb-1 md:mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.forgettingCurve.title')}</h3>
       <p className={`text-[10px] md:text-xs mb-4 md:mb-6 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-        基于 FSRS 算法的理论模型 (平均稳定性: {avgStability > 0 ? avgStability.toFixed(1) : 7}天)
+        {`${t('learningStats.forgettingCurve.description')} ${avgStability > 0 ? avgStability.toFixed(1) : 7}${t('learningStats.forgettingCurve.daysUnit')}`}
       </p>
       <div className="flex-1 w-full min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-            <XAxis 
-              dataKey="day" 
+            <XAxis
+              dataKey="day"
               axisLine={false}
               tickLine={false}
               tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
             />
-            <YAxis 
-              domain={[0, 100]} 
+            <YAxis
+              domain={[0, 100]}
               axisLine={false}
               tickLine={false}
               tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
               tickFormatter={(val) => `${val}%`}
               width={35}
             />
-            <RechartsTooltip 
-              formatter={(value) => [`${value}%`, '记忆保留率']}
-              labelFormatter={(label) => `第 ${label} 天`}
-              contentStyle={{ 
-                borderRadius: '8px', 
-                border: 'none', 
+            <RechartsTooltip
+              formatter={(value) => [`${value}%`, t('learningStats.forgettingCurve.retentionRate')]}
+              labelFormatter={(label) => `${t('learningStats.forgettingCurve.day')} ${label}`}
+              contentStyle={{
+                borderRadius: '8px',
+                border: 'none',
                 boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                 backgroundColor: isDark ? '#1e293b' : '#fff'
               }}
             />
-            <ReferenceLine 
-              y={retentionThreshold * 100} 
-              stroke="#ef4444" 
-              strokeDasharray="3 3" 
-              label={{ value: `目标 ${retentionThreshold * 100}%`, position: 'right', fill: '#ef4444', fontSize: 10 }} 
+            <ReferenceLine
+              y={retentionThreshold * 100}
+              stroke="#ef4444"
+              strokeDasharray="3 3"
+              label={{ value: `${t('learningStats.forgettingCurve.target')} ${retentionThreshold * 100}%`, position: 'right', fill: '#ef4444', fontSize: 10 }}
             />
-            <Line 
-              type="monotone" 
-              dataKey="retention" 
-              stroke="#6366f1" 
+            <Line
+              type="monotone"
+              dataKey="retention"
+              stroke="#6366f1"
               strokeWidth={2}
               dot={false}
-              name="记忆保留率"
+              name={t('learningStats.forgettingCurve.retentionRate')}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -140,11 +141,11 @@ const ForgettingCurveChart = ({ retentionThreshold, avgStability, isDark }: { re
   );
 };
 
-const GrowthChart = ({ data, isDark }: { data: any[], isDark: boolean }) => (
+const GrowthChart = ({ data, isDark, t }: { data: any[], isDark: boolean, t: (key: string) => string }) => (
   <div className={`p-4 md:p-6 rounded-xl shadow-sm border h-64 md:h-80 flex flex-col ${
     isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
   }`}>
-    <h3 className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? 'text-white' : 'text-gray-800'}`}>知识积累趋势 (近30天)</h3>
+    <h3 className={`text-base md:text-lg font-bold mb-4 md:mb-6 ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.growth.title')}</h3>
     <div className="flex-1 w-full min-h-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
@@ -155,36 +156,36 @@ const GrowthChart = ({ data, isDark }: { data: any[], isDark: boolean }) => (
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-          <XAxis 
-            dataKey="date" 
+          <XAxis
+            dataKey="date"
             tickFormatter={(value, index) => index % 5 === 0 ? `${new Date(value).getMonth() + 1}/${new Date(value).getDate()}` : ''}
             axisLine={false}
             tickLine={false}
             tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
             dy={10}
           />
-          <YAxis 
+          <YAxis
             axisLine={false}
             tickLine={false}
             tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
             width={30}
           />
-          <RechartsTooltip 
-            contentStyle={{ 
-              borderRadius: '8px', 
-              border: 'none', 
+          <RechartsTooltip
+            contentStyle={{
+              borderRadius: '8px',
+              border: 'none',
               boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
               backgroundColor: isDark ? '#1e293b' : '#fff'
             }}
           />
-          <Area 
-            type="monotone" 
-            dataKey="count" 
-            stroke="#10b981" 
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke="#10b981"
             strokeWidth={2}
-            fillOpacity={1} 
-            fill="url(#colorGrowthStats)" 
-            name="新增卡片"
+            fillOpacity={1}
+            fill="url(#colorGrowthStats)"
+            name={t('learningStats.growth.newCards')}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -192,50 +193,50 @@ const GrowthChart = ({ data, isDark }: { data: any[], isDark: boolean }) => (
   </div>
 );
 
-const FocusStatsCard = ({ stats, isDark }: { stats: any, isDark: boolean }) => {
+const FocusStatsCard = ({ stats, isDark, t }: { stats: any, isDark: boolean, t: (key: string) => string }) => {
   if (!stats) return null;
-  
+
   return (
     <div className={`p-4 md:p-6 rounded-xl shadow-sm border ${
       isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
     }`}>
       <h3 className={`text-base md:text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-        专注统计
+        {t('learningStats.focus.title')}
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className={`p-3 md:p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
           <div className="flex items-center gap-2 mb-2">
             <Clock size={16} className="text-blue-500" />
-            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>今日专注</span>
+            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.today')}</span>
           </div>
           <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            {stats.today?.minutes || 0} 分钟
+            {stats.today?.minutes || 0} {t('learningStats.focus.minutes')}
           </p>
           <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-            {stats.today?.sessions || 0} 次会话
+            {stats.today?.sessions || 0} {t('learningStats.focus.sessions')}
           </p>
         </div>
         <div className={`p-3 md:p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
           <div className="flex items-center gap-2 mb-2">
             <Zap size={16} className="text-amber-500" />
-            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>累计专注</span>
+            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.total')}</span>
           </div>
           <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            {((stats.total?.minutes || 0) / 60).toFixed(1)} 小时
+            {((stats.total?.minutes || 0) / 60).toFixed(1)} {t('learningStats.focus.hours')}
           </p>
           <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-            {stats.total?.sessions || 0} 次会话
+            {stats.total?.sessions || 0} {t('learningStats.focus.sessions')}
           </p>
         </div>
         <div className={`p-3 md:p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
           <div className="flex items-center gap-2 mb-2">
             <Target size={16} className="text-emerald-500" />
-            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>平均时长</span>
+            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.focus.avgDuration')}</span>
           </div>
           <p className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            {stats.total?.sessions ? Math.round(stats.total.minutes / stats.total.sessions) : 0} 分钟
+            {stats.total?.sessions ? Math.round(stats.total.minutes / stats.total.sessions) : 0} {t('learningStats.focus.minutes')}
           </p>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>每次会话</p>
+          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t('learningStats.focus.perSession')}</p>
         </div>
       </div>
     </div>
@@ -244,6 +245,7 @@ const FocusStatsCard = ({ stats, isDark }: { stats: any, isDark: boolean }) => {
 
 export const LearningStatsCenter = () => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const { data: stats, isLoading, error } = useStatistics();
   const { data: userData } = useUser();
   const { data: graphsData } = useGraphs();
@@ -285,16 +287,16 @@ export const LearningStatsCenter = () => {
     }));
   }, [stats]);
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-slate-400">加载统计数据中...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">无法加载统计数据</div>;
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-slate-400">{t('learningStats.loading')}</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{t('learningStats.error')}</div>;
   if (!stats) return null;
 
   return (
     <div className={`h-full overflow-y-auto p-4 md:p-8 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 md:mb-8">
-          <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>学习统计中心</h1>
-          <p className={`mt-1 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>全面掌握您的学习进度和知识库状态</p>
+          <h1 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('learningStats.title')}</h1>
+          <p className={`mt-1 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t('learningStats.subtitle')}</p>
         </div>
 
         <div className="space-y-6">
@@ -306,39 +308,39 @@ export const LearningStatsCenter = () => {
           />
 
           {focusStats && (
-            <FocusStatsCard stats={focusStats} isDark={isDark} />
+            <FocusStatsCard stats={focusStats} isDark={isDark} t={t} />
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <MetricCard 
-              title="总卡片数" 
-              value={stats.metrics.totalCards} 
-              subtext="累计创建的知识点"
-              icon={BookOpen} 
+            <MetricCard
+              title={t('learningStats.cards.totalCards')}
+              value={stats.metrics.totalCards}
+              subtext={t('learningStats.cards.totalCardsDesc')}
+              icon={BookOpen}
               color="bg-blue-500"
               isDark={isDark}
             />
-            <MetricCard 
-              title="今日待复习" 
-              value={stats.metrics.dueToday} 
-              subtext="保持记忆的关键"
-              icon={Clock} 
+            <MetricCard
+              title={t('learningStats.cards.dueToday')}
+              value={stats.metrics.dueToday}
+              subtext={t('learningStats.cards.dueTodayDesc')}
+              icon={Clock}
               color="bg-amber-500"
               isDark={isDark}
             />
-            <MetricCard 
-              title="已掌握/学习中" 
-              value={stats.metrics.learning} 
-              subtext="正在内化的知识"
-              icon={Brain} 
+            <MetricCard
+              title={t('learningStats.cards.learning')}
+              value={stats.metrics.learning}
+              subtext={t('learningStats.cards.learningDesc')}
+              icon={Brain}
               color="bg-green-500"
               isDark={isDark}
             />
-            <MetricCard 
-              title="平均记忆稳定性" 
-              value={stats.metrics.avgStability} 
-              subtext="天 (FSRS算法估算)"
-              icon={TrendingUp} 
+            <MetricCard
+              title={t('learningStats.cards.avgStability')}
+              value={stats.metrics.avgStability}
+              subtext={`${t('learningStats.cards.days')} (FSRS)`}
+              icon={TrendingUp}
               color="bg-indigo-500"
               isDark={isDark}
             />
@@ -352,15 +354,16 @@ export const LearningStatsCenter = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <ForecastChart data={stats.forecast || []} isDark={isDark} />
-            <ForgettingCurveChart 
-              retentionThreshold={retention} 
+            <ForecastChart data={stats.forecast || []} isDark={isDark} t={t} />
+            <ForgettingCurveChart
+              retentionThreshold={retention}
               avgStability={stats.metrics.avgStability}
               isDark={isDark}
+              t={t}
             />
           </div>
 
-          <GrowthChart data={stats.growth || []} isDark={isDark} />
+          <GrowthChart data={stats.growth || []} isDark={isDark} t={t} />
         </div>
       </div>
     </div>

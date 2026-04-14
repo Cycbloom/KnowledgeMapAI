@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '../hooks/queries';
 import { useLogoutMutation } from '../hooks/mutations';
 import { useStore } from '../store/useStore';
@@ -10,6 +11,7 @@ import { AIActionSettingsPanel } from '../components/GraphEditor/panels/AIAction
 import { backupApi, BackupSnapshot } from '../services/api/backup';
 
 export const Profile = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, token, setUser } = useStore();
   const { addMessage } = useMessageStore();
@@ -47,7 +49,7 @@ export const Profile = () => {
   }, [token]);
 
   const profile = (userData as any)?.user?.profile;
-  const displayName = profile?.name || (userData as any)?.user?.user_metadata?.name || user?.name || '未命名用户';
+  const displayName = profile?.name || (userData as any)?.user?.user_metadata?.name || user?.name || t('profile.accountInfo.unnamedUser');
   const email = (userData as any)?.user?.email || user?.email || '-';
 
   const handleLogout = async () => {
@@ -57,7 +59,7 @@ export const Profile = () => {
       console.error(e);
     }
     setUser(null, null);
-    addMessage({ type: 'success', content: '已退出登录' });
+    addMessage({ type: 'success', content: t('profile.messages.logoutSuccess') });
     navigate('/login');
   };
 
@@ -73,10 +75,10 @@ export const Profile = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      addMessage({ type: 'success', content: '备份导出成功' });
+      addMessage({ type: 'success', content: t('profile.messages.exportSuccess') });
     } catch (e) {
       console.error(e);
-      addMessage({ type: 'error', content: '导出备份失败' });
+      addMessage({ type: 'error', content: t('profile.messages.exportFailed') });
     } finally {
       setIsExporting(false);
     }
@@ -92,18 +94,23 @@ export const Profile = () => {
       const data = JSON.parse(text);
       
       if (!data.version || !data.data) {
-        throw new Error('无效的备份文件格式');
+        throw new Error(t('profile.messages.invalidBackupFormat'));
       }
 
       const result = await backupApi.import(data, importMode);
       addMessage({ 
         type: 'success', 
-        content: `${result.message}：${result.stats.graphs} 个图谱，${result.stats.nodes} 个节点，${result.stats.study_cards} 张学习卡片` 
+        content: t('profile.messages.importSuccess', {
+          message: result.message,
+          graphs: result.stats.graphs,
+          nodes: result.stats.nodes,
+          cards: result.stats.study_cards
+        })
       });
       loadSnapshots();
     } catch (e: any) {
       console.error(e);
-      addMessage({ type: 'error', content: e.message || '导入备份失败' });
+      addMessage({ type: 'error', content: e.message || t('profile.messages.importFailed') });
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) {
@@ -116,42 +123,46 @@ export const Profile = () => {
     setIsCreatingSnapshot(true);
     try {
       await backupApi.createSnapshot('manual');
-      addMessage({ type: 'success', content: '快照创建成功' });
+      addMessage({ type: 'success', content: t('profile.messages.snapshotCreateSuccess') });
       loadSnapshots();
     } catch (e: any) {
-      addMessage({ type: 'error', content: e.message || '创建快照失败' });
+      addMessage({ type: 'error', content: e.message || t('profile.messages.snapshotCreateFailed') });
     } finally {
       setIsCreatingSnapshot(false);
     }
   };
 
   const handleRestoreSnapshot = async (id: string) => {
-    if (!confirm('确定要恢复此快照吗？这将覆盖当前所有数据。')) return;
+    if (!confirm(t('profile.messages.confirmRestore'))) return;
     
     setRestoringId(id);
     try {
       const result = await backupApi.restoreSnapshot(id);
       addMessage({ 
         type: 'success', 
-        content: `${result.message}：${result.stats.graphs} 个图谱，${result.stats.nodes} 个节点` 
+        content: t('profile.messages.snapshotRestoreSuccess', {
+          message: result.message,
+          graphs: result.stats.graphs,
+          nodes: result.stats.nodes
+        })
       });
     } catch (e: any) {
-      addMessage({ type: 'error', content: e.message || '恢复快照失败' });
+      addMessage({ type: 'error', content: e.message || t('profile.messages.snapshotRestoreFailed') });
     } finally {
       setRestoringId(null);
     }
   };
 
   const handleDeleteSnapshot = async (id: string) => {
-    if (!confirm('确定要删除此快照吗？')) return;
+    if (!confirm(t('profile.messages.confirmDelete'))) return;
     
     setDeletingId(id);
     try {
       await backupApi.deleteSnapshot(id);
-      addMessage({ type: 'success', content: '快照已删除' });
+      addMessage({ type: 'success', content: t('profile.messages.snapshotDeleteSuccess') });
       setSnapshots(prev => prev.filter(s => s.id !== id));
     } catch (e: any) {
-      addMessage({ type: 'error', content: e.message || '删除快照失败' });
+      addMessage({ type: 'error', content: e.message || t('profile.messages.snapshotDeleteFailed') });
     } finally {
       setDeletingId(null);
     }
@@ -165,10 +176,10 @@ export const Profile = () => {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'auto_30min': return '30分钟自动';
-      case 'auto_5hour': return '5小时自动';
-      case 'auto_1day': return '每日自动';
-      case 'manual': return '手动创建';
+      case 'auto_30min': return t('profile.backup.snapshotTypes.auto_30min');
+      case 'auto_5hour': return t('profile.backup.snapshotTypes.auto_5hour');
+      case 'auto_1day': return t('profile.backup.snapshotTypes.auto_1day');
+      case 'manual': return t('profile.backup.snapshotTypes.manual');
       default: return type;
     }
   };
@@ -178,8 +189,8 @@ export const Profile = () => {
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">个人中心</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">账号信息与安全</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('profile.title')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">{t('profile.subtitle')}</p>
           </div>
           <button
             onClick={handleLogout}
@@ -187,26 +198,26 @@ export const Profile = () => {
             disabled={logoutMutation.isPending}
           >
             <LogOut className="w-4 h-4" />
-            <span>{logoutMutation.isPending ? '退出中...' : '退出登录'}</span>
+            <span>{logoutMutation.isPending ? t('profile.loggingOut') : t('profile.logout')}</span>
           </button>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">账号信息</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.accountInfo.title')}</h2>
           </div>
 
           {isLoading ? (
-            <div className="text-gray-600 dark:text-gray-400">加载中...</div>
+            <div className="text-gray-600 dark:text-gray-400">{t('profile.accountInfo.loading')}</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
-                <div className="text-gray-500 dark:text-gray-400">昵称</div>
+                <div className="text-gray-500 dark:text-gray-400">{t('profile.accountInfo.nickname')}</div>
                 <div className="mt-1 font-semibold text-gray-900 dark:text-gray-100 break-words">{displayName}</div>
               </div>
               <div className="p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
-                <div className="text-gray-500 dark:text-gray-400">邮箱</div>
+                <div className="text-gray-500 dark:text-gray-400">{t('profile.accountInfo.email')}</div>
                 <div className="mt-1 font-semibold text-gray-900 dark:text-gray-100 break-words">{email}</div>
               </div>
             </div>
@@ -218,15 +229,15 @@ export const Profile = () => {
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <SettingsIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">系统设置</h2>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.systemSettings.title')}</h2>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">管理外观、AI 模型配置及学习算法参数</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('profile.systemSettings.description')}</p>
                 </div>
                 <button
                     onClick={() => navigate('/settings')}
                     className="px-4 py-2 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-slate-600 flex items-center gap-2 transition-colors"
                 >
-                    <span>前往设置</span>
+                    <span>{t('profile.systemSettings.goToSettings')}</span>
                     <ExternalLink className="w-4 h-4" />
                 </button>
             </div>
@@ -237,15 +248,15 @@ export const Profile = () => {
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">AI 提示词管理</h2>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.promptManagement.title')}</h2>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">配置用户全局 AI 提示词模板 (User Scope)</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('profile.promptManagement.description')}</p>
                 </div>
                 <button
                     onClick={() => setIsPromptSettingsOpen(true)}
                     className="px-4 py-2 rounded-md bg-purple-50 dark:bg-slate-700 text-purple-700 dark:text-white hover:bg-purple-100 dark:hover:bg-slate-600 flex items-center gap-2 transition-colors"
                 >
-                    <span>管理提示词</span>
+                    <span>{t('profile.promptManagement.managePrompts')}</span>
                     <ExternalLink className="w-4 h-4" />
                 </button>
             </div>
@@ -255,11 +266,11 @@ export const Profile = () => {
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">数据备份</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('profile.backup.title')}</h2>
           </div>
           
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            导出所有知识图谱、节点、学习卡片和进度数据。建议定期备份以防数据丢失。
+            {t('profile.backup.description')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
@@ -269,7 +280,7 @@ export const Profile = () => {
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
               <Download className="w-5 h-5" />
-              <span>{isExporting ? '导出中...' : '导出备份'}</span>
+              <span>{isExporting ? t('profile.backup.exporting') : t('profile.backup.exportBackup')}</span>
             </button>
 
             <div className="flex-1">
@@ -286,13 +297,13 @@ export const Profile = () => {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 disabled:opacity-50 transition-colors"
               >
                 <Upload className="w-5 h-5" />
-                <span>{isImporting ? '导入中...' : '导入备份'}</span>
+                <span>{isImporting ? t('profile.backup.importing') : t('profile.backup.importBackup')}</span>
               </button>
             </div>
           </div>
 
           <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">导入模式</div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('profile.backup.importMode')}</div>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -304,8 +315,8 @@ export const Profile = () => {
                   className="w-4 h-4 text-blue-600"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">快照恢复</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">（清空现有数据后导入）</span>
+                  <span className="font-medium">{t('profile.backup.snapshotRestore')}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">{t('profile.backup.snapshotRestoreHint')}</span>
                 </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -318,8 +329,8 @@ export const Profile = () => {
                   className="w-4 h-4 text-blue-600"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">合并导入</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">（保留现有数据）</span>
+                  <span className="font-medium">{t('profile.backup.mergeImport')}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">{t('profile.backup.mergeImportHint')}</span>
                 </span>
               </label>
             </div>
@@ -329,7 +340,7 @@ export const Profile = () => {
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <div className="text-xs text-amber-800 dark:text-amber-300">
-                <strong>提示：</strong>快照恢复会先删除所有现有数据再导入备份，适合恢复到某个历史状态；合并导入会保留现有数据并添加新数据。
+                <strong>{t('profile.backup.tip')}</strong>{t('profile.backup.tipContent')}
               </div>
             </div>
           </div>
@@ -339,7 +350,7 @@ export const Profile = () => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">快照列表</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('profile.backup.snapshotList')}</span>
               </div>
               <div className="flex gap-2">
                 <button
@@ -355,16 +366,16 @@ export const Profile = () => {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>{isCreatingSnapshot ? '创建中...' : '创建快照'}</span>
+                  <span>{isCreatingSnapshot ? t('profile.backup.creating') : t('profile.backup.createSnapshot')}</span>
                 </button>
               </div>
             </div>
 
             {isLoadingSnapshots ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">加载中...</div>
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('profile.accountInfo.loading')}</div>
             ) : snapshots.length === 0 ? (
               <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-                暂无快照，系统会自动创建或点击上方按钮手动创建
+                {t('profile.backup.noSnapshots')}
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -383,7 +394,7 @@ export const Profile = () => {
                           {getTypeLabel(snapshot.type)}
                         </span>
                         <span className="text-sm text-gray-900 dark:text-gray-100">
-                          {snapshot.graphs_count} 个图谱，{snapshot.nodes_count} 个节点
+                          {t('profile.backup.graphsAndNodes', { graphs: snapshot.graphs_count, nodes: snapshot.nodes_count })}
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -395,7 +406,7 @@ export const Profile = () => {
                         onClick={() => handleRestoreSnapshot(snapshot.id)}
                         disabled={restoringId === snapshot.id}
                         className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 transition-colors"
-                        title="恢复此快照"
+                        title={t('profile.backup.restoreSnapshot')}
                       >
                         <RotateCcw className={`w-4 h-4 ${restoringId === snapshot.id ? 'animate-spin' : ''}`} />
                       </button>
@@ -403,7 +414,7 @@ export const Profile = () => {
                         onClick={() => handleDeleteSnapshot(snapshot.id)}
                         disabled={deletingId === snapshot.id}
                         className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
-                        title="删除此快照"
+                        title={t('profile.backup.deleteSnapshot')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -425,8 +436,8 @@ export const Profile = () => {
                   <MessageSquare size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI 个性化设置</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">配置全局提示词与自定义动作 (User Scope)</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('profile.promptSettings.title')}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.promptSettings.description')}</p>
                 </div>
               </div>
               <button onClick={() => setIsPromptSettingsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
@@ -439,14 +450,14 @@ export const Profile = () => {
                     className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'prompts' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                     onClick={() => setActiveTab('prompts')}
                 >
-                    提示词模板
+                    {t('profile.promptSettings.promptTemplates')}
                     {activeTab === 'prompts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
                 </button>
                 <button 
                     className={`pb-3 pt-3 px-4 text-sm font-medium transition-colors relative ${activeTab === 'actions' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
                     onClick={() => setActiveTab('actions')}
                 >
-                    自定义动作
+                    {t('profile.promptSettings.customActions')}
                     {activeTab === 'actions' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />}
                 </button>
             </div>

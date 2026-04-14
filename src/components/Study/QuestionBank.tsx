@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StudyCard } from '../../types';
 import { useUpdateCardMutation, useDeleteCardMutation, useDeleteCardsBatchMutation, useCreateCardsBatchMutation } from '../../hooks/mutations';
 import { Search, Trash2, Filter, CheckSquare, Square, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -12,6 +13,7 @@ interface QuestionBankProps {
 }
 
 export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,10 +41,10 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   const createCardsMutation = useCreateCardsBatchMutation();
 
   const fsrsStateLabels: Record<number, string> = {
-    0: '新卡片 (New)',
-    1: '学习中 (Learning)',
-    2: '复习中 (Review)',
-    3: '重学中 (Relearning)'
+    0: t('study.questionBank.fsrsStates.new'),
+    1: t('study.questionBank.fsrsStates.learning'),
+    2: t('study.questionBank.fsrsStates.review'),
+    3: t('study.questionBank.fsrsStates.relearning')
   };
 
   // Filter Logic
@@ -118,7 +120,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
   };
 
   const handleBatchDelete = async () => {
-    if (confirm(`确定要删除选中的 ${selectedIds.size} 个问题吗？`)) {
+    if (confirm(t('study.questionBank.deleteConfirm', { count: selectedIds.size }))) {
       await deleteBatchMutation.mutateAsync(Array.from(selectedIds));
       setSelectedIds(new Set());
     }
@@ -173,7 +175,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
               type="text"
-              placeholder="搜索题目或答案..."
+              placeholder={t('study.questionBank.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
@@ -188,10 +190,10 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                 isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-200'
             }`}
           >
-            <option value="all">所有题型</option>
-            <option value="qa">问答 (QA)</option>
-            <option value="choice">单选 (Choice)</option>
-            <option value="true_false">判断 (True/False)</option>
+            <option value="all">{t('study.questionBank.allTypes')}</option>
+            <option value="qa">{t('study.questionBank.typeQA')}</option>
+            <option value="choice">{t('study.questionBank.typeChoice')}</option>
+            <option value="true_false">{t('study.questionBank.typeTrueFalse')}</option>
           </select>
 
           <button
@@ -201,7 +203,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                 ? 'bg-indigo-100 border-indigo-200 text-indigo-600' 
                 : isDark ? 'bg-slate-800 border-slate-700 text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'
             }`}
-            title="高级筛选"
+            title={t('study.questionBank.advancedFilter')}
           >
             <Filter size={20} />
           </button>
@@ -215,7 +217,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                 ? 'bg-indigo-100 border-indigo-200 text-indigo-600'
                 : isDark ? 'bg-slate-800 border-slate-700 text-gray-400' : 'bg-white border-gray-200 text-gray-400'
             }`}
-            title={selectedIds.size === filteredCards.length ? "取消全选" : "全选当前页"}
+            title={selectedIds.size === filteredCards.length ? t('study.questionBank.deselectAll') : t('study.questionBank.selectAll')}
           >
             {selectedIds.size === filteredCards.length && filteredCards.length > 0 ? <CheckSquare size={20} /> : <Square size={20} />}
           </button>
@@ -226,7 +228,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
               className="flex items-center gap-1 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
             >
               <Trash2 size={18} />
-              <span>批量删除 ({selectedIds.size})</span>
+              <span>{t('study.questionBank.batchDelete')} ({selectedIds.size})</span>
             </button>
           )}
           
@@ -235,7 +237,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
             className="flex items-center gap-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <PlusCircle size={18} />
-            <span>新建题目</span>
+            <span>{t('study.questionBank.newQuestion')}</span>
           </button>
         </div>
       </div>
@@ -246,7 +248,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
           <div className="flex flex-wrap gap-6">
             {/* Review Count Range */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-500">复习次数</label>
+              <label className="text-sm font-medium text-gray-500">{t('study.questionBank.reviewCount')}</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -272,7 +274,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
 
             {/* Next Review Date Range */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-500">下次复习时间</label>
+              <label className="text-sm font-medium text-gray-500">{t('study.questionBank.nextReviewTime')}</label>
               <div className="flex items-center gap-2">
                 <input
                   type="date"
@@ -296,7 +298,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
 
             {/* FSRS State Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-500">学习状态</label>
+              <label className="text-sm font-medium text-gray-500">{t('study.questionBank.learningStatus')}</label>
               <div className="flex flex-wrap gap-2">
                 {[0, 1, 2, 3].map(state => (
                   <button
@@ -339,7 +341,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
              <div className={`p-4 rounded-full ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
                 <Search size={32} className="opacity-50" />
              </div>
-             <p>没有找到符合条件的题目</p>
+             <p>{t('study.questionBank.noQuestionsFound')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -351,7 +353,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
                   onPreview={setPreviewCard}
                   onEdit={startEditing}
                   onDelete={async (c) => {
-                    if(confirm('删除此卡片?')) await deleteCardMutation.mutateAsync(c.id);
+                    if(confirm(t('study.questionBank.deleteCardConfirm'))) await deleteCardMutation.mutateAsync(c.id);
                   }}
                   onSelect={(c) => toggleSelect(c.id)}
                   selected={selectedIds.has(card.id)}
@@ -368,7 +370,11 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ cards }) => {
       {filteredCards.length > 0 && (
         <div className={`p-4 border-t flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
           <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            显示 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredCards.length)} 条，共 {filteredCards.length} 条
+            {t('study.questionBank.pagination', {
+              start: ((currentPage - 1) * pageSize) + 1,
+              end: Math.min(currentPage * pageSize, filteredCards.length),
+              total: filteredCards.length
+            })}
           </div>
           
           <div className="flex items-center gap-2">

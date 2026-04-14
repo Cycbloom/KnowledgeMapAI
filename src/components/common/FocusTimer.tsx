@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
 import {
   Play,
@@ -20,18 +21,8 @@ const formatTime = (seconds: number) => {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
-const getModeLabel = (m: TimerMode) => {
-  switch (m) {
-    case "focus":
-      return "专注";
-    case "shortBreak":
-      return "小憩";
-    case "longBreak":
-      return "长休";
-  }
-};
-
 export const FocusTimer: React.FC = () => {
+  const { t } = useTranslation();
   const {
     isActive,
     timeLeft,
@@ -55,6 +46,17 @@ export const FocusTimer: React.FC = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const dragControls = useDragControls();
   const isDragging = useRef(false);
+
+  const getModeLabel = (m: TimerMode) => {
+    switch (m) {
+      case "focus":
+        return t("focusTimer.focus");
+      case "shortBreak":
+        return t("focusTimer.shortBreak");
+      case "longBreak":
+        return t("focusTimer.longBreak");
+    }
+  };
 
   useEffect(() => {
     if (isActive) {
@@ -143,7 +145,7 @@ export const FocusTimer: React.FC = () => {
               </span>
               {isActive && (
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 select-none">
-                  {getModeLabel(mode)}中...
+                  {t("focusTimer.inProgress")}...
                 </span>
               )}
             </div>
@@ -163,7 +165,7 @@ export const FocusTimer: React.FC = () => {
               <div className="flex items-center gap-2 pointer-events-none">
                 <Brain className="text-blue-500" size={18} />
                 <span className="font-semibold text-gray-700 dark:text-gray-200 select-none">
-                  专注模式
+                  {t("focusTimer.focusMode")}
                 </span>
               </div>
               <div
@@ -189,7 +191,7 @@ export const FocusTimer: React.FC = () => {
               <div className="p-4 space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    专注时长 (分钟)
+                    {t("focusTimer.focusDuration")}
                   </label>
                   <input
                     type="range"
@@ -212,7 +214,7 @@ export const FocusTimer: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    休息时长 (分钟)
+                    {t("focusTimer.breakDuration")}
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -224,7 +226,7 @@ export const FocusTimer: React.FC = () => {
                         })
                       }
                       className="w-1/2 p-2 rounded border dark:bg-slate-700 dark:border-slate-600 text-sm"
-                      placeholder="小憩"
+                      placeholder={t("focusTimer.shortBreakLabel")}
                     />
                     <input
                       type="number"
@@ -235,14 +237,14 @@ export const FocusTimer: React.FC = () => {
                         })
                       }
                       className="w-1/2 p-2 rounded border dark:bg-slate-700 dark:border-slate-600 text-sm"
-                      placeholder="长休"
+                      placeholder={t("focusTimer.longBreakLabel")}
                     />
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm text-gray-600 dark:text-gray-300">
-                    提示音
+                    {t("focusTimer.soundEnabled")}
                   </span>
                   <button
                     onClick={() =>
@@ -262,7 +264,7 @@ export const FocusTimer: React.FC = () => {
                   onClick={() => setShowSettings(false)}
                   className="w-full py-2 mt-2 text-sm bg-gray-100 dark:bg-slate-700 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  完成
+                  {t("focusTimer.done")}
                 </button>
               </div>
             ) : (
@@ -320,7 +322,7 @@ export const FocusTimer: React.FC = () => {
                       {formatTime(timeLeft)}
                     </span>
                     <span className="text-sm text-gray-400 mt-1">
-                      {isActive ? "进行中" : "已暂停"}
+                      {isActive ? t("focusTimer.inProgress") : t("focusTimer.paused")}
                     </span>
                   </div>
                 </div>
@@ -363,7 +365,7 @@ export const FocusTimer: React.FC = () => {
                 {/* Session Count */}
                 <div className="mt-6 text-xs text-gray-400 flex items-center gap-1">
                   <CheckCircleIcon size={12} />
-                  <span>本次已完成 {sessionsCompleted} 个专注时段</span>
+                  <span>{t("focusTimer.sessionsCompleted", { count: sessionsCompleted })}</span>
                 </div>
               </div>
             )}

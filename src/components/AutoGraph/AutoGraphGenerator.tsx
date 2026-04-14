@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { 
   Sparkles, 
   Loader2, 
@@ -40,33 +41,6 @@ interface TreeNode extends GeneratedNode {
   isLoading?: boolean;
 }
 
-const styleOptions = [
-  { 
-    value: 'academic', 
-    label: '学术风格', 
-    icon: GraduationCap, 
-    details: '专业术语，理论框架'
-  },
-  { 
-    value: 'practical', 
-    label: '实用风格', 
-    icon: Briefcase, 
-    details: '通俗易懂，实际应用'
-  },
-  { 
-    value: 'beginner', 
-    label: '入门风格', 
-    icon: BookOpen, 
-    details: '简单易懂，循序渐进'
-  },
-  { 
-    value: 'custom', 
-    label: '自定义', 
-    icon: PenTool, 
-    details: '自己编写生成规则'
-  },
-];
-
 const getLevelColor = (level?: string) => {
   switch (level) {
     case 'root': return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300';
@@ -97,6 +71,7 @@ interface NodeItemProps {
   style: 'academic' | 'practical' | 'beginner' | 'custom';
   graphId?: string;
   isMobile?: boolean;
+  t: (key: string) => string;
   onExpand: (nodeId: string) => Promise<TreeNode[] | null>;
   onNodeUpdate: (nodeId: string, updates: Partial<TreeNode>) => void;
 }
@@ -107,6 +82,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
   style, 
   graphId,
   isMobile,
+  t,
   onExpand,
   onNodeUpdate 
 }) => {
@@ -161,7 +137,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
               onClick={handleExpand}
               disabled={node.isLoading || isExpanding}
               className={`${isMobile ? 'p-1' : 'p-1.5'} bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 transition-colors`}
-              title="AI 展开此节点"
+              title={t('autoGraph.aiExpandNode')}
             >
               {node.isLoading || isExpanding ? (
                 <Loader2 size={isMobile ? 12 : 14} className="animate-spin" />
@@ -195,6 +171,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
                 style={style}
                 graphId={graphId}
                 isMobile={isMobile}
+                t={t}
                 onExpand={onExpand}
                 onNodeUpdate={onNodeUpdate}
               />
@@ -206,11 +183,19 @@ const NodeItem: React.FC<NodeItemProps> = ({
   );
 };
 
+const styleIcons = {
+  academic: GraduationCap,
+  practical: Briefcase,
+  beginner: BookOpen,
+  custom: PenTool,
+};
+
 export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   graphId,
   onGraphGenerated,
   onClose
 }) => {
+  const { t } = useTranslation();
   const { isMobile } = useIsMobile();
   const [topic, setTopic] = useState('');
   const [style, setStyle] = useState<'academic' | 'practical' | 'beginner' | 'custom'>('academic');
@@ -255,17 +240,17 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
   const handleInitialize = useCallback(async () => {
     if (!topic.trim()) {
-      addMessage({ type: 'warning', content: '请输入主题' });
+      addMessage({ type: 'warning', content: t('autoGraph.topicRequired') });
       return;
     }
 
     if (!graphId && isDuplicate) {
-      addMessage({ type: 'warning', content: '主题重复，请修改主题名称' });
+      addMessage({ type: 'warning', content: t('autoGraph.topicDuplicate') });
       return;
     }
 
     if (style === 'custom' && !customPrompt.trim()) {
-      addMessage({ type: 'warning', content: '请输入自定义生成规则' });
+      addMessage({ type: 'warning', content: t('autoGraph.enterCustomRules') });
       return;
     }
 
@@ -300,14 +285,14 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       setRootNode(root);
       setIsInputCollapsed(true);
-      addMessage({ type: 'success', content: '知识图谱初始化成功！点击 ✨ 展开节点' });
+      addMessage({ type: 'success', content: t('autoGraph.initSuccess') });
 
     } catch (error) {
-      handleError(error, { context: 'AutoGraphInit', fallbackMessage: '初始化失败' });
+      handleError(error, { context: 'AutoGraphInit', fallbackMessage: t('autoGraph.initFailed') });
     } finally {
       setIsInitializing(false);
     }
-  }, [topic, style, sources, graphId, addMessage, handleError, isDuplicate]);
+  }, [topic, style, sources, graphId, addMessage, handleError, isDuplicate, t]);
 
   const handleExpandNode = useCallback(async (nodeId: string, node: TreeNode): Promise<TreeNode[] | null> => {
     try {
@@ -333,10 +318,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       }));
 
     } catch (error) {
-      handleError(error, { context: 'ExpandNode', fallbackMessage: '展开失败' });
+      handleError(error, { context: 'ExpandNode', fallbackMessage: t('autoGraph.expandFailed') });
       return null;
     }
-  }, [createdGraphId, graphId, style, customPrompt, handleError]);
+  }, [createdGraphId, graphId, style, customPrompt, handleError, t]);
 
   const updateNodeInTree = useCallback((node: TreeNode, nodeId: string, updates: Partial<TreeNode>): TreeNode => {
     if (node.id === nodeId) {
@@ -421,7 +406,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
       }
 
       if (!targetGraphId) {
-        handleError(new Error('Failed to create graph'), { context: 'SaveGraph', fallbackMessage: '创建图谱失败' });
+        handleError(new Error('Failed to create graph'), { context: 'SaveGraph', fallbackMessage: t('autoGraph.createGraphFailed') });
         return;
       }
 
@@ -432,16 +417,27 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         nodes: allNodes
       });
 
-      addMessage({ type: 'success', content: '知识图谱已保存' });
+      addMessage({ type: 'success', content: t('autoGraph.graphSaved') });
       onGraphGenerated?.(allNodes, []);
       onClose?.();
 
     } catch (error) {
-      handleError(error, { context: 'SaveGraph', fallbackMessage: '保存失败' });
+      handleError(error, { context: 'SaveGraph', fallbackMessage: t('autoGraph.saveFailed') });
     } finally {
       setIsSaving(false);
     }
-  }, [graphId, rootNode, topic, collectAllNodes, onGraphGenerated, onClose, addMessage, handleError]);
+  }, [graphId, rootNode, topic, collectAllNodes, onGraphGenerated, onClose, addMessage, handleError, t]);
+
+  const styleOptions = [
+    { value: 'academic' as const, labelKey: 'autoGraph.styleLabels.academic', detailsKey: 'autoGraph.academicStyleDesc' },
+    { value: 'practical' as const, labelKey: 'autoGraph.styleLabels.practical', detailsKey: 'autoGraph.practicalStyleDesc' },
+    { value: 'beginner' as const, labelKey: 'autoGraph.styleLabels.beginner', detailsKey: 'autoGraph.beginnerStyleDesc' },
+    { value: 'custom' as const, labelKey: 'autoGraph.styleLabels.custom', detailsKey: 'autoGraph.customStyleDesc' },
+  ];
+
+  const getStyleLabel = (styleValue: string) => {
+    return t(`autoGraph.styleLabels.${styleValue}`);
+  };
 
   return (
     <div className={`auto-graph-generator bg-white dark:bg-slate-800 ${isMobile ? 'rounded-none' : 'rounded-xl'} shadow-lg ${isMobile ? 'p-4' : 'p-6'} w-full ${isMobile ? 'h-full' : 'max-w-2xl max-h-[90vh]'} overflow-y-auto`}>
@@ -451,8 +447,8 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             <Layers className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
           </div>
           <div>
-            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900 dark:text-white`}>AI 知识图谱生成器</h2>
-            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 dark:text-gray-400`}>渐进式生成，无限展开</p>
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900 dark:text-white`}>{t('autoGraph.title')}</h2>
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 dark:text-gray-400`}>{t('autoGraph.subtitle')}</p>
           </div>
         </div>
         {onClose && (
@@ -474,10 +470,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-300`}>主题：</span>
+                  <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-300`}>{t('autoGraph.topic')}:</span>
                   <span className={`font-medium text-gray-900 dark:text-white ${isMobile ? 'text-sm' : ''}`}>{topic}</span>
                   <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 dark:text-gray-500 px-2 py-0.5 bg-gray-200 dark:bg-slate-600 rounded`}>
-                    {style === 'custom' ? '自定义' : style === 'academic' ? '学术' : style === 'practical' ? '实用' : '入门'}
+                    {getStyleLabel(style)}
                   </span>
                 </div>
                 <button
@@ -485,7 +481,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                   className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-blue-500 hover:text-blue-600 flex items-center gap-1`}
                 >
                   <ChevronDown size={isMobile ? 12 : 14} />
-                  修改
+                  {t('autoGraph.modify')}
                 </button>
               </div>
             </motion.div>
@@ -499,14 +495,14 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             >
               <div>
                 <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}>
-                  主题 <span className="text-red-500">*</span>
+                  {t('autoGraph.topic')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    placeholder="例如：机器学习基础、量子计算入门"
+                    placeholder={t('autoGraph.topicPlaceholder')}
                     className={`w-full ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-3'} border rounded-lg focus:ring-2 focus:border-transparent dark:bg-slate-700 dark:text-white ${
                       isDuplicate 
                         ? 'border-amber-500 focus:ring-amber-500' 
@@ -522,9 +518,9 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                   <div className="mt-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex items-start gap-2">
                     <AlertCircle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} mt-0.5 flex-shrink-0`} />
                     <div className={`${isMobile ? 'text-xs' : 'text-sm'}`}>
-                      <p className="font-medium">主题重复</p>
+                      <p className="font-medium">{t('autoGraph.topicDuplicateWarning')}</p>
                       <p className="mt-0.5">
-                        与现有图谱「{similarGraphs[0].title}」相似度为 {(similarGraphs[0].similarity * 100).toFixed(1)}%
+                        {t('autoGraph.similarToGraph', { title: similarGraphs[0].title, similarity: (similarGraphs[0].similarity * 100).toFixed(1) })}
                       </p>
                     </div>
                   </div>
@@ -533,15 +529,15 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
               <div>
                 <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2`}>
-                  生成风格
+                  {t('autoGraph.generationStyle')}
                 </label>
                 <div className={`grid ${isMobile ? 'grid-cols-2 gap-1.5' : 'grid-cols-4 gap-2'}`}>
                   {styleOptions.map((option) => {
-                    const Icon = option.icon;
+                    const Icon = styleIcons[option.value];
                     return (
                       <button
                         key={option.value}
-                        onClick={() => setStyle(option.value as any)}
+                        onClick={() => setStyle(option.value)}
                         disabled={isInitializing}
                         className={`${isMobile ? 'p-2' : 'p-2'} rounded-lg border-2 transition-all text-left ${
                           style === option.value
@@ -556,11 +552,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                           <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium ${
                             style === option.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
                           }`}>
-                            {option.label}
+                            {t(option.labelKey)}
                           </span>
                         </div>
                         <p className={`${isMobile ? 'text-[9px]' : 'text-[10px]'} text-gray-500 dark:text-gray-400 line-clamp-1`}>
-                          {option.details}
+                          {t(option.detailsKey)}
                         </p>
                       </button>
                     );
@@ -577,38 +573,38 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                     >
                       <div className={`flex items-center justify-between ${isMobile ? 'mb-1.5 mt-2' : 'mb-2 mt-3'}`}>
                         <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-700 dark:text-gray-300`}>
-                          自定义生成规则
+                          {t('autoGraph.customRules')}
                         </label>
                         <button
                           onClick={async () => {
                             if (!topic.trim()) {
-                              addMessage({ type: 'warning', content: '请先输入主题' });
+                              addMessage({ type: 'warning', content: t('autoGraph.topicRequired') });
                               return;
                             }
                             try {
                               const result = await api.autoGraph.optimizePrompt({ topic, currentPrompt: customPrompt });
                               setCustomPrompt(result.optimizedPrompt);
-                              addMessage({ type: 'success', content: '规则已优化' });
+                              addMessage({ type: 'success', content: t('autoGraph.rulesOptimized') });
                             } catch (error) {
-                              handleError(error, { context: 'OptimizePrompt', fallbackMessage: '优化失败' });
+                              handleError(error, { context: 'OptimizePrompt', fallbackMessage: t('autoGraph.optimizeFailed') });
                             }
                           }}
                           disabled={isInitializing}
                           className={`flex items-center gap-1 px-2 py-1 ${isMobile ? 'text-[10px]' : 'text-xs'} bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:opacity-50`}
                         >
                           <Sparkles size={isMobile ? 10 : 12} />
-                          AI 优化
+                          {t('autoGraph.aiOptimize')}
                         </button>
                       </div>
                       <textarea
                         value={customPrompt}
                         onChange={(e) => setCustomPrompt(e.target.value)}
-                        placeholder="例如：请用简单的语言解释概念，每个节点不超过50字，重点关注实际应用场景..."
+                        placeholder={t('autoGraph.customRulesPlaceholder')}
                         className={`w-full ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white ${isMobile ? 'min-h-[80px]' : 'min-h-[100px]'} resize-y`}
                         disabled={isInitializing}
                       />
                       <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 mt-1`}>
-                        描述你希望 AI 如何生成知识图谱节点
+                        {t('autoGraph.customRulesDesc')}
                       </p>
                     </motion.div>
                   )}
@@ -620,7 +616,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200`}
               >
                 {showAdvanced ? <ChevronUp size={isMobile ? 14 : 16} /> : <ChevronDown size={isMobile ? 14 : 16} />}
-                参考来源
+                {t('autoGraph.referenceSources')}
               </button>
 
               <AnimatePresence>
@@ -636,7 +632,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         type="text"
                         value={newSource}
                         onChange={(e) => setNewSource(e.target.value)}
-                        placeholder="输入 URL 或文本内容"
+                        placeholder={t('autoGraph.sourcePlaceholder')}
                         className={`flex-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-slate-700 dark:text-white`}
                         disabled={isInitializing}
                       />
@@ -678,12 +674,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 {isInitializing ? (
                   <>
                     <Loader2 className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} animate-spin`} />
-                    正在初始化...
+                    {t('autoGraph.initializing')}
                   </>
                 ) : (
                   <>
                     <Sparkles className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                    开始生成
+                    {t('autoGraph.startGenerate')}
                   </>
                 )}
               </button>
@@ -699,10 +695,10 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
           >
             <div className="flex items-center justify-between">
               <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-gray-900 dark:text-white`}>
-                生成结果
+                {t('autoGraph.generateResult')}
               </h3>
               <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500`}>
-                点击 ✨ 展开任意节点
+                {t('autoGraph.clickToExpand')}
               </span>
             </div>
 
@@ -713,6 +709,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 style={style}
                 graphId={createdGraphId || graphId}
                 isMobile={isMobile}
+                t={t}
                 onExpand={handleExpandWrapper}
                 onNodeUpdate={handleNodeUpdate}
               />
@@ -728,7 +725,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               ) : (
                 <Check className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
               )}
-              {graphId ? '保存到当前图谱' : '创建新图谱并保存'}
+              {graphId ? t('autoGraph.saveToCurrentGraph') : t('autoGraph.createAndSave')}
             </button>
           </motion.div>
         )}

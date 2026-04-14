@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Droppable } from "@hello-pangea/dnd";
 import { motion } from "framer-motion";
 import { Clock, Plus, Zap, Target, ListTodo } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ScheduledTask } from "@shared/types";
 import { DraggableTaskCard } from "./DraggableTaskCard";
 
@@ -20,45 +21,6 @@ interface HorizontalQueueProps {
   onViewTaskDetail?: (task: ScheduledTask) => void;
 }
 
-const QUEUE_CONFIG = {
-  0: {
-    icon: Zap,
-    gradient: "from-cyan-500 to-blue-500",
-    border: "border-cyan-300 dark:border-cyan-400/50",
-    glow: "shadow-cyan-500/20",
-    headerBg:
-      "bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20",
-    accentColor: "text-cyan-600 dark:text-cyan-400",
-    badgeBg: "bg-cyan-100 dark:bg-cyan-500/20",
-    description: "紧急重要任务",
-    arrowColor: "#06b6d4",
-  },
-  1: {
-    icon: Target,
-    gradient: "from-emerald-500 to-teal-500",
-    border: "border-emerald-300 dark:border-emerald-400/50",
-    glow: "shadow-emerald-500/20",
-    headerBg:
-      "bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/20",
-    accentColor: "text-emerald-600 dark:text-emerald-400",
-    badgeBg: "bg-emerald-100 dark:bg-emerald-500/20",
-    description: "重要任务",
-    arrowColor: "#10b981",
-  },
-  2: {
-    icon: ListTodo,
-    gradient: "from-amber-500 to-orange-500",
-    border: "border-amber-300 dark:border-amber-400/50",
-    glow: "shadow-amber-500/20",
-    headerBg:
-      "bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/20",
-    accentColor: "text-amber-600 dark:text-amber-400",
-    badgeBg: "bg-amber-100 dark:bg-amber-500/20",
-    description: "待办任务",
-    arrowColor: "#f59e0b",
-  },
-};
-
 export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
   level,
   title,
@@ -72,6 +34,47 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
   onAddTask,
   onViewTaskDetail,
 }) => {
+  const { t } = useTranslation();
+  
+  const QUEUE_CONFIG = {
+    0: {
+      icon: Zap,
+      gradient: "from-cyan-500 to-blue-500",
+      border: "border-cyan-300 dark:border-cyan-400/50",
+      glow: "shadow-cyan-500/20",
+      headerBg:
+        "bg-gradient-to-r from-cyan-100 to-blue-100 dark:from-cyan-500/20 dark:to-blue-500/20",
+      accentColor: "text-cyan-600 dark:text-cyan-400",
+      badgeBg: "bg-cyan-100 dark:bg-cyan-500/20",
+      description: t("scheduler.queue.urgentDesc"),
+      arrowColor: "#06b6d4",
+    },
+    1: {
+      icon: Target,
+      gradient: "from-emerald-500 to-teal-500",
+      border: "border-emerald-300 dark:border-emerald-400/50",
+      glow: "shadow-emerald-500/20",
+      headerBg:
+        "bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/20",
+      accentColor: "text-emerald-600 dark:text-emerald-400",
+      badgeBg: "bg-emerald-100 dark:bg-emerald-500/20",
+      description: t("scheduler.queue.importantDesc"),
+      arrowColor: "#10b981",
+    },
+    2: {
+      icon: ListTodo,
+      gradient: "from-amber-500 to-orange-500",
+      border: "border-amber-300 dark:border-amber-400/50",
+      glow: "shadow-amber-500/20",
+      headerBg:
+        "bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/20",
+      accentColor: "text-amber-600 dark:text-amber-400",
+      badgeBg: "bg-amber-100 dark:bg-amber-500/20",
+      description: t("scheduler.queue.todoDesc"),
+      arrowColor: "#f59e0b",
+    },
+  };
+
   const config =
     QUEUE_CONFIG[level as keyof typeof QUEUE_CONFIG] || QUEUE_CONFIG[2];
   const IconComponent = config.icon;
@@ -79,7 +82,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
   const queueWrapperRef = useRef<HTMLDivElement>(null);
 
   const formatTimeSlice = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes < 60) return t("scheduler.minutes", { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
@@ -150,7 +153,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
             <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
               <Clock size={12} className={config.accentColor} />
               <span>
-                时间片:{" "}
+                {t("scheduler.queue.timeSlice")}:{" "}
                 <span className={config.accentColor}>
                   {formatTimeSlice(timeSlice)}
                 </span>
@@ -158,7 +161,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
             </div>
             <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
               <span>
-                任务:{" "}
+                {t("scheduler.queue.tasks")}:{" "}
                 <span className="text-slate-900 dark:text-white font-medium">
                   {visibleTasks.length}
                 </span>
@@ -167,7 +170,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
             {totalEstimatedTime > 0 && (
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                 <span>
-                  预计:{" "}
+                  {t("scheduler.queue.estimated")}:{" "}
                   <span className="text-slate-900 dark:text-white font-medium">
                     {formatTimeSlice(totalEstimatedTime)}
                   </span>
@@ -181,7 +184,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
           <div className="mt-2 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
             <span className="text-xs text-blue-600 dark:text-blue-400">
-              {inProgressTasks.length} 个任务进行中
+              {t("scheduler.queue.tasksInProgress", { count: inProgressTasks.length })}
             </span>
           </div>
         )}
@@ -222,9 +225,9 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                     </span>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400">
                       {task.status === "pending"
-                        ? "待处理"
+                        ? t("scheduler.kanban.todo")
                         : task.status === "in_progress"
-                          ? "进行中"
+                          ? t("scheduler.inProgress")
                           : task.status}
                     </span>
                   </div>
@@ -269,10 +272,10 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                       size={32}
                       className="mx-auto mb-2 opacity-40 dark:opacity-30"
                     />
-                    <p className="text-sm">暂无任务</p>
+                    <p className="text-sm">{t("scheduler.queue.noTasks")}</p>
                     {snapshot.isDraggingOver && (
                       <p className="text-xs mt-2 text-cyan-500 dark:text-cyan-400">
-                        释放以放置任务
+                        {t("scheduler.queue.dropToPlace")}
                       </p>
                     )}
                     {onAddTask && (
@@ -280,7 +283,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                         onClick={onAddTask}
                         className={`mt-3 text-sm ${config.accentColor} hover:underline`}
                       >
-                        + 添加任务
+                        + {t("scheduler.queue.addTask")}
                       </button>
                     )}
                   </div>
@@ -346,7 +349,7 @@ export const HorizontalQueue: React.FC<HorizontalQueueProps> = ({
                         `}
                     >
                       <Plus size={18} />
-                      <span>添加任务</span>
+                      <span>{t("scheduler.queue.addTask")}</span>
                     </motion.button>
                   )}
                 </>

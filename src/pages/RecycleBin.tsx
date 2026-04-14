@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useTrashGraphs } from "../hooks/queries";
 import {
   useRestoreGraphMutation,
@@ -22,6 +23,7 @@ import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
 
 export const RecycleBin = () => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { data: trashData, isLoading, error } = useTrashGraphs();
@@ -94,10 +96,10 @@ export const RecycleBin = () => {
   const handleRestore = async (id: string) => {
     try {
       await restoreGraphMutation.mutateAsync(id);
-      addMessage({ type: "success", content: "图谱已恢复" });
+      addMessage({ type: "success", content: t("recycleBin.messages.restoreSuccess") });
     } catch (err: any) {
       console.error(err);
-      addMessage({ type: "error", content: err.message || "恢复失败" });
+      addMessage({ type: "error", content: err.message || t("recycleBin.messages.restoreFailed") });
     }
   };
 
@@ -107,11 +109,11 @@ export const RecycleBin = () => {
     try {
       const ids = Array.from(selectedIds);
       await batchRestoreMutation.mutateAsync(ids);
-      addMessage({ type: "success", content: `已恢复 ${ids.length} 个图谱` });
+      addMessage({ type: "success", content: t("recycleBin.messages.batchRestoreSuccess", { count: ids.length }) });
       setSelectedIds(new Set());
     } catch (err: any) {
       console.error(err);
-      addMessage({ type: "error", content: err.message || "批量恢复失败" });
+      addMessage({ type: "error", content: err.message || t("recycleBin.messages.batchRestoreFailed") });
     }
   };
 
@@ -124,7 +126,7 @@ export const RecycleBin = () => {
     setDeleteConfirm({
       isOpen: true,
       id: "",
-      title: `${selectedIds.size} 个图谱`,
+      title: `${selectedIds.size} ${t("recycleBin.confirmDelete.title").toLowerCase()}`,
       isBatch: true,
     });
   };
@@ -136,14 +138,14 @@ export const RecycleBin = () => {
         onSuccess: () => {
           addMessage({
             type: "success",
-            content: `已永久删除 ${ids.length} 个图谱`,
+            content: t("recycleBin.messages.batchDeleteSuccess", { count: ids.length }),
           });
           setSelectedIds(new Set());
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: any) => {
           console.error(err);
-          addMessage({ type: "error", content: err.message || "批量删除失败" });
+          addMessage({ type: "error", content: err.message || t("recycleBin.messages.batchDeleteFailed") });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });
@@ -152,12 +154,12 @@ export const RecycleBin = () => {
 
       permanentDeleteGraphMutation.mutate(deleteConfirm.id, {
         onSuccess: () => {
-          addMessage({ type: "success", content: "图谱已永久删除" });
+          addMessage({ type: "success", content: t("recycleBin.messages.deleteSuccess") });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: any) => {
           console.error(err);
-          addMessage({ type: "error", content: err.message || "删除失败" });
+          addMessage({ type: "error", content: err.message || t("recycleBin.messages.deleteFailed") });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });
@@ -169,13 +171,13 @@ export const RecycleBin = () => {
       <div
         className={`min-h-full flex items-center justify-center p-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
       >
-        正在加载回收站...
+        {t("recycleBin.loading")}
       </div>
     );
   if (error)
     return (
       <div className="p-8 text-red-600">
-        错误: {(error as Error).message || "加载回收站失败"}
+        {t("common.error")}: {(error as Error).message || t("recycleBin.loadFailed")}
       </div>
     );
 
@@ -184,7 +186,6 @@ export const RecycleBin = () => {
       className={`h-full overflow-y-auto custom-scrollbar transition-colors ${isDark ? "bg-slate-900 text-slate-100" : "bg-gray-50 text-gray-900"}`}
     >
       <div className="max-w-7xl mx-auto p-6 lg:p-10 space-y-6">
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -198,13 +199,13 @@ export const RecycleBin = () => {
                 />
               </button>
               <h1 className="text-3xl font-extrabold tracking-tight text-red-500">
-                回收站
+                {t("recycleBin.title")}
               </h1>
             </div>
             <p
               className={`${isDark ? "text-slate-400" : "text-gray-500"} text-lg max-w-xl`}
             >
-              查看和管理已删除的图谱。您可以恢复它们，或永久删除。
+              {t("recycleBin.subtitle")}
             </p>
           </div>
 
@@ -216,7 +217,7 @@ export const RecycleBin = () => {
               />
               <input
                 type="text"
-                placeholder="搜索已删除图谱..."
+                placeholder={t("recycleBin.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`pl-10 pr-4 py-2.5 rounded-xl border outline-none transition-all w-full md:w-64 ${
@@ -229,7 +230,6 @@ export const RecycleBin = () => {
           </div>
         </div>
 
-        {/* Batch Operations Bar */}
         {filteredGraphs.length > 0 && (
           <div
             className={`flex items-center gap-4 p-3 rounded-xl ${isDark ? "bg-slate-800" : "bg-white border border-gray-200"}`}
@@ -252,7 +252,7 @@ export const RecycleBin = () => {
                 <Square className="w-5 h-5" />
               )}
               <span className="text-sm">
-                {isAllSelected ? "取消全选" : "全选"}
+                {isAllSelected ? t("recycleBin.deselectAll") : t("recycleBin.selectAll")}
               </span>
             </button>
 
@@ -261,7 +261,7 @@ export const RecycleBin = () => {
                 <span
                   className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
                 >
-                  已选择 {selectedCount} 项
+                  {t("recycleBin.selected", { count: selectedCount })}
                 </span>
                 <div className="flex-1" />
                 <button
@@ -274,7 +274,7 @@ export const RecycleBin = () => {
                   } disabled:opacity-50`}
                 >
                   <RefreshCw size={16} />
-                  批量恢复
+                  {t("recycleBin.batchRestore")}
                 </button>
                 <button
                   onClick={handleBatchDelete}
@@ -286,7 +286,7 @@ export const RecycleBin = () => {
                   } disabled:opacity-50`}
                 >
                   <AlertTriangle size={16} />
-                  批量删除
+                  {t("recycleBin.batchDelete")}
                 </button>
                 <button
                   onClick={clearSelection}
@@ -303,7 +303,6 @@ export const RecycleBin = () => {
           </div>
         )}
 
-        {/* Graphs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGraphs.length === 0 ? (
             <div
@@ -321,14 +320,14 @@ export const RecycleBin = () => {
               <h3
                 className={`text-xl font-bold mb-2 ${isDark ? "text-slate-300" : "text-gray-900"}`}
               >
-                {searchQuery ? "未找到相关图谱" : "回收站为空"}
+                {searchQuery ? t("recycleBin.noResults") : t("recycleBin.empty")}
               </h3>
               <p
                 className={`text-center max-w-md ${isDark ? "text-slate-500" : "text-gray-500"}`}
               >
                 {searchQuery
-                  ? "尝试更换搜索关键词"
-                  : "最近删除的图谱将显示在这里。"}
+                  ? t("recycleBin.noResultsHint")
+                  : t("recycleBin.emptyHint")}
               </p>
             </div>
           ) : (
@@ -373,7 +372,7 @@ export const RecycleBin = () => {
                           ? "text-green-400 hover:bg-green-900/30"
                           : "text-green-600 hover:bg-green-50"
                       }`}
-                      title="恢复图谱"
+                      title={t("recycleBin.restoreGraph")}
                     >
                       <RefreshCw size={18} />
                     </button>
@@ -384,7 +383,7 @@ export const RecycleBin = () => {
                           ? "text-red-400 hover:bg-red-900/30"
                           : "text-red-500 hover:bg-red-50"
                       }`}
-                      title="永久删除"
+                      title={t("recycleBin.permanentDelete")}
                     >
                       <AlertTriangle size={18} />
                     </button>
@@ -404,13 +403,13 @@ export const RecycleBin = () => {
                     isDark ? "text-slate-400" : "text-gray-500"
                   }`}
                 >
-                  {graph.description || "暂无描述"}
+                  {graph.description || t("recycleBin.noDescription")}
                 </p>
 
                 <div
                   className={`pt-4 border-t text-xs ${isDark ? "border-slate-700 text-slate-500" : "border-gray-50 text-gray-400"}`}
                 >
-                  删除时间: {new Date(graph.deleted_at).toLocaleString()}
+                  {t("recycleBin.deletedAt")}: {new Date(graph.deleted_at).toLocaleString()}
                 </div>
               </div>
             ))
@@ -419,14 +418,18 @@ export const RecycleBin = () => {
 
         <ConfirmationModal
           isOpen={deleteConfirm.isOpen}
-          title={deleteConfirm.isBatch ? "批量永久删除图谱" : "永久删除图谱"}
-          message={`确定要永久删除${deleteConfirm.isBatch ? deleteConfirm.title : `图谱 "${deleteConfirm.title}"`}吗？此操作将无法撤销，所有数据将彻底丢失！`}
+          title={deleteConfirm.isBatch ? t("recycleBin.confirmDelete.batchTitle") : t("recycleBin.confirmDelete.title")}
+          message={t("recycleBin.confirmDelete.message", {
+            target: deleteConfirm.isBatch
+              ? `${selectedIds.size} ${t("recycleBin.confirmDelete.title").toLowerCase()}`
+              : `"${deleteConfirm.title}"`
+          })}
           onConfirm={handleConfirmDelete}
           onClose={() =>
             setDeleteConfirm((prev) => ({ ...prev, isOpen: false }))
           }
           isDangerous={true}
-          confirmText="永久删除"
+          confirmText={t("recycleBin.confirmDelete.confirm")}
         />
       </div>
     </div>

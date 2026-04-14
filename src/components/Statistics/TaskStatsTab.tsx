@@ -22,6 +22,7 @@ import {
   Calendar,
   Target,
 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../hooks";
 import { api } from '../../services/api';
 
@@ -95,6 +96,7 @@ const MetricCard: React.FC<{
   color: string;
   change?: number;
 }> = ({ title, value, subtext, icon, color, change }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   return (
     <div
@@ -129,7 +131,7 @@ const MetricCard: React.FC<{
           {change >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
           <span>
             {change >= 0 ? "+" : ""}
-            {change}% 较上周
+            {change}% {t('stats.task.vsLastWeek')}
           </span>
         </div>
       )}
@@ -140,82 +142,94 @@ const MetricCard: React.FC<{
 const CompletionTrendChart: React.FC<{
   data: TaskAnalyticsResponse["completionTrend"];
   isDark: boolean;
-}> = ({ data, isDark }) => (
-  <div
-    className={`p-4 md:p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
-  >
-    <h3
-      className={`text-base md:text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+}> = ({ data, isDark }) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={`p-4 md:p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
     >
-      任务完成趋势（近30天）
-    </h3>
-    <div className="h-48 md:h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={data}
-          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-        >
-          <defs>
-            <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            vertical={false}
-            stroke={isDark ? "#334155" : "#e5e7eb"}
-          />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(value) => {
-              const date = new Date(value);
-              return `${date.getMonth() + 1}/${date.getDate()}`;
-            }}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
-            width={30}
-          />
-          <RechartsTooltip
-            contentStyle={{
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: isDark ? "#1e293b" : "#fff",
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="completed"
-            stroke="#8b5cf6"
-            strokeWidth={2}
-            fill="url(#colorCompleted)"
-            name="完成数"
-          />
-          <Line
-            type="monotone"
-            dataKey="cumulative"
-            stroke="#10b981"
-            strokeWidth={2}
-            dot={false}
-            name="累计完成"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <h3
+        className={`text-base md:text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+      >
+        {t('stats.task.completionTrend')}
+      </h3>
+      <div className="h-48 md:h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={data}
+            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={isDark ? "#334155" : "#e5e7eb"}
+            />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value) => {
+                const date = new Date(value);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+              }}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 10 }}
+              width={30}
+            />
+            <RechartsTooltip
+              contentStyle={{
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: isDark ? "#1e293b" : "#fff",
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="completed"
+              stroke="#8b5cf6"
+              strokeWidth={2}
+              fill="url(#colorCompleted)"
+              name={t('stats.task.completed')}
+            />
+            <Line
+              type="monotone"
+              dataKey="cumulative"
+              stroke="#10b981"
+              strokeWidth={2}
+              dot={false}
+              name={t('stats.task.cumulative')}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const TimeDistributionHeatmap: React.FC<{
   data: TaskAnalyticsResponse["timeDistribution"];
   isDark: boolean;
 }> = ({ data, isDark }) => {
-  const days = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+  const { t } = useTranslation();
+  const days = [
+    t('stats.task.days.mon'),
+    t('stats.task.days.tue'),
+    t('stats.task.days.wed'),
+    t('stats.task.days.thu'),
+    t('stats.task.days.fri'),
+    t('stats.task.days.sat'),
+    t('stats.task.days.sun')
+  ];
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   const getHeatmapColor = (value: number) => {
@@ -241,7 +255,7 @@ const TimeDistributionHeatmap: React.FC<{
       <h3
         className={`text-base md:text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
       >
-        时间分布热力图
+        {t('stats.task.timeDistribution')}
       </h3>
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
         <div className="min-w-[500px] md:min-w-[600px]">
@@ -270,7 +284,7 @@ const TimeDistributionHeatmap: React.FC<{
                     key={h}
                     className="w-6 h-5 md:w-8 md:h-6 m-0.5 rounded-sm transition-colors"
                     style={{ backgroundColor: getHeatmapColor(value) }}
-                    title={`${day} ${h}:00 - 完成 ${value} 个任务`}
+                    title={`${day} ${h}:00 - ${t('stats.task.completed', { count: value })}`}
                   />
                 );
               })}
@@ -282,7 +296,7 @@ const TimeDistributionHeatmap: React.FC<{
         <span
           className={`text-[10px] md:text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
         >
-          少
+          {t('stats.task.less')}
         </span>
         {[0, 2, 4, 6, 8].map((v) => (
           <div
@@ -294,7 +308,7 @@ const TimeDistributionHeatmap: React.FC<{
         <span
           className={`text-[10px] md:text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}
         >
-          多
+          {t('stats.task.more')}
         </span>
       </div>
     </div>
@@ -304,82 +318,8 @@ const TimeDistributionHeatmap: React.FC<{
 const QueueEfficiencyChart: React.FC<{
   data: TaskAnalyticsResponse["queueStats"];
   isDark: boolean;
-}> = ({ data, isDark }) => (
-  <div
-    className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
-  >
-    <h3
-      className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
-    >
-      队列效率分析
-    </h3>
-    <div className="space-y-4">
-      {data.map((queue) => (
-        <div
-          key={queue.queueLevel}
-          className={`p-4 rounded-lg ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${
-                  queue.queueLevel === 0
-                    ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400"
-                    : queue.queueLevel === 1
-                      ? "bg-yellow-100 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400"
-                      : "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
-                }`}
-              >
-                Q{queue.queueLevel}
-              </span>
-              <span
-                className={`text-sm ${isDark ? "text-slate-300" : "text-gray-600"}`}
-              >
-                {queue.queueLevel === 0
-                  ? "专注队列"
-                  : queue.queueLevel === 1
-                    ? "标准队列"
-                    : "后台队列"}
-              </span>
-            </div>
-            <span
-              className={`text-sm font-medium ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              {queue.completedTasks}/{queue.totalTasks} 任务
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <div
-                className={`h-2 rounded-full ${isDark ? "bg-slate-600" : "bg-gray-200"}`}
-              >
-                <div
-                  className="h-full rounded-full bg-blue-500"
-                  style={{ width: `${queue.completionRate}%` }}
-                />
-              </div>
-            </div>
-            <span
-              className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-600"}`}
-            >
-              {queue.completionRate.toFixed(0)}%
-            </span>
-          </div>
-          <div
-            className={`flex gap-4 mt-2 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
-          >
-            <span>平均时长: {queue.avgDuration}分钟</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const TagAnalysisChart: React.FC<{
-  data: TaskAnalyticsResponse["tagStats"];
-  isDark: boolean;
 }> = ({ data, isDark }) => {
+  const { t } = useTranslation();
   return (
     <div
       className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
@@ -387,7 +327,85 @@ const TagAnalysisChart: React.FC<{
       <h3
         className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
       >
-        标签分析
+        {t('stats.task.queueEfficiency')}
+      </h3>
+      <div className="space-y-4">
+        {data.map((queue) => (
+          <div
+            key={queue.queueLevel}
+            className={`p-4 rounded-lg ${isDark ? "bg-slate-700/50" : "bg-gray-50"}`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    queue.queueLevel === 0
+                      ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400"
+                      : queue.queueLevel === 1
+                        ? "bg-yellow-100 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400"
+                        : "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
+                  }`}
+                >
+                  Q{queue.queueLevel}
+                </span>
+                <span
+                  className={`text-sm ${isDark ? "text-slate-300" : "text-gray-600"}`}
+                >
+                  {queue.queueLevel === 0
+                    ? t('stats.task.focusQueue')
+                    : queue.queueLevel === 1
+                      ? t('stats.task.standardQueue')
+                      : t('stats.task.backgroundQueue')}
+                </span>
+              </div>
+              <span
+                className={`text-sm font-medium ${isDark ? "text-white" : "text-gray-900"}`}
+              >
+                {queue.completedTasks}/{queue.totalTasks} {t('stats.task.tasks')}
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div
+                  className={`h-2 rounded-full ${isDark ? "bg-slate-600" : "bg-gray-200"}`}
+                >
+                  <div
+                    className="h-full rounded-full bg-blue-500"
+                    style={{ width: `${queue.completionRate}%` }}
+                  />
+                </div>
+              </div>
+              <span
+                className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-600"}`}
+              >
+                {queue.completionRate.toFixed(0)}%
+              </span>
+            </div>
+            <div
+              className={`flex gap-4 mt-2 text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            >
+              <span>{t('stats.task.avgDuration')}: {queue.avgDuration}{t('stats.task.minutes')}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TagAnalysisChart: React.FC<{
+  data: TaskAnalyticsResponse["tagStats"];
+  isDark: boolean;
+}> = ({ data, isDark }) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+    >
+      <h3
+        className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+      >
+        {t('stats.task.tagAnalysis')}
       </h3>
       <div className="grid grid-cols-2 gap-4">
         <div className="h-48">
@@ -415,7 +433,7 @@ const TagAnalysisChart: React.FC<{
                 }}
                 formatter={(value) => [
                   `${Number(value || 0).toFixed(0)}%`,
-                  "完成率",
+                  t('stats.task.completionRate'),
                 ]}
               />
               <Bar
@@ -455,13 +473,13 @@ const TagAnalysisChart: React.FC<{
               />
               <Bar
                 dataKey="count"
-                name="任务数"
+                name={t('stats.task.taskCount')}
                 fill="#8b5cf6"
                 radius={[4, 4, 0, 0]}
               />
               <Bar
                 dataKey="completedCount"
-                name="完成数"
+                name={t('stats.task.completedCount')}
                 fill="#10b981"
                 radius={[4, 4, 0, 0]}
               />
@@ -476,175 +494,182 @@ const TagAnalysisChart: React.FC<{
 const PriorityAnalysisChart: React.FC<{
   data: TaskAnalyticsResponse["priorityStats"];
   isDark: boolean;
-}> = ({ data, isDark }) => (
-  <div
-    className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
-  >
-    <h3
-      className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+}> = ({ data, isDark }) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
     >
-      优先级分析
-    </h3>
-    <div className="h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            vertical={false}
-            stroke={isDark ? "#334155" : "#e5e7eb"}
-          />
-          <XAxis
-            dataKey="label"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 12 }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 12 }}
-          />
-          <RechartsTooltip
-            contentStyle={{
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: isDark ? "#1e293b" : "#fff",
-            }}
-          />
-          <Bar
-            dataKey="count"
-            name="任务数"
-            fill="#8b5cf6"
-            radius={[4, 4, 0, 0]}
-          />
-          <Bar
-            dataKey="completedCount"
-            name="完成数"
-            fill="#10b981"
-            radius={[4, 4, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+      <h3
+        className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-gray-800"}`}
+      >
+        {t('stats.task.priorityAnalysis')}
+      </h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={isDark ? "#334155" : "#e5e7eb"}
+            />
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 12 }}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 12 }}
+            />
+            <RechartsTooltip
+              contentStyle={{
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: isDark ? "#1e293b" : "#fff",
+              }}
+            />
+            <Bar
+              dataKey="count"
+              name={t('stats.task.taskCount')}
+              fill="#8b5cf6"
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar
+              dataKey="completedCount"
+              name={t('stats.task.completedCount')}
+              fill="#10b981"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const SmartInsightsPanel: React.FC<{
   insights: Insight[];
   loading: boolean;
   onGenerate: () => void;
   isDark: boolean;
-}> = ({ insights, loading, onGenerate, isDark }) => (
-  <div
-    className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
-  >
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        <Lightbulb
-          className={isDark ? "text-yellow-400" : "text-yellow-500"}
-          size={20}
-        />
-        <h3
-          className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-800"}`}
-        >
-          智能洞察
-        </h3>
-      </div>
-      <button
-        onClick={onGenerate}
-        disabled={loading}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-          loading
-            ? "bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
-            : "bg-blue-600 text-white hover:bg-blue-700"
-        }`}
-      >
-        {loading ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-        ) : (
-          <RefreshCw size={16} />
-        )}
-        {loading ? "生成中..." : "生成洞察"}
-      </button>
-    </div>
-
-    {insights.length === 0 ? (
-      <div
-        className={`text-center py-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
-      >
-        <Lightbulb size={32} className="mx-auto mb-2 opacity-50" />
-        <p>点击"生成洞察"按钮获取智能分析</p>
-      </div>
-    ) : (
-      <div className="space-y-3">
-        {insights.map((insight, index) => (
-          <div
-            key={index}
-            className={`p-4 rounded-lg ${
-              insight.type === "positive"
-                ? "bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30"
-                : insight.type === "negative"
-                  ? "bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30"
-                  : "bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30"
-            }`}
+}> = ({ insights, loading, onGenerate, isDark }) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={`p-6 rounded-xl border ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Lightbulb
+            className={isDark ? "text-yellow-400" : "text-yellow-500"}
+            size={20}
+          />
+          <h3
+            className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-800"}`}
           >
-            <div className="flex items-start gap-3">
-              {insight.type === "positive" ? (
-                <TrendingUp className="text-green-500 mt-0.5" size={16} />
-              ) : insight.type === "negative" ? (
-                <TrendingDown className="text-red-500 mt-0.5" size={16} />
-              ) : (
-                <Activity className="text-blue-500 mt-0.5" size={16} />
-              )}
-              <div>
-                <h4
-                  className={`font-medium ${
-                    insight.type === "positive"
-                      ? "text-green-700 dark:text-green-400"
-                      : insight.type === "negative"
-                        ? "text-red-700 dark:text-red-400"
-                        : "text-blue-700 dark:text-blue-400"
-                  }`}
-                >
-                  {insight.title}
-                </h4>
-                <p
-                  className={`text-sm mt-1 ${
-                    insight.type === "positive"
-                      ? "text-green-600 dark:text-green-300"
-                      : insight.type === "negative"
-                        ? "text-red-600 dark:text-red-300"
-                        : "text-blue-600 dark:text-blue-300"
-                  }`}
-                >
-                  {insight.description}
-                </p>
-                {insight.recommendation && (
-                  <p
-                    className={`text-xs mt-2 ${
+            {t('stats.task.smartInsights')}
+          </h3>
+        </div>
+        <button
+          onClick={onGenerate}
+          disabled={loading}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            loading
+              ? "bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}
+        >
+          {loading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+          ) : (
+            <RefreshCw size={16} />
+          )}
+          {loading ? t('stats.task.generating') : t('stats.task.regenerate')}
+        </button>
+      </div>
+
+      {insights.length === 0 ? (
+        <div
+          className={`text-center py-8 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+        >
+          <Lightbulb size={32} className="mx-auto mb-2 opacity-50" />
+          <p>{t('stats.task.noInsights')}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {insights.map((insight, index) => (
+            <div
+              key={index}
+              className={`p-4 rounded-lg ${
+                insight.type === "positive"
+                  ? "bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30"
+                  : insight.type === "negative"
+                    ? "bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30"
+                    : "bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                {insight.type === "positive" ? (
+                  <TrendingUp className="text-green-500 mt-0.5" size={16} />
+                ) : insight.type === "negative" ? (
+                  <TrendingDown className="text-red-500 mt-0.5" size={16} />
+                ) : (
+                  <Activity className="text-blue-500 mt-0.5" size={16} />
+                )}
+                <div>
+                  <h4
+                    className={`font-medium ${
                       insight.type === "positive"
-                        ? "text-green-500 dark:text-green-400"
+                        ? "text-green-700 dark:text-green-400"
                         : insight.type === "negative"
-                          ? "text-red-500 dark:text-red-400"
-                          : "text-blue-500 dark:text-blue-400"
+                          ? "text-red-700 dark:text-red-400"
+                          : "text-blue-700 dark:text-blue-400"
                     }`}
                   >
-                    💡 {insight.recommendation}
+                    {insight.title}
+                  </h4>
+                  <p
+                    className={`text-sm mt-1 ${
+                      insight.type === "positive"
+                        ? "text-green-600 dark:text-green-300"
+                        : insight.type === "negative"
+                          ? "text-red-600 dark:text-red-300"
+                          : "text-blue-600 dark:text-blue-300"
+                    }`}
+                  >
+                    {insight.description}
                   </p>
-                )}
+                  {insight.recommendation && (
+                    <p
+                      className={`text-xs mt-2 ${
+                        insight.type === "positive"
+                          ? "text-green-500 dark:text-green-400"
+                          : insight.type === "negative"
+                            ? "text-red-500 dark:text-red-400"
+                            : "text-blue-500 dark:text-blue-400"
+                      }`}
+                    >
+                      💡 {insight.recommendation}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const TaskStatsTab: React.FC = () => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [analytics, setAnalytics] = useState<TaskAnalyticsResponse | null>(
     null,
@@ -701,7 +726,7 @@ export const TaskStatsTab: React.FC = () => {
         className={`text-center py-20 ${isDark ? "text-slate-400" : "text-gray-500"}`}
       >
         <Activity size={48} className="mx-auto mb-4 opacity-50" />
-        <p>暂无数据，开始创建任务后将显示统计信息</p>
+        <p>{t('stats.task.loadFailed')}</p>
       </div>
     );
   }
@@ -721,31 +746,31 @@ export const TaskStatsTab: React.FC = () => {
       {/* Efficiency Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
-          title="今日完成"
+          title={t('stats.metric.todayCompleted')}
           value={overview.todayCompleted}
-          subtext="任务"
+          subtext={t('stats.metric.tasks')}
           icon={<CheckCircle size={18} className="text-white" />}
           color="bg-green-500"
           change={comparison?.change?.completedChange}
         />
         <MetricCard
-          title="本周完成"
+          title={t('stats.metric.weekCompleted')}
           value={overview.weekCompleted}
-          subtext="任务"
+          subtext={t('stats.metric.tasks')}
           icon={<Calendar size={18} className="text-white" />}
           color="bg-blue-500"
         />
         <MetricCard
-          title="本月完成"
+          title={t('stats.metric.monthCompleted')}
           value={overview.monthCompleted}
-          subtext="任务"
+          subtext={t('stats.metric.tasks')}
           icon={<Target size={18} className="text-white" />}
           color="bg-purple-500"
         />
         <MetricCard
-          title="平均时长"
+          title={t('stats.metric.avgDuration')}
           value={overview.avgDuration}
-          subtext="分钟"
+          subtext={t('stats.metric.minutes')}
           icon={<Clock size={18} className="text-white" />}
           color="bg-amber-500"
           change={comparison?.change?.avgDurationChange}
@@ -777,3 +802,4 @@ export const TaskStatsTab: React.FC = () => {
     </div>
   );
 };
+

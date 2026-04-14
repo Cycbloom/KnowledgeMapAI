@@ -18,6 +18,7 @@ import {
   Minus,
   FileText,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
 import type {
   ScheduledTask,
@@ -41,37 +42,6 @@ interface TaskFormProps {
   availableTasks?: ScheduledTask[];
   timeSliceSettings?: TaskSettings | null;
 }
-
-const DURATION_OPTIONS = [
-  { value: 15, label: "15 分钟" },
-  { value: 25, label: "25 分钟" },
-  { value: 30, label: "30 分钟" },
-  { value: 45, label: "45 分钟" },
-  { value: 60, label: "1 小时" },
-  { value: 90, label: "1.5 小时" },
-  { value: 120, label: "2 小时" },
-  { value: 180, label: "3 小时" },
-];
-
-const PRIORITY_OPTIONS = [
-  { value: 1, label: "低", color: "text-slate-500 dark:text-slate-400" },
-  { value: 2, label: "中", color: "text-blue-600 dark:text-blue-400" },
-  { value: 3, label: "高", color: "text-amber-600 dark:text-amber-400" },
-  { value: 4, label: "紧急", color: "text-red-600 dark:text-red-400" },
-];
-
-const COMMON_TAGS = [
-  "学习",
-  "工作",
-  "阅读",
-  "写作",
-  "编程",
-  "复习",
-  "项目",
-  "会议",
-  "运动",
-  "休息",
-];
 
 const TASK_DRAFT_KEY = "task_form_draft";
 
@@ -127,7 +97,39 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   availableTasks = [],
   timeSliceSettings = null,
 }) => {
+  const { t } = useTranslation();
   const isEditing = !!task;
+
+  const DURATION_OPTIONS = [
+    { value: 15, label: t("scheduler.taskForm.duration15min") },
+    { value: 25, label: t("scheduler.taskForm.duration25min") },
+    { value: 30, label: t("scheduler.taskForm.duration30min") },
+    { value: 45, label: t("scheduler.taskForm.duration45min") },
+    { value: 60, label: t("scheduler.taskForm.duration1hour") },
+    { value: 90, label: t("scheduler.taskForm.duration1_5hours") },
+    { value: 120, label: t("scheduler.taskForm.duration2hours") },
+    { value: 180, label: t("scheduler.taskForm.duration3hours") },
+  ];
+
+  const PRIORITY_OPTIONS = [
+    { value: 1, label: t("scheduler.taskForm.priorityLow"), color: "text-slate-500 dark:text-slate-400" },
+    { value: 2, label: t("scheduler.taskForm.priorityMedium"), color: "text-blue-600 dark:text-blue-400" },
+    { value: 3, label: t("scheduler.taskForm.priorityHigh"), color: "text-amber-600 dark:text-amber-400" },
+    { value: 4, label: t("scheduler.taskForm.priorityUrgent"), color: "text-red-600 dark:text-red-400" },
+  ];
+
+  const COMMON_TAGS = [
+    t("scheduler.taskForm.tagStudy"),
+    t("scheduler.taskForm.tagWork"),
+    t("scheduler.taskForm.tagReading"),
+    t("scheduler.taskForm.tagWriting"),
+    t("scheduler.taskForm.tagCoding"),
+    t("scheduler.taskForm.tagReview"),
+    t("scheduler.taskForm.tagProject"),
+    t("scheduler.taskForm.tagMeeting"),
+    t("scheduler.taskForm.tagExercise"),
+    t("scheduler.taskForm.tagRest"),
+  ];
 
   const getInitialState = () => {
     if (isEditing) {
@@ -295,10 +297,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!title.trim()) {
-      newErrors.title = "请输入任务标题";
+      newErrors.title = t("scheduler.taskForm.errorTitleRequired");
     }
     if (title.length > 100) {
-      newErrors.title = "标题不能超过100个字符";
+      newErrors.title = t("scheduler.taskForm.errorTitleTooLong");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -306,7 +308,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   const handleAIGenerate = async () => {
     if (!title.trim()) {
-      setErrors({ title: "请先输入任务标题" });
+      setErrors({ title: t("scheduler.taskForm.errorEnterTitleFirst") });
       return;
     }
 
@@ -457,7 +459,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       >
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-            {isEditing ? "编辑任务" : "创建新任务"}
+            {isEditing ? t("scheduler.taskForm.editTask") : t("scheduler.taskForm.createTask")}
           </h2>
           <button
             onClick={handleClose}
@@ -478,20 +480,20 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors min-h-[44px] touch-target"
             >
               <FileText size={18} />
-              <span>从模板创建</span>
+              <span>{t("scheduler.taskForm.createFromTemplate")}</span>
             </button>
           )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              任务标题 <span className="text-red-500 dark:text-red-400">*</span>
+              {t("scheduler.taskForm.taskTitle")} <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="输入任务标题..."
+                placeholder={t("scheduler.taskForm.titlePlaceholder")}
                 className={`
                   flex-1 px-4 py-2.5 rounded-xl
                   bg-slate-50 dark:bg-slate-800 border transition-all
@@ -513,7 +515,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                       : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 shadow-lg shadow-purple-500/20"
                   }
                 `}
-                title="AI 自动生成描述和标签"
+                title={t("scheduler.taskForm.aiGenerateHint")}
               >
                 {isGenerating ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -533,12 +535,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              任务描述
+              {t("scheduler.taskForm.taskDescription")}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="添加任务描述，或点击 AI 按钮自动生成..."
+              placeholder={t("scheduler.taskForm.descriptionPlaceholder")}
               rows={3}
               className="
                 w-full px-4 py-2.5 rounded-xl
@@ -553,7 +555,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               <Layers size={14} className="inline mr-1" />
-              任务类型
+              {t("scheduler.taskForm.taskType")}
             </label>
             <select
               value={taskType}
@@ -565,17 +567,16 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 focus:outline-none focus:ring-2 focus:ring-cyan-500/50
               "
             >
-              <option value="one_time">一次性任务</option>
-              <option value="long_term">长期项目任务</option>
-              <option value="periodic">周期性任务</option>
-              <option value="learning">学习任务</option>
+              <option value="one_time">{t("scheduler.taskForm.typeOneTime")}</option>
+              <option value="long_term">{t("scheduler.taskForm.typeLongTerm")}</option>
+              <option value="periodic">{t("scheduler.taskForm.typePeriodic")}</option>
+              <option value="learning">{t("scheduler.taskForm.typeLearning")}</option>
             </select>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {taskType === "one_time" && "单次完成的任务，如完成一份报告"}
-              {taskType === "long_term" &&
-                "需要多天完成的长期任务，如完成一个项目"}
-              {taskType === "periodic" && "按固定周期重复的任务，如每日阅读"}
-              {taskType === "learning" && "学习相关的任务，如学习一门新技能"}
+              {taskType === "one_time" && t("scheduler.taskForm.typeOneTimeDesc")}
+              {taskType === "long_term" && t("scheduler.taskForm.typeLongTermDesc")}
+              {taskType === "periodic" && t("scheduler.taskForm.typePeriodicDesc")}
+              {taskType === "learning" && t("scheduler.taskForm.typeLearningDesc")}
             </p>
           </div>
 
@@ -583,7 +584,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Clock size={14} className="inline mr-1" />
-                任务总时长（分钟）
+                {t("scheduler.taskForm.totalDuration")}
               </label>
               <input
                 type="number"
@@ -591,7 +592,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 onChange={(e) =>
                   setTotalDuration(parseInt(e.target.value) || 0)
                 }
-                placeholder="例如：180 表示3小时"
+                placeholder={t("scheduler.taskForm.totalDurationPlaceholder")}
                 min={0}
                 className="
                   w-full px-4 py-2.5 rounded-xl
@@ -602,9 +603,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               />
               {totalDuration > 0 && timeSliceSettings && (
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  预计需要约{" "}
-                  {Math.ceil(totalDuration / timeSliceSettings.q0_time_slice)}{" "}
-                  个时间片完成
+                  {t("scheduler.taskForm.estimatedTimeSlices", { count: Math.ceil(totalDuration / timeSliceSettings.q0_time_slice) })}
                 </p>
               )}
             </div>
@@ -613,7 +612,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           {taskType === "long_term" && totalDuration > 0 && (
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                进度分配模式
+                {t("scheduler.taskForm.progressMode")}
               </label>
               <select
                 value={progressMode}
@@ -627,10 +626,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   focus:outline-none focus:ring-2 focus:ring-cyan-500/50
                 "
               >
-                <option value="average">平均分配 - 每天完成相同进度</option>
-                <option value="decreasing">递减模式 - 前期多后期少</option>
-                <option value="increasing">递增模式 - 前期少后期多</option>
-                <option value="custom">自定义 - 手动设置每日进度</option>
+                <option value="average">{t("scheduler.taskForm.progressAverage")}</option>
+                <option value="decreasing">{t("scheduler.taskForm.progressDecreasing")}</option>
+                <option value="increasing">{t("scheduler.taskForm.progressIncreasing")}</option>
+                <option value="custom">{t("scheduler.taskForm.progressCustom")}</option>
               </select>
               <div className="mt-2 flex items-center gap-2">
                 {progressMode === "average" && (
@@ -643,12 +642,10 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   <TrendingUp size={14} className="text-emerald-500" />
                 )}
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {progressMode === "average" && "每天完成相同的进度百分比"}
-                  {progressMode === "decreasing" &&
-                    "类似加速折旧，前期完成更多"}
-                  {progressMode === "increasing" &&
-                    "前期完成较少，后期逐渐增加"}
-                  {progressMode === "custom" && "手动设置每天的进度目标"}
+                  {progressMode === "average" && t("scheduler.taskForm.progressAverageDesc")}
+                  {progressMode === "decreasing" && t("scheduler.taskForm.progressDecreasingDesc")}
+                  {progressMode === "increasing" && t("scheduler.taskForm.progressIncreasingDesc")}
+                  {progressMode === "custom" && t("scheduler.taskForm.progressCustomDesc")}
                 </p>
               </div>
             </div>
@@ -656,7 +653,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              前置依赖任务（可选）
+              {t("scheduler.taskForm.dependencies")}
             </label>
             <div className="relative">
               <button
@@ -680,8 +677,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   }
                 >
                   {selectedDependencies.length > 0
-                    ? `已选择 ${selectedDependencies.length} 个前置任务`
-                    : "选择前置任务"}
+                    ? t("scheduler.taskForm.dependenciesSelected", { count: selectedDependencies.length })
+                    : t("scheduler.taskForm.selectDependencies")}
                 </span>
                 <ChevronDown size={16} className="text-slate-400" />
               </button>
@@ -689,7 +686,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 <div className="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                   {availableTasks.length === 0 ? (
                     <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center">
-                      暂无可选任务
+                      {t("scheduler.taskForm.noAvailableTasks")}
                     </div>
                   ) : (
                     availableTasks
@@ -762,12 +759,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              任务上下文（可选）
+              {t("scheduler.taskForm.context")}
             </label>
             <textarea
               value={context}
               onChange={(e) => setContext(e.target.value)}
-              placeholder="描述任务的背景、目标、注意事项等..."
+              placeholder={t("scheduler.taskForm.contextPlaceholder")}
               rows={3}
               maxLength={2000}
               className="
@@ -787,7 +784,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Clock size={14} className="inline mr-1" />
-                预计时长
+                {t("scheduler.taskForm.estimatedDuration")}
               </label>
               <select
                 value={estimatedDuration}
@@ -810,7 +807,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Calendar size={14} className="inline mr-1" />
-                截止日期
+                {t("scheduler.taskForm.deadline")}
               </label>
               <input
                 type="datetime-local"
@@ -830,7 +827,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Star size={14} className="inline mr-1" />
-                优先级
+                {t("scheduler.taskForm.priority")}
               </label>
               <div className="flex gap-1">
                 {PRIORITY_OPTIONS.map((opt) => (
@@ -865,7 +862,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         className="text-purple-500 dark:text-purple-400"
                       />
                       <span className="text-xs text-purple-700 dark:text-purple-300">
-                        建议: P{prioritySuggestion.suggestedPriority} / Q
+                        {t("scheduler.taskForm.suggestion")}: P{prioritySuggestion.suggestedPriority} / Q
                         {prioritySuggestion.suggestedQueue}
                         <span className="ml-1 text-purple-400 dark:text-purple-500">
                           ({Math.round(prioritySuggestion.confidence * 100)}%)
@@ -878,20 +875,20 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                         onClick={applyPrioritySuggestion}
                         className="px-2 py-0.5 rounded text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-colors"
                       >
-                        应用
+                        {t("scheduler.taskForm.apply")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowPrioritySuggestion(false)}
                         className="px-2 py-0.5 rounded text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                       >
-                        忽略
+                        {t("scheduler.taskForm.ignore")}
                       </button>
                     </div>
                   </div>
                   {prioritySuggestion.keywords.length > 0 && (
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      检测到:{" "}
+                      {t("scheduler.taskForm.detected")}:{" "}
                       {prioritySuggestion.keywords.slice(0, 3).join(", ")}
                     </p>
                   )}
@@ -901,7 +898,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                队列级别
+                {t("scheduler.taskForm.queueLevel")}
               </label>
               <div className="flex gap-1">
                 {[0, 1, 2].map((level) => (
@@ -932,7 +929,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               <Tag size={14} className="inline mr-1" />
-              标签
+              {t("scheduler.taskForm.tags")}
             </label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {tags.map((tag) => (
@@ -970,7 +967,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               value={customTag}
               onChange={(e) => setCustomTag(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入自定义标签，按 Enter 添加..."
+              placeholder={t("scheduler.taskForm.customTagPlaceholder")}
               className="
                 w-full px-4 py-2 rounded-xl
                 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500
@@ -984,7 +981,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 <Link size={14} className="inline mr-1" />
-                关联知识点
+                {t("scheduler.taskForm.linkKnowledge")}
               </label>
               <select
                 value={knowledgePointId}
@@ -996,7 +993,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   focus:outline-none focus:ring-2 focus:ring-cyan-500/50
                 "
               >
-                <option value="">不关联知识点</option>
+                <option value="">{t("scheduler.taskForm.noKnowledgeLink")}</option>
                 {knowledgePoints.map((kp) => (
                   <option key={kp.id} value={kp.id}>
                     {kp.title}
@@ -1014,7 +1011,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               onClick={handleReset}
               className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors min-h-[44px] touch-target font-medium"
             >
-              重置
+              {t("scheduler.taskForm.reset")}
             </button>
           )}
           <button
@@ -1022,13 +1019,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             onClick={handleCancel}
             className="flex-1 sm:flex-none px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors min-h-[44px] touch-target font-medium"
           >
-            取消
+            {t("scheduler.taskForm.cancel")}
           </button>
           <button
             onClick={handleSubmit}
             className="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:from-cyan-400 hover:to-blue-400 transition-all shadow-lg shadow-cyan-500/20 min-h-[44px] touch-target"
           >
-            {isEditing ? "保存修改" : "创建任务"}
+            {isEditing ? t("scheduler.taskForm.saveChanges") : t("scheduler.taskForm.createTaskBtn")}
           </button>
         </div>
       </motion.div>

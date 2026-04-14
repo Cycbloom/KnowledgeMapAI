@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { LayoutGrid, Calendar, Columns, List } from 'lucide-react';
 
@@ -7,33 +8,34 @@ interface SchedulerViewsProps {
   onViewChange: (view: string) => void;
 }
 
-const VIEW_CONFIG = {
-  queue: {
-    icon: LayoutGrid,
-    label: '队列',
-    description: '三层队列视图',
-  },
-  timeline: {
-    icon: Calendar,
-    label: '时间轴',
-    description: '按时间排列',
-  },
-  kanban: {
-    icon: Columns,
-    label: '看板',
-    description: '状态看板',
-  },
-  list: {
-    icon: List,
-    label: '列表',
-    description: '详细列表',
-  },
-};
-
 export const SchedulerViews: React.FC<SchedulerViewsProps> = ({
   currentView,
   onViewChange,
 }) => {
+  const { t } = useTranslation();
+  
+  const VIEW_CONFIG = {
+    queue: {
+      icon: LayoutGrid,
+      label: t('scheduler.queue.queue'),
+      description: t('scheduler.queue.queueDesc'),
+    },
+    timeline: {
+      icon: Calendar,
+      label: t('scheduler.queue.timeline'),
+      description: t('scheduler.queue.timelineDesc'),
+    },
+    kanban: {
+      icon: Columns,
+      label: t('scheduler.queue.kanban'),
+      description: t('scheduler.queue.kanbanDesc'),
+    },
+    list: {
+      icon: List,
+      label: t('scheduler.queue.list'),
+      description: t('scheduler.queue.listDesc'),
+    },
+  };
   return (
     <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200 dark:border-slate-700/50">
       {(Object.keys(VIEW_CONFIG) as Array<keyof typeof VIEW_CONFIG>).map((viewKey) => {

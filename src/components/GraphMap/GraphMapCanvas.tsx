@@ -7,6 +7,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   Edge,
   ColorScheme,
@@ -93,6 +94,7 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
   ) => {
     void domainColorMap;
 
+    const { t } = useTranslation();
     const { isDark } = useTheme();
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -764,17 +766,17 @@ export const GraphMapCanvas = forwardRef<any, GraphMapCanvasProps>(
               <>
                 <div className="text-6xl mb-4">🗺️</div>
                 <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  暂无图谱
+                  {t("graphMap.empty.noGraphs")}
                 </p>
                 <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  创建你的第一个知识图谱开始探索
+                  {t("graphMap.empty.createFirst")}
                 </p>
               </>
             ) : (
               <>
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-600 dark:text-gray-400">
-                  正在加载图谱地图...
+                  {t("graphMap.empty.loading")}
                 </p>
               </>
             )}

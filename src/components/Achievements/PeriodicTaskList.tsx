@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { PeriodicTaskCard } from './PeriodicTaskCard';
+import { useTranslation } from 'react-i18next';
 
 interface PeriodicTaskListProps {
   tasks: Array<{
@@ -17,13 +18,14 @@ interface PeriodicTaskListProps {
   }>;
 }
 
-const periodTypeConfig = {
-  weekly: { label: '本周任务', icon: '📅', color: 'from-blue-500 to-cyan-500' },
-  monthly: { label: '本月任务', icon: '📆', color: 'from-purple-500 to-pink-500' },
-  quarterly: { label: '本季度任务', icon: '🗓️', color: 'from-orange-500 to-red-500' },
-};
-
 export const PeriodicTaskList: React.FC<PeriodicTaskListProps> = ({ tasks }) => {
+  const { t } = useTranslation();
+  
+  const periodTypeConfig = {
+    weekly: { label: t('achievements.periodic.weekly'), icon: '📅', color: 'from-blue-500 to-cyan-500' },
+    monthly: { label: t('achievements.periodic.monthly'), icon: '📆', color: 'from-purple-500 to-pink-500' },
+    quarterly: { label: t('achievements.periodic.quarterly'), icon: '🗓️', color: 'from-orange-500 to-red-500' },
+  };
   const groupedTasks = React.useMemo(() => {
     const groups: Record<string, typeof tasks> = {
       weekly: [],

@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Clock, CheckCircle2, Zap } from 'lucide-react';
 
 export const FocusStats = () => {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['focus-stats'],
     queryFn: async () => {
@@ -24,26 +26,26 @@ export const FocusStats = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard 
           icon={<Clock className="text-blue-500" />} 
-          label="今日专注" 
-          value={`${stats.today.minutes} 分钟`}
-          subValue={`${stats.today.sessions} 次会话`}
+          label={t('study.focusStats.todayFocus')} 
+          value={t('study.focusStats.minutes', { count: stats.today.minutes })}
+          subValue={t('study.focusStats.sessions', { count: stats.today.sessions })}
         />
         <StatCard 
           icon={<Zap className="text-amber-500" />} 
-          label="累计专注" 
-          value={`${(stats.total.minutes / 60).toFixed(1)} 小时`}
-          subValue={`${stats.total.sessions} 次会话`}
+          label={t('study.focusStats.totalFocus')} 
+          value={t('study.focusStats.hours', { count: (stats.total.minutes / 60).toFixed(1) })}
+          subValue={t('study.focusStats.sessions', { count: stats.total.sessions })}
         />
         <StatCard 
           icon={<CheckCircle2 className="text-emerald-500" />} 
-          label="平均时长" 
-          value={`${stats.total.sessions ? Math.round(stats.total.minutes / stats.total.sessions) : 0} 分钟`}
-          subValue="每次会话"
+          label={t('study.focusStats.avgDuration')} 
+          value={t('study.focusStats.minutes', { count: stats.total.sessions ? Math.round(stats.total.minutes / stats.total.sessions) : 0 })}
+          subValue={t('study.focusStats.perSession')}
         />
       </div>
 
       <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-200 dark:border-slate-700">
-        <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-200">近7天专注趋势</h3>
+        <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-200">{t('study.focusStats.weeklyTrend')}</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
@@ -63,7 +65,7 @@ export const FocusStats = () => {
                   if (active && payload && payload.length) {
                     return (
                       <div className="bg-gray-900 text-white text-xs py-1 px-2 rounded">
-                        {payload[0].value} 分钟
+                        {t('study.focusStats.minutes', { count: payload[0].value })}
                       </div>
                     );
                   }

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -28,6 +29,7 @@ export const QuizList: React.FC<QuizListProps> = ({
   onStartPractice,
   onViewQuiz,
 }) => {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -74,7 +76,7 @@ export const QuizList: React.FC<QuizListProps> = ({
   }, [searchTerm, selectedStatus, selectedGraphId]);
 
   const handleDelete = async (quiz: QuizSet) => {
-    if (confirm(`确定要删除测验 "${quiz.title}" 吗？此操作不可恢复。`)) {
+    if (confirm(t('study.quizList.deleteConfirm', { title: quiz.title }))) {
       await deleteMutation.mutateAsync(quiz.id);
     }
   };
@@ -97,7 +99,7 @@ export const QuizList: React.FC<QuizListProps> = ({
         }`}
       >
         <Loader2 size={32} className={`animate-spin ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
-        <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>正在加载测验列表...</p>
+        <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>{t('study.quizList.loading')}</p>
       </div>
     );
   }
@@ -110,12 +112,12 @@ export const QuizList: React.FC<QuizListProps> = ({
         }`}
       >
         <FileQuestion size={32} className="text-red-400" />
-        <p className="text-red-500">加载测验列表失败</p>
+        <p className="text-red-500">{t('study.quizList.loadFailed')}</p>
         <button
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
-          重试
+          {t('study.quizList.retry')}
         </button>
       </div>
     );
@@ -136,7 +138,7 @@ export const QuizList: React.FC<QuizListProps> = ({
             />
             <input
               type="text"
-              placeholder="搜索测验标题或描述..."
+              placeholder={t('study.quizList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
@@ -156,7 +158,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                   ? 'bg-slate-800 border-slate-700 text-gray-400 hover:text-white'
                   : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'
             }`}
-            title="筛选"
+            title={t('study.quizList.filter')}
           >
             <Filter size={20} />
           </button>
@@ -178,7 +180,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                       : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {status === 'all' ? '全部' : status === 'draft' ? '草稿' : status === 'generating' ? '生成中' : '就绪'}
+                {status === 'all' ? t('study.quizList.allStatus') : status === 'draft' ? t('study.quizList.statusDraft') : status === 'generating' ? t('study.quizList.statusGenerating') : t('study.quizList.statusReady')}
                 {status !== 'all' && ` (${statusCounts[status]})`}
               </button>
             ))}
@@ -190,7 +192,7 @@ export const QuizList: React.FC<QuizListProps> = ({
               className="flex items-center gap-1 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               <PlusCircle size={18} />
-              <span>新建测验</span>
+              <span>{t('study.quizList.newQuiz')}</span>
             </button>
           )}
         </div>
@@ -200,7 +202,7 @@ export const QuizList: React.FC<QuizListProps> = ({
         <div className={`p-4 border-b ${isDark ? 'bg-slate-800/30' : 'bg-gray-50/50'}`}>
           <div className="flex flex-wrap gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">按图谱筛选</label>
+              <label className="text-xs font-medium text-gray-500">{t('study.quizList.filterByGraph')}</label>
               <select
                 value={selectedGraphId}
                 onChange={(e) => setSelectedGraphId(e.target.value)}
@@ -210,7 +212,7 @@ export const QuizList: React.FC<QuizListProps> = ({
                     : 'bg-white border-gray-200'
                 }`}
               >
-                <option value="all">所有图谱</option>
+                <option value="all">{t('study.quizList.allGraphs')}</option>
                 {graphOptions.map((id) => (
                   <option key={id} value={id}>
                     {id}
@@ -232,14 +234,14 @@ export const QuizList: React.FC<QuizListProps> = ({
             <div className={`p-4 rounded-full ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
               <Layers size={32} className="opacity-50" />
             </div>
-            <p>没有找到符合条件的测验</p>
+            <p>{t('study.quizList.noQuizzesFound')}</p>
             {onCreateQuiz && (
               <button
                 onClick={onCreateQuiz}
                 className="mt-2 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <PlusCircle size={18} />
-                创建第一个测验
+                {t('study.quizList.createFirstQuiz')}
               </button>
             )}
           </div>
@@ -269,8 +271,11 @@ export const QuizList: React.FC<QuizListProps> = ({
           }`}
         >
           <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            显示 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredQuizzes.length)} 条，共{' '}
-            {filteredQuizzes.length} 条
+            {t('study.quizList.pagination', {
+              start: ((currentPage - 1) * pageSize) + 1,
+              end: Math.min(currentPage * pageSize, filteredQuizzes.length),
+              total: filteredQuizzes.length
+            })}
           </div>
 
           <div className="flex items-center gap-2">

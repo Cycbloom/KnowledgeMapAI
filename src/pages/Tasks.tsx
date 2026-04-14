@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useTasks } from "../hooks/queries";
 import {
   useRetryTaskMutation,
@@ -68,20 +69,20 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-const getTypeLabel = (type: string) => {
+const getTypeLabel = (type: string, t: (key: string) => string) => {
   switch (type) {
     case "generate_questions":
-      return "自动生成题目";
+      return t("tasks.autoGenerateQuestions");
     case "batch_generate_questions":
-      return "批量生成题目";
+      return t("tasks.batchGenerateQuestions");
     case "expand_graph":
-      return "自动扩展图谱";
+      return t("tasks.autoExpandGraph");
     case "recursive_graph_generation":
-      return "递归生成图谱";
+      return t("tasks.recursiveGraphGeneration");
     case "infinite_graph_expansion":
-      return "无限扩展知识网络";
+      return t("tasks.infiniteExpansion");
     case "embedding_generation":
-      return "向量嵌入生成";
+      return t("tasks.embeddingGeneration");
     default:
       return type;
   }
@@ -118,6 +119,7 @@ const FilterTab = ({
 );
 
 export const Tasks = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useStore();
   const { addMessage } = useMessageStore();
@@ -154,9 +156,9 @@ export const Tasks = () => {
   const handleRetry = async (taskId: string) => {
     try {
       await retryMutation.mutateAsync(taskId);
-      addMessage({ type: "success", content: "任务已重新提交" });
+      addMessage({ type: "success", content: t("tasks.taskRetried") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "重试失败" });
+      addMessage({ type: "error", content: err.message || t("tasks.retryFailed") });
     }
   };
 
@@ -168,16 +170,16 @@ export const Tasks = () => {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      addMessage({ type: "success", content: "任务已删除" });
+      addMessage({ type: "success", content: t("tasks.taskDeleted") });
       setDeleteId(null);
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "删除失败" });
+      addMessage({ type: "error", content: err.message || t("tasks.deleteFailed") });
     }
   };
 
   const handleExport = () => {
     if (!tasks || tasks.length === 0) {
-      addMessage({ type: "warning", content: "暂无任务可导出" });
+      addMessage({ type: "warning", content: t("tasks.noTasksToExport") });
       return;
     }
 
@@ -185,13 +187,13 @@ export const Tasks = () => {
     const BOM = "\uFEFF";
     const header = "ID,Name,Type,Status,Created At,Updated At,Error\n";
     const rows = tasks
-      .map((t) => {
-        const name = t.name || getTypeLabel(t.type);
+      .map((task) => {
+        const name = task.name || getTypeLabel(task.type, t);
         // Escape quotes by doubling them
         const escapedName = name ? name.replace(/"/g, '""') : "";
-        const error = t.error ? t.error.replace(/"/g, '""') : "";
+        const error = task.error ? task.error.replace(/"/g, '""') : "";
 
-        return `${t.id},"${escapedName}",${t.type},${t.status},${t.created_at},${t.updated_at},"${error}"`;
+        return `${task.id},"${escapedName}",${task.type},${task.status},${task.created_at},${task.updated_at},"${error}"`;
       })
       .join("\n");
 
@@ -210,7 +212,7 @@ export const Tasks = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    addMessage({ type: "success", content: "任务列表已导出" });
+    addMessage({ type: "success", content: t("tasks.tasksExported") });
   };
 
   return (
@@ -218,20 +220,20 @@ export const Tasks = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-            任务中心
+            {t("tasks.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
-            查看后台任务进度与结果回填
+            {t("tasks.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleExport}
             className="bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-            title="导出为 CSV"
+            title="Export as CSV"
           >
             <Download className="w-4 h-4" />
-            <span>导出</span>
+            <span>{t("tasks.export")}</span>
           </button>
           <button
             onClick={() => refetch()}
@@ -241,13 +243,13 @@ export const Tasks = () => {
             <RefreshCw
               className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
             />
-            <span>{isFetching ? "刷新中..." : "刷新"}</span>
+            <span>{isFetching ? t("tasks.refreshing") : t("tasks.refresh")}</span>
           </button>
           <Link
             to="/dashboard"
             className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700 transition-colors"
           >
-            <span>返回仪表盘</span>
+            <span>{t("tasks.returnToDashboard")}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -255,31 +257,31 @@ export const Tasks = () => {
 
       <div className="flex items-center gap-2 mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto">
         <FilterTab
-          label="全部任务"
+          label={t("tasks.allTasks")}
           value="all"
           current={filter}
           onClick={handleFilterChange}
         />
         <FilterTab
-          label="进行中"
+          label={t("tasks.inProgress")}
           value="processing"
           current={filter}
           onClick={handleFilterChange}
         />
         <FilterTab
-          label="已完成"
+          label={t("tasks.completed")}
           value="completed"
           current={filter}
           onClick={handleFilterChange}
         />
         <FilterTab
-          label="失败"
+          label={t("tasks.failed")}
           value="failed"
           current={filter}
           onClick={handleFilterChange}
         />
         <FilterTab
-          label="排队中"
+          label={t("tasks.pending")}
           value="pending"
           current={filter}
           onClick={handleFilterChange}
@@ -289,12 +291,12 @@ export const Tasks = () => {
       {error ? (
         <div className="p-8 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/20">
           <XCircle className="w-8 h-8 mx-auto mb-2" />
-          <p>加载任务失败: {(error as Error).message}</p>
+          <p>{t("tasks.loadTasksFailed", { error: (error as Error).message })}</p>
           <button
             onClick={() => refetch()}
             className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
           >
-            重试
+            {t("tasks.retry")}
           </button>
         </div>
       ) : (
@@ -302,59 +304,59 @@ export const Tasks = () => {
           {isLoading && !isFetching && (
             <div className="p-12 text-center text-gray-500 dark:text-gray-400">
               <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-              <p>加载中...</p>
+              <p>{t("tasks.loading")}</p>
             </div>
           )}
 
           {!isLoading && tasks.length === 0 && (
             <div className="p-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-300 dark:border-slate-700">
               <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
-              <p>暂无任务</p>
+              <p>{t("tasks.noTasks")}</p>
             </div>
           )}
 
           {!isLoading && tasks.length > 0 && (
             <>
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
-                {tasks.map((t) => {
-                  const graphId = t.payload?.graph_id;
-                  const nodeId = t.payload?.node_id;
-                  const resultTitles = Array.isArray(t.result?.nodeTitles)
-                    ? t.result.nodeTitles
+                {tasks.map((task) => {
+                  const graphId = task.payload?.graph_id;
+                  const nodeId = task.payload?.node_id;
+                  const resultTitles = Array.isArray(task.result?.nodeTitles)
+                    ? task.result.nodeTitles
                     : [];
                   const showResult =
-                    t.status === "completed" &&
-                    (t.type === "expand_graph" ||
-                      t.type === "generate_questions" ||
-                      t.type === "batch_generate_questions" ||
-                      t.type === "embedding_generation" ||
-                      t.type === "infinite_graph_expansion");
+                    task.status === "completed" &&
+                    (task.type === "expand_graph" ||
+                      task.type === "generate_questions" ||
+                      task.type === "batch_generate_questions" ||
+                      task.type === "embedding_generation" ||
+                      task.type === "infinite_graph_expansion");
 
                   return (
                     <div
-                      key={t.id}
+                      key={task.id}
                       className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusBadgeClass(t.status)}`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusBadgeClass(task.status)}`}
                             >
-                              {getStatusIcon(t.status)}
-                              <span>{t.status}</span>
+                              {getStatusIcon(task.status)}
+                              <span>{task.status}</span>
                             </span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100">
-                              {t.name || getTypeLabel(t.type)}
+                              {task.name || getTypeLabel(task.type, t)}
                             </span>
                             <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-                              #{t.id.slice(0, 8)}
+                              #{task.id.slice(0, 8)}
                             </span>
                           </div>
 
                           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 pl-1">
-                            {t.status === "processing" &&
-                              t.result?.progress !== undefined && (
+                            {task.status === "processing" &&
+                              task.result?.progress !== undefined && (
                                 <div className="mt-2 w-full max-w-md bg-slate-100 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
                                   <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
                                     <span className="flex items-center gap-2">
@@ -362,17 +364,17 @@ export const Tasks = () => {
                                         size={12}
                                         className="animate-spin text-blue-500"
                                       />
-                                      正在处理:{" "}
+                                      {t("tasks.processing")}{" "}
                                       <span className="text-blue-600 dark:text-blue-400">
                                         {getStringOrUnknown(
-                                          t.result.current_node,
-                                          "准备中...",
+                                          task.result.current_node,
+                                          t("tasks.preparing"),
                                         )}
                                       </span>
                                     </span>
                                     <span>
                                       {getNumberOrUndefined(
-                                        t.result.progress,
+                                        task.result.progress,
                                       ) ?? 0}
                                       %
                                     </span>
@@ -381,7 +383,7 @@ export const Tasks = () => {
                                     <div
                                       className="bg-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(59,130,246,0.5)]"
                                       style={{
-                                        width: `${getNumberOrUndefined(t.result.progress) ?? 0}%`,
+                                        width: `${getNumberOrUndefined(task.result.progress) ?? 0}%`,
                                       }}
                                     />
                                   </div>
@@ -390,131 +392,120 @@ export const Tasks = () => {
 
                             <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
                               <span className="flex items-center gap-1">
-                                <Clock size={12} /> 创建:{" "}
-                                {formatTime(t.created_at)}
+                                <Clock size={12} /> {t("tasks.created")}{" "}
+                                {formatTime(task.created_at)}
                               </span>
-                              {t.updated_at !== t.created_at && (
-                                <span>更新: {formatTime(t.updated_at)}</span>
+                              {task.updated_at !== task.created_at && (
+                                <span>{t("tasks.updated")} {formatTime(task.updated_at)}</span>
                               )}
                             </div>
 
-                            {t.error && (
+                            {task.error && (
                               <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
-                                <strong>错误：</strong>
-                                {t.error}
+                                <strong>{t("tasks.error")}</strong>
+                                {task.error}
                               </div>
                             )}
 
                             {showResult &&
-                              t.type === "expand_graph" &&
+                              task.type === "expand_graph" &&
                               resultTitles.length > 0 && (
                                 <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
                                   <span className="font-medium">
-                                    新增节点：
+                                    {t("tasks.newNodes")}
                                   </span>
                                   {resultTitles.slice(0, 6).join("、")}
                                   {resultTitles.length > 6
-                                    ? ` 等 ${resultTitles.length} 个`
+                                    ? t("tasks.etc", { count: resultTitles.length })
                                     : ""}
                                 </div>
                               )}
 
                             {showResult &&
-                              t.type === "generate_questions" &&
-                              typeof t.result?.count === "number" && (
+                              task.type === "generate_questions" &&
+                              typeof task.result?.count === "number" && (
                                 <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
                                   <span className="font-medium">
-                                    已生成卡片：
+                                    {t("tasks.cardsGenerated")}
                                   </span>{" "}
-                                  {t.result.count} 张
+                                  {task.result.count} {t("tasks.cards")}
                                 </div>
                               )}
 
                             {showResult &&
-                              t.type === "batch_generate_questions" &&
-                              typeof t.result?.totalCards === "number" && (
+                              task.type === "batch_generate_questions" &&
+                              typeof task.result?.totalCards === "number" && (
                                 <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
                                   <span className="font-medium">
-                                    批量生成完成：
+                                    {t("tasks.batchGenerateComplete")}
                                   </span>{" "}
-                                  共生成 {t.result.totalCards} 张卡片
+                                  {t("tasks.totalCardsGenerated", { count: task.result.totalCards })}
                                 </div>
                               )}
 
                             {showResult &&
-                              t.type === "infinite_graph_expansion" &&
-                              t.result?.total_graphs_created !== undefined && (
+                              task.type === "infinite_graph_expansion" &&
+                              task.result?.total_graphs_created !== undefined && (
                                 <div className="text-purple-700 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-900/10 p-2 rounded text-xs border border-purple-100/50 dark:border-purple-900/20">
                                   <span className="font-medium">
-                                    扩展完成：
+                                    {t("tasks.expansionComplete")}
                                   </span>
-                                  创建{" "}
-                                  {getNumberOrUndefined(
-                                    t.result.total_graphs_created,
-                                  ) ?? 0}{" "}
-                                  个图谱，
-                                  {getNumberOrUndefined(
-                                    t.result.total_nodes_created,
-                                  ) ?? 0}{" "}
-                                  个知识点
+                                  {t("tasks.createdGraphsAndNodes", {
+                                    graphs: getNumberOrUndefined(task.result.total_graphs_created) ?? 0,
+                                    nodes: getNumberOrUndefined(task.result.total_nodes_created) ?? 0
+                                  })}
                                 </div>
                               )}
 
                             {showResult &&
-                              t.type === "embedding_generation" &&
-                              typeof t.result?.processed === "number" && (
+                              task.type === "embedding_generation" &&
+                              typeof task.result?.processed === "number" && (
                                 <div className="text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 p-2 rounded text-xs border border-indigo-100/50 dark:border-indigo-900/20">
                                   <span className="font-medium">
-                                    嵌入生成完成：
+                                    {t("tasks.embeddingComplete")}
                                   </span>
-                                  成功{" "}
-                                  {getNumberOrUndefined(t.result.processed) ??
-                                    0}{" "}
-                                  个
-                                  {(getNumberOrUndefined(t.result.failed) ??
-                                    0) > 0 &&
-                                    `，失败 ${getNumberOrUndefined(t.result.failed)} 个`}
+                                  {t("tasks.successCount", { count: getNumberOrUndefined(task.result.processed) ?? 0 })}
+                                  {(getNumberOrUndefined(task.result.failed) ?? 0) > 0 &&
+                                    t("tasks.failedCount", { count: getNumberOrUndefined(task.result.failed) })}
                                 </div>
                               )}
 
-                            {t.status === "processing" &&
-                              t.type === "embedding_generation" &&
-                              t.result?.progress !== undefined && (
+                            {task.status === "processing" &&
+                              task.type === "embedding_generation" &&
+                              task.result?.progress !== undefined && (
                                 <div className="text-indigo-600 dark:text-indigo-400 text-xs flex items-center gap-2">
-                                  <span className="font-medium">进度：</span>
+                                  <span className="font-medium">{t("tasks.progress")}</span>
                                   <span>
-                                    {getNumberOrUndefined(t.result.processed) ??
+                                    {getNumberOrUndefined(task.result.processed) ??
                                       0}{" "}
-                                    / {getStringOrUnknown(t.result.total, "?")}
+                                    / {getStringOrUnknown(task.result.total, "?")}
                                   </span>
                                 </div>
                               )}
 
-                            {t.status === "processing" &&
-                              t.type === "infinite_graph_expansion" &&
-                              t.result?.current_depth !== undefined && (
+                            {task.status === "processing" &&
+                              task.type === "infinite_graph_expansion" &&
+                              task.result?.current_depth !== undefined && (
                                 <div className="text-purple-600 dark:text-purple-400 text-xs flex items-center gap-2">
-                                  <span className="font-medium">深度：</span>
+                                  <span className="font-medium">{t("tasks.depth")}</span>
                                   <span>
                                     {getNumberOrUndefined(
-                                      t.result.current_depth,
+                                      task.result.current_depth,
                                     ) ?? 0}{" "}
                                     /{" "}
-                                    {getNumberOrUndefined(t.result.max_depth) ??
+                                    {getNumberOrUndefined(task.result.max_depth) ??
                                       2}
                                   </span>
-                                  {t.result.total_graphs_created !==
+                                  {task.result.total_graphs_created !==
                                     undefined && (
                                     <>
                                       <span className="text-gray-300 dark:text-gray-600">
                                         |
                                       </span>
                                       <span>
-                                        已创建{" "}
-                                        {getNumberOrUndefined(
-                                          t.result.total_graphs_created,
-                                        ) ?? 0}{" "}
-                                        个图谱
+                                        {t("tasks.graphsCreated", {
+                                          count: getNumberOrUndefined(task.result.total_graphs_created) ?? 0
+                                        })}
                                       </span>
                                     </>
                                   )}
@@ -525,12 +516,12 @@ export const Tasks = () => {
 
                         <div className="flex flex-col items-end gap-2">
                           <div className="flex items-center gap-2">
-                            {t.status === "failed" && (
+                            {task.status === "failed" && (
                               <button
-                                onClick={() => handleRetry(t.id)}
+                                onClick={() => handleRetry(task.id)}
                                 disabled={retryMutation.isPending}
                                 className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
-                                title="重试任务"
+                                title={t("tasks.retry")}
                               >
                                 <RotateCw
                                   size={18}
@@ -544,10 +535,10 @@ export const Tasks = () => {
                             )}
 
                             <button
-                              onClick={() => handleDeleteClick(t.id)}
+                              onClick={() => handleDeleteClick(task.id)}
                               disabled={deleteMutation.isPending}
                               className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                              title="删除任务"
+                              title={t("tasks.deleteTask")}
                             >
                               <Trash2 size={18} />
                             </button>
@@ -558,11 +549,11 @@ export const Tasks = () => {
                               onClick={() => navigate(`/graph/${graphId}`)}
                               className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white transition-colors"
                             >
-                              打开图谱
+                              {t("tasks.openGraph")}
                             </button>
                           )}
 
-                          {t.type === "generate_questions" && nodeId && (
+                          {task.type === "generate_questions" && nodeId && (
                             <button
                               onClick={() =>
                                 navigate(
@@ -571,13 +562,13 @@ export const Tasks = () => {
                               }
                               className="w-full px-3 py-1.5 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                             >
-                              复习题目
+                              {t("tasks.reviewQuestions")}
                             </button>
                           )}
 
-                          {t.status === "completed" &&
+                          {task.status === "completed" &&
                             graphId &&
-                            t.type === "expand_graph" && (
+                            task.type === "expand_graph" && (
                               <button
                                 onClick={() => {
                                   navigate(`/graph/${graphId}`);
@@ -589,12 +580,12 @@ export const Tasks = () => {
                                 }}
                                 className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                               >
-                                查看结果
+                                {t("tasks.viewResult")}
                               </button>
                             )}
 
-                          {t.status === "completed" &&
-                            t.type === "generate_questions" &&
+                          {task.status === "completed" &&
+                            task.type === "generate_questions" &&
                             nodeId && (
                               <button
                                 onClick={() => {
@@ -609,18 +600,18 @@ export const Tasks = () => {
                                 }}
                                 className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                               >
-                                开始学习
+                                {t("tasks.startLearning")}
                               </button>
                             )}
 
-                          {t.status === "completed" &&
-                            t.type === "infinite_graph_expansion" &&
-                            typeof t.result?.source_graph_id === "string" &&
-                            t.result.source_graph_id && (
+                          {task.status === "completed" &&
+                            task.type === "infinite_graph_expansion" &&
+                            typeof task.result?.source_graph_id === "string" &&
+                            task.result.source_graph_id && (
                               <button
                                 onClick={() => {
                                   navigate(
-                                    `/graph-map?from=${String(t.result.source_graph_id)}`,
+                                    `/graph-map?from=${String(task.result.source_graph_id)}`,
                                   );
                                   addMessage({
                                     type: "success",
@@ -630,7 +621,7 @@ export const Tasks = () => {
                                 }}
                                 className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 shadow-sm shadow-purple-200 dark:shadow-none transition-colors"
                               >
-                                查看知识网络
+                                {t("tasks.viewKnowledgeNetwork")}
                               </button>
                             )}
                         </div>
@@ -644,8 +635,11 @@ export const Tasks = () => {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6 px-2">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    显示 {(page - 1) * limit + 1} -{" "}
-                    {Math.min(page * limit, total)} 条，共 {total} 条
+                    {t("tasks.showing", {
+                      start: (page - 1) * limit + 1,
+                      end: Math.min(page * limit, total),
+                      total: total
+                    })}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -710,10 +704,10 @@ export const Tasks = () => {
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={handleConfirmDelete}
-        title="删除任务"
-        message="确定要删除这个任务吗？此操作无法撤销。"
-        confirmText="删除"
-        cancelText="取消"
+        title={t("tasks.deleteTask")}
+        message={t("tasks.deleteTaskConfirm")}
+        confirmText={t("common.delete")}
+        cancelText={t("common.cancel")}
         isDangerous={true}
       />
     </div>

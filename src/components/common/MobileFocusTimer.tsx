@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
 import { Play, Pause, RotateCcw, Coffee, Brain, ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -7,17 +8,6 @@ const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
-
-const getModeLabel = (m: TimerMode) => {
-  switch (m) {
-    case "focus":
-      return "专注";
-    case "shortBreak":
-      return "小憩";
-    case "longBreak":
-      return "长休";
-  }
 };
 
 const getModeColor = (m: TimerMode) => {
@@ -37,6 +27,7 @@ const PANEL_WIDTH = 220;
 const SCREEN_MARGIN = 8;
 
 export const MobileFocusTimer: React.FC = () => {
+  const { t } = useTranslation();
   const {
     isActive,
     timeLeft,
@@ -61,6 +52,17 @@ export const MobileFocusTimer: React.FC = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastTapRef = useRef<number>(0);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+
+  const getModeLabel = (m: TimerMode) => {
+    switch (m) {
+      case "focus":
+        return t("focusTimer.focus");
+      case "shortBreak":
+        return t("focusTimer.shortBreak");
+      case "longBreak":
+        return t("focusTimer.longBreak");
+    }
+  };
 
   const progress = useCallback(() => {
     let total = focusDuration * 60;
@@ -202,14 +204,14 @@ export const MobileFocusTimer: React.FC = () => {
                   <Coffee size={16} color={colors.primary} />
                 )}
                 <span className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  {getModeLabel(mode)}模式
+                  {getModeLabel(mode)}{t("focusTimer.mode")}
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={handleCollapse}
                   className="p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors"
-                  title="收起到侧边"
+                  title={t("focusTimer.collapseToSide")}
                 >
                   {isOnRight ? (
                     <ChevronRight size={16} className="text-gray-500" />
@@ -220,7 +222,7 @@ export const MobileFocusTimer: React.FC = () => {
                 <button
                   onClick={closePanel}
                   className="p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors"
-                  title="关闭"
+                  title={t("focusTimer.close")}
                 >
                   <X size={16} className="text-gray-500" />
                 </button>
@@ -274,7 +276,7 @@ export const MobileFocusTimer: React.FC = () => {
                     {formatTime(timeLeft)}
                   </span>
                   <span className="text-xs text-gray-400 mt-1">
-                    {isActive ? "进行中" : "已暂停"}
+                    {isActive ? t("focusTimer.inProgress") : t("focusTimer.paused")}
                   </span>
                 </div>
               </div>
@@ -315,7 +317,7 @@ export const MobileFocusTimer: React.FC = () => {
               </div>
 
               <div className="mt-4 text-center text-xs text-gray-400">
-                已完成 {sessionsCompleted} 个专注时段
+                {t("focusTimer.sessionsCompleted", { count: sessionsCompleted })}
               </div>
             </div>
           </motion.div>

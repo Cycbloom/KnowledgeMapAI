@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useStore } from '../store/useStore';
 import { Achievement as BaseAchievement, DailyTask } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface Achievement extends BaseAchievement {
   unlocked_at?: string;
@@ -20,26 +21,27 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   Flame, Zap, Crown, Timer, Brain, GraduationCap, BookOpen, Trophy, Medal, Target, Star
 };
 
-const taskTypeMap: Record<string, { label: string, icon: any }> = {
-  login: { label: '每日登录', icon: Calendar },
-  study_cards: { label: '复习卡片', icon: BookOpen },
-  focus_time: { label: '专注时刻', icon: Timer },
-  create_node: { label: '创造知识', icon: Zap },
-};
-
 type TabKey = 'daily' | 'periodic' | 'pass' | 'achievements';
 
-const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
-  { key: 'daily', label: '每日任务', icon: Calendar },
-  { key: 'periodic', label: '周期任务', icon: Target },
-  { key: 'pass', label: '通行证', icon: Ticket },
-  { key: 'achievements', label: '终身成就', icon: Trophy },
-];
-
 export const Achievements = () => {
+  const { t } = useTranslation();
   const { user } = useStore();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = React.useState<TabKey>('daily');
+  
+  const taskTypeMap: Record<string, { label: string, icon: any }> = {
+    login: { label: t('achievements.taskTypes.login'), icon: Calendar },
+    study_cards: { label: t('achievements.taskTypes.study_cards'), icon: BookOpen },
+    focus_time: { label: t('achievements.taskTypes.focus_time'), icon: Timer },
+    create_node: { label: t('achievements.taskTypes.create_node'), icon: Zap },
+  };
+
+  const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
+    { key: 'daily', label: t('achievements.tabs.daily'), icon: Calendar },
+    { key: 'periodic', label: t('achievements.tabs.periodic'), icon: Target },
+    { key: 'pass', label: t('achievements.tabs.pass'), icon: Ticket },
+    { key: 'achievements', label: t('achievements.tabs.achievements'), icon: Trophy },
+  ];
   
   const { data: achievements, isLoading: loadingAchievements } = useQuery({
     queryKey: ['achievements'],
@@ -84,12 +86,12 @@ export const Achievements = () => {
     curr.unlocked_at ? acc + curr.xp_reward : acc, 0) || 0;
 
   const categories = {
-    study: '学习成就',
-    focus: '专注成就',
-    creation: '创造者',
-    streak: '连续成就',
-    tasks: '任务成就',
-    special: '特殊成就',
+    study: t('achievements.categories.study'),
+    focus: t('achievements.categories.focus'),
+    creation: t('achievements.categories.creation'),
+    streak: t('achievements.categories.streak'),
+    tasks: t('achievements.categories.tasks'),
+    special: t('achievements.categories.special'),
   };
 
   const getCategoryIcon = (cat: string) => {
@@ -119,11 +121,11 @@ export const Achievements = () => {
 
   const getDailyTaskDescription = (task: DailyTask) => {
     switch(task.task_type) {
-      case 'login': return '每日登录应用';
-      case 'study_cards': return `复习 ${task.target} 张知识卡片`;
-      case 'focus_time': return `专注学习 ${task.target} 分钟`;
-      case 'create_node': return `创建 ${task.target} 个新知识点`;
-      default: return '完成任务';
+      case 'login': return t('achievements.dailyTaskDesc.login');
+      case 'study_cards': return t('achievements.dailyTaskDesc.study_cards', { target: task.target });
+      case 'focus_time': return t('achievements.dailyTaskDesc.focus_time', { target: task.target });
+      case 'create_node': return t('achievements.dailyTaskDesc.create_node', { target: task.target });
+      default: return t('achievements.dailyTaskDesc.default');
     }
   };
 
@@ -148,11 +150,11 @@ export const Achievements = () => {
               <div className="flex-1 space-y-2 text-center md:text-left">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-2">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold">等级 {level}</h2>
-                    <p className="text-blue-100 text-sm md:text-base">总获得经验: {totalLifetimeXp} XP</p>
+                    <h2 className="text-xl md:text-2xl font-bold">{t('achievements.level')} {level}</h2>
+                    <p className="text-blue-100 text-sm md:text-base">{t('achievements.totalXpEarned', { xp: totalLifetimeXp })}</p>
                   </div>
                   <div className="text-center md:text-right">
-                    <span className="text-sm font-medium text-blue-100">{currentXp} / {xpNeeded} XP</span>
+                    <span className="text-sm font-medium text-blue-100">{t('achievements.xpProgress', { current: currentXp, needed: xpNeeded })}</span>
                   </div>
                 </div>
                 
@@ -163,7 +165,7 @@ export const Achievements = () => {
                   />
                 </div>
                 <p className="text-xs text-blue-200 mt-1">
-                  再获得 {xpNeeded - currentXp} XP 升级到 Level {level + 1}
+                  {t('achievements.xpToNextLevel', { xp: xpNeeded - currentXp, level: level + 1 })}
                 </p>
               </div>
             </div>
@@ -178,7 +180,7 @@ export const Achievements = () => {
                 <div className="text-3xl font-bold text-slate-800 dark:text-slate-100">
                   {unlockedCount} <span className="text-lg text-slate-400 font-normal">/ {totalCount}</span>
                 </div>
-                <p className="text-slate-500 text-sm">已解锁成就</p>
+                <p className="text-slate-500 text-sm">{t('achievements.unlockedCount')}</p>
               </div>
             </div>
           </div>

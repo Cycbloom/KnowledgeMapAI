@@ -18,6 +18,7 @@ import {
   Edit2,
   Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ScheduledTask } from "@shared/types";
 
 interface ListViewProps {
@@ -58,44 +59,6 @@ const QUEUE_COLORS = {
   },
 };
 
-const STATUS_CONFIG = {
-  pending: {
-    label: "待处理",
-    color:
-      "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
-  },
-  in_progress: {
-    label: "进行中",
-    color: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
-  },
-  paused: {
-    label: "已暂停",
-    color:
-      "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-  },
-  completed: {
-    label: "已完成",
-    color:
-      "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-  },
-  cancelled: {
-    label: "已取消",
-    color: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
-  },
-};
-
-const COLUMNS = [
-  { id: "title", label: "任务名称", width: "w-64" },
-  { id: "status", label: "状态", width: "w-24" },
-  { id: "queue_level", label: "队列", width: "w-16" },
-  { id: "priority", label: "优先级", width: "w-20" },
-  { id: "estimated_duration", label: "预计时长", width: "w-24" },
-  { id: "deadline", label: "截止日期", width: "w-28" },
-  { id: "tags", label: "标签", width: "w-32" },
-  { id: "created_at", label: "创建时间", width: "w-28" },
-  { id: "actions", label: "操作", width: "w-32" },
-];
-
 export const ListView: React.FC<ListViewProps> = ({
   tasks,
   onTaskClick: _onTaskClick,
@@ -105,6 +68,46 @@ export const ListView: React.FC<ListViewProps> = ({
   onPauseTask,
   onCompleteTask,
 }) => {
+  const { t } = useTranslation();
+  
+  const STATUS_CONFIG = {
+    pending: {
+      label: t("scheduler.pending"),
+      color:
+        "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
+    },
+    in_progress: {
+      label: t("scheduler.inProgress"),
+      color: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+    },
+    paused: {
+      label: t("scheduler.kanban.paused"),
+      color:
+        "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+    },
+    completed: {
+      label: t("scheduler.completed"),
+      color:
+        "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+    },
+    cancelled: {
+      label: t("scheduler.kanban.cancelled"),
+      color: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
+    },
+  };
+
+  const COLUMNS = [
+    { id: "title", label: t("scheduler.listView.title"), width: "w-64" },
+    { id: "status", label: t("scheduler.listView.status"), width: "w-24" },
+    { id: "queue_level", label: t("scheduler.listView.queue"), width: "w-16" },
+    { id: "priority", label: t("scheduler.listView.priority"), width: "w-20" },
+    { id: "estimated_duration", label: t("scheduler.estimatedDuration"), width: "w-24" },
+    { id: "deadline", label: t("scheduler.listView.deadline"), width: "w-28" },
+    { id: "tags", label: t("scheduler.listView.tags"), width: "w-32" },
+    { id: "created_at", label: t("scheduler.listView.createdAt"), width: "w-28" },
+    { id: "actions", label: t("scheduler.listView.actions"), width: "w-32" },
+  ];
+
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
@@ -185,7 +188,7 @@ export const ListView: React.FC<ListViewProps> = ({
 
   const formatDuration = (minutes?: number) => {
     if (!minutes) return "--";
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes < 60) return t("scheduler.minutes", { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
@@ -206,13 +209,13 @@ export const ListView: React.FC<ListViewProps> = ({
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
     if (days < 0)
-      return { text: "已过期", color: "text-red-500 dark:text-red-400" };
+      return { text: t("scheduler.timeline.overdue"), color: "text-red-500 dark:text-red-400" };
     if (days === 0)
-      return { text: "今天", color: "text-amber-500 dark:text-amber-400" };
+      return { text: t("scheduler.timeline.today"), color: "text-amber-500 dark:text-amber-400" };
     if (days === 1)
-      return { text: "明天", color: "text-yellow-500 dark:text-yellow-400" };
+      return { text: t("scheduler.timeline.tomorrow"), color: "text-yellow-500 dark:text-yellow-400" };
     if (days <= 7)
-      return { text: `${days}天后`, color: "text-blue-500 dark:text-blue-400" };
+      return { text: t("scheduler.review.daysLater", { count: days }), color: "text-blue-500 dark:text-blue-400" };
     return {
       text: d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" }),
       color: "text-slate-500 dark:text-slate-400",
@@ -243,7 +246,7 @@ export const ListView: React.FC<ListViewProps> = ({
             />
             <input
               type="text"
-              placeholder="搜索任务..."
+              placeholder={t("scheduler.listView.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 text-slate-800 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-400 dark:focus:border-cyan-500/50"
@@ -262,17 +265,13 @@ export const ListView: React.FC<ListViewProps> = ({
             `}
           >
             <Filter size={16} />
-            筛选
+            {t("scheduler.listView.filter")}
             {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
         </div>
 
         <div className="text-sm text-slate-500 dark:text-slate-400">
-          共{" "}
-          <span className="text-slate-800 dark:text-white font-medium">
-            {filteredAndSortedTasks.length}
-          </span>{" "}
-          个任务
+          {t("scheduler.listView.totalTasks", { count: filteredAndSortedTasks.length })}
         </div>
       </div>
 
@@ -287,7 +286,7 @@ export const ListView: React.FC<ListViewProps> = ({
             <div className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/30">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 dark:text-slate-500">
-                  状态:
+                  {t("scheduler.listView.status")}:
                 </span>
                 <div className="flex gap-1">
                   {Object.entries(STATUS_CONFIG).map(([status, config]) => (
@@ -315,7 +314,7 @@ export const ListView: React.FC<ListViewProps> = ({
 
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 dark:text-slate-500">
-                  队列:
+                  {t("scheduler.listView.queue")}:
                 </span>
                 <div className="flex gap-1">
                   {[0, 1, 2].map((level) => (
@@ -351,7 +350,7 @@ export const ListView: React.FC<ListViewProps> = ({
                   }}
                   className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                 >
-                  清除筛选
+                  {t("scheduler.listView.clearFilter")}
                 </button>
               )}
             </div>
@@ -396,7 +395,7 @@ export const ListView: React.FC<ListViewProps> = ({
                       colSpan={COLUMNS.length}
                       className="px-4 py-12 text-center text-slate-400 dark:text-slate-500"
                     >
-                      没有找到匹配的任务
+                      {t("scheduler.listView.noTasks")}
                     </td>
                   </tr>
                 ) : (

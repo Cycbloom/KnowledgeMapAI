@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -98,6 +99,7 @@ const DEFAULT_TIME_SLICES = {
 const QueueDataDefault: QueueData = { q0: [], q1: [], q2: [] };
 
 export const Scheduler: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addMessage } = useMessageStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -216,10 +218,10 @@ export const Scheduler: React.FC = () => {
   const handleCreateTask = async (data: CreateScheduledTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      addMessage({ type: "success", content: "任务创建成功" });
+      addMessage({ type: "success", content: t("scheduler.taskCreated") });
       setShowTaskForm(false);
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "创建任务失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.createTaskFailed") });
     }
   };
 
@@ -227,29 +229,29 @@ export const Scheduler: React.FC = () => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      addMessage({ type: "success", content: "任务更新成功" });
+      addMessage({ type: "success", content: t("scheduler.taskUpdated") });
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "更新任务失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.updateTaskFailed") });
     }
   };
 
   const handleDeleteTask = async (task: ScheduledTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已删除" });
+      addMessage({ type: "success", content: t("scheduler.taskDeleted") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "删除任务失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.deleteTaskFailed") });
     }
   };
 
   const handleMoveTask = async (taskId: string, targetQueue: number) => {
     try {
       await moveTaskMutation.mutateAsync({ id: taskId, targetQueue });
-      addMessage({ type: "success", content: `任务已移动到 Q${targetQueue}` });
+      addMessage({ type: "success", content: t("scheduler.taskMoved", { queue: targetQueue }) });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "移动任务失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.moveTaskFailed") });
     }
   };
 
@@ -257,34 +259,34 @@ export const Scheduler: React.FC = () => {
     try {
       await reorderMutation.mutateAsync({ queueLevel, taskIds });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "排序失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.reorderFailed") });
     }
   };
 
   const handleStartTask = async (task: ScheduledTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已开始" });
+      addMessage({ type: "success", content: t("scheduler.taskStarted") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "开始任务失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.startTaskFailed") });
     }
   };
 
   const handlePauseTask = async (task: ScheduledTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已暂停" });
+      addMessage({ type: "success", content: t("scheduler.taskPaused") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "暂停任务失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.pauseTaskFailed") });
     }
   };
 
   const handleCompleteTask = async (task: ScheduledTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已完成" });
+      addMessage({ type: "success", content: t("scheduler.taskCompleted") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || "完成任务失败" });
+      addMessage({ type: "error", content: err.message || t("scheduler.completeTaskFailed") });
     }
   };
 
@@ -304,11 +306,11 @@ export const Scheduler: React.FC = () => {
   };
 
   const formatTotalTime = (minutes: number) => {
-    if (minutes === 0) return "0分钟";
-    if (minutes < 60) return `${minutes}分钟`;
+    if (minutes === 0) return t("scheduler.minutes", { count: 0 });
+    if (minutes < 60) return t("scheduler.minutes", { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+    return mins > 0 ? t("scheduler.hoursAndMinutes", { hours, minutes: mins }) : t("scheduler.hours", { count: hours });
   };
 
   return (
@@ -340,10 +342,10 @@ export const Scheduler: React.FC = () => {
                   </div>
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 dark:from-cyan-400 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                      任务调度器
+                      {t("scheduler.title")}
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                      三层反馈队列 · 智能时间管理
+                      {t("scheduler.subtitle")}
                     </p>
                   </div>
                 </motion.div>
@@ -357,7 +359,7 @@ export const Scheduler: React.FC = () => {
                   className="p-2.5 sm:flex sm:items-center sm:gap-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                 >
                   <Calendar size={18} />
-                  <span className="hidden sm:inline">日历</span>
+                  <span className="hidden sm:inline">{t("scheduler.calendar")}</span>
                 </motion.button>
 
                 <motion.button
@@ -367,7 +369,7 @@ export const Scheduler: React.FC = () => {
                   className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all"
                 >
                   <Plus size={18} />
-                  <span className="hidden sm:inline">新建任务</span>
+                  <span className="hidden sm:inline">{t("scheduler.newTask")}</span>
                 </motion.button>
 
                 <button
@@ -398,7 +400,7 @@ export const Scheduler: React.FC = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
                 <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  待处理
+                  {t("scheduler.pending")}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-cyan-600 dark:text-cyan-400">
                   {stats.pending}
@@ -407,7 +409,7 @@ export const Scheduler: React.FC = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
                 <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  进行中
+                  {t("scheduler.inProgress")}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400">
                   {stats.inProgress}
@@ -416,7 +418,7 @@ export const Scheduler: React.FC = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                 <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  已完成
+                  {t("scheduler.completed")}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400">
                   {stats.completed}
@@ -425,7 +427,7 @@ export const Scheduler: React.FC = () => {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <Clock size={14} className="text-slate-400" />
                 <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  预计时长
+                  {t("scheduler.estimatedDuration")}
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                   {formatTotalTime(stats.totalEstimated)}
@@ -437,7 +439,7 @@ export const Scheduler: React.FC = () => {
               <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-2">
                   <Filter size={14} className="text-slate-400" />
-                  <span className="text-xs text-slate-500 dark:text-slate-400">筛选:</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{t("scheduler.filter")}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
@@ -451,7 +453,7 @@ export const Scheduler: React.FC = () => {
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
-                    全部任务
+                    {t("scheduler.allTasks")}
                   </button>
                   {learningPaths.map((path: any) => (
                     <button
@@ -478,7 +480,7 @@ export const Scheduler: React.FC = () => {
                     }`}
                   >
                     <Route size={12} />
-                    按路径分组
+                    {t("scheduler.groupByPath")}
                   </button>
                 </div>
               </div>
@@ -490,12 +492,12 @@ export const Scheduler: React.FC = () => {
           <div className="flex-shrink-0 p-4">
             <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400">
               <AlertCircle size={20} />
-              <span>加载失败: {(error as Error).message}</span>
+              <span>{t("scheduler.loadFailed", { error: (error as Error).message })}</span>
               <button
                 onClick={() => refetch()}
                 className="ml-auto text-sm underline hover:text-red-500 dark:hover:text-red-300"
               >
-                重试
+                {t("scheduler.retry")}
               </button>
             </div>
           </div>
@@ -513,7 +515,7 @@ export const Scheduler: React.FC = () => {
                   />
                 </div>
                 <p className="text-slate-500 dark:text-slate-400">
-                  加载任务队列...
+                  {t("scheduler.loadingQueues")}
                 </p>
               </div>
             </div>
@@ -626,10 +628,10 @@ export const Scheduler: React.FC = () => {
                 <div className="sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
                   <div>
                     <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                      任务设置
+                      {t("scheduler.taskSettings")}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      配置你的任务偏好和可用时间
+                      {t("scheduler.taskSettingsDesc")}
                     </p>
                   </div>
                   <button
@@ -664,12 +666,12 @@ export const Scheduler: React.FC = () => {
         <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800/50 bg-slate-50/80 dark:bg-slate-900/30 backdrop-blur-sm px-3 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-400 dark:text-slate-500">
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <span>拖拽任务卡片可在队列间移动或重新排序</span>
+              <span>{t("scheduler.dragToMove")}</span>
               <span className="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
-              <span className="hidden sm:inline">任务完成后将自动降级到下一队列</span>
+              <span className="hidden sm:inline">{t("scheduler.taskAutoDowngrade")}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span>总任务: {stats.total}</span>
+              <span>{t("scheduler.totalTasks", { count: stats.total })}</span>
             </div>
           </div>
         </div>

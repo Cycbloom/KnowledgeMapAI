@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Lock, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface PassReward {
   id: string;
@@ -36,33 +37,35 @@ interface PassProgressProps {
   onClaim: (passId: string, level: number) => Promise<void>;
 }
 
-const periodTypeConfig = {
-  weekly: {
-    label: "周通行证",
-    color: "from-blue-500 to-cyan-500",
-    bgColor: "bg-blue-500",
-    borderColor: "border-blue-400",
-  },
-  monthly: {
-    label: "月通行证",
-    color: "from-purple-500 to-pink-500",
-    bgColor: "bg-purple-500",
-    borderColor: "border-purple-400",
-  },
-  quarterly: {
-    label: "季度通行证",
-    color: "from-orange-500 to-red-500",
-    bgColor: "bg-orange-500",
-    borderColor: "border-orange-400",
-  },
-};
-
 export const PassProgress: React.FC<PassProgressProps> = ({
   pass,
   rewards,
   userProgress,
   onClaim,
 }) => {
+  const { t } = useTranslation();
+  
+  const periodTypeConfig = {
+    weekly: {
+      label: t("achievements.pass.weekly"),
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-500",
+      borderColor: "border-blue-400",
+    },
+    monthly: {
+      label: t("achievements.pass.monthly"),
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-500",
+      borderColor: "border-purple-400",
+    },
+    quarterly: {
+      label: t("achievements.pass.quarterly"),
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-500",
+      borderColor: "border-orange-400",
+    },
+  };
+  
   const [claiming, setClaiming] = React.useState<number | null>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
@@ -103,7 +106,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
   if (!pass || !config) {
     return (
       <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-        暂无通行证数据
+        {t("achievements.pass.noPassData")}
       </div>
     );
   }
@@ -157,7 +160,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
               {config.label}
             </h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm">
-              等级 {pass.current_level} | 积分 {pass.total_points}/{maxPoints}
+              {t("achievements.pass.level", { level: pass.current_level })} | {t("achievements.pass.points", { current: pass.total_points, max: maxPoints })}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -166,7 +169,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
                 {pass.current_level}
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400">
-                级
+                {t("achievements.pass.levelShort")}
               </div>
             </div>
           </div>
@@ -263,7 +266,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
                     )}
 
                     <div className="text-[10px] text-slate-400 mt-1">
-                      {reward.points_required}分
+                      {t("achievements.pass.pointsRequired", { points: reward.points_required })}
                     </div>
 
                     <div className="mt-2">
@@ -281,7 +284,7 @@ export const PassProgress: React.FC<PassProgressProps> = ({
                               : "bg-amber-500 hover:bg-amber-600 text-white"
                           }`}
                         >
-                          {claiming === reward.level ? "领取中" : "领取"}
+                          {claiming === reward.level ? t("achievements.pass.claiming") : t("achievements.pass.claim")}
                         </button>
                       ) : (
                         <div className="w-6 h-6 mx-auto rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useTheme } from "../../hooks";
 import { CheckCircle, BookOpen, TrendingUp, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface KnowledgeHeatmapProps {
   graphData: Array<{
@@ -29,6 +30,7 @@ interface WeakPoint {
 
 export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -69,7 +71,7 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
     <div className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-          知识掌握热力图
+          {t('learningStats.knowledgeHeatmap.title')}
         </h3>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
@@ -127,8 +129,8 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
             </div>
             
             <div className="flex justify-between mt-1 md:mt-2 text-[8px] md:text-[10px]">
-              <span className="text-green-500">{item.mastered} 已掌握</span>
-              <span className="text-gray-400">{item.total} 节点</span>
+              <span className="text-green-500">{item.mastered} {t('learningStats.knowledgeHeatmap.mastered')}</span>
+              <span className="text-gray-400">{item.total} {t('learningStats.knowledgeHeatmap.nodes')}</span>
             </div>
           </div>
         ))}
@@ -136,7 +138,7 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
       
       {heatmapData.length === 0 && (
         <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-          暂无图谱数据
+          {t('learningStats.knowledgeHeatmap.noData')}
         </div>
       )}
     </div>
@@ -145,6 +147,7 @@ export const KnowledgeHeatmap: React.FC<KnowledgeHeatmapProps> = ({ graphData })
 
 export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: string; value: number; color: string }> }> = ({ distribution }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const distributionData = distribution || [];
   const total = distributionData.reduce((sum, d) => sum + d.value, 0);
@@ -152,7 +155,7 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
   return (
     <div className={`rounded-xl p-4 md:p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
       <h3 className={`text-base md:text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-        知识点掌握分布
+        {t('learningStats.masteryDistribution.title')}
       </h3>
       
       <div className="flex flex-col sm:flex-row items-center">
@@ -173,7 +176,7 @@ export const MasteryDistributionChart: React.FC<{ distribution?: Array<{ name: s
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value) => [`${value} 个节点`, '']}
+                formatter={(value) => [`${value} ${t('learningStats.masteryDistribution.nodes')}`, '']}
                 contentStyle={{ 
                   borderRadius: '8px', 
                   border: 'none', 
@@ -216,6 +219,7 @@ export const WeakPointsAnalysis: React.FC<{
   graphTitle?: string;
 }> = ({ nodes, nodeStatus, graphTitle }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const weakPoints = useMemo(() => {
     const weak: WeakPoint[] = [];
@@ -231,19 +235,19 @@ export const WeakPointsAnalysis: React.FC<{
       if (isWeak && !status.mastered) {
         let suggestion = '';
         if (status.due_today) {
-          suggestion = '今日需要复习，建议优先处理';
+          suggestion = t('learningStats.weakPoints.reviewToday');
         } else if (status.review_count > 5) {
-          suggestion = '复习次数较多但未掌握，建议重新学习内容';
+          suggestion = t('learningStats.weakPoints.reviewManyTimes');
         } else if (status.stability && status.stability < 3) {
-          suggestion = '记忆稳定性较低，建议增加复习频率';
+          suggestion = t('learningStats.weakPoints.lowStability');
         } else {
-          suggestion = '需要加强学习';
+          suggestion = t('learningStats.weakPoints.needStrengthen');
         }
         
         weak.push({
           id: node.id,
           title: node.title,
-          graphTitle: graphTitle || '未知图谱',
+          graphTitle: graphTitle || t('learningStats.weakPoints.unknownGraph'),
           status: status.mastered ? 'mastered' : status.locked ? 'locked' : 'learning',
           reviewCount: status.review_count || 0,
           stability: status.stability || 0,
@@ -256,16 +260,16 @@ export const WeakPointsAnalysis: React.FC<{
       if (a.stability !== b.stability) return a.stability - b.stability;
       return b.reviewCount - a.reviewCount;
     }).slice(0, 10);
-  }, [nodes, nodeStatus, graphTitle]);
+  }, [nodes, nodeStatus, graphTitle, t]);
 
   return (
     <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-          薄弱知识点分析
+          {t('learningStats.weakPoints.title')}
         </h3>
         <span className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-orange-900/30 text-orange-400' : 'bg-orange-100 text-orange-600'}`}>
-          {weakPoints.length} 个需关注
+          {t('learningStats.weakPoints.needAttention', { count: weakPoints.length })}
         </span>
       </div>
       
@@ -292,11 +296,11 @@ export const WeakPointsAnalysis: React.FC<{
                 </div>
                 <div className="text-right">
                   <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    复习 {point.reviewCount} 次
+                    {t('learningStats.weakPoints.reviewCount', { count: point.reviewCount })}
                   </div>
                   {point.stability > 0 && (
                     <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                      稳定性: {point.stability.toFixed(1)}天
+                      {t('learningStats.weakPoints.stability', { count: point.stability.toFixed(1) })}
                     </div>
                   )}
                 </div>
@@ -307,7 +311,7 @@ export const WeakPointsAnalysis: React.FC<{
       ) : (
         <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
           <CheckCircle size={32} className="mx-auto mb-2 text-green-500" />
-          <p>太棒了！暂无明显薄弱知识点</p>
+          <p>{t('learningStats.weakPoints.noWeakPoints')}</p>
         </div>
       )}
     </div>
@@ -316,6 +320,7 @@ export const WeakPointsAnalysis: React.FC<{
 
 export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: number }> }> = ({ data }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const chartData = useMemo(() => {
     return data.map(d => ({
@@ -332,10 +337,10 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
     <div className={`rounded-xl p-6 ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-sm border ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-          学习时间趋势
+          {t('learningStats.learningTimeTrend.title')}
         </h3>
         <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-          近7天共 <span className="font-bold text-blue-500">{totalHours}</span> 小时
+          {t('learningStats.learningTimeTrend.last7Days', { hours: totalHours })}
         </div>
       </div>
       
@@ -357,7 +362,7 @@ export const LearningTimeTrend: React.FC<{ data: Array<{ date: string; minutes: 
               tickFormatter={(v) => `${v}h`}
             />
             <Tooltip 
-              formatter={(value) => [`${value} 小时`, '学习时间']}
+              formatter={(value) => [`${value} ${t('learningStats.learningTimeTrend.hours')}`, t('learningStats.learningTimeTrend.learningTime')]}
               labelFormatter={(label) => new Date(label).toLocaleDateString('zh-CN')}
               contentStyle={{ 
                 borderRadius: '8px', 
@@ -381,17 +386,18 @@ export const QuickStatsCards: React.FC<{
   streak: number;
 }> = ({ totalNodes, masteredNodes, dueToday, streak }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   const stats = [
     {
-      label: '知识点总数',
+      label: t('learningStats.quickStats.totalNodes'),
       value: totalNodes,
       icon: BookOpen,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10'
     },
     {
-      label: '已掌握',
+      label: t('learningStats.quickStats.mastered'),
       value: masteredNodes,
       icon: CheckCircle,
       color: 'text-green-500',
@@ -399,19 +405,19 @@ export const QuickStatsCards: React.FC<{
       subtext: totalNodes > 0 ? `${Math.round((masteredNodes / totalNodes) * 100)}%` : '0%'
     },
     {
-      label: '今日待复习',
+      label: t('learningStats.quickStats.dueToday'),
       value: dueToday,
       icon: Clock,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10'
     },
     {
-      label: '连续学习',
+      label: t('learningStats.quickStats.streak'),
       value: streak,
       icon: TrendingUp,
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10',
-      subtext: '天'
+      subtext: t('learningStats.quickStats.days')
     }
   ];
 

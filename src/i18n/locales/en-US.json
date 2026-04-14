@@ -92,6 +92,77 @@
       "focus": "Focus Mode",
       "quizzes": "Quizzes"
     },
+    "questionBank": {
+      "searchPlaceholder": "Search questions or answers...",
+      "allTypes": "All Types",
+      "typeQA": "Q&A",
+      "typeChoice": "Choice",
+      "typeTrueFalse": "True/False",
+      "advancedFilter": "Advanced Filter",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "batchDelete": "Batch Delete",
+      "newQuestion": "New Question",
+      "reviewCount": "Review Count",
+      "nextReviewTime": "Next Review Time",
+      "learningStatus": "Learning Status",
+      "noQuestionsFound": "No matching questions found",
+      "deleteConfirm": "Are you sure you want to delete {{count}} selected questions?",
+      "deleteCardConfirm": "Delete this card?",
+      "pagination": "Showing {{start}} - {{end}} of {{total}}",
+      "fsrsStates": {
+        "new": "New",
+        "learning": "Learning",
+        "review": "Review",
+        "relearning": "Relearning"
+      }
+    },
+    "focusTimer": {
+    "focus": "Focus",
+    "shortBreak": "Short Break",
+    "longBreak": "Long Break",
+    "focusMode": "Focus Mode",
+    "mode": "Mode",
+    "inProgress": "In Progress",
+    "paused": "Paused",
+    "sessionsCompleted": "Completed {{count}} focus sessions",
+    "focusDuration": "Focus Duration (min)",
+    "breakDuration": "Break Duration (min)",
+    "shortBreakLabel": "Short",
+    "longBreakLabel": "Long",
+    "soundEnabled": "Sound",
+    "done": "Done",
+    "collapseToSide": "Collapse to Side",
+    "close": "Close"
+  },
+  "focusStats": {
+    "todayFocus": "Today's Focus",
+    "totalFocus": "Total Focus",
+    "avgDuration": "Average Duration",
+    "sessions": "{{count}} sessions",
+    "minutes": "{{count}} min",
+    "hours": "{{count}} hours",
+    "perSession": "Per session",
+    "weeklyTrend": "7-Day Focus Trend"
+  },
+    "quizList": {
+      "searchPlaceholder": "Search quiz title or description...",
+      "filter": "Filter",
+      "filterByGraph": "Filter by Graph",
+      "allGraphs": "All Graphs",
+      "allStatus": "All",
+      "statusDraft": "Draft",
+      "statusGenerating": "Generating",
+      "statusReady": "Ready",
+      "newQuiz": "New Quiz",
+      "loading": "Loading quiz list...",
+      "loadFailed": "Failed to load quiz list",
+      "retry": "Retry",
+      "noQuizzesFound": "No matching quizzes found",
+      "createFirstQuiz": "Create First Quiz",
+      "deleteConfirm": "Are you sure you want to delete quiz \"{{title}}\"? This action cannot be undone.",
+      "pagination": "Showing {{start}} - {{end}} of {{total}}"
+    },
     "enterGraph": "Please select a knowledge graph first",
     "stats": {
       "totalCards": "Total Cards",
@@ -554,6 +625,11 @@
   },
   "graphMap": {
     "title": "Graph Map",
+    "empty": {
+      "noGraphs": "No Graphs",
+      "createFirst": "Create your first knowledge graph to start exploring",
+      "loading": "Loading graph map..."
+    },
     "filter": {
       "all": "All",
       "prerequisite": "Prerequisite",
@@ -746,6 +822,67 @@
     "skillSelector": {
       "selectedForAnalysis": "{{count}} graphs selected for analysis",
       "selectType": "Select Analysis Type"
+    }
+  },
+  "learningPaths": {
+    "title": "Learning Paths",
+    "subtitle": "Manage your learning plans",
+    "status": {
+      "all": "All",
+      "active": "In Progress",
+      "completed": "Completed",
+      "paused": "Paused",
+      "archived": "Archived"
+    },
+    "actions": {
+      "newPath": "New Path",
+      "createPath": "Create Learning Path",
+      "delete": "Delete",
+      "pause": "Pause",
+      "complete": "Complete",
+      "continue": "Continue Learning"
+    },
+    "search": {
+      "placeholder": "Search learning paths..."
+    },
+    "empty": {
+      "noResults": "No matching learning paths found",
+      "noPaths": "No learning paths yet",
+      "tryDifferent": "Try different search criteria",
+      "createFirst": "Click the button above to create your first learning path"
+    },
+    "card": {
+      "noDescription": "No description",
+      "progress": "Learning Progress",
+      "nodes": "{{count}} nodes",
+      "dailyMinutes": "{{count}} min daily"
+    },
+    "time": {
+      "minutes": "{{count}} min",
+      "hours": "{{count}} hr",
+      "hoursMinutes": "{{hours}}h {{minutes}}m"
+    },
+    "createDialog": {
+      "title": "Create Learning Path",
+      "pathName": "Path Name",
+      "pathNamePlaceholder": "e.g., Advanced React Learning",
+      "description": "Description",
+      "descriptionPlaceholder": "Briefly describe this learning path...",
+      "goal": "Learning Goal",
+      "goalPlaceholder": "e.g., Master React Hooks and State Management",
+      "dailyStudyTime": "Daily Study Time",
+      "targetDate": "Target Completion Date",
+      "creating": "Creating...",
+      "createNow": "Create Now"
+    },
+    "messages": {
+      "createSuccess": "Learning path created successfully!",
+      "createFailed": "Failed to create learning path",
+      "deleteConfirm": "Are you sure you want to delete the learning path \"{{title}}\"?",
+      "deleteSuccess": "Learning path deleted",
+      "deleteFailed": "Failed to delete learning path",
+      "statusUpdated": "Status updated",
+      "statusUpdateFailed": "Failed to update status"
     }
   },
   "learning": {
@@ -1059,6 +1196,137 @@
     "loadingStats": "Loading statistics...",
     "loadStatsFailed": "Failed to load statistics"
   },
+  "stats": {
+    "task": {
+      "vsLastWeek": "vs last week",
+      "completionTrend": "Task Completion Trend (30 Days)",
+      "completed": "Completed",
+      "cumulative": "Cumulative",
+      "timeDistribution": "Time Distribution Heatmap",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "completedCount": "{{count}} tasks",
+      "less": "Less",
+      "more": "More",
+      "queueEfficiency": "Queue Efficiency Analysis",
+      "focusQueue": "Focus Queue",
+      "standardQueue": "Standard Queue",
+      "backgroundQueue": "Background Queue",
+      "tasks": "tasks",
+      "avgDuration": "Avg Duration",
+      "minutes": "min",
+      "tagAnalysis": "Tag Analysis",
+      "completionRate": "Completion Rate",
+      "taskCount": "Tasks",
+      "priorityAnalysis": "Priority Analysis",
+      "smartInsights": "Smart Insights",
+      "generating": "Generating...",
+      "regenerate": "Regenerate",
+      "noInsights": "No insights yet, click generate to get AI analysis",
+      "noData": "No data yet, stats will appear after creating tasks",
+      "loadFailed": "Failed to load, please retry",
+      "loadingData": "Loading task statistics..."
+    },
+    "activity": {
+      "title": "Learning Activity",
+      "reviewCount": "{{count}} reviews",
+      "less": "Less",
+      "more": "More"
+    },
+    "metric": {
+      "todayCompleted": "Today Completed",
+      "weekCompleted": "This Week",
+      "monthCompleted": "This Month",
+      "avgDuration": "Avg Duration",
+      "tasks": "Tasks",
+      "minutes": "Minutes"
+    }
+  },
+  "learningStats": {
+    "title": "Learning Statistics Center",
+    "subtitle": "Comprehensive overview of your learning progress and knowledge base status",
+    "loading": "Loading statistics...",
+    "error": "Unable to load statistics",
+    "cards": {
+      "totalCards": "Total Cards",
+      "totalCardsDesc": "Cumulative knowledge points created",
+      "dueToday": "Due Today",
+      "dueTodayDesc": "Key to maintaining memory",
+      "learning": "Mastered/Learning",
+      "learningDesc": "Knowledge being internalized",
+      "avgStability": "Avg Memory Stability",
+      "days": "days"
+    },
+    "focus": {
+      "title": "Focus Statistics",
+      "today": "Today's Focus",
+      "minutes": "min",
+      "sessions": "sessions",
+      "total": "Total Focus",
+      "hours": "hours",
+      "avgDuration": "Avg Duration",
+      "perSession": "Per session"
+    },
+    "forecast": {
+      "title": "7-Day Review Forecast",
+      "day": "",
+      "reviewCards": "Review Cards"
+    },
+    "forgettingCurve": {
+      "title": "Forgetting Curve & Memory Threshold",
+      "description": "Theoretical model based on FSRS algorithm (Avg stability:",
+      "daysUnit": " days)",
+      "retentionRate": "Retention Rate",
+      "day": "Day",
+      "target": "Target"
+    },
+    "growth": {
+      "title": "Knowledge Growth Trend (30 Days)",
+      "newCards": "New Cards"
+    },
+    "knowledgeHeatmap": {
+      "title": "Knowledge Mastery Heatmap",
+      "mastered": "Mastered",
+      "nodes": "nodes",
+      "noData": "No graph data"
+    },
+    "masteryDistribution": {
+      "title": "Knowledge Mastery Distribution",
+      "nodes": "nodes"
+    },
+    "weakPoints": {
+      "title": "Weak Points Analysis",
+      "needAttention": "{{count}} need attention",
+      "reviewToday": "Due for review today, prioritize",
+      "reviewManyTimes": "Reviewed many times but not mastered, suggest relearning",
+      "lowStability": "Low memory stability, increase review frequency",
+      "needStrengthen": "Needs reinforcement",
+      "reviewCount": "{{count}} reviews",
+      "stability": "Stability: {{count}} days",
+      "noWeakPoints": "Great! No obvious weak points",
+      "unknownGraph": "Unknown graph"
+    },
+    "learningTimeTrend": {
+      "title": "Learning Time Trend",
+      "last7Days": "Last 7 days: {{hours}} hours total",
+      "learningTime": "Learning time",
+      "hours": "hours"
+    },
+    "quickStats": {
+      "totalNodes": "Total Knowledge Points",
+      "mastered": "Mastered",
+      "dueToday": "Due Today",
+      "streak": "Study Streak",
+      "days": "days"
+    }
+  },
   "calendar": {
     "title": "Calendar",
     "addTask": "Add Task",
@@ -1109,29 +1377,71 @@
     "unknownTask": "Unknown Task"
   },
   "achievements": {
+    "tabs": {
+      "daily": "Daily Tasks",
+      "periodic": "Periodic Tasks",
+      "pass": "Pass",
+      "achievements": "Lifetime Achievements"
+    },
+    "level": "Level",
+    "totalXpEarned": "Total XP Earned: {{xp}} XP",
+    "xpProgress": "{{current}} / {{needed}} XP",
+    "xpToNextLevel": "Earn {{xp}} more XP to reach Level {{level}}",
+    "unlockedCount": "Achievements Unlocked",
+    "taskTypes": {
+      "login": "Daily Login",
+      "study_cards": "Review Cards",
+      "focus_time": "Focus Time",
+      "create_node": "Create Knowledge"
+    },
+    "dailyTaskDesc": {
+      "login": "Log in to the app daily",
+      "study_cards": "Review {{target}} knowledge cards",
+      "focus_time": "Focus study for {{target}} minutes",
+      "create_node": "Create {{target}} new knowledge points",
+      "default": "Complete task"
+    },
+    "categories": {
+      "study": "Study Achievement",
+      "focus": "Focus Achievement",
+      "creation": "Creator",
+      "streak": "Streak Achievement",
+      "tasks": "Task Achievement",
+      "special": "Special Achievement"
+    },
+    "streak": {
+      "title": "Completion Streak",
+      "daily": "Daily Tasks Streak",
+      "weekly": "Weekly Tasks Streak",
+      "monthly": "Monthly Tasks Streak",
+      "quarterly": "Quarterly Tasks Streak",
+      "nextMilestone": "Next milestone: {{milestone}}"
+    },
+    "periodic": {
+      "weekly": "This Week's Tasks",
+      "monthly": "This Month's Tasks",
+      "quarterly": "This Quarter's Tasks"
+    },
+    "pass": {
+      "weekly": "Weekly Pass",
+      "monthly": "Monthly Pass",
+      "quarterly": "Quarterly Pass",
+      "level": "Level {{level}}",
+      "points": "Points {{current}}/{{max}}",
+      "levelShort": "Lv",
+      "noPassData": "No pass data available",
+      "claim": "Claim",
+      "claiming": "Claiming",
+      "pointsRequired": "{{points}} pts"
+    },
     "dailyLogin": "Daily Login",
     "reviewCards": "Review Cards",
     "focusTime": "Focus Time",
     "createKnowledge": "Create Knowledge",
     "dailyTasks": "Daily Tasks",
     "periodicTasks": "Periodic Tasks",
-    "pass": "Pass",
-    "lifetimeAchievements": "Lifetime Achievements",
-    "level": "Level",
-    "totalXpEarned": "Total XP Earned: {{xp}} XP",
-    "xpToNextLevel": "Earn {{xp}} more XP to reach Level {{level}}",
-    "unlockedAchievements": "Achievements Unlocked",
-    "studyAchievement": "Study Achievement",
-    "focusAchievement": "Focus Achievement",
-    "creator": "Creator",
-    "streakAchievement": "Streak Achievement",
-    "taskAchievement": "Task Achievement",
-    "specialAchievement": "Special Achievement",
-    "dailyLoginDesc": "Log in to the app daily",
-    "reviewCardsDesc": "Review {{count}} knowledge cards",
-    "focusTimeDesc": "Focus study for {{count}} minutes",
-    "createNodeDesc": "Create {{count}} new knowledge points",
-    "completeTask": "Complete Task"
+    "passTitle": "Pass",
+    "lifetimeAchievements": "Lifetime Achievements"
   },
   "tasks": {
     "title": "Task Center",
@@ -1244,6 +1554,21 @@
       "overdue": "Overdue",
       "noDeadline": "No deadline set"
     },
+    "listView": {
+      "title": "Task Name",
+      "status": "Status",
+      "queue": "Queue",
+      "priority": "Priority",
+      "deadline": "Deadline",
+      "tags": "Tags",
+      "createdAt": "Created At",
+      "actions": "Actions",
+      "searchPlaceholder": "Search tasks...",
+      "filter": "Filter",
+      "totalTasks": "{{count}} tasks total",
+      "clearFilter": "Clear Filter",
+      "noTasks": "No matching tasks found"
+    },
     "kanban": {
       "todo": "To Do",
       "inProgress": "In Progress",
@@ -1267,10 +1592,101 @@
       "urgent": "Urgent Queue",
       "important": "Important Queue",
       "todo": "To Do Queue",
+      "urgentDesc": "Urgent & Important Tasks",
+      "importantDesc": "Important Tasks",
+      "todoDesc": "To Do Tasks",
       "taskCount": "{{count}} tasks",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "completed": "Completed",
       "timelineView": "Timeline View",
       "kanbanView": "Kanban View",
-      "listView": "List View"
+      "listView": "List View",
+      "timeSlice": "Time Slice",
+      "tasks": "Tasks",
+      "estimated": "Estimated",
+      "tasksInProgress": "{{count}} tasks in progress",
+      "noTasks": "No tasks",
+      "dropToPlace": "Drop to place task",
+      "addTask": "Add Task"
+    },
+    "taskForm": {
+      "editTask": "Edit Task",
+      "createTask": "Create New Task",
+      "createFromTemplate": "Create from Template",
+      "taskTitle": "Task Title",
+      "titlePlaceholder": "Enter task title...",
+      "aiGenerateHint": "AI auto-generate description and tags",
+      "taskDescription": "Task Description",
+      "descriptionPlaceholder": "Add task description, or click AI button to auto-generate...",
+      "taskType": "Task Type",
+      "typeOneTime": "One-time Task",
+      "typeLongTerm": "Long-term Project",
+      "typePeriodic": "Periodic Task",
+      "typeLearning": "Learning Task",
+      "typeOneTimeDesc": "Single completion task, e.g., finish a report",
+      "typeLongTermDesc": "Multi-day long-term task, e.g., complete a project",
+      "typePeriodicDesc": "Fixed cycle recurring task, e.g., daily reading",
+      "typeLearningDesc": "Learning-related task, e.g., learn a new skill",
+      "totalDuration": "Total Duration (minutes)",
+      "totalDurationPlaceholder": "e.g., 180 for 3 hours",
+      "estimatedTimeSlices": "Estimated {{count}} time slices to complete",
+      "progressMode": "Progress Distribution Mode",
+      "progressAverage": "Average - Same progress each day",
+      "progressDecreasing": "Decreasing - More early, less later",
+      "progressIncreasing": "Increasing - Less early, more later",
+      "progressCustom": "Custom - Manual daily progress",
+      "progressAverageDesc": "Complete same progress percentage each day",
+      "progressDecreasingDesc": "Like accelerated depreciation, more done early",
+      "progressIncreasingDesc": "Less done early, gradually increase later",
+      "progressCustomDesc": "Manually set daily progress goals",
+      "dependencies": "Dependencies (Optional)",
+      "dependenciesSelected": "{{count}} dependencies selected",
+      "selectDependencies": "Select dependencies",
+      "noAvailableTasks": "No available tasks",
+      "context": "Task Context (Optional)",
+      "contextPlaceholder": "Describe task background, goals, notes...",
+      "estimatedDuration": "Estimated Duration",
+      "deadline": "Deadline",
+      "priority": "Priority",
+      "priorityLow": "Low",
+      "priorityMedium": "Medium",
+      "priorityHigh": "High",
+      "priorityUrgent": "Urgent",
+      "suggestion": "Suggestion",
+      "apply": "Apply",
+      "ignore": "Ignore",
+      "detected": "Detected",
+      "queueLevel": "Queue Level",
+      "tags": "Tags",
+      "customTagPlaceholder": "Enter custom tag, press Enter to add...",
+      "linkKnowledge": "Link Knowledge Point",
+      "noKnowledgeLink": "No knowledge link",
+      "reset": "Reset",
+      "cancel": "Cancel",
+      "saveChanges": "Save Changes",
+      "createTaskBtn": "Create Task",
+      "errorTitleRequired": "Please enter task title",
+      "errorTitleTooLong": "Title cannot exceed 100 characters",
+      "errorEnterTitleFirst": "Please enter task title first",
+      "duration15min": "15 min",
+      "duration25min": "25 min",
+      "duration30min": "30 min",
+      "duration45min": "45 min",
+      "duration1hour": "1 hour",
+      "duration1_5hours": "1.5 hours",
+      "duration2hours": "2 hours",
+      "duration3hours": "3 hours",
+      "tagStudy": "Study",
+      "tagWork": "Work",
+      "tagReading": "Reading",
+      "tagWriting": "Writing",
+      "tagCoding": "Coding",
+      "tagReview": "Review",
+      "tagProject": "Project",
+      "tagMeeting": "Meeting",
+      "tagExercise": "Exercise",
+      "tagRest": "Rest"
     },
     "review": {
       "overdue": "Overdue",
@@ -1656,6 +2072,151 @@
       "sub": "Sub Knowledge",
       "normal": "Specific Content",
       "leaf": "Example Details"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Account Information & Security",
+    "logout": "Logout",
+    "loggingOut": "Logging out...",
+    "accountInfo": {
+      "title": "Account Information",
+      "loading": "Loading...",
+      "nickname": "Nickname",
+      "email": "Email",
+      "unnamedUser": "Unnamed User"
+    },
+    "systemSettings": {
+      "title": "System Settings",
+      "description": "Manage appearance, AI model configuration and learning algorithm parameters",
+      "goToSettings": "Go to Settings"
+    },
+    "promptManagement": {
+      "title": "AI Prompt Management",
+      "description": "Configure user-level AI prompt templates (User Scope)",
+      "managePrompts": "Manage Prompts"
+    },
+    "backup": {
+      "title": "Data Backup",
+      "description": "Export all knowledge graphs, nodes, study cards and progress data. Regular backups are recommended to prevent data loss.",
+      "exportBackup": "Export Backup",
+      "exporting": "Exporting...",
+      "importBackup": "Import Backup",
+      "importing": "Importing...",
+      "importMode": "Import Mode",
+      "snapshotRestore": "Snapshot Restore",
+      "snapshotRestoreHint": "(Clear existing data before import)",
+      "mergeImport": "Merge Import",
+      "mergeImportHint": "(Keep existing data)",
+      "tip": "Tip: ",
+      "tipContent": "Snapshot restore will delete all existing data before importing the backup, suitable for restoring to a historical state; merge import will keep existing data and add new data.",
+      "snapshotList": "Snapshot List",
+      "createSnapshot": "Create Snapshot",
+      "creating": "Creating...",
+      "noSnapshots": "No snapshots yet. System will create automatically or click the button above to create manually",
+      "graphsAndNodes": "{{graphs}} graphs, {{nodes}} nodes",
+      "restoreSnapshot": "Restore this snapshot",
+      "deleteSnapshot": "Delete this snapshot",
+      "snapshotTypes": {
+        "auto_30min": "30-min Auto",
+        "auto_5hour": "5-hour Auto",
+        "auto_1day": "Daily Auto",
+        "manual": "Manual"
+      }
+    },
+    "promptSettings": {
+      "title": "AI Personalization Settings",
+      "description": "Configure global prompts and custom actions (User Scope)",
+      "promptTemplates": "Prompt Templates",
+      "customActions": "Custom Actions"
+    },
+    "messages": {
+      "logoutSuccess": "Logged out successfully",
+      "exportSuccess": "Backup exported successfully",
+      "exportFailed": "Failed to export backup",
+      "importSuccess": "{{message}}: {{graphs}} graphs, {{nodes}} nodes, {{cards}} study cards",
+      "importFailed": "Failed to import backup",
+      "invalidBackupFormat": "Invalid backup file format",
+      "snapshotCreateSuccess": "Snapshot created successfully",
+      "snapshotCreateFailed": "Failed to create snapshot",
+      "snapshotRestoreSuccess": "{{message}}: {{graphs}} graphs, {{nodes}} nodes",
+      "snapshotRestoreFailed": "Failed to restore snapshot",
+      "snapshotDeleteSuccess": "Snapshot deleted",
+      "snapshotDeleteFailed": "Failed to delete snapshot",
+      "confirmRestore": "Are you sure you want to restore this snapshot? This will overwrite all current data.",
+      "confirmDelete": "Are you sure you want to delete this snapshot?"
+    }
+  },
+  "recycleBin": {
+    "title": "Trash",
+    "subtitle": "View and manage deleted graphs. You can restore them or permanently delete.",
+    "loading": "Loading trash...",
+    "loadFailed": "Failed to load trash",
+    "searchPlaceholder": "Search deleted graphs...",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selected": "{{count}} items selected",
+    "batchRestore": "Batch Restore",
+    "batchDelete": "Batch Delete",
+    "empty": "Trash is empty",
+    "emptyHint": "Recently deleted graphs will appear here.",
+    "noResults": "No matching graphs found",
+    "noResultsHint": "Try different search keywords",
+    "noDescription": "No description",
+    "deletedAt": "Deleted At",
+    "restoreGraph": "Restore Graph",
+    "permanentDelete": "Permanent Delete",
+    "confirmDelete": {
+      "title": "Permanently Delete Graph",
+      "batchTitle": "Batch Permanently Delete Graphs",
+      "message": "Are you sure you want to permanently delete {{target}}? This action cannot be undone and all data will be lost!",
+      "confirm": "Permanently Delete"
+    },
+    "messages": {
+      "restoreSuccess": "Graph restored",
+      "restoreFailed": "Restore failed",
+      "batchRestoreSuccess": "{{count}} graphs restored",
+      "batchRestoreFailed": "Batch restore failed",
+      "deleteSuccess": "Graph permanently deleted",
+      "deleteFailed": "Delete failed",
+      "batchDeleteSuccess": "{{count}} graphs permanently deleted",
+      "batchDeleteFailed": "Batch delete failed"
+    }
+  },
+  "helpGuide": {
+    "title": "User Guide",
+    "subtitle": "Quickly master knowledge graph operations",
+    "gotIt": "Got It",
+    "mouseControls": {
+      "title": "Mouse Controls (3D View)",
+      "rotateView": "Rotate View",
+      "rotateViewShortcut": "Left-click Drag",
+      "panCanvas": "Pan Canvas",
+      "panCanvasShortcut": "Right-click Drag",
+      "zoomView": "Zoom View",
+      "zoomViewShortcut": "Scroll Wheel",
+      "selectNode": "Select Node",
+      "selectNodeShortcut": "Left-click",
+      "boxSelect": "Box Select",
+      "boxSelectShortcut": "Shift + Left-click Drag"
+    },
+    "keyboardShortcuts": {
+      "title": "Keyboard Shortcuts",
+      "undo": "Undo",
+      "redo": "Redo",
+      "focusModeToggle": "Toggle Focus Mode",
+      "exitMode": "Exit Mode"
+    },
+    "aiFeatures": {
+      "title": "AI Advanced Features",
+      "smartExpand": {
+        "title": "Smart Expand",
+        "description": "Select any node and click \"Smart Expand\". AI will automatically analyze the node content and generate related child nodes. Supports background batch processing, ideal for quickly building knowledge systems."
+      },
+      "autoQuestion": {
+        "title": "Auto Generate Questions",
+        "description": "AI can automatically generate various types of review cards including single-choice, multiple-choice, and Q&A based on node content, and automatically add them to the FSRS memory algorithm review queue."
+      }
     }
   }
 }

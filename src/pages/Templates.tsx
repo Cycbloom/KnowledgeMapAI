@@ -14,11 +14,9 @@ import {
   Trash2,
   Search,
   X,
-  BookOpen,
-  FileText,
+  GraduationCap,
   Briefcase,
-  PieChart,
-  Sparkles,
+  Layers,
   Network,
   CheckSquare,
 } from "lucide-react";
@@ -27,11 +25,10 @@ import { useTheme } from "../hooks";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
 
 const categoryIcons: Record<TemplateCategory, React.ReactNode> = {
-  learning: <BookOpen size={20} />,
-  story: <FileText size={20} />,
+  knowledge: <GraduationCap size={20} />,
   project: <Briefcase size={20} />,
-  analysis: <PieChart size={20} />,
-  custom: <Sparkles size={20} />,
+  analysis: <Search size={20} />,
+  architecture: <Layers size={20} />,
 };
 
 type TemplateTab = "knowledge" | "task";
@@ -57,7 +54,7 @@ export const Templates = () => {
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateDescription, setNewTemplateDescription] = useState("");
   const [newTemplateCategory, setNewTemplateCategory] =
-    useState<TemplateCategory>("learning");
+    useState<TemplateCategory>("knowledge");
 
   const filteredTemplates = templates.filter((t) => {
     const matchesSearch =
@@ -96,33 +93,56 @@ export const Templates = () => {
       setNewTemplateName("");
       setNewTemplateDescription("");
       setIsCreating(false);
-      addMessage({ type: "success", content: t("templates.message.createSuccess") });
+      addMessage({
+        type: "success",
+        content: t("templates.message.createSuccess"),
+      });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("templates.message.createFailed");
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : t("templates.message.createFailed");
       addMessage({ type: "error", content: errorMessage });
     }
   };
 
   const handleDeleteTemplate = async (template: Template) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotDelete") });
+      addMessage({
+        type: "error",
+        content: t("templates.message.systemTemplateCannotDelete"),
+      });
       return;
     }
 
-    if (!confirm(`${t("common.confirm")}${t("common.delete")} "${template.name}"?`)) return;
+    if (
+      !confirm(
+        `${t("common.confirm")}${t("common.delete")} "${template.name}"?`,
+      )
+    )
+      return;
 
     try {
       await deleteTemplateMutation.mutateAsync(template.id);
-      addMessage({ type: "success", content: t("templates.message.deleteSuccess") });
+      addMessage({
+        type: "success",
+        content: t("templates.message.deleteSuccess"),
+      });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("templates.message.deleteFailed");
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : t("templates.message.deleteFailed");
       addMessage({ type: "error", content: errorMessage });
     }
   };
 
   const handleEditTemplate = (template: Template) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotEdit") });
+      addMessage({
+        type: "error",
+        content: t("templates.message.systemTemplateCannotEdit"),
+      });
       return;
     }
     setEditingTemplate(template);
@@ -149,9 +169,15 @@ export const Templates = () => {
       setIsEditing(false);
       setNewTemplateName("");
       setNewTemplateDescription("");
-      addMessage({ type: "success", content: t("templates.message.updateSuccess") });
+      addMessage({
+        type: "success",
+        content: t("templates.message.updateSuccess"),
+      });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t("templates.message.updateFailed");
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : t("templates.message.updateFailed");
       addMessage({ type: "error", content: errorMessage });
     }
   };
@@ -213,7 +239,7 @@ export const Templates = () => {
                 onClick={() => {
                   setNewTemplateName("");
                   setNewTemplateDescription("");
-                  setNewTemplateCategory("learning");
+                  setNewTemplateCategory("knowledge");
                   setIsCreating(true);
                 }}
                 className="px-5 py-2.5 rounded-xl flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all font-medium"
@@ -246,11 +272,10 @@ export const Templates = () => {
                 {(
                   [
                     "all",
-                    "learning",
-                    "story",
+                    "knowledge",
                     "project",
                     "analysis",
-                    "custom",
+                    "architecture",
                   ] as const
                 ).map((cat) => (
                   <button
@@ -264,7 +289,9 @@ export const Templates = () => {
                           : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    {cat === "all" ? t("templates.filter.all") : t(`templates.category.${cat}`)}
+                    {cat === "all"
+                      ? t("templates.filter.all")
+                      : t(`templates.category.${cat}`)}
                   </button>
                 ))}
               </div>
@@ -276,8 +303,12 @@ export const Templates = () => {
               </div>
             ) : filteredTemplates.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-                <p className="text-lg mb-2">{t("templates.empty.noTemplates")}</p>
-                <p className="text-sm">{t("templates.empty.noTemplatesHint")}</p>
+                <p className="text-lg mb-2">
+                  {t("templates.empty.noTemplates")}
+                </p>
+                <p className="text-sm">
+                  {t("templates.empty.noTemplatesHint")}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -294,15 +325,13 @@ export const Templates = () => {
                       <div className="flex items-center gap-3">
                         <div
                           className={`p-2.5 rounded-xl ${
-                            template.category === "learning"
+                            template.category === "knowledge"
                               ? "bg-blue-50 text-blue-600"
-                              : template.category === "story"
-                                ? "bg-purple-50 text-purple-600"
-                                : template.category === "project"
-                                  ? "bg-green-50 text-green-600"
-                                  : template.category === "analysis"
-                                    ? "bg-orange-50 text-orange-600"
-                                    : "bg-pink-50 text-pink-600"
+                              : template.category === "project"
+                                ? "bg-green-50 text-green-600"
+                                : template.category === "analysis"
+                                  ? "bg-amber-50 text-amber-600"
+                                  : "bg-purple-50 text-purple-600"
                           }`}
                         >
                           {categoryIcons[template.category as TemplateCategory]}
@@ -316,7 +345,9 @@ export const Templates = () => {
                             {template.name}
                           </h3>
                           <span className="text-xs text-gray-500">
-                            {t(`templates.category.${template.category as TemplateCategory}`)}
+                            {t(
+                              `templates.category.${template.category as TemplateCategory}`,
+                            )}
                             {t("templates.template")}
                           </span>
                         </div>
@@ -357,7 +388,11 @@ export const Templates = () => {
                     </p>
 
                     <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                      <span>{t("templates.nodeCount", { count: template.nodes?.length ?? 0 })}</span>
+                      <span>
+                        {t("templates.nodeCount", {
+                          count: template.nodes?.length ?? 0,
+                        })}
+                      </span>
                       {template.layout && (
                         <span className="px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700">
                           {template.layout.type}
@@ -387,7 +422,9 @@ export const Templates = () => {
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">{t("templates.createTemplate")}</h3>
+              <h3 className="text-xl font-bold">
+                {t("templates.createTemplate")}
+              </h3>
               <button
                 onClick={() => setIsCreating(false)}
                 className={`p-2 rounded-full hover:bg-opacity-10 transition-colors ${
@@ -463,11 +500,18 @@ export const Templates = () => {
                       : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   }`}
                 >
-                  <option value="learning">{t("templates.category.learning")}</option>
-                  <option value="story">{t("templates.category.story")}</option>
-                  <option value="project">{t("templates.category.project")}</option>
-                  <option value="analysis">{t("templates.category.analysis")}</option>
-                  <option value="custom">{t("templates.category.custom")}</option>
+                  <option value="knowledge">
+                    {t("templates.category.knowledge")}
+                  </option>
+                  <option value="project">
+                    {t("templates.category.project")}
+                  </option>
+                  <option value="analysis">
+                    {t("templates.category.analysis")}
+                  </option>
+                  <option value="architecture">
+                    {t("templates.category.architecture")}
+                  </option>
                 </select>
               </div>
 
@@ -490,7 +534,9 @@ export const Templates = () => {
                     createTemplateMutation.isPending || !newTemplateName
                   }
                 >
-                  {createTemplateMutation.isPending ? `${t("common.generating")}` : t("templates.button.create")}
+                  {createTemplateMutation.isPending
+                    ? `${t("common.generating")}`
+                    : t("templates.button.create")}
                 </button>
               </div>
             </form>
@@ -506,7 +552,9 @@ export const Templates = () => {
             }`}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">{t("templates.button.edit")}</h3>
+              <h3 className="text-xl font-bold">
+                {t("templates.button.edit")}
+              </h3>
               <button
                 onClick={() => {
                   setIsEditing(false);
@@ -557,7 +605,8 @@ export const Templates = () => {
                   value={newTemplateDescription}
                   onChange={(e) => setNewTemplateDescription(e.target.value)}
                   placeholder={
-                    editingTemplate.description || t("templates.form.descriptionPlaceholder")
+                    editingTemplate.description ||
+                    t("templates.form.descriptionPlaceholder")
                   }
                   className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none ${
                     isDark
@@ -587,11 +636,18 @@ export const Templates = () => {
                       : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   }`}
                 >
-                  <option value="learning">{t("templates.category.learning")}</option>
-                  <option value="story">{t("templates.category.story")}</option>
-                  <option value="project">{t("templates.category.project")}</option>
-                  <option value="analysis">{t("templates.category.analysis")}</option>
-                  <option value="custom">{t("templates.category.custom")}</option>
+                  <option value="knowledge">
+                    {t("templates.category.knowledge")}
+                  </option>
+                  <option value="project">
+                    {t("templates.category.project")}
+                  </option>
+                  <option value="analysis">
+                    {t("templates.category.analysis")}
+                  </option>
+                  <option value="architecture">
+                    {t("templates.category.architecture")}
+                  </option>
                 </select>
               </div>
 
@@ -617,7 +673,9 @@ export const Templates = () => {
                     updateTemplateMutation.isPending || !newTemplateName
                   }
                 >
-                  {updateTemplateMutation.isPending ? `${t("common.generating")}` : t("templates.button.save")}
+                  {updateTemplateMutation.isPending
+                    ? `${t("common.generating")}`
+                    : t("templates.button.save")}
                 </button>
               </div>
             </form>

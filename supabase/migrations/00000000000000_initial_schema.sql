@@ -278,7 +278,8 @@ CREATE TABLE IF NOT EXISTS templates (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  category VARCHAR(20) NOT NULL CHECK (category IN ('learning', 'story', 'project', 'analysis', 'custom')),
+  category VARCHAR(20) NOT NULL DEFAULT 'knowledge' CHECK (category IN ('knowledge', 'project', 'analysis', 'architecture')),
+  template_type VARCHAR(30),
   is_system BOOLEAN DEFAULT false,
   nodes JSONB NOT NULL,
   edges JSONB DEFAULT '[]',
@@ -293,6 +294,8 @@ CREATE TABLE IF NOT EXISTS templates (
 );
 
 COMMENT ON TABLE templates IS '知识图谱模板表，存储预设和用户自定义模板';
+COMMENT ON COLUMN templates.category IS '模板分类：knowledge(知识), project(项目), analysis(分析), architecture(架构)';
+COMMENT ON COLUMN templates.template_type IS '模板类型标识：knowledge_tree, skill_map, project_lifecycle, root_cause, tech_ecosystem 等';
 COMMENT ON COLUMN templates.generation_config IS 'AI生成配置：风格、深度、语言等';
 COMMENT ON COLUMN templates.preview_data IS '预览数据：示例节点和边的缩略图数据';
 COMMENT ON COLUMN templates.tags IS '模板标签数组，用于分类和搜索';
@@ -1163,6 +1166,7 @@ CREATE INDEX IF NOT EXISTS idx_templates_user_id ON templates(user_id);
 CREATE INDEX IF NOT EXISTS idx_templates_category ON templates(category);
 CREATE INDEX IF NOT EXISTS idx_templates_is_system ON templates(is_system);
 CREATE INDEX IF NOT EXISTS idx_templates_user_category ON templates(user_id, category);
+CREATE INDEX IF NOT EXISTS idx_templates_template_type ON templates(template_type);
 
 -- Prompt templates
 CREATE INDEX IF NOT EXISTS idx_prompt_templates_code ON prompt_templates(code);

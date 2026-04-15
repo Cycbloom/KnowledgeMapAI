@@ -4,11 +4,14 @@ import type {
   TemplateEdge,
   TemplateDifficulty,
   TemplateCategory,
+  TemplateType,
   LayoutSuggestion,
   NodeLevel,
 } from "@shared/types/graph";
 import { getAIProviderForTask, getAIProvider } from "./factory";
 import { promptService } from "./promptService";
+import { performanceMonitor } from "./performanceMonitor";
+import { pricingService } from "./pricingService";
 import { logger } from "../../utils/logger";
 import { parseAIResponse } from "./utils";
 import {
@@ -46,6 +49,7 @@ export interface GenerateTemplatesOptions {
   topic: string;
   context?: string;
   category?: TemplateCategory;
+  templateType?: TemplateType;
   provider?: AIProviderType;
   model?: string;
   userId?: string;
@@ -376,12 +380,73 @@ export class TemplateGeneratorService {
       return getMockTemplates(topic);
     }
 
+    const startTime = Date.now();
+
     try {
-      const result = await this.callAI(provider, options);
+      const { result, usage } = await this.callAI(provider, options);
+
+      const inputTokens = usage?.prompt_tokens || 0;
+      const outputTokens = usage?.completion_tokens || 0;
+      const cachedInputTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
+      const uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
+      const reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens || 0;
+      const totalTokens = inputTokens + outputTokens;
+      const cacheHitRate = inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
+
+      const costBreakdown = pricingService.calculateDetailedCost(
+        provider.providerType,
+        options.model || provider.model,
+        inputTokens,
+        outputTokens,
+        cachedInputTokens
+      );
+
+      performanceMonitor.recordLog({
+        operation: "template_generation",
+        provider: provider.providerType,
+        model: options.model || provider.model,
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        estimatedCost: costBreakdown.totalCost,
+        duration: Date.now() - startTime,
+        success: true,
+        metadata: {
+          userId: options.userId,
+          graphId: options.graphId,
+          topic: options.topic,
+          templateType: options.templateType,
+        },
+        cachedInputTokens,
+        uncachedInputTokens,
+        reasoningTokens,
+        cacheHitRate: parseFloat(cacheHitRate.toFixed(2)),
+        costBreakdown,
+      });
+
       return result;
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("[Template Generator] AI Error:", error);
+
+      performanceMonitor.recordLog({
+        operation: "template_generation",
+        provider: provider.providerType,
+        model: options.model || provider.model,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        estimatedCost: 0,
+        duration: Date.now() - startTime,
+        success: false,
+        errorMessage: err.message,
+        metadata: {
+          userId: options.userId,
+          graphId: options.graphId,
+          topic: options.topic,
+          templateType: options.templateType,
+        },
+      });
 
       if (err instanceof TimeoutError) {
         throw new AppError(ErrorCodes.AI_TIMEOUT);
@@ -400,11 +465,11 @@ export class TemplateGeneratorService {
   private async callAI(
     provider: { providerType: AIProviderType; model: string; hasKey: boolean; client: unknown },
     options: GenerateTemplatesOptions
-  ): Promise<GenerateTemplatesResult> {
-    const { topic, context, category, preferredLayout } = options;
+  ): Promise<{ result: GenerateTemplatesResult; usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number; audio_tokens?: number }; completion_tokens_details?: { reasoning_tokens?: number; audio_tokens?: number } } }> {
+    const { topic, context, category, templateType, preferredLayout } = options;
     const model = options.model || provider.model;
 
-    const systemPrompt = await this.buildSystemPrompt(category, preferredLayout);
+    const systemPrompt = await this.buildSystemPrompt(category, templateType, preferredLayout, options.userId, options.graphId);
 
     const userPrompt = this.buildUserPrompt(topic, context);
 
@@ -421,6 +486,14 @@ export class TemplateGeneratorService {
             usage?: {
               prompt_tokens?: number;
               completion_tokens?: number;
+              prompt_tokens_details?: {
+                cached_tokens?: number;
+                audio_tokens?: number;
+              };
+              completion_tokens_details?: {
+                reasoning_tokens?: number;
+                audio_tokens?: number;
+              };
             };
           }>;
         };
@@ -475,30 +548,76 @@ export class TemplateGeneratorService {
 
     if (validatedTemplates.length === 0) {
       logger.warn("[Template Generator] No valid templates generated, using mock");
-      return getMockTemplates(topic);
+      return {
+        result: getMockTemplates(topic),
+        usage: completion.usage,
+      };
     }
 
     return {
-      templates: validatedTemplates.slice(0, 3),
-      metadata: {
-        topic,
-        generatedAt: new Date().toISOString(),
-        provider: provider.providerType,
-        model,
+      result: {
+        templates: validatedTemplates.slice(0, 3),
+        metadata: {
+          topic,
+          generatedAt: new Date().toISOString(),
+          provider: provider.providerType,
+          model,
+        },
       },
+      usage: completion.usage,
     };
   }
 
   private async buildSystemPrompt(
     category?: TemplateCategory,
-    preferredLayout?: LayoutSuggestion
+    templateType?: TemplateType,
+    preferredLayout?: LayoutSuggestion,
+    userId?: string,
+    graphId?: string
   ): Promise<string> {
+    const categoryGuides: Record<TemplateCategory, string> = {
+      knowledge: "Focus on educational structure with clear learning paths and prerequisites.",
+      project: "Focus on project management structure with tasks, milestones, and dependencies.",
+      analysis: "Focus on analytical structure with factors, comparisons, and conclusions.",
+      architecture: "Focus on system architecture with modules, components, and their relationships.",
+    };
+
+    let templateTypeGuidance = "";
+    if (templateType && templateType !== "blank") {
+      templateTypeGuidance = await promptService.getRenderedPrompt(
+        supabaseAdmin,
+        `template_type_${templateType}`,
+        {},
+        userId,
+        graphId
+      ) || "";
+    }
+
+    const layoutGuides: Record<LayoutSuggestion, string> = {
+      radial: "Center the main topic with related concepts radiating outward.",
+      tree: "Use a hierarchical tree structure with clear parent-child relationships.",
+      network: "Create an interconnected network showing relationships between concepts.",
+      hierarchical: "Use a top-down hierarchical structure with clear levels.",
+    };
+
+    const categoryGuidance = category
+      ? categoryGuides[category] || categoryGuides.knowledge
+      : "";
+
+    const layoutGuidance = preferredLayout
+      ? layoutGuides[preferredLayout] || ""
+      : "";
+
     const customPrompt = await promptService.getRenderedPrompt(
       supabaseAdmin,
       "template_generation",
       {
-        category: category || "custom",
+        category: category || "knowledge",
+        categoryGuidance,
+        templateType: templateType || "",
+        templateTypeGuidance,
         preferredLayout: preferredLayout || "radial",
+        layoutGuidance,
       }
     );
 
@@ -506,30 +625,22 @@ export class TemplateGeneratorService {
       return customPrompt;
     }
 
-    let categoryGuidance = "";
-    if (category) {
-      const categoryGuides: Record<TemplateCategory, string> = {
-        learning: "Focus on educational structure with clear learning paths and prerequisites.",
-        story: "Focus on narrative structure with characters, events, and plot development.",
-        project: "Focus on project management structure with tasks, milestones, and dependencies.",
-        analysis: "Focus on analytical structure with factors, comparisons, and conclusions.",
-        custom: "Use a flexible structure that adapts to the specific topic.",
-      };
-      categoryGuidance = `\n\n## Category Guidance\n${categoryGuides[category] || categoryGuides.custom}`;
+    let categorySection = "";
+    if (categoryGuidance) {
+      categorySection = `\n\n## Category Guidance\n${categoryGuidance}`;
     }
 
-    let layoutGuidance = "";
-    if (preferredLayout) {
-      const layoutGuides: Record<LayoutSuggestion, string> = {
-        radial: "Center the main topic with related concepts radiating outward.",
-        tree: "Use a hierarchical tree structure with clear parent-child relationships.",
-        network: "Create an interconnected network showing relationships between concepts.",
-        hierarchical: "Use a top-down hierarchical structure with clear levels.",
-      };
-      layoutGuidance = `\n\n## Preferred Layout\n${layoutGuides[preferredLayout] || ""}`;
+    let templateTypeSection = "";
+    if (templateTypeGuidance) {
+      templateTypeSection = `\n\n## Template Type Guidance\nYou are creating a "${templateType}" type graph. Follow this specific guidance:\n${templateTypeGuidance}`;
     }
 
-    return `${TEMPLATE_GENERATION_PROMPT}${categoryGuidance}${layoutGuidance}`;
+    let layoutSection = "";
+    if (layoutGuidance) {
+      layoutSection = `\n\n## Preferred Layout\n${layoutGuidance}`;
+    }
+
+    return `${TEMPLATE_GENERATION_PROMPT}${categorySection}${templateTypeSection}${layoutSection}`;
   }
 
   private buildUserPrompt(topic: string, context?: string): string {

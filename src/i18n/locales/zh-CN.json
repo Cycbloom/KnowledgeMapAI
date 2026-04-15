@@ -32,8 +32,6 @@
       "aiGenerate": "AI 生成"
     },
     "create": {
-      "title": "创建新图谱",
-      "fromTemplate": "从模板创建图谱",
       "nodeCount": "{{count}} 个节点",
       "noDescription": "暂无描述",
       "graphName": "图谱名称",
@@ -804,7 +802,14 @@
         "podcast-script": "播客脚本",
         "auto_graph_init": "图谱初始化",
         "auto_graph_expand": "节点展开",
-        "auto_graph_optimize_prompt": "提示词优化"
+        "auto_graph_optimize_prompt": "提示词优化",
+        "generateLearningMaterial": "生成学习材料",
+        "extractConcepts": "提取概念",
+        "analyzeCrossGraphConnections": "跨图谱连接分析",
+        "generateTaskDetails": "生成任务详情",
+        "getBranchSuggestions": "分支建议",
+        "generateGraphFromImage": "从图像生成图谱",
+        "suggestNextTopic": "建议下一个主题"
       },
       "providers": {
         "deepseek": "DeepSeek",
@@ -1027,26 +1032,62 @@
     "searchTaskPlaceholder": "搜索任务模板...",
     "filter": {
       "all": "全部",
-      "learning": "学习",
-      "story": "故事",
-      "project": "项目",
-      "analysis": "分析",
-      "custom": "自定义",
-      "study": "学习",
-      "work": "工作",
-      "life": "生活",
-      "health": "健康"
+      "knowledge": "知识学习",
+      "project": "项目规划",
+      "analysis": "问题分析",
+      "architecture": "系统架构"
     },
     "category": {
-      "learning": "学习",
-      "story": "故事",
-      "project": "项目",
-      "analysis": "分析",
-      "custom": "自定义",
-      "study": "学习",
-      "work": "工作",
-      "life": "生活",
-      "health": "健康"
+      "knowledge": "知识学习",
+      "project": "项目规划",
+      "analysis": "问题分析",
+      "architecture": "系统架构"
+    },
+    "categoryDescription": {
+      "knowledge": "系统学习知识，构建完整体系",
+      "project": "规划项目流程，分解任务目标",
+      "analysis": "深度分析问题，找到根因对策",
+      "architecture": "理解系统组成，梳理依赖关系"
+    },
+    "templateType": {
+      "knowledge_tree": "知识树",
+      "skill_map": "技能图谱",
+      "concept_network": "概念网络",
+      "learning_path": "学习路径",
+      "topic_research": "专题研究",
+      "project_lifecycle": "项目生命周期",
+      "dev_workflow": "开发流程",
+      "task_breakdown": "任务分解",
+      "sprint_planning": "迭代规划",
+      "root_cause": "根因分析",
+      "swot": "SWOT 分析",
+      "comparison": "对比分析",
+      "decision_tree": "决策树",
+      "tech_ecosystem": "技术生态",
+      "org_structure": "组织架构",
+      "system_architecture": "系统架构",
+      "knowledge_system": "知识体系",
+      "blank": "空白图谱"
+    },
+    "templateTypeDescription": {
+      "knowledge_tree": "层级学习，从基础到进阶",
+      "skill_map": "前置技能关系，学习路径",
+      "concept_network": "概念间关联和交叉",
+      "learning_path": "循序渐进的学习步骤",
+      "topic_research": "深度探索某个专题",
+      "project_lifecycle": "规划→执行→交付全流程",
+      "dev_workflow": "需求→设计→开发→测试→部署",
+      "task_breakdown": "WBS 工作分解结构",
+      "sprint_planning": "Sprint 迭代规划",
+      "root_cause": "5Why/鱼骨图式分析",
+      "swot": "优势/劣势/机会/威胁",
+      "comparison": "多维度对比分析",
+      "decision_tree": "条件分支决策",
+      "tech_ecosystem": "技术栈关系和依赖",
+      "org_structure": "层级与职能关系",
+      "system_architecture": "模块与依赖关系",
+      "knowledge_system": "跨领域知识关联",
+      "blank": "自由创建，不使用特定结构"
     },
     "form": {
       "name": "模板名称",
@@ -1280,8 +1321,26 @@
     "aiGenerateFailed": "AI 生成内容失败，请重试",
     "generateFailed": "生成学习内容失败，请重试",
     "backToOverview": "返回概览",
-    "overview": "概览",
     "regenerate": "重新生成",
+    "overview": {
+      "title": "图谱大纲",
+      "edit": "编辑",
+      "selectGraph": "请选择一个知识图谱",
+      "noDetails": "暂无详细信息",
+      "addDetailsHint": "为图谱添加描述、参考书籍和外部链接，帮助您更好地组织学习内容。",
+      "addInfo": "添加信息",
+      "description": "描述",
+      "referenceBooks": "参考书籍",
+      "author": "作者",
+      "viewLink": "查看链接",
+      "externalLinks": "外部链接",
+      "typeArticle": "文章",
+      "typeVideo": "视频",
+      "typeCourse": "课程",
+      "typeTool": "工具",
+      "typeLink": "链接",
+      "learningGuide": "学习指南"
+    },
     "focusMode": {
       "title": "专注模式",
       "enter": "进入专注模式",
@@ -1537,7 +1596,102 @@
       "darkMode": "切换到深色模式",
       "settings": "设置",
       "mindMap": "思维导图",
+      "title": "知识学习",
+      "selectChapter": "请选择章节",
+      "loading": "加载中...",
       "enterMindMap": "进入 3D 思维导图"
+    },
+    "chat": {
+      "welcome": "你好！我是你的 AI 学习助手，有什么可以帮助你的吗？",
+      "offline": "离线模式下无法使用 AI 助教",
+      "error": "抱歉，我现在无法回答。请稍后再试。",
+      "aiTutor": "AI 助教",
+      "online": "在线",
+      "placeholder": "有问题尽管问我...",
+      "disclaimer": "由 AI 导师提供支持，内容仅供参考"
+    },
+    "material": {
+      "generated": "学习教材已生成",
+      "saveFailed": "教材保存失败，下次进入将重新生成",
+      "generateFailed": "生成学习内容失败，请重试",
+      "aiFailed": "AI 生成内容失败，请重试",
+      "regenerate": "重新生成",
+      "regenerateFailed": "重新生成失败，请重试",
+      "regenerated": "学习资料已重新生成！请查看更新后的内容。",
+      "regeneratedMessage": "学习资料已重新生成！请查看更新后的内容。",
+      "regenerateOffline": "离线模式下无法重新生成",
+      "contentGenerated": "课程内容已生成！请仔细阅读左侧的教材。如果有任何疑问，或想深入了解某个概念，请直接问我。",
+      "generating": "AI 正在为您编写教材...",
+      "generatingTopic": "正在生成关于 \"{{title}}\" 的深度学习内容",
+      "generateCards": "生成题目"
+    },
+    "cards": {
+      "taskSubmitted": "题目生成任务已提交至后台",
+      "viewTasks": "查看任务",
+      "generateFailed": "生成题目失败",
+      "configure": "配置题目",
+      "offlineUnavailable": "离线模式不可用",
+      "generating": "正在生成题目...",
+      "generatingProgress": "正在生成题目 {{current}}/{{total}}",
+      "generatingChallenge": "正在生成挑战题目...",
+      "cancel": "取消",
+      "generateSuccess": "成功生成 {{count}} 题",
+      "startChallenge": "开始挑战",
+      "submitFailed": "提交失败: {{error}}",
+      "submitFailedShort": "提交失败",
+      "networkError": "网络连接失败",
+      "authError": "认证失败",
+      "validationError": "验证失败",
+      "unknownError": "未知错误",
+      "queryFailed": "查询失败",
+      "nodeNotFound": "节点未找到",
+      "retryLater": "稍后重试",
+      "retry": "重试",
+      "configureApiKey": "请先在设置中配置 AI API Key",
+      "goToSettings": "前往设置",
+      "generate": "生成题目",
+      "cancelling": "正在取消生成...",
+      "cancelled": "生成已取消，已生成 {{count}} 题",
+      "batchFailed": "第 {{batch}} 批生成失败，继续..."
+    },
+    "challenge": {
+      "start": "完成学习，开始挑战",
+      "completed": "学习完成！复习任务已创建，将在稍后复习",
+      "complete": "完成",
+      "missingParams": "缺少必要参数"
+    },
+    "batch": {
+      "selectNodes": "请先选择节点",
+      "deleteSuccess": "已删除 {{count}} 个节点",
+      "deleteFailed": "批量删除失败，请重试",
+      "expandSuccess": "已提交 {{count}} 个节点的扩展任务",
+      "expandFailed": "任务提交失败，请重试",
+      "expandOffline": "离线模式下无法扩展图谱",
+      "submitFailed": "任务提交失败",
+      "expandError": "扩展失败",
+      "generateSuccess": "已提交 {{count}} 个节点的生成任务",
+      "generateFailed": "批量生成失败"
+    },
+    "speech": {
+      "notSupported": "您的浏览器不支持语音识别功能，请尝试使用 Chrome 浏览器。",
+      "networkError": "网络连接失败",
+      "viewSolution": "查看解决方法",
+      "solutionDetail": "语音识别失败原因排查：\n1. 浏览器限制：Chrome 依赖 Google 服务，若网络环境限制访问 Google，会导致此错误。\n2. 尝试建议：请检查网络代理设置，或尝试使用 Edge 浏览器（通常在某些环境下更稳定）。\n3. 离线支持：当前浏览器暂不支持离线语音识别。"
+    },
+    "node": {
+      "loadFailed": "节点数据加载失败，请重试",
+      "createSuccess": "节点创建成功",
+      "createFailed": "创建节点失败，请重试",
+      "enterTitle": "请输入节点标题",
+      "welcomeBack": "欢迎回来！这是为您准备的 \"{{title}}\" 学习教材。如果您有任何疑问，请随时提问。"
+    },
+    "focus": {
+      "title": "专注模式",
+      "enter": "进入专注模式",
+      "selectContent": "请先选择学习内容"
+    },
+    "path": {
+      "title": "学习路径"
     }
   },
   "confirmDialog": {
@@ -2176,6 +2330,48 @@
       "beginner": "入门",
       "custom": "自定义"
     },
-    "modify": "修改"
+    "modify": "修改",
+    "steps": {
+      "selectTemplate": "选择模板",
+      "inputTopic": "输入主题",
+      "generateScheme": "生成方案",
+      "selectStyle": "选择风格"
+    },
+    "backToTemplateSelection": "返回选择模板",
+    "changeTemplate": "更换",
+    "templateType": "模板类型",
+    "editPrompt": "编辑提示词",
+    "promptSaved": "提示词已保存",
+    "promptSaveFailed": "提示词保存失败"
+  },
+  "prompts": {
+    "categories": {
+      "templateGeneration": "模板生成"
+    },
+    "scenarios": {
+      "templateGeneration": "模板生成",
+      "templateGenerationDesc": "自定义各模板类型的 AI 生成指导文本"
+    },
+    "templateNames": {
+      "template_generation": "模板生成基础提示词",
+      "template_type_knowledge_tree": "知识树",
+      "template_type_skill_map": "技能图谱",
+      "template_type_concept_network": "概念网络",
+      "template_type_learning_path": "学习路径",
+      "template_type_topic_research": "专题研究",
+      "template_type_project_lifecycle": "项目生命周期",
+      "template_type_dev_workflow": "开发流程",
+      "template_type_task_breakdown": "任务分解",
+      "template_type_sprint_planning": "迭代规划",
+      "template_type_root_cause": "根因分析",
+      "template_type_swot": "SWOT 分析",
+      "template_type_comparison": "对比分析",
+      "template_type_decision_tree": "决策树",
+      "template_type_tech_ecosystem": "技术生态",
+      "template_type_org_structure": "组织架构",
+      "template_type_system_architecture": "系统架构",
+      "template_type_knowledge_system": "知识体系",
+      "template_type_blank": "空白图谱"
+    }
   }
 }

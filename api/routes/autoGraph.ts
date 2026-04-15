@@ -14,7 +14,7 @@ import { scrapeUrl } from "../utils/scraper";
 import { autoGraphService, graphNodeService } from "../services/graph/index";
 import { embeddingService } from "../services/ai/embeddingService";
 import { templateGeneratorService } from "../services/ai/templateGeneratorService";
-import type { TemplateCategory, LayoutSuggestion } from "@shared/types/graph";
+import type { TemplateCategory, TemplateType, LayoutSuggestion } from "@shared/types/graph";
 import { z } from "zod";
 import { saveNodesSchema } from "../schemas/index";
 
@@ -162,8 +162,9 @@ const generateTemplatesSchema = z.object({
   topic: z.string().min(2).max(200),
   context: z.string().max(1000).optional(),
   category: z
-    .enum(["learning", "story", "project", "analysis", "custom"])
+    .enum(["knowledge", "project", "analysis", "architecture"])
     .optional(),
+  template_type: z.string().optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
   graph_id: z.string().uuid().optional(),
@@ -682,14 +683,13 @@ router.post(
       topic,
       context,
       category,
+      template_type,
       provider: providerType,
       model,
       graph_id,
       maxNodes,
       preferredLayout,
     } = req.body;
-
-    const startTime = Date.now();
 
     try {
       logger.info("Generating templates", {
@@ -703,6 +703,7 @@ router.post(
         topic,
         context,
         category: category as TemplateCategory | undefined,
+        templateType: template_type as TemplateType | undefined,
         provider: providerType as AIProviderType | undefined,
         model,
         userId: req.user.id,
@@ -711,14 +712,11 @@ router.post(
         preferredLayout: preferredLayout as LayoutSuggestion | undefined,
       });
 
-      const duration = Date.now() - startTime;
-
       logger.info("Templates generated successfully", {
         topic,
         templateCount: result.templates.length,
         provider: result.metadata.provider,
         model: result.metadata.model,
-        duration,
       });
 
       res.json(result);

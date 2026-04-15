@@ -1,0 +1,10 @@
+- [x] prompt_templates 表中有 18 条系统级模板类型提示词记录（code 格式 template_type_{type}）
+- [x] templateGeneratorService.buildSystemPrompt 通过 promptService.getRenderedPrompt 获取模板类型指导
+- [x] 用户级/图谱级覆盖模板类型指导时，AI 生成使用自定义内容
+- [x] PromptSettingsPanel 中有"模板生成"分类，包含 18 个模板类型配置项
+- [x] 每个模板类型配置项显示名称、生效来源、编辑/自定义/重置按钮
+- [x] promptScenarios.tsx 中有模板生成场景定义
+- [x] zh-CN.json 和 en-US.json 中有模板生成分类和场景的翻译
+- [x] 远程迁移脚本包含模板类型提示词的 INSERT 语句
+- [x] `npm run lint` 通过
+- [x] `npm run check` 通过

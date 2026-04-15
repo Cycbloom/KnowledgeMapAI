@@ -5,6 +5,7 @@ export interface GenerateTemplatesData {
   topic: string;
   context?: string;
   category?: TemplateCategory;
+  template_type?: string;
   provider?: string;
   model?: string;
   graph_id?: string;

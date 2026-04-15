@@ -28,7 +28,6 @@
       "import": "Import",
       "importing": "Importing...",
       "graphMap": "Graph Map",
-      "newGraph": "New Graph",
       "aiGenerate": "AI Generate"
     },
     "create": {
@@ -614,7 +613,14 @@
         "podcast-script": "Podcast Script",
         "auto_graph_init": "Graph Initialization",
         "auto_graph_expand": "Node Expansion",
-        "auto_graph_optimize_prompt": "Prompt Optimization"
+        "auto_graph_optimize_prompt": "Prompt Optimization",
+        "generateLearningMaterial": "Generate Learning Material",
+        "extractConcepts": "Extract Concepts",
+        "analyzeCrossGraphConnections": "Cross-Graph Connections Analysis",
+        "generateTaskDetails": "Generate Task Details",
+        "getBranchSuggestions": "Get Branch Suggestions",
+        "generateGraphFromImage": "Generate Graph From Image",
+        "suggestNextTopic": "Suggest Next Topic"
       },
       "providers": {
         "deepseek": "DeepSeek",
@@ -1047,13 +1053,12 @@
       "learningGuide": "Learning Guide",
       "author": "Author: {{author}}",
       "viewLink": "View Link",
-      "linkTypes": {
-        "article": "Article",
-        "video": "Video",
-        "course": "Course",
-        "tool": "Tool",
-        "link": "Link"
-      }
+      "typeArticle": "Article",
+      "typeVideo": "Video",
+      "typeCourse": "Course",
+      "typeTool": "Tool",
+      "typeLink": "Link",
+      "selectGraph": "Please select a knowledge graph"
     },
     "overviewEdit": {
       "title": "Edit Graph Overview",
@@ -1167,7 +1172,102 @@
       "darkMode": "Switch to Dark Mode",
       "settings": "Settings",
       "mindMap": "Mind Map",
+      "title": "Knowledge Learning",
+      "selectChapter": "Select a chapter",
+      "loading": "Loading...",
       "enterMindMap": "Enter 3D Mind Map"
+    },
+    "chat": {
+      "welcome": "Hello! I'm your AI learning assistant, how can I help you today?",
+      "offline": "AI tutor unavailable in offline mode",
+      "error": "Sorry, I can't answer right now. Please try again later.",
+      "aiTutor": "AI Tutor",
+      "online": "Online",
+      "placeholder": "Ask me anything...",
+      "disclaimer": "Powered by AI Tutor, content is for reference only"
+    },
+    "material": {
+      "generated": "Learning material generated",
+      "saveFailed": "Failed to save material, will regenerate next time",
+      "generateFailed": "Failed to generate learning content, please try again",
+      "aiFailed": "AI content generation failed, please try again",
+      "regenerate": "Regenerate",
+      "regenerateFailed": "Failed to regenerate, please try again",
+      "regenerated": "Learning material regenerated! Please check the updated content.",
+      "regeneratedMessage": "Learning material regenerated! Please check the updated content.",
+      "regenerateOffline": "Cannot regenerate in offline mode",
+      "contentGenerated": "Course content generated! Please read the material on the left carefully. If you have any questions or want to explore a concept further, just ask me.",
+      "generating": "AI is writing material for you...",
+      "generatingTopic": "Generating deep learning content about \"{{title}}\"",
+      "generateCards": "Generate Questions"
+    },
+    "cards": {
+      "taskSubmitted": "Question generation task submitted to background",
+      "viewTasks": "View Tasks",
+      "generateFailed": "Failed to generate questions",
+      "configure": "Configure Questions",
+      "offlineUnavailable": "Offline Unavailable",
+      "generating": "Generating questions...",
+      "generatingProgress": "Generating question {{current}}/{{total}}",
+      "generatingChallenge": "Generating challenge questions...",
+      "cancel": "Cancel",
+      "generateSuccess": "Successfully generated {{count}} questions",
+      "startChallenge": "Start Challenge",
+      "submitFailed": "Submission failed: {{error}}",
+      "submitFailedShort": "Submission failed",
+      "networkError": "Network connection failed",
+      "authError": "Authentication failed",
+      "validationError": "Validation failed",
+      "unknownError": "Unknown error",
+      "queryFailed": "Query failed",
+      "nodeNotFound": "Node not found",
+      "retryLater": "Retry later",
+      "retry": "Retry",
+      "configureApiKey": "Please configure AI API Key in settings first",
+      "goToSettings": "Go to Settings",
+      "generate": "Generate Questions",
+      "cancelling": "Cancelling generation...",
+      "cancelled": "Generation cancelled, {{count}} questions generated",
+      "batchFailed": "Batch {{batch}} generation failed, continuing..."
+    },
+    "challenge": {
+      "start": "Complete Learning, Start Challenge",
+      "completed": "Learning complete! Review task created, will review later",
+      "complete": "Complete",
+      "missingParams": "Missing required parameters"
+    },
+    "batch": {
+      "selectNodes": "Please select nodes first",
+      "deleteSuccess": "Deleted {{count}} nodes",
+      "deleteFailed": "Batch delete failed, please try again",
+      "expandSuccess": "Submitted expansion task for {{count}} nodes",
+      "expandFailed": "Task submission failed, please try again",
+      "expandOffline": "Cannot expand graph in offline mode",
+      "submitFailed": "Task submission failed",
+      "expandError": "Expansion failed",
+      "generateSuccess": "Submitted generation task for {{count}} nodes",
+      "generateFailed": "Batch generation failed"
+    },
+    "speech": {
+      "notSupported": "Your browser doesn't support speech recognition, please try Chrome browser.",
+      "networkError": "Network connection failed",
+      "viewSolution": "View Solution",
+      "solutionDetail": "Speech recognition troubleshooting:\n1. Browser limitation: Chrome relies on Google services, if your network restricts access to Google, this error may occur.\n2. Suggestion: Check your network proxy settings, or try Edge browser (usually more stable in some environments).\n3. Offline support: Current browser doesn't support offline speech recognition."
+    },
+    "node": {
+      "loadFailed": "Failed to load node data, please try again",
+      "createSuccess": "Node created successfully",
+      "createFailed": "Failed to create node, please try again",
+      "enterTitle": "Please enter node title",
+      "welcomeBack": "Welcome back! This is the learning material prepared for \"{{title}}\". If you have any questions, feel free to ask."
+    },
+    "focus": {
+      "title": "Focus Mode",
+      "enter": "Enter Focus Mode",
+      "selectContent": "Please select learning content first"
+    },
+    "path": {
+      "title": "Learning Path"
     }
   },
   "statistics": {
@@ -1830,7 +1930,49 @@
       "beginner": "Beginner",
       "custom": "Custom"
     },
-    "modify": "Modify"
+    "modify": "Modify",
+    "steps": {
+      "selectTemplate": "Select Template",
+      "inputTopic": "Input Topic",
+      "generateScheme": "Generate Scheme",
+      "selectStyle": "Select Style"
+    },
+    "backToTemplateSelection": "Back to Template Selection",
+    "changeTemplate": "Change",
+    "templateType": "Template Type",
+    "editPrompt": "Edit Prompt",
+    "promptSaved": "Prompt saved",
+    "promptSaveFailed": "Failed to save prompt"
+  },
+  "prompts": {
+    "categories": {
+      "templateGeneration": "Template Generation"
+    },
+    "scenarios": {
+      "templateGeneration": "Template Generation",
+      "templateGenerationDesc": "Customize AI generation guidance for each template type"
+    },
+    "templateNames": {
+      "template_generation": "Template Generation Base Prompt",
+      "template_type_knowledge_tree": "Knowledge Tree",
+      "template_type_skill_map": "Skill Map",
+      "template_type_concept_network": "Concept Network",
+      "template_type_learning_path": "Learning Path",
+      "template_type_topic_research": "Topic Research",
+      "template_type_project_lifecycle": "Project Lifecycle",
+      "template_type_dev_workflow": "Dev Workflow",
+      "template_type_task_breakdown": "Task Breakdown",
+      "template_type_sprint_planning": "Sprint Planning",
+      "template_type_root_cause": "Root Cause Analysis",
+      "template_type_swot": "SWOT Analysis",
+      "template_type_comparison": "Comparison",
+      "template_type_decision_tree": "Decision Tree",
+      "template_type_tech_ecosystem": "Tech Ecosystem",
+      "template_type_org_structure": "Org Structure",
+      "template_type_system_architecture": "System Architecture",
+      "template_type_knowledge_system": "Knowledge System",
+      "template_type_blank": "Blank Graph"
+    }
   },
   "templates": {
     "title": "Template Management",
@@ -1841,26 +1983,62 @@
     "searchTaskPlaceholder": "Search task templates...",
     "filter": {
       "all": "All",
-      "learning": "Learning",
-      "story": "Story",
+      "knowledge": "Knowledge",
       "project": "Project",
       "analysis": "Analysis",
-      "custom": "Custom",
-      "study": "Study",
-      "work": "Work",
-      "life": "Life",
-      "health": "Health"
+      "architecture": "Architecture"
     },
     "category": {
-      "learning": "Learning",
-      "story": "Story",
-      "project": "Project",
-      "analysis": "Analysis",
-      "custom": "Custom",
-      "study": "Study",
-      "work": "Work",
-      "life": "Life",
-      "health": "Health"
+      "knowledge": "Knowledge Learning",
+      "project": "Project Planning",
+      "analysis": "Problem Analysis",
+      "architecture": "System Architecture"
+    },
+    "categoryDescription": {
+      "knowledge": "Systematically learn knowledge, build complete systems",
+      "project": "Plan project workflows, break down task objectives",
+      "analysis": "Deeply analyze problems, find root causes and solutions",
+      "architecture": "Understand system composition, organize dependencies"
+    },
+    "templateType": {
+      "knowledge_tree": "Knowledge Tree",
+      "skill_map": "Skill Map",
+      "concept_network": "Concept Network",
+      "learning_path": "Learning Path",
+      "topic_research": "Topic Research",
+      "project_lifecycle": "Project Lifecycle",
+      "dev_workflow": "Dev Workflow",
+      "task_breakdown": "Task Breakdown",
+      "sprint_planning": "Sprint Planning",
+      "root_cause": "Root Cause Analysis",
+      "swot": "SWOT Analysis",
+      "comparison": "Comparison Analysis",
+      "decision_tree": "Decision Tree",
+      "tech_ecosystem": "Tech Ecosystem",
+      "org_structure": "Org Structure",
+      "system_architecture": "System Architecture",
+      "knowledge_system": "Knowledge System",
+      "blank": "Blank Graph"
+    },
+    "templateTypeDescription": {
+      "knowledge_tree": "Hierarchical learning, from basics to advanced",
+      "skill_map": "Prerequisite skill relationships, learning paths",
+      "concept_network": "Concept associations and intersections",
+      "learning_path": "Step-by-step learning progression",
+      "topic_research": "Deep exploration of a specific topic",
+      "project_lifecycle": "Plan → Execute → Deliver full process",
+      "dev_workflow": "Requirements → Design → Dev → Test → Deploy",
+      "task_breakdown": "WBS work breakdown structure",
+      "sprint_planning": "Sprint iteration planning",
+      "root_cause": "5Why/Fishbone diagram analysis",
+      "swot": "Strengths/Weaknesses/Opportunities/Threats",
+      "comparison": "Multi-dimensional comparison analysis",
+      "decision_tree": "Conditional branch decisions",
+      "tech_ecosystem": "Tech stack relationships and dependencies",
+      "org_structure": "Hierarchical and functional relationships",
+      "system_architecture": "Module and dependency relationships",
+      "knowledge_system": "Cross-domain knowledge connections",
+      "blank": "Create freely without specific structure"
     },
     "form": {
       "name": "Template Name",

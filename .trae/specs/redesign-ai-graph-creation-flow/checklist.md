@@ -1,0 +1,18 @@
+- [x] TemplateCategory 和 TemplateType 类型已正确定义，包含 4 大分类和 17+1 个具体模板类型
+- [x] 模板类型元数据常量包含名称、描述、图标、结构特征信息
+- [x] zh-CN.json 和 en-US.json 中包含所有新模板分类和类型的翻译
+- [x] AutoGraphGenerator 组件有步骤指示器，第一步为模板选择
+- [x] 模板选择界面显示 4 大分类卡片，点击展开具体模板列表
+- [x] "空白图谱"选项可用，选择后跳过模板约束
+- [x] 后端 templateGeneratorService 为每种模板类型提供了 prompt 指导
+- [x] API 路由支持 template_type 参数
+- [x] Dashboard 桌面端不再显示"新建图谱"按钮
+- [x] Dashboard 移动端不再显示"新建图谱"按钮和 FAB 菜单选项
+- [x] 相关的 isCreating、isTemplateSelectorOpen 等状态已清理
+- [x] 创建图谱模态框和模板选择器模态框已从 Dashboard 移除
+- [x] "AI 生成"按钮是唯一创建图谱入口
+- [x] TemplateSelector 分类筛选使用新分类体系
+- [x] TemplateCard 分类图标和颜色适配新分类
+- [x] 数据库种子数据使用新分类体系
+- [x] `npm run lint` 通过
+- [x] `npm run check` 通过

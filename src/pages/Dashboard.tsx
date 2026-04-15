@@ -1,12 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useGraphs, useDashboardStats, queryKeys } from "../hooks/queries";
 import {
-  useCreateGraphMutation,
   useImportGraphMutation,
   useDeleteGraphMutation,
-  useCreateGraphFromTemplateMutation,
   useToggleFavoriteMutation,
   usePrefetchGraph,
   useBatchDeleteGraphsMutation,
@@ -25,8 +23,6 @@ import {
   Tag,
   X,
   Star,
-  AlertCircle,
-  Loader2,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -42,23 +38,18 @@ import { useMessageStore } from "../store/useMessageStore";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { ConfirmationModal, SearchResults } from "../components/common";
-import { TemplateSelector } from "../components/Templates/TemplateSelector";
 import { AutoGraphGenerator } from "../components/AutoGraph/AutoGraphGenerator";
-import { Template } from "../types";
-import { useTheme, useIsMobile, useTopicCheck, useSearch } from "../hooks";
+import { useTheme, useIsMobile, useSearch } from "../hooks";
 import { api } from "../services/api";
 
 export const Dashboard = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile, isTablet } = useIsMobile();
-  const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: graphsData, isLoading, error } = useGraphs();
   const { data: statsData } = useDashboardStats();
-  const createGraphMutation = useCreateGraphMutation();
-  const createGraphFromTemplateMutation = useCreateGraphFromTemplateMutation();
   const importGraphMutation = useImportGraphMutation();
   const deleteGraphMutation = useDeleteGraphMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
@@ -66,15 +57,6 @@ export const Dashboard = () => {
   const prefetchGraph = usePrefetchGraph();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { addMessage } = useMessageStore();
-
-  const [isCreating, setIsCreating] = useState(false);
-  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
-    null,
-  );
-  const [newTitle, setNewTitle] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
@@ -96,7 +78,7 @@ export const Dashboard = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"card" | "list">(() => {
     const saved = localStorage.getItem("dashboard-view-mode");
-    return (saved === "card" || saved === "list") ? saved : "card";
+    return saved === "card" || saved === "list" ? saved : "card";
   });
   const graphsPerPage = isMobile ? 6 : viewMode === "list" ? 15 : 9;
 
@@ -104,13 +86,6 @@ export const Dashboard = () => {
     localStorage.setItem("dashboard-view-mode", viewMode);
   }, [viewMode]);
 
-  const {
-    isChecking,
-    isDuplicate,
-    similarGraphs,
-    checkTopic,
-    reset: resetTopicCheck,
-  } = useTopicCheck({ debounceMs: 500 });
   const {
     query: searchQuery,
     setQuery: setSearchQuery,
@@ -125,39 +100,12 @@ export const Dashboard = () => {
   const fabMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const state = location.state as { templateId?: string } | null;
-    if (state?.templateId) {
-      api.templates
-        .get(state.templateId)
-        .then((template) => {
-          setSelectedTemplate(template);
-          setNewTitle(template.name);
-          setNewDescription(template.description || "");
-          setIsCreating(true);
-        })
-        .catch((err) => {
-          console.error("Failed to load template:", err);
-          addMessage({ type: "error", content: "加载模板失败" });
-        });
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state, addMessage]);
-
-  useEffect(() => {
     if (searchQuery.length >= 2) {
       setShowSearchResults(true);
     } else {
       setShowSearchResults(false);
     }
   }, [searchQuery]);
-
-  useEffect(() => {
-    if (newTitle.trim().length >= 2) {
-      checkTopic(newTitle);
-    } else {
-      resetTopicCheck();
-    }
-  }, [newTitle, checkTopic, resetTopicCheck]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -202,43 +150,6 @@ export const Dashboard = () => {
     const start = (currentPage - 1) * graphsPerPage;
     return filteredGraphs.slice(start, start + graphsPerPage);
   }, [filteredGraphs, currentPage, graphsPerPage]);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle) return;
-
-    try {
-      setFormError(null);
-      if (selectedTemplate) {
-        await createGraphFromTemplateMutation.mutateAsync({
-          template_id: selectedTemplate.id,
-          title: newTitle,
-          description: newDescription,
-        });
-      } else {
-        await createGraphMutation.mutateAsync({
-          title: newTitle,
-          description: newDescription,
-        });
-      }
-      setNewTitle("");
-      setNewDescription("");
-      setSelectedTemplate(null);
-      setIsCreating(false);
-      addMessage({ type: "success", content: "创建成功!" });
-    } catch (err: unknown) {
-      console.error("创建图谱失败:", err);
-      const message = err instanceof Error ? err.message : "创建图谱失败";
-      setFormError(message);
-      addMessage({ type: "error", content: message });
-    }
-  };
-
-  const handleOpenTemplateSelector = () => {
-    setIsTemplateSelectorOpen(true);
-    setShowMoreMenu(false);
-    setShowFABMenu(false);
-  };
 
   const isAllSelected =
     paginatedGraphs.length > 0 &&
@@ -307,16 +218,6 @@ export const Dashboard = () => {
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
       },
     });
-  };
-
-  const handleSelectTemplate = (template: Template | null) => {
-    setSelectedTemplate(template);
-    setIsTemplateSelectorOpen(false);
-    setIsCreating(true);
-    if (template) {
-      setNewTitle(template.name);
-      setNewDescription(template.description || "");
-    }
   };
 
   const handleDeleteGraph = (id: string, title: string) => {
@@ -448,12 +349,12 @@ export const Dashboard = () => {
           <div className="flex flex-col gap-4 lg:gap-6">
             <div className="space-y-1 flex-shrink-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {t('dashboard.title')}
+                {t("dashboard.title")}
               </h1>
               <p
                 className={`${isDark ? "text-slate-400" : "text-gray-500"} text-xs sm:text-sm md:text-base`}
               >
-                {t('dashboard.subtitle')}
+                {t("dashboard.subtitle")}
               </p>
             </div>
 
@@ -478,27 +379,29 @@ export const Dashboard = () => {
                     {isMobile ? (
                       <>
                         <span className="font-semibold">{graphs.length}</span>{" "}
-                        {t('dashboard.stats.graphs')} ·{" "}
+                        {t("dashboard.stats.graphs")} ·{" "}
                         <span className="font-semibold">
                           {graphs.reduce(
                             (acc, g) => acc + (g.nodes_count || 0),
                             0,
                           )}
                         </span>{" "}
-                        {t('dashboard.stats.nodes')}
+                        {t("dashboard.stats.nodes")}
                       </>
                     ) : (
                       <>
-                        {t('dashboard.stats.created')}{" "}
+                        {t("dashboard.stats.created")}{" "}
                         <span className="font-semibold">{graphs.length}</span>{" "}
-                        {t('dashboard.stats.graphsUnit')}，{t('dashboard.stats.contains')}{" "}
+                        {t("dashboard.stats.graphsUnit")}，
+                        {t("dashboard.stats.contains")}{" "}
                         <span className="font-semibold">
                           {graphs.reduce(
                             (acc, g) => acc + (g.nodes_count || 0),
                             0,
                           )}
                         </span>{" "}
-                        {t('dashboard.stats.nodesUnit')}{t('dashboard.stats.keepGoing')}
+                        {t("dashboard.stats.nodesUnit")}
+                        {t("dashboard.stats.keepGoing")}
                       </>
                     )}
                   </p>
@@ -511,7 +414,7 @@ export const Dashboard = () => {
                       : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                   }`}
                 >
-                  {t('dashboard.stats.statistics')}
+                  {t("dashboard.stats.statistics")}
                   <ArrowRight size={12} className="hidden sm:block" />
                 </Link>
               </div>
@@ -529,7 +432,7 @@ export const Dashboard = () => {
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder={t('dashboard.search.placeholder')}
+                placeholder={t("dashboard.search.placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() =>
@@ -550,7 +453,7 @@ export const Dashboard = () => {
                       : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   }`}
                 >
-                  {t('dashboard.search.keyword')}
+                  {t("dashboard.search.keyword")}
                 </button>
                 <button
                   onClick={() => setSearchMode("semantic")}
@@ -561,7 +464,9 @@ export const Dashboard = () => {
                   }`}
                 >
                   <Sparkles size={12} />
-                  <span className="hidden sm:inline">{t('dashboard.search.semantic')}</span>
+                  <span className="hidden sm:inline">
+                    {t("dashboard.search.semantic")}
+                  </span>
                 </button>
               </div>
 
@@ -617,7 +522,7 @@ export const Dashboard = () => {
                           ? "text-slate-400 hover:text-slate-300"
                           : "text-gray-400 hover:text-gray-600"
                     }`}
-                    title={t('dashboard.view.cardView')}
+                    title={t("dashboard.view.cardView")}
                   >
                     <LayoutGrid size={18} />
                   </button>
@@ -632,7 +537,7 @@ export const Dashboard = () => {
                           ? "text-slate-400 hover:text-slate-300"
                           : "text-gray-400 hover:text-gray-600"
                     }`}
-                    title={t('dashboard.view.listView')}
+                    title={t("dashboard.view.listView")}
                   >
                     <List size={18} />
                   </button>
@@ -646,10 +551,12 @@ export const Dashboard = () => {
                         ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                         : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                     }`}
-                    title={t('dashboard.actions.select')}
+                    title={t("dashboard.actions.select")}
                   >
                     <CheckSquare size={16} />
-                    <span className="hidden lg:inline">{t('dashboard.actions.select')}</span>
+                    <span className="hidden lg:inline">
+                      {t("dashboard.actions.select")}
+                    </span>
                   </button>
                 )}
 
@@ -661,10 +568,12 @@ export const Dashboard = () => {
                         ? "bg-red-900/30 border-red-800 text-red-400 hover:bg-red-900/50"
                         : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
                     }`}
-                    title={t('dashboard.actions.cancelSelect')}
+                    title={t("dashboard.actions.cancelSelect")}
                   >
                     <X size={16} />
-                    <span className="hidden lg:inline">{t('dashboard.actions.cancel')}</span>
+                    <span className="hidden lg:inline">
+                      {t("dashboard.actions.cancel")}
+                    </span>
                   </button>
                 )}
 
@@ -676,11 +585,13 @@ export const Dashboard = () => {
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   } disabled:opacity-50`}
-                  title={t('dashboard.actions.import')}
+                  title={t("dashboard.actions.import")}
                 >
                   <Upload size={16} />
                   <span className="hidden lg:inline">
-                    {importGraphMutation.isPending ? t('dashboard.actions.importing') : t('dashboard.actions.import')}
+                    {importGraphMutation.isPending
+                      ? t("dashboard.actions.importing")
+                      : t("dashboard.actions.import")}
                   </span>
                 </button>
 
@@ -691,28 +602,23 @@ export const Dashboard = () => {
                       ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm"
                   }`}
-                  title={t('dashboard.actions.graphMap')}
+                  title={t("dashboard.actions.graphMap")}
                 >
                   <Network size={16} />
-                  <span className="hidden lg:inline">{t('dashboard.actions.graphMap')}</span>
+                  <span className="hidden lg:inline">
+                    {t("dashboard.actions.graphMap")}
+                  </span>
                 </Link>
-
-                <button
-                  onClick={handleOpenTemplateSelector}
-                  className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
-                  title={t('dashboard.actions.newGraph')}
-                >
-                  <Plus size={16} />
-                  <span className="hidden lg:inline">{t('dashboard.actions.newGraph')}</span>
-                </button>
 
                 <button
                   onClick={handleOpenAIGenerator}
                   className="px-3 lg:px-4 py-2.5 rounded-xl flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium min-h-[44px]"
-                  title={t('dashboard.actions.aiGenerate')}
+                  title={t("dashboard.actions.aiGenerate")}
                 >
                   <Sparkles size={16} />
-                  <span className="hidden lg:inline">{t('dashboard.actions.aiGenerate')}</span>
+                  <span className="hidden lg:inline">
+                    {t("dashboard.actions.aiGenerate")}
+                  </span>
                 </button>
               </div>
             )}
@@ -729,19 +635,11 @@ export const Dashboard = () => {
                 />
 
                 <button
-                  onClick={handleOpenTemplateSelector}
-                  className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium"
-                >
-                  <Plus size={18} />
-                  <span>{t('dashboard.actions.newGraph')}</span>
-                </button>
-
-                <button
                   onClick={handleOpenAIGenerator}
                   className="flex-1 min-h-[44px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-md transition-all text-sm font-medium"
                 >
                   <Sparkles size={18} />
-                  <span>{t('dashboard.actions.aiGenerate')}</span>
+                  <span>{t("dashboard.actions.aiGenerate")}</span>
                 </button>
 
                 <div className="relative" ref={moreMenuRef}>
@@ -777,7 +675,7 @@ export const Dashboard = () => {
                           }`}
                         >
                           <CheckSquare size={18} />
-                          <span>{t('dashboard.actions.select')}</span>
+                          <span>{t("dashboard.actions.select")}</span>
                         </button>
                       )}
 
@@ -794,7 +692,7 @@ export const Dashboard = () => {
                           }`}
                         >
                           <X size={18} />
-                          <span>{t('dashboard.actions.cancelSelect')}</span>
+                          <span>{t("dashboard.actions.cancelSelect")}</span>
                         </button>
                       )}
 
@@ -809,7 +707,9 @@ export const Dashboard = () => {
                       >
                         <Upload size={18} />
                         <span>
-                          {importGraphMutation.isPending ? t('dashboard.actions.importing') : t('dashboard.actions.import')}
+                          {importGraphMutation.isPending
+                            ? t("dashboard.actions.importing")
+                            : t("dashboard.actions.import")}
                         </span>
                       </button>
 
@@ -823,7 +723,7 @@ export const Dashboard = () => {
                         }`}
                       >
                         <Network size={18} />
-                        <span>{t('dashboard.actions.graphMap')}</span>
+                        <span>{t("dashboard.actions.graphMap")}</span>
                       </Link>
                     </div>
                   )}
@@ -843,178 +743,6 @@ export const Dashboard = () => {
             setCurrentPage(1);
           }}
         />
-
-        {/* Create Graph Modal/Form */}
-        {isCreating && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div
-              className={`w-full ${isMobile ? "inset-0 rounded-none" : "max-w-md rounded-2xl"} shadow-2xl ${isMobile ? "h-full" : ""} flex flex-col ${
-                isDark
-                  ? "bg-slate-800 border-slate-700" +
-                    (isMobile ? "" : " border")
-                  : "bg-white"
-              }`}
-            >
-              <div
-                className={`flex justify-between items-center p-4 md:p-6 border-b ${isDark ? "border-slate-700" : "border-gray-100"} ${isMobile ? "sticky top-0 z-10" : ""}`}
-              >
-                <h3 className="text-lg md:text-xl font-bold">
-                  {selectedTemplate ? t('dashboard.create.fromTemplate') : t('dashboard.create.title')}
-                </h3>
-                <button
-                  onClick={() => {
-                    setIsCreating(false);
-                    setSelectedTemplate(null);
-                  }}
-                  className={`p-2 rounded-full hover:bg-opacity-10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${isDark ? "hover:bg-white text-slate-400" : "hover:bg-black text-gray-400"}`}
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div
-                className={`flex-1 overflow-y-auto ${isMobile ? "p-4" : "p-6 md:p-8"}`}
-              >
-                {selectedTemplate && (
-                  <div
-                    className={`mb-6 p-4 rounded-xl ${isDark ? "bg-slate-700" : "bg-blue-50"}`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-600 text-white">
-                        {selectedTemplate.name}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {t('dashboard.create.nodeCount', { count: selectedTemplate.nodes?.length ?? 0 })}
-                      </span>
-                    </div>
-                    <p
-                      className={`text-sm ${isDark ? "text-slate-300" : "text-gray-600"}`}
-                    >
-                      {selectedTemplate.description || t('dashboard.create.noDescription')}
-                    </p>
-                  </div>
-                )}
-
-                <form onSubmit={handleCreate} className="space-y-5">
-                  <div className="space-y-2">
-                    <label
-                      className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
-                    >
-                      {t('dashboard.create.graphName')}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        placeholder={t('dashboard.create.namePlaceholder')}
-                        className={`w-full px-4 py-3 rounded-xl border outline-none transition-all text-base ${
-                          isDuplicate
-                            ? "border-amber-500 focus:ring-amber-500"
-                            : isDark
-                              ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                              : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        }`}
-                        autoFocus
-                      />
-                      {isChecking && (
-                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500" />
-                      )}
-                    </div>
-                    {isDuplicate && similarGraphs.length > 0 && (
-                      <div
-                        className={`p-3 rounded-lg flex items-start gap-2 ${
-                          isDark
-                            ? "bg-amber-900/30 text-amber-300"
-                            : "bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm">
-                          <p className="font-medium">{t('dashboard.create.duplicateTopic')}</p>
-                          <p className="mt-1">
-                            {t('dashboard.create.similarTo', { title: similarGraphs[0].title, similarity: (similarGraphs[0].similarity * 100).toFixed(1) })}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label
-                      className={`text-sm font-medium ${isDark ? "text-slate-300" : "text-gray-700"}`}
-                    >
-                      {t('dashboard.create.description')}（{t('dashboard.create.optional')}）
-                    </label>
-                    <textarea
-                      value={newDescription}
-                      onChange={(e) => setNewDescription(e.target.value)}
-                      placeholder={t('dashboard.create.descriptionPlaceholder')}
-                      className={`w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none text-base ${
-                        isDark
-                          ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          : "bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      }`}
-                      rows={4}
-                    />
-                  </div>
-
-                  {formError && (
-                    <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2">
-                      <span className="block w-1.5 h-1.5 rounded-full bg-red-500" />
-                      {formError}
-                    </div>
-                  )}
-                </form>
-              </div>
-
-              <div
-                className={`flex gap-3 p-4 md:p-6 border-t ${isDark ? "border-slate-700" : "border-gray-100"}`}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCreating(false);
-                    setSelectedTemplate(null);
-                    resetTopicCheck();
-                  }}
-                  className={`flex-1 min-h-[48px] px-4 py-3 rounded-xl font-medium transition-colors ${
-                    isDark
-                      ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {t('dashboard.actions.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  onClick={handleCreate}
-                  className="flex-1 min-h-[48px] px-4 py-3 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                  disabled={
-                    createGraphMutation.isPending ||
-                    createGraphFromTemplateMutation.isPending ||
-                    !newTitle ||
-                    isChecking ||
-                    isDuplicate
-                  }
-                >
-                  {createGraphMutation.isPending ||
-                  createGraphFromTemplateMutation.isPending
-                    ? t('dashboard.create.creating')
-                    : t('dashboard.create.createNow')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Template Selector Modal */}
-        {isTemplateSelectorOpen && (
-          <TemplateSelector
-            onSelectTemplate={handleSelectTemplate}
-            onCancel={() => setIsTemplateSelectorOpen(false)}
-          />
-        )}
 
         {/* AI Graph Generator Modal */}
         {isAIGeneratorOpen && (
@@ -1068,7 +796,9 @@ export const Dashboard = () => {
                 <Square className="w-5 h-5" />
               )}
               <span className="text-sm">
-                {isAllSelected ? t('dashboard.batch.deselectAll') : t('dashboard.batch.selectAll')}
+                {isAllSelected
+                  ? t("dashboard.batch.deselectAll")
+                  : t("dashboard.batch.selectAll")}
               </span>
             </button>
 
@@ -1077,7 +807,7 @@ export const Dashboard = () => {
                 <span
                   className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
                 >
-                  {t('dashboard.batch.selected', { count: selectedCount })}
+                  {t("dashboard.batch.selected", { count: selectedCount })}
                 </span>
                 <div className="flex-1" />
                 <button
@@ -1090,7 +820,9 @@ export const Dashboard = () => {
                   } disabled:opacity-50`}
                 >
                   <Trash2 size={16} />
-                  {batchDeleteGraphsMutation.isPending ? t('dashboard.batch.deleting') : t('dashboard.batch.batchDelete')}
+                  {batchDeleteGraphsMutation.isPending
+                    ? t("dashboard.batch.deleting")
+                    : t("dashboard.batch.batchDelete")}
                 </button>
                 <button
                   onClick={clearSelection}
@@ -1126,34 +858,40 @@ export const Dashboard = () => {
               <h3
                 className={`text-lg sm:text-xl font-bold mb-2 ${isDark ? "text-slate-300" : "text-gray-900"}`}
               >
-                {searchQuery ? t('dashboard.empty.noResults') : t('dashboard.empty.startJourney')}
+                {searchQuery
+                  ? t("dashboard.empty.noResults")
+                  : t("dashboard.empty.startJourney")}
               </h3>
               <p
                 className={`text-center max-w-md mb-6 sm:mb-8 px-4 text-sm ${isDark ? "text-slate-500" : "text-gray-500"}`}
               >
                 {searchQuery
-                  ? t('dashboard.empty.tryDifferent')
-                  : t('dashboard.empty.createOrImport')}
+                  ? t("dashboard.empty.tryDifferent")
+                  : t("dashboard.empty.createOrImport")}
               </p>
               {!searchQuery && (
                 <button
-                  onClick={() => setIsCreating(true)}
-                  className="min-h-[48px] px-6 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                  onClick={handleOpenAIGenerator}
+                  className="min-h-[48px] px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium hover:from-purple-600 hover:to-blue-600 transition-colors shadow-lg"
                 >
-                  {t('dashboard.empty.createFirst')}
+                  {t("dashboard.empty.createFirst")}
                 </button>
               )}
             </div>
           ) : viewMode === "list" ? (
-            <div className={`col-span-full rounded-2xl border overflow-hidden ${
-              isDark
-                ? "bg-slate-800 border-slate-700"
-                : "bg-white border-gray-200 shadow-sm"
-            }`}>
+            <div
+              className={`col-span-full rounded-2xl border overflow-hidden ${
+                isDark
+                  ? "bg-slate-800 border-slate-700"
+                  : "bg-white border-gray-200 shadow-sm"
+              }`}
+            >
               <div className={`overflow-x-auto ${isMobile ? "hidden" : ""}`}>
                 <table className="w-full">
                   <thead>
-                    <tr className={`border-b ${isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-100 bg-gray-50"}`}>
+                    <tr
+                      className={`border-b ${isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-100 bg-gray-50"}`}
+                    >
                       {isSelectMode && (
                         <th className="w-12 px-4 py-3">
                           <button
@@ -1169,16 +907,42 @@ export const Dashboard = () => {
                             }`}
                           >
                             {isAllSelected && <Check size={14} />}
-                            {isPartialSelected && <div className="w-2 h-0.5 bg-blue-500 rounded" />}
+                            {isPartialSelected && (
+                              <div className="w-2 h-0.5 bg-blue-500 rounded" />
+                            )}
                           </button>
                         </th>
                       )}
-                      <th className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.title')}</th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.description')}</th>
-                      <th className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.nodes')}</th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.createdAt')}</th>
-                      <th className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.updatedAt')}</th>
-                      <th className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>{t('dashboard.list.actions')}</th>
+                      <th
+                        className={`text-left px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                      >
+                        {t("dashboard.list.title")}
+                      </th>
+                      <th
+                        className={`text-left px-4 py-3 text-sm font-semibold hidden lg:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                      >
+                        {t("dashboard.list.description")}
+                      </th>
+                      <th
+                        className={`text-center px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                      >
+                        {t("dashboard.list.nodes")}
+                      </th>
+                      <th
+                        className={`text-left px-4 py-3 text-sm font-semibold hidden md:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                      >
+                        {t("dashboard.list.createdAt")}
+                      </th>
+                      <th
+                        className={`text-left px-4 py-3 text-sm font-semibold hidden xl:table-cell ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                      >
+                        {t("dashboard.list.updatedAt")}
+                      </th>
+                      <th
+                        className={`text-right px-4 py-3 text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                      >
+                        {t("dashboard.list.actions")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1206,7 +970,10 @@ export const Dashboard = () => {
                         }}
                       >
                         {isSelectMode && (
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td
+                            className="px-4 py-3"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               onClick={() => toggleSelect(graph.id)}
                               className={`flex items-center justify-center w-5 h-5 rounded ${
@@ -1223,47 +990,81 @@ export const Dashboard = () => {
                         )}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg flex-shrink-0 ${
-                              isDark
-                                ? "bg-indigo-900/30 text-indigo-400"
-                                : "bg-indigo-50 text-indigo-600"
-                            }`}>
+                            <div
+                              className={`p-2 rounded-lg flex-shrink-0 ${
+                                isDark
+                                  ? "bg-indigo-900/30 text-indigo-400"
+                                  : "bg-indigo-50 text-indigo-600"
+                              }`}
+                            >
                               <BookOpen size={16} />
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className={`font-medium truncate ${isDark ? "text-slate-100" : "text-gray-900"}`}>
+                                <span
+                                  className={`font-medium truncate ${isDark ? "text-slate-100" : "text-gray-900"}`}
+                                >
                                   {graph.title}
                                 </span>
                                 {graph.is_favorite && (
-                                  <Star size={14} className="text-yellow-500 flex-shrink-0" fill="currentColor" />
+                                  <Star
+                                    size={14}
+                                    className="text-yellow-500 flex-shrink-0"
+                                    fill="currentColor"
+                                  />
                                 )}
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className={`px-4 py-3 hidden lg:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                          <span className="line-clamp-1 text-sm">{graph.description || t('dashboard.card.noDescription')}</span>
+                        <td
+                          className={`px-4 py-3 hidden lg:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        >
+                          <span className="line-clamp-1 text-sm">
+                            {graph.description ||
+                              t("dashboard.card.noDescription")}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <div className={`flex items-center justify-center gap-1 text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                          <div
+                            className={`flex items-center justify-center gap-1 text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                          >
                             <Network size={14} />
                             <span>{graph.nodes_count || 0}</span>
                           </div>
                         </td>
-                        <td className={`px-4 py-3 hidden md:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                        <td
+                          className={`px-4 py-3 hidden md:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        >
                           <div className="flex items-center gap-1.5 text-sm">
                             <Calendar size={14} />
-                            <span>{graph.created_at ? new Date(graph.created_at).toLocaleDateString("zh-CN") : "-"}</span>
+                            <span>
+                              {graph.created_at
+                                ? new Date(graph.created_at).toLocaleDateString(
+                                    "zh-CN",
+                                  )
+                                : "-"}
+                            </span>
                           </div>
                         </td>
-                        <td className={`px-4 py-3 hidden xl:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}>
+                        <td
+                          className={`px-4 py-3 hidden xl:table-cell ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        >
                           <div className="flex items-center gap-1.5 text-sm">
                             <Clock size={14} />
-                            <span>{graph.updated_at ? new Date(graph.updated_at).toLocaleDateString("zh-CN") : "-"}</span>
+                            <span>
+                              {graph.updated_at
+                                ? new Date(graph.updated_at).toLocaleDateString(
+                                    "zh-CN",
+                                  )
+                                : "-"}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          className="px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center justify-end gap-1">
                             <Link
                               to={`/graph/${graph.id}`}
@@ -1273,7 +1074,7 @@ export const Dashboard = () => {
                                   ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                   : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
                               }`}
-                              title={t('dashboard.card.openMindMap')}
+                              title={t("dashboard.card.openMindMap")}
                             >
                               <Network size={16} />
                             </Link>
@@ -1281,7 +1082,10 @@ export const Dashboard = () => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleToggleFavorite(graph.id, graph.is_favorite || false);
+                                handleToggleFavorite(
+                                  graph.id,
+                                  graph.is_favorite || false,
+                                );
                               }}
                               className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
                                 graph.is_favorite
@@ -1290,9 +1094,18 @@ export const Dashboard = () => {
                                     ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
                                     : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
                               }`}
-                              title={graph.is_favorite ? t('dashboard.card.unfavorite') : t('dashboard.card.favorite')}
+                              title={
+                                graph.is_favorite
+                                  ? t("dashboard.card.unfavorite")
+                                  : t("dashboard.card.favorite")
+                              }
                             >
-                              <Star size={16} fill={graph.is_favorite ? "currentColor" : "none"} />
+                              <Star
+                                size={16}
+                                fill={
+                                  graph.is_favorite ? "currentColor" : "none"
+                                }
+                              />
                             </button>
                             <button
                               onClick={(e) => {
@@ -1305,7 +1118,7 @@ export const Dashboard = () => {
                                   ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                   : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                               }`}
-                              title={t('dashboard.card.delete')}
+                              title={t("dashboard.card.delete")}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -1356,24 +1169,46 @@ export const Dashboard = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className={`font-medium text-sm sm:text-base ${isDark ? "text-slate-100" : "text-gray-900"}`}>
+                            <span
+                              className={`font-medium text-sm sm:text-base ${isDark ? "text-slate-100" : "text-gray-900"}`}
+                            >
                               {graph.title}
                             </span>
                             {graph.is_favorite && (
-                              <Star size={14} className="text-yellow-500 flex-shrink-0" fill="currentColor" />
+                              <Star
+                                size={14}
+                                className="text-yellow-500 flex-shrink-0"
+                                fill="currentColor"
+                              />
                             )}
                           </div>
-                          <p className={`text-xs sm:text-sm mb-2 line-clamp-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                            {graph.description || t('dashboard.card.noDescription')}
+                          <p
+                            className={`text-xs sm:text-sm mb-2 line-clamp-2 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                          >
+                            {graph.description ||
+                              t("dashboard.card.noDescription")}
                           </p>
                           <div className="flex items-center gap-3 text-xs">
-                            <div className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                            <div
+                              className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                            >
                               <Network size={12} />
-                              <span>{graph.nodes_count || 0} {t('dashboard.card.nodes')}</span>
+                              <span>
+                                {graph.nodes_count || 0}{" "}
+                                {t("dashboard.card.nodes")}
+                              </span>
                             </div>
-                            <div className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}>
+                            <div
+                              className={`flex items-center gap-1 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                            >
                               <Calendar size={12} />
-                              <span>{graph.created_at ? new Date(graph.created_at).toLocaleDateString("zh-CN") : "-"}</span>
+                              <span>
+                                {graph.created_at
+                                  ? new Date(
+                                      graph.created_at,
+                                    ).toLocaleDateString("zh-CN")
+                                  : "-"}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -1425,7 +1260,8 @@ export const Dashboard = () => {
                         : "bg-white border border-gray-100 hover:border-gray-200"
                     : "hover:-translate-y-1"
                 } ${
-                  !isSelectMode && (isDark
+                  !isSelectMode &&
+                  (isDark
                     ? "bg-slate-800 border border-slate-700 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20"
                     : "bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/5")
                 }`}
@@ -1500,7 +1336,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                 : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
                             }`}
-                            title={t('dashboard.card.openMindMap')}
+                            title={t("dashboard.card.openMindMap")}
                           >
                             <Network size={18} />
                           </Link>
@@ -1515,7 +1351,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                 : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                             }`}
-                            title={t('dashboard.card.delete')}
+                            title={t("dashboard.card.delete")}
                           >
                             <Trash2 size={18} />
                           </button>
@@ -1531,7 +1367,7 @@ export const Dashboard = () => {
                                   ? "text-slate-400 hover:bg-yellow-900/30 hover:text-yellow-400"
                                   : "text-gray-400 hover:bg-yellow-50 hover:text-yellow-500"
                               }`}
-                              title={t('dashboard.card.favorite')}
+                              title={t("dashboard.card.favorite")}
                             >
                               <Star size={18} />
                             </button>
@@ -1550,7 +1386,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-indigo-900/30 hover:text-indigo-400"
                                 : "text-gray-400 hover:bg-indigo-50 hover:text-indigo-600"
                             }`}
-                            title={t('dashboard.card.openMindMap')}
+                            title={t("dashboard.card.openMindMap")}
                           >
                             <Network size={18} />
                           </Link>
@@ -1565,7 +1401,7 @@ export const Dashboard = () => {
                                 ? "text-slate-400 hover:bg-red-900/30 hover:text-red-400"
                                 : "text-gray-400 hover:bg-red-50 hover:text-red-500"
                             }`}
-                            title={t('dashboard.card.delete')}
+                            title={t("dashboard.card.delete")}
                           >
                             <Trash2 size={18} />
                           </button>
@@ -1581,7 +1417,7 @@ export const Dashboard = () => {
                             handleToggleFavorite(graph.id, true);
                           }}
                           className={`p-2 rounded-lg text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors ${isMobile ? "min-h-[44px] min-w-[44px] flex items-center justify-center" : ""}`}
-                          title={t('dashboard.card.unfavorite')}
+                          title={t("dashboard.card.unfavorite")}
                         >
                           <Star size={18} fill="currentColor" />
                         </button>
@@ -1602,7 +1438,7 @@ export const Dashboard = () => {
                       isDark ? "text-slate-400" : "text-gray-500"
                     }`}
                   >
-                    {graph.description || t('dashboard.card.noDescription')}
+                    {graph.description || t("dashboard.card.noDescription")}
                   </p>
 
                   <div
@@ -1617,7 +1453,9 @@ export const Dashboard = () => {
                         }`}
                       >
                         <Network size={14} />
-                        <span>{graph.nodes_count || 0} {t('dashboard.card.nodes')}</span>
+                        <span>
+                          {graph.nodes_count || 0} {t("dashboard.card.nodes")}
+                        </span>
                       </div>
                     </div>
 
@@ -1628,7 +1466,7 @@ export const Dashboard = () => {
                           : "text-indigo-600 group-hover:text-indigo-700"
                       }`}
                     >
-                      <span>{t('dashboard.card.enterOutline')}</span>
+                      <span>{t("dashboard.card.enterOutline")}</span>
                       <ArrowRight
                         size={14}
                         className="transition-transform group-hover:translate-x-1"
@@ -1741,18 +1579,6 @@ export const Dashboard = () => {
           {/* FAB Menu */}
           {showFABMenu && (
             <div className="absolute bottom-20 right-0 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <button
-                onClick={handleOpenTemplateSelector}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${
-                  isDark ? "bg-slate-700 text-white" : "bg-white text-gray-900"
-                }`}
-              >
-                <div className="p-1.5 rounded-lg bg-blue-500 text-white">
-                  <Plus size={16} />
-                </div>
-                <span className="text-sm font-medium">新建图谱</span>
-              </button>
-
               <button
                 onClick={handleOpenAIGenerator}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg whitespace-nowrap ${

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
 import { PromptEditor } from './PromptEditor';
-import { Edit, RotateCcw, Network, Layers, MessageSquare, Wrench, ChevronDown } from 'lucide-react';
+import { Edit, RotateCcw, Network, Layers, MessageSquare, Wrench, ChevronDown, LayoutTemplate } from 'lucide-react';
 
 interface PromptSettingsPanelProps {
   graphId?: string;
@@ -29,6 +29,25 @@ const PROMPT_NAME_MAP: Record<string, string> = {
   auto_graph_init: '图谱初始化 (Auto Graph Init)',
   auto_graph_expand: '节点展开 (Auto Graph Expand)',
   generate_task_details: '任务详情生成 (Generate Task Details)',
+  template_generation: '模板生成 (Template Generation)',
+  template_type_knowledge_tree: '模板: 知识树 (Knowledge Tree)',
+  template_type_skill_map: '模板: 技能图谱 (Skill Map)',
+  template_type_concept_network: '模板: 概念网络 (Concept Network)',
+  template_type_learning_path: '模板: 学习路径 (Learning Path)',
+  template_type_topic_research: '模板: 专题研究 (Topic Research)',
+  template_type_project_lifecycle: '模板: 项目生命周期 (Project Lifecycle)',
+  template_type_dev_workflow: '模板: 开发流程 (Dev Workflow)',
+  template_type_task_breakdown: '模板: 任务分解 (Task Breakdown)',
+  template_type_sprint_planning: '模板: 迭代规划 (Sprint Planning)',
+  template_type_root_cause: '模板: 根因分析 (Root Cause Analysis)',
+  template_type_swot: '模板: SWOT 分析 (SWOT Analysis)',
+  template_type_comparison: '模板: 对比分析 (Comparison)',
+  template_type_decision_tree: '模板: 决策树 (Decision Tree)',
+  template_type_tech_ecosystem: '模板: 技术生态 (Tech Ecosystem)',
+  template_type_org_structure: '模板: 组织架构 (Org Structure)',
+  template_type_system_architecture: '模板: 系统架构 (System Architecture)',
+  template_type_knowledge_system: '模板: 知识体系 (Knowledge System)',
+  template_type_blank: '模板: 空白图谱 (Blank Graph)',
 };
 
 const SOURCE_NAME_MAP: Record<string, string> = {
@@ -68,10 +87,17 @@ const PROMPT_CATEGORIES = [
     codes: ['generate_task_details']
   },
   {
+    id: 'template_generation',
+    name: '模板生成',
+    icon: LayoutTemplate,
+    color: 'rose',
+    codes: ['template_generation', 'template_type_knowledge_tree', 'template_type_skill_map', 'template_type_concept_network', 'template_type_learning_path', 'template_type_topic_research', 'template_type_project_lifecycle', 'template_type_dev_workflow', 'template_type_task_breakdown', 'template_type_sprint_planning', 'template_type_root_cause', 'template_type_swot', 'template_type_comparison', 'template_type_decision_tree', 'template_type_tech_ecosystem', 'template_type_org_structure', 'template_type_system_architecture', 'template_type_knowledge_system', 'template_type_blank']
+  },
+  {
     id: 'other',
     name: '其他工具',
     icon: Wrench,
-    color: 'rose',
+    color: 'slate',
     codes: ['term_annotation']
   }
 ];
@@ -106,6 +132,12 @@ const CATEGORY_COLOR_MAP: Record<string, { bg: string; bgHover: string; icon: st
     bgHover: 'hover:bg-rose-100/80 dark:hover:bg-rose-900/50',
     icon: 'text-rose-600 dark:text-rose-400',
     border: 'border-rose-200 dark:border-rose-700'
+  },
+  slate: {
+    bg: 'bg-slate-50/70 dark:bg-slate-900/30',
+    bgHover: 'hover:bg-slate-100/80 dark:hover:bg-slate-900/50',
+    icon: 'text-slate-600 dark:text-slate-400',
+    border: 'border-slate-200 dark:border-slate-700'
   }
 };
 

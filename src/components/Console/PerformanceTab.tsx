@@ -428,15 +428,26 @@ const LogDetailModal: React.FC<{
               >
                 {t("console.performance.detail.metadata")}
               </div>
-              <pre
-                className={`text-xs p-2 rounded-md mt-1 overflow-x-auto ${
+              <div
+                className={`mt-1 space-y-1 ${
                   isDark
                     ? "bg-slate-800 text-slate-300"
                     : "bg-gray-100 text-gray-700"
-                }`}
+                } p-2 rounded-md`}
               >
-                {JSON.stringify(log.metadata, null, 2)}
-              </pre>
+                {Object.entries(log.metadata).map(([key, value]) => (
+                  <div key={key} className="flex flex-col">
+                    <span className={`text-xs font-medium ${
+                      isDark ? "text-slate-400" : "text-gray-500"
+                    }`}>
+                      {key}:
+                    </span>
+                    <span className="text-xs ml-2">
+                      {typeof value === 'string' ? value : JSON.stringify(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

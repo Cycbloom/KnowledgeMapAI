@@ -5,7 +5,7 @@ export const presetTemplates: Template[] = [
     id: 'template-concept-learning',
     name: '概念学习',
     description: '适用于学习新概念，从定义到应用的完整学习路径',
-    category: 'learning',
+    category: 'knowledge',
     is_system: true,
     nodes: [
       {
@@ -54,7 +54,7 @@ export const presetTemplates: Template[] = [
     id: 'template-problem-solving',
     name: '问题解决',
     description: '系统化的问题分析到解决方案的完整流程',
-    category: 'learning',
+    category: 'knowledge',
     is_system: true,
     nodes: [
       {
@@ -103,7 +103,7 @@ export const presetTemplates: Template[] = [
     id: 'template-programming',
     name: '编程学习',
     description: '编程语言和技术的系统化学习路径',
-    category: 'learning',
+    category: 'knowledge',
     is_system: true,
     nodes: [
       {
@@ -160,7 +160,7 @@ export const presetTemplates: Template[] = [
     id: 'template-history',
     name: '历史学习',
     description: '历史事件的系统化学习框架',
-    category: 'learning',
+    category: 'knowledge',
     is_system: true,
     nodes: [
       {
@@ -209,7 +209,7 @@ export const presetTemplates: Template[] = [
     id: 'template-scientific-experiment',
     name: '科学实验',
     description: '科学实验的完整记录和分析框架',
-    category: 'learning',
+    category: 'knowledge',
     is_system: true,
     nodes: [
       {

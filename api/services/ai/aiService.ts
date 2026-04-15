@@ -34,21 +34,31 @@ interface PerformanceTrackingOptions {
     graphId?: string;
     nodeId?: string;
     userId?: string;
+    topic?: string;
+    text?: string;
+    graph1?: string;
+    graph2?: string;
+    title?: string;
+    nodeTitle?: string;
   };
 }
 
-function extractTokenUsage(usage: {
-  prompt_tokens?: number;
-  completion_tokens?: number;
-  prompt_tokens_details?: {
-    cached_tokens?: number;
-    audio_tokens?: number;
-  };
-  completion_tokens_details?: {
-    reasoning_tokens?: number;
-    audio_tokens?: number;
-  };
-} | undefined): {
+function extractTokenUsage(
+  usage:
+    | {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        prompt_tokens_details?: {
+          cached_tokens?: number;
+          audio_tokens?: number;
+        };
+        completion_tokens_details?: {
+          reasoning_tokens?: number;
+          audio_tokens?: number;
+        };
+      }
+    | undefined,
+): {
   inputTokens: number;
   outputTokens: number;
   cachedInputTokens: number;
@@ -112,14 +122,15 @@ async function withPerformanceTracking<T>(
   } finally {
     const duration = Date.now() - startTime;
     const totalTokens = inputTokens + outputTokens;
-    const cacheHitRate = inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
-    
+    const cacheHitRate =
+      inputTokens > 0 ? (cachedInputTokens / inputTokens) * 100 : 0;
+
     const costBreakdown = pricingService.calculateDetailedCost(
       options.provider,
       options.model,
       inputTokens,
       outputTokens,
-      cachedInputTokens
+      cachedInputTokens,
     );
 
     performanceMonitor.recordLog({
@@ -134,7 +145,7 @@ async function withPerformanceTracking<T>(
       success,
       errorMessage,
       metadata: options.metadata,
-      
+
       cachedInputTokens,
       uncachedInputTokens,
       reasoningTokens,
@@ -211,20 +222,20 @@ export class AIService {
       if (provider.createEmbedding) {
         return await withEmbeddingMonitoring(
           {
-            operation: 'generate_embedding',
+            operation: "generate_embedding",
             provider: provider.providerType,
             model: provider.embeddingModel || provider.model,
           },
           async () => ({
             result: await provider.createEmbedding!(text),
             tokenCount: text.length,
-          })
+          }),
         );
       }
 
       return await withEmbeddingMonitoring(
         {
-          operation: 'generate_embedding',
+          operation: "generate_embedding",
           provider: provider.providerType,
           model: provider.embeddingModel || provider.model,
         },
@@ -237,7 +248,7 @@ export class AIService {
             result: response.data[0].embedding as number[],
             tokenCount: text.length,
           };
-        }
+        },
       );
     } catch (error) {
       logger.error("Failed to generate embedding:", error);
@@ -267,7 +278,7 @@ export class AIService {
             batch.map((text) =>
               withEmbeddingMonitoring(
                 {
-                  operation: 'generate_embedding_batch',
+                  operation: "generate_embedding_batch",
                   provider: provider.providerType,
                   model: provider.embeddingModel || provider.model,
                   metadata: { batchCount: batch.length },
@@ -275,7 +286,7 @@ export class AIService {
                 async () => ({
                   result: await provider.createEmbedding!(text),
                   tokenCount: text.length,
-                })
+                }),
               ).catch(() => null),
             ),
           );
@@ -294,7 +305,7 @@ export class AIService {
 
       return await withEmbeddingMonitoring(
         {
-          operation: 'generate_embedding_batch',
+          operation: "generate_embedding_batch",
           provider: provider.providerType,
           model: provider.embeddingModel || provider.model,
           metadata: { batchCount: texts.length },
@@ -305,16 +316,18 @@ export class AIService {
             input: texts,
           });
 
-          const results: (number[] | null)[] = new Array(texts.length).fill(null);
+          const results: (number[] | null)[] = new Array(texts.length).fill(
+            null,
+          );
           for (const item of response.data) {
             results[item.index] = item.embedding;
           }
-          
+
           return {
             result: results,
             tokenCount: texts.reduce((sum, t) => sum + t.length, 0),
           };
-        }
+        },
       );
     } catch (error) {
       logger.error("Failed to generate embeddings batch:", error);
@@ -350,7 +363,7 @@ export class AIService {
     try {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
-        
+
         return withPerformanceTracking(
           {
             operation: "chat",
@@ -583,7 +596,7 @@ export class AIService {
     try {
       return await dedupedRequest(requestKey, async () => {
         const model = options.model || provider.model;
-        
+
         return withPerformanceTracking(
           {
             operation: "generateCards",
@@ -635,10 +648,11 @@ export class AIService {
                 options.graphId,
               );
             } else {
-              const typeRestriction = types.length === 1 
-                ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
-                : `Allowed card types: ${types.join(', ')}. Only generate these types.`;
-              
+              const typeRestriction =
+                types.length === 1
+                  ? `CRITICAL: ONLY generate cards of type '${types[0]}'. DO NOT generate any other types.`
+                  : `Allowed card types: ${types.join(", ")}. Only generate these types.`;
+
               systemPrompt = `You are an educational expert. Generate ${count} flashcards based on the provided topic.
 
 ${typeRestriction}
@@ -684,18 +698,18 @@ Please respond with a valid JSON object.`;
 
             let cards = parsed.cards || [];
             const originalCount = cards.length;
-            
+
             if (originalCount > 0) {
               cards = cards.filter((card: any) => {
                 const cardType = card.type;
                 return types.includes(cardType);
               });
-              
+
               const filteredCount = cards.length;
               if (filteredCount !== originalCount) {
                 logger.warn(
-                  `[Generate Cards] Filtered cards: requested types [${types.join(', ')}], ` +
-                  `got ${originalCount}, kept ${filteredCount}`
+                  `[Generate Cards] Filtered cards: requested types [${types.join(", ")}], ` +
+                    `got ${originalCount}, kept ${filteredCount}`,
                 );
               }
             }
@@ -755,7 +769,7 @@ Please respond with a valid JSON object.`;
 
     try {
       const model = options.model || provider.model;
-      
+
       return withPerformanceTracking(
         {
           operation: "expandKnowledge",
@@ -905,72 +919,88 @@ Please respond with a valid JSON object.`;
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const existingNodesContext =
-          existingNodes && existingNodes.length > 0
-            ? `\nExisting Nodes in Graph: ${existingNodes
-                .slice(0, 300)
-                .join(", ")}`
-            : "";
+        const model = options.model || provider.model;
 
-        const childrenContext =
-          childNodes && childNodes.length > 0
-            ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
-                ", ",
-              )}`
-            : "";
-
-        const contextLevel = options.contextLevel || "normal";
-
-        const templateContext = {
-          nodeTitle,
-          nodeContent: nodeContent || "",
-          existingNodes: existingNodesContext,
-          childrenContext,
-          isRootOrCore: ["root", "core"].includes(contextLevel),
-          isLeaf: contextLevel === "leaf",
-        };
-
-        const systemPrompt = await promptService.getRenderedPrompt(
-          supabaseAdmin,
-          "branch_suggestions",
-          templateContext,
-          options.userId,
-          options.graphId,
-        );
-
-        const completion = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages: [
-                { role: "system", content: systemPrompt },
-                {
-                  role: "user",
-                  content: `Node Title: ${nodeTitle}\nNode Content: ${
-                    nodeContent || ""
-                  }${existingNodesContext}${childrenContext}`,
-                },
-              ],
-              model: options.model || provider.model,
-              response_format: { type: "json_object" },
-            }),
+        return withPerformanceTracking(
           {
-            timeout: LONG_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `Branch Suggestions retry attempt ${attempt}: ${error.message}`,
-              );
+            operation: "getBranchSuggestions",
+            provider: provider.providerType,
+            model,
+            metadata: {
+              nodeTitle: nodeTitle,
+              userId: options.userId,
             },
           },
-        );
+          async () => {
+            const existingNodesContext =
+              existingNodes && existingNodes.length > 0
+                ? `\nExisting Nodes in Graph: ${existingNodes
+                    .slice(0, 300)
+                    .join(", ")}`
+                : "";
 
-        const content = completion.choices[0].message.content || "";
-        const parsed = parseAIResponse<{ suggestions: unknown[] }>(
-          content,
-          "Branch Suggestions",
-        );
+            const childrenContext =
+              childNodes && childNodes.length > 0
+                ? `\nCurrent Direct Children (DO NOT suggest these): ${childNodes.join(
+                    ", ",
+                  )}`
+                : "";
 
-        return { suggestions: parsed.suggestions || [] };
+            const contextLevel = options.contextLevel || "normal";
+
+            const templateContext = {
+              nodeTitle,
+              nodeContent: nodeContent || "",
+              existingNodes: existingNodesContext,
+              childrenContext,
+              isRootOrCore: ["root", "core"].includes(contextLevel),
+              isLeaf: contextLevel === "leaf",
+            };
+
+            const systemPrompt = await promptService.getRenderedPrompt(
+              supabaseAdmin,
+              "branch_suggestions",
+              templateContext,
+              options.userId,
+              options.graphId,
+            );
+
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    {
+                      role: "user",
+                      content: `Node Title: ${nodeTitle}\nNode Content: ${nodeContent || ""}${existingNodesContext}${childrenContext}`,
+                    },
+                  ],
+                  model,
+                  response_format: { type: "json_object" },
+                }),
+              {
+                timeout: LONG_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Branch Suggestions retry attempt ${attempt}: ${error.message}`,
+                  );
+                },
+              },
+            );
+
+            const content = completion.choices[0].message.content || "";
+            const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+              content,
+              "Branch Suggestions",
+            );
+
+            return {
+              result: { suggestions: parsed.suggestions || [] },
+              usage: completion.usage,
+            };
+          },
+        );
       });
     } catch (error: unknown) {
       const err = error as Error;
@@ -1008,12 +1038,19 @@ Please respond with a valid JSON object.`;
     }
 
     try {
-      const completion = await provider.client.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: `You are a knowledge graph expert capable of analyzing visual content.
-            
+      return withPerformanceTracking(
+        {
+          operation: "generateGraphFromImage",
+          provider: provider.providerType,
+          model,
+        },
+        async () => {
+          const completion = await provider.client.chat.completions.create({
+            messages: [
+              {
+                role: "system",
+                content: `You are a knowledge graph expert capable of analyzing visual content.
+                
 Your task:
 1. Analyze the provided image to extract the structured knowledge hierarchy.
 2. Output a JSON object with 'nodes' and 'edges' arrays.
@@ -1021,27 +1058,34 @@ Your task:
    - Edges: { "source": "parent_id", "target": "child_id", "relationship": "contains|related" }
 3. Limit to 30-50 nodes.
 4. Respond in Chinese.`,
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Please analyze this image and generate the knowledge graph JSON.",
               },
-              { type: "image_url", image_url: { url: imageBase64 } },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: "Please analyze this image and generate the knowledge graph JSON.",
+                  },
+                  { type: "image_url", image_url: { url: imageBase64 } },
+                ],
+              },
             ],
-          },
-        ],
-        model,
-        response_format: { type: "json_object" },
-        max_tokens: 4000,
-      });
+            model,
+            response_format: { type: "json_object" },
+            max_tokens: 4000,
+          });
 
-      const content = completion.choices[0].message.content || "";
-      return parseAIResponse<{ nodes: unknown[]; edges: unknown[] }>(
-        content,
-        "Image to Graph",
+          const content = completion.choices[0].message.content || "";
+          const result = parseAIResponse<{
+            nodes: unknown[];
+            edges: unknown[];
+          }>(content, "Image to Graph");
+
+          return {
+            result,
+            usage: completion.usage,
+          };
+        },
       );
     } catch (error: unknown) {
       const err = error as Error;
@@ -1096,64 +1140,82 @@ Your task:
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const templateContext = {
-          topic,
-          context: context || "General knowledge",
-          level: options.level,
-        };
+        const model = options.model || provider.model;
 
-        const systemPrompt = await promptService.getRenderedPrompt(
-          supabaseAdmin,
-          "learning_material",
-          templateContext,
-          options.userId,
-          options.graphId,
-        );
-
-        const completion = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages: [
-                {
-                  role: "system",
-                  content: systemPrompt,
-                },
-                {
-                  role: "user",
-                  content: `Please generate the learning material based on the instructions above.`,
-                },
-              ],
-              model: options.model || provider.model,
-              response_format: { type: "json_object" },
-            }),
+        return withPerformanceTracking(
           {
-            timeout: LONG_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `Generate Learning Material retry attempt ${attempt}: ${error.message}`,
-              );
+            operation: "generateLearningMaterial",
+            provider: provider.providerType,
+            model,
+            metadata: {
+              topic: topic,
+              userId: options.userId,
             },
           },
+          async () => {
+            const templateContext = {
+              topic,
+              context: context || "General knowledge",
+              level: options.level,
+            };
+
+            const systemPrompt = await promptService.getRenderedPrompt(
+              supabaseAdmin,
+              "learning_material",
+              templateContext,
+              options.userId,
+              options.graphId,
+            );
+
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages: [
+                    {
+                      role: "system",
+                      content: systemPrompt,
+                    },
+                    {
+                      role: "user",
+                      content: `Please generate the learning material based on the instructions above.`,
+                    },
+                  ],
+                  model,
+                  response_format: { type: "json_object" },
+                }),
+              {
+                timeout: LONG_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Generate Learning Material retry attempt ${attempt}: ${error.message}`,
+                  );
+                },
+              },
+            );
+
+            const rawContent = completion.choices[0].message.content || "";
+            const parsed = parseAIResponse<{
+              content: string;
+              keywords: Keyword[];
+            }>(rawContent, "Generate Learning Material");
+
+            return {
+              result: {
+                content: parsed.content || "",
+                keywords: Array.isArray(parsed.keywords)
+                  ? parsed.keywords.map((k) => ({
+                      term: k.term || "",
+                      importance: Math.min(5, Math.max(1, k.importance || 3)),
+                      category: k.category || "概念",
+                      explanation: k.explanation || "",
+                    }))
+                  : [],
+              },
+              usage: completion.usage,
+            };
+          },
         );
-
-        const rawContent = completion.choices[0].message.content || "";
-        const parsed = parseAIResponse<{
-          content: string;
-          keywords: Keyword[];
-        }>(rawContent, "Generate Learning Material");
-
-        return {
-          content: parsed.content || "",
-          keywords: Array.isArray(parsed.keywords)
-            ? parsed.keywords.map((k) => ({
-                term: k.term || "",
-                importance: Math.min(5, Math.max(1, k.importance || 3)),
-                category: k.category || "概念",
-                explanation: k.explanation || "",
-              }))
-            : [],
-        };
       });
     } catch (error: unknown) {
       const err = error as Error;
@@ -1191,45 +1253,56 @@ Your task:
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const progressContext = options.userProgress
-          ? `\nUser Progress:\n- Mastered nodes: ${
-              options.userProgress.masteredCount || 0
-            }\n- Current level: ${
-              options.userProgress.currentLevel || "beginner"
-            }`
-          : "";
+        const model = options.model || provider.model;
 
-        const completion = await provider.client.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
-                "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
-                "- 'title': Brief topic title (max 30 chars)\n" +
-                "- 'description': Short explanation (max 80 chars)\n" +
-                "- 'priority': 'high', 'medium', or 'low'\n" +
-                "- 'estimatedDifficulty': Number from 1-5\n" +
-                "Please respond in Chinese.",
+        return withPerformanceTracking(
+          {
+            operation: "suggestNextTopic",
+            provider: provider.providerType,
+            model,
+            metadata: {
+              nodeTitle: nodeTitle,
             },
-            {
-              role: "user",
-              content: `Current Node:\nTitle: ${nodeTitle}\nContent: ${
-                nodeContent || ""
-              }${progressContext}`,
-            },
-          ],
-          model: options.model || provider.model,
-          response_format: { type: "json_object" },
-        });
+          },
+          async () => {
+            const progressContext = options.userProgress
+              ? `\nUser Progress:\n- Mastered nodes: ${options.userProgress.masteredCount || 0}\n- Current level: ${options.userProgress.currentLevel || "beginner"}`
+              : "";
 
-        const content = completion.choices[0].message.content || "";
-        const parsed = parseAIResponse<{ suggestions: unknown[] }>(
-          content,
-          "Suggest Next Topic",
+            const completion = await provider.client.chat.completions.create({
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "You are an expert knowledge tutor. Based on the current node and user's learning progress, suggest 2-3 next topics to explore.\n" +
+                    "Return a JSON object with a 'suggestions' array. Each object must have:\n" +
+                    "- 'title': Brief topic title (max 30 chars)\n" +
+                    "- 'description': Short explanation (max 80 chars)\n" +
+                    "- 'priority': 'high', 'medium', or 'low'\n" +
+                    "- 'estimatedDifficulty': Number from 1-5\n" +
+                    "Please respond in Chinese.",
+                },
+                {
+                  role: "user",
+                  content: `Current Node:\nTitle: ${nodeTitle}\nContent: ${nodeContent || ""}${progressContext}`,
+                },
+              ],
+              model,
+              response_format: { type: "json_object" },
+            });
+
+            const content = completion.choices[0].message.content || "";
+            const parsed = parseAIResponse<{ suggestions: unknown[] }>(
+              content,
+              "Suggest Next Topic",
+            );
+
+            return {
+              result: { suggestions: parsed.suggestions || [] },
+              usage: completion.usage,
+            };
+          },
         );
-
-        return { suggestions: parsed.suggestions || [] };
       });
     } catch (error: unknown) {
       const err = error as Error;
@@ -1267,7 +1340,7 @@ Your task:
 
     try {
       const model = options.model || provider.model;
-      
+
       return withPerformanceTracking(
         {
           operation: "tutorChat",
@@ -1372,22 +1445,34 @@ Instructions:
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const existingNodesContext =
-          existingNodes && existingNodes.length > 0
-            ? `\nExisting Nodes (DO NOT duplicate these): ${existingNodes
-                .slice(0, 50)
-                .join(", ")}`
-            : "";
+        const model = options.model || provider.model;
 
-        const maxConcepts = options.maxConcepts || 5;
+        return withPerformanceTracking(
+          {
+            operation: "extractConcepts",
+            provider: provider.providerType,
+            model,
+            metadata: {
+              text: text.slice(0, 100) + (text.length > 100 ? "..." : ""),
+            },
+          },
+          async () => {
+            const existingNodesContext =
+              existingNodes && existingNodes.length > 0
+                ? `\nExisting Nodes (DO NOT duplicate these): ${existingNodes
+                    .slice(0, 50)
+                    .join(", ")}`
+                : "";
 
-        const completion = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages: [
-                {
-                  role: "system",
-                  content: `You are a concept extraction expert. Analyze the given text and extract key concepts.
+            const maxConcepts = options.maxConcepts || 5;
+
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages: [
+                    {
+                      role: "system",
+                      content: `You are a concept extraction expert. Analyze the given text and extract key concepts.
 
 Requirements:
 1. Extract ${maxConcepts} most important concepts
@@ -1402,33 +1487,38 @@ Return a JSON object with a 'concepts' array. Each object must have:
 - 'priority': 'high', 'medium', or 'low'
 
 Please respond in Chinese.`,
+                    },
+                    {
+                      role: "user",
+                      content: `Text to analyze:\n${text}${existingNodesContext}`,
+                    },
+                  ],
+                  model,
+                  response_format: { type: "json_object" },
+                }),
+              {
+                timeout: DEFAULT_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Extract Concepts retry attempt ${attempt}: ${error.message}`,
+                  );
                 },
-                {
-                  role: "user",
-                  content: `Text to analyze:\n${text}${existingNodesContext}`,
-                },
-              ],
-              model: options.model || provider.model,
-              response_format: { type: "json_object" },
-            }),
-          {
-            timeout: DEFAULT_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `Extract Concepts retry attempt ${attempt}: ${error.message}`,
-              );
-            },
+              },
+            );
+
+            const content = completion.choices[0].message.content || "";
+            const parsed = parseAIResponse<{ concepts: unknown[] }>(
+              content,
+              "Extract Concepts",
+            );
+
+            return {
+              result: { concepts: parsed.concepts || [] },
+              usage: completion.usage,
+            };
           },
         );
-
-        const content = completion.choices[0].message.content || "";
-        const parsed = parseAIResponse<{ concepts: unknown[] }>(
-          content,
-          "Extract Concepts",
-        );
-
-        return { concepts: parsed.concepts || [] };
       });
     } catch (error: unknown) {
       const err = error as Error;
@@ -1486,78 +1576,102 @@ Please respond in Chinese.`,
     }
 
     try {
-      const graph1NodesText = graph1.nodes
-        .slice(0, 50)
-        .map(
-          (n) =>
-            `- Title: ${n.title}${
-              n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
-            }`,
-        )
-        .join("\n");
+      const model = options.model || provider.model;
 
-      const graph2NodesText = graph2.nodes
-        .slice(0, 50)
-        .map(
-          (n) =>
-            `- Title: ${n.title}${
-              n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
-            }`,
-        )
-        .join("\n");
-
-      const templateContext = {
-        graph1Title: graph1.title || "图谱 1",
-        graph2Title: graph2.title || "图谱 2",
-        graph1Description: "",
-        graph2Description: "",
-        graph1Nodes: graph1NodesText,
-        graph2Nodes: graph2NodesText,
-      };
-
-      const systemPrompt = await promptService.getRenderedPrompt(
-        supabaseAdmin,
-        "cross_graph_connection_analysis",
-        templateContext,
-        options.userId,
-      );
-
-      const completion = await withTimeoutAndRetry(
-        () =>
-          provider.client.chat.completions.create({
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: `请分析这两个图谱之间的节点连接关系。` },
-            ],
-            model: options.model || provider.model,
-            response_format: { type: "json_object" },
-          }),
+      return withPerformanceTracking(
         {
-          timeout: DEFAULT_TIMEOUT,
-          maxRetries: 3,
-          onRetry: (attempt, error) => {
-            logger.warn(
-              `Cross Graph Connections retry attempt ${attempt}: ${error.message}`,
-            );
+          operation: "analyzeCrossGraphConnections",
+          provider: provider.providerType,
+          model,
+          metadata: {
+            graph1: graph1.title || "图谱 1",
+            graph2: graph2.title || "图谱 2",
+            userId: options.userId,
           },
         },
-      );
+        async () => {
+          const graph1NodesText = graph1.nodes
+            .slice(0, 50)
+            .map(
+              (n) =>
+                `- Title: ${n.title}${
+                  n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
+                }`,
+            )
+            .join("\n");
 
-      const content = completion.choices[0].message.content || "";
-      return parseAIResponse<{
-        connections: Array<{
-          node1_title: string;
-          node2_title: string;
-          connection_type: string;
-          similarity: number;
-          reason: string;
-        }>;
-        summary: {
-          total_connections: number;
-          by_type: Record<string, number>;
-          overall_relationship: string;
-        };
-      }>(content, "Cross Graph Connections");
+          const graph2NodesText = graph2.nodes
+            .slice(0, 50)
+            .map(
+              (n) =>
+                `- Title: ${n.title}${
+                  n.content ? `, Content: ${n.content.slice(0, 200)}...` : ""
+                }`,
+            )
+            .join("\n");
+
+          const templateContext = {
+            graph1Title: graph1.title || "图谱 1",
+            graph2Title: graph2.title || "图谱 2",
+            graph1Description: "",
+            graph2Description: "",
+            graph1Nodes: graph1NodesText,
+            graph2Nodes: graph2NodesText,
+          };
+
+          const systemPrompt = await promptService.getRenderedPrompt(
+            supabaseAdmin,
+            "cross_graph_connection_analysis",
+            templateContext,
+            options.userId,
+          );
+
+          const completion = await withTimeoutAndRetry(
+            () =>
+              provider.client.chat.completions.create({
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  {
+                    role: "user",
+                    content: `请分析这两个图谱之间的节点连接关系。`,
+                  },
+                ],
+                model,
+                response_format: { type: "json_object" },
+              }),
+            {
+              timeout: DEFAULT_TIMEOUT,
+              maxRetries: 3,
+              onRetry: (attempt, error) => {
+                logger.warn(
+                  `Cross Graph Connections retry attempt ${attempt}: ${error.message}`,
+                );
+              },
+            },
+          );
+
+          const content = completion.choices[0].message.content || "";
+          const result = parseAIResponse<{
+            connections: Array<{
+              node1_title: string;
+              node2_title: string;
+              connection_type: string;
+              similarity: number;
+              reason: string;
+            }>;
+            summary: {
+              total_connections: number;
+              by_type: Record<string, number>;
+              overall_relationship: string;
+            };
+          }>(content, "Cross Graph Connections");
+
+          return {
+            result,
+            usage: completion.usage,
+          };
+        },
+      );
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("AI Cross Graph Connections Error:", error);
@@ -1612,64 +1726,86 @@ Please respond in Chinese.`,
 
     try {
       return await dedupedRequest(requestKey, async () => {
-        const systemPrompt = await promptService.getRenderedPrompt(
-          supabaseAdmin,
-          "generate_task_details",
-          {
-            title,
-            context: options.context || "",
-          },
-          options.userId,
-        );
+        const model = options.model || provider.model;
 
-        const completion = await withTimeoutAndRetry(
-          () =>
-            provider.client.chat.completions.create({
-              messages: [
-                { role: "system", content: systemPrompt },
-                {
-                  role: "user",
-                  content: `任务标题：${title}${
-                    options.context ? `\n\n补充信息：${options.context}` : ""
-                  }`,
-                },
-              ],
-              model: options.model || provider.model,
-              response_format: { type: "json_object" },
-            }),
+        return withPerformanceTracking(
           {
-            timeout: DEFAULT_TIMEOUT,
-            maxRetries: 3,
-            onRetry: (attempt, error) => {
-              logger.warn(
-                `Generate Task Details retry attempt ${attempt}: ${error.message}`,
-              );
+            operation: "generateTaskDetails",
+            provider: provider.providerType,
+            model,
+            metadata: {
+              title: title,
+              userId: options.userId,
             },
           },
+          async () => {
+            const systemPrompt = await promptService.getRenderedPrompt(
+              supabaseAdmin,
+              "generate_task_details",
+              {
+                title,
+                context: options.context || "",
+              },
+              options.userId,
+            );
+
+            const completion = await withTimeoutAndRetry(
+              () =>
+                provider.client.chat.completions.create({
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    {
+                      role: "user",
+                      content: `任务标题：${title}${
+                        options.context
+                          ? `\n\n补充信息：${options.context}`
+                          : ""
+                      }`,
+                    },
+                  ],
+                  model,
+                  response_format: { type: "json_object" },
+                }),
+              {
+                timeout: DEFAULT_TIMEOUT,
+                maxRetries: 3,
+                onRetry: (attempt, error) => {
+                  logger.warn(
+                    `Generate Task Details retry attempt ${attempt}: ${error.message}`,
+                  );
+                },
+              },
+            );
+
+            const content = completion.choices[0].message.content || "";
+            const parsed = parseAIResponse<{
+              description: string;
+              tags: string[];
+              estimated_duration: number;
+              priority: number;
+              suggested_queue: number;
+            }>(content, "Generate Task Details");
+
+            const result = {
+              description: parsed.description || "",
+              tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+              estimated_duration: Math.min(
+                180,
+                Math.max(15, parsed.estimated_duration || 25),
+              ),
+              priority: Math.min(4, Math.max(1, parsed.priority || 2)),
+              suggested_queue: Math.min(
+                2,
+                Math.max(0, parsed.suggested_queue || 2),
+              ),
+            };
+
+            return {
+              result,
+              usage: completion.usage,
+            };
+          },
         );
-
-        const content = completion.choices[0].message.content || "";
-        const parsed = parseAIResponse<{
-          description: string;
-          tags: string[];
-          estimated_duration: number;
-          priority: number;
-          suggested_queue: number;
-        }>(content, "Generate Task Details");
-
-        return {
-          description: parsed.description || "",
-          tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
-          estimated_duration: Math.min(
-            180,
-            Math.max(15, parsed.estimated_duration || 25),
-          ),
-          priority: Math.min(4, Math.max(1, parsed.priority || 2)),
-          suggested_queue: Math.min(
-            2,
-            Math.max(0, parsed.suggested_queue || 2),
-          ),
-        };
       });
     } catch (error: unknown) {
       const err = error as Error;

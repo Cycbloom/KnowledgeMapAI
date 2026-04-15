@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Template,
   TemplateNode,
   TemplateEdge,
   TemplateCategory,
   NodeLevel,
-} from '../../types';
+} from "../../types";
 import {
   X,
   Plus,
@@ -14,8 +14,8 @@ import {
   ChevronDown,
   ChevronRight,
   GripVertical,
-} from 'lucide-react';
-import { useTheme, useIsMobile } from '../../hooks';
+} from "lucide-react";
+import { useTheme, useIsMobile } from "../../hooks";
 
 interface TemplateEditorProps {
   template: Template;
@@ -23,38 +23,39 @@ interface TemplateEditorProps {
   onCancel: () => void;
 }
 
-const generateId = () => `node-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+const generateId = () =>
+  `node-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 const getNodeLevelColor = (level: NodeLevel, isDark: boolean) => {
   if (isDark) {
     switch (level) {
-      case 'root':
-        return 'bg-blue-600 text-white';
-      case 'core':
-        return 'bg-indigo-600 text-white';
-      case 'sub':
-        return 'bg-purple-600 text-white';
-      case 'normal':
-        return 'bg-slate-600 text-white';
-      case 'leaf':
-        return 'bg-emerald-600 text-white';
+      case "root":
+        return "bg-blue-600 text-white";
+      case "core":
+        return "bg-indigo-600 text-white";
+      case "sub":
+        return "bg-purple-600 text-white";
+      case "normal":
+        return "bg-slate-600 text-white";
+      case "leaf":
+        return "bg-emerald-600 text-white";
       default:
-        return 'bg-slate-700 text-slate-300';
+        return "bg-slate-700 text-slate-300";
     }
   }
   switch (level) {
-    case 'root':
-      return 'bg-blue-500 text-white';
-    case 'core':
-      return 'bg-indigo-500 text-white';
-    case 'sub':
-      return 'bg-purple-500 text-white';
-    case 'normal':
-      return 'bg-gray-500 text-white';
-    case 'leaf':
-      return 'bg-emerald-500 text-white';
+    case "root":
+      return "bg-blue-500 text-white";
+    case "core":
+      return "bg-indigo-500 text-white";
+    case "sub":
+      return "bg-purple-500 text-white";
+    case "normal":
+      return "bg-gray-500 text-white";
+    case "leaf":
+      return "bg-emerald-500 text-white";
     default:
-      return 'bg-gray-200 text-gray-700';
+      return "bg-gray-200 text-gray-700";
   }
 };
 
@@ -67,20 +68,11 @@ const TreeNodeItem: React.FC<{
   onUpdate: (id: string, updates: Partial<TemplateNode>) => void;
   onDelete: (id: string) => void;
   onAddChild: (parentId: string) => void;
-}> = ({
-  node,
-  allNodes,
-  depth,
-  isDark,
-  t,
-  onUpdate,
-  onDelete,
-  onAddChild,
-}) => {
+}> = ({ node, allNodes, depth, isDark, t, onUpdate, onDelete, onAddChild }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const children = useMemo(
     () => allNodes.filter((n) => n.parentId === node.id),
-    [allNodes, node.id]
+    [allNodes, node.id],
   );
   const hasChildren = children.length > 0;
 
@@ -88,7 +80,7 @@ const TreeNodeItem: React.FC<{
     <div className="flex flex-col">
       <div
         className={`flex items-start gap-2 py-2 px-3 rounded-lg transition-all ${
-          isDark ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'
+          isDark ? "hover:bg-slate-700/50" : "hover:bg-gray-50"
         }`}
         style={{ marginLeft: `${depth * 16}px` }}
       >
@@ -98,8 +90,8 @@ const TreeNodeItem: React.FC<{
               onClick={() => setIsExpanded(!isExpanded)}
               className={`p-0.5 rounded ${
                 isDark
-                  ? 'hover:bg-slate-600 text-slate-400'
-                  : 'hover:bg-gray-200 text-gray-500'
+                  ? "hover:bg-slate-600 text-slate-400"
+                  : "hover:bg-gray-200 text-gray-500"
               }`}
             >
               {isExpanded ? (
@@ -113,7 +105,7 @@ const TreeNodeItem: React.FC<{
           )}
           <GripVertical
             size={14}
-            className={`${isDark ? 'text-slate-500' : 'text-gray-400'} cursor-grab`}
+            className={`${isDark ? "text-slate-500" : "text-gray-400"} cursor-grab`}
           />
         </div>
 
@@ -126,8 +118,8 @@ const TreeNodeItem: React.FC<{
               placeholder={t("templates.node.title")}
               className={`flex-1 px-2 py-1 text-sm rounded border outline-none transition-all ${
                 isDark
-                  ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500'
-                  : 'bg-white border-gray-200 text-gray-900 focus:border-blue-500'
+                  ? "bg-slate-800 border-slate-600 text-white focus:border-blue-500"
+                  : "bg-white border-gray-200 text-gray-900 focus:border-blue-500"
               }`}
             />
             <select
@@ -137,8 +129,8 @@ const TreeNodeItem: React.FC<{
               }
               className={`px-2 py-1 text-xs rounded border outline-none ${
                 isDark
-                  ? 'bg-slate-800 border-slate-600 text-white'
-                  : 'bg-white border-gray-200 text-gray-900'
+                  ? "bg-slate-800 border-slate-600 text-white"
+                  : "bg-white border-gray-200 text-gray-900"
               }`}
             >
               <option value="root">{t("templates.node.root")}</option>
@@ -150,7 +142,7 @@ const TreeNodeItem: React.FC<{
             <span
               className={`text-xs font-medium px-2 py-0.5 rounded ${getNodeLevelColor(
                 node.level,
-                isDark
+                isDark,
               )}`}
             >
               {node.level}
@@ -158,14 +150,14 @@ const TreeNodeItem: React.FC<{
           </div>
 
           <textarea
-            value={node.description || ''}
+            value={node.description || ""}
             onChange={(e) => onUpdate(node.id, { description: e.target.value })}
             placeholder={t("templates.node.contentDescription")}
             rows={2}
             className={`w-full px-2 py-1 text-xs rounded border outline-none transition-all resize-none ${
               isDark
-                ? 'bg-slate-800 border-slate-600 text-slate-300 placeholder-slate-500 focus:border-blue-500'
-                : 'bg-white border-gray-200 text-gray-600 placeholder-gray-400 focus:border-blue-500'
+                ? "bg-slate-800 border-slate-600 text-slate-300 placeholder-slate-500 focus:border-blue-500"
+                : "bg-white border-gray-200 text-gray-600 placeholder-gray-400 focus:border-blue-500"
             }`}
           />
 
@@ -174,8 +166,8 @@ const TreeNodeItem: React.FC<{
               onClick={() => onAddChild(node.id)}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 isDark
-                  ? 'text-blue-400 hover:bg-blue-900/30'
-                  : 'text-blue-600 hover:bg-blue-50'
+                  ? "text-blue-400 hover:bg-blue-900/30"
+                  : "text-blue-600 hover:bg-blue-50"
               }`}
             >
               <Plus size={12} />
@@ -185,8 +177,8 @@ const TreeNodeItem: React.FC<{
               onClick={() => onDelete(node.id)}
               className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                 isDark
-                  ? 'text-red-400 hover:bg-red-900/30'
-                  : 'text-red-600 hover:bg-red-50'
+                  ? "text-red-400 hover:bg-red-900/30"
+                  : "text-red-600 hover:bg-red-50"
               }`}
             >
               <Trash2 size={12} />
@@ -229,7 +221,7 @@ const EdgeItem: React.FC<{
   return (
     <div
       className={`flex items-center gap-2 p-2 rounded-lg ${
-        isDark ? 'bg-slate-700/50' : 'bg-gray-50'
+        isDark ? "bg-slate-700/50" : "bg-gray-50"
       }`}
     >
       <select
@@ -237,8 +229,8 @@ const EdgeItem: React.FC<{
         onChange={(e) => onUpdate({ source: e.target.value })}
         className={`flex-1 px-2 py-1 text-sm rounded border outline-none ${
           isDark
-            ? 'bg-slate-800 border-slate-600 text-white'
-            : 'bg-white border-gray-200 text-gray-900'
+            ? "bg-slate-800 border-slate-600 text-white"
+            : "bg-white border-gray-200 text-gray-900"
         }`}
       >
         <option value="">{t("templates.edge.sourceNode")}</option>
@@ -249,7 +241,9 @@ const EdgeItem: React.FC<{
         ))}
       </select>
 
-      <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+      <span
+        className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}
+      >
         →
       </span>
 
@@ -258,8 +252,8 @@ const EdgeItem: React.FC<{
         onChange={(e) => onUpdate({ target: e.target.value })}
         className={`flex-1 px-2 py-1 text-sm rounded border outline-none ${
           isDark
-            ? 'bg-slate-800 border-slate-600 text-white'
-            : 'bg-white border-gray-200 text-gray-900'
+            ? "bg-slate-800 border-slate-600 text-white"
+            : "bg-white border-gray-200 text-gray-900"
         }`}
       >
         <option value="">{t("templates.edge.targetNode")}</option>
@@ -272,13 +266,13 @@ const EdgeItem: React.FC<{
 
       <input
         type="text"
-        value={edge.relationship_type || ''}
+        value={edge.relationship_type || ""}
         onChange={(e) => onUpdate({ relationship_type: e.target.value })}
         placeholder={t("templates.edge.relationshipType")}
         className={`w-24 px-2 py-1 text-sm rounded border outline-none ${
           isDark
-            ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500'
-            : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
+            ? "bg-slate-800 border-slate-600 text-white placeholder-slate-500"
+            : "bg-white border-gray-200 text-gray-900 placeholder-gray-400"
         }`}
       />
 
@@ -286,8 +280,8 @@ const EdgeItem: React.FC<{
         onClick={onDelete}
         className={`p-1 rounded transition-colors ${
           isDark
-            ? 'text-red-400 hover:bg-red-900/30'
-            : 'text-red-600 hover:bg-red-50'
+            ? "text-red-400 hover:bg-red-900/30"
+            : "text-red-600 hover:bg-red-50"
         }`}
       >
         <Trash2 size={14} />
@@ -306,23 +300,20 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const { isMobile } = useIsMobile();
 
   const [name, setName] = useState(template.name);
-  const [description, setDescription] = useState(template.description || '');
+  const [description, setDescription] = useState(template.description || "");
   const [category, setCategory] = useState<TemplateCategory>(template.category);
   const [nodes, setNodes] = useState<TemplateNode[]>(template.nodes || []);
   const [edges, setEdges] = useState<TemplateEdge[]>(template.edges || []);
 
-  const rootNodes = useMemo(
-    () => nodes.filter((n) => !n.parentId),
-    [nodes]
-  );
+  const rootNodes = useMemo(() => nodes.filter((n) => !n.parentId), [nodes]);
 
   const handleUpdateNode = useCallback(
     (id: string, updates: Partial<TemplateNode>) => {
       setNodes((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, ...updates } : n))
+        prev.map((n) => (n.id === id ? { ...n, ...updates } : n)),
       );
     },
-    []
+    [],
   );
 
   const handleDeleteNode = useCallback((id: string) => {
@@ -338,17 +329,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       return prev.filter((n) => !idsToDelete.has(n.id));
     });
 
-    setEdges((prev) =>
-      prev.filter((e) => e.source !== id && e.target !== id)
-    );
+    setEdges((prev) => prev.filter((e) => e.source !== id && e.target !== id));
   }, []);
 
   const handleAddNode = useCallback((parentId?: string) => {
     const newNode: TemplateNode = {
       id: generateId(),
-      title: '',
-      description: '',
-      level: parentId ? 'sub' : 'core',
+      title: "",
+      description: "",
+      level: parentId ? "sub" : "core",
       parentId,
     };
     setNodes((prev) => [...prev, newNode]);
@@ -357,9 +346,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const handleAddChildNode = useCallback((parentId: string) => {
     const newNode: TemplateNode = {
       id: generateId(),
-      title: '',
-      description: '',
-      level: 'sub',
+      title: "",
+      description: "",
+      level: "sub",
       parentId,
     };
     setNodes((prev) => [...prev, newNode]);
@@ -368,10 +357,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const handleUpdateEdge = useCallback(
     (index: number, updates: Partial<TemplateEdge>) => {
       setEdges((prev) =>
-        prev.map((e, i) => (i === index ? { ...e, ...updates } : e))
+        prev.map((e, i) => (i === index ? { ...e, ...updates } : e)),
       );
     },
-    []
+    [],
   );
 
   const handleDeleteEdge = useCallback((index: number) => {
@@ -381,7 +370,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const handleAddEdge = useCallback(() => {
     setEdges((prev) => [
       ...prev,
-      { source: '', target: '', relationship_type: '' },
+      { source: "", target: "", relationship_type: "" },
     ]);
   }, []);
 
@@ -412,20 +401,20 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     >
       <div
         className={`w-full ${
-          isMobile ? 'h-full rounded-none' : 'max-w-4xl rounded-2xl'
-        } shadow-2xl ${isMobile ? 'max-h-full' : 'max-h-[90vh]'} flex flex-col ${
-          isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white'
+          isMobile ? "h-full rounded-none" : "max-w-4xl rounded-2xl"
+        } shadow-2xl ${isMobile ? "max-h-full" : "max-h-[90vh]"} flex flex-col ${
+          isDark ? "bg-slate-800 border border-slate-700" : "bg-white"
         }`}
       >
         <div
           className={`p-4 md:p-6 border-b ${
-            isDark ? 'border-slate-700' : 'border-gray-200'
+            isDark ? "border-slate-700" : "border-gray-200"
           }`}
         >
           <div className="flex items-center justify-between">
             <h2
               className={`text-lg md:text-xl font-bold ${
-                isDark ? 'text-white' : 'text-gray-900'
+                isDark ? "text-white" : "text-gray-900"
               }`}
             >
               {t("templates.button.edit")}
@@ -434,8 +423,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               onClick={onCancel}
               className={`p-2 rounded-full transition-colors ${
                 isDark
-                  ? 'hover:bg-slate-700 text-slate-400'
-                  : 'hover:bg-gray-100 text-gray-500'
+                  ? "hover:bg-slate-700 text-slate-400"
+                  : "hover:bg-gray-100 text-gray-500"
               }`}
             >
               <X size={isMobile ? 20 : 24} />
@@ -448,13 +437,13 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <div
               className={`p-4 rounded-xl border ${
                 isDark
-                  ? 'bg-slate-900 border-slate-700'
-                  : 'bg-gray-50 border-gray-200'
+                  ? "bg-slate-900 border-slate-700"
+                  : "bg-gray-50 border-gray-200"
               }`}
             >
               <h3
                 className={`text-sm font-semibold mb-4 ${
-                  isDark ? 'text-slate-300' : 'text-gray-700'
+                  isDark ? "text-slate-300" : "text-gray-700"
                 }`}
               >
                 {t("templates.basicInfo")}
@@ -463,7 +452,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 <div>
                   <label
                     className={`block text-xs font-medium mb-1 ${
-                      isDark ? 'text-slate-400' : 'text-gray-600'
+                      isDark ? "text-slate-400" : "text-gray-600"
                     }`}
                   >
                     {t("templates.form.name")}
@@ -475,15 +464,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     placeholder={t("templates.form.name")}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all ${
                       isDark
-                        ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500'
-                        : 'bg-white border-gray-200 text-gray-900 focus:border-blue-500'
+                        ? "bg-slate-800 border-slate-600 text-white focus:border-blue-500"
+                        : "bg-white border-gray-200 text-gray-900 focus:border-blue-500"
                     }`}
                   />
                 </div>
                 <div>
                   <label
                     className={`block text-xs font-medium mb-1 ${
-                      isDark ? 'text-slate-400' : 'text-gray-600'
+                      isDark ? "text-slate-400" : "text-gray-600"
                     }`}
                   >
                     {t("templates.form.description")}
@@ -495,33 +484,42 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                     rows={2}
                     className={`w-full px-3 py-2 rounded-lg border outline-none transition-all resize-none ${
                       isDark
-                        ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500'
-                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                        ? "bg-slate-800 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500"
+                        : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500"
                     }`}
                   />
                 </div>
                 <div>
                   <label
                     className={`block text-xs font-medium mb-1 ${
-                      isDark ? 'text-slate-400' : 'text-gray-600'
+                      isDark ? "text-slate-400" : "text-gray-600"
                     }`}
                   >
                     {t("templates.form.category")}
                   </label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as TemplateCategory)}
+                    onChange={(e) =>
+                      setCategory(e.target.value as TemplateCategory)
+                    }
                     className={`w-full px-3 py-2 rounded-lg border outline-none ${
                       isDark
-                        ? 'bg-slate-800 border-slate-600 text-white'
-                        : 'bg-white border-gray-200 text-gray-900'
+                        ? "bg-slate-800 border-slate-600 text-white"
+                        : "bg-white border-gray-200 text-gray-900"
                     }`}
                   >
-                    <option value="learning">{t("templates.category.learning")}</option>
-                    <option value="story">{t("templates.category.story")}</option>
-                    <option value="project">{t("templates.category.project")}</option>
-                    <option value="analysis">{t("templates.category.analysis")}</option>
-                    <option value="custom">{t("templates.category.custom")}</option>
+                    <option value="knowledge">
+                      {t("templates.category.knowledge")}
+                    </option>
+                    <option value="project">
+                      {t("templates.category.project")}
+                    </option>
+                    <option value="analysis">
+                      {t("templates.category.analysis")}
+                    </option>
+                    <option value="architecture">
+                      {t("templates.category.architecture")}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -530,14 +528,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <div
               className={`p-4 rounded-xl border ${
                 isDark
-                  ? 'bg-slate-900 border-slate-700'
-                  : 'bg-gray-50 border-gray-200'
+                  ? "bg-slate-900 border-slate-700"
+                  : "bg-gray-50 border-gray-200"
               }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3
                   className={`text-sm font-semibold ${
-                    isDark ? 'text-slate-300' : 'text-gray-700'
+                    isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
                   {t("templates.nodeList", { count: nodes.length })}
@@ -546,8 +544,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   onClick={() => handleAddNode()}
                   className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     isDark
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
                   }`}
                 >
                   <Plus size={14} />
@@ -558,7 +556,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               {nodes.length === 0 ? (
                 <div
                   className={`text-center py-8 ${
-                    isDark ? 'text-slate-500' : 'text-gray-500'
+                    isDark ? "text-slate-500" : "text-gray-500"
                   }`}
                 >
                   {t("templates.noNodesClickToAdd")}
@@ -567,8 +565,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 <div
                   className={`space-y-1 p-3 rounded-lg border max-h-80 overflow-y-auto ${
                     isDark
-                      ? 'bg-slate-800 border-slate-700'
-                      : 'bg-white border-gray-200'
+                      ? "bg-slate-800 border-slate-700"
+                      : "bg-white border-gray-200"
                   }`}
                 >
                   {rootNodes.map((node) => (
@@ -591,14 +589,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <div
               className={`p-4 rounded-xl border ${
                 isDark
-                  ? 'bg-slate-900 border-slate-700'
-                  : 'bg-gray-50 border-gray-200'
+                  ? "bg-slate-900 border-slate-700"
+                  : "bg-gray-50 border-gray-200"
               }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3
                   className={`text-sm font-semibold ${
-                    isDark ? 'text-slate-300' : 'text-gray-700'
+                    isDark ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
                   {t("templates.edgeList", { count: edges.length })}
@@ -608,8 +606,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   disabled={nodes.length < 2}
                   className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                     isDark
-                      ? 'bg-purple-600 text-white hover:bg-purple-700'
-                      : 'bg-purple-500 text-white hover:bg-purple-600'
+                      ? "bg-purple-600 text-white hover:bg-purple-700"
+                      : "bg-purple-500 text-white hover:bg-purple-600"
                   }`}
                 >
                   <Plus size={14} />
@@ -620,7 +618,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               {edges.length === 0 ? (
                 <div
                   className={`text-center py-4 ${
-                    isDark ? 'text-slate-500' : 'text-gray-500'
+                    isDark ? "text-slate-500" : "text-gray-500"
                   }`}
                 >
                   {t("templates.empty.noEdges")}
@@ -647,17 +645,17 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
         <div
           className={`p-4 md:p-6 border-t flex ${
-            isMobile ? 'flex-col gap-2' : 'justify-end gap-3'
-          } ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
+            isMobile ? "flex-col gap-2" : "justify-end gap-3"
+          } ${isDark ? "border-slate-700" : "border-gray-200"}`}
         >
           <button
             onClick={onCancel}
             className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-medium transition-colors ${
-              isMobile ? 'w-full text-center' : ''
+              isMobile ? "w-full text-center" : ""
             } ${
               isDark
-                ? 'text-slate-300 hover:bg-slate-700'
-                : 'text-gray-700 hover:bg-gray-100'
+                ? "text-slate-300 hover:bg-slate-700"
+                : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             {t("templates.button.cancel")}
@@ -666,7 +664,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             onClick={handleSave}
             disabled={!isValid}
             className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-              isMobile ? 'w-full shadow-lg shadow-blue-600/20' : ''
+              isMobile ? "w-full shadow-lg shadow-blue-600/20" : ""
             }`}
           >
             {t("templates.button.save")}

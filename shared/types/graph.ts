@@ -26,11 +26,191 @@ export type EdgeWidthMode = "fixed" | "strength" | "relationship";
 export type ExplorationMode = "none" | "branch" | "timeline";
 
 export type TemplateCategory =
-  | "learning"
-  | "story"
+  | "knowledge"
   | "project"
   | "analysis"
-  | "custom";
+  | "architecture";
+
+export type TemplateType =
+  | "knowledge_tree"
+  | "skill_map"
+  | "concept_network"
+  | "learning_path"
+  | "topic_research"
+  | "project_lifecycle"
+  | "dev_workflow"
+  | "task_breakdown"
+  | "sprint_planning"
+  | "root_cause"
+  | "swot"
+  | "comparison"
+  | "decision_tree"
+  | "tech_ecosystem"
+  | "org_structure"
+  | "system_architecture"
+  | "knowledge_system"
+  | "blank";
+
+export interface TemplateTypeInfo {
+  type: TemplateType;
+  category: TemplateCategory;
+  layoutSuggestion: LayoutSuggestion;
+  primaryRelationType: string;
+  structureHint: string;
+}
+
+export const TEMPLATE_TYPE_MAP: Record<TemplateType, TemplateTypeInfo> = {
+  knowledge_tree: {
+    type: "knowledge_tree",
+    category: "knowledge",
+    layoutSuggestion: "tree",
+    primaryRelationType: "prerequisite",
+    structureHint: "hierarchical",
+  },
+  skill_map: {
+    type: "skill_map",
+    category: "knowledge",
+    layoutSuggestion: "network",
+    primaryRelationType: "prerequisite",
+    structureHint: "network",
+  },
+  concept_network: {
+    type: "concept_network",
+    category: "knowledge",
+    layoutSuggestion: "network",
+    primaryRelationType: "related",
+    structureHint: "network",
+  },
+  learning_path: {
+    type: "learning_path",
+    category: "knowledge",
+    layoutSuggestion: "hierarchical",
+    primaryRelationType: "prerequisite",
+    structureHint: "linear",
+  },
+  topic_research: {
+    type: "topic_research",
+    category: "knowledge",
+    layoutSuggestion: "radial",
+    primaryRelationType: "related",
+    structureHint: "radial_network",
+  },
+  project_lifecycle: {
+    type: "project_lifecycle",
+    category: "project",
+    layoutSuggestion: "hierarchical",
+    primaryRelationType: "prerequisite",
+    structureHint: "timeline",
+  },
+  dev_workflow: {
+    type: "dev_workflow",
+    category: "project",
+    layoutSuggestion: "hierarchical",
+    primaryRelationType: "prerequisite",
+    structureHint: "flowchart",
+  },
+  task_breakdown: {
+    type: "task_breakdown",
+    category: "project",
+    layoutSuggestion: "tree",
+    primaryRelationType: "related",
+    structureHint: "hierarchical",
+  },
+  sprint_planning: {
+    type: "sprint_planning",
+    category: "project",
+    layoutSuggestion: "hierarchical",
+    primaryRelationType: "prerequisite",
+    structureHint: "timeline_hierarchical",
+  },
+  root_cause: {
+    type: "root_cause",
+    category: "analysis",
+    layoutSuggestion: "radial",
+    primaryRelationType: "related",
+    structureHint: "radial",
+  },
+  swot: {
+    type: "swot",
+    category: "analysis",
+    layoutSuggestion: "network",
+    primaryRelationType: "related",
+    structureHint: "quadrant",
+  },
+  comparison: {
+    type: "comparison",
+    category: "analysis",
+    layoutSuggestion: "network",
+    primaryRelationType: "related",
+    structureHint: "grouped",
+  },
+  decision_tree: {
+    type: "decision_tree",
+    category: "analysis",
+    layoutSuggestion: "tree",
+    primaryRelationType: "prerequisite",
+    structureHint: "tree",
+  },
+  tech_ecosystem: {
+    type: "tech_ecosystem",
+    category: "architecture",
+    layoutSuggestion: "network",
+    primaryRelationType: "related",
+    structureHint: "network",
+  },
+  org_structure: {
+    type: "org_structure",
+    category: "architecture",
+    layoutSuggestion: "tree",
+    primaryRelationType: "related",
+    structureHint: "hierarchical",
+  },
+  system_architecture: {
+    type: "system_architecture",
+    category: "architecture",
+    layoutSuggestion: "network",
+    primaryRelationType: "related",
+    structureHint: "layered_network",
+  },
+  knowledge_system: {
+    type: "knowledge_system",
+    category: "architecture",
+    layoutSuggestion: "network",
+    primaryRelationType: "cross_domain",
+    structureHint: "network",
+  },
+  blank: {
+    type: "blank",
+    category: "knowledge",
+    layoutSuggestion: "radial",
+    primaryRelationType: "related",
+    structureHint: "free",
+  },
+};
+
+export const TEMPLATE_CATEGORY_TYPES: Record<TemplateCategory, TemplateType[]> =
+  {
+    knowledge: [
+      "knowledge_tree",
+      "skill_map",
+      "concept_network",
+      "learning_path",
+      "topic_research",
+    ],
+    project: [
+      "project_lifecycle",
+      "dev_workflow",
+      "task_breakdown",
+      "sprint_planning",
+    ],
+    analysis: ["root_cause", "swot", "comparison", "decision_tree"],
+    architecture: [
+      "tech_ecosystem",
+      "org_structure",
+      "system_architecture",
+      "knowledge_system",
+    ],
+  };
 
 export type TemplateLayoutType =
   | "default"
@@ -350,6 +530,7 @@ export interface Template {
   name: string;
   description?: string;
   category: TemplateCategory;
+  template_type?: TemplateType;
   is_system: boolean;
   user_id?: string;
   nodes: TemplateNode[];
@@ -370,6 +551,7 @@ export interface CreateTemplateData {
   name: string;
   description?: string;
   category: TemplateCategory;
+  template_type?: TemplateType;
   nodes: TemplateNode[];
   edges: TemplateEdge[];
   layout?: TemplateLayout;
@@ -385,6 +567,7 @@ export interface UpdateTemplateData {
   name?: string;
   description?: string;
   category?: TemplateCategory;
+  template_type?: TemplateType;
   nodes?: TemplateNode[];
   edges?: TemplateEdge[];
   layout?: TemplateLayout;

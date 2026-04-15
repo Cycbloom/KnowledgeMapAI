@@ -1,4 +1,4 @@
-import type { AIProviderType } from './ai';
+import type { AIProviderType } from "./ai";
 
 export interface AIPerformanceLog {
   id: string;
@@ -13,7 +13,7 @@ export interface AIPerformanceLog {
   duration: number;
   success: boolean;
   errorMessage?: string;
-  
+
   cachedInputTokens?: number;
   uncachedInputTokens?: number;
   reasoningTokens?: number;
@@ -25,11 +25,18 @@ export interface AIPerformanceLog {
     totalCost: number;
     savedByCache: number;
   };
-  
+
   metadata?: {
     graphId?: string;
     nodeId?: string;
     userId?: string;
+    topic?: string;
+    templateType?: string;
+    text?: string;
+    graph1?: string;
+    graph2?: string;
+    title?: string;
+    nodeTitle?: string;
   };
 }
 
@@ -54,8 +61,26 @@ export interface AIPerformanceStats {
   totalSavedByCache: number;
   avgDuration: number;
   avgCacheHitRate: number;
-  byOperation: Record<string, { count: number; tokens: number; cost: number; cachedTokens: number; savedCost: number }>;
-  byModel: Record<string, { count: number; tokens: number; cost: number; cachedTokens: number; savedCost: number }>;
+  byOperation: Record<
+    string,
+    {
+      count: number;
+      tokens: number;
+      cost: number;
+      cachedTokens: number;
+      savedCost: number;
+    }
+  >;
+  byModel: Record<
+    string,
+    {
+      count: number;
+      tokens: number;
+      cost: number;
+      cachedTokens: number;
+      savedCost: number;
+    }
+  >;
 }
 
 export interface GetPerformanceLogsQuery {

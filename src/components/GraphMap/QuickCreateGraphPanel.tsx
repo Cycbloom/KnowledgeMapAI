@@ -72,7 +72,8 @@ export const QuickCreateGraphPanel: React.FC<QuickCreateGraphPanelProps> = ({
         } else {
           setShowRecommendations(false);
         }
-      } catch {
+      } catch (error) {
+        console.error('Failed to get domain recommendations:', error);
       } finally {
         setIsLoadingRecommendations(false);
       }

@@ -1,18 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { X, GraduationCap, Briefcase, Search, Layers, FileText, RefreshCw } from 'lucide-react';
-import { PromptEditor } from '../GraphEditor/panels/PromptEditor';
-import { useStore } from '../../store/useStore';
-import { useMessageStore } from '../../store/useMessageStore';
-import { api } from '../../services/api';
-import { getScenarioById } from '../PromptConfig/promptScenarios';
-import type { TemplateType, TemplateCategory } from '@shared/types/graph';
-import { TEMPLATE_CATEGORY_TYPES } from '@shared/types/graph';
+import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  X,
+  GraduationCap,
+  Briefcase,
+  Search,
+  Layers,
+  FileText,
+  RefreshCw,
+} from "lucide-react";
+import { PromptEditor } from "../GraphEditor/panels/PromptEditor";
+import { useStore } from "../../store/useStore";
+import { useMessageStore } from "../../store/useMessageStore";
+import { api } from "../../services/api";
+import { getScenarioById } from "../PromptConfig/promptScenarios";
+import type { TemplateType, TemplateCategory } from "@shared/types/graph";
+import { TEMPLATE_CATEGORY_TYPES } from "@shared/types/graph";
 
 interface PromptTemplate {
   id: string;
   code: string;
-  scope: 'system' | 'user' | 'graph';
+  scope: "system" | "user" | "graph";
   user_id?: string;
   graph_id?: string;
   template_content: string;
@@ -28,60 +36,68 @@ interface TemplatePromptConfigPanelProps {
 }
 
 const CATEGORIES: TemplateCategory[] = [
-  'knowledge',
-  'project',
-  'analysis',
-  'architecture',
+  "knowledge",
+  "project",
+  "analysis",
+  "architecture",
 ];
 
-const CATEGORY_CONFIG: Record<TemplateCategory, { icon: React.ReactNode; labelKey: string; color: string; iconBg: string; textColor: string }> = {
+const CATEGORY_CONFIG: Record<
+  TemplateCategory,
+  {
+    icon: React.ReactNode;
+    labelKey: string;
+    color: string;
+    iconBg: string;
+    textColor: string;
+  }
+> = {
   knowledge: {
     icon: <GraduationCap size={16} />,
-    labelKey: 'templates.category.knowledge',
-    color: 'text-blue-600 dark:text-blue-400',
-    iconBg: 'bg-blue-100 dark:bg-blue-800/40',
-    textColor: 'text-blue-600 dark:text-blue-400',
+    labelKey: "templates.category.knowledge",
+    color: "text-blue-600 dark:text-blue-400",
+    iconBg: "bg-blue-100 dark:bg-blue-800/40",
+    textColor: "text-blue-600 dark:text-blue-400",
   },
   project: {
     icon: <Briefcase size={16} />,
-    labelKey: 'templates.category.project',
-    color: 'text-green-600 dark:text-green-400',
-    iconBg: 'bg-green-100 dark:bg-green-800/40',
-    textColor: 'text-green-600 dark:text-green-400',
+    labelKey: "templates.category.project",
+    color: "text-green-600 dark:text-green-400",
+    iconBg: "bg-green-100 dark:bg-green-800/40",
+    textColor: "text-green-600 dark:text-green-400",
   },
   analysis: {
     icon: <Search size={16} />,
-    labelKey: 'templates.category.analysis',
-    color: 'text-amber-600 dark:text-amber-400',
-    iconBg: 'bg-amber-100 dark:bg-amber-800/40',
-    textColor: 'text-amber-600 dark:text-amber-400',
+    labelKey: "templates.category.analysis",
+    color: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-100 dark:bg-amber-800/40",
+    textColor: "text-amber-600 dark:text-amber-400",
   },
   architecture: {
     icon: <Layers size={16} />,
-    labelKey: 'templates.category.architecture',
-    color: 'text-purple-600 dark:text-purple-400',
-    iconBg: 'bg-purple-100 dark:bg-purple-800/40',
-    textColor: 'text-purple-600 dark:text-purple-400',
+    labelKey: "templates.category.architecture",
+    color: "text-purple-600 dark:text-purple-400",
+    iconBg: "bg-purple-100 dark:bg-purple-800/40",
+    textColor: "text-purple-600 dark:text-purple-400",
   },
 };
 
-export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps> = ({
-  isOpen,
-  onClose,
-  graphId,
-  initialSelectedType,
-}) => {
+export const TemplatePromptConfigPanel: React.FC<
+  TemplatePromptConfigPanelProps
+> = ({ isOpen, onClose, graphId, initialSelectedType }) => {
   const { t } = useTranslation();
   const { token } = useStore();
   const { addMessage } = useMessageStore();
 
-  const [selectedType, setSelectedType] = useState<TemplateType | null>(initialSelectedType ?? null);
+  const [selectedType, setSelectedType] = useState<TemplateType | null>(
+    initialSelectedType ?? null,
+  );
   const [templates, setTemplates] = useState<{
     system: PromptTemplate[];
     user: PromptTemplate[];
     graph: PromptTemplate[];
   }>({ system: [], user: [], graph: [] });
-  const [editingContent, setEditingContent] = useState('');
+  const [editingContent, setEditingContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -100,36 +116,51 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
     setIsLoading(true);
     try {
       const result = await api.prompts.list(graphId);
-      setTemplates(result as { system: PromptTemplate[]; user: PromptTemplate[]; graph: PromptTemplate[] });
+      setTemplates(
+        result as {
+          system: PromptTemplate[];
+          user: PromptTemplate[];
+          graph: PromptTemplate[];
+        },
+      );
     } catch (error) {
-      console.error('Failed to load templates:', error);
+      console.error("Failed to load templates:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getTemplateContent = useCallback((type: TemplateType, scope: 'system' | 'user' | 'graph'): string => {
-    const code = `template_type_${type}`;
-    const templateList = templates[scope];
-    const template = templateList?.find((t) => t.code === code);
-    return template?.template_content || '';
-  }, [templates]);
+  const getTemplateContent = useCallback(
+    (type: TemplateType, scope: "system" | "user" | "graph"): string => {
+      const code = `template_type_${type}`;
+      const templateList = templates[scope];
+      const template = templateList?.find((t) => t.code === code);
+      return template?.template_content || "";
+    },
+    [templates],
+  );
 
-  const getEffectiveContent = useCallback((type: TemplateType): string => {
-    if (graphId) {
-      const graphContent = getTemplateContent(type, 'graph');
-      if (graphContent) return graphContent;
-    }
-    const userContent = getTemplateContent(type, 'user');
-    if (userContent) return userContent;
-    const scenario = getScenarioById(`template_type_${type}`);
-    return scenario?.defaultTemplate || '';
-  }, [graphId, getTemplateContent]);
+  const getEffectiveContent = useCallback(
+    (type: TemplateType): string => {
+      if (graphId) {
+        const graphContent = getTemplateContent(type, "graph");
+        if (graphContent) return graphContent;
+      }
+      const userContent = getTemplateContent(type, "user");
+      if (userContent) return userContent;
+      const scenario = getScenarioById(`template_type_${type}`);
+      return scenario?.defaultTemplate || "";
+    },
+    [graphId, getTemplateContent],
+  );
 
-  const hasCustomPrompt = useCallback((type: TemplateType): boolean => {
-    if (graphId && getTemplateContent(type, 'graph')) return true;
-    return !!getTemplateContent(type, 'user');
-  }, [graphId, getTemplateContent]);
+  const hasCustomPrompt = useCallback(
+    (type: TemplateType): boolean => {
+      if (graphId && getTemplateContent(type, "graph")) return true;
+      return !!getTemplateContent(type, "user");
+    },
+    [graphId, getTemplateContent],
+  );
 
   useEffect(() => {
     if (selectedType) {
@@ -147,27 +178,29 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
     try {
       await api.prompts.save({
         code: `template_type_${selectedType}`,
-        scope: graphId ? 'graph' : 'user',
+        scope: graphId ? "graph" : "user",
         template_content: content,
         graph_id: graphId,
       });
-      addMessage({ type: 'success', content: t('autoGraph.promptSaved') });
+      addMessage({ type: "success", content: t("autoGraph.promptSaved") });
       await loadTemplates();
     } catch (error) {
-      console.error('Failed to save prompt:', error);
-      addMessage({ type: 'error', content: t('autoGraph.promptSaveFailed') });
+      console.error("Failed to save prompt:", error);
+      addMessage({ type: "error", content: t("autoGraph.promptSaveFailed") });
     }
   };
 
   const handleClose = () => {
     setSelectedType(initialSelectedType ?? null);
-    setEditingContent('');
+    setEditingContent("");
     onClose();
   };
 
   if (!isOpen) return null;
 
-  const selectedScenario = selectedType ? getScenarioById(`template_type_${selectedType}`) : null;
+  const selectedScenario = selectedType
+    ? getScenarioById(`template_type_${selectedType}`)
+    : null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
@@ -176,7 +209,7 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {t('autoGraph.templatePromptConfig')}
+              {t("autoGraph.templatePromptConfig")}
             </h2>
           </div>
           <button
@@ -199,7 +232,9 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
               const config = CATEGORY_CONFIG[cat];
               return (
                 <div key={cat} className="mb-3">
-                  <div className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider ${config.textColor}`}>
+                  <div
+                    className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider ${config.textColor}`}
+                  >
                     <div className={`p-1 rounded ${config.iconBg}`}>
                       {config.icon}
                     </div>
@@ -215,15 +250,19 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
                           onClick={() => handleSelectType(type)}
                           className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all text-sm ${
                             isSelected
-                              ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
-                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                              ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                              : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
                           }`}
                         >
                           {isCustom && (
                             <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
                           )}
-                          {!isCustom && <span className="w-1.5 h-1.5 flex-shrink-0" />}
-                          <span className="truncate">{t(`templates.templateType.${type}`)}</span>
+                          {!isCustom && (
+                            <span className="w-1.5 h-1.5 flex-shrink-0" />
+                          )}
+                          <span className="truncate">
+                            {t(`templates.templateType.${type}`)}
+                          </span>
                         </button>
                       );
                     })}
@@ -235,24 +274,31 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
             <div className="mb-3">
               <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 <div className="p-1 rounded bg-gray-100 dark:bg-gray-700">
-                  <FileText size={16} className="text-gray-500 dark:text-gray-400" />
+                  <FileText
+                    size={16}
+                    className="text-gray-500 dark:text-gray-400"
+                  />
                 </div>
-                {t('templates.templateType.blank')}
+                {t("templates.templateType.blank")}
               </div>
               <div className="space-y-0.5">
                 <button
-                  onClick={() => handleSelectType('blank')}
+                  onClick={() => handleSelectType("blank")}
                   className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all text-sm ${
-                    selectedType === 'blank'
-                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                    selectedType === "blank"
+                      ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {hasCustomPrompt('blank') && (
+                  {hasCustomPrompt("blank") && (
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
                   )}
-                  {!hasCustomPrompt('blank') && <span className="w-1.5 h-1.5 flex-shrink-0" />}
-                  <span className="truncate">{t('templates.templateType.blank')}</span>
+                  {!hasCustomPrompt("blank") && (
+                    <span className="w-1.5 h-1.5 flex-shrink-0" />
+                  )}
+                  <span className="truncate">
+                    {t("templates.templateType.blank")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -275,7 +321,9 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
                   </div>
                   {hasCustomPrompt(selectedType) && (
                     <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
-                      {graphId ? t('autoGraph.graphLevel') : t('autoGraph.userLevel')}
+                      {graphId
+                        ? t("autoGraph.graphLevel")
+                        : t("autoGraph.userLevel")}
                     </span>
                   )}
                 </div>
@@ -283,7 +331,7 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
                   <PromptEditor
                     key={selectedType}
                     initialContent={editingContent}
-                    variables={selectedScenario?.variables || ['topic']}
+                    variables={selectedScenario?.variables || ["topic"]}
                     onSave={handleSave}
                     onCancel={handleClose}
                     title=""
@@ -294,7 +342,7 @@ export const TemplatePromptConfigPanel: React.FC<TemplatePromptConfigPanelProps>
               <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                 <div className="text-center">
                   <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>{t('autoGraph.selectTemplateType')}</p>
+                  <p>{t("autoGraph.selectTemplateType")}</p>
                 </div>
               </div>
             )}

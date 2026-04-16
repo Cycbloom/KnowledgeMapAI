@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -70,6 +71,8 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
     setPaginationMode,
     resetSettings,
   } = useLearningSettingsStore();
+
+  const { t } = useTranslation();
 
   const { isMobile } = useIsMobile();
   const [activeTab, setActiveTab] = useState<ActiveTab>("reading");
@@ -214,22 +217,22 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
   const getScopeLabel = (scope: TemplateScope) => {
     switch (scope) {
       case "system":
-        return "系统级";
+        return t("learning.settings.scopeSystem");
       case "user":
-        return "用户级";
+        return t("learning.settings.scopeUser");
       case "graph":
-        return "图谱级";
+        return t("learning.settings.scopeGraph");
     }
   };
 
   const getScopeDescription = (scope: TemplateScope) => {
     switch (scope) {
       case "system":
-        return "全局默认模板，所有用户共享";
+        return t("learning.settings.scopeSystemDesc");
       case "user":
-        return "您的个人模板，全局生效";
+        return t("learning.settings.scopeUserDesc");
       case "graph":
-        return "当前图谱专用模板，优先级最高";
+        return t("learning.settings.scopeGraphDesc");
     }
   };
 
@@ -244,10 +247,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/20">
-            <Settings
-              size={18}
-              className="text-cyan-600 dark:text-cyan-400"
-            />
+            <Settings size={18} className="text-cyan-600 dark:text-cyan-400" />
           </div>
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
             设置
@@ -273,7 +273,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           }`}
         >
           <Type size={16} />
-          阅读设置
+          {t("learning.settings.readingSettings")}
         </button>
         <button
           onClick={() => setActiveTab("prompt")}
@@ -284,7 +284,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           }`}
         >
           <Zap size={16} />
-          配置生成模板
+          {t("learning.settings.promptSettings")}
         </button>
       </div>
 
@@ -298,7 +298,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   className="text-slate-500 dark:text-slate-400"
                 />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  字体大小
+                  {t("learning.settings.fontSize")}
                 </span>
                 <span className="ml-auto text-sm font-mono text-cyan-600 dark:text-cyan-400">
                   {fontSize}px
@@ -311,9 +311,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   max="24"
                   step="1"
                   value={fontSize}
-                  onChange={(e) =>
-                    setFontSize(parseInt(e.target.value))
-                  }
+                  onChange={(e) => setFontSize(parseInt(e.target.value))}
                   className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-cyan-500"
                 />
                 <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500">
@@ -332,7 +330,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   className="text-slate-500 dark:text-slate-400"
                 />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  阅读模式
+                  {t("learning.settings.readingMode")}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -340,21 +338,21 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   [
                     {
                       id: "default",
-                      label: "默认",
+                      label: t("learning.settings.modeDefault"),
                       icon: Sun,
                       color:
                         "from-slate-100 to-white dark:from-slate-700 dark:to-slate-800",
                     },
                     {
                       id: "eye-care",
-                      label: "护眼",
+                      label: t("learning.settings.modeEyeCare"),
                       icon: Eye,
                       color:
                         "from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30",
                     },
                     {
                       id: "dark",
-                      label: "深色",
+                      label: t("learning.settings.modeDark"),
                       icon: Moon,
                       color:
                         "from-slate-800 to-slate-900 dark:from-slate-900 dark:to-slate-950",
@@ -368,8 +366,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     whileTap={{ scale: 0.98 }}
                     className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
                       readingMode === mode.id
-                        ? "border-cyan-500 bg-gradient-to-br " +
-                          mode.color
+                        ? "border-cyan-500 bg-gradient-to-br " + mode.color
                         : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
                     }`}
                   >
@@ -402,16 +399,20 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   className="text-slate-500 dark:text-slate-400"
                 />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  分页方式
+                  {t("learning.settings.pagination")}
                 </span>
               </div>
               <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
                 {(
                   [
-                    { id: "scroll", label: "滚动", icon: Scroll },
+                    {
+                      id: "scroll",
+                      label: t("learning.settings.scroll"),
+                      icon: Scroll,
+                    },
                     {
                       id: "pagination",
-                      label: "翻页",
+                      label: t("learning.settings.page"),
                       icon: FileText,
                     },
                   ] as const
@@ -443,7 +444,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
               >
                 <RefreshCcw size={16} />
                 <span className="text-sm font-medium">
-                  重置默认设置
+                  {t("learning.settings.resetSettings")}
                 </span>
               </motion.button>
             </div>
@@ -452,12 +453,11 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
           <div className="flex flex-1 overflow-hidden">
             <div className="w-64 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4">
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-                配置场景
+                {t("learning.settings.configScenarios")}
               </h3>
               <div className="space-y-2">
                 {PROMPT_SCENARIOS.map((scenario) => {
-                  const isSelected =
-                    selectedScenario?.id === scenario.id;
+                  const isSelected = selectedScenario?.id === scenario.id;
                   const effective = getEffectiveTemplate(scenario.id);
 
                   return (
@@ -527,7 +527,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       onClick={handleResetToDefault}
                       className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
-                      重置为默认
+                      {t("learning.settings.resetToDefault")}
                     </button>
                   </div>
                   <div className="flex-1 min-h-0">
@@ -568,45 +568,42 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                       ) : (
                         <ChevronDown size={16} />
                       )}
-                      模板优先级说明
+                      {t("learning.settings.templatePriority")}
                     </button>
                     {showScopeInfo && (
                       <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg text-sm text-gray-600 dark:text-gray-400">
                         <p className="mb-2">
-                          模板按以下优先级生效：
+                          {t("learning.settings.priorityOrder")}
                           <strong>
-                            图谱级 {">"} 用户级 {">"} 系统级
+                            {t("learning.settings.priorityGraph")}
                           </strong>
                         </p>
                         <ul className="space-y-1 text-xs">
                           <li className="flex items-center gap-2">
-                            <Network
-                              size={12}
-                              className="text-purple-500"
-                            />
+                            <Network size={12} className="text-purple-500" />
                             <span>
-                              <strong>图谱级</strong>
-                              ：仅对当前图谱生效，优先级最高
+                              <strong>
+                                {t("learning.settings.scopeGraph")}
+                              </strong>
+                              ：{t("learning.settings.scopeGraphDesc")}
                             </span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <User
-                              size={12}
-                              className="text-blue-500"
-                            />
+                            <User size={12} className="text-blue-500" />
                             <span>
-                              <strong>用户级</strong>
-                              ：对您的所有图谱生效
+                              <strong>
+                                {t("learning.settings.scopeUser")}
+                              </strong>
+                              ：{t("learning.settings.scopeUserDesc")}
                             </span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <Globe
-                              size={12}
-                              className="text-gray-500"
-                            />
+                            <Globe size={12} className="text-gray-500" />
                             <span>
-                              <strong>系统级</strong>
-                              ：全局默认模板，不可修改
+                              <strong>
+                                {t("learning.settings.scopeSystem")}
+                              </strong>
+                              ：{t("learning.settings.scopeSystemDesc")}
                             </span>
                           </li>
                         </ul>
@@ -616,7 +613,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      可用变量
+                      {t("learning.settings.availableVariables")}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedScenario.variables.map((variable) => (
@@ -640,10 +637,10 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                               className="text-purple-600 dark:text-purple-400"
                             />
                             <span className="font-medium text-gray-900 dark:text-white">
-                              图谱级模板
+                              {t("learning.settings.graphLevelTemplate")}
                             </span>
                             <span className="text-xs text-purple-600 dark:text-purple-400">
-                              最高优先级
+                              {t("learning.settings.highestPriority")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -652,12 +649,10 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                               "graph",
                             ) && (
                               <button
-                                onClick={() =>
-                                  handleDeleteTemplate("graph")
-                                }
+                                onClick={() => handleDeleteTemplate("graph")}
                                 className="text-xs text-red-500 hover:text-red-700"
                               >
-                                删除
+                                {t("learning.settings.delete")}
                               </button>
                             )}
                             <button
@@ -665,25 +660,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                               className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
                             >
                               <Edit size={12} />
-                              {getTemplateContent(
-                                selectedScenario.id,
-                                "graph",
-                              )
-                                ? "编辑"
-                                : "创建"}
+                              {getTemplateContent(selectedScenario.id, "graph")
+                                ? t("learning.settings.edit")
+                                : t("learning.settings.create")}
                             </button>
                           </div>
                         </div>
-                        {getTemplateContent(
-                          selectedScenario.id,
-                          "graph",
-                        ) && (
+                        {getTemplateContent(selectedScenario.id, "graph") && (
                           <div className="p-3 bg-white dark:bg-slate-900">
                             <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
-                              {getTemplateContent(
-                                selectedScenario.id,
-                                "graph",
-                              )}
+                              {getTemplateContent(selectedScenario.id, "graph")}
                             </pre>
                           </div>
                         )}
@@ -698,24 +684,19 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                             className="text-blue-600 dark:text-blue-400"
                           />
                           <span className="font-medium text-gray-900 dark:text-white">
-                            用户级模板
+                            {t("learning.settings.userLevelTemplate")}
                           </span>
                           <span className="text-xs text-blue-600 dark:text-blue-400">
-                            全局生效
+                            {t("learning.settings.globalEffect")}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          {getTemplateContent(
-                            selectedScenario.id,
-                            "user",
-                          ) && (
+                          {getTemplateContent(selectedScenario.id, "user") && (
                             <button
-                              onClick={() =>
-                                handleDeleteTemplate("user")
-                              }
+                              onClick={() => handleDeleteTemplate("user")}
                               className="text-xs text-red-500 hover:text-red-700"
                             >
-                              删除
+                              {t("learning.settings.delete")}
                             </button>
                           )}
                           <button
@@ -723,25 +704,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                             className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                           >
                             <Edit size={12} />
-                            {getTemplateContent(
-                              selectedScenario.id,
-                              "user",
-                            )
-                              ? "编辑"
-                              : "创建"}
+                            {getTemplateContent(selectedScenario.id, "user")
+                              ? t("learning.settings.edit")
+                              : t("learning.settings.create")}
                           </button>
                         </div>
                       </div>
-                      {getTemplateContent(
-                        selectedScenario.id,
-                        "user",
-                      ) && (
+                      {getTemplateContent(selectedScenario.id, "user") && (
                         <div className="p-3 bg-white dark:bg-slate-900">
                           <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
-                            {getTemplateContent(
-                              selectedScenario.id,
-                              "user",
-                            )}
+                            {getTemplateContent(selectedScenario.id, "user")}
                           </pre>
                         </div>
                       )}
@@ -750,19 +722,16 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden opacity-75">
                       <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50">
                         <div className="flex items-center gap-2">
-                          <Globe
-                            size={16}
-                            className="text-gray-500"
-                          />
+                          <Globe size={16} className="text-gray-500" />
                           <span className="font-medium text-gray-900 dark:text-white">
-                            系统级模板
+                            {t("learning.settings.systemLevelTemplate")}
                           </span>
                           <span className="text-xs text-gray-500">
-                            默认模板
+                            {t("learning.settings.defaultTemplate")}
                           </span>
                         </div>
                         <span className="text-xs text-gray-400">
-                          不可修改
+                          {t("learning.settings.cannotModify")}
                         </span>
                       </div>
                       <div className="p-3 bg-white dark:bg-slate-900">
@@ -777,7 +746,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                 <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                   <div className="text-center">
                     <Zap className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>请从左侧选择一个配置场景</p>
+                    <p>{t("learning.settings.selectScenario")}</p>
                   </div>
                 </div>
               )}

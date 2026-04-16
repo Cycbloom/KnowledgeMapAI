@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -130,6 +131,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   const { id } = useParams<{ id: string }>();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
+  const { t } = useTranslation();
   const [openDropdown, setOpenDropdown] = useState<'edit' | 'ai' | 'system' | 'view' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<'ai' | 'view' | 'more' | null>(null);
 
@@ -554,12 +556,12 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       {/* 2. Edit Tools Dropdown - Hidden in read-only mode */}
       {!isReadOnly && (
         <div className="flex items-center space-x-2">
-          <DropdownButton id="edit" icon={Plus} label="编辑" active={isDeleteMode || selectedNodeIds.size > 0}>
-            <MenuItem onClick={onAddNode} icon={Plus} label="添加节点" colorClass="text-blue-500" />
+          <DropdownButton id="edit" icon={Plus} label={t('graphEditor.toolbar.edit')} active={isDeleteMode || selectedNodeIds.size > 0}>
+            <MenuItem onClick={onAddNode} icon={Plus} label={t('graphEditor.toolbar.addNode')} colorClass="text-blue-500" />
             <MenuItem 
               onClick={() => setIsDeleteMode(!isDeleteMode)} 
               icon={Eraser} 
-              label={isDeleteMode ? "退出删除模式" : "删除模式"} 
+              label={isDeleteMode ? t('graphEditor.toolbar.exitDeleteMode') : t('graphEditor.toolbar.deleteMode')} 
               active={isDeleteMode}
               activeClass="bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400"
             />
@@ -567,7 +569,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
               onClick={onDeleteSelected}
               disabled={selectedNodeIds.size !== 1}
               icon={Trash2}
-              label="删除选中节点"
+              label={t('graphEditor.toolbar.deleteSelectedNode')}
               colorClass="text-red-500"
             />
           </DropdownButton>
@@ -581,10 +583,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                    ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60' 
                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                }`}
-               title="分享图谱"
+               title={t('graphEditor.toolbar.shareGraph')}
              >
                <Share2 size={16} />
-               <span className="text-xs font-bold hidden xl:inline">分享</span>
+               <span className="text-xs font-bold hidden xl:inline">{t('graphEditor.toolbar.share')}</span>
              </button>
           )}
 
@@ -597,10 +599,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                    ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50 hover:bg-purple-800/60' 
                    : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
                }`}
-               title="基于选中节点进行智能拓展 (无限模式)"
+               title={t('graphEditor.toolbar.aiExpandTitle')}
             >
               <Sparkles size={16} />
-              <span className="text-xs font-bold">无限拓展</span>
+              <span className="text-xs font-bold">{t('graphEditor.toolbar.infiniteExpand')}</span>
             </button>
           )}
 
@@ -613,10 +615,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                    ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-800/60' 
                    : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
                }`}
-               title="查看分支建议"
+               title={t('graphEditor.toolbar.branchSuggestionTitle')}
             >
               <GitBranch size={16} />
-              <span className="text-xs font-bold">探索分支</span>
+              <span className="text-xs font-bold">{t('graphEditor.toolbar.exploreBranch')}</span>
             </button>
           )}
 
@@ -638,10 +640,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/60' 
                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
            }`}
-           title="分享图谱"
+           title={t('graphEditor.toolbar.shareGraph')}
          >
            <Share2 size={16} />
-           <span className="text-xs font-bold hidden xl:inline">分享</span>
+           <span className="text-xs font-bold hidden xl:inline">{t('graphEditor.toolbar.share')}</span>
          </button>
       )}
 
@@ -649,8 +651,8 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
 
       {/* 3. AI Tools Dropdown - Hidden in read-only mode */}
       {!isReadOnly && (
-        <DropdownButton id="ai" icon={Sparkles} label="AI 助手" active={isChatOpen || isPathfindingMode}>
-          <MenuItem onClick={onTextToGraph} icon={Sparkles} label="文本/文档生成" colorClass="text-purple-500" />
+        <DropdownButton id="ai" icon={Sparkles} label={t('graphEditor.toolbar.aiAssistant')} active={isChatOpen || isPathfindingMode}>
+          <MenuItem onClick={onTextToGraph} icon={Sparkles} label={t('graphEditor.toolbar.textToGraph')} colorClass="text-purple-500" />
           <MenuItem 
             onClick={() => {
               if (selectedNodeIds.size === 1 && onAIExpand) {
@@ -659,7 +661,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             }}
             disabled={selectedNodeIds.size !== 1}
             icon={Navigation} 
-            label="智能拓展 (无限模式)" 
+            label={t('graphEditor.toolbar.intelligentExpand')} 
             colorClass="text-green-500"
           />
           <MenuItem 
@@ -670,14 +672,14 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
             }}
             disabled={selectedNodeIds.size !== 1 || !onBackgroundTask}
             icon={Sparkles} 
-            label="后台自动拓展" 
+            label={t('graphEditor.toolbar.backgroundExpand')} 
             colorClass="text-blue-500"
           />
-          <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label="智能问答" active={isChatOpen} colorClass="text-purple-500" />
+          <MenuItem onClick={() => setIsChatOpen(!isChatOpen)} icon={MessageSquare} label={t('graphEditor.toolbar.intelligentQnA')} active={isChatOpen} colorClass="text-purple-500" />
           <MenuItem 
             onClick={() => { setIsPathfindingMode(!isPathfindingMode); pathfindingState.reset(); }} 
             icon={Navigation} 
-            label={isPathfindingMode ? "退出路径导航" : "路径导航"} 
+            label={isPathfindingMode ? t('graphEditor.toolbar.exitPathfinding') : t('graphEditor.toolbar.pathfinding')} 
             active={isPathfindingMode}
           />
         </DropdownButton>
@@ -686,48 +688,50 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       <Divider />
 
       {/* 4. View Tools Dropdown */}
-      <DropdownButton id="view" icon={List} label="视图">
-        <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label="大纲学习模式" colorClass="text-indigo-600" />
+      <DropdownButton id="view" icon={List} label={t('graphEditor.toolbar.view')}>
+        <MenuItem onClick={() => navigate(`/learning?graph_id=${id}`)} icon={GraduationCap} label={t('graphEditor.toolbar.outlineLearningMode')} colorClass="text-indigo-600" />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         <div className="px-3 py-2">
-          <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase">视图模式</div>
+          <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase">{t('graphEditor.toolbar.viewModes')}</div>
           <div className="space-y-1">
-            {[
-              { mode: 'mindmap' as const, label: '思维导图', icon: Network },
-              { mode: 'timeline' as const, label: '时间线', icon: Clock },
-              { mode: 'tree' as const, label: '树形视图', icon: GitBranch },
-              { mode: 'planet' as const, label: '知识星球', icon: Globe }
-            ].map(({ mode, label, icon: Icon }) => (
-              <MenuItem
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                icon={Icon}
-                label={label}
-                active={viewMode === mode}
-                colorClass="text-blue-600"
-              />
-            ))}
+            {
+              [
+                { mode: 'mindmap' as const, label: t('graphEditor.toolbar.mindmap'), icon: Network },
+                { mode: 'timeline' as const, label: t('graphEditor.toolbar.timeline'), icon: Clock },
+                { mode: 'tree' as const, label: t('graphEditor.toolbar.treeView'), icon: GitBranch },
+                { mode: 'planet' as const, label: t('graphEditor.toolbar.knowledgePlanet'), icon: Globe }
+              ].map(({ mode, label, icon: Icon }) => (
+                <MenuItem
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  icon={Icon}
+                  label={label}
+                  active={viewMode === mode}
+                  colorClass="text-blue-600"
+                />
+              ))
+            }
           </div>
         </div>
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label="侧边栏大纲" active={sidebarMode === 'outline'} />
-        <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label="搜索节点" />
+        <MenuItem onClick={() => setSidebarMode(sidebarMode === 'outline' ? 'none' : 'outline')} icon={List} label={t('graphEditor.toolbar.sidebarOutline')} active={sidebarMode === 'outline'} />
+        <MenuItem onClick={() => setSidebarMode('outline')} icon={Search} label={t('graphEditor.toolbar.searchNodes')} />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <MenuItem onClick={() => setIsExplorationMode(!isExplorationMode)} icon={GitBranch} label={isExplorationMode ? "退出探索模式" : "探索分支模式"} active={isExplorationMode} colorClass="text-purple-600" />
+        <MenuItem onClick={() => setIsExplorationMode(!isExplorationMode)} icon={GitBranch} label={isExplorationMode ? t('graphEditor.toolbar.exitExplorationMode') : t('graphEditor.toolbar.explorationMode')} active={isExplorationMode} colorClass="text-purple-600" />
         
         <MenuItem 
           onClick={() => setColoringMode(coloringMode === 'level' ? 'status' : 'level')} 
           icon={coloringMode === 'level' ? Layers : Activity} 
-          label={coloringMode === 'level' ? "着色模式: 结构" : "着色模式: 热力图"} 
+          label={coloringMode === 'level' ? t('graphEditor.toolbar.coloringModeLevel') : t('graphEditor.toolbar.coloringModeHeatmap')} 
           colorClass={coloringMode === 'level' ? "text-blue-500" : "text-orange-500"}
         />
 
         {isExplorationMode && (
-          <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? "隐藏时间轴" : "显示时间轴"} active={isTimelineVisible} colorClass="text-blue-500" />
+          <MenuItem onClick={() => setIsTimelineVisible(!isTimelineVisible)} icon={Clock} label={isTimelineVisible ? t('graphEditor.toolbar.hideTimeline') : t('graphEditor.toolbar.showTimeline')} active={isTimelineVisible} colorClass="text-blue-500" />
         )}
         {isExplorationMode && <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>}
-        <MenuItem onClick={onTogglePresentation} icon={MonitorPlay} label="演示播放" colorClass="text-orange-500" disabled={!onTogglePresentation} />
-        <MenuItem onClick={onTogglePodcast} icon={Headphones} label="播客模式 (AI)" colorClass="text-pink-500" disabled={!onTogglePodcast} />
+        <MenuItem onClick={onTogglePresentation} icon={MonitorPlay} label={t('graphEditor.toolbar.presentationMode')} colorClass="text-orange-500" disabled={!onTogglePresentation} />
+        <MenuItem onClick={onTogglePodcast} icon={Headphones} label={t('graphEditor.toolbar.podcastMode')} colorClass="text-pink-500" disabled={!onTogglePodcast} />
       </DropdownButton>
 
       {/* AI Status Badge */}
@@ -741,10 +745,10 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
                 ? 'bg-amber-900/40 text-amber-300 border border-amber-700/50 hover:bg-amber-800/60' 
                 : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
             }`}
-            title="当前为模拟模式（Mock Mode），点击配置 API Key 以解锁全部功能"
+            title={t('graphEditor.toolbar.demoModeTitle')}
           >
             <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-            <span>演示模式</span>
+            <span>{t('graphEditor.toolbar.demoMode')}</span>
           </button>
         </>
       )}
@@ -752,35 +756,35 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       <Divider />
 
       {/* 5. System & Settings Dropdown */}
-      <DropdownButton id="system" icon={Settings} label="设置">
-        <MenuItem onClick={onRefresh} icon={RefreshCw} label="刷新数据" disabled={!onRefresh} />
-        <MenuItem onClick={onOpenHelp} icon={HelpCircle} label="操作指南" disabled={!onOpenHelp} />
-        <MenuItem onClick={onOpenShortcutSettings} icon={Keyboard} label="快捷键设置" disabled={!onOpenShortcutSettings} />
-        <MenuItem onClick={() => navigate('/profile')} icon={User} label="个人设置" />
+      <DropdownButton id="system" icon={Settings} label={t('graphEditor.toolbar.settings')}>
+        <MenuItem onClick={onRefresh} icon={RefreshCw} label={t('graphEditor.toolbar.refreshData')} disabled={!onRefresh} />
+        <MenuItem onClick={onOpenHelp} icon={HelpCircle} label={t('graphEditor.toolbar.helpGuide')} disabled={!onOpenHelp} />
+        <MenuItem onClick={onOpenShortcutSettings} icon={Keyboard} label={t('graphEditor.toolbar.shortcutSettings')} disabled={!onOpenShortcutSettings} />
+        <MenuItem onClick={() => navigate('/profile')} icon={User} label={t('graphEditor.toolbar.personalSettings')} />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <MenuItem onClick={() => setIsStyleSettingsOpen(true)} icon={Palette} label="样式设置" active={isStyleSettingsOpen} />
-        <MenuItem onClick={() => setShowGrid(!showGrid)} icon={Grid} label={showGrid ? "隐藏网格" : "显示网格"} active={showGrid} />
-        <MenuItem onClick={toggleTheme} icon={isDark ? Sun : Moon} label={isDark ? "浅色模式" : "深色模式"} />
-        <MenuItem onClick={() => setIsFocusMode(true)} icon={Maximize} label="专注模式 (F)" />
+        <MenuItem onClick={() => setIsStyleSettingsOpen(true)} icon={Palette} label={t('graphEditor.toolbar.styleSettings')} active={isStyleSettingsOpen} />
+        <MenuItem onClick={() => setShowGrid(!showGrid)} icon={Grid} label={showGrid ? t('graphEditor.toolbar.hideGrid') : t('graphEditor.toolbar.showGrid')} active={showGrid} />
+        <MenuItem onClick={toggleTheme} icon={isDark ? Sun : Moon} label={isDark ? t('graphEditor.toolbar.lightMode') : t('graphEditor.toolbar.darkMode')} />
+        <MenuItem onClick={() => setIsFocusMode(true)} icon={Maximize} label={t('graphEditor.toolbar.focusMode')} />
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-        <MenuItem onClick={onOpenSettings} icon={Settings} label="图谱参数设置" />
-        <MenuItem onClick={onOpenAnalysis} icon={BarChart3} label="图谱分析" disabled={!onOpenAnalysis} />
+        <MenuItem onClick={onOpenSettings} icon={Settings} label={t('graphEditor.toolbar.graphSettings')} />
+        <MenuItem onClick={onOpenAnalysis} icon={BarChart3} label={t('graphEditor.toolbar.graphAnalysis')} disabled={!onOpenAnalysis} />
         
         <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
         
-        <MenuItem icon={Download} label="导出图谱">
-          <MenuItem onClick={exportActions.onMarkdown} icon={Download} label="Markdown" />
-          <MenuItem onClick={exportActions.onAnki} icon={BookOpen} label="Anki 卡片" />
-          <MenuItem onClick={exportActions.onPDF} icon={Download} label="PDF 文档" />
-          <MenuItem onClick={exportActions.onJSON} icon={Download} label="JSON 备份" />
-          <MenuItem onClick={exportActions.onImage} icon={Download} label="图片 (PNG)" />
+        <MenuItem icon={Download} label={t('graphEditor.toolbar.exportGraph')}>
+          <MenuItem onClick={exportActions.onMarkdown} icon={Download} label={t('graphEditor.toolbar.exportMarkdown')} />
+          <MenuItem onClick={exportActions.onAnki} icon={BookOpen} label={t('graphEditor.toolbar.exportAnki')} />
+          <MenuItem onClick={exportActions.onPDF} icon={Download} label={t('graphEditor.toolbar.exportPDF')} />
+          <MenuItem onClick={exportActions.onJSON} icon={Download} label={t('graphEditor.toolbar.exportJSON')} />
+          <MenuItem onClick={exportActions.onImage} icon={Download} label={t('graphEditor.toolbar.exportImage')} />
         </MenuItem>
 
         {/* Delete graph - Hidden in read-only mode */}
         {!isReadOnly && (
           <>
             <div className={`h-px w-full my-1 ${themeClasses.divider}`}></div>
-            <MenuItem onClick={exportActions.onDeleteGraph} icon={Trash2} label="彻底删除此图谱" colorClass="text-red-500" />
+            <MenuItem onClick={exportActions.onDeleteGraph} icon={Trash2} label={t('graphEditor.toolbar.deleteGraph')} colorClass="text-red-500" />
           </>
         )}
       </DropdownButton>

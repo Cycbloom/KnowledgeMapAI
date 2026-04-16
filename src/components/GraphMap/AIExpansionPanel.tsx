@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Sparkles, Network, ChevronDown, ChevronUp, Check, Settings2, Layers, GitBranch, BookOpen, Briefcase, GraduationCap, PenTool, Link, Plus } from 'lucide-react';
 import type { GraphRelationType, InfiniteExpansionProgress } from '../../types';
@@ -81,6 +82,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
   onEditPrompt,
   hasNodes = false,
 }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<ExpansionMode>(hasNodes ? 'width' : 'depth');
 
   const [depthStyle, setDepthStyle] = useState<DepthStyle>('academic');
@@ -227,14 +229,14 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-500" />
-              AI 智能拓展
+              {t('graphEditor.graphMap.aiExpansion.title')}
             </h2>
             <div className="flex items-center gap-2">
               {onEditPrompt && (
                 <button
                   onClick={() => onEditPrompt(mode)}
                   className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded transition-colors"
-                  title="编辑提示词"
+                  title={t('graphEditor.graphMap.aiExpansion.editPrompt')}
                 >
                   <Settings2 className="w-4 h-4" />
                 </button>
@@ -252,17 +254,17 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
             <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300">
                 <Network className="w-4 h-4" />
-                <span className="font-medium">源图谱：</span>
+                <span className="font-medium">{t('graphEditor.graphMap.aiExpansion.sourceGraph')}</span>
                 <span>{sourceGraphTitle}</span>
               </div>
               <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                选择拓展方式，AI 将自动生成相关内容
+                {t('graphEditor.graphMap.aiExpansion.expansionHint')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                拓展方式
+                {t('graphEditor.graphMap.aiExpansion.expansionMethod')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -276,10 +278,10 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Layers className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">深度拓展</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('graphEditor.graphMap.aiExpansion.depthExpansion')}</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    生成图谱内的知识点
+                    {t('graphEditor.graphMap.aiExpansion.depthExpansionDesc')}
                   </p>
                 </button>
                 <button
@@ -293,10 +295,10 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <GitBranch className="w-4 h-4 text-emerald-600" />
-                    <span className="font-medium text-gray-900 dark:text-white">宽度拓展</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('graphEditor.graphMap.aiExpansion.widthExpansion')}</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    生成相关知识网络
+                    {t('graphEditor.graphMap.aiExpansion.widthExpansionDesc')}
                   </p>
                 </button>
               </div>
@@ -311,7 +313,7 @@ export const AIExpansionPanel: React.FC<AIExpansionPanelProps> = ({
               >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    生成风格
+                    {t('graphEditor.graphMap.aiExpansion.generationStyle')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {styleOptions.map(option => (

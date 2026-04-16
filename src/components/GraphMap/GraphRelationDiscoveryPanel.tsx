@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Sparkles, GitBranch, Layers, Lightbulb, Loader2, 
@@ -38,6 +39,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
   onGraphClick,
   createdRelationIds,
 }) => {
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortBy>('confidence');
   const [showFilters, setShowFilters] = useState(false);
@@ -184,7 +186,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                   >
-                    学习建议
+                    {t('graphEditor.graphMap.relationDiscovery.learningSuggestions')}
                   </button>
                 </div>
 
@@ -196,7 +198,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                         className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                       >
                         <Filter className="w-4 h-4" />
-                        筛选
+                        {t('graphEditor.graphMap.relationDiscovery.filter')}
                         {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
                       <div className="flex gap-2">
@@ -205,8 +207,8 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                           onChange={e => setSortBy(e.target.value as SortBy)}
                           className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-300"
                         >
-                          <option value="confidence">按置信度</option>
-                          <option value="type">按类型</option>
+                          <option value="confidence">{t('graphEditor.graphMap.relationDiscovery.sortByConfidence')}</option>
+                          <option value="type">{t('graphEditor.graphMap.relationDiscovery.sortByType')}</option>
                         </select>
                       </div>
                     </div>
@@ -226,7 +228,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                               : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300'
                           }`}
                         >
-                          全部
+                          {t('graphEditor.graphMap.relationDiscovery.all')}
                         </button>
                         {(['prerequisite', 'extension', 'related', 'cross_domain'] as GraphRelationType[]).map(type => (
                           <button
@@ -250,7 +252,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
 
                     {sortedRelations.length === 0 ? (
                       <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                        没有发现符合条件的关系
+                        {t('graphEditor.graphMap.relationDiscovery.noRelationsFound')}
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -281,7 +283,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                                       {GRAPH_RELATION_LABELS[rel.relation_type]}
                                     </span>
                                     <span className="text-xs text-gray-400 dark:text-gray-500">
-                                      置信度 {(rel.confidence * 100).toFixed(0)}%
+                                      {t('graphEditor.graphMap.relationDiscovery.confidence')} {(rel.confidence * 100).toFixed(0)}%
                                     </span>
                                   </div>
                                   
@@ -333,17 +335,17 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                                   {isCreated ? (
                                     <>
                                       <Check className="w-4 h-4" />
-                                      已创建
+                                      {t('graphEditor.graphMap.relationDiscovery.created')}
                                     </>
                                   ) : isCreating ? (
                                     <>
                                       <Loader2 className="w-4 h-4 animate-spin" />
-                                      创建中
+                                      {t('graphEditor.graphMap.relationDiscovery.creating')}
                                     </>
                                   ) : (
                                     <>
                                       <Plus className="w-4 h-4" />
-                                      创建
+                                      {t('graphEditor.graphMap.relationDiscovery.create')}
                                     </>
                                   )}
                                 </button>
@@ -360,7 +362,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                   <div className="space-y-3">
                     {discoveryResult.cross_domain_insights.length === 0 ? (
                       <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                        没有发现跨学科交叉
+                        {t('graphEditor.graphMap.relationDiscovery.noCrossDomainFound')}
                       </div>
                     ) : (
                       discoveryResult.cross_domain_insights.map((insight, idx) => (
@@ -379,7 +381,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                           </p>
                           {insight.intersection_topics.length > 0 && (
                             <div className="mb-3">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">交叉主题：</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('graphEditor.graphMap.relationDiscovery.crossTopics')}</div>
                               <div className="flex flex-wrap gap-1">
                                 {insight.intersection_topics.map((topic, i) => (
                                   <span
@@ -399,7 +401,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                                 onClick={() => onGraphClick(graphId)}
                                 className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                               >
-                                查看图谱
+                                {t('graphEditor.graphMap.relationDiscovery.viewGraph')}
                               </button>
                             ))}
                           </div>
@@ -415,7 +417,7 @@ export const GraphRelationDiscoveryPanel: React.FC<GraphRelationDiscoveryPanelPr
                       <div>
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                           <GitBranch className="w-4 h-4 text-green-500" />
-                          学习路径建议
+                          {t('graphEditor.graphMap.relationDiscovery.learningPathSuggestions')}
                         </h4>
                         <div className="space-y-2">
                           {intelligentSuggestions.learning_path_suggestions.map((path, idx) => (

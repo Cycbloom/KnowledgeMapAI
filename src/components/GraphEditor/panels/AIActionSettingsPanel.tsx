@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api, AIAction } from '../../../services/api';
 import { PromptEditor } from './PromptEditor';
 import { Edit, Trash2, Plus, Zap, Copy } from 'lucide-react';
@@ -8,23 +9,30 @@ interface AIActionSettingsPanelProps {
   scope: 'user' | 'graph';
 }
 
-const ACTION_MODE_MAP: Record<string, string> = {
-  'show_result': '显示结果 (Show Result)',
-  'update_node': '更新节点 (Update Node)',
-  'spawn_children': '生成子节点 (Spawn Children)'
+const getActionModeText = (mode: string, t: (key: string) => string) => {
+  const modes: Record<string, string> = {
+    'show_result': t('aiAction.modes.showResult'),
+    'update_node': t('aiAction.modes.updateNode'),
+    'spawn_children': t('aiAction.modes.spawnChildren')
+  };
+  return modes[mode] || mode;
 };
 
-const SCOPE_MAP: Record<string, string> = {
-  'system': '系统 (System)',
-  'user': '用户 (User)',
-  'graph': '图谱 (Graph)'
+const getScopeText = (scope: string, t: (key: string) => string) => {
+  const scopes: Record<string, string> = {
+    'system': t('aiAction.scopes.system'),
+    'user': t('aiAction.scopes.user'),
+    'graph': t('aiAction.scopes.graph')
+  };
+  return scopes[scope] || scope;
 };
 
 export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ graphId, scope }) => {
+  const { t } = useTranslation();
   const [actions, setActions] = useState<AIAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAction, setEditingAction] = useState<Partial<AIAction> | null>(null);
-  const [_isCreating, setIsCreating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const fetchActions = async () => {
     setLoading(true);
@@ -63,12 +71,12 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
         fetchActions();
     } catch (err) {
         console.error("Failed to save action", err);
-        alert("保存失败");
+        alert(t('aiAction.saveFailed'));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('确定要删除这个动作吗？')) {
+    if (confirm(t('aiAction.confirmDelete'))) {
         await api.aiActions.delete(id);
         fetchActions();
     }
@@ -76,7 +84,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
 
   const startCreate = () => {
       setEditingAction({
-          name: '新动作',
+          name: t('aiAction.newAction'),
           description: '',
           target_mode: 'show_result',
           scope,
@@ -89,7 +97,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
       setEditingAction({
           ...action,
           id: undefined, // Clear ID to create new
-          name: `${action.name} (副本)`,
+          name: `${action.name} (${t('aiAction.copy')})`,
           scope, // Set to current scope
           graph_id: scope === 'graph' ? graphId : undefined,
           user_id: undefined // Let backend handle user_id
@@ -100,9 +108,9 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">自定义 AI 动作</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{t('aiAction.title')}</h3>
         <button onClick={startCreate} className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700">
-            <Plus size={16} className="mr-1"/> 新建动作
+            <Plus size={16} className="mr-1"/> {t('aiAction.createAction')}
         </button>
       </div>
 
@@ -110,38 +118,38 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
         <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
             <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium mb-1">名称</label>
+                    <label className="block text-sm font-medium mb-1">{t('aiAction.name')}</label>
                     <input 
                         value={editingAction.name} 
                         onChange={e => setEditingAction({...editingAction, name: e.target.value})}
                         className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-                        placeholder="例如：润色内容"
+                        placeholder={t('aiAction.namePlaceholder')}
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium mb-1">模式</label>
+                    <label className="block text-sm font-medium mb-1">{t('aiAction.mode')}</label>
                     <select 
                         value={editingAction.target_mode}
                         onChange={e => setEditingAction({...editingAction, target_mode: e.target.value as any})}
                         className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
                     >
-                        {Object.entries(ACTION_MODE_MAP).map(([k, v]) => (
-                            <option key={k} value={k}>{v}</option>
+                        {[('show_result'), ('update_node'), ('spawn_children')].map((k) => (
+                            <option key={k} value={k}>{getActionModeText(k, t)}</option>
                         ))}
                     </select>
                 </div>
                 <div className="col-span-2">
-                    <label className="block text-sm font-medium mb-1">描述</label>
+                    <label className="block text-sm font-medium mb-1">{t('aiAction.description')}</label>
                     <input 
                         value={editingAction.description || ''} 
                         onChange={e => setEditingAction({...editingAction, description: e.target.value})}
                         className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-                        placeholder="描述该动作的功能..."
+                        placeholder={t('aiAction.descriptionPlaceholder')}
                     />
                 </div>
                 
                 <div className="col-span-2">
-                    <label className="block text-sm font-medium mb-2">上下文变量配置</label>
+                    <label className="block text-sm font-medium mb-2">{t('aiAction.contextVariables')}</label>
                     <div className="flex flex-wrap gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-700">
                         <label className="flex items-center space-x-2 cursor-pointer">
                             <input 
@@ -153,7 +161,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                 })}
                                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="text-sm">包含父节点 ({'{{parents}}'})</span>
+                            <span className="text-sm">{t('aiAction.includeParent')} ({'{{parents}}'})</span>
                         </label>
                         <label className="flex items-center space-x-2 cursor-pointer">
                             <input 
@@ -165,7 +173,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                 })}
                                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="text-sm">包含兄弟节点 ({'{{siblings}}'})</span>
+                            <span className="text-sm">{t('aiAction.includeSiblings')} ({'{{siblings}}'})</span>
                         </label>
                         <label className="flex items-center space-x-2 cursor-pointer">
                             <input 
@@ -177,13 +185,13 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                 })}
                                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="text-sm">包含子节点 ({'{{children}}'})</span>
+                            <span className="text-sm">{t('aiAction.includeChildren')} ({'{{children}}'})</span>
                         </label>
                     </div>
                 </div>
             </div>
             
-            <div className="mb-2 text-sm font-medium">提示词模板</div>
+            <div className="mb-2 text-sm font-medium">{t('aiAction.promptTemplate')}</div>
             <PromptEditor
                 initialContent={editingAction.prompt_template || ''}
                 onSave={handleSave}
@@ -210,11 +218,11 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                     action.scope === 'user' ? 'bg-blue-100 text-blue-700' :
                                     'bg-green-100 text-green-700'
                                 }`}>
-                                    {SCOPE_MAP[action.scope]}
+                                    {getScopeText(action.scope, t)}
                                 </span>
                             </div>
-                            <div className="text-sm text-gray-500">{action.description || '无描述'}</div>
-                            <div className="text-xs text-gray-400 mt-1">模式: {ACTION_MODE_MAP[action.target_mode]}</div>
+                            <div className="text-sm text-gray-500">{action.description || t('aiAction.noDescription')}</div>
+                            <div className="text-xs text-gray-400 mt-1">{t('aiAction.mode')}: {getActionModeText(action.target_mode, t)}</div>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -223,14 +231,14 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                                 <button 
                                     onClick={() => setEditingAction(action)}
                                     className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                    title="编辑"
+                                    title={t('aiAction.edit')}
                                 >
                                     <Edit size={18} />
                                 </button>
                                 <button 
                                     onClick={() => handleDelete(action.id)}
                                     className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                    title="删除"
+                                    title={t('aiAction.delete')}
                                 >
                                     <Trash2 size={18} />
                                 </button>
@@ -239,7 +247,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                             <button 
                                 onClick={() => handleDuplicate(action)}
                                 className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-                                title="复制到当前层级并编辑"
+                                title={t('aiAction.copyToCurrentLevel')}
                             >
                                 <Copy size={18} />
                             </button>
@@ -249,7 +257,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
             )})}
             {actions.length === 0 && !loading && (
                 <div className="text-center py-8 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed">
-                    暂无自定义动作，点击右上角新建
+{t('aiAction.noActions')}
                 </div>
             )}
         </div>

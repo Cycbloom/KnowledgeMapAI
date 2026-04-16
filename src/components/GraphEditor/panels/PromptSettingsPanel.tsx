@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../../services/api';
 import { PromptEditor } from './PromptEditor';
 import { Edit, RotateCcw, Network, Layers, MessageSquare, Wrench, ChevronDown, LayoutTemplate } from 'lucide-react';
@@ -50,10 +51,10 @@ const PROMPT_NAME_MAP: Record<string, string> = {
   template_type_blank: '模板: 空白图谱 (Blank Graph)',
 };
 
-const SOURCE_NAME_MAP: Record<string, string> = {
-  'Graph': '图谱专属',
-  'User': '用户全局',
-  'System': '系统默认'
+const SOURCE_NAME_MAP: Record<string, { zh: string; en: string }> = {
+  'Graph': { zh: '图谱专属', en: 'Graph-specific' },
+  'User': { zh: '用户全局', en: 'User-wide' },
+  'System': { zh: '系统默认', en: 'System Default' }
 };
 
 const PROMPT_CATEGORIES = [
@@ -142,10 +143,20 @@ const CATEGORY_COLOR_MAP: Record<string, { bg: string; bgHover: string; icon: st
 };
 
 export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphId, scope }) => {
+  const { t, i18n } = useTranslation();
   const [templates, setTemplates] = useState<any>({ system: [], user: [], graph: [] });
   const [loading, setLoading] = useState(true);
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const getSourceName = (source: string) => {
+    const isZh = i18n.language.startsWith('zh');
+    const sourceMap = SOURCE_NAME_MAP[source];
+    if (sourceMap) {
+      return isZh ? sourceMap.zh : sourceMap.en;
+    }
+    return source;
+  };
 
   const fetchTemplates = async () => {
     setLoading(true);
@@ -193,11 +204,11 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
   
   const handleReset = async (code: string) => {
     const effective = getEffectiveTemplate(code);
-    const canReset = (scope === 'graph' && effective.source === 'Graph') || 
+    const canReset = (scope === 'graph' && effective.source === 'Graph') ||
                      (scope === 'user' && effective.source === 'User');
 
     if (canReset && effective.id) {
-        if (confirm(`确定要重置回${scope === 'graph' ? '用户/系统默认' : '系统默认'}设置吗？`)) {
+        if (confirm(t('profile.promptSettings.confirmReset', { scope: scope === 'graph' ? t('profile.promptSettings.graphScope') : t('profile.promptSettings.userScope') }))) {
             await api.prompts.reset(effective.id);
             fetchTemplates();
         }
@@ -242,14 +253,14 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
           variables={variableMap[editingCode] || []}
           onSave={handleSave}
           onCancel={() => setEditingCode(null)}
-          title={`编辑: ${displayName} (${scope === 'graph' ? '图谱专用' : '用户全局'})`}
+          title={t('profile.promptSettings.editTemplate', { name: displayName, scope: scope === 'graph' ? t('profile.promptSettings.graphScope') : t('profile.promptSettings.userScope') })}
         />
       </div>
     );
   }
 
   if (loading) {
-      return <div className="p-8 text-center text-gray-500">加载模板中...</div>;
+      return <div className="p-8 text-center text-gray-500">{t('profile.promptSettings.loading')}</div>;
   }
 
   return (
@@ -269,7 +280,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
                 <div className={`p-2 rounded-lg bg-white/50 dark:bg-black/20 ${colorStyle.icon}`}>
                   <IconComponent size={18} />
                 </div>
-                <span className="font-medium text-gray-900 dark:text-white">{category.name}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{t(`profile.promptSettings.categories.${category.id}`, category.name)}</span>
                 <span className="text-sm text-gray-500 dark:text-gray-400">({category.codes.length})</span>
               </div>
               <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
@@ -298,7 +309,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
                             effective.source === 'User' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                             'bg-gray-50 text-gray-600 border-gray-200'
                           }`}>
-                            {SOURCE_NAME_MAP[effective.source] || effective.source}
+                            {getSourceName(effective.source)}
                           </span>
                           {effective.updated_at && (
                             <span className="text-gray-400">更新于: {new Date(effective.updated_at).toLocaleDateString()}</span>
@@ -311,7 +322,7 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
                           <button 
                             onClick={() => handleReset(code)}
                             className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                            title="重置为默认"
+                            title={t('profile.promptSettings.reset')}
                           >
                             <RotateCcw size={18} />
                           </button>
@@ -319,10 +330,10 @@ export const PromptSettingsPanel: React.FC<PromptSettingsPanelProps> = ({ graphI
                         <button 
                           onClick={() => setEditingCode(code)}
                           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                          title="自定义模板"
+                          title={t('profile.promptSettings.customize')}
                         >
                           <Edit size={16} />
-                          {isCustomizedAtScope ? '编辑' : '自定义'}
+                          {isCustomizedAtScope ? t('profile.promptSettings.edit') : t('profile.promptSettings.customize')}
                         </button>
                       </div>
                     </div>

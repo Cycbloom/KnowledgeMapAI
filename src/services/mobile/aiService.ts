@@ -141,10 +141,18 @@ export interface AICardGenError {
 }
 
 function classifyError(error: unknown): AICardGenError {
-  const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-  const originalMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : String(error).toLowerCase();
+  const originalMessage =
+    error instanceof Error ? error.message : String(error);
 
-  if (errorMessage.includes("api key") || errorMessage.includes("api_key") || errorMessage.includes("未配置")) {
+  if (
+    errorMessage.includes("api key") ||
+    errorMessage.includes("api_key") ||
+    errorMessage.includes("未配置")
+  ) {
     return {
       type: "api_key_missing",
       message: "AI 服务未配置",
@@ -154,7 +162,7 @@ function classifyError(error: unknown): AICardGenError {
   }
 
   if (
-    errorMessage.includes("invalid") && errorMessage.includes("key") ||
+    (errorMessage.includes("invalid") && errorMessage.includes("key")) ||
     errorMessage.includes("unauthorized") ||
     errorMessage.includes("authentication") ||
     errorMessage.includes("401") ||
@@ -329,11 +337,7 @@ const LEARNING_MATERIAL_SYSTEM_PROMPT = `你是一位杰出的教材作者和教
 export const mobileAIService = {
   isConfigured: (): boolean => {
     const config = getAIConfigFromUserSettings();
-    return !!(
-      config &&
-      config.apiKey &&
-      config.apiKey.trim() !== ""
-    );
+    return !!(config && config.apiKey && config.apiKey.trim() !== "");
   },
 
   getConfig: (): MobileAIUserConfig | null => {
@@ -431,7 +435,10 @@ Important:
 
     if (supabase && userId && graphId) {
       try {
-        const promptCode = types.length === 1 ? `generate_cards_${types[0].replace("fill_in_the_blank", "fill_blank")}` : "generate_cards";
+        const promptCode =
+          types.length === 1
+            ? `generate_cards_${types[0].replace("fill_in_the_blank", "fill_blank")}`
+            : "generate_cards";
         const context = {
           topic,
           content: content || "No detailed content provided.",
@@ -440,7 +447,8 @@ Important:
           difficulty,
           typeRestriction,
           typeInstructions,
-          difficultyPrompt: DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS.medium,
+          difficultyPrompt:
+            DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS.medium,
         };
 
         const renderedPrompt = await mobilePromptService.getRenderedPrompt(
@@ -455,7 +463,10 @@ Important:
           systemPrompt = renderedPrompt;
         }
       } catch (error) {
-        console.warn("[MobileAIService.generateCards] 获取 Prompt 模板失败，使用默认模板:", error);
+        console.warn(
+          "[MobileAIService.generateCards] 获取 Prompt 模板失败，使用默认模板:",
+          error,
+        );
       }
     }
 
@@ -539,7 +550,10 @@ Important:
       .select();
 
     if (error) {
-      console.error("[MobileAIService.saveCardsToStudyCards] 数据库写入失败:", error);
+      console.error(
+        "[MobileAIService.saveCardsToStudyCards] 数据库写入失败:",
+        error,
+      );
       const dbError: AICardGenError = {
         type: "database_error",
         message: "数据库写入失败",
@@ -579,7 +593,10 @@ Important:
           userId = user.id;
         }
       } catch (error) {
-        console.warn("[MobileAIService.generateAndSaveCards] 获取用户信息失败:", error);
+        console.warn(
+          "[MobileAIService.generateAndSaveCards] 获取用户信息失败:",
+          error,
+        );
       }
     }
 
@@ -606,7 +623,10 @@ Important:
         savedCount: saveResult.count,
       };
     } catch (saveError) {
-      console.error("[MobileAIService.generateAndSaveCards] 保存失败:", saveError);
+      console.error(
+        "[MobileAIService.generateAndSaveCards] 保存失败:",
+        saveError,
+      );
       const dbError: AICardGenError = {
         type: "database_error",
         message: "数据库写入失败",

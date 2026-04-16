@@ -259,6 +259,33 @@
       "saveProgressFailed": "Failed to save progress, please retry"
     }
   },
+  "promptConfig": {
+    "title": "AI Personalization Settings",
+    "scenarios": "Configuration Scenarios",
+    "systemTemplate": "System Template",
+    "userTemplate": "User Template",
+    "graphTemplate": "Graph Template",
+    "highestPriority": "Highest Priority",
+    "globalEffect": "Global Effect",
+    "defaultTemplate": "Default Template",
+    "cannotModify": "Cannot Modify",
+    "edit": "Edit",
+    "create": "Create",
+    "delete": "Delete",
+    "resetToDefault": "Reset to Default",
+    "templatePriority": "Template Priority Explanation",
+    "priorityOrder": "Templates take effect in the following priority: Graph-level > User-level > System-level",
+    "graphLevelDesc": "Graph-level: Only applies to the current graph, highest priority",
+    "userLevelDesc": "User-level: Applies to all your graphs",
+    "systemLevelDesc": "System-level: Global default template, cannot be modified",
+    "availableVariables": "Available Variables",
+    "pleaseSelectScenario": "Please select a configuration scenario from the left",
+    "systemTemplateCannotModify": "System-level templates cannot be modified",
+    "promptSaved": "Prompt configuration saved",
+    "saveFailed": "Save failed",
+    "resetToDefaultSuccess": "Reset to default template",
+    "resetFailed": "Reset failed"
+  },
   "errors": {
     "AUTH_HEADER_MISSING": "Missing authentication header",
     "AUTH_TOKEN_MISSING": "Missing token",
@@ -1362,6 +1389,10 @@
   "statistics": {
     "title": "Learning Statistics Analysis",
     "subtitle": "Comprehensive overview of your learning progress and knowledge base status",
+    "tabs": {
+      "learning": "Learning Statistics",
+      "tasks": "Task Statistics"
+    },
     "overview": "Overview",
     "graphAnalysis": "Graph Analysis",
     "totalCards": "Total Cards",
@@ -2466,6 +2497,53 @@
     "createFailed": "Failed to create relation"
   },
 
+  "promptEditor": {
+    "availableVariables": "Available Variables",
+    "placeholder": "Enter your prompt template here... Supports Handlebars syntax like {{variable}} and {{#if condition}}...{{/if}}",
+    "optimizeInstruction": "AI Optimization Instructions (Optional)",
+    "optimizePlaceholder": "e.g., Make it more creative, or more concise...",
+    "optimizing": "Optimizing...",
+    "startOptimize": "Start Optimize",
+    "cancel": "Cancel",
+    "aiOptimize": "AI Optimize",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "optimizeFailed": "Optimization failed: {{message}}",
+    "saveFailed": "Save failed: {{message}}"
+  },
+  "aiAction": {
+    "title": "Custom AI Actions",
+    "createAction": "Create Action",
+    "newAction": "New Action",
+    "name": "Name",
+    "namePlaceholder": "e.g., Polish Content",
+    "mode": "Mode",
+    "modes": {
+      "showResult": "Show Result",
+      "updateNode": "Update Node",
+      "spawnChildren": "Spawn Children"
+    },
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the function of this action...",
+    "contextVariables": "Context Variables Configuration",
+    "includeParent": "Include Parent Node",
+    "includeSiblings": "Include Sibling Nodes",
+    "includeChildren": "Include Child Nodes",
+    "promptTemplate": "Prompt Template",
+    "scopes": {
+      "system": "System",
+      "user": "User",
+      "graph": "Graph"
+    },
+    "noDescription": "No description",
+    "edit": "Edit",
+    "delete": "Delete",
+    "copy": "Copy",
+    "copyToCurrentLevel": "Copy to current level and edit",
+    "noActions": "No custom actions yet, click the top right to create",
+    "confirmDelete": "Are you sure you want to delete this action?",
+    "saveFailed": "Save failed"
+  },
   "profile": {
     "title": "Profile",
     "subtitle": "Account Information & Security",
@@ -2520,7 +2598,23 @@
       "title": "AI Personalization Settings",
       "description": "Configure global prompts and custom actions (User Scope)",
       "promptTemplates": "Prompt Templates",
-      "customActions": "Custom Actions"
+      "customActions": "Custom Actions",
+      "loading": "Loading templates...",
+      "edit": "Edit",
+      "customize": "Customize",
+      "reset": "Reset to Default",
+      "editTemplate": "Edit: {{name}} ({{scope}})",
+      "confirmReset": "Are you sure you want to reset to {{scope}} settings?",
+      "graphScope": "User/System Default",
+      "userScope": "System Default",
+      "categories": {
+        "graph_building": "Knowledge Graph Building",
+        "card_generation": "Card Generation",
+        "ai_chat": "AI Chat",
+        "task_scheduler": "Task Scheduler",
+        "template_generation": "Template Generation",
+        "other": "Other Tools"
+      }
     },
     "messages": {
       "logoutSuccess": "Logged out successfully",

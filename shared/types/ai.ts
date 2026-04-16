@@ -1,6 +1,6 @@
-import type OpenAI from 'openai';
+import type OpenAI from "openai";
 
-export type AIProviderType = 'deepseek' | 'volcengine' | 'aliyun';
+export type AIProviderType = "deepseek" | "volcengine" | "aliyun";
 
 export interface AIProviderConfig {
   apiKey: string;
@@ -16,7 +16,12 @@ export interface AIProvider {
   providerType: AIProviderType;
   hasKey: boolean;
   createEmbedding?: (text: string) => Promise<number[] | null>;
-  synthesizeSpeech?: (text: string, voice?: string, speed?: number, format?: string) => Promise<Buffer>;
+  synthesizeSpeech?: (
+    text: string,
+    voice?: string,
+    speed?: number,
+    format?: string,
+  ) => Promise<Buffer>;
 }
 
 export interface AIActionVariables {
@@ -25,7 +30,7 @@ export interface AIActionVariables {
   includeChildren?: boolean;
 }
 
-export type AnalysisMode = 'quick' | 'deep' | 'custom';
+export type AnalysisMode = "quick" | "deep" | "custom";
 
 export interface AnalysisModeOption {
   mode: AnalysisMode;
@@ -42,8 +47,8 @@ export interface AIAction {
   name: string;
   description: string;
   icon: string;
-  target_mode: 'show_result' | 'update_node' | 'spawn_children';
-  scope: 'system' | 'user' | 'graph';
+  target_mode: "show_result" | "update_node" | "spawn_children";
+  scope: "system" | "user" | "graph";
   user_id?: string;
   graph_id?: string;
   prompt_template: string;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Sparkles, Save, Variable } from "lucide-react";
 import { api } from "../../../services/api";
 
@@ -17,6 +18,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   onCancel,
   title = "Edit Prompt",
 }) => {
+  const { t } = useTranslation();
   const [content, setContent] = useState(initialContent);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeInstruction, setOptimizeInstruction] = useState("");
@@ -66,7 +68,9 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
     } catch (error) {
       console.error("Optimization failed", error);
       // Ideally show a toast here
-      alert(`优化失败: ${(error as any).message}`);
+      alert(
+        t("promptEditor.optimizeFailed", { message: (error as any).message }),
+      );
     } finally {
       setIsOptimizing(false);
     }
@@ -78,7 +82,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       await onSave(content);
     } catch (error) {
       console.error("Save failed", error);
-      alert(`保存失败: ${(error as any).message}`);
+      alert(t("promptEditor.saveFailed", { message: (error as any).message }));
     } finally {
       setIsSaving(false);
     }
@@ -104,7 +108,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-900 border-b dark:border-gray-700 overflow-x-auto">
         <span className="text-xs font-medium text-gray-500 uppercase mr-2 flex-shrink-0">
-          可用变量:
+          {t("promptEditor.availableVariables")}:
         </span>
         {variables.map((v) => (
           <button
@@ -126,7 +130,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           className="w-full h-full p-4 font-mono text-sm resize-none focus:outline-none dark:bg-gray-800 dark:text-gray-200"
-          placeholder="在此输入提示词模板... 支持 Handlebars 语法，如 {{variable}} 和 {{#if condition}}...{{/if}}"
+          placeholder={t("promptEditor.placeholder")}
           spellCheck={false}
         />
 
@@ -135,14 +139,14 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg animate-in slide-in-from-bottom-5 z-10">
             <div className="flex flex-col gap-3">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                AI 优化指令 (可选)
+                {t("promptEditor.optimizeInstruction")}
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={optimizeInstruction}
                   onChange={(e) => setOptimizeInstruction(e.target.value)}
-                  placeholder="例如：让它更具创造性，或更简洁..."
+                  placeholder={t("promptEditor.optimizePlaceholder")}
                   className="flex-1 px-3 py-2 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-purple-500"
                   onKeyDown={(e) => e.key === "Enter" && handleOptimize()}
                   autoFocus
@@ -153,10 +157,10 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
                   className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 font-medium"
                 >
                   {isOptimizing ? (
-                    "优化中..."
+                    t("promptEditor.optimizing")
                   ) : (
                     <>
-                      <Sparkles size={16} /> 开始优化
+                      <Sparkles size={16} /> {t("promptEditor.startOptimize")}
                     </>
                   )}
                 </button>
@@ -164,7 +168,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
                   onClick={() => setShowOptimizeInput(false)}
                   className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md dark:text-gray-400 dark:hover:bg-gray-700"
                 >
-                  取消
+                  {t("promptEditor.cancel")}
                 </button>
               </div>
             </div>
@@ -181,7 +185,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-md dark:text-purple-400 dark:hover:bg-purple-900/20 transition-colors"
             >
               <Sparkles size={16} />
-              AI 智能优化
+              {t("promptEditor.aiOptimize")}
             </button>
           )}
         </div>
@@ -190,7 +194,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
           >
-            取消
+            {t("promptEditor.cancel")}
           </button>
           <button
             onClick={handleSave}
@@ -198,7 +202,9 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-700"
           >
             <Save size={16} />
-            {isSaving ? "保存中..." : "保存更改"}
+            {isSaving
+              ? t("promptEditor.saving")
+              : t("promptEditor.saveChanges")}
           </button>
         </div>
       </div>

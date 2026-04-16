@@ -259,6 +259,12 @@
     }
   },
   "statistics": {
+    "title": "学习统计中心",
+    "subtitle": "全面分析您的学习和任务完成情况",
+    "tabs": {
+      "learning": "学习统计",
+      "tasks": "任务统计"
+    },
     "knowledgeDistribution": "知识掌握分布"
   },
   "stats": {
@@ -391,6 +397,33 @@
       "streak": "连续学习",
       "days": "天"
     }
+  },
+  "promptConfig": {
+    "title": "AI 个性化设置",
+    "scenarios": "配置场景",
+    "systemTemplate": "系统级模板",
+    "userTemplate": "用户级模板",
+    "graphTemplate": "图谱级模板",
+    "highestPriority": "最高优先级",
+    "globalEffect": "全局生效",
+    "defaultTemplate": "默认模板",
+    "cannotModify": "不可修改",
+    "edit": "编辑",
+    "create": "创建",
+    "delete": "删除",
+    "resetToDefault": "重置为默认",
+    "templatePriority": "模板优先级说明",
+    "priorityOrder": "模板按以下优先级生效：图谱级 > 用户级 > 系统级",
+    "graphLevelDesc": "图谱级：仅对当前图谱生效，优先级最高",
+    "userLevelDesc": "用户级：对您的所有图谱生效",
+    "systemLevelDesc": "系统级：全局默认模板，不可修改",
+    "availableVariables": "可用变量",
+    "pleaseSelectScenario": "请从左侧选择一个配置场景",
+    "systemTemplateCannotModify": "系统级模板不可修改",
+    "promptSaved": "Prompt配置已保存",
+    "saveFailed": "保存失败",
+    "resetToDefaultSuccess": "已重置为默认模板",
+    "resetFailed": "重置失败"
   },
   "errors": {
     "AUTH_HEADER_MISSING": "缺少认证头",
@@ -2304,6 +2337,53 @@
     "passTitle": "通行证",
     "lifetimeAchievements": "终身成就"
   },
+  "promptEditor": {
+    "availableVariables": "可用变量",
+    "placeholder": "在此输入提示词模板... 支持 Handlebars 语法，如 {{variable}} 和 {{#if condition}}...{{/if}}",
+    "optimizeInstruction": "AI 优化指令 (可选)",
+    "optimizePlaceholder": "例如：让它更具创造性，或更简洁...",
+    "optimizing": "优化中...",
+    "startOptimize": "开始优化",
+    "cancel": "取消",
+    "aiOptimize": "AI 智能优化",
+    "saving": "保存中...",
+    "saveChanges": "保存更改",
+    "optimizeFailed": "优化失败: {{message}}",
+    "saveFailed": "保存失败: {{message}}"
+  },
+  "aiAction": {
+    "title": "自定义 AI 动作",
+    "createAction": "新建动作",
+    "newAction": "新动作",
+    "name": "名称",
+    "namePlaceholder": "例如：润色内容",
+    "mode": "模式",
+    "modes": {
+      "showResult": "显示结果",
+      "updateNode": "更新节点",
+      "spawnChildren": "生成子节点"
+    },
+    "description": "描述",
+    "descriptionPlaceholder": "描述该动作的功能...",
+    "contextVariables": "上下文变量配置",
+    "includeParent": "包含父节点",
+    "includeSiblings": "包含兄弟节点",
+    "includeChildren": "包含子节点",
+    "promptTemplate": "提示词模板",
+    "scopes": {
+      "system": "系统",
+      "user": "用户",
+      "graph": "图谱"
+    },
+    "noDescription": "无描述",
+    "edit": "编辑",
+    "delete": "删除",
+    "copy": "副本",
+    "copyToCurrentLevel": "复制到当前层级并编辑",
+    "noActions": "暂无自定义动作，点击右上角新建",
+    "confirmDelete": "确定要删除这个动作吗？",
+    "saveFailed": "保存失败"
+  },
   "profile": {
     "title": "个人中心",
     "subtitle": "账号信息与安全",
@@ -2358,7 +2438,23 @@
       "title": "AI 个性化设置",
       "description": "配置全局提示词与自定义动作 (User Scope)",
       "promptTemplates": "提示词模板",
-      "customActions": "自定义动作"
+      "customActions": "自定义动作",
+      "loading": "加载模板中...",
+      "edit": "编辑",
+      "customize": "自定义",
+      "reset": "重置为默认",
+      "editTemplate": "编辑: {{name}} ({{scope}})",
+      "confirmReset": "确定要重置回{{scope}}设置吗？",
+      "graphScope": "用户/系统默认",
+      "userScope": "系统默认",
+      "categories": {
+        "graph_building": "知识图谱构建",
+        "card_generation": "卡片生成",
+        "ai_chat": "AI 对话",
+        "task_scheduler": "任务调度",
+        "template_generation": "模板生成",
+        "other": "其他工具"
+      }
     },
     "messages": {
       "logoutSuccess": "已退出登录",

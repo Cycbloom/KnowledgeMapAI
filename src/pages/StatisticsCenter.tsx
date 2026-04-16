@@ -2,18 +2,20 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, CheckSquare } from "lucide-react";
 import { useTheme } from "../hooks";
+import { useTranslation } from "react-i18next";
 import { LearningStatsTab } from "../components/Statistics/LearningStatsTab";
 import { TaskStatsTab } from "../components/Statistics/TaskStatsTab";
 
 type StatsTab = "learning" | "tasks";
 
-const tabs: { id: StatsTab; label: string; icon: React.ReactNode }[] = [
-  { id: "learning", label: "学习统计", icon: <BookOpen size={18} /> },
-  { id: "tasks", label: "任务统计", icon: <CheckSquare size={18} /> },
+const tabs: { id: StatsTab; label: string; icon: React.ReactNode; translationKey: string }[] = [
+  { id: "learning", label: "学习统计", icon: <BookOpen size={18} />, translationKey: "statistics.tabs.learning" },
+  { id: "tasks", label: "任务统计", icon: <CheckSquare size={18} />, translationKey: "statistics.tabs.tasks" },
 ];
 
 export const StatisticsCenter: React.FC = () => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<StatsTab>("learning");
 
   return (
@@ -26,10 +28,10 @@ export const StatisticsCenter: React.FC = () => {
           <h1
             className={`text-2xl md:text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
           >
-            统计中心
+            {t('layout.statistics')}
           </h1>
           <p className={`mt-1 md:mt-2 text-sm md:text-base ${isDark ? "text-slate-400" : "text-gray-600"}`}>
-            全面分析您的学习和任务完成情况
+            {t('statistics.subtitle')}
           </p>
         </div>
 
@@ -48,7 +50,7 @@ export const StatisticsCenter: React.FC = () => {
               }`}
             >
               {tab.icon}
-              <span>{tab.label}</span>
+              <span>{t(tab.translationKey)}</span>
             </button>
           ))}
         </div>

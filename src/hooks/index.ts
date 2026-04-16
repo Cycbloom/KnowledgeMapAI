@@ -5,3 +5,4 @@ export * from "./scheduler";
 export * from "./graphAI";
 export * from "./graphEditor";
 export * from "./useConsole";
+export * from "./useScrollDirection";

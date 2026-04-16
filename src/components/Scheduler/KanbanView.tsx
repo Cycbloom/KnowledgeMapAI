@@ -228,7 +228,7 @@ export const KanbanView: React.FC<{
                   )}
                 </div>
 
-                <div className="flex-1 min-h-0 p-2 sm:p-3 overflow-y-auto custom-scrollbar">
+                <div data-scrollable-queue className="flex-1 min-h-0 p-2 sm:p-3 overflow-y-auto custom-scrollbar">
                   {column.tasks.length === 0 ? (
                     <div className="text-center py-8 text-slate-400 dark:text-slate-500">
                       <IconComponent

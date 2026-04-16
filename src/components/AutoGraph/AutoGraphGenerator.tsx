@@ -25,7 +25,7 @@ import { useErrorHandler, useIsMobile } from "../../hooks";
 import { useTopicCheck } from "../../hooks";
 import type { TemplateType, TemplateCategory } from "@shared/types/graph";
 import { TEMPLATE_CATEGORY_TYPES } from "@shared/types/graph";
-import { PromptEditor } from "../GraphEditor/panels/PromptEditor";
+import { TemplatePromptConfigPanel } from "./TemplatePromptConfigPanel";
 
 interface AutoGraphGeneratorProps {
   graphId?: string;
@@ -277,9 +277,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [expandedCategory, setExpandedCategory] =
     useState<TemplateCategory | null>(null);
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
-  const [editingPromptType, setEditingPromptType] =
-    useState<TemplateType | null>(null);
-  const [editingPromptContent, setEditingPromptContent] = useState("");
+  const [showTemplatePromptConfig, setShowTemplatePromptConfig] = useState(false);
 
   const [topic, setTopic] = useState("");
   const [backgroundInfo, setBackgroundInfo] = useState("");
@@ -592,46 +590,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     setExpandedCategory(null);
   };
 
-  const handleOpenPromptEditor = async (type: TemplateType) => {
-    try {
-      const promptCode = `template_type_${type}`;
-      const prompts = await api.prompts.list(graphId);
-      const userPrompt = prompts.user?.find((p: any) => p.code === promptCode);
-      const graphPrompt = graphId
-        ? prompts.graph?.find((p: any) => p.code === promptCode)
-        : null;
-      const systemPrompt = prompts.system?.find(
-        (p: any) => p.code === promptCode,
-      );
-      const effectivePrompt = graphPrompt || userPrompt || systemPrompt;
-      setEditingPromptContent(effectivePrompt?.template_content || "");
-      setEditingPromptType(type);
-    } catch {
-      setEditingPromptContent("");
-      setEditingPromptType(type);
-    }
-  };
-
-  const handleSavePrompt = async (content: string) => {
-    if (!editingPromptType) return;
-    try {
-      await api.prompts.save({
-        code: `template_type_${editingPromptType}`,
-        scope: graphId ? "graph" : "user",
-        template_content: content,
-        graph_id: graphId,
-      });
-      addMessage({ type: "success", content: t("autoGraph.promptSaved") });
-      setEditingPromptType(null);
-      setEditingPromptContent("");
-    } catch (error) {
-      handleError(error, {
-        context: "SavePrompt",
-        fallbackMessage: t("autoGraph.promptSaveFailed"),
-      });
-    }
-  };
-
   const renderTemplateSelector = () => (
     <div
       className={`rounded-xl border ${isMobile ? "" : ""} ${isTemplateSelectorOpen ? "border-blue-300 dark:border-blue-700" : "border-gray-200 dark:border-gray-700"}`}
@@ -660,11 +618,11 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
               {t("templates.templateType.blank")}
             </span>
           )}
-          {selectedTemplateType !== "blank" && !isTemplateSelectorOpen && (
+          {!isTemplateSelectorOpen && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleOpenPromptEditor(selectedTemplateType);
+                setShowTemplatePromptConfig(true);
               }}
               className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors`}
               title={t("autoGraph.editPrompt")}
@@ -1189,24 +1147,12 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         )}
       </div>
 
-      {editingPromptType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div
-            className={`bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full ${isMobile ? "max-w-full" : "max-w-2xl"} max-h-[80vh] overflow-y-auto flex flex-col`}
-          >
-            <PromptEditor
-              initialContent={editingPromptContent}
-              variables={[]}
-              onSave={handleSavePrompt}
-              onCancel={() => {
-                setEditingPromptType(null);
-                setEditingPromptContent("");
-              }}
-              title={`${t("autoGraph.editPrompt")} - ${t(`templates.templateType.${editingPromptType}`)}`}
-            />
-          </div>
-        </div>
-      )}
+      <TemplatePromptConfigPanel
+        isOpen={showTemplatePromptConfig}
+        onClose={() => setShowTemplatePromptConfig(false)}
+        graphId={graphId}
+        initialSelectedType={selectedTemplateType !== "blank" ? selectedTemplateType : undefined}
+      />
     </div>
   );
 };

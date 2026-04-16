@@ -308,21 +308,6 @@
     "SYSTEM_MAINTENANCE": "System under maintenance",
     "SYSTEM_CONFIGURATION_ERROR": "System configuration error",
     "SERVER_ERROR": "Server error",
-    "TOKEN_MISSING": "Missing token",
-    "INVALID_TOKEN": "Invalid token",
-    "TOKEN_EXPIRED": "Token has expired",
-    "TOKEN_REVOKED": "Token has been revoked",
-    "UNAUTHORIZED": "Unauthorized access",
-    "FORBIDDEN": "Access forbidden",
-    "NOT_FOUND": "Resource not found",
-    "GRAPH_NOT_FOUND": "Graph not found",
-    "NODE_NOT_FOUND": "Node not found",
-    "CARD_NOT_FOUND": "Card not found",
-    "INVALID_JSON": "Invalid JSON format",
-    "INVALID_PARAMS": "Invalid parameter format",
-    "DUPLICATE_ENTRY": "Data already exists",
-    "FOREIGN_KEY_VIOLATION": "Related data not found",
-    "INTERNAL_ERROR": "Internal server error",
     "INVALID_CREDENTIALS": "Invalid email or password",
     "EMAIL_NOT_CONFIRMED": "Please verify your email before logging in",
     "TOO_MANY_REQUESTS": "Too many requests, please try again later",
@@ -916,7 +901,23 @@
     "aiGenerateFailed": "AI content generation failed, please try again",
     "generateFailed": "Failed to generate learning content, please try again",
     "backToOverview": "Back to Overview",
-    "overview": "Overview",
+    "overview": {
+      "edit": "Edit",
+      "noDetails": "No Overview Details",
+      "addDetailsHint": "Add reference books, external links, and learning guide to enhance your knowledge graph.",
+      "addInfo": "Add Information",
+      "description": "Description",
+      "referenceBooks": "Reference Books",
+      "author": "Author",
+      "viewLink": "View Link",
+      "externalLinks": "External Links",
+      "typeArticle": "Article",
+      "typeVideo": "Video",
+      "typeCourse": "Course",
+      "typeTool": "Tool",
+      "typeLink": "Link",
+      "learningGuide": "Learning Guide"
+    },
     "regenerate": "Regenerate",
     "focusMode": {
       "title": "Focus Mode",
@@ -944,9 +945,11 @@
     "learningPath": {
       "title": "Learning Path",
       "noSavedPaths": "No saved learning paths",
+      "noLearningPath": "No learning path",
+      "useAIToCreate": "Use AI to create",
       "pathCount": "{{count}} learning paths",
       "aiPlan": "AI Plan",
-      "startAiPlan": "Start AI Planning",
+      "startAIPlan": "Start AI Planning",
       "previewPath": "Preview Learning Path",
       "aiGenerated": "AI Generated",
       "target": "Target",
@@ -997,7 +1000,34 @@
       "pause": "Pause",
       "continue": "Continue",
       "delete": "Delete",
-      "learningOrder": "Learning Order"
+      "learningOrder": "Learning Order",
+      "selectGraph": "Please select a knowledge graph",
+      "generateFailed": "Failed to generate learning path",
+      "aiAnalyzing": "AI is analyzing...",
+      "pathGenerated": "Learning path generated",
+      "aiGenerateFailed": "AI generation failed",
+      "pathDescription": "Estimated learning time: {{hours}} hours",
+      "confirmDelete": "Are you sure you want to delete this learning path?",
+      "updateFailed": "Update failed",
+      "priorityHigh": "High",
+      "priorityMedium": "Medium",
+      "priorityLow": "Low",
+      "statusActive": "Active",
+      "statusPaused": "Paused",
+      "statusCompleted": "Completed",
+      "statusArchived": "Archived",
+      "styleSequential": "Sequential Learning",
+      "styleExploratory": "Exploratory Learning",
+      "styleFocused": "Focused Learning",
+      "styleCustom": "Custom",
+      "aiGeneratedTarget": "AI Generated Path - Goal: {{goal}}",
+      "totalNodes": "Total Nodes",
+      "minutes": "min",
+      "noPaths": "No learning paths",
+      "deselect": "Deselect",
+      "resume": "Resume",
+      "nodeCount": "{{count}} nodes",
+      "min": "min"
     },
     "pathOutline": {
       "backToGraphOutline": "Back to Graph Outline",
@@ -1041,31 +1071,14 @@
       "configureAndGenerate": "Configure and Generate Questions",
       "offlineMode": "Offline mode unavailable"
     },
-    "overview": {
-      "title": "Graph Overview",
-      "edit": "Edit",
-      "addInfo": "Add Info",
-      "noDetails": "No detailed information",
-      "addDetailsHint": "Add description, reference books, external links and learning guide to better understand this knowledge graph",
-      "description": "Description",
-      "referenceBooks": "Reference Books",
-      "externalLinks": "External Links",
-      "learningGuide": "Learning Guide",
-      "author": "Author: {{author}}",
-      "viewLink": "View Link",
-      "typeArticle": "Article",
-      "typeVideo": "Video",
-      "typeCourse": "Course",
-      "typeTool": "Tool",
-      "typeLink": "Link",
-      "selectGraph": "Please select a knowledge graph"
-    },
     "overviewEdit": {
       "title": "Edit Graph Overview",
       "unnamedGraph": "Unnamed Graph",
       "booksTab": "Reference Books",
       "linksTab": "External Links",
       "guideTab": "Learning Guide",
+      "referenceBooks": "Reference Books",
+      "externalLinks": "External Links",
       "addBook": "Add Book",
       "editBook": "Edit Book",
       "updateBook": "Update Book",
@@ -1074,6 +1087,7 @@
       "bookAuthor": "Author",
       "linkUrl": "Link URL",
       "bookDescription": "Description",
+      "description": "Description",
       "enterBookTitle": "Enter book title",
       "enterAuthor": "Enter author",
       "enterIsbn": "Enter ISBN",
@@ -1087,6 +1101,14 @@
       "linkDescription": "Description",
       "enterLinkTitle": "Enter link title",
       "enterLinkDesc": "Enter link description",
+      "type": "Type",
+      "linkTitlePlaceholder": "Enter link title",
+      "typeArticle": "Article",
+      "typeVideo": "Video",
+      "typeCourse": "Course",
+      "typeTool": "Tool",
+      "typeOther": "Other",
+      "linkDescriptionPlaceholder": "Enter link description",
       "preview": "Preview",
       "edit": "Edit",
       "noGuideContent": "No learning guide content",
@@ -1100,7 +1122,26 @@
       "enterUrl": "Please enter URL",
       "enterBookTitleError": "Please enter book title",
       "enterAuthorError": "Please enter author",
-      "invalidUrl": "Please enter a valid URL"
+      "invalidUrl": "Please enter a valid URL",
+      "validation": {
+        "linkTitleRequired": "Link title is required",
+        "urlRequired": "URL is required",
+        "invalidUrl": "Please enter a valid URL",
+        "bookTitleRequired": "Book title is required",
+        "authorRequired": "Author is required"
+      },
+      "author": "Author",
+      "authorPlaceholder": "Enter author",
+      "isbn": "ISBN",
+      "isbnPlaceholder": "Enter ISBN",
+      "bookTitle": "Book Title",
+      "bookTitlePlaceholder": "Enter book title",
+      "bookDescription": "Description",
+      "bookDescriptionPlaceholder": "Enter book description",
+      "addBookButton": "Add Book",
+      "addLinkButton": "Add Link",
+      "learningGuide": "Learning Guide",
+      "cancel": "Cancel"
     },
     "challenge": {
       "start": "Complete Learning, Start Challenge",
@@ -1230,12 +1271,7 @@
       "cancelled": "Generation cancelled, {{count}} questions generated",
       "batchFailed": "Batch {{batch}} generation failed, continuing..."
     },
-    "challenge": {
-      "start": "Complete Learning, Start Challenge",
-      "completed": "Learning complete! Review task created, will review later",
-      "complete": "Complete",
-      "missingParams": "Missing required parameters"
-    },
+
     "batch": {
       "selectNodes": "Please select nodes first",
       "deleteSuccess": "Deleted {{count}} nodes",
@@ -1259,7 +1295,22 @@
       "createSuccess": "Node created successfully",
       "createFailed": "Failed to create node, please try again",
       "enterTitle": "Please enter node title",
-      "welcomeBack": "Welcome back! This is the learning material prepared for \"{{title}}\". If you have any questions, feel free to ask."
+      "welcomeBack": "Welcome back! This is the learning material prepared for \"{{title}}\". If you have any questions, feel free to ask.",
+      "createTitle": "Create New Node",
+      "titleLabel": "Node Title",
+      "titlePlaceholder": "Enter node title",
+      "contentLabel": "Node Content",
+      "contentPlaceholder": "Enter node content (optional)",
+      "levelLabel": "Node Level",
+      "levelRoot": "Root",
+      "levelCore": "Core",
+      "levelSub": "Sub",
+      "levelNormal": "Normal",
+      "levelLeaf": "Leaf",
+      "parentLabel": "Parent Node",
+      "noParent": "No Parent",
+      "cancel": "Cancel",
+      "createButton": "Create Node"
     },
     "focus": {
       "title": "Focus Mode",
@@ -1267,7 +1318,8 @@
       "selectContent": "Please select learning content first"
     },
     "path": {
-      "title": "Learning Path"
+      "title": "Learning Path",
+      "aiDriven": "AI Driven"
     }
   },
   "statistics": {
@@ -1882,6 +1934,31 @@
       "resetView": "Reset View",
       "fitScreen": "Fit Screen",
       "zoom": "Zoom: {{percent}}%"
+    },
+    "outline": {
+      "title": "Outline View ({{count}})",
+      "noMatchingNodes": "No matching nodes",
+      "unnamedNode": "Unnamed node",
+      "selectAllChildren": "Select all children",
+      "addNode": "Add node",
+      "selectIsolatedNodes": "Select all isolated nodes (no connections)",
+      "connectionDiscovery": "Connection Discovery ({{count}} suggestions)",
+      "exitMultiSelect": "Exit multi-select",
+      "multiSelectMode": "Multi-select mode",
+      "searchNodes": "Search nodes...",
+      "treeView": "Tree view",
+      "listView": "List view",
+      "allLevels": "All levels",
+      "sortByTitle": "Current: Sort by title",
+      "sortByLevel": "Current: Sort by level",
+      "selectAll": "Select all/Unselect all",
+      "selected": "{{count}} selected",
+      "batchGenerateQuestions": "Batch generate questions",
+      "backgroundExpand": "Background expand",
+      "batchDelete": "Batch delete",
+      "establishConnection": "Establish connection",
+      "ignore": "Ignore",
+      "noNodes": "No nodes"
     }
   },
   "autoGraph": {
@@ -1942,7 +2019,11 @@
     "templateType": "Template Type",
     "editPrompt": "Edit Prompt",
     "promptSaved": "Prompt saved",
-    "promptSaveFailed": "Failed to save prompt"
+    "promptSaveFailed": "Failed to save prompt",
+    "templatePromptConfig": "Template Prompt Configuration",
+    "selectTemplateType": "Select a template type from the left",
+    "graphLevel": "Graph Level",
+    "userLevel": "User Level"
   },
   "prompts": {
     "categories": {
@@ -2258,27 +2339,7 @@
     "createSuccess": "Relation created successfully",
     "createFailed": "Failed to create relation"
   },
-  "nodeSelector": {
-    "title": "Select Knowledge Points",
-    "selectFrom": "Select knowledge points from \"{{title}}\" to generate questions",
-    "searchPlaceholder": "Search knowledge points...",
-    "selected": "{{count}} knowledge points selected",
-    "selectAll": "Select All",
-    "deselectAll": "Deselect All",
-    "confirm": "Confirm Selection",
-    "cancel": "Cancel",
-    "noNodes": "No knowledge points in this graph",
-    "noNodesHint": "Please add knowledge points in the graph editor first",
-    "noResults": "No matching knowledge points found",
-    "unnamedNode": "Unnamed Node",
-    "levelLabels": {
-      "root": "Core Topic",
-      "core": "Main Concept",
-      "sub": "Sub Knowledge",
-      "normal": "Specific Content",
-      "leaf": "Example Details"
-    }
-  },
+
   "profile": {
     "title": "Profile",
     "subtitle": "Account Information & Security",

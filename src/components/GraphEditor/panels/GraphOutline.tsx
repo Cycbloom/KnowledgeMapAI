@@ -4,6 +4,7 @@ import { Node, Edge } from '../../../types';
 import { BatchGenerateDialog } from '../modals/BatchGenerateDialog';
 import { GraphStatsSummary } from '../shared/GraphStatsSummary';
 import { getLevelColors } from '../../../config/learningStatusColors';
+import { useTranslation } from 'react-i18next';
 
 interface GraphOutlineProps {
   nodes: Node[];
@@ -38,6 +39,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   stats,
   isReadOnly = false
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -362,7 +364,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
   const renderList = () => {
     // processedNodes is already sorted and filtered
     if (processedNodes.length === 0) {
-      return <div className="text-center py-8 text-slate-500 text-sm">无匹配节点</div>;
+      return <div className="text-center py-8 text-slate-500 text-sm">{t('graphEditor.outline.noMatchingNodes')}</div>;
     }
 
     return processedNodes.map(node => {
@@ -396,7 +398,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             style={{ backgroundColor: getLevelColors(node.level || 'leaf').primary }}
           />
           <span className="truncate flex-1 font-medium">
-            {node.title || '未命名节点'}
+            {node.title || t('graphEditor.outline.unnamedNode')}
           </span>
           <span 
             className="text-[10px] px-1 py-0.5 rounded uppercase"
@@ -508,7 +510,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           />
           
           <span className="truncate flex-1 font-medium">
-            {node.title || '未命名节点'}
+            {node.title || t('graphEditor.outline.unnamedNode')}
           </span>
           
           {node.level && (
@@ -531,7 +533,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             <button
               onClick={(e) => handleSelectChildren(node.id, e)}
               className="ml-2 p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded hidden group-hover:flex items-center justify-center transition-colors"
-              title="全选子节点"
+              title={t('graphEditor.outline.selectAllChildren')}
             >
               <ListChecks size={14} />
             </button>
@@ -562,14 +564,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
         )}
         <div className="flex justify-between items-center mb-3 pr-6">
           <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            大纲视图 ({nodes.length})
+            {t('graphEditor.outline.title', { count: nodes.length })}
           </h2>
           <div className="flex items-center gap-1">
             {onAddNode && !isReadOnly && (
               <button
                 onClick={onAddNode}
                 className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
-                title="添加节点"
+                title={t('graphEditor.outline.addNode')}
               >
                 <Plus size={16} />
               </button>
@@ -578,7 +580,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
               <button
                 onClick={handleSelectIsolated}
                 className="p-1.5 rounded transition-colors text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-orange-500"
-                title="选中所有孤立节点 (无连线)"
+                title={t('graphEditor.outline.selectIsolatedNodes')}
               >
                 <Eraser size={16} />
               </button>
@@ -587,7 +589,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
               <button
                 onClick={() => setShowConnectionDiscovery(!showConnectionDiscovery)}
                 className={`p-1.5 rounded transition-colors ${showConnectionDiscovery ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-purple-500'}`}
-                title={`关联发现 (${filteredSuggestions.length} 条建议)`}
+                title={t('graphEditor.outline.connectionDiscovery', { count: filteredSuggestions.length })}
               >
                 <Network size={16} />
               </button>
@@ -601,7 +603,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                   }
                 }}
                 className={`p-1.5 rounded transition-colors ${isMultiSelectMode ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                title={isMultiSelectMode ? "退出多选" : "多选模式"}
+                title={isMultiSelectMode ? t('graphEditor.outline.exitMultiSelect') : t('graphEditor.outline.multiSelectMode')}
               >
                 <MousePointer2 size={16} />
               </button>
@@ -613,7 +615,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="搜索节点..."
+            placeholder={t('graphEditor.outline.searchNodes')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-md text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
@@ -627,14 +629,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             <button
               onClick={() => setViewMode('tree')}
               className={`p-1.5 rounded ${viewMode === 'tree' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}
-              title="树状视图"
+              title={t('graphEditor.outline.treeView')}
             >
               <Layers size={14} />
             </button>
             <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}
-              title="列表视图"
+              title={t('graphEditor.outline.listView')}
             >
               <List size={14} />
             </button>
@@ -650,7 +652,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                onChange={(e) => setFilterLevel(e.target.value)}
                className="w-full pl-7 pr-2 py-1 bg-slate-100 dark:bg-slate-800 border-none rounded text-xs text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer"
              >
-               <option value="all">全部分级</option>
+               <option value="all">{t('graphEditor.outline.allLevels')}</option>
                <option value="root">Root</option>
                <option value="core">Core</option>
                <option value="sub">Sub</option>
@@ -664,7 +666,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             <button
               onClick={() => setSortMode(prev => prev === 'title' ? 'level' : 'title')}
               className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 hover:text-blue-600"
-              title={sortMode === 'title' ? "当前：按标题排序" : "当前：按层级排序"}
+              title={sortMode === 'title' ? t('graphEditor.outline.sortByTitle') : t('graphEditor.outline.sortByLevel')}
             >
               {sortMode === 'title' ? <ArrowDownAZ size={14} /> : <ArrowUpAZ size={14} />}
             </button>
@@ -678,18 +680,18 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                 <button 
                   onClick={handleSelectAll}
                   className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-                  title="全选/取消全选"
+                  title={t('graphEditor.outline.selectAll')}
                 >
                   {selectedNodeIds.size === nodes.length && nodes.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
                 </button>
-                <span className="text-xs text-slate-500 font-medium">{selectedNodeIds.size} 已选</span>
+                <span className="text-xs text-slate-500 font-medium">{t('graphEditor.outline.selected', { count: selectedNodeIds.size })}</span>
              </div>
              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setIsBatchGenerateOpen(true)}
                   disabled={selectedNodeIds.size === 0}
                   className="p-1.5 text-purple-600 hover:bg-purple-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="批量生成题目"
+                  title={t('graphEditor.outline.batchGenerateQuestions')}
                 >
                   <Sparkles size={16} />
                 </button>
@@ -697,7 +699,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                   onClick={() => onBatchAction?.('expand_graph')}
                   disabled={selectedNodeIds.size === 0}
                   className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="后台拓展"
+                  title={t('graphEditor.outline.backgroundExpand')}
                 >
                   <Wand2 size={16} />
                 </button>
@@ -705,7 +707,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                   onClick={() => onBatchAction?.('delete')}
                   disabled={selectedNodeIds.size === 0}
                   className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="批量删除"
+                  title={t('graphEditor.outline.batchDelete')}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -721,7 +723,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
             <div className="flex items-center gap-2">
               <Network size={14} className="text-purple-500" />
               <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
-                关联发现 ({filteredSuggestions.length})
+                {t('graphEditor.outline.connectionDiscovery', { count: filteredSuggestions.length })}
               </span>
             </div>
             <button
@@ -755,14 +757,14 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
                   <button
                     onClick={() => handleConnect(suggestion)}
                     className="p-1 text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded"
-                    title="建立连接"
+                    title={t('graphEditor.outline.establishConnection')}
                   >
                     <Link2 size={12} />
                   </button>
                   <button
                     onClick={() => handleDismissConnection(suggestion.sourceId, suggestion.targetId)}
                     className="p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
-                    title="忽略"
+                    title={t('graphEditor.outline.ignore')}
                   >
                     <X size={12} />
                   </button>
@@ -791,7 +793,7 @@ export const GraphOutline: React.FC<GraphOutlineProps> = ({
              )}
              {nodes.length === 0 && (
                <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
-                 暂无节点
+                 {t('graphEditor.outline.noNodes')}
                </div>
              )}
           </div>

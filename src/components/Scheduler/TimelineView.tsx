@@ -186,7 +186,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2 flex-1 min-h-0 space-y-2 overflow-y-auto custom-scrollbar">
+                <div data-scrollable-queue className="p-2 flex-1 min-h-0 space-y-2 overflow-y-auto custom-scrollbar">
                   {day.tasks.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
                       {day.isToday ? t('scheduler.timeline.noTasksToday') : t('scheduler.timeline.noTasks')}

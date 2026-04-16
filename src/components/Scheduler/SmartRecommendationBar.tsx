@@ -14,8 +14,8 @@ import {
   AlertCircle,
   Lightbulb,
 } from "lucide-react";
-import { useTranslation } from 'react-i18next';
-import { api } from '../../services/api';
+import { useTranslation } from "react-i18next";
+import { api } from "../../services/api";
 
 interface SmartRecommendation {
   recommendedTask: {
@@ -56,8 +56,14 @@ interface SmartRecommendation {
 
 interface EfficiencyProfile {
   hourlyEfficiency: Record<number, number>;
-  tagEfficiency: Record<string, { avgDuration: number; completionRate: number }>;
-  queueEfficiency: Record<number, { avgDuration: number; completionRate: number }>;
+  tagEfficiency: Record<
+    string,
+    { avgDuration: number; completionRate: number }
+  >;
+  queueEfficiency: Record<
+    number,
+    { avgDuration: number; completionRate: number }
+  >;
   peakHours: number[];
   lowHours: number[];
 }
@@ -74,12 +80,16 @@ interface SmartRecommendationBarProps {
   onStartTask?: (taskId: string) => void;
   onViewTask?: (taskId: string) => void;
   currentTaskId?: string | null;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
   onStartTask,
   onViewTask,
   currentTaskId,
+  isCollapsed,
+  onToggleCollapse,
 }) => {
   const { t } = useTranslation();
   const [recommendation, setRecommendation] =
@@ -87,9 +97,20 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
   const [efficiencyProfile, setEfficiencyProfile] =
     useState<EfficiencyProfile | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [internalExpanded, setInternalExpanded] = useState(true);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+
+  const isExpanded =
+    isCollapsed !== undefined ? !isCollapsed : internalExpanded;
+
+  const handleToggleExpand = useCallback(() => {
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    } else {
+      setInternalExpanded(!internalExpanded);
+    }
+  }, [onToggleCollapse, internalExpanded]);
 
   const loadRecommendation = useCallback(async () => {
     setLoading(true);
@@ -98,11 +119,11 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
         api.scheduler.getSmartRecommendation(),
         api.scheduler.getEfficiencyProfile(30),
       ]);
-      
+
       if (recommendationRes.success) {
         setRecommendation(recommendationRes.data);
       }
-      
+
       if (efficiencyRes.success) {
         setEfficiencyProfile(efficiencyRes.data);
       }
@@ -146,17 +167,17 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     switch (level) {
       case "high":
         return {
-          label: t('scheduler.recommendation.peakEfficiency'),
+          label: t("scheduler.recommendation.peakEfficiency"),
           color: "text-green-500 bg-green-100 dark:bg-green-500/20",
         };
       case "low":
         return {
-          label: t('scheduler.recommendation.lowEfficiency'),
+          label: t("scheduler.recommendation.lowEfficiency"),
           color: "text-yellow-500 bg-yellow-100 dark:bg-yellow-500/20",
         };
       default:
         return {
-          label: t('scheduler.recommendation.normalEfficiency'),
+          label: t("scheduler.recommendation.normalEfficiency"),
           color: "text-blue-500 bg-blue-100 dark:bg-blue-500/20",
         };
     }
@@ -203,7 +224,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     if (task.deadline) {
       const deadline = new Date(task.deadline);
       const hoursUntil = Math.round(
-        (deadline.getTime() - Date.now()) / (1000 * 60 * 60)
+        (deadline.getTime() - Date.now()) / (1000 * 60 * 60),
       );
       details.push({
         type: "deadline",
@@ -213,8 +234,8 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
           hoursUntil < 0
             ? "已超过截止日期"
             : hoursUntil < 24
-            ? `截止时间临近 (${hoursUntil}小时)`
-            : `截止时间: ${deadline.toLocaleDateString("zh-CN")}`,
+              ? `截止时间临近 (${hoursUntil}小时)`
+              : `截止时间: ${deadline.toLocaleDateString("zh-CN")}`,
       });
     }
 
@@ -238,7 +259,8 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
     if (!efficiencyProfile) return [];
 
     const currentHour = new Date().getHours();
-    const slots: Array<{ time: string; efficiency: number; label: string }> = [];
+    const slots: Array<{ time: string; efficiency: number; label: string }> =
+      [];
 
     for (let i = currentHour; i < Math.min(currentHour + 8, 24); i++) {
       const efficiency = efficiencyProfile.hourlyEfficiency[i] || 0;
@@ -290,7 +312,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
           </div>
           <div className="flex-1">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              {t('scheduler.recommendation.noPendingTasks')}
+              {t("scheduler.recommendation.noPendingTasks")}
             </p>
           </div>
         </div>
@@ -306,6 +328,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-50 dark:from-cyan-500/10 dark:via-blue-500/10 dark:to-indigo-500/10 rounded-xl border border-cyan-200 dark:border-cyan-500/30 overflow-hidden"
@@ -317,15 +340,19 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-slate-900 dark:text-white">
-              {t('scheduler.recommendation.title')}
+              {t("scheduler.recommendation.title")}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {currentContext.timeSlot.label} · {efficiencyBadge.label}
+              {!isExpanded && recommendedTask
+                ? recommendedTask.task.title
+                : `${currentContext.timeSlot.label} · ${efficiencyBadge.label}`}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className={`px-2 py-1 rounded-full text-xs font-medium ${efficiencyBadge.color}`}>
+          <div
+            className={`px-2 py-1 rounded-full text-xs font-medium ${efficiencyBadge.color}`}
+          >
             {currentContext.isPeakHour ? (
               <TrendingUp className="w-3 h-3 inline mr-1" />
             ) : (
@@ -341,7 +368,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={handleToggleExpand}
             className="p-2 rounded-lg hover:bg-cyan-100 dark:hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 transition-colors"
           >
             <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
@@ -351,13 +378,14 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
         </div>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
           >
             {/* Recommended Task */}
             <div className="p-4">
@@ -377,12 +405,16 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                           Q{recommendedTask.task.queue_level}
                         </span>
                         <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                          {t('scheduler.recommendation.priority', { level: recommendedTask.task.priority })}
+                          {t("scheduler.recommendation.priority", {
+                            level: recommendedTask.task.priority,
+                          })}
                         </span>
                         {recommendedTask.task.estimated_duration && (
                           <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                             <Clock className="w-3 h-3" />
-                            {t('scheduler.recommendation.minutes', { count: recommendedTask.task.estimated_duration })}
+                            {t("scheduler.recommendation.minutes", {
+                              count: recommendedTask.task.estimated_duration,
+                            })}
                           </span>
                         )}
                       </div>
@@ -392,13 +424,13 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                         onClick={handleViewTask}
                         className="px-3 py-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 rounded-lg transition-colors"
                       >
-                        {t('scheduler.recommendation.viewDetails')}
+                        {t("scheduler.recommendation.viewDetails")}
                       </button>
                       <button
                         onClick={handleAcceptRecommendation}
                         className="px-4 py-1.5 text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/30"
                       >
-                        {t('scheduler.recommendation.startTask')}
+                        {t("scheduler.recommendation.startTask")}
                       </button>
                     </div>
                   </div>
@@ -421,7 +453,7 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                         className="flex items-center gap-2 text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors mb-3"
                       >
                         <Lightbulb className="w-4 h-4" />
-                        {t('scheduler.recommendation.recommendationDetails')}
+                        {t("scheduler.recommendation.recommendationDetails")}
                         <ChevronRight
                           className={`w-4 h-4 transition-transform ${showDetails ? "rotate-90" : ""}`}
                         />
@@ -480,10 +512,10 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                               slot.label === "高峰时段"
                                 ? "bg-green-100 dark:bg-green-500/20 border border-green-300 dark:border-green-500/30"
                                 : slot.label === "低效时段"
-                                ? "bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-300 dark:border-yellow-500/30"
-                                : slot.efficiency > 0.7
-                                ? "bg-blue-100 dark:bg-blue-500/20 border border-blue-300 dark:border-blue-500/30"
-                                : "bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                                  ? "bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-300 dark:border-yellow-500/30"
+                                  : slot.efficiency > 0.7
+                                    ? "bg-blue-100 dark:bg-blue-500/20 border border-blue-300 dark:border-blue-500/30"
+                                    : "bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
                             }`}
                           >
                             <div className="text-xs font-medium text-slate-900 dark:text-white">
@@ -494,8 +526,8 @@ export const SmartRecommendationBar: React.FC<SmartRecommendationBarProps> = ({
                                 slot.label === "高峰时段"
                                   ? "text-green-600 dark:text-green-400"
                                   : slot.label === "低效时段"
-                                  ? "text-yellow-600 dark:text-yellow-400"
-                                  : "text-slate-500 dark:text-slate-400"
+                                    ? "text-yellow-600 dark:text-yellow-400"
+                                    : "text-slate-500 dark:text-slate-400"
                               }`}
                             >
                               {slot.label}

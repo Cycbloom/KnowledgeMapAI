@@ -314,7 +314,7 @@ export const HorizontalQueueView: React.FC<HorizontalQueueViewProps> = ({
       )}
 
       <div className="flex-1 min-h-0 overflow-hidden">
-        {currentView === "queue" && <div key="queue" className="h-full overflow-y-auto custom-scrollbar">{renderQueueView()}</div>}
+        {currentView === "queue" && <div key="queue" data-scrollable-queue className="h-full overflow-y-auto custom-scrollbar">{renderQueueView()}</div>}
 
         {currentView === "timeline" && (
           <motion.div

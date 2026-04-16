@@ -450,7 +450,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 h-full">
             <div className="w-64 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4">
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
                 {t("learning.settings.configScenarios")}

@@ -114,10 +114,10 @@ export class DashboardService {
     });
 
     return [
-      { name: '新卡片', value: distribution[State.New], color: '#94a3b8' },
-      { name: '学习中', value: distribution[State.Learning], color: '#fbbf24' },
-      { name: '复习中', value: distribution[State.Review], color: '#4ade80' },
-      { name: '重新学习', value: distribution[State.Relearning], color: '#f87171' }
+      { name: 'new', value: distribution[State.New], color: '#94a3b8' },
+      { name: 'learning', value: distribution[State.Learning], color: '#fbbf24' },
+      { name: 'review', value: distribution[State.Review], color: '#4ade80' },
+      { name: 'relearning', value: distribution[State.Relearning], color: '#f87171' }
     ];
   }
 }

@@ -396,10 +396,10 @@ export const mobileStatisticsApi = {
 
     if (!user) {
       const emptyDistribution = [
-        { name: "新卡片", value: 0, color: "#94a3b8" },
-        { name: "学习中", value: 0, color: "#fbbf24" },
-        { name: "复习中", value: 0, color: "#4ade80" },
-        { name: "重新学习", value: 0, color: "#f87171" },
+        { name: "new", value: 0, color: "#94a3b8" },
+        { name: "learning", value: 0, color: "#fbbf24" },
+        { name: "review", value: 0, color: "#4ade80" },
+        { name: "relearning", value: 0, color: "#f87171" },
       ];
       const forecast = [];
       const growth = [];
@@ -533,15 +533,15 @@ export const mobileStatisticsApi = {
       },
       heatmap,
       distribution: [
-        { name: "新卡片", value: stateCounts[State.New], color: "#94a3b8" },
+        { name: "new", value: stateCounts[State.New], color: "#94a3b8" },
         {
-          name: "学习中",
+          name: "learning",
           value: stateCounts[State.Learning],
           color: "#fbbf24",
         },
-        { name: "复习中", value: stateCounts[State.Review], color: "#4ade80" },
+        { name: "review", value: stateCounts[State.Review], color: "#4ade80" },
         {
-          name: "重新学习",
+          name: "relearning",
           value: stateCounts[State.Relearning],
           color: "#f87171",
         },

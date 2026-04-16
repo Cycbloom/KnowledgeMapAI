@@ -81,10 +81,10 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     },
     heatmap,
     distribution: [
-      { name: '新卡片', value: stateCounts[State.New], color: '#94a3b8' },
-      { name: '学习中', value: stateCounts[State.Learning], color: '#fbbf24' },
-      { name: '复习中', value: stateCounts[State.Review], color: '#4ade80' },
-      { name: '重新学习', value: stateCounts[State.Relearning], color: '#f87171' }
+      { name: 'new', value: stateCounts[State.New], color: '#94a3b8' },
+      { name: 'learning', value: stateCounts[State.Learning], color: '#fbbf24' },
+      { name: 'review', value: stateCounts[State.Review], color: '#4ade80' },
+      { name: 'relearning', value: stateCounts[State.Relearning], color: '#f87171' }
     ],
     forecast,
     growth

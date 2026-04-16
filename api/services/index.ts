@@ -7,7 +7,7 @@ export {
   ragService,
   searchService,
 } from "./ai/index";
-export { focusService } from "./focusService";
+export { focusService } from "./scheduler/focusService";
 export { studyProgressService } from "./study/studyProgressService";
 export { studyService } from "./study/studyService";
 export { taskService } from "./taskService";

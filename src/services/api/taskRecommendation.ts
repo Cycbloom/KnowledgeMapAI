@@ -38,6 +38,23 @@ export interface SmartSuggestions {
   efficiencyTips: string[];
 }
 
+export interface DecisionFactor {
+  name: string;
+  weight: number;
+  score: number;
+  description: string;
+}
+
+export interface DecisionTaskRecommendation {
+  taskId: string;
+  title: string;
+  queueLevel: number;
+  priority: number;
+  totalScore: number;
+  factors: DecisionFactor[];
+  reason: string;
+}
+
 export const taskRecommendationApi = {
   getRecommendations: () =>
     request<{ success: boolean; data: TaskRecommendation[] }>('/scheduler/recommendations'),
@@ -53,4 +70,7 @@ export const taskRecommendationApi = {
 
   getEfficiencyData: (days: number = 30) =>
     request<{ success: boolean; data: EfficiencyData }>(`/scheduler/efficiency-data?days=${days}`),
+
+  getDecisionRecommendations: (limit: number = 5) =>
+    request<{ success: boolean; data: DecisionTaskRecommendation[] }>(`/scheduler/decision-engine/recommendations?limit=${limit}`),
 };

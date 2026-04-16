@@ -23,6 +23,8 @@ export type {
   PathTaskWithDetails,
 } from "./pathTasks";
 
+export { orchestratorApi } from "./orchestrator";
+
 export type {
   ScheduledTask,
   TaskType,
@@ -60,6 +62,7 @@ import { achievementsApi } from "./achievements";
 import { reviewTasksApi } from "./reviewTasks";
 import { progressSyncApi } from "./progressSync";
 import { pathTasksApi } from "./pathTasks";
+import { orchestratorApi } from "./orchestrator";
 
 export const schedulerApi = {
   ...tasksApi,
@@ -77,4 +80,5 @@ export const schedulerApi = {
   ...reviewTasksApi,
   ...progressSyncApi,
   ...pathTasksApi,
+  ...orchestratorApi,
 };

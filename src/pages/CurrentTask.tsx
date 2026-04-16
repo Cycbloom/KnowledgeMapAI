@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -34,6 +28,7 @@ import {
   useStartScheduledTaskMutation,
 } from "../hooks";
 import { useMessageStore } from "../store/useMessageStore";
+import { useUnifiedTimer } from "../hooks/scheduler";
 import type { ScheduledTask, TaskSettings } from "@shared/types";
 
 const QUEUE_CONFIG = {
@@ -115,10 +110,21 @@ export const CurrentTask: React.FC = () => {
     return tasks?.[0] || null;
   }, [tasksData]);
 
-  const [isRunning, setIsRunning] = useState(false);
-  const [isBreak, setIsBreak] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [breakElapsed, setBreakElapsed] = useState(0);
+  const {
+    taskId: timerTaskId,
+    mode: timerMode,
+    timeLeft,
+    totalTime,
+    isActive,
+    isPaused,
+    progress: timerProgress,
+    start: startTimer,
+    pause: pauseTimer,
+    resume: resumeTimer,
+    complete: completeTimer,
+    skipToBreak,
+  } = useUnifiedTimer();
+
   const [soundEnabled, setSoundEnabled] = useState(
     settings?.sound_enabled ?? true,
   );
@@ -128,65 +134,19 @@ export const CurrentTask: React.FC = () => {
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
   const [glowOffset, setGlowOffset] = useState(0);
 
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number | null>(null);
   const glowAnimationRef = useRef<number | null>(null);
 
   const queueConfig = currentTask
     ? QUEUE_CONFIG[currentTask.queue_level as keyof typeof QUEUE_CONFIG]
     : QUEUE_CONFIG[0];
-  const timeSlice = currentTask
-    ? getTimeSlice(currentTask.queue_level, settings)
-    : 25 * 60;
-  const breakDuration = (settings?.break_duration || 5) * 60;
+  const timeSliceMinutes = currentTask
+    ? getTimeSlice(currentTask.queue_level, settings) / 60
+    : 25;
+  const breakDurationMinutes = settings?.break_duration || 5;
 
-  const remaining = isBreak
-    ? breakDuration - breakElapsed
-    : timeSlice - elapsed;
-  const progress = isBreak ? breakElapsed / breakDuration : elapsed / timeSlice;
-
-  const playNotificationSound = useCallback(() => {
-    if (!soundEnabled) return;
-
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (
-          window.AudioContext || (window as any).webkitAudioContext
-        )();
-      }
-
-      const ctx = audioContextRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
-      oscillator.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
-      oscillator.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
-
-      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.5);
-    } catch (e) {
-      console.warn("Failed to play notification sound:", e);
-    }
-  }, [soundEnabled]);
-
-  const sendNotification = useCallback(
-    (title: string, body: string) => {
-      if (!notificationEnabled) return;
-
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(title, { body, icon: "/favicon.ico" });
-      }
-    },
-    [notificationEnabled],
-  );
+  const isBreak = timerMode !== "focus";
+  const remaining = timeLeft;
+  const progress = timerProgress / 100;
 
   const requestNotificationPermission = useCallback(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -199,7 +159,7 @@ export const CurrentTask: React.FC = () => {
   }, [requestNotificationPermission]);
 
   useEffect(() => {
-    if (isRunning) {
+    if (isActive) {
       const animateGlow = () => {
         setGlowOffset(Math.sin(Date.now() / 500) * 15);
         glowAnimationRef.current = requestAnimationFrame(animateGlow);
@@ -211,79 +171,25 @@ export const CurrentTask: React.FC = () => {
         }
       };
     }
-  }, [isRunning]);
+  }, [isActive]);
 
   useEffect(() => {
-    if (currentTask && currentTask.status === "in_progress" && !isBreak) {
-      setIsRunning(true);
-      startTimeRef.current = Date.now() - elapsed * 1000;
-    } else {
-      setIsRunning(false);
+    if (currentTask && currentTask.status === "in_progress" && !timerTaskId) {
+      startTimer(currentTask.id, timeSliceMinutes, currentTask.queue_level);
     }
-  }, [currentTask]);
+  }, [currentTask, timerTaskId, timeSliceMinutes, startTimer]);
 
   useEffect(() => {
-    if (!isRunning) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
+    if (!isActive && timerTaskId && timeLeft === 0) {
+      setShowTimeUpModal(true);
     }
-
-    intervalRef.current = setInterval(() => {
-      if (isBreak) {
-        setBreakElapsed((prev) => {
-          const next = prev + 1;
-          if (next >= breakDuration) {
-            setIsRunning(false);
-            setShowTimeUpModal(true);
-            playNotificationSound();
-            sendNotification(
-              "休息结束",
-              "休息时间已结束，准备开始下一个任务！",
-            );
-            return prev;
-          }
-          return next;
-        });
-      } else {
-        setElapsed((prev) => {
-          const next = prev + 1;
-          if (next >= timeSlice) {
-            setIsRunning(false);
-            setShowTimeUpModal(true);
-            playNotificationSound();
-            sendNotification(
-              "时间片结束",
-              "当前任务的时间片已用完，请选择继续或休息。",
-            );
-            return prev;
-          }
-          return next;
-        });
-      }
-    }, 1000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [
-    isRunning,
-    isBreak,
-    timeSlice,
-    breakDuration,
-    playNotificationSound,
-    sendNotification,
-  ]);
+  }, [isActive, timerTaskId, timeLeft]);
 
   const handlePause = async () => {
     if (!currentTask) return;
     try {
       await pauseMutation.mutateAsync(currentTask.id);
-      setIsRunning(false);
+      pauseTimer();
       addMessage({ type: "info", content: "任务已暂停" });
     } catch (error) {
       addMessage({ type: "error", content: "暂停失败" });
@@ -294,7 +200,7 @@ export const CurrentTask: React.FC = () => {
     if (!currentTask) return;
     try {
       await startMutation.mutateAsync(currentTask.id);
-      setIsRunning(true);
+      resumeTimer();
       addMessage({ type: "success", content: "任务已继续" });
     } catch (error) {
       addMessage({ type: "error", content: "继续失败" });
@@ -305,8 +211,7 @@ export const CurrentTask: React.FC = () => {
     if (!currentTask) return;
     try {
       await completeMutation.mutateAsync(currentTask.id);
-      setIsRunning(false);
-      setElapsed(0);
+      await completeTimer();
       addMessage({ type: "success", content: "任务已完成！" });
       refetch();
     } catch (error) {
@@ -318,8 +223,7 @@ export const CurrentTask: React.FC = () => {
     if (!currentTask) return;
     try {
       await demoteMutation.mutateAsync(currentTask.id);
-      setIsRunning(false);
-      setElapsed(0);
+      await completeTimer();
       addMessage({ type: "info", content: "任务已降级" });
       refetch();
     } catch (error) {
@@ -328,21 +232,19 @@ export const CurrentTask: React.FC = () => {
   };
 
   const handleStartBreak = () => {
-    setIsBreak(true);
-    setBreakElapsed(0);
-    setIsRunning(true);
+    skipToBreak();
     setShowTimeUpModal(false);
   };
 
   const handleContinueWork = () => {
-    setIsBreak(false);
-    setIsRunning(true);
+    if (currentTask) {
+      startTimer(currentTask.id, timeSliceMinutes, currentTask.queue_level);
+    }
     setShowTimeUpModal(false);
   };
 
   const handleDismissModal = () => {
     setShowTimeUpModal(false);
-    setIsRunning(false);
   };
 
   const circumference = 2 * Math.PI * 140;
@@ -548,7 +450,7 @@ export const CurrentTask: React.FC = () => {
                 </div>
               </div>
 
-              {isRunning && (
+              {isActive && (
                 <motion.div
                   className="absolute inset-0 rounded-full pointer-events-none"
                   style={{
@@ -567,7 +469,7 @@ export const CurrentTask: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4 mt-8">
-              {isRunning ? (
+              {isActive && !isPaused ? (
                 <motion.button
                   onClick={handlePause}
                   className="flex items-center gap-2 px-8 py-4 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-all"
@@ -607,13 +509,13 @@ export const CurrentTask: React.FC = () => {
                   style={{ backgroundColor: queueConfig.color }}
                 />
                 <span>
-                  已用: {formatTime(isBreak ? breakElapsed : elapsed)}
+                  已用: {formatTime(totalTime - timeLeft)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-400" />
                 <span>
-                  总计: {formatTime(isBreak ? breakDuration : timeSlice)}
+                  总计: {formatTime(totalTime)}
                 </span>
               </div>
             </div>
@@ -727,7 +629,7 @@ export const CurrentTask: React.FC = () => {
                   <div className="text-left">
                     <div className="font-medium">开始休息</div>
                     <div className="text-xs text-slate-400 dark:text-slate-500">
-                      休息 {settings?.break_duration || 5} 分钟
+                      休息 {breakDurationMinutes} 分钟
                     </div>
                   </div>
                 </motion.button>

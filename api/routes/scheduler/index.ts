@@ -14,6 +14,8 @@ import recommendationsRouter from "./recommendations";
 import progressRouter from "./progress";
 import progressSyncRouter from "./progressSync";
 import settingsRouter from "./settings";
+import unifiedReviewRouter from "./unifiedReview";
+import learningLoopsRouter from "./learningLoops";
 
 const router = Router();
 
@@ -32,5 +34,7 @@ router.use(recommendationsRouter);
 router.use(progressRouter);
 router.use(progressSyncRouter);
 router.use(settingsRouter);
+router.use(unifiedReviewRouter);
+router.use(learningLoopsRouter);
 
 export default router;

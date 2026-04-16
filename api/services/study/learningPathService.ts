@@ -11,6 +11,8 @@ export interface LearningPath {
   goal?: string;
   target_date?: string;
   source_graph_id?: string;
+  domain_id?: string;
+  path_type: "single_graph" | "cross_graph";
   total_estimated_time: number;
   ai_generated: boolean;
   status: "active" | "completed" | "paused" | "archived";
@@ -25,6 +27,7 @@ export interface LearningPathNode {
   id: string;
   path_id: string;
   knowledge_point_id?: string;
+  graph_id?: string;
   order_index: number;
   title: string;
   description?: string;
@@ -81,6 +84,8 @@ export interface CreateLearningPathInput {
   goal?: string;
   target_date?: string;
   source_graph_id?: string;
+  domain_id?: string;
+  path_type?: "single_graph" | "cross_graph";
   total_estimated_time?: number;
   ai_generated?: boolean;
   daily_minutes_target?: number;
@@ -89,6 +94,7 @@ export interface CreateLearningPathInput {
 
 export interface CreateLearningPathNodeInput {
   knowledge_point_id?: string;
+  graph_id?: string;
   order_index: number;
   title: string;
   description?: string;
@@ -121,6 +127,8 @@ export interface LearningPathWithNodeCount {
   goal: string | null;
   target_date: string | null;
   source_graph_id: string | null;
+  domain_id: string | null;
+  path_type: string;
   total_estimated_time: number;
   ai_generated: boolean;
   status: string;
@@ -146,6 +154,8 @@ export class LearningPathService {
         goal: input.goal || null,
         target_date: input.target_date || null,
         source_graph_id: input.source_graph_id || null,
+        domain_id: input.domain_id || null,
+        path_type: input.path_type || "single_graph",
         total_estimated_time: input.total_estimated_time || 0,
         ai_generated: input.ai_generated || false,
         daily_minutes_target: input.daily_minutes_target || 30,
@@ -163,6 +173,7 @@ export class LearningPathService {
       const nodesData = input.nodes.map((node) => ({
         path_id: path.id,
         knowledge_point_id: node.knowledge_point_id || null,
+        graph_id: node.graph_id || null,
         order_index: node.order_index,
         title: node.title,
         description: node.description || null,
@@ -214,6 +225,8 @@ export class LearningPathService {
         goal,
         target_date,
         source_graph_id,
+        domain_id,
+        path_type,
         total_estimated_time,
         ai_generated,
         status,
@@ -422,6 +435,7 @@ export class LearningPathService {
       .insert({
         path_id: pathId,
         knowledge_point_id: input.knowledge_point_id || null,
+        graph_id: input.graph_id || null,
         order_index: input.order_index,
         title: input.title,
         description: input.description || null,
@@ -2153,6 +2167,78 @@ export class LearningPathService {
       path_progress: progress,
       path_completed: progress.progress_percentage === 100,
     };
+  }
+
+  async getCrossGraphProgress(
+    supabase: SupabaseClient,
+    pathId: string,
+    userId: string,
+  ): Promise<Record<string, LearningPathProgressSummary>> {
+    const { data: nodes, error } = await supabase
+      .from("learning_path_nodes")
+      .select("id, status, estimated_time, graph_id")
+      .eq("path_id", pathId);
+
+    if (error || !nodes || nodes.length === 0) {
+      return {};
+    }
+
+    const { data: progressData } = await supabase
+      .from("learning_path_progress")
+      .select("node_id, time_spent")
+      .eq("user_id", userId)
+      .eq("path_id", pathId);
+
+    const nodeTimeSpent = new Map<string, number>();
+    (progressData || []).forEach((p) => {
+      nodeTimeSpent.set(p.node_id, p.time_spent || 0);
+    });
+
+    const graphNodes = new Map<string, {
+      total: number;
+      completed: number;
+      in_progress: number;
+      pending: number;
+      skipped: number;
+      totalTimeSpent: number;
+    }>();
+
+    for (const node of nodes) {
+      const graphId = node.graph_id ?? "unknown";
+      if (!graphNodes.has(graphId)) {
+        graphNodes.set(graphId, {
+          total: 0, completed: 0, in_progress: 0,
+          pending: 0, skipped: 0, totalTimeSpent: 0,
+        });
+      }
+      const stats = graphNodes.get(graphId)!;
+      stats.total++;
+      stats.totalTimeSpent += nodeTimeSpent.get(node.id) ?? 0;
+
+      switch (node.status) {
+        case "completed": stats.completed++; break;
+        case "in_progress": stats.in_progress++; break;
+        case "skipped": stats.skipped++; break;
+        default: stats.pending++;
+      }
+    }
+
+    const result: Record<string, LearningPathProgressSummary> = {};
+    graphNodes.forEach((stats, graphId) => {
+      result[graphId] = {
+        total_nodes: stats.total,
+        completed_nodes: stats.completed,
+        in_progress_nodes: stats.in_progress,
+        pending_nodes: stats.pending,
+        skipped_nodes: stats.skipped,
+        total_time_spent: stats.totalTimeSpent,
+        progress_percentage: stats.total > 0
+          ? Math.round((stats.completed / stats.total) * 100)
+          : 0,
+      };
+    });
+
+    return result;
   }
 }
 

@@ -2,7 +2,7 @@ import { Router, type Response } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
-import { focusService } from '../services/focusService';
+import { focusService } from '../services/scheduler/focusService';
 import { achievementService } from '../services/achievementService';
 import { logger } from '../utils/logger';
 
@@ -26,12 +26,11 @@ router.post('/sessions', requireAuth, validate(createSessionSchema), async (req:
     return res.status(500).json({ error: 'Database connection not available' });
   }
 
-  const session = await focusService.createSession(supabase, req.user.id, {
+  const session = await focusService.createFocusSession(supabase, req.user.id, {
+    started_at: start_time,
+    ended_at: end_time,
     duration,
-    mode,
-    start_time,
-    end_time,
-    completed,
+    is_break: mode !== 'focus',
   });
 
   if (completed) {
@@ -48,20 +47,19 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: 'Database connection not available' });
   }
 
-  const stats = await focusService.getStats(supabase, req.user.id);
+  const stats = await focusService.getUserFocusStats(supabase, req.user.id);
   res.json({ success: true, data: stats });
 });
 
 router.get('/sessions', requireAuth, async (req: AuthRequest, res: Response) => {
   const supabase = req.supabase;
   const limit = parseInt(req.query.limit as string) || 20;
-  const offset = parseInt(req.query.offset as string) || 0;
 
   if (!supabase) {
     return res.status(500).json({ error: 'Database connection not available' });
   }
 
-  const sessions = await focusService.getSessions(supabase, req.user.id, { limit, offset });
+  const sessions = await focusService.getFocusSessions(supabase, req.user.id, { limit });
   res.json({ success: true, data: sessions });
 });
 
@@ -72,7 +70,7 @@ router.get('/today', requireAuth, async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ error: 'Database connection not available' });
   }
 
-  const todayStats = await focusService.getTodayStats(supabase, req.user.id);
+  const todayStats = await focusService.getDailyFocusStats(supabase, req.user.id);
   res.json({ success: true, data: todayStats });
 });
 

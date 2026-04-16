@@ -9,6 +9,7 @@ import {
   reorderTasksSchema,
 } from "../../schemas/index";
 import { logger } from "../../utils/logger";
+import { taskStateMachine } from "../../services/scheduler/core/stateMachine";
 
 const router = Router();
 
@@ -390,35 +391,31 @@ router.post(
 
     const { id } = req.params;
 
-    const { data: task, error: taskError } = await supabase
+    const { data: currentTask } = await supabase
       .from("scheduled_tasks")
-      .update({ status: "in_progress" })
+      .select("status")
       .eq("id", id)
       .eq("user_id", req.user.id)
       .is("deleted_at", null)
-      .select()
       .single();
 
-    if (taskError || !task) {
+    if (!currentTask) {
       return res.status(404).json({ error: "任务不存在" });
     }
 
-    const { data: execution, error: execError } = await supabase
-      .from("task_executions")
-      .insert({
-        task_id: id,
-        user_id: req.user.id,
-        started_at: new Date().toISOString(),
-        queue_level: task.queue_level,
-      })
-      .select()
-      .single();
+    const result = await taskStateMachine.transition(
+      supabase,
+      id,
+      req.user.id,
+      currentTask.status,
+      "in_progress",
+    );
 
-    if (execError) {
-      logger.error("Create execution error:", execError);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
     }
 
-    res.json({ success: true, data: { task, execution } });
+    res.json({ success: true, data: { task: result.task, execution: result.execution } });
   },
 );
 
@@ -436,46 +433,31 @@ router.post(
 
     const { id } = req.params;
 
-    const { data: execution } = await supabase
-      .from("task_executions")
-      .select("*")
-      .eq("task_id", id)
-      .eq("user_id", req.user.id)
-      .is("ended_at", null)
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let duration = 0;
-    if (execution) {
-      const startedAt = new Date(execution.started_at);
-      const endedAt = new Date();
-      duration = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
-
-      await supabase
-        .from("task_executions")
-        .update({
-          ended_at: endedAt.toISOString(),
-          duration,
-          status: "interrupted",
-        })
-        .eq("id", execution.id);
-    }
-
-    const { data: task, error: taskError } = await supabase
+    const { data: currentTask } = await supabase
       .from("scheduled_tasks")
-      .update({ status: "paused" })
+      .select("status")
       .eq("id", id)
       .eq("user_id", req.user.id)
       .is("deleted_at", null)
-      .select()
       .single();
 
-    if (taskError || !task) {
+    if (!currentTask) {
       return res.status(404).json({ error: "任务不存在" });
     }
 
-    res.json({ success: true, data: { task, duration } });
+    const result = await taskStateMachine.transition(
+      supabase,
+      id,
+      req.user.id,
+      currentTask.status,
+      "paused",
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ success: true, data: { task: result.task, duration: result.execution?.duration ?? 0 } });
   },
 );
 
@@ -494,78 +476,32 @@ router.post(
     const { id } = req.params;
     const { actual_duration } = req.body;
 
-    const { data: execution } = await supabase
-      .from("task_executions")
-      .select("*")
-      .eq("task_id", id)
-      .eq("user_id", req.user.id)
-      .is("ended_at", null)
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (execution) {
-      const startedAt = new Date(execution.started_at);
-      const endedAt = new Date();
-      const duration = Math.floor(
-        (endedAt.getTime() - startedAt.getTime()) / 1000,
-      );
-
-      await supabase
-        .from("task_executions")
-        .update({
-          ended_at: endedAt.toISOString(),
-          duration,
-          status: "completed",
-        })
-        .eq("id", execution.id);
-    } else {
-      const { data: lastExecution } = await supabase
-        .from("task_executions")
-        .select("*")
-        .eq("task_id", id)
-        .eq("user_id", req.user.id)
-        .order("started_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (lastExecution) {
-        await supabase
-          .from("task_executions")
-          .update({
-            status: "completed",
-          })
-          .eq("id", lastExecution.id);
-      } else {
-        await supabase.from("task_executions").insert({
-          task_id: id,
-          user_id: req.user.id,
-          started_at: new Date().toISOString(),
-          ended_at: new Date().toISOString(),
-          duration: 0,
-          status: "completed",
-        });
-      }
-    }
-
-    const { data: task, error: taskError } = await supabase
+    const { data: currentTask } = await supabase
       .from("scheduled_tasks")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        actual_duration: actual_duration ?? undefined,
-      })
+      .select("status")
       .eq("id", id)
       .eq("user_id", req.user.id)
       .is("deleted_at", null)
-      .select()
       .single();
 
-    if (taskError || !task) {
+    if (!currentTask) {
       return res.status(404).json({ error: "任务不存在" });
     }
 
-    res.json({ success: true, data: task });
+    const result = await taskStateMachine.transition(
+      supabase,
+      id,
+      req.user.id,
+      currentTask.status,
+      "completed",
+      { actual_duration: actual_duration ?? undefined },
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ success: true, data: result.task });
   },
 );
 

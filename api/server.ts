@@ -7,6 +7,9 @@ import { taskWorker } from './jobs/worker';
 import { logger } from './utils/logger';
 import { checkEnvOnStartup } from './utils/envValidator';
 import { performanceMonitor } from './services/ai/performanceMonitor';
+import { schedulerCronService } from './services/scheduler/core/cronService';
+import { schedulerSubscribers } from './services/scheduler/core/subscribers';
+import { supabaseAdmin } from './supabase';
 
 /**
  * Validate Environment
@@ -34,6 +37,10 @@ const server = app.listen(PORT, () => {
   } else {
     logger.info('[Worker] BullMQ Worker not started (Redis not available)');
   }
+
+  schedulerSubscribers.initialize(supabaseAdmin);
+  schedulerCronService.start();
+  logger.info('[Scheduler] Cron service and event subscribers initialized');
 });
 
 // Handle unhandled promise rejections
@@ -58,6 +65,8 @@ process.on('uncaughtException', (err: Error) => {
 const gracefulShutdown = async (signal: string) => {
   logger.info(`${signal} signal received: closing HTTP server`);
   
+  schedulerCronService.stop();
+
   // Close the worker if it exists
   if (taskWorker) {
     await taskWorker.close();

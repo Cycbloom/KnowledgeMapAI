@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Check, Clock, Zap, Target, ListTodo } from "lucide-react";
 import { ScheduledTask } from "@shared/types";
-import { useFocusStore } from "../../store/useFocusStore";
+import { useUnifiedTimer } from "../../hooks/scheduler";
 
 interface ActiveTaskPanelProps {
   task: ScheduledTask;
@@ -45,26 +45,21 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
   task,
   onPause,
   onComplete,
-  timeSlice,
+  timeSlice: _timeSlice,
 }) => {
   const config =
     QUEUE_CONFIG[task.queue_level as keyof typeof QUEUE_CONFIG] ||
     QUEUE_CONFIG[2];
   const IconComponent = config.icon;
 
-  const { timeLeft, isActive, startTimer, pauseTimer, setTaskId, setDuration } =
-    useFocusStore();
-
-  useEffect(() => {
-    if (task.status === "in_progress") {
-      setTaskId(task.id);
-      setDuration(timeSlice);
-      startTimer();
-    }
-    return () => {
-      setTaskId(null);
-    };
-  }, [task.id, task.status, timeSlice, setTaskId, setDuration, startTimer]);
+  const {
+    timeLeft,
+    isActive,
+    progress,
+    pause,
+    resume,
+    complete,
+  } = useUnifiedTimer();
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -72,8 +67,19 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progress =
-    timeSlice > 0 ? ((timeSlice * 60 - timeLeft) / (timeSlice * 60)) * 100 : 0;
+  const handlePauseResume = () => {
+    if (isActive) {
+      pause();
+    } else {
+      resume();
+    }
+    onPause();
+  };
+
+  const handleComplete = async () => {
+    await complete();
+    onComplete();
+  };
 
   return (
     <AnimatePresence>
@@ -138,14 +144,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  if (isActive) {
-                    pauseTimer();
-                  } else {
-                    startTimer();
-                  }
-                  onPause();
-                }}
+                onClick={handlePauseResume}
                 className={`
                   p-3 rounded-xl transition-all
                   ${
@@ -162,10 +161,7 @@ export const ActiveTaskPanel: React.FC<ActiveTaskPanelProps> = ({
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  pauseTimer();
-                  onComplete();
-                }}
+                onClick={handleComplete}
                 className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all"
                 title="完成"
               >

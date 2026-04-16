@@ -42,6 +42,7 @@ import { api } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
 import { useTheme, useSpeechRecognition, useNetworkStatus } from "../hooks";
 import { useGraph, useGraphData, useGraphNodeStatus } from "../hooks/queries";
+import { useUnifiedTimer } from "../hooks/scheduler";
 import { preprocessMarkdown } from "../utils/markdownUtils";
 import {
   isAppError,
@@ -112,26 +113,19 @@ export const LearningMode = () => {
   const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
   const { fontSize, readingMode } = useLearningSettingsStore();
   const queryClient = useQueryClient();
-  const [sessionStartTime] = useState(Date.now);
+
+  const {
+    start: startFocusTimer,
+    complete: completeFocusTimer,
+    taskId: focusTaskId,
+    isActive: isFocusTimerActive,
+  } = useUnifiedTimer();
 
   useEffect(() => {
-    if (!nodeId) return;
-
-    const interval = setInterval(() => {
-      const currentDuration = Math.round((Date.now() - sessionStartTime) / 60000);
-
-      if (currentDuration > 0 && currentDuration % 5 === 0) {
-        schedulerApi.syncStudyDuration({
-          taskId: nodeId,
-          duration: currentDuration,
-        }).catch((error: Error) => {
-          console.error("Failed to sync study duration:", error);
-        });
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [nodeId, sessionStartTime]);
+    if (nodeId && !focusTaskId && !isFocusTimerActive) {
+      startFocusTimer(nodeId, 25);
+    }
+  }, [nodeId, focusTaskId, isFocusTimerActive, startFocusTimer]);
 
   const [generateProgress, setGenerateProgress] = useState<{
     current: number;
@@ -192,7 +186,9 @@ export const LearningMode = () => {
 
   useEffect(() => {
     if (speechError) {
-      const isNetworkError = speechError.includes(t("learning.speech.networkError"));
+      const isNetworkError = speechError.includes(
+        t("learning.speech.networkError"),
+      );
       addMessage({
         type: "error",
         content: speechError,
@@ -201,9 +197,7 @@ export const LearningMode = () => {
           ? {
               label: t("learning.speech.viewSolution"),
               onClick: () => {
-                alert(
-                  t("learning.speech.solutionDetail"),
-                );
+                alert(t("learning.speech.solutionDetail"));
               },
             }
           : undefined,
@@ -272,7 +266,10 @@ export const LearningMode = () => {
       }
     } catch (cardError) {
       console.error("Failed to generate cards:", cardError);
-      addMessage({ type: "error", content: t("learning.cards.generateFailed") });
+      addMessage({
+        type: "error",
+        content: t("learning.cards.generateFailed"),
+      });
     } finally {
       setIsGeneratingCards(false);
     }
@@ -362,11 +359,17 @@ export const LearningMode = () => {
             },
           ]);
         } else {
-          addMessage({ type: "error", content: t("learning.material.aiFailed") });
+          addMessage({
+            type: "error",
+            content: t("learning.material.aiFailed"),
+          });
         }
       } catch (error) {
         console.error("Failed to load learning material:", error);
-        addMessage({ type: "error", content: t("learning.material.generateFailed") });
+        addMessage({
+          type: "error",
+          content: t("learning.material.generateFailed"),
+        });
       } finally {
         setIsGenerating(false);
       }
@@ -488,7 +491,10 @@ export const LearningMode = () => {
         });
       }
 
-      addMessage({ type: "success", content: t("learning.node.createSuccess") });
+      addMessage({
+        type: "success",
+        content: t("learning.node.createSuccess"),
+      });
 
       setNewNodeTitle("");
       setNewNodeContent("");
@@ -512,19 +518,18 @@ export const LearningMode = () => {
 
   const handleStartChallenge = async () => {
     if (!nodeId || !graphId) {
-      addMessage({ type: "warning", content: t("learning.challenge.missingParams") });
+      addMessage({
+        type: "warning",
+        content: t("learning.challenge.missingParams"),
+      });
       return;
     }
-
-    const finalStudyDuration = Math.round(
-      (Date.now() - sessionStartTime) / 60000
-    );
 
     try {
       let taskId: string;
 
       const existingTask = await schedulerApi.getTask(nodeId).catch(() => null);
-      
+
       if (existingTask?.id) {
         taskId = existingTask.id;
       } else {
@@ -533,17 +538,12 @@ export const LearningMode = () => {
           knowledge_point_id: nodeId,
           task_type: "learning",
           queue_level: 1,
-          estimated_duration: finalStudyDuration > 0 ? finalStudyDuration : 30,
+          estimated_duration: 30,
         });
         taskId = newTask.id;
       }
 
-      if (finalStudyDuration > 0) {
-        await schedulerApi.syncStudyDuration({
-          taskId: taskId,
-          duration: finalStudyDuration,
-        });
-      }
+      await completeFocusTimer();
 
       await schedulerApi.createFirstReviewTask({
         knowledge_point_id: nodeId,
@@ -558,17 +558,25 @@ export const LearningMode = () => {
       console.error("Failed to create review task:", error);
     }
 
-    navigate(`/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`);
+    navigate(
+      `/study?node_id=${nodeId}&graph_id=${graphId}&mode=quiz&from=learning`,
+    );
   };
 
   const handleRegenerateMaterial = async () => {
     if (!nodeId || !graphId) {
-      addMessage({ type: "warning", content: t("learning.challenge.missingParams") });
+      addMessage({
+        type: "warning",
+        content: t("learning.challenge.missingParams"),
+      });
       return;
     }
 
     if (!isOnline) {
-      addMessage({ type: "error", content: t("learning.material.regenerateOffline") });
+      addMessage({
+        type: "error",
+        content: t("learning.material.regenerateOffline"),
+      });
       return;
     }
 
@@ -596,7 +604,10 @@ export const LearningMode = () => {
 
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
 
-        addMessage({ type: "success", content: t("learning.material.regenerated") });
+        addMessage({
+          type: "success",
+          content: t("learning.material.regenerated"),
+        });
 
         setMessages((prev) => [
           ...prev,
@@ -609,7 +620,10 @@ export const LearningMode = () => {
       }
     } catch (error) {
       console.error("Failed to regenerate learning material:", error);
-      addMessage({ type: "error", content: t("learning.material.regenerateFailed") });
+      addMessage({
+        type: "error",
+        content: t("learning.material.regenerateFailed"),
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -656,7 +670,8 @@ export const LearningMode = () => {
 
         const { data: graphNodes, error: gnError } = await client
           .from("graph_nodes")
-          .select(`
+          .select(
+            `
             knowledge_point_id,
             graph_id,
             knowledge_points (
@@ -664,18 +679,25 @@ export const LearningMode = () => {
               title,
               content
             )
-          `)
+          `,
+          )
           .eq("knowledge_point_id", nodeId)
           .is("deleted_at", null);
 
         if (gnError) {
           console.error("查询 graph_nodes 失败:", gnError);
-          addMessage({ type: "error", content: t("learning.cards.queryFailed") });
+          addMessage({
+            type: "error",
+            content: t("learning.cards.queryFailed"),
+          });
           return;
         }
 
         if (!graphNodes || graphNodes.length === 0) {
-          addMessage({ type: "error", content: t("learning.cards.nodeNotFound") });
+          addMessage({
+            type: "error",
+            content: t("learning.cards.nodeNotFound"),
+          });
           return;
         }
 
@@ -697,7 +719,11 @@ export const LearningMode = () => {
         };
 
         const totalCards = config.count;
-        setGenerateProgress({ current: 0, total: totalCards, isGenerating: true });
+        setGenerateProgress({
+          current: 0,
+          total: totalCards,
+          isGenerating: true,
+        });
 
         let generatedCount = 0;
         let savedCount = 0;
@@ -724,10 +750,10 @@ export const LearningMode = () => {
 
           addMessage({
             type: "info",
-            content: t("learning.cards.generating", { 
-              start: generatedCount + 1, 
-              end: generatedCount + currentBatchSize, 
-              total: totalCards 
+            content: t("learning.cards.generating", {
+              start: generatedCount + 1,
+              end: generatedCount + currentBatchSize,
+              total: totalCards,
             }),
             duration: 3000,
           });
@@ -776,9 +802,14 @@ export const LearningMode = () => {
         }
       } catch (error) {
         console.error("[LearningMode] 移动端题目生成异常:", error);
-        
+
         const isAICardGenError = (err: unknown): err is AICardGenError => {
-          return typeof err === "object" && err !== null && "type" in err && "suggestion" in err;
+          return (
+            typeof err === "object" &&
+            err !== null &&
+            "type" in err &&
+            "suggestion" in err
+          );
         };
 
         if (isAICardGenError(error)) {
@@ -913,9 +944,13 @@ export const LearningMode = () => {
           },
         });
       } else {
-        const errorMsg = result.message || result.error || t("learning.cards.unknownError");
+        const errorMsg =
+          result.message || result.error || t("learning.cards.unknownError");
         console.error("[LearningMode] 任务提交失败:", errorMsg);
-        addMessage({ type: "error", content: t("learning.cards.submitFailed", { error: errorMsg }) });
+        addMessage({
+          type: "error",
+          content: t("learning.cards.submitFailed", { error: errorMsg }),
+        });
       }
     } catch (error) {
       console.error("[LearningMode] 题目生成异常:", {
@@ -933,9 +968,13 @@ export const LearningMode = () => {
       } else if (isValidationError(error)) {
         errorMessage = t("learning.cards.validationError");
       } else if (isAppError(error)) {
-        errorMessage = t("learning.cards.submitFailed", { error: error.message });
+        errorMessage = t("learning.cards.submitFailed", {
+          error: error.message,
+        });
       } else if (error instanceof Error) {
-        errorMessage = t("learning.cards.submitFailed", { error: error.message });
+        errorMessage = t("learning.cards.submitFailed", {
+          error: error.message,
+        });
       }
 
       addMessage({ type: "error", content: errorMessage });
@@ -975,11 +1014,17 @@ export const LearningMode = () => {
         });
       } catch (error) {
         console.error("Batch delete failed:", error);
-        addMessage({ type: "error", content: t("learning.batch.deleteFailed") });
+        addMessage({
+          type: "error",
+          content: t("learning.batch.deleteFailed"),
+        });
       }
     } else if (action === "expand_graph") {
       if (!isOnline) {
-        addMessage({ type: "error", content: t("learning.batch.expandOffline") });
+        addMessage({
+          type: "error",
+          content: t("learning.batch.expandOffline"),
+        });
         return;
       }
       try {
@@ -987,7 +1032,9 @@ export const LearningMode = () => {
         if (result.success) {
           addMessage({
             type: "success",
-            content: t("learning.batch.expandSuccess", { count: nodeIds.length }),
+            content: t("learning.batch.expandSuccess", {
+              count: nodeIds.length,
+            }),
             duration: 5000,
             action: {
               label: t("learning.cards.viewTasks"),
@@ -996,7 +1043,10 @@ export const LearningMode = () => {
           });
           setSelectedNodeIds(new Set());
         } else {
-          addMessage({ type: "error", content: t("learning.batch.submitFailed") });
+          addMessage({
+            type: "error",
+            content: t("learning.batch.submitFailed"),
+          });
         }
       } catch (error) {
         console.error("Batch expand failed:", error);
@@ -1015,7 +1065,9 @@ export const LearningMode = () => {
         if (result.success) {
           addMessage({
             type: "success",
-            content: t("learning.batch.generateSuccess", { count: nodeIds.length }),
+            content: t("learning.batch.generateSuccess", {
+              count: nodeIds.length,
+            }),
             duration: 5000,
             action: {
               label: t("learning.cards.viewTasks"),
@@ -1024,9 +1076,13 @@ export const LearningMode = () => {
           });
           setSelectedNodeIds(new Set());
         } else {
-          const errorMsg = result.message || result.error || t("learning.cards.unknownError");
+          const errorMsg =
+            result.message || result.error || t("learning.cards.unknownError");
           console.error("[LearningMode] 批量生成失败:", errorMsg);
-          addMessage({ type: "error", content: t("learning.cards.submitFailed", { error: errorMsg }) });
+          addMessage({
+            type: "error",
+            content: t("learning.cards.submitFailed", { error: errorMsg }),
+          });
         }
       } catch (error) {
         console.error("[LearningMode] 批量生成异常:", {
@@ -1106,7 +1162,11 @@ export const LearningMode = () => {
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
             }`}
-            title={isOutlineOpen ? t("learning.header.collapseOutline") : t("learning.header.expandOutline")}
+            title={
+              isOutlineOpen
+                ? t("learning.header.collapseOutline")
+                : t("learning.header.expandOutline")
+            }
           >
             {isOutlineOpen ? (
               <PanelLeftClose size={20} />
@@ -1129,7 +1189,10 @@ export const LearningMode = () => {
                 <p
                   className={`text-[10px] lg:text-xs ${isDark ? "text-slate-500" : "text-gray-500"} truncate max-w-[150px]`}
                 >
-                  {nodeTitle || (graphData ? t("learning.header.selectChapter") : t("learning.header.loading"))}
+                  {nodeTitle ||
+                    (graphData
+                      ? t("learning.header.selectChapter")
+                      : t("learning.header.loading"))}
                 </p>
               )}
             </div>
@@ -1142,7 +1205,11 @@ export const LearningMode = () => {
                 ? "hover:bg-slate-800 text-slate-400"
                 : "hover:bg-gray-100 text-gray-600"
             }`}
-            title={isChatOpen ? t("learning.header.hideAI") : t("learning.header.showAI")}
+            title={
+              isChatOpen
+                ? t("learning.header.hideAI")
+                : t("learning.header.showAI")
+            }
           >
             <MessageSquare
               size={isMobile ? 18 : 20}
@@ -1157,13 +1224,19 @@ export const LearningMode = () => {
           <button
             onClick={toggleTheme}
             className={`flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
-              isMobile ? "min-w-[36px] min-h-[36px]" : "min-w-[44px] min-h-[44px]"
+              isMobile
+                ? "min-w-[36px] min-h-[36px]"
+                : "min-w-[44px] min-h-[44px]"
             } ${
               isDark
                 ? "hover:bg-slate-800 text-amber-400"
                 : "hover:bg-gray-100 text-indigo-600"
             }`}
-            title={isDark ? t("learning.header.lightMode") : t("learning.header.darkMode")}
+            title={
+              isDark
+                ? t("learning.header.lightMode")
+                : t("learning.header.darkMode")
+            }
           >
             {isDark ? (
               <Sun size={isMobile ? 18 : 20} />
@@ -1175,7 +1248,9 @@ export const LearningMode = () => {
             <button
               onClick={() => setIsSettingsOpen(true)}
               className={`flex items-center justify-center p-1.5 lg:p-2 rounded-lg transition-colors ${
-                isMobile ? "min-w-[36px] min-h-[36px]" : "min-w-[44px] min-h-[44px]"
+                isMobile
+                  ? "min-w-[36px] min-h-[36px]"
+                  : "min-w-[44px] min-h-[44px]"
               } ${
                 isDark
                   ? "hover:bg-slate-800 text-slate-400"
@@ -1211,7 +1286,9 @@ export const LearningMode = () => {
                 }
               >
                 <Brain size={18} />
-                <span className="hidden sm:inline">{t("learning.focus.title")}</span>
+                <span className="hidden sm:inline">
+                  {t("learning.focus.title")}
+                </span>
               </button>
               <button
                 onClick={() => {
@@ -1228,7 +1305,9 @@ export const LearningMode = () => {
                 title={t("learning.path.title")}
               >
                 <Route size={18} />
-                <span className="hidden sm:inline">{t("learning.path.title")}</span>
+                <span className="hidden sm:inline">
+                  {t("learning.path.title")}
+                </span>
               </button>
               <button
                 onClick={() => navigate(`/graph/${graphId}`)}
@@ -1240,7 +1319,9 @@ export const LearningMode = () => {
                 title={t("learning.header.mindMap")}
               >
                 <Network size={18} />
-                <span className="hidden sm:inline">{t("learning.header.mindMap")}</span>
+                <span className="hidden sm:inline">
+                  {t("learning.header.mindMap")}
+                </span>
               </button>
             </>
           )}
@@ -1257,10 +1338,16 @@ export const LearningMode = () => {
                       ? "bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50 border border-indigo-500/30"
                       : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
                 }`}
-                title={isOnline ? t("learning.cards.configure") : t("learning.cards.offlineUnavailable")}
+                title={
+                  isOnline
+                    ? t("learning.cards.configure")
+                    : t("learning.cards.offlineUnavailable")
+                }
               >
                 <BrainCircuit size={isMobile ? 16 : 18} />
-                <span className="hidden md:inline">{t("learning.cards.generate")}</span>
+                <span className="hidden md:inline">
+                  {t("learning.cards.generate")}
+                </span>
               </button>
               {!isOnline && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
@@ -1275,7 +1362,11 @@ export const LearningMode = () => {
               {generateProgress?.isGenerating && (
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
-                    <Sparkles size={10} /> {t("learning.cards.generatingProgress", { current: generateProgress.current, total: generateProgress.total })}
+                    <Sparkles size={10} />{" "}
+                    {t("learning.cards.generatingProgress", {
+                      current: generateProgress.current,
+                      total: generateProgress.total,
+                    })}
                   </span>
                   <button
                     onClick={handleCancelGenerate}
@@ -1285,11 +1376,14 @@ export const LearningMode = () => {
                   </button>
                 </div>
               )}
-              {isGeneratingCards && !generateProgress?.isGenerating && !isMobile && (
-                <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
-                  <Sparkles size={10} /> {t("learning.cards.generatingChallenge")}
-                </span>
-              )}
+              {isGeneratingCards &&
+                !generateProgress?.isGenerating &&
+                !isMobile && (
+                  <span className="text-[10px] text-indigo-500 animate-pulse flex items-center gap-1">
+                    <Sparkles size={10} />{" "}
+                    {t("learning.cards.generatingChallenge")}
+                  </span>
+                )}
               <button
                 onClick={handleStartChallenge}
                 disabled={isGeneratingCards}
@@ -1299,7 +1393,9 @@ export const LearningMode = () => {
                 title={t("learning.challenge.start")}
               >
                 <GraduationCap size={isMobile ? 18 : 18} />
-                <span className="hidden sm:inline">{t("learning.challenge.complete")}</span>
+                <span className="hidden sm:inline">
+                  {t("learning.challenge.complete")}
+                </span>
               </button>
             </div>
           )}
@@ -1384,7 +1480,9 @@ export const LearningMode = () => {
                       <p
                         className={isDark ? "text-slate-400" : "text-gray-500"}
                       >
-                        {t("learning.material.generatingTopic", { title: nodeTitle })}
+                        {t("learning.material.generatingTopic", {
+                          title: nodeTitle,
+                        })}
                       </p>
                     </div>
                   </div>
@@ -1393,7 +1491,9 @@ export const LearningMode = () => {
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => navigate(`/learning?graph_id=${graphId}`)}
+                          onClick={() =>
+                            navigate(`/learning?graph_id=${graphId}`)
+                          }
                           className={`flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors ${
                             isDark
                               ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
@@ -1402,7 +1502,9 @@ export const LearningMode = () => {
                           title={t("learning.overview.back")}
                         >
                           <ArrowLeft size={16} />
-                          <span className="hidden sm:inline">{t("learning.overview.title")}</span>
+                          <span className="hidden sm:inline">
+                            {t("learning.overview.title")}
+                          </span>
                         </button>
                         <div>
                           <h2
@@ -1440,14 +1542,18 @@ export const LearningMode = () => {
                                 : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200"
                           }`}
                           title={
-                            isOnline ? t("learning.material.regenerate") : t("learning.cards.offlineUnavailable")
+                            isOnline
+                              ? t("learning.material.regenerate")
+                              : t("learning.cards.offlineUnavailable")
                           }
                         >
                           <RefreshCw
                             size={16}
                             className={isGenerating ? "animate-spin" : ""}
                           />
-                          <span className="hidden sm:inline">{t("learning.material.regenerate")}</span>
+                          <span className="hidden sm:inline">
+                            {t("learning.material.regenerate")}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -1563,11 +1669,15 @@ export const LearningMode = () => {
                     </div>
                     <div>
                       <h3 className="font-bold text-sm">
-                        {rightPanelMode === "chat" ? t("learning.chat.aiTutor") : t("learning.path.title")}
+                        {rightPanelMode === "chat"
+                          ? t("learning.chat.aiTutor")
+                          : t("learning.path.title")}
                       </h3>
                       <div className="flex items-center text-[10px] text-green-500">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span>
-                        {rightPanelMode === "chat" ? t("learning.chat.online") : t("learning.path.aiDriven")}
+                        {rightPanelMode === "chat"
+                          ? t("learning.chat.online")
+                          : t("learning.path.aiDriven")}
                       </div>
                     </div>
                   </div>
@@ -1614,7 +1724,9 @@ export const LearningMode = () => {
                       }}
                       className={`p-1.5 rounded-md transition-colors ${isDark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-gray-100 text-gray-500"}`}
                       title={
-                        rightPanelMode === "chat" ? t("learning.chat.clear") : t("learning.path.refresh")
+                        rightPanelMode === "chat"
+                          ? t("learning.chat.clear")
+                          : t("learning.path.refresh")
                       }
                     >
                       <RefreshCw size={14} />
@@ -1787,7 +1899,11 @@ export const LearningMode = () => {
                                 ? "text-slate-400 hover:bg-slate-700 hover:text-indigo-400"
                                 : "text-gray-400 hover:bg-gray-100 hover:text-indigo-600"
                           }`}
-                          title={isListening ? t("learning.speech.stop") : t("learning.speech.start")}
+                          title={
+                            isListening
+                              ? t("learning.speech.stop")
+                              : t("learning.speech.start")
+                          }
                         >
                           {isListening ? (
                             <Mic size={18} />
@@ -1859,7 +1975,8 @@ export const LearningMode = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}
                   >
-                    {t("learning.node.titleLabel")} <span className="text-red-500">*</span>
+                    {t("learning.node.titleLabel")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -1913,7 +2030,9 @@ export const LearningMode = () => {
                     <option value="root">{t("learning.node.levelRoot")}</option>
                     <option value="core">{t("learning.node.levelCore")}</option>
                     <option value="sub">{t("learning.node.levelSub")}</option>
-                    <option value="normal">{t("learning.node.levelNormal")}</option>
+                    <option value="normal">
+                      {t("learning.node.levelNormal")}
+                    </option>
                     <option value="leaf">{t("learning.node.levelLeaf")}</option>
                   </select>
                 </div>

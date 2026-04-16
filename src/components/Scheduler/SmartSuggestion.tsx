@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Lightbulb,
@@ -14,8 +14,10 @@ import {
   taskRecommendationApi,
   SmartSuggestions,
   PrioritySuggestion,
+  DecisionTaskRecommendation,
 } from "../../services/api/taskRecommendation";
-import { TaskRecommendation } from "./TaskRecommendation";
+import { TaskRecommendation as TaskRecommendationComponent } from "./TaskRecommendation";
+import type { TaskRecommendation as TaskRecommendationType } from "../../services/api/taskRecommendation";
 import { ScheduledTask } from "@shared/types";
 
 interface SmartSuggestionProps {
@@ -34,6 +36,9 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
   taskDescription,
 }) => {
   const [suggestions, setSuggestions] = useState<SmartSuggestions | null>(null);
+  const [decisionRecommendations, setDecisionRecommendations] = useState<
+    DecisionTaskRecommendation[]
+  >([]);
   const [prioritySuggestion, setPrioritySuggestion] =
     useState<PrioritySuggestion | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,13 +57,59 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
     }
   }, [taskTitle, taskDescription]);
 
+  const convertToTaskRecommendations = useCallback(
+    (
+      decisions: DecisionTaskRecommendation[],
+    ): TaskRecommendationType[] => {
+      return decisions.map((d) => {
+        const urgencyLevel: TaskRecommendationType["urgencyLevel"] =
+          d.totalScore >= 80
+            ? "critical"
+            : d.totalScore >= 60
+              ? "high"
+              : d.totalScore >= 40
+                ? "medium"
+                : "low";
+
+        const task: ScheduledTask = {
+          id: d.taskId,
+          title: d.title,
+          queue_level: d.queueLevel,
+          priority: d.priority,
+          position: 0,
+          status: "pending",
+          tags: [],
+          user_id: "",
+          created_at: "",
+          updated_at: "",
+        };
+
+        return {
+          task,
+          score: d.totalScore,
+          reasons: [d.reason],
+          urgencyLevel,
+        };
+      });
+    },
+    [],
+  );
+
   const loadSuggestions = async () => {
     setIsLoading(true);
     try {
-      const result = await taskRecommendationApi.getSmartSuggestions();
-      setSuggestions(result.data);
+      const [smartResult, decisionResult] = await Promise.all([
+        taskRecommendationApi.getSmartSuggestions().catch(() => ({
+          data: { topTasks: [], timeBasedSuggestions: [], efficiencyTips: [] },
+        })),
+        taskRecommendationApi.getDecisionRecommendations().catch(() => ({
+          data: [],
+        })),
+      ]);
+      setSuggestions(smartResult.data);
+      setDecisionRecommendations(decisionResult.data);
     } catch (error) {
-      console.error("Failed to load suggestions:", error);
+      console.warn("Failed to load suggestions:", error);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +124,7 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
       setPrioritySuggestion(result.data);
       onPrioritySuggestion?.(result.data);
     } catch (error) {
-      console.error("Failed to analyze priority:", error);
+      console.warn("Failed to analyze priority:", error);
     }
   };
 
@@ -227,8 +278,12 @@ export const SmartSuggestion: React.FC<SmartSuggestionProps> = ({
                       </div>
                     )}
 
-                  <TaskRecommendation
-                    recommendations={suggestions?.topTasks || []}
+                  <TaskRecommendationComponent
+                    recommendations={
+                      decisionRecommendations.length > 0
+                        ? convertToTaskRecommendations(decisionRecommendations)
+                        : suggestions?.topTasks ?? []
+                    }
                     onSelectTask={onSelectTask}
                     onStartTask={onStartTask}
                     isLoading={isLoading}

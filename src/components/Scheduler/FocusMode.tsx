@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWhiteNoise } from '../../hooks/useWhiteNoise';
+import { useUnifiedTimer } from '../../hooks/scheduler';
 import { AudioVisualizer } from '../common/AudioVisualizer';
 import { NOISE_OPTIONS, WhiteNoiseType as AudioWhiteNoiseType } from '../../utils/audioSynthesis';
 import { NoisePreset, WhiteNoiseType } from '../../store/useFocusStore';
@@ -16,6 +17,7 @@ import {
 interface FocusModeProps {
   isOpen: boolean;
   onClose: () => void;
+  taskId?: string;
   taskTitle?: string;
   onFocusComplete?: () => void;
   children?: React.ReactNode;
@@ -54,6 +56,7 @@ const getNoiseOption = (type: WhiteNoiseType) => {
 export const FocusMode: React.FC<FocusModeProps> = ({
   isOpen,
   onClose,
+  taskId,
   taskTitle,
   onFocusComplete: _onFocusComplete,
   children,
@@ -61,6 +64,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showNoiseSelector, setShowNoiseSelector] = useState(false);
+
+  const {
+    timeLeft,
+    isActive,
+    progress,
+    start,
+  } = useUnifiedTimer();
 
   const {
     isPlaying,
@@ -79,10 +89,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   useEffect(() => {
     if (isOpen) {
       startMixer();
+      if (taskId && !isActive) {
+        start(taskId, 25);
+      }
     } else {
       stopMixer();
     }
-  }, [isOpen, startMixer, stopMixer]);
+  }, [isOpen, startMixer, stopMixer, taskId, isActive, start]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -168,6 +181,20 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                   </div>
                   {taskTitle && (
                     <span className="text-slate-400 text-sm">| {taskTitle}</span>
+                  )}
+                  {isActive && taskId && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-700/50 border border-slate-600/30">
+                      <span className="text-xs text-slate-300 font-mono">
+                        {Math.floor(timeLeft / 60).toString().padStart(2, "0")}:{(timeLeft % 60).toString().padStart(2, "0")}
+                      </span>
+                      <div className="w-16 h-1.5 bg-slate-600 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-cyan-400 rounded-full transition-all duration-1000"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400">{Math.round(progress)}%</span>
+                    </div>
                   )}
                 </div>
                 

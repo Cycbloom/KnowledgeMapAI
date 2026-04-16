@@ -980,6 +980,8 @@ CREATE TABLE IF NOT EXISTS learning_paths (
   goal TEXT,
   target_date DATE,
   source_graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
+  domain_id UUID,
+  path_type VARCHAR(20) DEFAULT 'single_graph' CHECK (path_type IN ('single_graph', 'cross_graph')),
   total_estimated_time INTEGER DEFAULT 0,
   ai_generated BOOLEAN DEFAULT FALSE,
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'paused', 'archived')),
@@ -1001,6 +1003,7 @@ CREATE TABLE IF NOT EXISTS learning_path_nodes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   path_id UUID NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
   knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
+  graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
   order_index INTEGER NOT NULL DEFAULT 0,
   title TEXT NOT NULL,
   description TEXT,
@@ -1061,6 +1064,30 @@ COMMENT ON TABLE learning_plans IS 'Daily learning plans for learning paths';
 COMMENT ON COLUMN learning_plans.planned_nodes IS 'Array of learning_path_node IDs planned for this day';
 COMMENT ON COLUMN learning_plans.planned_duration IS 'Planned duration in minutes';
 COMMENT ON COLUMN learning_plans.actual_duration IS 'Actual duration spent in minutes';
+
+CREATE TABLE IF NOT EXISTS learning_loops (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  knowledge_point_id UUID REFERENCES knowledge_points(id) ON DELETE SET NULL,
+  graph_id UUID REFERENCES knowledge_graphs(id) ON DELETE SET NULL,
+  current_stage VARCHAR(20) DEFAULT 'learn' CHECK (current_stage IN ('learn', 'test', 'review', 'iterate')),
+  mastery_level DOUBLE PRECISION DEFAULT 0,
+  loop_count INTEGER DEFAULT 0,
+  last_stage_change_at TIMESTAMPTZ DEFAULT NOW(),
+  config JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE learning_loops IS 'Learning loop orchestrator tracking learn-test-review-iterate cycles';
+COMMENT ON COLUMN learning_loops.current_stage IS 'Current stage in the learning loop';
+COMMENT ON COLUMN learning_loops.mastery_level IS 'Current mastery level (0-1)';
+COMMENT ON COLUMN learning_loops.loop_count IS 'Number of completed loop iterations';
+COMMENT ON COLUMN learning_loops.config IS 'Loop configuration (masteryThreshold, testDelayMinutes, maxLoops)';
+
+CREATE INDEX IF NOT EXISTS idx_learning_loops_user ON learning_loops(user_id);
+CREATE INDEX IF NOT EXISTS idx_learning_loops_user_stage ON learning_loops(user_id, current_stage);
+CREATE INDEX IF NOT EXISTS idx_learning_loops_knowledge_point ON learning_loops(knowledge_point_id);
 
 ALTER TABLE task_subtasks 
 ADD COLUMN IF NOT EXISTS learning_path_node_id UUID REFERENCES learning_path_nodes(id) ON DELETE SET NULL;
@@ -1847,6 +1874,13 @@ CREATE POLICY "Users can view own plans" ON learning_plans FOR SELECT USING (aut
 CREATE POLICY "Users can insert own plans" ON learning_plans FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own plans" ON learning_plans FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own plans" ON learning_plans FOR DELETE USING (auth.uid() = user_id);
+
+-- Learning loops RLS
+ALTER TABLE learning_loops ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own learning loops" ON learning_loops FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own learning loops" ON learning_loops FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own learning loops" ON learning_loops FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own learning loops" ON learning_loops FOR DELETE USING (auth.uid() = user_id);
 
 -- Knowledge review tasks RLS
 ALTER TABLE knowledge_review_tasks ENABLE ROW LEVEL SECURITY;

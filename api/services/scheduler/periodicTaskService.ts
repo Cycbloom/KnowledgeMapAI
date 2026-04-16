@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { AppError } from '../../middleware/errorHandler';
 import { ErrorCodes } from '../../../shared/types/errorCodes';
 import { logger } from '../../utils/logger';
@@ -576,6 +577,122 @@ export class PeriodicTaskService {
 
       if (achievement.xp_reward) {
         await this.awardXp(userId, achievement.xp_reward);
+      }
+    }
+  }
+
+  async aggregateAllProgress(supabase: SupabaseClient): Promise<void> {
+    const periodTypes: ('weekly' | 'monthly' | 'quarterly')[] = ['weekly', 'monthly', 'quarterly'];
+
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id');
+
+    if (error || !users) {
+      logger.error('[PeriodicTaskService] Failed to fetch users for aggregation:', error);
+      return;
+    }
+
+    for (const user of users) {
+      try {
+        for (const periodType of periodTypes) {
+          const { start } = getPeriodDates(periodType);
+
+          const { data: tasks } = await supabase
+            .from('periodic_tasks')
+            .select('id, task_type, target, progress, status, pass_points')
+            .eq('user_id', user.id)
+            .eq('period_type', periodType)
+            .eq('period_start', start);
+
+          if (!tasks) continue;
+
+          for (const task of tasks) {
+            if (task.status === 'completed') continue;
+
+            let currentValue = task.progress;
+
+            switch (task.task_type) {
+              case 'focus': {
+                const { data: focusStats } = await supabase
+                  .from('focus_sessions')
+                  .select('duration')
+                  .eq('user_id', user.id)
+                  .gte('started_at', `${start}T00:00:00`)
+                  .is('ended_at', null)
+                  .limit(1);
+
+                if (focusStats && focusStats.length > 0) {
+                  const totalMinutes = focusStats.reduce((sum: number, s: { duration?: number }) => sum + (s.duration ?? 0), 0) / 60;
+                  currentValue = Math.round(totalMinutes);
+                }
+                break;
+              }
+              case 'study': {
+                const { count: studyCount } = await supabase
+                  .from('study_cards')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('user_id', user.id)
+                  .gte('created_at', `${start}T00:00:00`);
+                currentValue = studyCount ?? 0;
+                break;
+              }
+              case 'create': {
+                const { count: createCount } = await supabase
+                  .from('knowledge_points')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('owner_id', user.id)
+                  .gte('created_at', `${start}T00:00:00`);
+                currentValue = createCount ?? 0;
+                break;
+              }
+              case 'tasks': {
+                const { count: taskCount } = await supabase
+                  .from('scheduled_tasks')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('user_id', user.id)
+                  .eq('status', 'completed')
+                  .gte('completed_at', `${start}T00:00:00`)
+                  .is('deleted_at', null);
+                currentValue = taskCount ?? 0;
+                break;
+              }
+            }
+
+            if (currentValue !== task.progress) {
+              const newProgress = Math.min(currentValue, task.target);
+              const updates: Record<string, unknown> = { progress: newProgress };
+
+              if (newProgress >= task.target) {
+                updates.status = 'completed';
+
+                const { data: currentPass } = await supabase
+                  .from('periodic_passes')
+                  .select('total_points')
+                  .eq('user_id', user.id)
+                  .eq('period_type', periodType)
+                  .eq('period_start', start)
+                  .single();
+
+                if (currentPass) {
+                  await supabase
+                    .from('periodic_passes')
+                    .update({ total_points: currentPass.total_points + task.pass_points })
+                    .eq('user_id', user.id)
+                    .eq('period_type', periodType)
+                    .eq('period_start', start);
+                }
+              }
+
+              await supabase
+                .from('periodic_tasks')
+                .update(updates)
+                .eq('id', task.id);
+            }
+          }
+        }
+      } catch (error) {
+        logger.error(`[PeriodicTaskService] Failed to aggregate progress for user ${user.id}:`, error);
       }
     }
   }

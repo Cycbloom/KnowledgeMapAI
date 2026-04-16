@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
+import { useUnifiedTimer } from "../../hooks/scheduler";
 import {
   Play,
   Pause,
@@ -24,26 +25,29 @@ const formatTime = (seconds: number) => {
 export const FocusTimer: React.FC = () => {
   const { t } = useTranslation();
   const {
-    isActive,
-    timeLeft,
-    mode,
-    sessionsCompleted,
     focusDuration,
     shortBreakDuration,
     longBreakDuration,
     soundEnabled,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    setMode,
-    tick,
     updateSettings,
     isInFocusMode,
   } = useFocusStore();
 
+  const {
+    timeLeft,
+    mode,
+    isActive,
+    progress,
+    completedSessions,
+    start,
+    pause,
+    resume,
+    setMode,
+    skipToBreak,
+  } = useUnifiedTimer();
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const dragControls = useDragControls();
   const isDragging = useRef(false);
 
@@ -58,38 +62,22 @@ export const FocusTimer: React.FC = () => {
     }
   };
 
-  useEffect(() => {
+  const handleStartPause = () => {
     if (isActive) {
-      intervalRef.current = setInterval(tick, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isActive, tick]);
-
-  useEffect(() => {
-    if (isActive) {
-      document.title = `${formatTime(timeLeft)} - ${getModeLabel(mode)}`;
+      pause();
+    } else if (timeLeft === focusDuration * 60 && mode === "focus") {
+      start("manual", focusDuration);
     } else {
-      document.title = "KnowledgeMap";
+      resume();
     }
-    return () => {
-      document.title = "KnowledgeMap";
-    };
-  }, [isActive, timeLeft, mode]);
-
-  const getProgress = () => {
-    let total = focusDuration * 60;
-    if (mode === "shortBreak") total = shortBreakDuration * 60;
-    if (mode === "longBreak") total = longBreakDuration * 60;
-    return ((total - timeLeft) / total) * 100;
   };
 
-  const toggleExpand = (_e: React.MouseEvent) => {
-    if (isDragging.current) return;
-    setIsExpanded(!isExpanded);
+  const handleReset = () => {
+    setMode(mode);
+  };
+
+  const handleSkip = () => {
+    skipToBreak();
   };
 
   if (isInFocusMode) {
@@ -132,7 +120,7 @@ export const FocusTimer: React.FC = () => {
             exit={{ opacity: 0 }}
             className="flex items-center gap-2 p-2 cursor-pointer"
             onPointerDown={(e) => dragControls.start(e)}
-            onClick={toggleExpand}
+            onClick={() => setIsExpanded(!isExpanded)}
           >
             <div
               className={`p-2 rounded-full ${isActive ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"}`}
@@ -157,7 +145,6 @@ export const FocusTimer: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Header */}
             <div
               className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-100 dark:border-slate-700 cursor-move"
               onPointerDown={(e) => dragControls.start(e)}
@@ -179,7 +166,7 @@ export const FocusTimer: React.FC = () => {
                   <Settings2 size={16} />
                 </button>
                 <button
-                  onClick={toggleExpand}
+                  onClick={() => setIsExpanded(false)}
                   className="p-1.5 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg text-gray-500"
                 >
                   <Minimize2 size={16} />
@@ -309,7 +296,7 @@ export const FocusTimer: React.FC = () => {
                       fill="transparent"
                       strokeDasharray={2 * Math.PI * 88}
                       strokeDashoffset={
-                        2 * Math.PI * 88 * (1 - getProgress() / 100)
+                        2 * Math.PI * 88 * (1 - progress / 100)
                       }
                       className={`${
                         mode === "focus" ? "text-blue-500" : "text-emerald-500"
@@ -327,17 +314,16 @@ export const FocusTimer: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Controls */}
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={resetTimer}
+                    onClick={handleReset}
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
                     <RotateCcw size={20} />
                   </button>
 
                   <button
-                    onClick={isActive ? pauseTimer : startTimer}
+                    onClick={handleStartPause}
                     className={`p-4 rounded-full shadow-lg transform transition-transform active:scale-95 ${
                       isActive
                         ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
@@ -352,20 +338,16 @@ export const FocusTimer: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => {
-                      if (mode === "focus") setMode("shortBreak");
-                      else setMode("focus");
-                    }}
+                    onClick={handleSkip}
                     className="p-3 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
                     <SkipForward size={20} />
                   </button>
                 </div>
 
-                {/* Session Count */}
                 <div className="mt-6 text-xs text-gray-400 flex items-center gap-1">
                   <CheckCircleIcon size={12} />
-                  <span>{t("focusTimer.sessionsCompleted", { count: sessionsCompleted })}</span>
+                  <span>{t("focusTimer.sessionsCompleted", { count: completedSessions })}</span>
                 </div>
               </div>
             )}

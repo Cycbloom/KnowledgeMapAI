@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useFocusStore, TimerMode } from "../../store/useFocusStore";
+import { useUnifiedTimer } from "../../hooks/scheduler";
 import { Play, Pause, RotateCcw, Coffee, Brain, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const formatTime = (seconds: number) => {
@@ -29,27 +30,28 @@ const SCREEN_MARGIN = 8;
 export const MobileFocusTimer: React.FC = () => {
   const { t } = useTranslation();
   const {
-    isActive,
-    timeLeft,
-    mode,
-    sessionsCompleted,
     focusDuration,
-    shortBreakDuration,
-    longBreakDuration,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    setMode,
-    tick,
     isInFocusMode,
   } = useFocusStore();
+
+  const {
+    timeLeft,
+    mode,
+    isActive,
+    progress,
+    completedSessions,
+    start,
+    pause,
+    resume,
+    setMode,
+    skipToBreak,
+  } = useUnifiedTimer();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [ballY, setBallY] = useState(150);
   const [isOnRight, setIsOnRight] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastTapRef = useRef<number>(0);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 
@@ -63,24 +65,6 @@ export const MobileFocusTimer: React.FC = () => {
         return t("focusTimer.longBreak");
     }
   };
-
-  const progress = useCallback(() => {
-    let total = focusDuration * 60;
-    if (mode === "shortBreak") total = shortBreakDuration * 60;
-    if (mode === "longBreak") total = longBreakDuration * 60;
-    return ((total - timeLeft) / total) * 100;
-  }, [mode, timeLeft, focusDuration, shortBreakDuration, longBreakDuration]);
-
-  useEffect(() => {
-    if (isActive) {
-      intervalRef.current = setInterval(tick, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isActive, tick]);
 
   useEffect(() => {
     const saved = localStorage.getItem("mobileFocusTimerState");
@@ -136,9 +120,11 @@ export const MobileFocusTimer: React.FC = () => {
     
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
       if (isActive) {
-        pauseTimer();
+        pause();
+      } else if (timeLeft === focusDuration * 60 && mode === "focus") {
+        start("manual", focusDuration);
       } else {
-        startTimer();
+        resume();
       }
       lastTapRef.current = 0;
     } else {
@@ -151,7 +137,7 @@ export const MobileFocusTimer: React.FC = () => {
         setIsExpanded(true);
       }
     }
-  }, [isDragging, isCollapsed, isExpanded, isActive, startTimer, pauseTimer]);
+  }, [isDragging, isCollapsed, isExpanded, isActive, pause, resume, start, timeLeft, focusDuration, mode]);
 
   const handleCollapse = useCallback(() => {
     setIsCollapsed(true);
@@ -167,12 +153,26 @@ export const MobileFocusTimer: React.FC = () => {
     setIsExpanded(false);
   }, []);
 
+  const handleStartPause = useCallback(() => {
+    if (isActive) {
+      pause();
+    } else if (timeLeft === focusDuration * 60 && mode === "focus") {
+      start("manual", focusDuration);
+    } else {
+      resume();
+    }
+  }, [isActive, pause, resume, start, timeLeft, focusDuration, mode]);
+
+  const handleReset = useCallback(() => {
+    setMode(mode);
+  }, [setMode, mode]);
+
   if (isInFocusMode) {
     return null;
   }
 
   const colors = getModeColor(mode);
-  const progressValue = progress();
+  const progressValue = progress;
   const circumference = 2 * Math.PI * 22;
   const strokeDashoffset = circumference * (1 - progressValue / 100);
 
@@ -283,14 +283,14 @@ export const MobileFocusTimer: React.FC = () => {
 
               <div className="flex items-center justify-center gap-4">
                 <button
-                  onClick={resetTimer}
+                  onClick={handleReset}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <RotateCcw size={18} />
                 </button>
 
                 <motion.button
-                  onClick={() => (isActive ? pauseTimer() : startTimer())}
+                  onClick={handleStartPause}
                   className="p-4 rounded-full shadow-lg"
                   style={{ backgroundColor: colors.primary }}
                   whileTap={{ scale: 0.95 }}
@@ -303,10 +303,7 @@ export const MobileFocusTimer: React.FC = () => {
                 </motion.button>
 
                 <button
-                  onClick={() => {
-                    if (mode === "focus") setMode("shortBreak");
-                    else setMode("focus");
-                  }}
+                  onClick={skipToBreak}
                   className="p-2.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -317,7 +314,7 @@ export const MobileFocusTimer: React.FC = () => {
               </div>
 
               <div className="mt-4 text-center text-xs text-gray-400">
-                {t("focusTimer.sessionsCompleted", { count: sessionsCompleted })}
+                {t("focusTimer.sessionsCompleted", { count: completedSessions })}
               </div>
             </div>
           </motion.div>

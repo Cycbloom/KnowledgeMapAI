@@ -444,8 +444,6 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
     const graphTables = [
       { table: 'graph_collaborators', column: 'user_id' },
       { table: 'learning_path_progress', column: 'user_id' },
-      { table: 'edges', column: 'user_id' },
-      { table: 'graph_nodes', column: 'user_id' },
       { table: 'graph_domains', column: 'user_id' },
       { table: 'graph_relations', column: 'user_id' },
       { table: 'learning_paths', column: 'user_id' },
@@ -512,11 +510,10 @@ router.post('/reset', requireAuth, async (req: AuthRequest, res: Response) => {
   // 公共表（all类型都删）
   if (types.includes('all')) {
     const commonTables = [
-      { table: 'knowledge_points', column: 'user_id' },
-      { table: 'knowledge_point_versions', column: 'user_id' },
+      { table: 'knowledge_points', column: 'owner_id' },
       { table: 'domains', column: 'user_id' },
       { table: 'quiz_sets', column: 'user_id' },
-      { table: 'relationship_types', column: 'created_by', extraFilter: { column: 'is_system', value: false } }
+      { table: 'relationship_types', column: 'user_id', extraFilter: { column: 'is_builtin', value: false } }
     ];
 
     for (const t of commonTables) {

@@ -619,19 +619,19 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
             </span>
           )}
           {!isTemplateSelectorOpen && (
-            <button
+            <div
               onClick={(e) => {
                 e.stopPropagation();
                 setShowTemplatePromptConfig(true);
               }}
-              className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors`}
+              className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors cursor-pointer`}
               title={t("autoGraph.editPrompt")}
             >
               <Settings2
                 size={14}
                 className="text-gray-400 dark:text-gray-500"
               />
-            </button>
+            </div>
           )}
         </div>
         {isTemplateSelectorOpen ? (

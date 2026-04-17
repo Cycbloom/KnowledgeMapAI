@@ -66,21 +66,22 @@ npx supabase status       # 查看状态
 
 启动后，Supabase CLI 会显示各服务的访问地址，通常为：
 
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| API | http://127.0.0.1:54321 | Supabase API 网关 |
-| Studio | http://127.0.0.1:54323 | Supabase 管理界面 |
-| PostgreSQL | localhost:54322 | 直连数据库 |
-| Inbucket | http://127.0.0.1:54324 | 邮件测试服务 |
+| 服务       | 地址                   | 说明              |
+| ---------- | ---------------------- | ----------------- |
+| API        | http://127.0.0.1:54321 | Supabase API 网关 |
+| Studio     | http://127.0.0.1:54323 | Supabase 管理界面 |
+| PostgreSQL | localhost:54322        | 直连数据库        |
+| Inbucket   | http://127.0.0.1:54324 | 邮件测试服务      |
 
 > 注意：实际端口以 `npx supabase status` 输出为准
 
 ### 本地数据库
 
-- **Schema 文件**：`supabase/migrations/00000000000000_initial_schema.sql`
-- **Seed 文件**：`supabase/migrations/00000000000001_initial_seed.sql`
-- **测试用户**：`test@example.com` / `test123456`
-- **不创建新迁移文件**：所有变更直接修改 000 和 001 文件
+- **Schema 文件**：`supabase/migrations/` 目录下按业务域组织的模块化 SQL 文件（00-16 为 Schema，17-25 为 Seed）
+- **Seed 文件**：`supabase/migrations/` 目录下按数据类型组织的模块化 SQL 文件
+- **测试用户**：`test@example.com` / `test123456`（每次 `npx supabase db reset` 后自动创建）
+- **迁移文件管理**：所有变更直接修改对应的模块化文件，不创建新的增量迁移文件
+- **迁移文件命名**：`{两位序号}_{业务域}.sql`，序号确保执行顺序
 
 ### 开发环境配置
 

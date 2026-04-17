@@ -1,185 +1,8 @@
 -- =====================================================
--- Knowledge Map - Initial Seed Data
--- Generated: 2026-02-26 (Consolidated Migration)
+-- Knowledge Map - [Seed: Prompt Templates]
 -- =====================================================
 
--- =====================================================
--- DEFAULT QUEUES FOR NEW USERS
--- =====================================================
-
--- Function to create default queues for new users
-CREATE OR REPLACE FUNCTION create_default_queues_for_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO queues (user_id, name, color, time_slice, priority) VALUES
-    (NEW.id, '紧急队列', 'cyan', 25, 0),
-    (NEW.id, '重要队列', 'emerald', 45, 1),
-    (NEW.id, '待办队列', 'amber', 90, 2);
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
--- Trigger to auto-create default queues when a new user is created
-DROP TRIGGER IF EXISTS on_user_created_queues ON users;
-CREATE TRIGGER on_user_created_queues
-  AFTER INSERT ON users
-  FOR EACH ROW EXECUTE FUNCTION create_default_queues_for_user();
-
--- =====================================================
--- APP SETTINGS
--- =====================================================
-
-INSERT INTO app_settings (key, value, description) VALUES 
-    ('ai_provider_config', '{
-        "deepseek": { "enabled": true, "apiKey": "", "baseURL": "https://api.deepseek.com", "model": "deepseek-chat" },
-        "volcengine": { "enabled": true, "apiKey": "", "baseURL": "https://ark.cn-beijing.volces.com/api/v3", "model": "doubao-seed-1-8-251228", "embeddingModel": "doubao-embedding-vision-251215" },
-        "aliyun": { "enabled": true, "apiKey": "", "baseURL": "https://dashscope.aliyuncs.com/compatible-mode/v1", "model": "qwen-long-latest" }
-    }'::jsonb, 'Configuration for AI Providers'),
-    ('system_config', '{
-        "default_provider": "deepseek",
-        "task_mapping": { "text": "deepseek", "embedding": "volcengine", "reasoning": "aliyun" }
-    }'::jsonb, 'Global system settings and defaults')
-ON CONFLICT (key) DO NOTHING;
-
--- =====================================================
--- ACHIEVEMENTS
--- =====================================================
-
-INSERT INTO achievements (code, name, description, category, icon, color, xp_reward, condition_type, condition_value, is_hidden) VALUES
--- Study streak achievements
-  ('streak_3', '初出茅庐', '保持3天连续学习', 'study', 'Flame', '#F97316', 100, 'streak_days', 3, FALSE),
-  ('streak_7', '坚持不懈', '保持7天连续学习', 'study', 'Zap', '#3B82F6', 300, 'streak_days', 7, FALSE),
-  ('streak_14', '持之以恒', '保持14天连续学习', 'study', 'Zap', '#8B5CF6', 500, 'streak_days', 14, FALSE),
-  ('streak_30', '月度大师', '保持30天连续学习', 'study', 'Crown', '#A855F7', 1000, 'streak_days', 30, FALSE),
-  ('streak_100', '百日筑基', '保持100天连续学习', 'study', 'Crown', '#FCD34D', 5000, 'streak_days', 100, FALSE),
--- Focus time achievements
-  ('focus_10', '专注时刻', '完成10分钟专注时间', 'focus', 'Timer', '#10B981', 50, 'focus_minutes', 10, FALSE),
-  ('focus_60', '深度潜入', '完成60分钟专注时间', 'focus', 'Timer', '#3B82F6', 150, 'focus_minutes', 60, FALSE),
-  ('focus_300', '专注大师', '完成300分钟(5小时)专注时间', 'focus', 'Brain', '#8B5CF6', 500, 'focus_minutes', 300, FALSE),
-  ('focus_1000', '心流境界', '完成1000分钟专注时间', 'focus', 'Brain', '#EC4899', 1500, 'focus_minutes', 1000, FALSE),
--- Mastery achievements
-  ('mastery_1', '初试牛刀', '掌握1张知识卡片', 'study', 'GraduationCap', '#10B981', 50, 'cards_mastered', 1, FALSE),
-  ('mastery_10', '跬步千里', '掌握10张知识卡片', 'study', 'GraduationCap', '#3B82F6', 100, 'cards_mastered', 10, FALSE),
-  ('mastery_50', '求知若渴', '掌握50张知识卡片', 'study', 'BookOpen', '#8B5CF6', 300, 'cards_mastered', 50, FALSE),
-  ('mastery_100', '领域专家', '掌握100张知识卡片', 'study', 'Trophy', '#F59E0B', 600, 'cards_mastered', 100, FALSE),
-  ('mastery_500', '博闻强识', '掌握500张知识卡片', 'study', 'Trophy', '#FCD34D', 2500, 'cards_mastered', 500, FALSE),
--- Creation achievements
-  ('creation_graph_1', '创世之初', '创建第1个知识图谱', 'creation', 'BookOpen', '#10B981', 200, 'graphs_created', 1, FALSE),
-  ('creation_graph_5', '知识架构师', '创建5个知识图谱', 'creation', 'BookOpen', '#3B82F6', 800, 'graphs_created', 5, FALSE),
-  ('creation_node_10', '萌芽', '创建10个知识节点', 'creation', 'Target', '#F59E0B', 100, 'nodes_created', 10, FALSE),
-  ('creation_node_100', '枝繁叶茂', '创建100个知识节点', 'creation', 'Target', '#8B5CF6', 500, 'nodes_created', 100, FALSE),
-  ('creation_node_1000', '知识森林', '创建1000个知识节点', 'creation', 'Target', '#FCD34D', 2000, 'nodes_created', 1000, FALSE),
--- Focus achievements (new)
-  ('first_focus', '初次专注', '完成第一次专注会话', 'focus', '🎯', '#10B981', 10, 'focus_sessions', 1, FALSE),
-  ('focus_1h', '一小时达人', '累计专注时间达到1小时', 'focus', '⏱️', '#3B82F6', 20, 'total_focus_hours', 1, FALSE),
-  ('focus_10h', '专注新手', '累计专注时间达到10小时', 'focus', '🔥', '#F59E0B', 50, 'total_focus_hours', 10, FALSE),
-  ('focus_50h', '专注达人', '累计专注时间达到50小时', 'focus', '💪', '#8B5CF6', 100, 'total_focus_hours', 50, FALSE),
-  ('focus_100h', '专注大师', '累计专注时间达到100小时', 'focus', '🏆', '#EC4899', 200, 'total_focus_hours', 100, FALSE),
-  ('focus_500h', '专注传奇', '累计专注时间达到500小时', 'focus', '👑', '#FCD34D', 500, 'total_focus_hours', 500, FALSE),
-  ('daily_4h', '高效一天', '单日专注时间达到4小时', 'focus', '⚡', '#06B6D4', 50, 'daily_focus_hours', 4, FALSE),
-  ('daily_8h', '极限挑战', '单日专注时间达到8小时', 'focus', '🚀', '#EF4444', 100, 'daily_focus_hours', 8, FALSE),
--- Streak achievements (new)
-  ('streak_3_new', '三天坚持', '连续专注3天', 'streak', '🌟', '#F97316', 30, 'consecutive_days', 3, FALSE),
-  ('streak_7_new', '一周达人', '连续专注7天', 'streak', '✨', '#84CC16', 70, 'consecutive_days', 7, FALSE),
-  ('streak_14_new', '两周毅力', '连续专注14天', 'streak', '💫', '#14B8A6', 140, 'consecutive_days', 14, FALSE),
-  ('streak_30_new', '月度冠军', '连续专注30天', 'streak', '🏅', '#A855F7', 300, 'consecutive_days', 30, FALSE),
-  ('streak_100_new', '百日传奇', '连续专注100天', 'streak', '💎', '#F43F5E', 1000, 'consecutive_days', 100, FALSE),
--- Task achievements
-  ('tasks_10', '任务新手', '完成10个任务', 'tasks', '📋', '#6366F1', 30, 'tasks_completed', 10, FALSE),
-  ('tasks_50', '任务达人', '完成50个任务', 'tasks', '📝', '#8B5CF6', 100, 'tasks_completed', 50, FALSE),
-  ('tasks_100', '任务大师', '完成100个任务', 'tasks', '🎖️', '#EC4899', 200, 'tasks_completed', 100, FALSE),
-  ('tasks_500', '任务传奇', '完成500个任务', 'tasks', '🏅', '#F59E0B', 500, 'tasks_completed', 500, FALSE),
--- Pomodoro achievements
-  ('pomodoro_10', '番茄新手', '完成10个番茄钟', 'focus', '🍅', '#EF4444', 20, 'pomodoros_completed', 10, FALSE),
-  ('pomodoro_50', '番茄达人', '完成50个番茄钟', 'focus', '🍅', '#F97316', 50, 'pomodoros_completed', 50, FALSE),
-  ('pomodoro_100', '番茄大师', '完成100个番茄钟', 'focus', '🍅', '#DC2626', 100, 'pomodoros_completed', 100, FALSE),
--- Special achievements
-  ('night_owl', '夜猫子', '在凌晨(0:00-5:00)完成专注会话', 'special', '🦉', '#6366F1', 30, 'special_condition', 1, TRUE),
-  ('early_bird', '早起鸟', '在早晨(5:00-7:00)完成专注会话', 'special', '🐦', '#FBBF24', 30, 'special_condition', 1, TRUE),
-  ('weekend_warrior', '周末战士', '在周末完成4小时专注', 'special', '⚔️', '#8B5CF6', 50, 'special_condition', 1, TRUE),
-  ('perfectionist', '完美主义者', '一天内完成所有计划任务', 'special', '✅', '#10B981', 50, 'special_condition', 1, TRUE),
-  ('multitasker', '多面手', '在一天内完成5个不同任务', 'special', '🎭', '#EC4899', 40, 'special_condition', 1, TRUE),
--- Weekly streak achievements
-  ('weekly_streak_4', '四周坚持', '连续完成4周所有周任务', 'streak', '📅', '#10B981', 100, 'weekly_streak', 4, FALSE),
-  ('weekly_streak_8', '两月坚持', '连续完成8周所有周任务', 'streak', '📆', '#3B82F6', 200, 'weekly_streak', 8, FALSE),
-  ('weekly_streak_12', '季度坚持', '连续完成12周所有周任务', 'streak', '🗓️', '#8B5CF6', 400, 'weekly_streak', 12, FALSE),
--- Monthly streak achievements
-  ('monthly_streak_3', '三月连冠', '连续完成3个月所有月任务', 'streak', '🏆', '#F59E0B', 300, 'monthly_streak', 3, FALSE),
-  ('monthly_streak_6', '半年传奇', '连续完成6个月所有月任务', 'streak', '👑', '#EC4899', 600, 'monthly_streak', 6, FALSE),
-  ('monthly_streak_12', '年度霸主', '连续完成12个月所有月任务', 'streak', '💎', '#FCD34D', 1500, 'monthly_streak', 12, FALSE),
--- Quarterly streak achievements
-  ('quarterly_streak_2', '半年坚持', '连续完成2个季度所有任务', 'streak', '🌟', '#14B8A6', 500, 'quarterly_streak', 2, FALSE),
-  ('quarterly_streak_4', '年度传奇', '连续完成4个季度所有任务', 'streak', '🏅', '#A855F7', 1000, 'quarterly_streak', 4, FALSE),
--- Daily task streak achievements
-  ('daily_streak_7', '周常达人', '连续7天完成所有每日任务', 'streak', '🔥', '#F97316', 50, 'daily_task_streak', 7, FALSE),
-  ('daily_streak_14', '两周毅力', '连续14天完成所有每日任务', 'streak', '💪', '#EF4444', 100, 'daily_task_streak', 14, FALSE),
-  ('daily_streak_30', '月度坚持', '连续30天完成所有每日任务', 'streak', '🎯', '#DC2626', 300, 'daily_task_streak', 30, FALSE),
-  ('daily_streak_60', '双月传奇', '连续60天完成所有每日任务', 'streak', '⭐', '#7C3AED', 600, 'daily_task_streak', 60, FALSE),
-  ('daily_streak_100', '百日王者', '连续100天完成所有每日任务', 'streak', '👑', '#FCD34D', 1000, 'daily_task_streak', 100, FALSE)
-ON CONFLICT (code) DO NOTHING;
-
--- =====================================================
--- TEMPLATES
--- =====================================================
-
-INSERT INTO templates (user_id, name, description, category, template_type, is_system, nodes, edges, tags, difficulty, estimated_nodes) VALUES
-  (NULL, '知识树模板', '适用于构建知识体系，从基础到进阶的层级学习', 'knowledge', 'knowledge_tree', true, 
-   '[{"id":"node-1","title":"知识领域","level":"root","description":"核心主题"},{"id":"node-2","title":"基础知识","level":"core","description":"基础概念和定义"},{"id":"node-3","title":"核心概念","level":"core","description":"核心理论和方法"},{"id":"node-4","title":"进阶内容","level":"sub","description":"深入理解和应用"},{"id":"node-5","title":"实践案例","level":"leaf","description":"实际应用案例"}]'::jsonb,
-   '[{"source":"node-1","target":"node-2"},{"source":"node-1","target":"node-3"},{"source":"node-2","target":"node-4"},{"source":"node-3","target":"node-4"},{"source":"node-4","target":"node-5"}]'::jsonb,
-   ARRAY['系统学习', '循序渐进'],
-   'medium',
-   20
-  ),
-  (NULL, '技能图谱模板', '适用于梳理技能前置关系，规划学习路径', 'knowledge', 'skill_map', true,
-   '[{"id":"node-1","title":"目标技能","level":"root","description":"要掌握的技能"},{"id":"node-2","title":"前置技能A","level":"core","description":"必须先掌握的基础技能"},{"id":"node-3","title":"前置技能B","level":"core","description":"另一项前置技能"},{"id":"node-4","title":"基础技能A1","level":"sub","description":"前置技能A的基础"},{"id":"node-5","title":"基础技能B1","level":"sub","description":"前置技能B的基础"}]'::jsonb,
-   '[{"source":"node-2","target":"node-1","relationship_type":"prerequisite"},{"source":"node-3","target":"node-1","relationship_type":"prerequisite"},{"source":"node-4","target":"node-2","relationship_type":"prerequisite"},{"source":"node-5","target":"node-3","relationship_type":"prerequisite"}]'::jsonb,
-   ARRAY['技能学习', '路径规划'],
-   'medium',
-   15
-  ),
-  (NULL, '项目生命周期模板', '适用于项目管理，从规划到交付的全流程', 'project', 'project_lifecycle', true,
-   '[{"id":"node-1","title":"项目目标","level":"root","description":"项目总体目标"},{"id":"node-2","title":"规划阶段","level":"core","description":"需求分析和规划"},{"id":"node-3","title":"执行阶段","level":"core","description":"开发与实施"},{"id":"node-4","title":"交付阶段","level":"core","description":"测试与交付"},{"id":"node-5","title":"复盘总结","level":"sub","description":"项目复盘和经验总结"}]'::jsonb,
-   '[{"source":"node-1","target":"node-2"},{"source":"node-2","target":"node-3"},{"source":"node-3","target":"node-4"},{"source":"node-4","target":"node-5"}]'::jsonb,
-   ARRAY['项目管理', '生命周期'],
-   'medium',
-   15
-  ),
-  (NULL, '根因分析模板', '适用于问题分析，5Why/鱼骨图式深入分析', 'analysis', 'root_cause', true,
-   '[{"id":"node-1","title":"问题现象","level":"root","description":"观察到的核心问题"},{"id":"node-2","title":"人因","level":"core","description":"人员相关原因"},{"id":"node-3","title":"流程因","level":"core","description":"流程相关原因"},{"id":"node-4","title":"技术因","level":"core","description":"技术相关原因"},{"id":"node-5","title":"环境因","level":"core","description":"环境相关原因"}]'::jsonb,
-   '[{"source":"node-2","target":"node-1"},{"source":"node-3","target":"node-1"},{"source":"node-4","target":"node-1"},{"source":"node-5","target":"node-1"}]'::jsonb,
-   ARRAY['问题分析', '根因分析'],
-   'hard',
-   12
-  ),
-  (NULL, '技术生态模板', '适用于梳理技术栈关系和依赖', 'architecture', 'tech_ecosystem', true,
-   '[{"id":"node-1","title":"技术生态","level":"root","description":"核心技术栈概览"},{"id":"node-2","title":"前端技术","level":"core","description":"前端框架和工具"},{"id":"node-3","title":"后端技术","level":"core","description":"后端框架和服务"},{"id":"node-4","title":"基础设施","level":"core","description":"部署和运维技术"},{"id":"node-5","title":"数据技术","level":"sub","description":"数据库和数据处理"}]'::jsonb,
-   '[{"source":"node-1","target":"node-2"},{"source":"node-1","target":"node-3"},{"source":"node-1","target":"node-4"},{"source":"node-2","target":"node-3","relationship_type":"related"},{"source":"node-3","target":"node-5","relationship_type":"related"}]'::jsonb,
-   ARRAY['技术栈', '生态图'],
-   'hard',
-   18
-  )
-ON CONFLICT DO NOTHING;
-
--- =====================================================
--- AI ACTIONS
--- =====================================================
-
-INSERT INTO ai_actions (name, description, icon, target_mode, scope, prompt_template) VALUES
-  ('精炼内容', '将节点内容精炼为简洁的几句话', 'Minimize2', 'update_node', 'system', '请将以下内容精炼为3-5句话，保留核心观点和关键事实。直接返回精炼后的内容，不要有开场白。
-
-内容：
-{{nodeContent}}'),
-  ('反向辩驳', '提出该观点的反面论证或潜在缺陷', 'MessageSquareWarning', 'show_result', 'system', '请扮演一个批判性思维者，针对以下观点提出反面论证、潜在缺陷或被忽视的视角。
-
-观点：{{nodeTitle}}
-详细内容：{{nodeContent}}')
-ON CONFLICT DO NOTHING;
-
--- =====================================================
--- PROMPT TEMPLATES
--- =====================================================
-
-INSERT INTO prompt_templates ("code", "scope", "user_id", "graph_id", "template_content", "created_at", "updated_at") VALUES 
+INSERT INTO prompt_templates ("code", "scope", "user_id", "graph_id", "template_content", "created_at", "updated_at") VALUES
 ('expand_knowledge', 'system', null, null, 'You are a knowledge graph expert. Suggest a comprehensive list of related sub-topics or concepts for the given node to expand the graph deeply.
 
 Goal: Prioritize generating NEW, specific concepts to broaden the graph''s coverage.
@@ -393,20 +216,20 @@ Existing Nodes:
 
 Important: Return node titles (not IDs) in your recommendations. Use exact titles from the existing nodes list.', NOW(), NOW()),
 ('term_annotation', 'system', null, null, '你是一个专业的学术助手。请分析以下文本，提取其中的关键专业术语。', NOW(), NOW()),
-('generate_cards_choice', 'system', null, null, 'For ''choice'' type: Create multiple-choice questions with 4 plausible options. 
+('generate_cards_choice', 'system', null, null, 'For ''choice'' type: Create multiple-choice questions with 4 plausible options.
 Provide the correct answer and a detailed ''explanation'' of why it is correct and others are wrong.
 Distractors should be common misconceptions if possible.', NOW(), NOW()),
-('generate_cards_essay', 'system', null, null, 'For ''essay'' type: Create complex questions requiring a long-form structured answer. 
-The ''answer'' should be a model response with key points. 
+('generate_cards_essay', 'system', null, null, 'For ''essay'' type: Create complex questions requiring a long-form structured answer.
+The ''answer'' should be a model response with key points.
 Provide a detailed ''explanation'' with scoring criteria and key concepts to cover.', NOW(), NOW()),
-('generate_cards_fill_blank', 'system', null, null, 'For ''fill_in_the_blank'' type: Create a sentence with one or more ''___'' (3 underscores) as blanks. 
+('generate_cards_fill_blank', 'system', null, null, 'For ''fill_in_the_blank'' type: Create a sentence with one or more ''___'' (3 underscores) as blanks.
 The ''answer'' should be the missing text. Provide a detailed ''explanation''.', NOW(), NOW()),
-('generate_cards_multi_choice', 'system', null, null, 'For ''multi_choice'' type: Create multiple-choice questions where ONE OR MORE options can be correct. 
+('generate_cards_multi_choice', 'system', null, null, 'For ''multi_choice'' type: Create multiple-choice questions where ONE OR MORE options can be correct.
 Provide 4 options, the ''answer'' as a JSON array of correct strings, and a detailed ''explanation''.', NOW(), NOW()),
-('generate_cards_qa', 'system', null, null, 'For ''qa'' type: Create thought-provoking open-ended questions that test deep understanding. 
+('generate_cards_qa', 'system', null, null, 'For ''qa'' type: Create thought-provoking open-ended questions that test deep understanding.
 Provide a detailed ''explanation'' analyzing the answer.
 Focus on explaining the "Why" and "How" rather than just "What".', NOW(), NOW()),
-('generate_cards_true_false', 'system', null, null, 'For ''true_false'' type: Create statements focusing on common misconceptions or key details. 
+('generate_cards_true_false', 'system', null, null, 'For ''true_false'' type: Create statements focusing on common misconceptions or key details.
 Provide a detailed ''explanation'' clarifying the fact.', NOW(), NOW()),
 ('auto_graph_init', 'system', null, null, 'You are a knowledge graph expert. Initialize a new knowledge graph based on the given topic.
 
@@ -594,10 +417,10 @@ Respond in Chinese.', NOW(), NOW()),
 
 1. **前置知识（prerequisite）**：学习当前领域之前需要掌握的独立领域
    - 例如：学习"量子密码学"前需要掌握"密码学"、"量子力学"、"线性代数"
-   
+
 2. **扩展知识（extension）**：当前领域学习后可以深入探索的独立领域
    - 例如：学完"量子密码学"后可以学习"量子通信"、"量子计算应用"
-   
+
 3. **相关知识（related）**：与当前领域有交叉或关联的独立领域
    - 例如："量子密码学"的相关领域有"信息安全"、"网络安全"
 
@@ -677,7 +500,7 @@ Respond in Chinese.', NOW(), NOW()),
 
 队列判断标准：
 - **Q0 紧急队列**：需要立即处理、有紧迫截止日期、高优先级任务
-- **Q1 重要队列**：重要但不紧急、需要专注完成的任务  
+- **Q1 重要队列**：重要但不紧急、需要专注完成的任务
 - **Q2 待办队列**：常规任务、可以稍后处理的任务
 
 请确保：
@@ -807,138 +630,3 @@ INSERT INTO prompt_templates (code, scope, user_id, graph_id, template_content, 
   ('template_type_knowledge_system', 'system', null, null, 'Create a cross-domain knowledge system. Show how knowledge areas connect across different domains. Use network structure with cross-domain relationships. Highlight interdisciplinary connections and shared concepts. Include both domain-specific and universal knowledge elements. Show how insights from one domain can apply to another. Consider the evolution and convergence of knowledge areas.', NOW(), NOW()),
   ('template_type_blank', 'system', null, null, 'Create a knowledge graph freely based on the topic. No specific structural constraints. Use whatever structure best represents the topic. Follow the natural organization of the subject matter. Be creative and adaptive in your approach.', NOW(), NOW())
 ON CONFLICT (code, scope, user_id, graph_id) DO NOTHING;
-
--- =====================================================
--- RELATIONSHIP TYPES
--- =====================================================
-
--- 层级结构 (hierarchical)
-INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
-  ('contains', '包含', 'hierarchical', '#3B82F6', 'solid', 'auto', true),
-  ('part_of', '属于', 'hierarchical', '#3B82F6', 'solid', 'auto', true),
-  ('parent_child', '父子', 'hierarchical', '#3B82F6', 'solid', 'auto', true)
-ON CONFLICT (name) DO NOTHING;
-
--- 依赖约束 (dependency)
-INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
-  ('depends_on', '依赖', 'dependency', '#F59E0B', 'dashed', 'true', true),
-  ('prerequisite', '前提', 'dependency', '#F59E0B', 'dashed', 'true', true),
-  ('constrains', '制约', 'dependency', '#F59E0B', 'dashed', 'true', true),
-  ('supports', '支撑', 'dependency', '#F59E0B', 'dashed', 'true', true),
-  ('mutex', '互斥', 'dependency', '#EF4444', 'dotted', 'false', true),
-  ('exclusive', '排他', 'dependency', '#EF4444', 'dotted', 'false', true)
-ON CONFLICT (name) DO NOTHING;
-
--- 语义关系 (semantic)
-INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
-  ('related', '相关', 'semantic', '#6B7280', 'solid', 'false', true),
-  ('similar_to', '相似', 'semantic', '#8B5CF6', 'solid', 'false', true),
-  ('opposite', '相反', 'semantic', '#EC4899', 'solid', 'false', true),
-  ('synonym', '同义', 'semantic', '#8B5CF6', 'solid', 'false', true),
-  ('equivalent', '等价', 'semantic', '#8B5CF6', 'solid', 'false', true),
-  ('generalization', '泛化', 'semantic', '#10B981', 'solid', 'true', true),
-  ('specialization', '特化', 'semantic', '#10B981', 'solid', 'true', true)
-ON CONFLICT (name) DO NOTHING;
-
--- 时序流程 (temporal)
-INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
-  ('follows', '后续', 'temporal', '#06B6D4', 'dashed', 'true', true),
-  ('parallel', '并行', 'temporal', '#06B6D4', 'solid', 'false', true),
-  ('branch', '分支', 'temporal', '#06B6D4', 'solid', 'true', true),
-  ('merge', '汇合', 'temporal', '#06B6D4', 'solid', 'true', true),
-  ('trigger', '触发', 'temporal', '#06B6D4', 'dashed', 'true', true),
-  ('loop', '循环', 'temporal', '#06B6D4', 'dashed', 'true', true)
-ON CONFLICT (name) DO NOTHING;
-
--- 交互行为 (interaction)
-INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
-  ('points_to', '指向', 'interaction', '#F97316', 'solid', 'true', true),
-  ('acts_on', '作用', 'interaction', '#F97316', 'solid', 'true', true),
-  ('influences', '影响', 'interaction', '#F97316', 'dashed', 'true', true),
-  ('feedback', '反馈', 'interaction', '#F97316', 'dashed', 'true', true),
-  ('calls', '调用', 'interaction', '#F97316', 'solid', 'true', true)
-ON CONFLICT (name) DO NOTHING;
-
--- 因果推导 (causal)
-INSERT INTO relationship_types (name, display_name, category, color, line_style, show_arrow, is_builtin) VALUES
-  ('causes', '因果', 'causal', '#DC2626', 'solid', 'true', true),
-  ('derives', '推导', 'causal', '#DC2626', 'solid', 'true', true),
-  ('proportional', '正比', 'causal', '#DC2626', 'solid', 'false', true),
-  ('inverse', '反比', 'causal', '#DC2626', 'solid', 'false', true)
-ON CONFLICT (name) DO NOTHING;
-
--- =====================================================
--- TASK TEMPLATES
--- =====================================================
-
-INSERT INTO task_templates (name, description, category, title_template, description_template, estimated_duration, tags, priority, is_system, is_default) VALUES
--- Study templates
-('深度学习', '专注学习新知识', 'study', '学习：{{topic}}', '深入学习 {{topic}}，理解核心概念和应用场景', 45, ARRAY['学习', '专注'], 3, TRUE, TRUE),
-('复习巩固', '复习已学内容', 'study', '复习：{{topic}}', '复习 {{topic}}，巩固知识点，查漏补缺', 25, ARRAY['学习', '复习'], 2, TRUE, FALSE),
-('阅读笔记', '阅读并做笔记', 'study', '阅读：{{book_name}}', '阅读 {{book_name}}，记录要点和心得', 30, ARRAY['学习', '阅读'], 2, TRUE, FALSE),
-('练习题', '做练习题巩固知识', 'study', '练习：{{subject}}', '完成 {{subject}} 相关练习题', 40, ARRAY['学习', '练习'], 2, TRUE, FALSE),
-
--- Work templates
-('项目开发', '开发项目任务', 'work', '开发：{{feature}}', '开发 {{feature}} 功能，包括设计、编码和测试', 60, ARRAY['工作', '开发'], 3, TRUE, TRUE),
-('会议准备', '准备会议材料', 'work', '准备会议：{{meeting_name}}', '准备 {{meeting_name}} 会议材料和演示文稿', 30, ARRAY['工作', '会议'], 2, TRUE, FALSE),
-('代码审查', '审查代码', 'work', '代码审查：{{project}}', '审查 {{project}} 项目代码，检查代码质量和规范', 45, ARRAY['工作', '代码'], 2, TRUE, FALSE),
-('文档编写', '编写文档', 'work', '文档：{{doc_name}}', '编写 {{doc_name}} 相关文档', 40, ARRAY['工作', '文档'], 2, TRUE, FALSE),
-('邮件处理', '处理邮件', 'work', '处理邮件', '检查和回复重要邮件', 15, ARRAY['工作', '邮件'], 1, TRUE, FALSE),
-
--- Life templates
-('购物清单', '采购物品', 'life', '购物：{{items}}', '购买 {{items}}', 30, ARRAY['生活', '购物'], 1, TRUE, TRUE),
-('家务整理', '整理家务', 'life', '家务：{{task}}', '完成 {{task}} 家务整理', 30, ARRAY['生活', '家务'], 1, TRUE, FALSE),
-('账单支付', '支付账单', 'life', '支付账单', '处理各类账单支付', 15, ARRAY['生活', '财务'], 2, TRUE, FALSE),
-
--- Health templates
-('运动健身', '锻炼身体', 'health', '运动：{{type}}', '进行 {{type}} 运动，保持身体健康', 45, ARRAY['健康', '运动'], 2, TRUE, TRUE),
-('冥想放松', '冥想放松身心', 'health', '冥想放松', '进行冥想练习，放松身心', 15, ARRAY['健康', '冥想'], 1, TRUE, FALSE),
-('健康检查', '健康相关事项', 'health', '健康：{{item}}', '处理 {{item}} 健康相关事项', 30, ARRAY['健康'], 2, TRUE, FALSE)
-ON CONFLICT DO NOTHING;
-
--- =====================================================
--- PASS REWARDS
--- =====================================================
-
-INSERT INTO pass_rewards (period_type, level, points_required, reward_type, reward_value, name, description, icon) VALUES
--- Weekly Pass (15 levels, 40 points total to complete all tasks = 4 tasks * 10 points each)
-('weekly', 1, 10, 'xp', 50, '起步者', '完成第一个周任务', '🌱'),
-('weekly', 2, 20, 'xp', 50, '初见成效', '继续努力', '⭐'),
-('weekly', 3, 30, 'xp', 75, '渐入佳境', '保持势头', '✨'),
-('weekly', 4, 40, 'xp', 75, '周常达人', '完成所有周任务', '🏆'),
-('weekly', 5, 50, 'achievement', 0, '周冠军', '连续完成周任务', '🥇'),
-
--- Monthly Pass (20 levels, ~160 points total)
-('monthly', 1, 10, 'xp', 50, '月度起步', '开始你的月度旅程', '📅'),
-('monthly', 2, 20, 'xp', 50, '稳步前行', '持续进步', '📈'),
-('monthly', 3, 30, 'xp', 75, '小有成就', '月度任务进行中', '🎯'),
-('monthly', 4, 40, 'xp', 75, '坚持就是胜利', '保持专注', '💪'),
-('monthly', 5, 50, 'xp', 100, '月度中坚', '完成一半目标', '🌟'),
-('monthly', 6, 60, 'xp', 100, '势不可挡', '继续冲刺', '🔥'),
-('monthly', 7, 70, 'xp', 125, '接近终点', '胜利在望', '💫'),
-('monthly', 8, 80, 'xp', 125, '月度精英', '即将完成', '🏅'),
-('monthly', 9, 90, 'xp', 150, '月度大师', '几乎完成', '👑'),
-('monthly', 10, 100, 'achievement', 0, '月度冠军', '完成所有月任务', '🥇'),
-('monthly', 11, 110, 'xp', 150, '超额完成', '超越目标', '🚀'),
-('monthly', 12, 120, 'xp', 175, '月度传奇', '持续超越', '💎'),
-('monthly', 13, 130, 'xp', 175, '月度神话', '非凡成就', '🌈'),
-('monthly', 14, 140, 'xp', 200, '月度至尊', '登峰造极', '🏆'),
-('monthly', 15, 150, 'achievement', 0, '月度之神', '完美月度', '⚡'),
-
--- Quarterly Pass (20 levels, ~480 points total)
-('quarterly', 1, 20, 'xp', 75, '季度启程', '开始你的季度旅程', '🗓️'),
-('quarterly', 2, 40, 'xp', 75, '季度进展', '稳步前进', '📊'),
-('quarterly', 3, 60, 'xp', 100, '季度中坚', '保持势头', '🎯'),
-('quarterly', 4, 80, 'xp', 100, '季度精英', '持续努力', '⭐'),
-('quarterly', 5, 100, 'xp', 125, '季度达人', '表现优秀', '🌟'),
-('quarterly', 6, 120, 'xp', 125, '季度高手', '技艺精湛', '💫'),
-('quarterly', 7, 140, 'xp', 150, '季度专家', '专业水准', '🏅'),
-('quarterly', 8, 160, 'xp', 150, '季度大师', '登峰造极', '👑'),
-('quarterly', 9, 180, 'xp', 175, '季度传奇', '非凡成就', '💎'),
-('quarterly', 10, 200, 'achievement', 0, '季度冠军', '完成所有季度任务', '🥇'),
-('quarterly', 11, 220, 'xp', 175, '超额完成', '超越目标', '🚀'),
-('quarterly', 12, 240, 'xp', 200, '季度神话', '持续超越', '🌈'),
-('quarterly', 13, 260, 'xp', 200, '季度至尊', '非凡表现', '🏆'),
-('quarterly', 14, 280, 'xp', 225, '季度之神', '登峰造极', '⚡'),
-('quarterly', 15, 300, 'achievement', 0, '完美季度', '季度完美表现', '🌟')
-ON CONFLICT (period_type, level) DO NOTHING;

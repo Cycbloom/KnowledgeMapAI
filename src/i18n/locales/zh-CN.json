@@ -76,6 +76,24 @@
       "enterOutline": "进入大纲"
     }
   },
+  "focusTimer": {
+    "focus": "专注",
+    "shortBreak": "小憩",
+    "longBreak": "长休",
+    "focusMode": "专注模式",
+    "mode": "模式",
+    "inProgress": "进行中",
+    "paused": "已暂停",
+    "sessionsCompleted": "本次已完成 {{count}} 个专注时段",
+    "focusDuration": "专注时长 (分钟)",
+    "breakDuration": "休息时长 (分钟)",
+    "shortBreakLabel": "小憩",
+    "longBreakLabel": "长休",
+    "soundEnabled": "提示音",
+    "done": "完成",
+    "collapseToSide": "收起到侧边",
+    "close": "关闭"
+  },
   "study": {
     "loading": "加载中...",
     "title": "学习中心",

@@ -1,6 +1,7 @@
 /**
  * local server entry file, for local development
  */
+import './supabase'; // Load environment variables first
 import app from './app';
 import './jobs/worker.js'; // Initialize BullMQ Worker (optional, requires Redis)
 import { taskWorker } from './jobs/worker';

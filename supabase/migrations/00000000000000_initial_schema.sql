@@ -949,25 +949,6 @@ COMMENT ON COLUMN user_efficiency_profile.peak_hours IS '高效时段列表（�
 COMMENT ON COLUMN user_efficiency_profile.low_hours IS '低效时段列表（小时）';
 
 -- =====================================================
--- PATH NODE TASKS TABLE (学习路径节点任务关联)
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS path_node_tasks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  path_id UUID NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
-  node_id UUID NOT NULL REFERENCES learning_path_nodes(id) ON DELETE CASCADE,
-  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(node_id, task_id)
-);
-
-COMMENT ON TABLE path_node_tasks IS '学习路径节点与任务的关联表';
-COMMENT ON COLUMN path_node_tasks.path_id IS '学习路径 ID';
-COMMENT ON COLUMN path_node_tasks.node_id IS '学习路径节点 ID';
-COMMENT ON COLUMN path_node_tasks.task_id IS '关联的任务 ID';
-
--- =====================================================
 -- LEARNING PATHS TABLES
 -- =====================================================
 
@@ -1022,6 +1003,25 @@ COMMENT ON COLUMN learning_path_nodes.order_index IS 'Order of this node in the 
 COMMENT ON COLUMN learning_path_nodes.estimated_time IS 'Estimated time in minutes';
 COMMENT ON COLUMN learning_path_nodes.is_milestone IS 'Whether this node is a milestone';
 COMMENT ON COLUMN learning_path_nodes.prerequisites IS 'Array of prerequisite node IDs';
+
+-- =====================================================
+-- PATH NODE TASKS TABLE (学习路径节点任务关联)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS path_node_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  path_id UUID NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
+  node_id UUID NOT NULL REFERENCES learning_path_nodes(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES scheduled_tasks(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(node_id, task_id)
+);
+
+COMMENT ON TABLE path_node_tasks IS '学习路径节点与任务的关联表';
+COMMENT ON COLUMN path_node_tasks.path_id IS '学习路径 ID';
+COMMENT ON COLUMN path_node_tasks.node_id IS '学习路径节点 ID';
+COMMENT ON COLUMN path_node_tasks.task_id IS '关联的任务 ID';
 
 -- Learning path progress table
 CREATE TABLE IF NOT EXISTS learning_path_progress (
@@ -1371,7 +1371,7 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_user ON knowledge_review_t
 CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_kp ON knowledge_review_tasks(knowledge_point_id);
 CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_task ON knowledge_review_tasks(task_id);
 CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_next_review ON knowledge_review_tasks(user_id, next_review_date);
-CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_due ON knowledge_review_tasks(user_id, next_review_date) WHERE next_review_date <= NOW();
+CREATE INDEX IF NOT EXISTS idx_knowledge_review_tasks_due ON knowledge_review_tasks(user_id, next_review_date) WHERE next_review_date IS NOT NULL;
 
 -- User efficiency profile indexes
 CREATE INDEX IF NOT EXISTS idx_user_efficiency_profile_user ON user_efficiency_profile(user_id);

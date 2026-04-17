@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell, crashReporter, ipcMain } from "electron";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import * as http from "http";
+import * as fs from "fs";
 import pkg from "electron-updater";
 const { autoUpdater } = pkg;
 import dotenv from "dotenv";
@@ -16,7 +17,16 @@ function loadEnvVariables() {
     if (isPackaged) {
       envPath = path.join(process.resourcesPath, ".env.production");
     } else {
-      envPath = path.join(__dirname, "..", "..", ".env.production");
+      const devEnvPath = path.join(__dirname, "..", "..", ".env.development");
+      const defaultEnvPath = path.join(__dirname, "..", "..", ".env");
+      
+      if (fs.existsSync(devEnvPath)) {
+        envPath = devEnvPath;
+      } else if (fs.existsSync(defaultEnvPath)) {
+        envPath = defaultEnvPath;
+      } else {
+        envPath = devEnvPath;
+      }
     }
     console.log("[Main] 尝试加载环境变量文件:", envPath);
     dotenv.config({ path: envPath });

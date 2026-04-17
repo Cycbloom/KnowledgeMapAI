@@ -6,6 +6,50 @@ import { logger } from "./utils/logger";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const LOCAL_SUPABASE_URL = "http://127.0.0.1:54321";
+const LOCAL_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
+const LOCAL_SUPABASE_SERVICE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+
+function isDevelopment(): boolean {
+  const nodeEnv = process.env.NODE_ENV;
+  return nodeEnv === "development" || !nodeEnv;
+}
+
+function getSupabaseConfig(): {
+  url: string;
+  serviceKey: string;
+  anonKey: string;
+} {
+  const envUrl = process.env.VITE_SUPABASE_URL;
+  const envServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const envAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (envUrl && envServiceKey) {
+    return {
+      url: envUrl,
+      serviceKey: envServiceKey,
+      anonKey: envAnonKey || envServiceKey,
+    };
+  }
+
+  if (isDevelopment()) {
+    logger.info("Using local Supabase configuration for development");
+    return {
+      url: LOCAL_SUPABASE_URL,
+      serviceKey: LOCAL_SUPABASE_SERVICE_KEY,
+      anonKey: LOCAL_SUPABASE_ANON_KEY,
+    };
+  }
+
+  return {
+    url: envUrl || "",
+    serviceKey: envServiceKey || "",
+    anonKey: envAnonKey || "",
+  };
+}
+
 let envPath: string | null = null;
 
 try {
@@ -25,8 +69,10 @@ try {
     possiblePaths.push(path.join(__dirname, "..", ".env.production"));
     possiblePaths.push(path.join(__dirname, "..", "..", ".env.production"));
   } else {
-    possiblePaths.push(path.join(__dirname, "..", ".env.production"));
-    possiblePaths.push(path.join(__dirname, "..", "..", ".env.production"));
+    possiblePaths.push(path.join(__dirname, "..", ".env.development"));
+    possiblePaths.push(path.join(__dirname, "..", ".env"));
+    possiblePaths.push(path.join(__dirname, "..", "..", ".env.development"));
+    possiblePaths.push(path.join(__dirname, "..", "..", ".env"));
   }
 
   for (const tryPath of possiblePaths) {
@@ -44,13 +90,18 @@ try {
   if (!envPath) {
     dotenv.config();
   }
+  
+  if (envPath) {
+    logger.info(`Loaded environment from: ${envPath}`);
+  }
 } catch {
   logger.debug("Failed to initialize environment");
 }
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+const config = getSupabaseConfig();
+const supabaseUrl = config.url;
+const supabaseServiceKey = config.serviceKey;
+const supabaseAnonKey = config.anonKey;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   logger.warn("Supabase credentials missing in .env file!");
@@ -89,8 +140,9 @@ const { admin: supabaseAdmin, anon: supabaseAnon } = createSupabaseClients();
 export { supabaseAdmin, supabaseAnon };
 
 export const createClientWithToken = (token: string): SupabaseClient => {
-  const validUrl = supabaseUrl || "https://placeholder.supabase.co";
-  const validAnonKey = supabaseAnonKey || "placeholder-key";
+  const tokenConfig = getSupabaseConfig();
+  const validUrl = tokenConfig.url || "https://placeholder.supabase.co";
+  const validAnonKey = tokenConfig.anonKey || "placeholder-key";
 
   try {
     return createClient(validUrl, validAnonKey, {

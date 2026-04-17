@@ -34,12 +34,68 @@ npx playwright test --grep="功能名称"  # 运行特定测试
 
 ## 数据库规范
 
+### 环境分离
+
+项目支持开发环境与生产环境的数据库分离：
+
+- **开发环境**：使用 Supabase CLI 本地服务
+- **生产环境**：使用云端 Supabase 服务
+
+### 本地数据库管理
+
+使用 Supabase CLI 管理本地数据库（推荐）：
+
+```bash
+npm run db:local:start    # 启动本地数据库
+npm run db:local:stop     # 停止本地数据库
+npm run db:local:reset    # 重置本地数据库（删除所有数据）
+npm run db:local:status   # 查看本地数据库状态
+npm run db:local:logs     # 查看本地数据库日志
+```
+
+或直接使用 Supabase CLI：
+
+```bash
+npx supabase start        # 启动本地数据库
+npx supabase stop         # 停止本地数据库
+npx supabase db reset     # 重置本地数据库
+npx supabase status       # 查看状态
+```
+
+### 本地数据库访问地址
+
+启动后，Supabase CLI 会显示各服务的访问地址，通常为：
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| API | http://127.0.0.1:54321 | Supabase API 网关 |
+| Studio | http://127.0.0.1:54323 | Supabase 管理界面 |
+| PostgreSQL | localhost:54322 | 直连数据库 |
+| Inbucket | http://127.0.0.1:54324 | 邮件测试服务 |
+
+> 注意：实际端口以 `npx supabase status` 输出为准
+
 ### 本地数据库
 
 - **Schema 文件**：`supabase/migrations/00000000000000_initial_schema.sql`
 - **Seed 文件**：`supabase/migrations/00000000000001_initial_seed.sql`
 - **测试用户**：`test@example.com` / `test123456`
 - **不创建新迁移文件**：所有变更直接修改 000 和 001 文件
+
+### 开发环境配置
+
+开发环境使用 `.env.development` 文件配置，自动连接本地 Supabase：
+
+```bash
+# 复制开发环境配置
+cp .env.example .env.development
+
+# 启动本地数据库
+npm run db:local:start
+
+# 启动开发服务器
+npm run dev
+```
 
 ### 远程数据库
 

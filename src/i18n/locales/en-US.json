@@ -2562,6 +2562,17 @@
     "confirmDelete": "Are you sure you want to delete this action?",
     "saveFailed": "Save failed"
   },
+  "register": {
+    "title": "Register",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Register",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Login",
+    "switchToLight": "Switch to Light Mode",
+    "switchToDark": "Switch to Dark Mode"
+  },
   "profile": {
     "title": "Profile",
     "subtitle": "Account Information & Security",

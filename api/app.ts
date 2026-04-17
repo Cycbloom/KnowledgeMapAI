@@ -8,7 +8,6 @@ import express, {
 } from "express";
 import "express-async-errors";
 import cors from "cors";
-import dotenv from "dotenv";
 import helmet from "helmet";
 import compression from "compression";
 import cookieParser from "cookie-parser";
@@ -49,9 +48,6 @@ import agentRoutes from "./routes/agent";
 import domainRoutes from "./routes/domains";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
-
-// load env
-dotenv.config();
 
 import { errorHandler } from "./middleware/errorHandler";
 import { csrfProtection, getCsrfToken } from "./middleware/csrf";

@@ -1,5 +1,0 @@
-- [x] handleBatchCreate 函数在 expand 模式下传递 expandDomain 而非 domain
-- [x] handleBatchCreate 函数在 new 模式下仍传递 domain（行为不变）
-- [x] 当 expandDomain 为空时，传递 undefined 而非空字符串
-- [x] 类型检查通过（npm run check）— 已有错误在 graph.ts:144，与本次修改无关
-- [x] Lint 检查通过（npm run lint）

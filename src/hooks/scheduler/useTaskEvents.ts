@@ -104,6 +104,14 @@ export const useTaskEvents = () => {
               return;
             }
 
+            if (data.cacheKeys && Array.isArray(data.cacheKeys)) {
+              for (const key of data.cacheKeys) {
+                if (Array.isArray(key)) {
+                  queryClient.invalidateQueries({ queryKey: key });
+                }
+              }
+            }
+
             if (data.type === "task_update") {
               const { taskId, status, result, error } = data;
 
@@ -140,6 +148,10 @@ export const useTaskEvents = () => {
               );
 
               queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+            }
+
+            if (data.type === "task_completed" || data.type === "focus_session_ended" || data.type === "review_completed") {
+              queryClient.invalidateQueries({ queryKey: ["scheduler"] });
             }
           } catch (err) {
             console.error("[SSE] Error parsing message:", err);

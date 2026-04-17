@@ -17,6 +17,8 @@ import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 import { supabaseAdmin } from "../../supabase";
 import type { CollaboratorRole, GraphWithCollaborators } from "@shared/types";
+import { appEventBus } from "../core/eventBus";
+import type { GraphCreatedPayload, GraphUpdatedPayload, GraphDeletedPayload } from "@shared/types/events";
 
 interface GraphWithCount {
   id: string;
@@ -242,6 +244,8 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
+    await appEventBus.publish("graph_created", { graphId: data.id, title, userId } as GraphCreatedPayload, userId, "graph_service");
+
     return data;
   }
 
@@ -337,6 +341,8 @@ export class GraphService {
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     await cacheService.del(CacheKeys.GRAPH(graphId));
 
+    await appEventBus.publish("graph_updated", { graphId, userId, changes: updates } as GraphUpdatedPayload, userId, "graph_service");
+
     return data;
   }
 
@@ -361,6 +367,8 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
 
+    await appEventBus.publish("graph_updated", { graphId, userId } as GraphUpdatedPayload, userId, "graph_service");
+
     return data;
   }
 
@@ -372,6 +380,8 @@ export class GraphService {
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
     await cacheService.del(CacheKeys.GRAPH(graphId));
+
+    await appEventBus.publish("graph_deleted", { graphId, userId } as GraphDeletedPayload, userId, "graph_service");
   }
 
   async deleteGraphs(supabase: SupabaseClient, graphIds: string[], userId: string) {
@@ -385,6 +395,10 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+    for (const id of (data?.map((g: { id: string }) => g.id) || [])) {
+      await appEventBus.publish("graph_deleted", { graphId: id, userId } as GraphDeletedPayload, userId, "graph_service");
+    }
 
     return { count: data?.length || 0 };
   }
@@ -403,6 +417,8 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+    await appEventBus.publish("graph_updated", { graphId, userId } as GraphUpdatedPayload, userId, "graph_service");
   }
 
   async permanentDeleteGraph(
@@ -419,6 +435,8 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+    await appEventBus.publish("graph_deleted", { graphId, userId } as GraphDeletedPayload, userId, "graph_service");
   }
 
   async restoreGraphs(
@@ -436,6 +454,10 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+    for (const id of (data?.map((g: { id: string }) => g.id) || [])) {
+      await appEventBus.publish("graph_updated", { graphId: id, userId } as GraphUpdatedPayload, userId, "graph_service");
+    }
 
     return { count: data?.length || 0 };
   }
@@ -455,6 +477,10 @@ export class GraphService {
     if (error) throw error;
 
     await cacheService.del(CacheKeys.USER_GRAPHS(userId));
+
+    for (const id of (data?.map((g: { id: string }) => g.id) || [])) {
+      await appEventBus.publish("graph_deleted", { graphId: id, userId } as GraphDeletedPayload, userId, "graph_service");
+    }
 
     return { count: data?.length || 0 };
   }

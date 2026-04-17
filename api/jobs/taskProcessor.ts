@@ -2,10 +2,14 @@ import { supabaseAdmin } from "../supabase";
 import { taskService, Task } from "../services/taskService";
 import { aiService } from "../services/ai/aiService";
 import { getNextLevel } from "../utils/graphUtils";
-import { cacheService, CacheKeys } from "../services/common/cacheService";
 import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers";
 import { logger } from "../utils/logger";
+import { appEventBus } from "../services/core/eventBus";
 import type { AIProviderType } from "@shared/types";
+import type {
+  AITaskCompletedPayload,
+  AITaskFailedPayload,
+} from "@shared/types/events";
 
 class TaskProcessor {
   public async processTask(task: Task) {
@@ -47,19 +51,18 @@ class TaskProcessor {
       );
       logger.debug(`[TaskProcessor] Task ${task.id} completed`);
 
-      // Invalidate cache
-      if (task.type === "expand_graph") {
-        // We need user_id and graph_id to invalidate cache properly
-        // task.user_id is available
-        // task.payload.graph_id is available
-        const { graph_id } = task.payload;
-        if (graph_id && task.user_id) {
-          await cacheService.del(CacheKeys.GRAPH_NODES(task.user_id, graph_id));
-          logger.debug(
-            `[TaskProcessor] Cache invalidated for graph ${graph_id}`,
-          );
-        }
-      }
+      await appEventBus.publish(
+        "ai_task_completed",
+        {
+          taskId: task.id,
+          taskType: task.type,
+          userId: task.user_id,
+          graphId: task.payload?.graph_id,
+          result,
+        } as AITaskCompletedPayload,
+        task.user_id,
+        "task_processor",
+      );
     } catch (error: any) {
       logger.error(`Task ${task.id} failed:`, error);
       await taskService.updateTaskStatus(
@@ -68,6 +71,19 @@ class TaskProcessor {
         "failed",
         undefined,
         error.message,
+      );
+
+      await appEventBus.publish(
+        "ai_task_failed",
+        {
+          taskId: task.id,
+          taskType: task.type,
+          userId: task.user_id,
+          graphId: task.payload?.graph_id,
+          error: error.message,
+        } as AITaskFailedPayload,
+        task.user_id,
+        "task_processor",
       );
     }
   }
@@ -220,11 +236,6 @@ class TaskProcessor {
 
     if (totalCount === 0 && errors.length > 0) {
       throw new Error(`Failed to generate cards: ${errors.join("; ")}`);
-    }
-
-    // Invalidate cache if graph_id is available
-    if (graph_id) {
-      await cacheService.del(CacheKeys.STUDY_CARDS(graph_id));
     }
 
     return {

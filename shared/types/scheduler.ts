@@ -494,115 +494,56 @@ export interface PendingReviewTask extends ReviewTask {
   masteryLevel: number;
 }
 
-export type SchedulerEventType =
-  | "task_started"
-  | "task_paused"
-  | "task_resumed"
-  | "task_completed"
-  | "task_demoted"
-  | "task_moved"
-  | "focus_session_started"
-  | "focus_session_ended"
-  | "review_completed"
-  | "schedule_executed"
-  | "learning_progress_updated";
+export type {
+  SchedulerEventType,
+  SchedulerEvent,
+  SchedulerEventHandler,
+  SchedulerEventPayload,
+} from "./events";
 
-export interface SchedulerEvent<T = unknown> {
-  id: string;
-  type: SchedulerEventType;
-  payload: T;
-  userId: string;
-  timestamp: string;
-  source?: string;
-}
+export type {
+  AppEventType,
+  AppEvent,
+  AppEventHandler,
+  AppEventPayload,
+  GraphEventType,
+  GraphCreatedPayload,
+  GraphUpdatedPayload,
+  GraphDeletedPayload,
+  NodeCreatedPayload,
+  NodeUpdatedPayload,
+  NodeDeletedPayload,
+  EdgeCreatedPayload,
+  EdgeDeletedPayload,
+  AIEventType,
+  AITaskCompletedPayload,
+  AITaskFailedPayload,
+  StudyEventType,
+  StudySessionCompletedPayload,
+  SystemEventType,
+  CacheInvalidationNeededPayload,
+  NotificationNeededPayload,
+} from "./events";
 
-export interface TaskStartedPayload {
-  taskId: string;
-  queueLevel: number;
-  knowledgePointId?: string;
-}
+export type {
+  TaskStartedPayload,
+  TaskPausedPayload,
+  TaskResumedPayload,
+  TaskCompletedPayload,
+  TaskDemotedPayload,
+  TaskMovedPayload,
+  FocusSessionStartedPayload,
+  FocusSessionEndedPayload,
+  ReviewCompletedPayload,
+  ScheduleExecutedPayload,
+  LearningProgressUpdatedPayload,
+} from "./events";
 
-export interface TaskPausedPayload {
-  taskId: string;
-  duration: number;
-}
-
-export interface TaskResumedPayload {
-  taskId: string;
-}
-
-export interface TaskCompletedPayload {
-  taskId: string;
-  queueLevel: number;
-  actualDuration?: number;
-  knowledgePointId?: string;
-  tags: string[];
-}
-
-export interface TaskDemotedPayload {
-  taskId: string;
-  fromQueueLevel: number;
-  toQueueLevel: number;
-}
-
-export interface TaskMovedPayload {
-  taskId: string;
-  fromQueueLevel: number;
-  toQueueLevel: number;
-}
-
-export interface FocusSessionStartedPayload {
-  sessionId: string;
-  taskId?: string;
-}
-
-export interface FocusSessionEndedPayload {
-  sessionId: string;
-  taskId?: string;
-  duration: number;
-  pomodoroCount: number;
-  isBreak: boolean;
-}
-
-export interface ReviewCompletedPayload {
-  reviewTaskId: string;
-  knowledgePointId: string;
-  qualityScore: number;
-  nextReviewDate: string;
-  algorithm: "sm2" | "fsrs";
-}
-
-export interface ScheduleExecutedPayload {
-  scheduleId: string;
-  scheduleType: string;
-  taskCreated?: string;
-}
-
-export interface LearningProgressUpdatedPayload {
-  knowledgePointId: string;
-  masteryLevel: number;
-  studyDuration: number;
-  source: "task_completion" | "focus_session" | "review";
-}
-
-export type SchedulerEventPayload =
-  | TaskStartedPayload
-  | TaskPausedPayload
-  | TaskResumedPayload
-  | TaskCompletedPayload
-  | TaskDemotedPayload
-  | TaskMovedPayload
-  | FocusSessionStartedPayload
-  | FocusSessionEndedPayload
-  | ReviewCompletedPayload
-  | ScheduleExecutedPayload
-  | LearningProgressUpdatedPayload;
-
-export type SchedulerEventHandler = (event: SchedulerEvent) => Promise<void> | void;
+import type { SchedulerEventType as SchedulerEventTypeLocal } from "./events";
 
 export interface SchedulerEventLog {
   id: string;
-  event_type: SchedulerEventType;
+  event_type: SchedulerEventTypeLocal;
   payload: Record<string, unknown>;
   source?: string;
   status: "pending" | "processed" | "failed";

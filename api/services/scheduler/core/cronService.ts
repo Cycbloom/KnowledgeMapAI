@@ -2,7 +2,9 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "../../../supabase";
 import { logger } from "../../../utils/logger";
 import { schedulerEventBus } from "./eventBus";
+import { appEventBus } from "../../core/eventBus";
 import type { ScheduleExecutedPayload } from "../../../../shared/types/scheduler";
+import type { NotificationNeededPayload } from "../../../../shared/types/events";
 
 interface CronJob {
   name: string;
@@ -270,14 +272,20 @@ class SchedulerCronService {
       userReviews.set(review.user_id, count + 1);
     }
 
-    const { sseService } = await import("../../core/sseService");
     for (const [userId, count] of userReviews) {
       try {
-        sseService.sendToUser(userId, {
-          type: "review_reminder",
-          message: `你有 ${count} 个待复习的知识点`,
-          data: { count, date: today },
-        });
+        await appEventBus.publish<NotificationNeededPayload>(
+          "notification_needed",
+          {
+            userId,
+            type: "review_reminder",
+            message: `你有 ${count} 个待复习的知识点`,
+            data: { count, date: today },
+            cacheKeys: [["study", "review"]],
+          },
+          userId,
+          "cron_service",
+        );
       } catch (error) {
         logger.error(`[CronService] Failed to send review reminder to ${userId}:`, error);
       }

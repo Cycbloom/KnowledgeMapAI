@@ -10,6 +10,14 @@ import { performanceMonitor } from './services/ai/performanceMonitor';
 import { schedulerCronService } from './services/scheduler/core/cronService';
 import { schedulerSubscribers } from './services/scheduler/core/subscribers';
 import { supabaseAdmin } from './supabase';
+import { appEventBus } from './services/core/eventBus';
+import {
+  cacheInvalidationSubscriber,
+  sseNotificationSubscriber,
+  achievementSubscriber,
+  learningProgressSubscriber,
+  reviewSchedulerSubscriber,
+} from './services/core/subscribers';
 
 /**
  * Validate Environment
@@ -39,8 +47,17 @@ const server = app.listen(PORT, () => {
   }
 
   schedulerSubscribers.initialize(supabaseAdmin);
+
+  cacheInvalidationSubscriber.initialize();
+  sseNotificationSubscriber.initialize();
+  achievementSubscriber.initialize();
+  learningProgressSubscriber.initialize();
+  reviewSchedulerSubscriber.initialize();
+
   schedulerCronService.start();
-  logger.info('[Scheduler] Cron service and event subscribers initialized');
+
+  logger.info(`[AppEventBus] Initialized with ${appEventBus.getHandlerCount()} total handlers`);
+  logger.info('[Scheduler] Cron service and all event subscribers initialized');
 });
 
 // Handle unhandled promise rejections
@@ -66,6 +83,14 @@ const gracefulShutdown = async (signal: string) => {
   logger.info(`${signal} signal received: closing HTTP server`);
   
   schedulerCronService.stop();
+
+  cacheInvalidationSubscriber.destroy();
+  sseNotificationSubscriber.destroy();
+  achievementSubscriber.destroy();
+  learningProgressSubscriber.destroy();
+  reviewSchedulerSubscriber.destroy();
+
+  appEventBus.clear();
 
   // Close the worker if it exists
   if (taskWorker) {

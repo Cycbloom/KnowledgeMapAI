@@ -35,7 +35,7 @@ if (redisUrl) {
 
         try {
           const { data: task, error } = await supabaseAdmin
-            .from('tasks')
+            .from('scheduled_tasks')
             .select('*')
             .eq('id', taskId)
             .single();

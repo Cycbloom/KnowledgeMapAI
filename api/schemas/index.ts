@@ -492,14 +492,20 @@ export const optimizePromptSchema = z.object({
 
 // --- Task Schemas ---
 export const createTaskSchema = z.object({
-  type: z.enum([
-    "graph_expansion",
-    "card_generation",
-    "content_analysis",
-    "custom",
+  task_type: z.enum([
+    "one_time",
+    "long_term",
+    "periodic",
+    "learning",
+    "async",
   ]),
-  payload: z.record(z.any()),
+  title: z.string().min(1, "标题不能为空"),
+  description: z.string().optional(),
+  queue_id: z.string().optional(),
   priority: z.enum(["low", "medium", "high"]).optional(),
+  estimated_duration: z.number().int().positive().optional(),
+  notes: z.string().optional(),
+  context: z.string().max(2000).optional(),
 });
 
 // --- Relation Delete Schemas ---

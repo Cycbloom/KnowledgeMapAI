@@ -46,8 +46,11 @@ import quizSetRoutes from "./routes/quizSets";
 import collaboratorRoutes from "./routes/collaborators";
 import agentRoutes from "./routes/agent";
 import domainRoutes from "./routes/domains";
+import pluginsRoutes from "./routes/plugins";
 import { startAutoBackupScheduler } from "./jobs/autoBackupScheduler";
 import { syncExistingBackups } from "./services/common/backupSyncService";
+import { Kernel } from "./services/kernel/Kernel";
+import { registerCoreEventTypes } from "./services/kernel/coreEvents";
 
 import { errorHandler } from "./middleware/errorHandler";
 import { csrfProtection, getCsrfToken } from "./middleware/csrf";
@@ -60,6 +63,41 @@ import { requestIdMiddleware } from "./middleware/requestId";
 import { logger } from "./utils/logger";
 
 const app: express.Application = express();
+
+const kernel = new Kernel();
+registerCoreEventTypes(kernel);
+
+function applyKernelRoutes(app: express.Application, kernel: Kernel): void {
+  const routes = kernel.getRegisteredRoutes();
+  const rateLimiterMap: Record<string, express.RequestHandler> = {
+    auth: rateLimiters.auth,
+    ai: rateLimiters.ai,
+    aiHeavy: rateLimiters.aiHeavy,
+    general: rateLimiters.general,
+    write: rateLimiters.write,
+  };
+
+  for (const [, entry] of routes) {
+    const middleware: express.RequestHandler[] = [];
+
+    if (entry.options?.rateLimiter) {
+      const limiter = rateLimiterMap[entry.options.rateLimiter];
+      if (limiter) {
+        middleware.push(limiter);
+      }
+    }
+
+    if (entry.options?.middleware) {
+      middleware.push(...entry.options.middleware);
+    }
+
+    if (middleware.length > 0) {
+      app.use(entry.prefix, ...middleware, entry.router);
+    } else {
+      app.use(entry.prefix, entry.router);
+    }
+  }
+}
 
 app.use(requestIdMiddleware);
 
@@ -176,10 +214,10 @@ app.use("/api/calendar", calendarRoutes);
 app.use("/api/collaborations", collaboratorRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api", quizSetRoutes);
+app.use("/api/plugins", pluginsRoutes);
 
-/**
- * health
- */
+applyKernelRoutes(app, kernel);
+
 app.get("/api/health", (_req: Request, res: Response): void => {
   res.status(200).json({
     success: true,
@@ -206,3 +244,4 @@ app.use((_req: Request, res: Response) => {
 });
 
 export default app;
+export { kernel };

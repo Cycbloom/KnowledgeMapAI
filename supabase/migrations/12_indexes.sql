@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_actions_user ON ai_actions(user_id);
 CREATE INDEX IF NOT EXISTS idx_ai_actions_graph ON ai_actions(graph_id);
 
 -- Focus sessions (simplified: 5 indexes)
-CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_date ON focus_sessions(user_id, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_date ON focus_sessions(user_id, started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_completed ON focus_sessions(user_id, completed) WHERE completed = true;
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_task ON focus_sessions(task_id) WHERE task_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_focus_sessions_user_id ON focus_sessions(user_id);

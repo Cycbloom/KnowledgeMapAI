@@ -68,12 +68,15 @@ export interface LearningPlan {
   id: string;
   user_id: string;
   path_id: string;
-  plan_date: string;
-  planned_nodes: string[];
-  planned_duration?: number;
-  actual_duration?: number;
-  status: "pending" | "completed" | "partial" | "skipped";
+  node_id: string;
+  status: string;
+  progress_percentage: number;
+  time_spent: number;
   notes?: string;
+  planned_duration?: number;
+  planned_nodes: string[];
+  started_at?: string;
+  completed_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -783,18 +786,21 @@ export class LearningPathService {
     }
 
     const { data, error } = await supabase
-      .from("learning_plans")
+      .from("learning_path_progress")
       .upsert(
         {
           user_id: userId,
           path_id: pathId,
-          plan_date: input.plan_date,
+          node_id: input.planned_nodes[0],
+          started_at: input.plan_date,
           planned_nodes: input.planned_nodes,
           planned_duration: input.planned_duration || path.daily_minutes_target,
           notes: input.notes || null,
           status: "pending",
+          progress_percentage: 0,
+          time_spent: 0,
         },
-        { onConflict: "user_id,path_id,plan_date" },
+        { onConflict: "user_id,path_id,node_id" },
       )
       .select()
       .single();
@@ -814,11 +820,12 @@ export class LearningPathService {
     planDate: string,
   ): Promise<LearningPlan | null> {
     const { data, error } = await supabase
-      .from("learning_plans")
+      .from("learning_path_progress")
       .select("*")
       .eq("user_id", userId)
       .eq("path_id", pathId)
-      .eq("plan_date", planDate)
+      .gte("started_at", `${planDate}T00:00:00Z`)
+      .lt("started_at", `${planDate}T23:59:59Z`)
       .maybeSingle();
 
     if (error) {
@@ -837,17 +844,17 @@ export class LearningPathService {
     endDate?: string,
   ): Promise<LearningPlan[]> {
     let query = supabase
-      .from("learning_plans")
+      .from("learning_path_progress")
       .select("*")
       .eq("user_id", userId)
       .eq("path_id", pathId)
-      .order("plan_date", { ascending: true });
+      .order("started_at", { ascending: true });
 
     if (startDate) {
-      query = query.gte("plan_date", startDate);
+      query = query.gte("started_at", startDate);
     }
     if (endDate) {
-      query = query.lte("plan_date", endDate);
+      query = query.lte("started_at", endDate);
     }
 
     const { data, error } = await query;
@@ -865,13 +872,14 @@ export class LearningPathService {
     planId: string,
     userId: string,
     input: {
-      status?: "pending" | "completed" | "partial" | "skipped";
-      actual_duration?: number;
+      status?: string;
+      time_spent?: number;
       notes?: string;
+      progress_percentage?: number;
     },
   ): Promise<LearningPlan> {
     const { data: plan, error: checkError } = await supabase
-      .from("learning_plans")
+      .from("learning_path_progress")
       .select("id, path_id")
       .eq("id", planId)
       .eq("user_id", userId)
@@ -887,7 +895,7 @@ export class LearningPathService {
     };
 
     const { data, error } = await supabase
-      .from("learning_plans")
+      .from("learning_path_progress")
       .update(updateData)
       .eq("id", planId)
       .eq("user_id", userId)
@@ -1120,10 +1128,13 @@ export class LearningPathService {
           id: "",
           user_id: userId,
           path_id: pathId,
-          plan_date: planDateStr,
+          node_id: plannedNodesForDay[0],
+          status: "pending",
+          progress_percentage: 0,
+          time_spent: 0,
           planned_nodes: plannedNodesForDay,
           planned_duration: plannedDuration,
-          status: "pending",
+          started_at: planDateStr,
           created_at: now,
           updated_at: now,
         });
@@ -1134,15 +1145,18 @@ export class LearningPathService {
       const plansToInsert = plans.map((p) => ({
         user_id: p.user_id,
         path_id: p.path_id,
-        plan_date: p.plan_date,
+        node_id: p.node_id,
+        started_at: p.started_at,
         planned_nodes: p.planned_nodes,
         planned_duration: p.planned_duration,
         status: p.status,
+        progress_percentage: p.progress_percentage,
+        time_spent: p.time_spent,
       }));
 
       const { data: insertedPlans, error: insertError } = await supabase
-        .from("learning_plans")
-        .upsert(plansToInsert, { onConflict: "user_id,path_id,plan_date" })
+        .from("learning_path_progress")
+        .upsert(plansToInsert, { onConflict: "user_id,path_id,node_id" })
         .select();
 
       if (insertError) {

@@ -23,17 +23,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const getStringOrUnknown = (value: unknown, fallback: string = ""): string => {
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  return fallback;
-};
-
-const getNumberOrUndefined = (value: unknown): number | undefined => {
-  if (typeof value === "number") return value;
-  return undefined;
-};
-
 const formatTime = (iso?: string) => {
   if (!iso) return "-";
   const date = new Date(iso);
@@ -45,9 +34,9 @@ const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case "completed":
       return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "failed":
+    case "cancelled":
       return "bg-red-50 text-red-700 border-red-200";
-    case "processing":
+    case "in_progress":
       return "bg-blue-50 text-blue-700 border-blue-200";
     case "pending":
     default:
@@ -59,9 +48,9 @@ const getStatusIcon = (status: string) => {
   switch (status) {
     case "completed":
       return <CheckCircle2 className="w-4 h-4" />;
-    case "failed":
+    case "cancelled":
       return <XCircle className="w-4 h-4" />;
-    case "processing":
+    case "in_progress":
       return <Loader2 className="w-4 h-4 animate-spin" />;
     case "pending":
     default:
@@ -185,15 +174,13 @@ export const Tasks = () => {
 
     // Add BOM for Excel compatibility with UTF-8
     const BOM = "\uFEFF";
-    const header = "ID,Name,Type,Status,Created At,Updated At,Error\n";
+    const header = "ID,Title,Type,Status,Created At,Updated At\n";
     const rows = tasks
       .map((task) => {
-        const name = task.name || getTypeLabel(task.type, t);
-        // Escape quotes by doubling them
-        const escapedName = name ? name.replace(/"/g, '""') : "";
-        const error = task.error ? task.error.replace(/"/g, '""') : "";
+        const title = task.title || getTypeLabel(task.task_type, t);
+        const escapedTitle = title ? title.replace(/"/g, '""') : "";
 
-        return `${task.id},"${escapedName}",${task.type},${task.status},${task.created_at},${task.updated_at},"${error}"`;
+        return `${task.id},"${escapedTitle}",${task.task_type},${task.status},${task.created_at},${task.updated_at}`;
       })
       .join("\n");
 
@@ -264,7 +251,7 @@ export const Tasks = () => {
         />
         <FilterTab
           label={t("tasks.inProgress")}
-          value="processing"
+          value="in_progress"
           current={filter}
           onClick={handleFilterChange}
         />
@@ -276,7 +263,7 @@ export const Tasks = () => {
         />
         <FilterTab
           label={t("tasks.failed")}
-          value="failed"
+          value="cancelled"
           current={filter}
           onClick={handleFilterChange}
         />
@@ -319,18 +306,9 @@ export const Tasks = () => {
             <>
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
                 {tasks.map((task) => {
-                  const graphId = task.payload?.graph_id;
-                  const nodeId = task.payload?.node_id;
-                  const resultTitles = Array.isArray(task.result?.nodeTitles)
-                    ? task.result.nodeTitles
-                    : [];
-                  const showResult =
-                    task.status === "completed" &&
-                    (task.type === "expand_graph" ||
-                      task.type === "generate_questions" ||
-                      task.type === "batch_generate_questions" ||
-                      task.type === "embedding_generation" ||
-                      task.type === "infinite_graph_expansion");
+                  const context = (() => { try { return JSON.parse(task.context || '{}'); } catch { return {}; } })();
+                  const graphId = context.graph_id;
+                  const nodeId = context.node_id;
 
                   return (
                     <div
@@ -347,7 +325,7 @@ export const Tasks = () => {
                               <span>{task.status}</span>
                             </span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100">
-                              {task.name || getTypeLabel(task.type, t)}
+                              {task.title || getTypeLabel(task.task_type, t)}
                             </span>
                             <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">
                               #{task.id.slice(0, 8)}
@@ -355,41 +333,6 @@ export const Tasks = () => {
                           </div>
 
                           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1.5 pl-1">
-                            {task.status === "processing" &&
-                              task.result?.progress !== undefined && (
-                                <div className="mt-2 w-full max-w-md bg-slate-100 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
-                                    <span className="flex items-center gap-2">
-                                      <Loader2
-                                        size={12}
-                                        className="animate-spin text-blue-500"
-                                      />
-                                      {t("tasks.processing")}{" "}
-                                      <span className="text-blue-600 dark:text-blue-400">
-                                        {getStringOrUnknown(
-                                          task.result.current_node,
-                                          t("tasks.preparing"),
-                                        )}
-                                      </span>
-                                    </span>
-                                    <span>
-                                      {getNumberOrUndefined(
-                                        task.result.progress,
-                                      ) ?? 0}
-                                      %
-                                    </span>
-                                  </div>
-                                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden shadow-inner">
-                                    <div
-                                      className="bg-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(59,130,246,0.5)]"
-                                      style={{
-                                        width: `${getNumberOrUndefined(task.result.progress) ?? 0}%`,
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-
                             <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Clock size={12} /> {t("tasks.created")}{" "}
@@ -400,123 +343,17 @@ export const Tasks = () => {
                               )}
                             </div>
 
-                            {task.error && (
-                              <div className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded text-xs break-words border border-red-100 dark:border-red-900/20">
-                                <strong>{t("tasks.error")}</strong>
-                                {task.error}
+                            {task.notes && (
+                              <div className="text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/10 p-2 rounded text-xs break-words border border-slate-100 dark:border-slate-900/20">
+                                {task.notes}
                               </div>
                             )}
-
-                            {showResult &&
-                              task.type === "expand_graph" &&
-                              resultTitles.length > 0 && (
-                                <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
-                                  <span className="font-medium">
-                                    {t("tasks.newNodes")}
-                                  </span>
-                                  {resultTitles.slice(0, 6).join("、")}
-                                  {resultTitles.length > 6
-                                    ? t("tasks.etc", { count: resultTitles.length })
-                                    : ""}
-                                </div>
-                              )}
-
-                            {showResult &&
-                              task.type === "generate_questions" &&
-                              typeof task.result?.count === "number" && (
-                                <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
-                                  <span className="font-medium">
-                                    {t("tasks.cardsGenerated")}
-                                  </span>{" "}
-                                  {task.result.count} {t("tasks.cards")}
-                                </div>
-                              )}
-
-                            {showResult &&
-                              task.type === "batch_generate_questions" &&
-                              typeof task.result?.totalCards === "number" && (
-                                <div className="text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-2 rounded text-xs border border-emerald-100/50 dark:border-emerald-900/20">
-                                  <span className="font-medium">
-                                    {t("tasks.batchGenerateComplete")}
-                                  </span>{" "}
-                                  {t("tasks.totalCardsGenerated", { count: task.result.totalCards })}
-                                </div>
-                              )}
-
-                            {showResult &&
-                              task.type === "infinite_graph_expansion" &&
-                              task.result?.total_graphs_created !== undefined && (
-                                <div className="text-purple-700 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-900/10 p-2 rounded text-xs border border-purple-100/50 dark:border-purple-900/20">
-                                  <span className="font-medium">
-                                    {t("tasks.expansionComplete")}
-                                  </span>
-                                  {t("tasks.createdGraphsAndNodes", {
-                                    graphs: getNumberOrUndefined(task.result.total_graphs_created) ?? 0,
-                                    nodes: getNumberOrUndefined(task.result.total_nodes_created) ?? 0
-                                  })}
-                                </div>
-                              )}
-
-                            {showResult &&
-                              task.type === "embedding_generation" &&
-                              typeof task.result?.processed === "number" && (
-                                <div className="text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10 p-2 rounded text-xs border border-indigo-100/50 dark:border-indigo-900/20">
-                                  <span className="font-medium">
-                                    {t("tasks.embeddingComplete")}
-                                  </span>
-                                  {t("tasks.successCount", { count: getNumberOrUndefined(task.result.processed) ?? 0 })}
-                                  {(getNumberOrUndefined(task.result.failed) ?? 0) > 0 &&
-                                    t("tasks.failedCount", { count: getNumberOrUndefined(task.result.failed) })}
-                                </div>
-                              )}
-
-                            {task.status === "processing" &&
-                              task.type === "embedding_generation" &&
-                              task.result?.progress !== undefined && (
-                                <div className="text-indigo-600 dark:text-indigo-400 text-xs flex items-center gap-2">
-                                  <span className="font-medium">{t("tasks.progress")}</span>
-                                  <span>
-                                    {getNumberOrUndefined(task.result.processed) ??
-                                      0}{" "}
-                                    / {getStringOrUnknown(task.result.total, "?")}
-                                  </span>
-                                </div>
-                              )}
-
-                            {task.status === "processing" &&
-                              task.type === "infinite_graph_expansion" &&
-                              task.result?.current_depth !== undefined && (
-                                <div className="text-purple-600 dark:text-purple-400 text-xs flex items-center gap-2">
-                                  <span className="font-medium">{t("tasks.depth")}</span>
-                                  <span>
-                                    {getNumberOrUndefined(
-                                      task.result.current_depth,
-                                    ) ?? 0}{" "}
-                                    /{" "}
-                                    {getNumberOrUndefined(task.result.max_depth) ??
-                                      2}
-                                  </span>
-                                  {task.result.total_graphs_created !==
-                                    undefined && (
-                                    <>
-                                      <span className="text-gray-300 dark:text-gray-600">
-                                        |
-                                      </span>
-                                      <span>
-                                        {t("tasks.graphsCreated", {
-                                          count: getNumberOrUndefined(task.result.total_graphs_created) ?? 0
-                                        })}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              )}
                           </div>
                         </div>
 
                         <div className="flex flex-col items-end gap-2">
                           <div className="flex items-center gap-2">
-                            {task.status === "failed" && (
+                            {task.status === "cancelled" && (
                               <button
                                 onClick={() => handleRetry(task.id)}
                                 disabled={retryMutation.isPending}
@@ -553,7 +390,7 @@ export const Tasks = () => {
                             </button>
                           )}
 
-                          {task.type === "generate_questions" && nodeId && (
+                          {task.task_type === "generate_questions" && nodeId && (
                             <button
                               onClick={() =>
                                 navigate(
@@ -568,7 +405,7 @@ export const Tasks = () => {
 
                           {task.status === "completed" &&
                             graphId &&
-                            task.type === "expand_graph" && (
+                            task.task_type === "expand_graph" && (
                               <button
                                 onClick={() => {
                                   navigate(`/graph/${graphId}`);
@@ -585,7 +422,7 @@ export const Tasks = () => {
                             )}
 
                           {task.status === "completed" &&
-                            task.type === "generate_questions" &&
+                            task.task_type === "generate_questions" &&
                             nodeId && (
                               <button
                                 onClick={() => {
@@ -601,27 +438,6 @@ export const Tasks = () => {
                                 className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200 dark:shadow-none transition-colors"
                               >
                                 {t("tasks.startLearning")}
-                              </button>
-                            )}
-
-                          {task.status === "completed" &&
-                            task.type === "infinite_graph_expansion" &&
-                            typeof task.result?.source_graph_id === "string" &&
-                            task.result.source_graph_id && (
-                              <button
-                                onClick={() => {
-                                  navigate(
-                                    `/graph-map?from=${String(task.result.source_graph_id)}`,
-                                  );
-                                  addMessage({
-                                    type: "success",
-                                    content:
-                                      "已打开图谱地图，可查看扩展的知识网络",
-                                  });
-                                }}
-                                className="w-full px-3 py-1.5 text-xs font-medium rounded-md bg-purple-600 text-white hover:bg-purple-700 shadow-sm shadow-purple-200 dark:shadow-none transition-colors"
-                              >
-                                {t("tasks.viewKnowledgeNetwork")}
                               </button>
                             )}
                         </div>

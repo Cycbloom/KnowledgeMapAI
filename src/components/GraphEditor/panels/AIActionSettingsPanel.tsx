@@ -32,7 +32,6 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
   const [actions, setActions] = useState<AIAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAction, setEditingAction] = useState<Partial<AIAction> | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
   const fetchActions = async () => {
     setLoading(true);
@@ -67,7 +66,6 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
             await api.aiActions.create(actionData);
         }
         setEditingAction(null);
-        setIsCreating(false);
         fetchActions();
     } catch (err) {
         console.error("Failed to save action", err);
@@ -90,7 +88,6 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
           scope,
           prompt_template: '{{nodeContent}}'
       });
-      setIsCreating(true);
   };
 
   const handleDuplicate = (action: AIAction) => {
@@ -102,7 +99,6 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
           graph_id: scope === 'graph' ? graphId : undefined,
           user_id: undefined // Let backend handle user_id
       });
-      setIsCreating(true);
   };
 
   return (
@@ -196,7 +192,7 @@ export const AIActionSettingsPanel: React.FC<AIActionSettingsPanelProps> = ({ gr
                 initialContent={editingAction.prompt_template || ''}
                 onSave={handleSave}
                 variables={['nodeTitle', 'nodeContent', 'userInputs', 'parents', 'children', 'siblings']}
-                onCancel={() => { setEditingAction(null); setIsCreating(false); }}
+                onCancel={() => { setEditingAction(null); }}
             />
         </div>
       ) : (

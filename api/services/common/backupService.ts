@@ -22,7 +22,7 @@ export interface BackupData {
     study_progress: any[];
     focus_sessions: any[];
     user_achievements: any[];
-    daily_tasks: any[];
+    periodic_tasks: any[];
   };
 }
 
@@ -41,13 +41,13 @@ export async function createBackup(
 ): Promise<{ filePath: string; fileSize: number; graphsCount: number; nodesCount: number }> {
   await ensureBackupDir();
 
-  const [graphsResult, studyCardsResult, studyProgressResult, focusSessionsResult, userAchievementsResult, dailyTasksResult] = await Promise.all([
+  const [graphsResult, studyCardsResult, studyProgressResult, focusSessionsResult, userAchievementsResult, periodicTasksResult] = await Promise.all([
     supabase.from('knowledge_graphs').select('*').eq('user_id', userId),
     supabase.from('study_cards').select('*').eq('user_id', userId),
     supabase.from('study_progress').select('*').eq('user_id', userId),
     supabase.from('focus_sessions').select('*').eq('user_id', userId),
     supabase.from('user_achievements').select('*').eq('user_id', userId),
-    supabase.from('daily_tasks').select('*').eq('user_id', userId),
+    supabase.from('periodic_tasks').select('*').eq('user_id', userId).eq('period_type', 'daily'),
   ]);
 
   const graphs = graphsResult.data || [];
@@ -163,7 +163,7 @@ export async function createBackup(
       study_progress: studyProgressResult.data || [],
       focus_sessions: focusSessionsResult.data || [],
       user_achievements: userAchievementsResult.data || [],
-      daily_tasks: dailyTasksResult.data || [],
+      periodic_tasks: periodicTasksResult.data || [],
     },
   };
 

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from "react";
+import React, { Suspense, lazy, useEffect, useMemo } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useStore } from "./store/useStore";
@@ -7,9 +7,14 @@ import { useMobileInit } from "./hooks/useMobileInit";
 import { getSupabaseClient } from "./lib/supabase";
 import { authConfig } from "./config/authConfig";
 import { toUser } from "@shared/types/database";
+import { initializeFrontendPlugins } from "./services/kernel/plugins";
 import "./i18n";
 
-// Lazy Load Pages
+const frontendKernel = initializeFrontendPlugins();
+frontendKernel.activateAll().catch((err: unknown) => {
+  console.error("[Kernel] Failed to activate frontend plugins:", err);
+});
+
 const Login = lazy(() =>
   import("./pages/Login").then((module) => ({ default: module.Login })),
 );
@@ -119,10 +124,19 @@ const LoadingFallback = () => (
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token } = useStore();
-  // Simple check. Real app should verify token expiry or fetch user on mount.
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
+
+function useKernelRoutes() {
+  return useMemo(() => {
+    const routes = frontendKernel.getRoutes();
+    return routes.map((registration) => {
+      const routePath = registration.path.replace(/^\//, "");
+      return { ...registration, routePath };
+    });
+  }, []);
+}
 
 function App() {
   useMobileInit();
@@ -179,8 +193,6 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
-          {/* 公开图谱路由 - 允许未登录用户访问 */}
           <Route path="/graph/:id" element={<GraphEditor />} />
 
           <Route
@@ -217,6 +229,29 @@ function App() {
             <Route path="learning-paths/:id" element={<LearningPathDetail />} />
             <Route path="quiz/:quizSetId" element={<QuizPreview />} />
             <Route path="quiz/:quizSetId/practice" element={<QuizPractice />} />
+            {useKernelRoutes().map(({ routePath, component, options }) => {
+              const Component = lazy(component);
+              if (options?.protected) {
+                return (
+                  <Route
+                    key={routePath}
+                    path={routePath}
+                    element={
+                      <ProtectedRoute>
+                        <Component />
+                      </ProtectedRoute>
+                    }
+                  />
+                );
+              }
+              return (
+                <Route
+                  key={routePath}
+                  path={routePath}
+                  element={<Component />}
+                />
+              );
+            })}
           </Route>
         </Routes>
       </Suspense>
@@ -225,3 +260,4 @@ function App() {
 }
 
 export default App;
+export { frontendKernel };

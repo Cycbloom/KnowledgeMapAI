@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "../supabase";
-import { taskService, Task } from "../services/taskService";
+import { taskService } from "../services/taskService";
+import type { Task } from "@shared/types/common";
 import { aiService } from "../services/ai/aiService";
 import { getNextLevel } from "../utils/graphUtils";
 import { createKnowledgePointWithGraphNode } from "../utils/nodeHelpers";
@@ -13,14 +14,14 @@ import type {
 
 class TaskProcessor {
   public async processTask(task: Task) {
-    logger.debug(`[TaskProcessor] Processing task ${task.id} (${task.type})`);
+    const payload = JSON.parse(task.context || '{}');
+    logger.debug(`[TaskProcessor] Processing task ${task.id} (${task.task_type})`);
 
     try {
-      // Update status to processing
       await taskService.updateTaskStatus(supabaseAdmin, task.id, "processing");
 
       let result;
-      switch (task.type) {
+      switch (task.task_type) {
         case "generate_questions":
           result = await this.handleGenerateQuestions(task);
           break;
@@ -31,18 +32,17 @@ class TaskProcessor {
           await taskService.processTask(
             task.id,
             task.user_id,
-            task.type,
-            task.payload,
+            task.task_type,
+            payload,
           );
           return;
         case "expand_graph":
           result = await this.handleExpandGraph(task);
           break;
         default:
-          throw new Error(`Unknown task type: ${task.type}`);
+          throw new Error(`Unknown task type: ${task.task_type}`);
       }
 
-      // Update status to completed
       await taskService.updateTaskStatus(
         supabaseAdmin,
         task.id,
@@ -55,9 +55,9 @@ class TaskProcessor {
         "ai_task_completed",
         {
           taskId: task.id,
-          taskType: task.type,
+          taskType: task.task_type,
           userId: task.user_id,
-          graphId: task.payload?.graph_id,
+          graphId: payload?.graph_id,
           result,
         } as AITaskCompletedPayload,
         task.user_id,
@@ -77,9 +77,9 @@ class TaskProcessor {
         "ai_task_failed",
         {
           taskId: task.id,
-          taskType: task.type,
+          taskType: task.task_type,
           userId: task.user_id,
-          graphId: task.payload?.graph_id,
+          graphId: payload?.graph_id,
           error: error.message,
         } as AITaskFailedPayload,
         task.user_id,
@@ -89,8 +89,9 @@ class TaskProcessor {
   }
 
   private async handleGenerateQuestions(task: Task) {
+    const payload = JSON.parse(task.context || '{}');
     const { knowledge_point_id, node_id, node_title, node_content, config } =
-      task.payload;
+      payload;
     const nodeId = knowledge_point_id || node_id;
     let totalCount = 0;
     const errors: string[] = [];
@@ -116,8 +117,8 @@ class TaskProcessor {
         ? config.types
         : ["qa", "choice"]; // Default types
     const totalRequestCount = config?.count || 5;
-    const provider = config?.provider || task.payload.provider;
-    const model = config?.model || task.payload.model;
+    const provider = config?.provider || payload?.provider;
+    const model = config?.model || payload?.model;
 
     // Pre-calculate counts for each type
     let remainingCount = totalRequestCount;
@@ -258,6 +259,7 @@ class TaskProcessor {
   }
 
   private async handleExpandGraph(task: Task) {
+    const payload = JSON.parse(task.context || '{}');
     const {
       graph_id,
       node_id,
@@ -267,7 +269,7 @@ class TaskProcessor {
       child_nodes,
       provider,
       model,
-    } = task.payload;
+    } = payload;
 
     const { data: allGraphNodes } = await supabaseAdmin
       .from("graph_nodes")

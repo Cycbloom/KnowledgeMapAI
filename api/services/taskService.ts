@@ -6,6 +6,7 @@ import { getProcessor } from "./taskProcessors/index";
 import { getPaginationParams, PaginationOptions } from "../utils/pagination";
 import { AppError } from "../middleware/errorHandler";
 import { ErrorCodes } from "../../shared/types/errorCodes";
+import { Task } from "../../shared/types/common";
 import "./taskProcessors/batchGenerateCardsProcessor.js";
 import "./taskProcessors/recursiveGraphProcessor.js";
 import "./taskProcessors/infiniteExpansionProcessor.js";
@@ -25,41 +26,6 @@ try {
   logger.warn('Failed to load .env file in taskService:', err);
 }
 
-export interface TaskPayload {
-  [key: string]: unknown;
-  graph_id?: string;
-  knowledge_point_id?: string;
-  node_id?: string;
-  node_title?: string;
-  node_content?: string;
-  provider?: string;
-  model?: string;
-  config?: {
-    types?: string[];
-    count?: number;
-    pack_template?: string;
-    provider?: string;
-    model?: string;
-  };
-}
-
-export interface TaskResult {
-  [key: string]: unknown;
-}
-
-export interface Task {
-  id: string;
-  user_id: string;
-  type: string;
-  name?: string;
-  status: "pending" | "processing" | "completed" | "failed";
-  payload: TaskPayload;
-  result?: TaskResult;
-  error?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface TaskProgress {
   stage?: string;
   progress?: number;
@@ -70,7 +36,7 @@ export interface UpdateTaskStatusOptions {
   taskId: string;
   status: string;
   progress?: TaskProgress | null;
-  result?: TaskResult;
+  result?: Record<string, unknown>;
   error?: string;
   userId?: string;
   client?: SupabaseClient;
@@ -95,17 +61,16 @@ try {
 }
 
 export class TaskService {
-  async createTask(userId: string, type: string, payload?: TaskPayload, name?: string) {
+  async createTask(userId: string, type: string, payload?: Record<string, unknown>, name?: string) {
     const supabase = defaultClient;
 
     const { data, error } = await supabase
-      .from("tasks")
+      .from("scheduled_tasks")
       .insert({
         user_id: userId,
-        type,
-        name,
+        task_type: type,
+        title: name,
         status: "pending",
-        payload: payload || {},
       })
       .select()
       .single();
@@ -128,7 +93,7 @@ export class TaskService {
     taskId: string,
     userId: string,
     type: string,
-    payload: TaskPayload,
+    payload: Record<string, unknown>,
   ) {
     try {
       await this.processTask(taskId, userId, type, payload);
@@ -142,7 +107,7 @@ export class TaskService {
     arg2?: string,
     arg3?: string,
     arg4?: TaskProgress | null,
-    arg5?: TaskResult,
+    arg5?: Record<string, unknown>,
     arg6?: string,
     arg7?: string,
   ) {
@@ -150,7 +115,7 @@ export class TaskService {
     let taskId: string;
     let status: string;
     let progress: TaskProgress | null | undefined;
-    let result: TaskResult | undefined;
+    let result: Record<string, unknown> | undefined;
     let errorMsg: string | undefined;
     let userId: string | undefined;
 
@@ -176,17 +141,15 @@ export class TaskService {
         supabase = defaultClient;
         taskId = arg1 as string;
         status = arg2!;
-        result = arg3 as TaskResult | undefined;
+        result = arg3 as Record<string, unknown> | undefined;
         errorMsg = arg4 as string | undefined;
         userId = arg5 as string | undefined;
         progress = undefined;
       }
     }
 
-    const updateData: { status: string; updated_at: string; result?: TaskResult; error?: string } = { status, updated_at: new Date().toISOString() };
-    if (progress !== undefined && progress !== null && result) updateData.result = { ...result, ...progress };
-    else if (result !== undefined) updateData.result = result;
-    if (errorMsg !== undefined) updateData.error = errorMsg;
+    const updateData: { status: string; updated_at: string; progress_percentage?: number } = { status, updated_at: new Date().toISOString() };
+    if (progress?.progress !== undefined) updateData.progress_percentage = progress.progress;
 
     logger.info(`Updating task ${taskId} status to ${status}`, {
       stage: progress?.stage,
@@ -194,7 +157,7 @@ export class TaskService {
     });
 
     const { error } = await supabase
-      .from("tasks")
+      .from("scheduled_tasks")
       .update(updateData)
       .eq("id", taskId);
 
@@ -205,7 +168,7 @@ export class TaskService {
         type: "task_update",
         taskId,
         status,
-        result: updateData.result,
+        result,
         error: errorMsg,
       });
     }
@@ -219,7 +182,7 @@ export class TaskService {
   ) {
     const { offset, end } = getPaginationParams(options);
     let query = client
-      .from("tasks")
+      .from("scheduled_tasks")
       .select("*", { count: "exact" })
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -240,7 +203,7 @@ export class TaskService {
     userId: string,
   ): Promise<Task | null> {
     const { data, error } = await client
-      .from("tasks")
+      .from("scheduled_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -253,7 +216,7 @@ export class TaskService {
 
   async getPendingTasks(client: SupabaseClient) {
     const { data, error } = await client
-      .from("tasks")
+      .from("scheduled_tasks")
       .select("*")
       .eq("status", "pending")
       .order("created_at", { ascending: true })
@@ -265,7 +228,7 @@ export class TaskService {
 
   async retryTask(client: SupabaseClient, taskId: string, userId: string) {
     const { data: task, error: fetchError } = await client
-      .from("tasks")
+      .from("scheduled_tasks")
       .select("*")
       .eq("id", taskId)
       .eq("user_id", userId)
@@ -274,26 +237,26 @@ export class TaskService {
     if (fetchError || !task) throw new AppError(ErrorCodes.NOT_FOUND, { message: "Task not found" });
 
     const { data, error } = await client
-      .from("tasks")
+      .from("scheduled_tasks")
       .update({
         status: "pending",
-        error: null,
-        result: null,
+        progress_percentage: 0,
         updated_at: new Date().toISOString(),
       })
       .eq("id", taskId)
+      .eq("user_id", userId)
       .select()
       .single();
 
     if (error) throw new AppError(ErrorCodes.DATABASE_QUERY_ERROR, { message: `Failed to retry task: ${error.message}` });
 
     if (taskQueue) {
-      await taskQueue.add(data.type, { taskId: data.id });
+      await taskQueue.add(data.task_type, { taskId: data.id });
     } else {
       logger.info(
         "Task queue not available, processing retried task synchronously",
       );
-      this.processTaskAsync(data.id, userId, data.type, data.payload).catch(
+      this.processTaskAsync(data.id, userId, data.task_type, {}).catch(
         (err) => {
           logger.error(
             `Failed to process retried task ${data.id} synchronously:`,
@@ -308,7 +271,7 @@ export class TaskService {
 
   async deleteTask(client: SupabaseClient, taskId: string, userId: string) {
     const { error } = await client
-      .from("tasks")
+      .from("scheduled_tasks")
       .delete()
       .eq("id", taskId)
       .eq("user_id", userId);
@@ -320,7 +283,7 @@ export class TaskService {
     taskId: string,
     userId: string,
     type: string,
-    payload: TaskPayload,
+    payload: Record<string, unknown>,
   ) {
     const supabase = defaultClient;
     const processor = getProcessor(type);

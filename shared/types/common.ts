@@ -48,35 +48,65 @@ export interface CreateNotificationData {
   expires_at?: string;
 }
 
-export interface TaskPayload {
-  node_id?: string;
-  graph_id?: string;
-  count?: number;
-  depth?: number;
-  node_ids?: string[];
-  [key: string]: unknown;
-}
-
-export interface TaskResult {
-  nodes?: Array<{ id: string; title: string }>;
-  cards?: Array<{ id: string; question: string }>;
-  error?: string;
-  [key: string]: unknown;
-}
-
 export interface Task {
   id: string;
   user_id: string;
-  type:
-    | "generate_questions"
-    | "expand_graph"
-    | "batch_generate_questions"
-    | string;
-  name?: string;
-  status: "pending" | "processing" | "completed" | "failed" | string;
-  payload: TaskPayload;
-  result: TaskResult;
-  error?: string;
+  title: string;
+  description: string;
+  queue_id: string;
+  queue_level: number;
+  position: number;
+  estimated_duration: number;
+  actual_duration: number;
+  deadline: string;
+  status: "pending" | "in_progress" | "paused" | "completed" | "cancelled";
+  tags: string[];
+  knowledge_point_id: string;
+  priority: number;
+  task_type: string;
+  total_duration: number;
+  progress_mode: "average" | "decreasing" | "increasing" | "custom";
+  progress_percentage: number;
+  parent_task_id: string;
+  context: string;
+  scheduled_start: string;
+  scheduled_end: string;
+  notes: string;
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string;
+}
+
+export interface PeriodicTask {
+  id: string;
+  user_id: string;
+  period_type: "daily" | "weekly" | "monthly" | "quarterly";
+  period_start: string;
+  period_end: string;
+  task_type: "focus" | "study" | "create" | "tasks";
+  target: number;
+  progress: number;
+  status: "pending" | "completed";
+  xp_reward: number;
+  pass_points: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningPathProgress {
+  id: string;
+  user_id: string;
+  path_id: string;
+  node_id: string;
+  status: "pending" | "in_progress" | "completed" | "skipped";
+  progress_percentage: number;
+  time_spent: number;
+  notes: string;
+  planned_duration: number;
+  planned_nodes: string[];
+  started_at: string;
+  completed_at: string;
   created_at: string;
   updated_at: string;
 }

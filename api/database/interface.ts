@@ -446,14 +446,15 @@ export interface DatabaseInterface {
   getAsyncTask(id: string): Promise<Task | null>;
   createAsyncTask(data: {
     user_id: string;
-    type: string;
-    name?: string;
-    payload?: Record<string, unknown>;
+    task_type: string;
+    title?: string;
+    description?: string;
+    context?: string;
   }): Promise<Task>;
   updateAsyncTask(id: string, data: {
     status?: string;
-    result?: Record<string, unknown>;
-    error?: string;
+    notes?: string;
+    context?: string;
   }): Promise<Task>;
   deleteAsyncTask(id: string): Promise<void>;
 

@@ -2877,7 +2877,7 @@ export class SupabaseAdapter implements DatabaseInterface {
 
   async getAsyncTasks(userId: string, options?: { status?: string }): Promise<Task[]> {
     let query = this.client
-      .from('tasks')
+      .from('scheduled_tasks')
       .select('*')
       .eq('user_id', userId);
 
@@ -2893,20 +2893,37 @@ export class SupabaseAdapter implements DatabaseInterface {
     return (data || []).map(row => ({
       id: row.id,
       user_id: row.user_id,
-      type: row.type,
-      name: row.name,
+      title: row.title,
+      description: row.description,
+      queue_id: row.queue_id,
+      queue_level: row.queue_level,
+      position: row.position,
+      estimated_duration: row.estimated_duration,
+      actual_duration: row.actual_duration,
+      deadline: row.deadline,
       status: row.status,
-      payload: row.payload || {},
-      result: row.result || {},
-      error: row.error,
+      tags: row.tags,
+      knowledge_point_id: row.knowledge_point_id,
+      priority: row.priority,
+      task_type: row.task_type,
+      total_duration: row.total_duration,
+      progress_mode: row.progress_mode,
+      progress_percentage: row.progress_percentage,
+      parent_task_id: row.parent_task_id,
+      context: row.context,
+      scheduled_start: row.scheduled_start,
+      scheduled_end: row.scheduled_end,
+      notes: row.notes,
+      completed_at: row.completed_at,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      deleted_at: row.deleted_at,
     }));
   }
 
   async getAsyncTask(id: string): Promise<Task | null> {
     const { data, error } = await this.client
-      .from('tasks')
+      .from('scheduled_tasks')
       .select('*')
       .eq('id', id)
       .maybeSingle();
@@ -2917,32 +2934,52 @@ export class SupabaseAdapter implements DatabaseInterface {
     return {
       id: data.id,
       user_id: data.user_id,
-      type: data.type,
-      name: data.name,
+      title: data.title,
+      description: data.description,
+      queue_id: data.queue_id,
+      queue_level: data.queue_level,
+      position: data.position,
+      estimated_duration: data.estimated_duration,
+      actual_duration: data.actual_duration,
+      deadline: data.deadline,
       status: data.status,
-      payload: data.payload || {},
-      result: data.result || {},
-      error: data.error,
+      tags: data.tags,
+      knowledge_point_id: data.knowledge_point_id,
+      priority: data.priority,
+      task_type: data.task_type,
+      total_duration: data.total_duration,
+      progress_mode: data.progress_mode,
+      progress_percentage: data.progress_percentage,
+      parent_task_id: data.parent_task_id,
+      context: data.context,
+      scheduled_start: data.scheduled_start,
+      scheduled_end: data.scheduled_end,
+      notes: data.notes,
+      completed_at: data.completed_at,
       created_at: data.created_at,
       updated_at: data.updated_at,
+      deleted_at: data.deleted_at,
     };
   }
 
   async createAsyncTask(data: {
     user_id: string;
-    type: string;
-    name?: string;
-    payload?: Record<string, unknown>;
+    task_type: string;
+    title?: string;
+    description?: string;
+    context?: string;
+    notes?: string;
   }): Promise<Task> {
     const { data: task, error } = await this.client
-      .from('tasks')
+      .from('scheduled_tasks')
       .insert({
         user_id: data.user_id,
-        type: data.type,
-        name: data.name,
+        task_type: data.task_type,
+        title: data.title,
+        description: data.description,
+        context: data.context,
+        notes: data.notes,
         status: 'pending',
-        payload: data.payload || {},
-        result: {},
       })
       .select()
       .single();
@@ -2952,29 +2989,44 @@ export class SupabaseAdapter implements DatabaseInterface {
     return {
       id: task.id,
       user_id: task.user_id,
-      type: task.type,
-      name: task.name,
+      title: task.title,
+      description: task.description,
+      queue_id: task.queue_id,
+      queue_level: task.queue_level,
+      position: task.position,
+      estimated_duration: task.estimated_duration,
+      actual_duration: task.actual_duration,
+      deadline: task.deadline,
       status: task.status,
-      payload: task.payload || {},
-      result: task.result || {},
-      error: task.error,
+      tags: task.tags,
+      knowledge_point_id: task.knowledge_point_id,
+      priority: task.priority,
+      task_type: task.task_type,
+      total_duration: task.total_duration,
+      progress_mode: task.progress_mode,
+      progress_percentage: task.progress_percentage,
+      parent_task_id: task.parent_task_id,
+      context: task.context,
+      scheduled_start: task.scheduled_start,
+      scheduled_end: task.scheduled_end,
+      notes: task.notes,
+      completed_at: task.completed_at,
       created_at: task.created_at,
       updated_at: task.updated_at,
+      deleted_at: task.deleted_at,
     };
   }
 
   async updateAsyncTask(id: string, data: {
     status?: string;
-    result?: Record<string, unknown>;
-    error?: string;
+    notes?: string;
   }): Promise<Task> {
     const updateData: Record<string, unknown> = { updated_at: now() };
     if (data.status !== undefined) updateData.status = data.status;
-    if (data.result !== undefined) updateData.result = data.result;
-    if (data.error !== undefined) updateData.error = data.error;
+    if (data.notes !== undefined) updateData.notes = data.notes;
 
     const { data: task, error } = await this.client
-      .from('tasks')
+      .from('scheduled_tasks')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -2985,20 +3037,37 @@ export class SupabaseAdapter implements DatabaseInterface {
     return {
       id: task.id,
       user_id: task.user_id,
-      type: task.type,
-      name: task.name,
+      title: task.title,
+      description: task.description,
+      queue_id: task.queue_id,
+      queue_level: task.queue_level,
+      position: task.position,
+      estimated_duration: task.estimated_duration,
+      actual_duration: task.actual_duration,
+      deadline: task.deadline,
       status: task.status,
-      payload: task.payload || {},
-      result: task.result || {},
-      error: task.error,
+      tags: task.tags,
+      knowledge_point_id: task.knowledge_point_id,
+      priority: task.priority,
+      task_type: task.task_type,
+      total_duration: task.total_duration,
+      progress_mode: task.progress_mode,
+      progress_percentage: task.progress_percentage,
+      parent_task_id: task.parent_task_id,
+      context: task.context,
+      scheduled_start: task.scheduled_start,
+      scheduled_end: task.scheduled_end,
+      notes: task.notes,
+      completed_at: task.completed_at,
       created_at: task.created_at,
       updated_at: task.updated_at,
+      deleted_at: task.deleted_at,
     };
   }
 
   async deleteAsyncTask(id: string): Promise<void> {
     const { error } = await this.client
-      .from('tasks')
+      .from('scheduled_tasks')
       .delete()
       .eq('id', id);
 

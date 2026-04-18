@@ -23,22 +23,23 @@ export class AchievementService {
     
     // Check if tasks exist for today
     const { count, error } = await supabaseAdmin
-      .from('daily_tasks')
+      .from('periodic_tasks')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('task_date', today);
+      .eq('period_type', 'daily')
+      .eq('period_start', today);
       
     if (error || (count && count > 0)) return;
 
     // Create default daily tasks
     const tasks = [
-      { user_id: userId, task_date: today, task_type: 'login', target: 1, xp_reward: 20 },
-      { user_id: userId, task_date: today, task_type: 'study_cards', target: 10, xp_reward: 50 },
-      { user_id: userId, task_date: today, task_type: 'focus_time', target: 25, xp_reward: 50 },
-      { user_id: userId, task_date: today, task_type: 'create_node', target: 1, xp_reward: 30 }
+      { user_id: userId, period_type: 'daily' as const, period_start: today, period_end: today, task_type: 'login', target: 1, xp_reward: 20 },
+      { user_id: userId, period_type: 'daily' as const, period_start: today, period_end: today, task_type: 'study_cards', target: 10, xp_reward: 50 },
+      { user_id: userId, period_type: 'daily' as const, period_start: today, period_end: today, task_type: 'focus_time', target: 25, xp_reward: 50 },
+      { user_id: userId, period_type: 'daily' as const, period_start: today, period_end: today, task_type: 'create_node', target: 1, xp_reward: 30 }
     ];
 
-    await supabaseAdmin.from('daily_tasks').insert(tasks);
+    await supabaseAdmin.from('periodic_tasks').insert(tasks);
   }
 
   /**
@@ -49,10 +50,11 @@ export class AchievementService {
     
     const today = new Date().toISOString().split('T')[0];
     const { data } = await supabaseAdmin
-      .from('daily_tasks')
+      .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
-      .eq('task_date', today)
+      .eq('period_type', 'daily')
+      .eq('period_start', today)
       .order('created_at');
       
     return data || [];
@@ -66,10 +68,11 @@ export class AchievementService {
     
     // Get task
     const { data: task } = await supabaseAdmin
-      .from('daily_tasks')
+      .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
-      .eq('task_date', today)
+      .eq('period_type', 'daily')
+      .eq('period_start', today)
       .eq('task_type', type)
       .single();
       
@@ -86,7 +89,7 @@ export class AchievementService {
     }
 
     await supabaseAdmin
-      .from('daily_tasks')
+      .from('periodic_tasks')
       .update(updates)
       .eq('id', task.id);
       
@@ -347,10 +350,11 @@ export class AchievementService {
   async updateDailyTaskProgress(userId: string, type: string, currentTotal: number): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     const { data: task } = await supabaseAdmin
-      .from('daily_tasks')
+      .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
-      .eq('task_date', today)
+      .eq('period_type', 'daily')
+      .eq('period_start', today)
       .eq('task_type', type)
       .single();
       
@@ -358,13 +362,13 @@ export class AchievementService {
     
     if (currentTotal >= task.target) {
       await supabaseAdmin
-        .from('daily_tasks')
+        .from('periodic_tasks')
         .update({ status: 'completed', progress: task.target, completed_at: new Date().toISOString() })
         .eq('id', task.id);
       await this.addXp(userId, task.xp_reward);
     } else {
       await supabaseAdmin
-        .from('daily_tasks')
+        .from('periodic_tasks')
         .update({ progress: currentTotal })
         .eq('id', task.id);
     }

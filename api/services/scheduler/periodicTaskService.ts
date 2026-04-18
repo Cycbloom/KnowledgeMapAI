@@ -413,10 +413,11 @@ export class PeriodicTaskService {
     const today = new Date().toISOString().split('T')[0];
 
     const { data: dailyTasks } = await supabaseAdmin
-      .from('daily_tasks')
+      .from('periodic_tasks')
       .select('*')
       .eq('user_id', userId)
-      .eq('task_date', today);
+      .eq('period_type', 'daily')
+      .eq('period_start', today);
 
     if (!dailyTasks || dailyTasks.length === 0) {
       return { streak: 0, bonusAwarded: 0 };

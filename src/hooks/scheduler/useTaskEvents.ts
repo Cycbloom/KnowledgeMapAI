@@ -113,7 +113,7 @@ export const useTaskEvents = () => {
             }
 
             if (data.type === "task_update") {
-              const { taskId, status, result, error } = data;
+              const { taskId, status } = data;
 
               queryClient.setQueryData(
                 ["tasks"],
@@ -129,14 +129,6 @@ export const useTaskEvents = () => {
                     newTasks[existingTaskIndex] = {
                       ...newTasks[existingTaskIndex],
                       status,
-                      result:
-                        result !== undefined
-                          ? result
-                          : newTasks[existingTaskIndex].result,
-                      error:
-                        error !== undefined
-                          ? error
-                          : newTasks[existingTaskIndex].error,
                       updated_at: new Date().toISOString(),
                     };
                     return newTasks;

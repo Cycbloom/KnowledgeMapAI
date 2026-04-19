@@ -129,11 +129,13 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [isSystemDark, setIsSystemDark] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<
     Set<NoiseCategory>
   >(new Set(["nature"]));
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const keywordListRef = useRef<HTMLDivElement>(null);
 
   const toggleCategory = useCallback((categoryId: NoiseCategory) => {
     setExpandedCategories((prev) => {
@@ -145,6 +147,31 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
       }
       return newSet;
     });
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsSystemDark(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsSystemDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const handleKeywordClick = useCallback((keyword: { term: string; importance: number; category: string; explanation: string }) => {
+    setShowSettings(true);
+    setTimeout(() => {
+      const keywordCards = keywordListRef.current?.querySelectorAll('[data-keyword-term]');
+      if (keywordCards) {
+        for (const card of keywordCards) {
+          if (card.getAttribute('data-keyword-term') === keyword.term) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('ring-2', 'ring-cyan-400');
+            setTimeout(() => card.classList.remove('ring-2', 'ring-cyan-400'), 2000);
+            break;
+          }
+        }
+      }
+    }, 300);
   }, []);
 
   const getNoiseOption = useCallback((type: WhiteNoiseType) => {
@@ -308,9 +335,10 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
             >
               <HighlightedReader
                 content={articleContent}
-                isDark={false}
+                isDark={isSystemDark}
                 isMobile={isMobile}
                 keywords={keywords}
+                onKeywordClick={handleKeywordClick}
               />
             </div>
 
@@ -369,7 +397,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                         <Brain size={16} className="text-purple-500" />
                         {t("learning.focusMode.keywords")} ({keywords.length})
                       </h3>
-                      <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                      <div ref={keywordListRef} className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                         {keywords.map((keyword, index) => {
                           const importanceColors: Record<number, string> = {
                             5: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30",
@@ -385,6 +413,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                           return (
                             <div
                               key={index}
+                              data-keyword-term={keyword.term}
                               className={`p-2 rounded-lg border ${colorClass}`}
                             >
                               <div className="flex items-center justify-between mb-1">

@@ -1638,7 +1638,7 @@
       "cancel": "取消"
     },
     "challenge": {
-      "start": "完成学习，开始挑战",
+      "complete": "完成学习，开始挑战",
       "generating": "正在生成挑战题...",
       "generatingProgress": "正在生成第 {{current}}/{{total}} 题",
       "cancel": "取消",

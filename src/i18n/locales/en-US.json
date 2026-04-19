@@ -1226,7 +1226,7 @@
       "cancel": "Cancel"
     },
     "challenge": {
-      "start": "Complete Learning, Start Challenge",
+      "complete": "Complete Learning, Start Challenge",
       "generating": "Generating challenge questions...",
       "generatingProgress": "Generating question {{current}}/{{total}}",
       "cancel": "Cancel",

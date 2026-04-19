@@ -36,9 +36,6 @@ const pluginNameLabels: Record<string, string> = {
   study: "学习系统",
   scheduler: "任务调度",
   agent: "智能代理",
-  "markdown-exporter": "Markdown 导出器",
-  "daily-digest": "每日知识摘要",
-  "graph-themes": "图谱主题包",
 };
 
 const pluginDescriptionLabels: Record<string, string> = {

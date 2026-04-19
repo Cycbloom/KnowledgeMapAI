@@ -1,18 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useWhiteNoise } from '../../hooks/useWhiteNoise';
-import { useUnifiedTimer } from '../../hooks/scheduler';
-import { AudioVisualizer } from '../common/AudioVisualizer';
-import { NOISE_OPTIONS, WhiteNoiseType as AudioWhiteNoiseType } from '../../utils/audioSynthesis';
-import { NoisePreset, WhiteNoiseType } from '../../store/useFocusStore';
-import { 
-  CloudRain, Coffee, Trees, Waves, Flame, 
-  CloudLightning, Droplets, Wind, BookOpen, Moon, 
-  Train, Plane, Circle, Bell, Activity, Radio,
-  Volume2, X,
-  Shield, Minimize2, Maximize2,
-  LucideIcon
-} from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useWhiteNoise } from "../../hooks/useWhiteNoise";
+import { useUnifiedTimer } from "../../hooks/scheduler";
+import { AudioVisualizer } from "../common/AudioVisualizer";
+import {
+  NOISE_OPTIONS,
+  WhiteNoiseType as AudioWhiteNoiseType,
+} from "../../utils/audioSynthesis";
+import { NoisePreset, WhiteNoiseType } from "../../store/useFocusStore";
+import {
+  CloudRain,
+  Coffee,
+  Trees,
+  Waves,
+  Flame,
+  CloudLightning,
+  Droplets,
+  Wind,
+  BookOpen,
+  Moon,
+  Train,
+  Plane,
+  Circle,
+  Bell,
+  Activity,
+  Radio,
+  Volume2,
+  X,
+  Shield,
+  Minimize2,
+  Maximize2,
+  LucideIcon,
+} from "lucide-react";
 
 interface FocusModeProps {
   isOpen: boolean;
@@ -42,15 +61,24 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Radio,
 };
 
-const getIcon = (iconName: string | undefined, size: number = 18): React.ReactNode => {
+const getIcon = (
+  iconName: string | undefined,
+  size: number = 18,
+): React.ReactNode => {
   if (!iconName) return <Volume2 size={size} />;
   const IconComponent = ICON_MAP[iconName];
-  return IconComponent ? <IconComponent size={size} /> : <Volume2 size={size} />;
+  return IconComponent ? (
+    <IconComponent size={size} />
+  ) : (
+    <Volume2 size={size} />
+  );
 };
 
 const getNoiseOption = (type: WhiteNoiseType) => {
-  if (type === 'none') return undefined;
-  return NOISE_OPTIONS.find(option => option.id === type as AudioWhiteNoiseType);
+  if (type === "none") return undefined;
+  return NOISE_OPTIONS.find(
+    (option) => option.id === (type as AudioWhiteNoiseType),
+  );
 };
 
 export const FocusMode: React.FC<FocusModeProps> = ({
@@ -65,12 +93,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [showNoiseSelector, setShowNoiseSelector] = useState(false);
 
-  const {
-    timeLeft,
-    isActive,
-    progress,
-    start,
-  } = useUnifiedTimer();
+  const { timeLeft, isActive, progress, start } = useUnifiedTimer();
 
   const {
     isPlaying,
@@ -99,13 +122,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
     };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   const toggleFullscreen = () => {
@@ -122,12 +145,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   const handleNoiseToggle = (type: AudioWhiteNoiseType) => {
-    if (mixedNoises.find(n => n.type === type as WhiteNoiseType)) {
+    if (mixedNoises.find((n) => n.type === (type as WhiteNoiseType))) {
       removeNoise(type as WhiteNoiseType);
     } else {
       addNoise(type as WhiteNoiseType);
@@ -162,7 +186,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             transition={{
               duration: 8,
               repeat: Infinity,
-              ease: 'easeInOut',
+              ease: "easeInOut",
             }}
           />
 
@@ -177,15 +201,22 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/30">
                     <Shield size={16} className="text-cyan-400" />
-                    <span className="text-sm text-cyan-300">专注模式已开启</span>
+                    <span className="text-sm text-cyan-300">
+                      专注模式已开启
+                    </span>
                   </div>
                   {taskTitle && (
-                    <span className="text-slate-400 text-sm">| {taskTitle}</span>
+                    <span className="text-slate-400 text-sm">
+                      | {taskTitle}
+                    </span>
                   )}
                   {isActive && taskId && (
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-700/50 border border-slate-600/30">
                       <span className="text-xs text-slate-300 font-mono">
-                        {Math.floor(timeLeft / 60).toString().padStart(2, "0")}:{(timeLeft % 60).toString().padStart(2, "0")}
+                        {Math.floor(timeLeft / 60)
+                          .toString()
+                          .padStart(2, "0")}
+                        :{(timeLeft % 60).toString().padStart(2, "0")}
                       </span>
                       <div className="w-16 h-1.5 bg-slate-600 rounded-full overflow-hidden">
                         <div
@@ -193,11 +224,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                           style={{ width: `${progress}%` }}
                         />
                       </div>
-                      <span className="text-[10px] text-slate-400">{Math.round(progress)}%</span>
+                      <span className="text-[10px] text-slate-400">
+                        {Math.round(progress)}%
+                      </span>
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <motion.button
                     onClick={toggleFullscreen}
@@ -205,7 +238,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    {isFullscreen ? (
+                      <Minimize2 size={18} />
+                    ) : (
+                      <Maximize2 size={18} />
+                    )}
                   </motion.button>
                   <motion.button
                     onClick={onClose}
@@ -225,7 +262,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           </div>
 
           {isPlaying && analyserData && (
-            <AudioVisualizer 
+            <AudioVisualizer
               analyserData={analyserData}
               type="wave"
               width={400}
@@ -248,14 +285,14 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                     <div className="flex items-center justify-center gap-2 mb-4">
                       <span className="text-xs text-slate-400">预设</span>
                       <div className="flex items-center gap-1">
-                        {allPresets.slice(0, 4).map(preset => (
+                        {allPresets.slice(0, 4).map((preset) => (
                           <motion.button
                             key={preset.id}
                             onClick={() => handlePresetClick(preset)}
                             className={`px-3 py-1 rounded-lg text-xs transition-all ${
                               activePresetId === preset.id
-                                ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
-                                : 'bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent'
+                                ? "bg-cyan-500/30 text-cyan-300 border border-cyan-500/50"
+                                : "bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent"
                             }`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -269,24 +306,29 @@ export const FocusMode: React.FC<FocusModeProps> = ({
 
                   {mixedNoises.length > 0 && (
                     <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
-                      {mixedNoises.map(noise => {
+                      {mixedNoises.map((noise) => {
                         const option = getNoiseOption(noise.type);
                         return (
-                          <div 
-                            key={noise.type} 
+                          <div
+                            key={noise.type}
                             className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1"
                           >
                             {getIcon(option?.icon, 16)}
-                            <input 
-                              type="range" 
-                              min="0" 
-                              max="1" 
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
                               step="0.1"
-                              value={noise.volume} 
-                              onChange={(e) => setNoiseVolume(noise.type, parseFloat(e.target.value))}
+                              value={noise.volume}
+                              onChange={(e) =>
+                                setNoiseVolume(
+                                  noise.type,
+                                  parseFloat(e.target.value),
+                                )
+                              }
                               className="w-16 accent-cyan-500"
                             />
-                            <button 
+                            <button
                               onClick={() => removeNoise(noise.type)}
                               className="text-slate-400 hover:text-red-400"
                             >
@@ -302,28 +344,32 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                     {showNoiseSelector && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
+                        animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
                         <div className="grid grid-cols-6 gap-2 p-4 bg-black/30 rounded-lg mb-4">
-                          {NOISE_OPTIONS.map(option => {
-                            const isActive = mixedNoises.find(n => n.type === option.id);
+                          {NOISE_OPTIONS.map((option) => {
+                            const isActive = mixedNoises.find(
+                              (n) => n.type === option.id,
+                            );
                             return (
                               <motion.button
                                 key={option.id}
                                 onClick={() => handleNoiseToggle(option.id)}
                                 className={`p-2 rounded-lg flex flex-col items-center gap-1 transition-all ${
                                   isActive
-                                    ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
-                                    : 'bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent'
+                                    ? "bg-cyan-500/30 text-cyan-300 border border-cyan-500/50"
+                                    : "bg-white/10 text-slate-400 hover:bg-white/20 border border-transparent"
                                 }`}
                                 title={option.label}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                               >
                                 {getIcon(option.icon, 18)}
-                                <span className="text-[10px]">{option.label}</span>
+                                <span className="text-[10px]">
+                                  {option.label}
+                                </span>
                               </motion.button>
                             );
                           })}
@@ -332,11 +378,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({
                     )}
                   </AnimatePresence>
 
-                  <button 
+                  <button
                     onClick={() => setShowNoiseSelector(!showNoiseSelector)}
                     className="text-xs text-cyan-400 hover:text-cyan-300 mb-4 w-full text-center"
                   >
-                    {showNoiseSelector ? '收起' : '展开更多声音'}
+                    {showNoiseSelector ? "收起" : "展开更多声音"}
                   </button>
 
                   <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
@@ -360,7 +406,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
             transition={{
               duration: 60,
               repeat: Infinity,
-              ease: 'linear',
+              ease: "linear",
             }}
           >
             <div className="absolute inset-0 rounded-full border border-cyan-500/10" />

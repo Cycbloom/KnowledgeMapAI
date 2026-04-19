@@ -215,7 +215,8 @@ router.put(
         learning_material,
         properties,
         visibility,
-        owner_id
+        owner_id,
+        keywords
       )
     `,
       )
@@ -246,6 +247,8 @@ router.put(
       kpUpdates.properties = updates.properties;
     if (updates.visibility !== undefined)
       kpUpdates.visibility = updates.visibility;
+    if (updates.keywords !== undefined)
+      kpUpdates.keywords = updates.keywords;
 
     if (updates.x_position !== undefined)
       gnUpdates.x_position = updates.x_position;
@@ -308,7 +311,8 @@ router.put(
         visibility,
         owner_id,
         created_at,
-        updated_at
+        updated_at,
+        keywords
       )
     `,
       )

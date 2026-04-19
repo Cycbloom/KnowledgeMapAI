@@ -1022,7 +1022,37 @@
       "paused": "Paused",
       "sessionsCompleted": "Completed {{count}} focus sessions",
       "lock": "Lock",
-      "unlock": "Unlock"
+      "unlock": "Unlock",
+      "noiseCategories": {
+        "nature": "Nature",
+        "environment": "Environment",
+        "meditation": "Meditation"
+      },
+      "noiseOptions": {
+        "rain": "Rain",
+        "thunder": "Thunder",
+        "ocean": "Ocean Waves",
+        "stream": "Stream",
+        "wind": "Wind",
+        "forest": "Forest",
+        "fire": "Campfire",
+        "cafe": "Café",
+        "library": "Library",
+        "night": "Night",
+        "train": "Train",
+        "airplane": "Airplane",
+        "singing_bowl": "Singing Bowl",
+        "wind_chime": "Wind Chime",
+        "breathing": "Breathing Guide",
+        "white_noise": "White Noise",
+        "pink_noise": "Pink Noise"
+      },
+      "presetNames": {
+        "rainy-reading": "Rainy Reading",
+        "late-night-work": "Late Night Work",
+        "forest-meditation": "Forest Meditation",
+        "beach-relax": "Beach Relax"
+      }
     },
     "learningPath": {
       "title": "Learning Path",
@@ -1226,7 +1256,7 @@
       "cancel": "Cancel"
     },
     "challenge": {
-      "complete": "Complete Learning, Start Challenge",
+      "complete": "Start Challenge",
       "generating": "Generating challenge questions...",
       "generatingProgress": "Generating question {{current}}/{{total}}",
       "cancel": "Cancel",
@@ -1348,7 +1378,7 @@
       "retry": "Retry",
       "configureApiKey": "Please configure AI API Key in settings first",
       "goToSettings": "Go to Settings",
-      "generate": "Generate Questions",
+      "generate": "Generate Quiz",
       "cancelling": "Cancelling generation...",
       "cancelled": "Generation cancelled, {{count}} questions generated",
       "batchFailed": "Batch {{batch}} generation failed, continuing..."
@@ -1400,7 +1430,7 @@
       "selectContent": "Please select learning content first"
     },
     "path": {
-      "title": "Learning Path",
+      "title": "Path",
       "aiDriven": "AI Driven"
     }
   },

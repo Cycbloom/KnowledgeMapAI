@@ -467,7 +467,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                               />
                             )}
                             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                              {category.label}
+                              {t(`learning.focusMode.noiseCategories.${category.id}`)}
                             </span>
                           </button>
                           {expandedCategories.has(category.id) && (
@@ -490,7 +490,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 >
                                   {getIcon(option.icon)}
                                   <span className="text-[10px]">
-                                    {option.label}
+                                    {t(`learning.focusMode.noiseOptions.${option.id}`)}
                                   </span>
                                 </motion.button>
                               ))}
@@ -516,7 +516,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                               >
                                 {option && getIcon(option.icon)}
                                 <span className="text-xs text-slate-600 dark:text-slate-300 flex-1">
-                                  {option?.label}
+                                  {t(`learning.focusMode.noiseOptions.${noise.type}`)}
                                 </span>
                                 <input
                                   type="range"
@@ -553,7 +553,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
 
                     <div className="mt-4 space-y-2">
                       <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                        {t("learning.focusMode.presets")}
+                        {t("learning.focusMode.presetScenes")}
                       </h4>
                       <div className="grid grid-cols-2 gap-2">
                         {allPresets.map((preset) => (
@@ -566,10 +566,10 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                                 : "bg-slate-100 text-slate-500 hover:bg-slate-200 border border-transparent dark:bg-white/10 dark:text-slate-400 dark:hover:bg-white/20"
                             }`}
                             whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            {preset.name}
-                          </motion.button>
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {preset.isBuiltIn ? t(`learning.focusMode.presetNames.${preset.id}`) : preset.name}
+                        </motion.button>
                         ))}
                       </div>
                       {mixedNoises.length > 0 && (

@@ -55,6 +55,16 @@ export const createNodeSchema = z.object({
   learning_material: z.string().optional(),
   level: z.enum(["root", "core", "sub", "normal", "leaf"]).optional(),
   is_accepted: z.boolean().optional(),
+  keywords: z
+    .array(
+      z.object({
+        term: z.string(),
+        importance: z.number().min(1).max(5),
+        category: z.string(),
+        explanation: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const updateNodeSchema = createNodeSchema

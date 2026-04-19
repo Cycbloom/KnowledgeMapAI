@@ -2733,5 +2733,24 @@
         "description": "AI can automatically generate various types of review cards including single-choice, multiple-choice, and Q&A based on node content, and automatically add them to the FSRS memory algorithm review queue."
       }
     }
+  },
+  "pluginMarketplace": {
+    "title": "Plugin Marketplace",
+    "browse": "Browse Plugins",
+    "installed": "Installed",
+    "searchPlaceholder": "Search plugins...",
+    "allCategories": "All Categories",
+    "loading": "Loading...",
+    "noPlugins": "No plugins found",
+    "noInstalledPlugins": "No plugins installed yet. Browse the marketplace to find plugins!",
+    "install": "Install",
+    "installing": "Installing...",
+    "uninstall": "Uninstall",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "stateActive": "Active",
+    "stateInactive": "Inactive",
+    "stateError": "Error",
+    "unknownPlugin": "Unknown Plugin"
   }
 }

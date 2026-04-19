@@ -20,12 +20,14 @@ import {
   ArrowLeft,
   Smartphone,
   Globe,
+  Puzzle,
 } from "lucide-react";
 import { AvailableModels } from "../types";
 import type { AIProviderType } from "@shared/types";
 import { isCapacitorMobile } from "../config/mobileApiConfig";
 import { mobileAIService } from "../services/mobile/aiService";
 import type { MobileAIUserConfig } from "../services/mobile/aiService";
+import { PluginMarketplace } from "../components/PluginMarketplace/PluginMarketplace";
 
 export const Settings = () => {
   const navigate = useNavigate();
@@ -769,6 +771,16 @@ export const Settings = () => {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 md:p-6 transition-colors">
+          <div className="flex items-center gap-2 mb-4">
+            <Puzzle className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              插件市场
+            </h2>
+          </div>
+          <PluginMarketplace />
         </div>
       </div>
     </div>

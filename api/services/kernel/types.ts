@@ -3,11 +3,24 @@ import type { ZodSchema } from "zod";
 
 export type PluginState = "installed" | "active" | "inactive" | "uninstalled";
 
+export interface PluginAuthor {
+  name: string;
+  email?: string;
+}
+
 export interface PluginMeta {
   name: string;
   version: string;
   description: string;
   dependencies?: string[];
+  author?: PluginAuthor;
+  icon?: string;
+  screenshots?: string[];
+  homepage?: string;
+  repository?: string;
+  keywords?: string[];
+  category?: string;
+  permissions?: string[];
 }
 
 export interface Plugin extends PluginMeta {
@@ -44,7 +57,8 @@ export interface RouteOptions {
 
 export interface PluginEntry {
   plugin: Plugin;
-  state: PluginState;
+  state: PluginState | "error";
+  errorMessage?: string;
   registeredServices: string[];
   registeredRoutes: string[];
   registeredExtensions: Map<string, string[]>;
@@ -66,4 +80,20 @@ export type AppEventHandler = (event: AppEvent) => Promise<void> | void;
 export interface EventTypeEntry {
   schema?: ZodSchema;
   pluginName?: string;
+}
+
+export interface PluginManifest {
+  name: string;
+  version: string;
+  description: string;
+  author: PluginAuthor;
+  main: string;
+  dependencies?: string[];
+  permissions?: string[];
+  icon?: string;
+  screenshots?: string[];
+  homepage?: string;
+  repository?: string;
+  keywords?: string[];
+  category?: string;
 }

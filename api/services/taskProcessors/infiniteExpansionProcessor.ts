@@ -87,7 +87,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
       await updateTaskStatus(
         supabase,
         taskId,
-        "processing",
+        "in_progress",
         {
           stage: "init",
           progress: 0,
@@ -163,7 +163,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
         await updateTaskStatus(
           supabase,
           taskId,
-          "processing",
+          "in_progress",
           {
             stage: "expanding",
             progress,
@@ -299,7 +299,7 @@ export class InfiniteExpansionProcessor implements TaskProcessor {
                   await updateTaskStatus(
                     supabase,
                     taskId,
-                    "processing",
+                    "in_progress",
                     {
                       stage: "generating_nodes",
                       progress: Math.min(95, progress + 2),

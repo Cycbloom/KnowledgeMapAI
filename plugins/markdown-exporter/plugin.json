@@ -1,0 +1,11 @@
+{
+  "name": "markdown-exporter",
+  "version": "1.0.0",
+  "description": "Export knowledge graphs to Markdown files with customizable templates.",
+  "author": { "name": "KnowledgeMap Team", "email": "team@knowledgemap.dev" },
+  "main": "./index.js",
+  "permissions": ["graph:read", "storage:write"],
+  "keywords": ["export", "markdown", "documentation"],
+  "category": "productivity",
+  "homepage": "https://github.com/knowledgemap/markdown-exporter"
+}

@@ -16,7 +16,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
     logger.info(`Starting recursive graph generation task ${taskId} for user ${userId}`, { payload });
     
     try {
-      await updateTaskStatus(supabase, taskId, 'processing', { 
+      await updateTaskStatus(supabase, taskId, 'in_progress', { 
         stage: 'init', 
         progress: 0 
       }, undefined, undefined, userId);
@@ -106,7 +106,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
         }
       }
 
-      await updateTaskStatus(supabase, taskId, 'processing', { 
+      await updateTaskStatus(supabase, taskId, 'in_progress', { 
         stage: 'init_complete', 
         progress: 30,
         totalNodes 
@@ -120,7 +120,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           const [nodeTitle, nodeId] = coreNodeEntries[i];
           
           logger.debug(`Expanding core node ${i + 1}/${coreNodeEntries.length}: ${nodeTitle}`);
-          await updateTaskStatus(supabase, taskId, 'processing', { 
+          await updateTaskStatus(supabase, taskId, 'in_progress', { 
             stage: 'expanding', 
             progress: 30 + Math.round((i / coreNodeEntries.length) * 40),
             currentNode: nodeTitle
@@ -190,7 +190,7 @@ export class RecursiveGraphProcessor implements TaskProcessor {
           const [nodeTitle, nodeId] = subNodeEntries[i];
           
           logger.debug(`Expanding sub-node ${i + 1}/${Math.min(subNodeEntries.length, 10)}: ${nodeTitle}`);
-          await updateTaskStatus(supabase, taskId, 'processing', { 
+          await updateTaskStatus(supabase, taskId, 'in_progress', { 
             stage: 'deep_expanding', 
             progress: 70 + Math.round((i / Math.min(subNodeEntries.length, 10)) * 25),
             currentNode: nodeTitle

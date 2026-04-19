@@ -28,6 +28,8 @@ export { agentApi } from './agent';
 export { schedulerApi } from './modules/scheduler';
 export { performanceApi } from './performance';
 export { domainsApi, graphDomainsApi } from './domains';
+export { pluginsApi } from './plugins';
+export type { RegistryPlugin, InstalledPlugin, PluginUpdate } from './plugins';
 
 import { authApi } from './auth';
 import { graphsApi } from './graphs';
@@ -48,6 +50,7 @@ import { agentApi } from './agent';
 import { schedulerApi } from './modules/scheduler';
 import { performanceApi } from './performance';
 import { domainsApi, graphDomainsApi } from './domains';
+import { pluginsApi } from './plugins';
 
 export const api = {
   auth: authApi,
@@ -83,6 +86,7 @@ export const api = {
   performance: performanceApi,
   domains: domainsApi,
   graphDomains: graphDomainsApi,
+  plugins: pluginsApi,
 };
 
 export type {

@@ -11,6 +11,8 @@ import { AIPlugin as aiPlugin } from './services/plugins/AIPlugin';
 import { StudyPlugin as studyPlugin } from './services/plugins/StudyPlugin';
 import { SchedulerPlugin as schedulerPlugin } from './services/plugins/SchedulerPlugin';
 import { AgentPlugin as agentPlugin } from './services/plugins/AgentPlugin';
+import { PluginLoader } from './services/kernel/PluginLoader';
+import { PluginStoreService } from './services/kernel/PluginStoreService';
 
 checkEnvOnStartup();
 
@@ -39,9 +41,18 @@ const server = app.listen(PORT, async () => {
 
   try {
     await kernel.activateAll();
-    logger.info('[Kernel] All plugins activated successfully');
+    logger.info('[Kernel] All built-in plugins activated successfully');
   } catch (error) {
     logger.error('[Kernel] Failed to activate plugins:', error);
+  }
+
+  try {
+    const pluginStoreService = new PluginStoreService(kernel);
+    const pluginLoader = new PluginLoader(kernel, pluginStoreService.getPluginsDir());
+    const result = await pluginLoader.loadInstalledPlugins();
+    logger.info(`[PluginLoader] Third-party plugins: ${result.loaded} loaded, ${result.failed} failed`);
+  } catch (error) {
+    logger.error('[PluginLoader] Failed to load third-party plugins:', error);
   }
 });
 

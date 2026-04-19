@@ -30,7 +30,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
     logger.info(`Starting quiz generation task ${taskId} for user ${userId}`, { payload });
     
     try {
-      await updateTaskStatus(supabase, taskId, 'processing', { stage: 'initializing', progress: 0 }, undefined, undefined, userId);
+      await updateTaskStatus(supabase, taskId, 'in_progress', { stage: 'initializing', progress: 0 }, undefined, undefined, userId);
 
       const { quizSetId, knowledgePointIds, config } = payload;
       const { cardTypes = ['qa', 'choice'], difficulty = 'medium', cardsPerType, customPrompt, provider, model } = config || {};
@@ -192,7 +192,7 @@ export class QuizGenerationProcessor implements TaskProcessor {
         }
 
         processedCount++;
-        await updateTaskStatus(supabase, taskId, 'processing', {
+        await updateTaskStatus(supabase, taskId, 'in_progress', {
           stage: 'generating',
           progress: Math.round((processedCount / sortedNodes.length) * 100),
           current_node: node.title,

@@ -14,11 +14,13 @@ import type {
 
 class TaskProcessor {
   public async processTask(task: Task) {
-    const payload = JSON.parse(task.context || '{}');
-    logger.debug(`[TaskProcessor] Processing task ${task.id} (${task.task_type})`);
+    const payload = JSON.parse(task.context || "{}");
+    logger.debug(
+      `[TaskProcessor] Processing task ${task.id} (${task.task_type})`,
+    );
 
     try {
-      await taskService.updateTaskStatus(supabaseAdmin, task.id, "processing");
+      await taskService.updateTaskStatus(supabaseAdmin, task.id, "in_progress");
 
       let result;
       switch (task.task_type) {
@@ -89,7 +91,7 @@ class TaskProcessor {
   }
 
   private async handleGenerateQuestions(task: Task) {
-    const payload = JSON.parse(task.context || '{}');
+    const payload = JSON.parse(task.context || "{}");
     const { knowledge_point_id, node_id, node_title, node_content, config } =
       payload;
     const nodeId = knowledge_point_id || node_id;
@@ -149,10 +151,15 @@ class TaskProcessor {
         return;
       }
       lastProgressUpdateAt = now;
-      await taskService.updateTaskStatus(supabaseAdmin, task.id, "processing", {
-        progress,
-        current_node: `正在生成 ${typeLabel}...`,
-      });
+      await taskService.updateTaskStatus(
+        supabaseAdmin,
+        task.id,
+        "in_progress",
+        {
+          progress,
+          current_node: `正在生成 ${typeLabel}...`,
+        },
+      );
     };
 
     // Helper function to process a single type
@@ -230,7 +237,7 @@ class TaskProcessor {
     }
 
     // Ensure we end at 100% even if throttled
-    await taskService.updateTaskStatus(supabaseAdmin, task.id, "processing", {
+    await taskService.updateTaskStatus(supabaseAdmin, task.id, "in_progress", {
       progress: 100,
       current_node: "生成完成，正在收尾...",
     });
@@ -259,7 +266,7 @@ class TaskProcessor {
   }
 
   private async handleExpandGraph(task: Task) {
-    const payload = JSON.parse(task.context || '{}');
+    const payload = JSON.parse(task.context || "{}");
     const {
       graph_id,
       node_id,

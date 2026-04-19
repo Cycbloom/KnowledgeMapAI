@@ -60,7 +60,7 @@ export interface GenerateQuizData {
 }
 
 export interface QuizGenerationProgress {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
   total: number;
   completed: number;
   current?: string;

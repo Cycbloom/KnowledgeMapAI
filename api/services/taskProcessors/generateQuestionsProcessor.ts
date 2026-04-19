@@ -15,7 +15,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
     logger.info(`Starting generate questions task ${taskId} for user ${userId}`, { payload });
 
     try {
-      await updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, undefined, userId);
+      await updateTaskStatus(supabase, taskId, 'in_progress', undefined, undefined, undefined, userId);
 
       const { knowledge_point_id: node_id, node_title, node_content, config } = payload;
       let totalCount = 0;
@@ -122,7 +122,7 @@ export class GenerateQuestionsProcessor implements TaskProcessor {
         } finally {
           completedTasks++;
           const progress = Math.round((completedTasks / tasksToRun.length) * 100);
-          await updateTaskStatus(supabase, taskId, 'processing', {
+          await updateTaskStatus(supabase, taskId, 'in_progress', {
             progress,
             current_node: `正在生成 ${this.getTypeName(type)}...`,
           }, undefined, undefined, userId);

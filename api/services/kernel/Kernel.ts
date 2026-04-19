@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import type { Router } from "express";
 import type { ZodSchema } from "zod";
 import type {
@@ -11,6 +13,7 @@ import type {
 } from "./types";
 import { DependencyResolver } from "./DependencyResolver";
 import { ExtensionPoint } from "./ExtensionPoint";
+import { validateManifest } from "./manifest";
 import { logger } from "../../utils/logger";
 
 export class Kernel implements KernelAPI {
@@ -378,6 +381,127 @@ export class Kernel implements KernelAPI {
     return [...this.pluginRegistry.entries()]
       .filter(([, entry]) => entry.state === "active")
       .map(([name]) => name);
+  }
+
+  unregisterPlugin(name: string): void {
+    const entry = this.pluginRegistry.get(name);
+    if (!entry) {
+      logger.warn(`[Kernel] Plugin "${name}" is not registered, skipping unregister`);
+      return;
+    }
+
+    if (entry.state === "active") {
+      this.deactivatePlugin(name).catch((err: unknown) => {
+        logger.error(`[Kernel] Failed to deactivate plugin "${name}" during unregister:`, err);
+      });
+    }
+
+    for (const serviceName of entry.registeredServices) {
+      this.serviceContainer.delete(serviceName);
+    }
+
+    for (const routePrefix of entry.registeredRoutes) {
+      this.routeRegistry.delete(routePrefix);
+    }
+
+    this.extensionPoint.removeByPlugin(name);
+
+    for (const eventType of entry.registeredEventTypes) {
+      const typeEntry = this.eventTypeRegistry.get(eventType);
+      if (typeEntry?.pluginName === name) {
+        this.eventTypeRegistry.delete(eventType);
+      }
+    }
+
+    for (const sub of entry.registeredSubscriptions) {
+      const handlers = this.eventHandlers.get(sub.eventType);
+      if (handlers) {
+        handlers.delete(sub.handler);
+        if (handlers.size === 0) {
+          this.eventHandlers.delete(sub.eventType);
+        }
+      }
+    }
+
+    this.pluginRegistry.delete(name);
+
+    if (entry.plugin.onUninstall) {
+      try {
+        entry.plugin.onUninstall();
+      } catch (err: unknown) {
+        logger.error(`[Kernel] Error in onUninstall for plugin "${name}":`, err);
+      }
+    }
+
+    logger.info(`[Kernel] Plugin "${name}" unregistered`);
+  }
+
+  async loadPluginFromManifest(manifestPath: string): Promise<{ success: boolean; error?: string }> {
+    if (!fs.existsSync(manifestPath)) {
+      return { success: false, error: `Manifest file not found: ${manifestPath}` };
+    }
+
+    let manifestData: unknown;
+    try {
+      const raw = fs.readFileSync(manifestPath, "utf-8");
+      manifestData = JSON.parse(raw);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to parse manifest JSON";
+      return { success: false, error: `Failed to read manifest: ${message}` };
+    }
+
+    const validation = validateManifest(manifestData);
+    if (!validation.success) {
+      return { success: false, error: `Invalid manifest: ${validation.errors?.join(", ")}` };
+    }
+
+    const manifest = validation.data;
+    if (!manifest) {
+      return { success: false, error: "Manifest validation succeeded but no data returned" };
+    }
+    const manifestDir = path.dirname(manifestPath);
+    const entryPath = path.resolve(manifestDir, manifest.main);
+
+    if (!fs.existsSync(entryPath)) {
+      return { success: false, error: `Plugin entry file not found: ${entryPath}` };
+    }
+
+    let loaded: unknown;
+    try {
+      loaded = await import(entryPath);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      return { success: false, error: `Failed to load plugin entry: ${message}` };
+    }
+
+    const moduleRecord = loaded as Record<string, unknown> | null | undefined;
+    const plugin = moduleRecord?.default ?? loaded;
+
+    if (
+      typeof plugin !== "object" ||
+      plugin === null ||
+      !("name" in plugin) ||
+      !("version" in plugin) ||
+      !("onInstall" in plugin) ||
+      typeof (plugin as Record<string, unknown>).onInstall !== "function"
+    ) {
+      return { success: false, error: "Plugin entry does not implement the Plugin interface (missing name, version, or onInstall)" };
+    }
+
+    this.registerPlugin(plugin as Plugin);
+
+    return { success: true };
+  }
+
+  getPluginState(name: string): { state: string; errorMessage?: string } | undefined {
+    const entry = this.pluginRegistry.get(name);
+    if (!entry) {
+      return undefined;
+    }
+    return {
+      state: entry.state,
+      errorMessage: entry.errorMessage,
+    };
   }
 
   private getDependents(pluginName: string): string[] {

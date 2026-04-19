@@ -17,7 +17,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
     logger.info(`Starting embedding generation task ${taskId} for user ${userId}`, { payload });
     
     try {
-      await updateTaskStatus(supabase, taskId, 'processing', undefined, undefined, undefined, userId);
+      await updateTaskStatus(supabase, taskId, 'in_progress', undefined, undefined, undefined, userId);
 
       const { graphId, knowledgePointIds } = payload;
 
@@ -114,7 +114,7 @@ export class EmbeddingGenerationProcessor implements TaskProcessor {
           }
 
           const progress = Math.round(((i + batch.length) / knowledgePoints.length) * 100);
-          await updateTaskStatus(supabase, taskId, 'processing', {
+          await updateTaskStatus(supabase, taskId, 'in_progress', {
             progress,
             processed,
             failed,

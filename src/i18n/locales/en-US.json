@@ -947,6 +947,7 @@
     "generateFailed": "Failed to generate learning content, please try again",
     "backToOverview": "Back to Overview",
     "overview": {
+      "title": "Graph Overview",
       "edit": "Edit",
       "noDetails": "No Overview Details",
       "addDetailsHint": "Add reference books, external links, and learning guide to enhance your knowledge graph.",
@@ -1003,6 +1004,7 @@
     "regenerate": "Regenerate",
     "focusMode": {
       "title": "Focus Mode",
+      "timer": "Timer",
       "enter": "Enter Focus Mode",
       "selectContentFirst": "Please select learning content first",
       "highlight": "Highlight",

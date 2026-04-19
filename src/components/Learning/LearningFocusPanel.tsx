@@ -42,6 +42,7 @@ import {
 } from "../../store/useFocusStore";
 import { HighlightedReader } from "./HighlightedReader";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
+import { useUnifiedTimer } from "../../hooks/scheduler";
 import { AudioVisualizer } from "../common/AudioVisualizer";
 import { NOISE_OPTIONS, NOISE_CATEGORIES } from "../../utils/audioSynthesis";
 import type { Keyword } from "../../../shared/types/graph";
@@ -94,21 +95,26 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   const { t } = useTranslation();
 
   const {
-    isActive,
-    timeLeft,
-    mode,
-    sessionsCompleted,
     focusDuration,
+    shortBreakDuration,
+    longBreakDuration,
     highlightEnabled,
     highlightIntensity,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    setMode,
     setHighlightEnabled,
     setHighlightIntensity,
     exitFocusMode,
   } = useFocusStore();
+
+  const {
+    isActive,
+    timeLeft,
+    mode,
+    completedSessions: sessionsCompleted,
+    pause: pauseTimer,
+    resume: resumeTimer,
+    setMode: setTimerMode,
+    skipToBreak,
+  } = useUnifiedTimer();
 
   const {
     mixedNoises,
@@ -126,7 +132,6 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   } = useWhiteNoise();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showControls, setShowControls] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [isSystemDark, setIsSystemDark] = useState(false);
@@ -224,7 +229,9 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
   }, []);
 
   const getProgress = () => {
-    const total = focusDuration * 60;
+    let total = focusDuration * 60;
+    if (mode === "shortBreak") total = shortBreakDuration * 60;
+    else if (mode === "longBreak") total = longBreakDuration * 60;
     return ((total - timeLeft) / total) * 100;
   };
 
@@ -238,8 +245,6 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-[100] bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-slate-800 dark:via-slate-700 dark:to-slate-800"
-          onMouseMove={() => !isLocked && setShowControls(true)}
-          onMouseLeave={() => !isLocked && setShowControls(false)}
         >
           <motion.div
             className="absolute inset-0 opacity-30 pointer-events-none"
@@ -329,7 +334,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
             </div>
           </div>
 
-          <div className="absolute inset-0 flex overflow-hidden pt-14 pb-24">
+          <div className="absolute inset-0 flex overflow-hidden pt-14">
             <div
               className={`flex-1 overflow-y-auto custom-scrollbar ${isMobile ? "p-4" : "p-8 lg:p-12"}`}
             >
@@ -350,6 +355,112 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
                   exit={{ opacity: 0, x: 300 }}
                   className="w-80 border-l border-slate-200 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-4 space-y-6"
                 >
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                      <Brain size={16} className="text-cyan-500" />
+                      {t("learning.focusMode.timer")}
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex p-1 bg-slate-200 dark:bg-slate-800/50 rounded-xl">
+                        {(["focus", "shortBreak"] as const).map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => setTimerMode(m)}
+                            className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                              mode === m
+                                ? "bg-cyan-500 text-white shadow-lg"
+                                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
+                            }`}
+                          >
+                            {m === "focus" ? t("learning.focusMode.focus") : t("learning.focusMode.break")}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="relative">
+                          <svg className="w-24 h-24 transform -rotate-90">
+                            <circle
+                              cx="48"
+                              cy="48"
+                              r="44"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="transparent"
+                              className="text-slate-200 dark:text-slate-700"
+                            />
+                            <circle
+                              cx="48"
+                              cy="48"
+                              r="44"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="transparent"
+                              strokeDasharray={2 * Math.PI * 44}
+                              strokeDashoffset={
+                                2 * Math.PI * 44 * (1 - getProgress() / 100)
+                              }
+                              className={`${
+                                mode === "focus"
+                                  ? "text-cyan-500"
+                                  : "text-emerald-500"
+                              } transition-all duration-1000 ease-linear`}
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-xl font-bold font-mono text-slate-800 dark:text-white">
+                              {formatTime(timeLeft)}
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              {isActive ? t("learning.focusMode.inProgress") : t("learning.focusMode.paused")}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setTimerMode(mode)}
+                            className="p-2 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
+                          >
+                            <RotateCcw size={18} />
+                          </button>
+                          
+                          <button
+                            onClick={isActive ? pauseTimer : resumeTimer}
+                            className={`p-3 rounded-full shadow-lg transform transition-transform active:scale-95 ${
+                              isActive
+                                ? "bg-amber-100 text-amber-600 hover:bg-amber-200 dark:bg-amber-500/80 dark:text-white dark:hover:bg-amber-500"
+                                : "bg-cyan-500 text-white hover:bg-cyan-600"
+                            }`}
+                          >
+                            {isActive ? (
+                              <Pause size={20} fill="currentColor" />
+                            ) : (
+                              <Play
+                                size={20}
+                                fill="currentColor"
+                                className="ml-0.5"
+                              />
+                            )}
+                          </button>
+                          
+                          <button
+                            onClick={skipToBreak}
+                            className="p-2 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
+                          >
+                            <SkipForward size={18} />
+                          </button>
+                        </div>
+                        
+                        <div className="text-xs text-slate-500 dark:text-slate-500 flex items-center justify-center gap-1">
+                          <CheckCircleIcon size={12} />
+                          <span>{t("learning.focusMode.sessionsCompleted", { count: sessionsCompleted })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div>
                     <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                       <Highlighter size={16} className="text-yellow-500" />
@@ -601,121 +712,7 @@ export const LearningFocusPanel: React.FC<LearningFocusPanelProps> = ({
             </AnimatePresence>
           </div>
 
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-200/80 to-transparent dark:from-slate-900/80 dark:to-transparent z-20"
-              >
-                <div className="max-w-lg mx-auto">
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <div className="flex p-1 bg-slate-200 dark:bg-slate-800/50 rounded-xl">
-                      {(["focus", "shortBreak"] as const).map((m) => (
-                        <button
-                          key={m}
-                          onClick={() => setMode(m)}
-                          className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                            mode === m
-                              ? "bg-cyan-500 text-white shadow-lg"
-                              : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
-                          }`}
-                        >
-                          {m === "focus" ? t("learning.focusMode.focus") : t("learning.focusMode.break")}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="relative">
-                      <svg className="w-24 h-24 transform -rotate-90">
-                        <circle
-                          cx="48"
-                          cy="48"
-                          r="44"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="transparent"
-                          className="text-slate-200 dark:text-slate-700"
-                        />
-                        <circle
-                          cx="48"
-                          cy="48"
-                          r="44"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="transparent"
-                          strokeDasharray={2 * Math.PI * 44}
-                          strokeDashoffset={
-                            2 * Math.PI * 44 * (1 - getProgress() / 100)
-                          }
-                          className={`${
-                            mode === "focus"
-                              ? "text-cyan-500"
-                              : "text-emerald-500"
-                          } transition-all duration-1000 ease-linear`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xl font-bold font-mono text-slate-800 dark:text-white">
-                          {formatTime(timeLeft)}
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                          {isActive ? t("learning.focusMode.inProgress") : t("learning.focusMode.paused")}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={resetTimer}
-                        className="p-2 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
-                      >
-                        <RotateCcw size={18} />
-                      </button>
-
-                      <button
-                        onClick={isActive ? pauseTimer : startTimer}
-                        className={`p-3 rounded-full shadow-lg transform transition-transform active:scale-95 ${
-                          isActive
-                            ? "bg-amber-100 text-amber-600 hover:bg-amber-200 dark:bg-amber-500/80 dark:text-white dark:hover:bg-amber-500"
-                            : "bg-cyan-500 text-white hover:bg-cyan-600"
-                        }`}
-                      >
-                        {isActive ? (
-                          <Pause size={20} fill="currentColor" />
-                        ) : (
-                          <Play
-                            size={20}
-                            fill="currentColor"
-                            className="ml-0.5"
-                          />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (mode === "focus") setMode("shortBreak");
-                          else setMode("focus");
-                        }}
-                        className="p-2 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors"
-                      >
-                        <SkipForward size={18} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 text-xs text-slate-500 dark:text-slate-500 flex items-center justify-center gap-1">
-                    <CheckCircleIcon size={12} />
-                    <span>{t("learning.focusMode.sessionsCompleted", { count: sessionsCompleted })}</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* 移除底部计时器面板 */}
 
           <motion.div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] pointer-events-none"

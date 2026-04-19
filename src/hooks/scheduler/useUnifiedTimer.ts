@@ -1,6 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { api } from "../../services/api";
+import { useState, useEffect, useCallback } from "react";
+import { timerService } from "../../services/timer/TimerService";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useFocusStore, type TimerMode } from "../../store/useFocusStore";
+import type {
+  TimerTickPayload,
+  TimerPausedPayload,
+  TimerCompletedPayload,
+  TimerModeChangedPayload,
+  TimerSkipToBreakPayload,
+} from "@shared/types/events";
 
 interface UseUnifiedTimerReturn {
   taskId: string | null;
@@ -21,196 +29,153 @@ interface UseUnifiedTimerReturn {
   setMode: (mode: TimerMode) => void;
 }
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-}
-
 export function useUnifiedTimer(): UseUnifiedTimerReturn {
-  const {
-    focusDuration,
-    shortBreakDuration,
-    longBreakDuration,
-    soundEnabled,
-  } = useFocusStore();
+  useFocusStore();
 
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [queueLevel, setQueueLevel] = useState<number>(0);
-  const [mode, setModeState] = useState<TimerMode>("focus");
-  const [timeLeft, setTimeLeft] = useState<number>(focusDuration * 60);
-  const [totalTime, setTotalTime] = useState<number>(focusDuration * 60);
-  const [isActive, setIsActive] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [completedSessions, setCompletedSessions] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTimeRef = useRef<Date | null>(null);
+  const initialState = timerService.getState();
+  const [taskId, setTaskId] = useState<string | null>(initialState.taskId);
+  const [queueLevel, setQueueLevel] = useState<number>(initialState.queueLevel);
+  const [mode, setModeState] = useState<TimerMode>(initialState.mode);
+  const [timeLeft, setTimeLeft] = useState<number>(initialState.timeLeft);
+  const [totalTime, setTotalTime] = useState<number>(initialState.totalTime);
+  const [isActive, setIsActive] = useState<boolean>(initialState.isActive);
+  const [isPaused, setIsPaused] = useState<boolean>(initialState.isPaused);
+  const [completedSessions, setCompletedSessions] = useState<number>(
+    initialState.completedSessions,
+  );
+  const [progress, setProgress] = useState<number>(initialState.progress);
 
-  const clearTimer = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+  const syncAllState = useCallback(() => {
+    const state = timerService.getState();
+    setTaskId(state.taskId);
+    setQueueLevel(state.queueLevel);
+    setModeState(state.mode);
+    setTimeLeft(state.timeLeft);
+    setTotalTime(state.totalTime);
+    setIsActive(state.isActive);
+    setIsPaused(state.isPaused);
+    setCompletedSessions(state.completedSessions);
+    setProgress(state.progress);
   }, []);
 
-  const playNotificationSound = useCallback(() => {
-    if (!soundEnabled) return;
-    try {
-      const ctx = new (window.AudioContext || (window as never)["webkitAudioContext"])();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 800;
-      osc.type = "sine";
-      gain.gain.value = 0.3;
-      osc.start();
-      setTimeout(() => {
-        osc.stop();
-        ctx.close();
-      }, 300);
-    } catch {
-      // Audio not available
-    }
-  }, [soundEnabled]);
-
-  const saveFocusSession = useCallback(async (elapsedSeconds: number) => {
-    if (!startTimeRef.current) return;
-
-    try {
-      await api.scheduler.createFocusSession({
-        task_id: taskId ?? undefined,
-        started_at: startTimeRef.current.toISOString(),
-        ended_at: new Date().toISOString(),
-        duration: Math.round(elapsedSeconds / 60),
-        pomodoro_count: completedSessions + 1,
-        is_break: mode !== "focus",
-      });
-    } catch (error) {
-      console.error("Failed to save focus session:", error);
-    }
-  }, [taskId, completedSessions, mode]);
-
-  const onTimerEnd = useCallback(async () => {
-    clearTimer();
-    setIsActive(false);
-    setIsPaused(false);
-
-    const elapsedDuration = totalTime - timeLeft;
-    await saveFocusSession(elapsedDuration);
-
-    playNotificationSound();
-
-    if (mode === "focus") {
-      setCompletedSessions((prev) => prev + 1);
-    }
-
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification(mode === "focus" ? "专注时间结束！" : "休息时间结束！", {
-        body: mode === "focus" ? "该休息一下了" : "继续加油吧！",
-      });
-    }
-  }, [totalTime, timeLeft, mode, clearTimer, saveFocusSession, playNotificationSound]);
-
   useEffect(() => {
-    if (!isActive || isPaused) return;
+    const onTick = (payload: unknown) => {
+      const p = payload as TimerTickPayload;
+      setTaskId(p.taskId);
+      setTimeLeft(p.timeLeft);
+      setTotalTime(p.totalTime);
+      setProgress(p.progress);
+      setModeState(p.mode as TimerMode);
+      setIsActive(p.isActive);
+      setIsPaused(p.isPaused);
+      setCompletedSessions(p.completedSessions);
+    };
 
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          onTimerEnd();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const onStarted = (_payload: unknown) => {
+      syncAllState();
+    };
 
-    return () => clearTimer();
-  }, [isActive, isPaused, onTimerEnd, clearTimer]);
+    const onPaused = (payload: unknown) => {
+      const p = payload as TimerPausedPayload;
+      setIsPaused(true);
+      setTimeLeft(p.timeLeft);
+    };
 
-  useEffect(() => {
-    if (isActive && !isPaused) {
-      document.title = `${formatTime(timeLeft)} - ${mode === "focus" ? "专注中" : "休息中"}`;
-    } else {
-      document.title = "KnowledgeMap";
-    }
+    const onResumed = (_payload: unknown) => {
+      setIsPaused(false);
+    };
+
+    const onCompleted = (payload: unknown) => {
+      const p = payload as TimerCompletedPayload;
+      setIsActive(false);
+      setIsPaused(false);
+      setCompletedSessions(p.completedSessions);
+      setTimeLeft(timerService.getState().timeLeft);
+    };
+
+    const onModeChanged = (payload: unknown) => {
+      const p = payload as TimerModeChangedPayload;
+      setModeState(p.newMode as TimerMode);
+      setTimeLeft(p.timeLeft);
+      setTotalTime(p.totalTime);
+    };
+
+    const onSkipToBreak = (payload: unknown) => {
+      const p = payload as TimerSkipToBreakPayload;
+      setModeState(p.toMode as TimerMode);
+      setTimeLeft(p.breakDuration);
+      setTotalTime(p.breakDuration);
+      setIsActive(true);
+      setIsPaused(false);
+    };
+
+    const onReset = (_payload: unknown) => {
+      syncAllState();
+    };
+
+    const unsubTick = frontendEventBus.subscribe("timer_tick", onTick);
+    const unsubStarted = frontendEventBus.subscribe("timer_started", onStarted);
+    const unsubPaused = frontendEventBus.subscribe("timer_paused", onPaused);
+    const unsubResumed = frontendEventBus.subscribe("timer_resumed", onResumed);
+    const unsubCompleted = frontendEventBus.subscribe(
+      "timer_completed",
+      onCompleted,
+    );
+    const unsubModeChanged = frontendEventBus.subscribe(
+      "timer_mode_changed",
+      onModeChanged,
+    );
+    const unsubSkipToBreak = frontendEventBus.subscribe(
+      "timer_skip_to_break",
+      onSkipToBreak,
+    );
+    const unsubReset = frontendEventBus.subscribe("timer_reset", onReset);
 
     return () => {
-      document.title = "KnowledgeMap";
+      unsubTick();
+      unsubStarted();
+      unsubPaused();
+      unsubResumed();
+      unsubCompleted();
+      unsubModeChanged();
+      unsubSkipToBreak();
+      unsubReset();
     };
-  }, [isActive, isPaused, timeLeft, mode]);
+  }, [syncAllState]);
 
-  const start = useCallback((newTaskId: string, duration: number, newQueueLevel?: number) => {
-    clearTimer();
-    setTaskId(newTaskId);
-    setQueueLevel(newQueueLevel ?? 0);
-    setModeState("focus");
-    setTimeLeft(duration * 60);
-    setTotalTime(duration * 60);
-    setIsActive(true);
-    setIsPaused(false);
-    startTimeRef.current = new Date();
-  }, [clearTimer]);
+  const start = useCallback(
+    (newTaskId: string, duration: number, newQueueLevel?: number) => {
+      timerService.start(newTaskId, duration, newQueueLevel);
+    },
+    [],
+  );
 
   const pause = useCallback(() => {
-    setIsPaused(true);
+    timerService.pause();
   }, []);
 
   const resume = useCallback(() => {
-    setIsPaused(false);
+    timerService.resume();
   }, []);
 
   const complete = useCallback(async () => {
-    const elapsedDuration = totalTime - timeLeft;
-    await saveFocusSession(elapsedDuration);
-    clearTimer();
-    setIsActive(false);
-    setIsPaused(false);
-    setTaskId(null);
-    setTimeLeft(focusDuration * 60);
-    setTotalTime(focusDuration * 60);
-  }, [totalTime, timeLeft, focusDuration, saveFocusSession, clearTimer]);
+    await timerService.complete();
+  }, []);
 
   const skipToBreak = useCallback(() => {
-    clearTimer();
-    const breakDuration =
-      completedSessions > 0 && completedSessions % 4 === 0
-        ? longBreakDuration
-        : shortBreakDuration;
-    const nextMode: TimerMode = mode === "focus" ? "shortBreak" : "focus";
-    setModeState(nextMode);
-    setTimeLeft(breakDuration * 60);
-    setTotalTime(breakDuration * 60);
-    setIsActive(true);
-    setIsPaused(false);
-    startTimeRef.current = new Date();
-  }, [completedSessions, shortBreakDuration, longBreakDuration, mode, clearTimer]);
+    timerService.skipToBreak();
+  }, []);
 
-  const switchTask = useCallback((newTaskId: string, duration: number, newQueueLevel?: number) => {
-    clearTimer();
-    setTaskId(newTaskId);
-    setQueueLevel(newQueueLevel ?? 0);
-    setTimeLeft(duration * 60);
-    setTotalTime(duration * 60);
-    setModeState("focus");
-    setIsActive(true);
-    setIsPaused(false);
-    startTimeRef.current = new Date();
-  }, [clearTimer]);
+  const switchTask = useCallback(
+    (newTaskId: string, duration: number, newQueueLevel?: number) => {
+      timerService.switchTask(newTaskId, duration, newQueueLevel);
+    },
+    [],
+  );
 
   const setMode = useCallback((newMode: TimerMode) => {
-    clearTimer();
-    let duration = focusDuration;
-    if (newMode === "shortBreak") duration = shortBreakDuration;
-    if (newMode === "longBreak") duration = longBreakDuration;
-    setModeState(newMode);
-    setTimeLeft(duration * 60);
-    setTotalTime(duration * 60);
-    setIsActive(false);
-    setIsPaused(false);
-  }, [focusDuration, shortBreakDuration, longBreakDuration, clearTimer]);
-
-  const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
+    timerService.setMode(newMode);
+  }, []);
 
   return {
     taskId,

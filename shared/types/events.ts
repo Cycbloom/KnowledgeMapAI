@@ -32,12 +32,23 @@ export type SystemEventType =
   | "cache_invalidation_needed"
   | "notification_needed";
 
+export type TimerEventType =
+  | "timer_started"
+  | "timer_paused"
+  | "timer_resumed"
+  | "timer_completed"
+  | "timer_tick"
+  | "timer_mode_changed"
+  | "timer_skip_to_break"
+  | "timer_reset";
+
 export type AppEventType =
   | SchedulerEventType
   | GraphEventType
   | AIEventType
   | StudyEventType
-  | SystemEventType;
+  | SystemEventType
+  | TimerEventType;
 
 export interface AppEvent<T = unknown> {
   id: string;
@@ -193,6 +204,62 @@ export interface StudySessionCompletedPayload {
   cardsReviewed: number;
 }
 
+export interface TimerStartedPayload {
+  taskId: string | null;
+  queueLevel: number;
+  mode: "focus" | "shortBreak" | "longBreak";
+  duration: number;
+}
+
+export interface TimerPausedPayload {
+  taskId: string | null;
+  timeLeft: number;
+  mode: string;
+}
+
+export interface TimerResumedPayload {
+  taskId: string | null;
+  timeLeft: number;
+  mode: string;
+}
+
+export interface TimerCompletedPayload {
+  taskId: string | null;
+  mode: string;
+  duration: number;
+  completedSessions: number;
+}
+
+export interface TimerTickPayload {
+  taskId: string | null;
+  timeLeft: number;
+  totalTime: number;
+  progress: number;
+  mode: string;
+  isActive: boolean;
+  isPaused: boolean;
+  completedSessions: number;
+}
+
+export interface TimerModeChangedPayload {
+  previousMode: string;
+  newMode: string;
+  timeLeft: number;
+  totalTime: number;
+}
+
+export interface TimerSkipToBreakPayload {
+  fromMode: string;
+  toMode: string;
+  breakDuration: number;
+}
+
+export interface TimerResetPayload {
+  mode: string;
+  timeLeft: number;
+  totalTime: number;
+}
+
 export interface CacheInvalidationNeededPayload {
   keys: string[];
   tags?: string[];
@@ -231,7 +298,15 @@ export type AppEventPayload =
   | AITaskFailedPayload
   | StudySessionCompletedPayload
   | CacheInvalidationNeededPayload
-  | NotificationNeededPayload;
+  | NotificationNeededPayload
+  | TimerStartedPayload
+  | TimerPausedPayload
+  | TimerResumedPayload
+  | TimerCompletedPayload
+  | TimerTickPayload
+  | TimerModeChangedPayload
+  | TimerSkipToBreakPayload
+  | TimerResetPayload;
 
 export type SchedulerEvent<T = unknown> = AppEvent<T>;
 export type SchedulerEventHandler = AppEventHandler;

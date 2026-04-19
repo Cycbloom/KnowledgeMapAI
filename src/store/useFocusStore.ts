@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
-import { api } from "../services/api";
 
 export type TimerMode = "focus" | "shortBreak" | "longBreak";
 
@@ -47,8 +46,6 @@ export interface NoiseOption {
 }
 
 interface FocusState {
-  isActive: boolean;
-  timeLeft: number;
   mode: TimerMode;
 
   taskId: string | null;
@@ -71,11 +68,7 @@ interface FocusState {
   customPresets: NoisePreset[];
   activePresetId: string | null;
 
-  startTimer: () => void;
-  pauseTimer: () => void;
-  resetTimer: () => void;
   setMode: (mode: TimerMode) => void;
-  tick: () => void;
   updateSettings: (
     settings: Partial<
       Pick<
@@ -87,8 +80,6 @@ interface FocusState {
       >
     >,
   ) => void;
-  setTaskId: (taskId: string | null) => void;
-  setDuration: (minutes: number) => void;
   enterFocusMode: (nodeId?: string) => void;
   exitFocusMode: () => void;
   setNoise: (noise: WhiteNoiseType) => void;
@@ -116,9 +107,7 @@ export const useFocusStore = create<FocusState>()(
   devtools(
     persist(
       (set, get) => ({
-        isActive: false,
         mode: "focus",
-        timeLeft: DEFAULT_DURATIONS.focus * 60,
         taskId: null,
         focusDuration: DEFAULT_DURATIONS.focus,
         shortBreakDuration: DEFAULT_DURATIONS.shortBreak,
@@ -137,96 +126,8 @@ export const useFocusStore = create<FocusState>()(
         customPresets: [],
         activePresetId: null,
 
-        startTimer: () => set({ isActive: true }),
-
-        pauseTimer: () => set({ isActive: false }),
-
-        resetTimer: () => {
-          const { mode, focusDuration, shortBreakDuration, longBreakDuration } =
-            get();
-          let duration = focusDuration;
-          if (mode === "shortBreak") duration = shortBreakDuration;
-          if (mode === "longBreak") duration = longBreakDuration;
-
-          set({ isActive: false, timeLeft: duration * 60 });
-        },
-
         setMode: (mode) => {
-          const { focusDuration, shortBreakDuration, longBreakDuration } =
-            get();
-          let duration = focusDuration;
-          if (mode === "shortBreak") duration = shortBreakDuration;
-          if (mode === "longBreak") duration = longBreakDuration;
-
-          set({ mode, isActive: false, timeLeft: duration * 60 });
-        },
-
-        tick: () => {
-          const { timeLeft, isActive, soundEnabled } = get();
-          if (!isActive) return;
-
-          if (timeLeft > 0) {
-            set({ timeLeft: timeLeft - 1 });
-          } else {
-            const {
-              mode,
-              focusDuration,
-              shortBreakDuration,
-              longBreakDuration,
-              taskId,
-            } = get();
-
-            let duration = 0;
-            if (mode === "focus") duration = focusDuration;
-            else if (mode === "shortBreak") duration = shortBreakDuration;
-            else if (mode === "longBreak") duration = longBreakDuration;
-
-            const endTime = new Date();
-            const startTime = new Date(
-              endTime.getTime() - duration * 60 * 1000,
-            );
-
-            api.focus
-              .saveSession({
-                duration,
-                mode,
-                start_time: startTime.toISOString(),
-                end_time: endTime.toISOString(),
-                task_id: taskId || undefined,
-              })
-              .catch((err) =>
-                console.error("Failed to save focus session:", err),
-              );
-
-            set((state) => ({
-              isActive: false,
-              sessionsCompleted:
-                mode === "focus"
-                  ? state.sessionsCompleted + 1
-                  : state.sessionsCompleted,
-            }));
-
-            if (soundEnabled) {
-              try {
-                if (typeof window !== "undefined") {
-                  const ctx = new (
-                    window.AudioContext || (window as any).webkitAudioContext
-                  )();
-                  const osc = ctx.createOscillator();
-                  const gain = ctx.createGain();
-                  osc.connect(gain);
-                  gain.connect(ctx.destination);
-                  osc.type = "sine";
-                  osc.frequency.value = 880;
-                  gain.gain.value = 0.1;
-                  osc.start();
-                  setTimeout(() => osc.stop(), 500);
-                }
-              } catch (e) {
-                console.error("Audio play failed", e);
-              }
-            }
-          }
+          set({ mode });
         },
 
         updateSettings: (settings) => {
@@ -234,15 +135,6 @@ export const useFocusStore = create<FocusState>()(
             const newState = { ...state, ...settings };
             return newState;
           });
-        },
-
-        setTaskId: (taskId) => set({ taskId }),
-
-        setDuration: (minutes) => {
-          const { isActive } = get();
-          if (!isActive) {
-            set({ timeLeft: minutes * 60, focusDuration: minutes });
-          }
         },
 
         enterFocusMode: (nodeId) =>

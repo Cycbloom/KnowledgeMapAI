@@ -1,32 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Coffee, 
-  Play, 
-  Pause, 
-  SkipForward, 
+import {
+  Coffee,
+  Play,
+  Pause,
+  SkipForward,
   RotateCcw,
   CheckCircle,
   ArrowRight,
   Sparkles
 } from 'lucide-react';
-
-type BreakType = 'short' | 'long';
+import { useUnifiedTimer } from '../../hooks/scheduler';
 
 interface BreakTimerProps {
   isOpen: boolean;
   onClose: () => void;
-  breakType: BreakType;
   pomodorosCompleted: number;
   onResumeTask: () => void;
   onSwitchTask: () => void;
-  onSkipBreak: () => void;
 }
-
-const BREAK_DURATIONS = {
-  short: 5 * 60,
-  long: 15 * 60,
-};
 
 const BREAK_SUGGESTIONS = [
   { icon: '👀', text: '远眺窗外，放松眼睛' },
@@ -40,72 +32,32 @@ const BREAK_SUGGESTIONS = [
 export const BreakTimer: React.FC<BreakTimerProps> = ({
   isOpen,
   onClose,
-  breakType,
   pomodorosCompleted,
   onResumeTask,
   onSwitchTask,
-  onSkipBreak,
 }) => {
-  const duration = BREAK_DURATIONS[breakType];
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const [isRunning, setIsRunning] = useState(true);
-  const [showEndPrompt, setShowEndPrompt] = useState(false);
+  const {
+    timeLeft,
+    isActive,
+    isPaused,
+    mode,
+    progress,
+    pause,
+    resume,
+    skipToBreak,
+    setMode,
+  } = useUnifiedTimer();
+
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isRunning = isActive && !isPaused;
+  const showEndPrompt = !isActive && timeLeft === 0;
+  const breakType = mode === 'longBreak' ? 'long' : 'short';
 
   useEffect(() => {
     if (isOpen) {
-      setTimeLeft(duration);
-      setIsRunning(true);
-      setShowEndPrompt(false);
       setCurrentSuggestion(Math.floor(Math.random() * BREAK_SUGGESTIONS.length));
     }
-  }, [isOpen, duration]);
-
-  const playNotificationSound = () => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.value = 523.25;
-      gain.gain.value = 0.2;
-      osc.start();
-      setTimeout(() => {
-        osc.frequency.value = 659.25;
-        setTimeout(() => {
-          osc.frequency.value = 783.99;
-          setTimeout(() => osc.stop(), 200);
-        }, 200);
-      }, 200);
-    } catch (e) {
-      console.error('Audio play failed', e);
-    }
-  };
-
-  useEffect(() => {
-    if (isRunning && isOpen) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            setShowEndPrompt(true);
-            playNotificationSound();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isRunning, isOpen]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && isRunning) {
@@ -122,17 +74,10 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progress = ((duration - timeLeft) / duration) * 100;
   const circumference = 2 * Math.PI * 120;
   const strokeDashoffset = circumference * (1 - progress / 100);
 
-  const handleReset = () => {
-    setTimeLeft(duration);
-    setIsRunning(true);
-    setShowEndPrompt(false);
-  };
-
-  if (!isOpen) return null;
+  if (!isOpen || (mode !== 'shortBreak' && mode !== 'longBreak')) return null;
 
   return (
     <AnimatePresence>
@@ -160,7 +105,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 {breakType === 'long' ? '长休息时间' : '小憩时间'}
               </span>
             </motion.div>
-            
+
             {breakType === 'long' && (
               <motion.p
                 initial={{ opacity: 0 }}
@@ -269,7 +214,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
 
               <div className="flex items-center justify-center gap-4">
                 <motion.button
-                  onClick={handleReset}
+                  onClick={() => setMode(mode)}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -278,7 +223,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 </motion.button>
 
                 <motion.button
-                  onClick={() => setIsRunning(!isRunning)}
+                  onClick={() => isRunning ? pause() : resume()}
                   className={`p-4 rounded-full shadow-lg ${
                     isRunning
                       ? 'bg-amber-500 text-white'
@@ -291,7 +236,7 @@ export const BreakTimer: React.FC<BreakTimerProps> = ({
                 </motion.button>
 
                 <motion.button
-                  onClick={onSkipBreak}
+                  onClick={skipToBreak}
                   className="p-3 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

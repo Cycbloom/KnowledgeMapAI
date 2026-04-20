@@ -21,6 +21,8 @@ import {
   ChevronUp,
   RefreshCw,
   GripHorizontal,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import { PromptEditor } from "../GraphEditor/panels/PromptEditor";
@@ -66,9 +68,11 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
     fontSize,
     readingMode,
     paginationMode,
+    contentWidthMode,
     setFontSize,
     setReadingMode,
     setPaginationMode,
+    setContentWidthMode,
     resetSettings,
   } = useLearningSettingsStore();
 
@@ -166,7 +170,10 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 
     try {
       if (editingScope === "system") {
-        frontendEventBus.publish("message_show", { type: "error", content: "系统级模板不可修改" });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: "系统级模板不可修改",
+        });
         return;
       }
 
@@ -177,12 +184,18 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
         graph_id: editingScope === "graph" ? graphId : undefined,
       });
 
-      frontendEventBus.publish("message_show", { type: "success", content: "Prompt配置已保存" });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: "Prompt配置已保存",
+      });
       setEditingScope(null);
       await loadTemplates();
     } catch (error) {
       console.error("Failed to save prompt config:", error);
-      frontendEventBus.publish("message_show", { type: "error", content: "保存失败" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "保存失败",
+      });
     }
   };
 
@@ -205,11 +218,17 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 
     try {
       await api.prompts.reset(template.id);
-      frontendEventBus.publish("message_show", { type: "success", content: "已重置为默认模板" });
+      frontendEventBus.publish("message_show", {
+        type: "success",
+        content: "已重置为默认模板",
+      });
       await loadTemplates();
     } catch (error) {
       console.error("Failed to reset template:", error);
-      frontendEventBus.publish("message_show", { type: "error", content: "重置失败" });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: "重置失败",
+      });
     }
   };
 
@@ -429,6 +448,75 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
                   >
                     <mode.icon size={16} />
                     {mode.label}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText
+                  size={16}
+                  className="text-slate-500 dark:text-slate-400"
+                />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t("learning.settings.contentWidth")}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    {
+                      id: "full",
+                      label: t("learning.settings.widthFull"),
+                      icon: Maximize2,
+                      color:
+                        "from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20",
+                    },
+                    {
+                      id: "comfortable",
+                      label: t("learning.settings.widthComfortable"),
+                      icon: FileText,
+                      color:
+                        "from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20",
+                    },
+                    {
+                      id: "narrow",
+                      label: t("learning.settings.widthNarrow"),
+                      icon: Minimize2,
+                      color:
+                        "from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20",
+                    },
+                  ] as const
+                ).map((mode) => (
+                  <motion.button
+                    key={mode.id}
+                    onClick={() => setContentWidthMode(mode.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      contentWidthMode === mode.id
+                        ? "border-cyan-500 bg-gradient-to-br " + mode.color
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                    }`}
+                  >
+                    <mode.icon
+                      size={20}
+                      className={
+                        contentWidthMode === mode.id
+                          ? "text-cyan-600 dark:text-cyan-400"
+                          : "text-slate-400 dark:text-slate-500"
+                      }
+                    />
+                    <span
+                      className={`text-xs font-medium ${
+                        contentWidthMode === mode.id
+                          ? "text-cyan-700 dark:text-cyan-300"
+                          : "text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {mode.label}
+                    </span>
                   </motion.button>
                 ))}
               </div>

@@ -110,7 +110,8 @@ export const LearningMode = () => {
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOverviewEditModalOpen, setIsOverviewEditModalOpen] = useState(false);
-  const { fontSize, readingMode } = useLearningSettingsStore();
+  const { fontSize, readingMode, contentWidthMode } =
+    useLearningSettingsStore();
   const queryClient = useQueryClient();
 
   const {
@@ -289,7 +290,10 @@ export const LearningMode = () => {
         const node = await api.nodes.get(nodeId);
 
         if (!node) {
-          frontendEventBus.publish("message_show", { type: "error", content: t("learning.node.loadFailed") });
+          frontendEventBus.publish("message_show", {
+            type: "error",
+            content: t("learning.node.loadFailed"),
+          });
           return;
         }
 
@@ -391,7 +395,10 @@ export const LearningMode = () => {
     if (!input.trim() || isChatLoading) return;
 
     if (!isOnline) {
-      frontendEventBus.publish("message_show", { type: "error", content: t("learning.chat.offline") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("learning.chat.offline"),
+      });
       return;
     }
 
@@ -466,7 +473,10 @@ export const LearningMode = () => {
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("learning.node.enterTitle") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("learning.node.enterTitle"),
+      });
       return;
     }
 
@@ -511,7 +521,10 @@ export const LearningMode = () => {
       }
     } catch (error) {
       console.error("Failed to create node:", error);
-      frontendEventBus.publish("message_show", { type: "error", content: t("learning.node.createFailed") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("learning.node.createFailed"),
+      });
     }
   };
 
@@ -633,12 +646,18 @@ export const LearningMode = () => {
     types: string[];
   }) => {
     if (!nodeId) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("learning.cards.selectNode") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("learning.cards.selectNode"),
+      });
       return;
     }
 
     if (!isOnline) {
-      frontendEventBus.publish("message_show", { type: "error", content: t("learning.cards.offline") });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: t("learning.cards.offline"),
+      });
       return;
     }
 
@@ -976,7 +995,10 @@ export const LearningMode = () => {
         });
       }
 
-      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", {
+        type: "error",
+        content: errorMessage,
+      });
     } finally {
       setIsGeneratingCards(false);
     }
@@ -985,7 +1007,10 @@ export const LearningMode = () => {
   const handleCancelGenerate = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      frontendEventBus.publish("message_show", { type: "info", content: t("learning.cards.cancelling") });
+      frontendEventBus.publish("message_show", {
+        type: "info",
+        content: t("learning.cards.cancelling"),
+      });
     }
   };
 
@@ -995,7 +1020,10 @@ export const LearningMode = () => {
   ) => {
     const nodeIds = Array.from(selectedNodeIds);
     if (nodeIds.length === 0) {
-      frontendEventBus.publish("message_show", { type: "warning", content: t("learning.batch.selectNodes") });
+      frontendEventBus.publish("message_show", {
+        type: "warning",
+        content: t("learning.batch.selectNodes"),
+      });
       return;
     }
 
@@ -1049,11 +1077,17 @@ export const LearningMode = () => {
         }
       } catch (error) {
         console.error("Batch expand failed:", error);
-        frontendEventBus.publish("message_show", { type: "error", content: t("learning.batch.expandError") });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: t("learning.batch.expandError"),
+        });
       }
     } else if (action === "batch_generate_questions" && data) {
       if (!isOnline) {
-        frontendEventBus.publish("message_show", { type: "error", content: t("learning.cards.offline") });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: t("learning.cards.offline"),
+        });
         return;
       }
 
@@ -1104,7 +1138,10 @@ export const LearningMode = () => {
           errorMessage = error.message;
         }
 
-        frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: errorMessage,
+        });
       } finally {
         setIsGeneratingCards(false);
       }
@@ -1267,7 +1304,10 @@ export const LearningMode = () => {
                 onClick={() => {
                   if (nodeId && articleContent) {
                     enterFocusMode(nodeId);
-                    frontendEventBus.publish("focus_enter", { nodeId, taskId: focusTaskId ?? undefined });
+                    frontendEventBus.publish("focus_enter", {
+                      nodeId,
+                      taskId: focusTaskId ?? undefined,
+                    });
                     setIsFocusModeOpen(true);
                   }
                 }}
@@ -1487,7 +1527,7 @@ export const LearningMode = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="max-w-3xl mx-auto">
+                  <div className="w-full">
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
                       <div className="flex items-center gap-3">
                         <button
@@ -1559,6 +1599,12 @@ export const LearningMode = () => {
                     </div>
                     <div
                       className={`prose dark:prose-invert prose-indigo ${
+                        contentWidthMode === "full"
+                          ? "max-w-none"
+                          : contentWidthMode === "comfortable"
+                            ? "max-w-4xl mx-auto"
+                            : "max-w-3xl mx-auto"
+                      } ${
                         readingMode === "default"
                           ? isDark
                             ? "bg-slate-900 text-slate-50"
@@ -2096,7 +2142,9 @@ export const LearningMode = () => {
         onClose={() => {
           setIsFocusModeOpen(false);
           exitFocusMode();
-          frontendEventBus.publish("focus_exit", { nodeId: nodeId ?? undefined });
+          frontendEventBus.publish("focus_exit", {
+            nodeId: nodeId ?? undefined,
+          });
         }}
         articleContent={articleContent}
         nodeTitle={nodeTitle}

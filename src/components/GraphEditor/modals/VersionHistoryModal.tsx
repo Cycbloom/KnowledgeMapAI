@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, History, RotateCcw, GitCompare, Loader2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { knowledgePointsApi } from '../../../services/api/knowledgePoints';
 import type { KnowledgePointVersionWithDiff, KnowledgePointVersionDiff } from '../../../types';
-import { useMessageStore } from '../../../store/useMessageStore';
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -29,7 +29,6 @@ export const VersionHistoryModal = ({
   const [rollbackLoading, setRollbackLoading] = useState(false);
   const [offset, setOffset] = useState(0);
   const pageSize = 10;
-  const { addMessage } = useMessageStore();
 
   useEffect(() => {
     if (isOpen && knowledgePointId) {
@@ -48,7 +47,7 @@ export const VersionHistoryModal = ({
       setTotal(result.total);
     } catch (error) {
       console.error('Failed to load versions:', error);
-      addMessage({ type: 'error', content: '加载版本历史失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '加载版本历史失败' });
     } finally {
       setLoading(false);
     }
@@ -62,12 +61,12 @@ export const VersionHistoryModal = ({
     setRollbackLoading(true);
     try {
       await knowledgePointsApi.rollbackVersion(knowledgePointId, versionNumber);
-      addMessage({ type: 'success', content: `已成功回滚到版本 ${versionNumber}` });
+      frontendEventBus.publish("message_show", { type: 'success', content: `已成功回滚到版本 ${versionNumber}` });
       loadVersions();
       onRollback?.();
     } catch (error) {
       console.error('Rollback failed:', error);
-      addMessage({ type: 'error', content: '回滚失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '回滚失败' });
     } finally {
       setRollbackLoading(false);
     }
@@ -96,7 +95,7 @@ export const VersionHistoryModal = ({
       setCompareResult(result);
     } catch (error) {
       console.error('Compare failed:', error);
-      addMessage({ type: 'error', content: '版本对比失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '版本对比失败' });
     } finally {
       setLoading(false);
     }

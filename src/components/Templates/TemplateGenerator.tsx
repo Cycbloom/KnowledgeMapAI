@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { api } from "../../services/api";
 import type { GeneratedTemplate } from "../../services/api/autoGraph";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useErrorHandler, useIsMobile, useTheme } from "../../hooks";
 import type {
   TemplateCategory,
@@ -372,7 +372,6 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     useState<GeneratedTemplate | null>(null);
   const [step, setStep] = useState<"input" | "templates" | "style">("input");
 
-  const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
   const categoryOptions: Array<{
@@ -436,7 +435,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
 
   const handleGenerateTemplates = useCallback(async () => {
     if (!topic.trim()) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "warning",
         content: t("templates.message.enterTopic"),
       });
@@ -458,14 +457,14 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
       if (result.templates && result.templates.length > 0) {
         setTemplates(result.templates);
         setStep("templates");
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: t("templates.generator.templateGenerated", {
             count: result.templates.length,
           }),
         });
       } else {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "warning",
           content: t("templates.generator.generateFailed"),
         });
@@ -478,7 +477,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     } finally {
       setIsGenerating(false);
     }
-  }, [topic, context, category, graphId, addMessage, handleError, t]);
+  }, [topic, context, category, graphId, handleError, t]);
 
   const handleSelectTemplate = useCallback((template: GeneratedTemplate) => {
     setSelectedTemplate(template);
@@ -487,7 +486,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
 
   const handleApplyTemplate = useCallback(async () => {
     if (!selectedTemplate || !graphId) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "warning",
         content: t("templates.message.selectTemplate"),
       });
@@ -495,7 +494,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     }
 
     if (style === "custom" && !customPrompt.trim()) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "warning",
         content: t("templates.message.enterCustomRules"),
       });
@@ -513,7 +512,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         graph_id: graphId,
       });
 
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("templates.generator.applySuccess"),
       });
@@ -533,7 +532,6 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     style,
     customPrompt,
     topic,
-    addMessage,
     handleError,
     onTemplateApplied,
     onClose,
@@ -558,7 +556,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
         tags: selectedTemplate.tags,
       });
 
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("templates.message.saveToLibrarySuccess"),
       });
@@ -570,7 +568,7 @@ export const TemplateGenerator: React.FC<TemplateGeneratorProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [selectedTemplate, category, addMessage, handleError, t]);
+  }, [selectedTemplate, category, handleError, t]);
 
   const handleBack = useCallback(() => {
     if (step === "style") {

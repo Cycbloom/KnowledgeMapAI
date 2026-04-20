@@ -19,7 +19,7 @@ import {
   useGraphLearningPath,
   useUser,
 } from '../../hooks/queries';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useStore } from '../../store/useStore';
 import { KnowledgePointSelector } from './KnowledgePointSelector';
 import { QuizTypeConfig } from './QuizTypeConfig';
@@ -55,7 +55,6 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
   onComplete,
 }) => {
   const { isDark } = useTheme();
-  const { addMessage } = useMessageStore();
   const { token } = useStore();
   const { data: userData } = useUser(!!token);
 
@@ -137,14 +136,14 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
 
   useEffect(() => {
     if (progress?.status === 'completed' && createdQuizSetId) {
-      addMessage({ type: 'success', content: '测验生成完成！' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '测验生成完成！' });
       onComplete(createdQuizSetId);
       handleClose();
     } else if (progress?.status === 'failed') {
-      addMessage({ type: 'error', content: progress.error || '测验生成失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: progress.error || '测验生成失败' });
       setTaskId(null);
     }
-  }, [progress, createdQuizSetId, addMessage, onComplete, handleClose]);
+  }, [progress, createdQuizSetId, onComplete, handleClose]);
 
   const handleGraphChange = (graphId: string) => {
     setSelectedGraphId(graphId || null);
@@ -191,10 +190,10 @@ export const QuizGenerationModal: React.FC<QuizGenerationModalProps> = ({
       });
 
       setTaskId(result.task_id);
-      addMessage({ type: 'info', content: '测验生成任务已开始...' });
+      frontendEventBus.publish("message_show", { type: 'info', content: '测验生成任务已开始...' });
     } catch (error: any) {
       console.error('Failed to generate quiz:', error);
-      addMessage({ type: 'error', content: error.message || '创建测验失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '创建测验失败' });
     }
   };
 

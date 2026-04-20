@@ -2,7 +2,7 @@ import type { Node, Edge, ExtractedConcept, TutorMode } from '../../types';
 import { getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from './useHistory';
 import { GraphEditorState } from '../graphEditor';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 
 interface UseTutorOperationsProps {
@@ -25,7 +25,6 @@ export const useTutorOperations = ({
   mutations,
   record
 }: UseTutorOperationsProps) => {
-  const { addMessage } = useMessageStore();
   const { 
     tutorMode, setTutorMode,
     extractedConcepts, setExtractedConcepts,
@@ -54,7 +53,7 @@ export const useTutorOperations = ({
       );
     } catch (error: any) {
       console.error('Tutor chat error:', error);
-      addMessage({ type: 'error', content: '助教对话失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '助教对话失败，请重试' });
       throw error;
     }
   };
@@ -73,19 +72,19 @@ export const useTutorOperations = ({
       setExtractedConcepts(result.concepts || []);
       
       if (result.concepts && result.concepts.length > 0) {
-        addMessage({ 
+        frontendEventBus.publish("message_show", { 
           type: 'success', 
           content: `提取了 ${result.concepts.length} 个概念，可以添加到图谱中` 
         });
       } else {
-        addMessage({ 
+        frontendEventBus.publish("message_show", { 
           type: 'info', 
           content: '未提取到新的概念' 
         });
       }
     } catch (error: any) {
       console.error('Extract concepts error:', error);
-      addMessage({ type: 'error', content: '概念提取失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '概念提取失败' });
     } finally {
       setLoading(false);
     }
@@ -99,7 +98,7 @@ export const useTutorOperations = ({
       const parentNode = selectedNode || nodes.find(n => n.level === 'root');
       
       if (!parentNode) {
-        addMessage({ type: 'error', content: '请先选择一个父节点' });
+        frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个父节点' });
         return;
       }
 
@@ -138,7 +137,7 @@ export const useTutorOperations = ({
       
       setExtractedConcepts(prev => prev.filter(c => c.title !== concept.title));
       
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'success', 
         content: `已将 "${concept.title}" 添加到图谱中` 
       });
@@ -146,7 +145,7 @@ export const useTutorOperations = ({
       return newNode;
     } catch (error: any) {
       console.error('Add concept to graph error:', error);
-      addMessage({ type: 'error', content: '添加概念失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '添加概念失败' });
       return null;
     } finally {
       setLoading(false);
@@ -163,7 +162,7 @@ export const useTutorOperations = ({
       const parentNode = selectedNode || nodes.find(n => n.level === 'root');
       
       if (!parentNode) {
-        addMessage({ type: 'error', content: '请先选择一个父节点' });
+        frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个父节点' });
         return;
       }
 
@@ -206,13 +205,13 @@ export const useTutorOperations = ({
       
       setExtractedConcepts([]);
       
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'success', 
         content: `已将 ${addedNodes.length} 个概念添加到图谱中` 
       });
     } catch (error: any) {
       console.error('Add all concepts error:', error);
-      addMessage({ type: 'error', content: '批量添加概念失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '批量添加概念失败' });
     } finally {
       setLoading(false);
     }
@@ -239,19 +238,19 @@ export const useTutorOperations = ({
       setSuggestedNextTopics(result.suggestions || []);
       
       if (result.suggestions && result.suggestions.length > 0) {
-        addMessage({ 
+        frontendEventBus.publish("message_show", { 
           type: 'success', 
           content: `生成了 ${result.suggestions.length} 个学习建议` 
         });
       } else {
-        addMessage({ 
+        frontendEventBus.publish("message_show", { 
           type: 'info', 
           content: '暂无学习建议' 
         });
       }
     } catch (error: any) {
       console.error('Suggest next topics error:', error);
-      addMessage({ type: 'error', content: '生成学习建议失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '生成学习建议失败' });
     } finally {
       setLoading(false);
     }
@@ -260,7 +259,7 @@ export const useTutorOperations = ({
   const handleSwitchTutorMode = (mode: TutorMode) => {
     setTutorMode(mode);
     setIsTutorMode(true);
-    addMessage({ 
+    frontendEventBus.publish("message_show", { 
       type: 'info', 
       content: `已切换到${mode === 'free' ? '自由对话' : '引导学习'}模式` 
     });
@@ -270,12 +269,12 @@ export const useTutorOperations = ({
     setIsTutorMode(!isTutorMode);
     if (!isTutorMode) {
       setTutorMode('free');
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'info', 
         content: '助教模式已开启' 
       });
     } else {
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'info', 
         content: '助教模式已关闭' 
       });

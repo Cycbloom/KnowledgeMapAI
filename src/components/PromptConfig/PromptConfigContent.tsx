@@ -5,7 +5,7 @@ import { PROMPT_SCENARIOS, getScenarioById, type PromptScenario } from './prompt
 import { useUpdateProfileMutation } from '../../hooks/mutations';
 import { useUser } from '../../hooks/queries';
 import { useStore } from '../../store/useStore';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 interface PromptConfigContentProps {
   initialScenarioId?: string;
@@ -17,7 +17,6 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
   const { token } = useStore();
   const { data: userData } = useUser(!!token);
   const updateProfileMutation = useUpdateProfileMutation();
-  const { addMessage } = useMessageStore();
 
   const [selectedScenario, setSelectedScenario] = useState<PromptScenario | null>(null);
   const [editingScenario, setEditingScenario] = useState<PromptScenario | null>(null);
@@ -69,11 +68,11 @@ export const PromptConfigContent: React.FC<PromptConfigContentProps> = ({
         },
       });
 
-      addMessage({ type: 'success', content: 'Prompt配置已保存' });
+      frontendEventBus.publish("message_show", { type: 'success', content: 'Prompt配置已保存' });
       setEditingScenario(null);
     } catch (error) {
       console.error('Failed to save prompt config:', error);
-      addMessage({ type: 'error', content: '保存失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '保存失败' });
     }
   };
 

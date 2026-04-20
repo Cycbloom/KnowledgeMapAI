@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import type { CommandItem } from '../../components/GraphEditor/shared/CommandPalette';
 import type { Node, GraphViewMode } from '../../types';
-import type { MessageType } from '../../store/useMessageStore';
+import type { MessageShowPayload } from '../../services/FrontendEventTypes';
 import type { SidebarMode } from '../../hooks/graphEditor/useSidebarState';
 
 interface UseCommandPaletteOptions {
@@ -19,7 +19,7 @@ interface UseCommandPaletteOptions {
   setViewMode: Dispatch<SetStateAction<GraphViewMode>>;
   setIsFocusMode: (value: boolean | ((prev: boolean) => boolean)) => void;
   handleDeleteNode: (node: Node | null) => void;
-  addMessage: (msg: { type: MessageType; content: string }) => string;
+  addMessage: (msg: { type: MessageShowPayload["type"]; content: string }) => void;
 }
 
 export const useCommandPalette = (options: UseCommandPaletteOptions): CommandItem[] => {

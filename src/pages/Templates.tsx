@@ -20,7 +20,7 @@ import {
   Network,
   CheckSquare,
 } from "lucide-react";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import { TaskTemplates } from "../components/Templates/TaskTemplates";
 
@@ -41,7 +41,6 @@ export const Templates = () => {
   const createTemplateMutation = useCreateTemplateMutation();
   const updateTemplateMutation = useUpdateTemplateMutation();
   const deleteTemplateMutation = useDeleteTemplateMutation();
-  const { addMessage } = useMessageStore();
 
   const [activeTab, setActiveTab] = useState<TemplateTab>("knowledge");
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,7 +92,7 @@ export const Templates = () => {
       setNewTemplateName("");
       setNewTemplateDescription("");
       setIsCreating(false);
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("templates.message.createSuccess"),
       });
@@ -102,13 +101,13 @@ export const Templates = () => {
         err instanceof Error
           ? err.message
           : t("templates.message.createFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handleDeleteTemplate = async (template: Template) => {
     if (template.is_system) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: t("templates.message.systemTemplateCannotDelete"),
       });
@@ -124,7 +123,7 @@ export const Templates = () => {
 
     try {
       await deleteTemplateMutation.mutateAsync(template.id);
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("templates.message.deleteSuccess"),
       });
@@ -133,13 +132,13 @@ export const Templates = () => {
         err instanceof Error
           ? err.message
           : t("templates.message.deleteFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handleEditTemplate = (template: Template) => {
     if (template.is_system) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: t("templates.message.systemTemplateCannotEdit"),
       });
@@ -169,7 +168,7 @@ export const Templates = () => {
       setIsEditing(false);
       setNewTemplateName("");
       setNewTemplateDescription("");
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("templates.message.updateSuccess"),
       });
@@ -178,7 +177,7 @@ export const Templates = () => {
         err instanceof Error
           ? err.message
           : t("templates.message.updateFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 

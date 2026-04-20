@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { learningPathsApi, NodeStatus } from "../services/api/learningPaths";
 import { pathTasksApi } from "../services/api/modules/scheduler";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useErrorHandler } from "../hooks";
 
 interface LearningPathNode {
@@ -175,7 +175,6 @@ const LearningPathDetailPage: React.FC = () => {
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [isBatchConverting, setIsBatchConverting] = useState(false);
 
-  const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
   const fetchPathDetail = async () => {
@@ -266,7 +265,7 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       await learningPathsApi.updateNodeStatus(pathId, nodeId, status);
       await fetchPathDetail();
-      addMessage({ type: "success", content: "节点状态已更新" });
+      frontendEventBus.publish("message_show", { type: "success", content: "节点状态已更新" });
     } catch (error) {
       handleError(error, {
         context: "UpdateNodeStatus",
@@ -290,7 +289,7 @@ const LearningPathDetailPage: React.FC = () => {
         knowledge_point_id: node.node_id,
         priority: node.difficulty_level || 2,
       });
-      addMessage({ type: "success", content: `已创建任务：${node.title}` });
+      frontendEventBus.publish("message_show", { type: "success", content: `已创建任务：${node.title}` });
       await fetchPathDetail();
     } catch (error) {
       handleError(error, {
@@ -311,14 +310,14 @@ const LearningPathDetailPage: React.FC = () => {
       );
 
       if (result.converted_count > 0) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: `成功转换 ${result.converted_count} 个节点为任务`,
         });
       }
 
       if (result.failed_count > 0) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "warning",
           content: `${result.failed_count} 个节点转换失败`,
         });
@@ -376,7 +375,7 @@ const LearningPathDetailPage: React.FC = () => {
         daily_minutes: pathDetail.daily_minutes_target || 30,
       });
 
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: `已创建主任务，包含 ${result.total_tasks} 个学习节点，预计 ${result.estimated_days} 天完成`,
       });
@@ -401,7 +400,7 @@ const LearningPathDetailPage: React.FC = () => {
     try {
       await learningPathsApi.update(pathId, { status });
       await fetchPathDetail();
-      addMessage({ type: "success", content: "学习路径状态已更新" });
+      frontendEventBus.publish("message_show", { type: "success", content: "学习路径状态已更新" });
     } catch (error) {
       handleError(error, {
         context: "UpdatePathStatus",
@@ -418,7 +417,7 @@ const LearningPathDetailPage: React.FC = () => {
 
     try {
       await learningPathsApi.delete(pathId);
-      addMessage({ type: "success", content: "学习路径已删除" });
+      frontendEventBus.publish("message_show", { type: "success", content: "学习路径已删除" });
       navigate(-1);
     } catch (error) {
       handleError(error, {

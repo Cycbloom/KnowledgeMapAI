@@ -2,7 +2,7 @@ import { useState, useLayoutEffect, useRef } from 'react';
 import { X, Settings, Shield, ArrowUp, ArrowDown, Save, Type, Zap, Activity, Gauge, MessageSquare } from 'lucide-react';
 import { useGraph } from '../../../hooks/queries';
 import { useUpdateGraphMutation } from '../../../hooks/mutations';
-import { useMessageStore } from '../../../store/useMessageStore';
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { usePerformanceStore } from '../../../store/usePerformanceStore';
 import { PromptSettingsPanel } from '../panels/PromptSettingsPanel';
 import { AIActionSettingsPanel } from '../panels/AIActionSettingsPanel';
@@ -16,7 +16,6 @@ interface GraphSettingsModalProps {
 export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsModalProps) => {
   const { data: graph } = useGraph(graphId);
   const updateGraphMutation = useUpdateGraphMutation();
-  const { addMessage } = useMessageStore();
   const { quality, setQuality, showStats, toggleStats } = usePerformanceStore();
   
   const [activeTab, setActiveTab] = useState<'general' | 'prompts' | 'actions'>('general');
@@ -48,10 +47,10 @@ export const GraphSettingsModal = ({ isOpen, onClose, graphId }: GraphSettingsMo
           }
         }
       });
-      addMessage({ type: 'success', content: '设置已保存' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '设置已保存' });
       onClose();
     } catch (error) {
-      addMessage({ type: 'error', content: '保存失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '保存失败' });
     }
   };
 

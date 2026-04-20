@@ -31,7 +31,7 @@ import {
   TrendingUp,
   AlertTriangle,
 } from "lucide-react";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme, useIsMobile } from "../hooks";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../services/api";
@@ -58,7 +58,6 @@ export const Study = () => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
-  const { addMessage } = useMessageStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const graphId = searchParams.get("graph_id");
@@ -246,7 +245,7 @@ export const Study = () => {
     const next = [...selected];
 
     if (next.length === 0) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         content: t("study.messages.noCardsToReview"),
         type: "info",
       });
@@ -282,7 +281,7 @@ export const Study = () => {
       handleNextCard();
     } catch (err) {
       console.error(err);
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: t("study.messages.saveProgressFailed"),
       });
@@ -299,7 +298,7 @@ export const Study = () => {
       });
     } catch (err) {
       console.error(err);
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: t("study.messages.saveProgressFailed"),
       });

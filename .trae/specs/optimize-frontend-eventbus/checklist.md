@@ -1,0 +1,33 @@
+- [x] FrontendEventMap 定义完整，包含 timer、sse、sync、notification、scheduler、graph、focus、message、achievement 事件域
+- [x] FrontendEventBus 实例使用 FrontendEventMap 泛型参数，具备完整类型安全
+- [x] TimerService 和 useUnifiedTimer 使用新的类型化事件名
+- [x] useTaskEvents 将 SSE 消息解析后发布到事件总线（sse:{eventType} 格式）
+- [x] 集中缓存失效处理器订阅 sse:* 事件执行 invalidateQueries
+- [x] useTaskEvents 中不再有硬编码的缓存失效逻辑
+- [x] BackgroundSyncManager 移除自建事件系统（eventListeners、notifyListeners、on 方法）
+- [x] BackgroundSyncManager 通过 frontendEventBus.publish("sync:*") 发布事件
+- [x] OfflineStatusBar 通过 frontendEventBus.subscribe("sync:*") 订阅
+- [x] onSyncEvent 导出函数已移除
+- [x] NotificationCenter 移除 setInterval 轮询
+- [x] NotificationCenter 通过订阅 notification:new 和 sse:notification_needed 事件刷新
+- [x] DeadlineChecker 移除 setInterval 轮询
+- [x] DeadlineChecker 通过订阅 scheduler:task_updated 和 sse:task_update 事件检查截止日期
+- [x] Layout.tsx 移除 lastTaskStatusRef 手动 diff 逻辑
+- [x] Layout.tsx 通过订阅 scheduler:task_status_changed 事件显示通知
+- [x] 调度器领域事件（scheduler:task_changed、scheduler:task_completed）的集中失效处理器已实现
+- [x] 图谱领域事件（graph:data_changed）的集中失效处理器已实现
+- [x] useScheduler.ts 中 mutation onSuccess 从直接调用 invalidateQueries 改为发布领域事件
+- [x] useGraphMutations.ts 中 mutation onSuccess 从直接调用 invalidateQueries 改为发布领域事件
+- [x] AchievementNotification 移除 Context 和 Provider
+- [x] AchievementNotification 通过订阅 achievement:unlocked 事件显示通知
+- [x] 所有 useAchievementNotification().showNotification 调用替换为 frontendEventBus.publish
+- [x] AchievementNotificationProvider 包裹已移除
+- [x] SSE 状态变化时发布 sse:status_changed 事件
+- [x] SSEStatusIndicator 通过订阅 sse:status_changed 事件获取状态
+- [x] useStore 中移除 sseStatus、sseError、setSSEStatus
+- [x] LearningMode 和 FocusMode 发布 focus:enter/focus:exit 事件
+- [x] 专注模式进入/退出逻辑统一，消除重复计时器启动代码
+- [x] MessageBar 通过订阅 message:show 事件显示消息
+- [x] 所有 addMessage() 调用替换为 frontendEventBus.publish("message:show", ...)
+- [x] npm run lint 通过
+- [x] npm run check 通过

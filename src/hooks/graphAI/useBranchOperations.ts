@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Node, Edge, BranchSuggestion } from '../../types';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 
 interface UseBranchOperationsOptions {
@@ -24,7 +24,6 @@ interface UseBranchOperationsOptions {
 
 export const useBranchOperations = (options: UseBranchOperationsOptions) => {
   const { id, nodes, edges, selectedNode, state, mutations, record } = options;
-  const { addMessage } = useMessageStore();
 
   const handleGetBranchSuggestions = useCallback(async (): Promise<BranchSuggestion[]> => {
     if (!selectedNode || !id) return [];
@@ -52,12 +51,12 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
       return res.suggestions || [];
     } catch (err) {
       console.error(err);
-      addMessage({ type: 'error', content: '获取分支建议失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '获取分支建议失败' });
       return [];
     } finally {
       state.setLoading(false);
     }
-  }, [selectedNode, id, state, nodes, edges, addMessage]);
+  }, [selectedNode, id, state, nodes, edges]);
 
   const handleCreateBranch = useCallback(async (suggestion: BranchSuggestion, isAccepted: boolean = true) => {
     if (!selectedNode || !id) return null;
@@ -96,16 +95,16 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
         graphId: id
       });
       record({ type: 'CREATE_EDGE', payload: newEdge });
-      addMessage({ type: 'success', content: `已创建分支：${suggestion.title}` });
+      frontendEventBus.publish("message_show", { type: 'success', content: `已创建分支：${suggestion.title}` });
       return newNode;
     } catch (err) {
       console.error(err);
-      addMessage({ type: 'error', content: '创建分支失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '创建分支失败' });
       return null;
     } finally {
       state.setLoading(false);
     }
-  }, [selectedNode, id, state, mutations, record, edges, addMessage]);
+  }, [selectedNode, id, state, mutations, record, edges]);
 
   const handleSwitchBranch = useCallback(async (pathItem: any, suggestion: BranchSuggestion) => {
     if (!id) return;
@@ -176,15 +175,15 @@ export const useBranchOperations = (options: UseBranchOperationsOptions) => {
           }
         ]);
 
-        addMessage({ type: 'success', content: `已切换分支：${suggestion.title}` });
+        frontendEventBus.publish("message_show", { type: 'success', content: `已切换分支：${suggestion.title}` });
       }
     } catch (err) {
       console.error(err);
-      addMessage({ type: 'error', content: '切换分支失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '切换分支失败' });
     } finally {
       state.setLoading(false);
     }
-  }, [id, nodes, edges, state, mutations, record, addMessage]);
+  }, [id, nodes, edges, state, mutations, record]);
 
   return {
     handleGetBranchSuggestions,

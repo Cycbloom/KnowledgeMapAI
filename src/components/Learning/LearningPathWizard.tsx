@@ -15,7 +15,7 @@ import {
   Link2
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useErrorHandler } from "../../hooks";
 
 interface ExistingGraph {
@@ -81,7 +81,6 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     matchedTitle?: string;
   }>>([]);
   
-  const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
   useEffect(() => {
@@ -145,7 +144,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
 
   const handleCreatePrerequisiteGraphs = async () => {
     if (selectedPrerequisites.size === 0) {
-      addMessage({ type: 'warning', content: '请选择要创建图谱的前置知识' });
+      frontendEventBus.publish("message_show", { type: 'warning', content: '请选择要创建图谱的前置知识' });
       return;
     }
 
@@ -176,7 +175,7 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
         message = `已关联 ${linkedCount} 个现有图谱`;
       }
       
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'success', 
         content: message 
       });
@@ -194,12 +193,12 @@ export const LearningPathWizard: React.FC<LearningPathWizardProps> = ({
     const finalGoal = selectedGoal === 'custom' ? customGoal : selectedGoal;
     
     if (!finalGoal.trim()) {
-      addMessage({ type: 'warning', content: '请选择或输入学习目标' });
+      frontendEventBus.publish("message_show", { type: 'warning', content: '请选择或输入学习目标' });
       return;
     }
 
     setIsGenerating(true);
-    addMessage({ type: 'info', content: '已收到请求，AI 正在为您规划学习路径，请稍候...' });
+    frontendEventBus.publish("message_show", { type: 'info', content: '已收到请求，AI 正在为您规划学习路径，请稍候...' });
     try {
       onComplete({
         targetGoal: finalGoal,

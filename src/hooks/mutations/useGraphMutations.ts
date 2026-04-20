@@ -9,21 +9,18 @@ import {
 } from "../queries/config";
 import { useCreateCardsBatchMutation } from "./useStudyMutations";
 import { useCreateTaskMutation } from "./useTaskMutations";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 export const useCreateGraphMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: api.graphs.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graph_created" });
     },
   });
 };
 
 export const useCreateGraphFromTemplateMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: {
       template_id: string;
@@ -31,53 +28,43 @@ export const useCreateGraphFromTemplateMutation = () => {
       description?: string;
     }) => api.graphs.createFromTemplate(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graph_created" });
     },
   });
 };
 
 export const useImportGraphMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: api.data.import,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graph_created" });
     },
   });
 };
 
 export const useDeleteGraphMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: api.graphs.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-      queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graph_deleted" });
     },
   });
 };
 
 export const useRestoreGraphMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: api.graphs.restore,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-      queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graph_restored" });
     },
   });
 };
 
 export const usePermanentDeleteGraphMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: api.graphs.permanentDelete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graph_permanently_deleted" });
     },
   });
 };
@@ -99,55 +86,40 @@ const batchOperation = async <T>(
 };
 
 export const useBatchRestoreGraphsMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (ids: string[]) => batchOperation(api.graphs.batchRestore, ids),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-      queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graphs_batch_restored" });
     },
   });
 };
 
 export const useBatchPermanentDeleteGraphsMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (ids: string[]) =>
       batchOperation(api.graphs.batchPermanentDelete, ids),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graphs_batch_permanently_deleted" });
     },
   });
 };
 
 export const useBatchDeleteGraphsMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (ids: string[]) => batchOperation(api.graphs.batchDelete, ids),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-      queryClient.invalidateQueries({ queryKey: ["graphs", "trash"] });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graphs_batch_deleted" });
     },
   });
 };
 
 export const useUpdateGraphMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       api.graphs.update(id, data),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graph(variables.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphNodeStatus(variables.id),
-      });
+      frontendEventBus.publish("graph_list_changed", { graphId: variables.id, changeType: "graph_updated" });
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.id, changeType: "node_updated" });
     },
   });
 };
@@ -177,7 +149,7 @@ export const useToggleFavoriteMutation = () => {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
+      frontendEventBus.publish("graph_list_changed", { changeType: "graph_updated" });
     },
   });
 };
@@ -240,16 +212,12 @@ export const useCreateNodeMutation = () => {
       }
     },
     onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphData(variables.graph_id),
-      });
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.graph_id, changeType: "node_created" });
     },
   });
 };
 
 export const useUpdateNodeMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({
       id,
@@ -269,13 +237,7 @@ export const useUpdateNodeMutation = () => {
       graphId?: string;
     }) => api.nodes.update(id, data),
     onSuccess: (_data, variables) => {
-      if (variables.graphId) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.graphData(variables.graphId),
-        });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["graphData"] });
-      }
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_updated" });
     },
   });
 };
@@ -325,9 +287,7 @@ export const useUpdateNodeOptimisticMutation = () => {
       }
     },
     onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphData(variables.graphId),
-      });
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_updated" });
     },
   });
 };
@@ -374,9 +334,7 @@ export const useDeleteNodeMutation = () => {
     onSuccess: (data, _variables) => {
       if (data?.affected_graphs) {
         data.affected_graphs.forEach((graphId: string) => {
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.graphData(graphId),
-          });
+          frontendEventBus.publish("graph_data_changed", { graphId, changeType: "node_deleted" });
         });
       }
     },
@@ -389,9 +347,7 @@ export const useDeleteNodeMutation = () => {
       }
     },
     onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphData(variables.graphId),
-      });
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_deleted" });
     },
   });
 };
@@ -442,9 +398,7 @@ export const useBatchDeleteNodesMutation = () => {
       }
     },
     onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.graphData(variables.graphId),
-      });
+      frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "node_deleted" });
     },
   });
 };
@@ -507,23 +461,19 @@ export const useCreateEdgeMutation = () => {
     },
     onSettled: (_data, _error, variables) => {
       if (variables.graphId) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.graphData(variables.graphId),
-        });
+        frontendEventBus.publish("graph_data_changed", { graphId: variables.graphId, changeType: "edge_created" });
       } else {
-        queryClient.invalidateQueries({ queryKey: ["graphData"] });
+        frontendEventBus.publish("graph_data_changed", { changeType: "edge_created" });
       }
     },
   });
 };
 
 export const useDeleteEdgeMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id }: { id: string }) => api.edges.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["graphData"] });
+      frontendEventBus.publish("graph_data_changed", { changeType: "edge_deleted" });
     },
   });
 };
@@ -541,15 +491,11 @@ export const useAIGenerateCardsMutation = () => {
 };
 
 export const useTextToGraphMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: api.ai.textToGraph,
     onSuccess: (_data, variables) => {
       if (variables.action === "save") {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.graphData(variables.graph_id),
-        });
+        frontendEventBus.publish("graph_data_changed", { graphId: variables.graph_id, changeType: "ai_action_executed" });
       }
     },
   });

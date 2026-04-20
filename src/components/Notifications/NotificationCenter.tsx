@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Settings, X, Clock, AlertCircle, CheckCircle, Timer, Coffee } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
 import { Notification, NotificationType } from '@shared/types';
 import { useTheme } from "../../hooks";
 import { useNavigate } from 'react-router-dom';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
   task_start: <Timer className="text-blue-500" size={16} />,
@@ -41,29 +42,7 @@ export const NotificationCenter: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadNotifications();
-    loadUnreadCount();
-
-    const interval = setInterval(() => {
-      loadUnreadCount();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const response = await notificationApi.getNotifications({ limit: 10 });
@@ -75,9 +54,9 @@ export const NotificationCenter: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadUnreadCount = async () => {
+  const loadUnreadCount = useCallback(async () => {
     try {
       const response = await notificationApi.getUnreadCount();
       if (response.success) {
@@ -86,7 +65,45 @@ export const NotificationCenter: React.FC = () => {
     } catch (error) {
       console.error('Failed to load unread count:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+    loadUnreadCount();
+
+    const unsubNotificationNew = frontendEventBus.subscribe("notification_new", () => {
+      loadUnreadCount();
+      loadNotifications();
+    });
+    const unsubSseNotificationNeeded = frontendEventBus.subscribe("sse_notification_needed", () => {
+      loadUnreadCount();
+      loadNotifications();
+    });
+    const unsubSseTaskCompleted = frontendEventBus.subscribe("sse_task_completed", () => {
+      loadUnreadCount();
+    });
+    const unsubSseFocusSessionEnded = frontendEventBus.subscribe("sse_focus_session_ended", () => {
+      loadUnreadCount();
+    });
+
+    return () => {
+      unsubNotificationNew();
+      unsubSseNotificationNeeded();
+      unsubSseTaskCompleted();
+      unsubSseFocusSessionEnded();
+    };
+  }, [loadNotifications, loadUnreadCount]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {

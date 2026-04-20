@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { ScheduledTask, TaskSubtask } from "@shared/types";
 import { api } from "../../services/api";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 interface TaskCardProps {
   task: ScheduledTask;
@@ -148,7 +148,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onViewDetail,
   onSubtaskUpdate,
 }) => {
-  const { addMessage } = useMessageStore();
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
   const [loadingSubtasks, setLoadingSubtasks] = useState(false);
@@ -258,13 +257,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           subtasks.map((st) => (st.id === subtask.id ? response.data : st))
         );
         onSubtaskUpdate?.();
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: newStatus === "completed" ? "子任务已完成" : "子任务已重新开启",
         });
       }
     } catch (error: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: error.message || "更新子任务失败",
       });

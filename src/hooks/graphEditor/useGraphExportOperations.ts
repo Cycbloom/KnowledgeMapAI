@@ -1,6 +1,6 @@
 import type { Node, Edge, Graph } from '../../types';
 import { GraphEditorState } from './index';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 import { generateJSON, downloadFile, downloadImage, generateAnkiDeck } from '../../utils/exportUtils';
 
@@ -25,7 +25,6 @@ export const useGraphExportOperations = ({
   mutations,
   navigate
 }: UseGraphExportOperationsProps) => {
-  const { addMessage } = useMessageStore();
   const { 
     setConfirmModal,
     setLoading,
@@ -43,11 +42,11 @@ export const useGraphExportOperations = ({
     try {
       const json = generateJSON(graphMeta, nodes, edges);
       downloadFile(json, `${graphMeta.title}_backup.json`, 'application/json');
-      addMessage({ content: 'JSON 导出成功', type: 'success' });
+      frontendEventBus.publish("message_show", { content: 'JSON 导出成功', type: 'success' });
       setIsExportMenuOpen(false);
     } catch (err) {
       console.error(err);
-      addMessage({ content: '导出失败', type: 'error' });
+      frontendEventBus.publish("message_show", { content: '导出失败', type: 'error' });
     }
   };
 
@@ -64,10 +63,10 @@ export const useGraphExportOperations = ({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      addMessage({ content: 'Markdown 导出成功', type: 'success' });
+      frontendEventBus.publish("message_show", { content: 'Markdown 导出成功', type: 'success' });
     } catch (err) {
       console.error(err);
-      addMessage({ content: 'Markdown 导出失败', type: 'error' });
+      frontendEventBus.publish("message_show", { content: 'Markdown 导出失败', type: 'error' });
     }
   };
 
@@ -75,22 +74,22 @@ export const useGraphExportOperations = ({
     if (!id || !graphMeta) return;
     try {
       setIsExportMenuOpen(false);
-      addMessage({ content: '正在生成 Anki 卡片...', type: 'info' });
+      frontendEventBus.publish("message_show", { content: '正在生成 Anki 卡片...', type: 'info' });
       
       const cards = await api.study.getCards({ graph_id: id });
       
       if (!cards || cards.length === 0) {
-        addMessage({ content: '当前图谱没有复习卡片', type: 'warning' });
+        frontendEventBus.publish("message_show", { content: '当前图谱没有复习卡片', type: 'warning' });
         return;
       }
 
       const content = generateAnkiDeck(cards, graphMeta.title);
       downloadFile(content, `${graphMeta.title}_anki.txt`, 'text/plain');
       
-      addMessage({ content: 'Anki 导出成功', type: 'success' });
+      frontendEventBus.publish("message_show", { content: 'Anki 导出成功', type: 'success' });
     } catch (err) {
       console.error(err);
-      addMessage({ content: 'Anki 导出失败', type: 'error' });
+      frontendEventBus.publish("message_show", { content: 'Anki 导出失败', type: 'error' });
     }
   };
 
@@ -111,12 +110,12 @@ export const useGraphExportOperations = ({
         setLoading(true);
         deleteGraphMutation.mutate(id, {
           onSuccess: () => {
-            addMessage({ content: '图谱已删除', type: 'success' });
+            frontendEventBus.publish("message_show", { content: '图谱已删除', type: 'success' });
             navigate('/dashboard');
           },
           onError: (err: any) => {
             console.error(err);
-            addMessage({ content: err.message || '删除失败', type: 'error' });
+            frontendEventBus.publish("message_show", { content: err.message || '删除失败', type: 'error' });
             setLoading(false);
             setConfirmModal({ ...state.confirmModal, isOpen: false });
           },
@@ -137,17 +136,17 @@ export const useGraphExportOperations = ({
   const confirmExportImage = async () => {
     try {
       if (!graphRef.current) {
-        addMessage({ content: '当前视图不支持图片导出', type: 'error' });
+        frontendEventBus.publish("message_show", { content: '当前视图不支持图片导出', type: 'error' });
         setIsExportImageModalOpen(false);
         return;
       }
       const dataUrl = await graphRef.current.captureScreenshot(exportImageOptions);
       downloadImage(dataUrl, `${graphMeta?.title || 'graph'}_snapshot.png`);
       setIsExportImageModalOpen(false);
-      addMessage({ content: '图片导出成功', type: 'success' });
+      frontendEventBus.publish("message_show", { content: '图片导出成功', type: 'success' });
     } catch (error) {
       console.error('Export image failed:', error);
-      addMessage({ content: '图片导出失败', type: 'error' });
+      frontendEventBus.publish("message_show", { content: '图片导出失败', type: 'error' });
     }
   };
 

@@ -25,7 +25,7 @@ export { MonthlyReport } from './MonthlyReport';
 export { FocusHeatmap } from './FocusHeatmap';
 export { AchievementBadge, AchievementBadgeNotification } from './AchievementBadge';
 export { AchievementGallery } from './AchievementGallery';
-export { AchievementNotificationProvider, useAchievementNotification, AchievementUnlockModal } from './AchievementNotification';
+export { AchievementNotification, AchievementUnlockModal } from './AchievementNotification';
 
 export { DailyReview } from './DailyReview';
 export { TaskRetrospect } from './TaskRetrospect';

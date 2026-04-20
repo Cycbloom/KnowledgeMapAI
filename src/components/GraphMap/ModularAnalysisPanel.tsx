@@ -7,7 +7,7 @@ import { PromptEditor } from '../GraphEditor/panels/PromptEditor';
 import { MODULE_TO_SCENARIO } from './types';
 import { getScenarioById } from '../PromptConfig';
 import { api } from '../../services/api';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
   isOpen,
@@ -21,7 +21,6 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
 }) => {
   const [editingPromptModule, setEditingPromptModule] = useState<AnalysisModuleId | null>(null);
   const [promptTemplates, setPromptTemplates] = useState<Record<string, string>>({});
-  const { addMessage } = useMessageStore();
   const selectedModules = useMemo(
     () => modules.filter(m => m.selected),
     [modules]
@@ -86,14 +85,14 @@ export const ModularAnalysisPanel: React.FC<ModularAnalysisPanelProps> = ({
         ...prev,
         [scenarioId]: content,
       }));
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: 'success',
         content: '提示词保存成功',
         duration: 3000,
       });
       setEditingPromptModule(null);
     } catch (error) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: 'error',
         content: `保存失败: ${(error as Error).message}`,
         duration: 5000,

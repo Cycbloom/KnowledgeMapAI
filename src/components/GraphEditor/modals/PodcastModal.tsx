@@ -14,7 +14,7 @@ import { CodeBlock } from "../../common";
 import { useTextToSpeech } from "../../../hooks";
 import { useTheme } from "../../../hooks";
 import { api } from "../../../services/api";
-import { useMessageStore } from "../../../store/useMessageStore";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { Node } from "../../../types";
 
 interface PodcastModalProps {
@@ -53,7 +53,6 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
     switchEngine,
   } = useTextToSpeech("qwen3");
 
-  const { addMessage } = useMessageStore();
   const scriptContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,7 +101,7 @@ export const PodcastModal: React.FC<PodcastModalProps> = ({
         .replace(/\s*```$/, "");
       setScript(cleanedScript);
     } catch (error: any) {
-      addMessage({ type: "error", content: `脚本生成失败: ${error.message}` });
+      frontendEventBus.publish("message_show", { type: "error", content: `脚本生成失败: ${error.message}` });
     } finally {
       setIsGenerating(false);
     }

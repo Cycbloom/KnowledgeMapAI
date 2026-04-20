@@ -16,12 +16,11 @@ import {
 } from 'lucide-react';
 import { notificationApi } from '../../services/api/notification';
 import { NotificationSettings } from '@shared/types';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useTheme } from "../../hooks";
 
 export const NotificationSettingsPanel: React.FC = () => {
   const { isDark } = useTheme();
-  const { addMessage } = useMessageStore();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,9 +49,9 @@ export const NotificationSettingsPanel: React.FC = () => {
     setSaving(true);
     try {
       await notificationApi.updateSettings(settings);
-      addMessage({ type: 'success', content: '通知设置已保存!' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '通知设置已保存!' });
     } catch (error: any) {
-      addMessage({ type: 'error', content: error.message || '保存设置失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '保存设置失败' });
     } finally {
       setSaving(false);
     }

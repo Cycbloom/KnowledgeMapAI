@@ -7,7 +7,7 @@ import {
   useDeleteTaskMutation,
 } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal } from "../components/common";
 import {
   CheckCircle2,
@@ -111,7 +111,6 @@ export const Tasks = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useStore();
-  const { addMessage } = useMessageStore();
   const [filter, setFilter] = useState<string>("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -145,9 +144,9 @@ export const Tasks = () => {
   const handleRetry = async (taskId: string) => {
     try {
       await retryMutation.mutateAsync(taskId);
-      addMessage({ type: "success", content: t("tasks.taskRetried") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("tasks.taskRetried") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || t("tasks.retryFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("tasks.retryFailed") });
     }
   };
 
@@ -159,16 +158,16 @@ export const Tasks = () => {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      addMessage({ type: "success", content: t("tasks.taskDeleted") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("tasks.taskDeleted") });
       setDeleteId(null);
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || t("tasks.deleteFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("tasks.deleteFailed") });
     }
   };
 
   const handleExport = () => {
     if (!tasks || tasks.length === 0) {
-      addMessage({ type: "warning", content: t("tasks.noTasksToExport") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("tasks.noTasksToExport") });
       return;
     }
 
@@ -199,7 +198,7 @@ export const Tasks = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    addMessage({ type: "success", content: t("tasks.tasksExported") });
+    frontendEventBus.publish("message_show", { type: "success", content: t("tasks.tasksExported") });
   };
 
   return (
@@ -409,7 +408,7 @@ export const Tasks = () => {
                               <button
                                 onClick={() => {
                                   navigate(`/graph/${graphId}`);
-                                  addMessage({
+                                  frontendEventBus.publish("message_show", {
                                     type: "info",
                                     content:
                                       "已打开图谱：如未自动刷新，请稍等或手动刷新页面",
@@ -429,7 +428,7 @@ export const Tasks = () => {
                                   navigate(
                                     `/study?node_id=${encodeURIComponent(nodeId)}`,
                                   );
-                                  addMessage({
+                                  frontendEventBus.publish("message_show", {
                                     type: "success",
                                     content:
                                       "进入学习模式：可开始复习生成的题目",

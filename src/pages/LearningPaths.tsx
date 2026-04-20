@@ -24,7 +24,7 @@ import {
   Archive,
   TrendingUp,
 } from "lucide-react";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 
 type PathStatus = LearningPathStatus | "all";
@@ -90,7 +90,6 @@ export const LearningPaths = () => {
   const createMutation = useCreateLearningPathMutation();
   const updateMutation = useUpdateLearningPathMutation();
   const deleteMutation = useDeleteLearningPathMutation();
-  const { addMessage } = useMessageStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<PathStatus>("all");
@@ -130,9 +129,9 @@ export const LearningPaths = () => {
       setNewPathDailyMinutes(30);
       setNewPathTargetDate("");
       setIsCreating(false);
-      addMessage({ type: "success", content: t("learningPaths.messages.createSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.createSuccess") });
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("learningPaths.messages.createFailed"),
       });
@@ -144,9 +143,9 @@ export const LearningPaths = () => {
 
     try {
       await deleteMutation.mutateAsync(path.id);
-      addMessage({ type: "success", content: t("learningPaths.messages.deleteSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.deleteSuccess") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || t("learningPaths.messages.deleteFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("learningPaths.messages.deleteFailed") });
     }
   };
 
@@ -159,9 +158,9 @@ export const LearningPaths = () => {
         id: path.id,
         data: { status: newStatus },
       });
-      addMessage({ type: "success", content: t("learningPaths.messages.statusUpdated") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learningPaths.messages.statusUpdated") });
     } catch (err: any) {
-      addMessage({ type: "error", content: err.message || t("learningPaths.messages.statusUpdateFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("learningPaths.messages.statusUpdateFailed") });
     }
   };
 

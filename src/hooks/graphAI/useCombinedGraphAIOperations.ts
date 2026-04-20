@@ -1,6 +1,6 @@
 import { Node, Edge } from '../../types';
 import { getLevel } from '../../lib/graphUtils';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
@@ -28,9 +28,8 @@ interface UseCombinedGraphAIOperationsProps {
 export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperationsProps) {
   const { graph1Id, graph2Id, selectedNode, nodes1, nodes2, edges1, edges2, onRefresh } = props;
   
-  const { addMessage } = useMessageStore();
   const queryClient = useQueryClient();
-  const asyncHandler = createAsyncHandler(addMessage);
+  const asyncHandler = createAsyncHandler();
   
   const aiExpandMutation = useAIExpandMutation();
   const aiGenerateCardsMutation = useAIGenerateCardsMutation();
@@ -58,18 +57,18 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleExpandNode = async (prompt?: string) => {
     if (!selectedNode) {
-      addMessage({ type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
       return null;
     }
     
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      addMessage({ type: 'error', content: '无法确定节点所属图谱' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '无法确定节点所属图谱' });
       return null;
     }
     
     if (!selectedNode.title) {
-      addMessage({ type: 'error', content: '节点标题不能为空' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '节点标题不能为空' });
       return null;
     }
     
@@ -118,9 +117,9 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
       {
         onSuccess: (result) => {
           if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
-            addMessage({ type: 'success', content: `拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线` });
+            frontendEventBus.publish("message_show", { type: 'success', content: `拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线` });
           } else {
-            addMessage({ type: 'info', content: '未发现新的关联' });
+            frontendEventBus.publish("message_show", { type: 'info', content: '未发现新的关联' });
           }
         },
         errorMessage: '拓展失败'
@@ -130,17 +129,17 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleGenerateContent = async (prompt?: string) => {
     if (!selectedNode) {
-      addMessage({ type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
       return null;
     }
     
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      addMessage({ type: 'error', content: '无法确定节点所属图谱' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '无法确定节点所属图谱' });
       return null;
     }
     
-    addMessage({ content: 'AI 内容生成任务已开始...', type: 'info' });
+    frontendEventBus.publish("message_show", { content: 'AI 内容生成任务已开始...', type: 'info' });
     
     return await asyncHandler(
       async () => {
@@ -180,13 +179,13 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleGenerateCards = async () => {
     if (!selectedNode) {
-      addMessage({ type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
       return null;
     }
     
     const currentGraphId = getCurrentGraphId();
     if (!currentGraphId) {
-      addMessage({ type: 'error', content: '无法确定节点所属图谱' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '无法确定节点所属图谱' });
       return null;
     }
     
@@ -206,7 +205,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         }));
         
         if (cards.length === 0) {
-          addMessage({ type: 'error', content: 'AI 未能生成有效的卡片' });
+          frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未能生成有效的卡片' });
           return null;
         }
         
@@ -220,7 +219,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
         errorMessage: '生成卡片失败',
         onSuccess: (result) => {
           if (result && typeof result === 'number') {
-            addMessage({ type: 'success', content: `成功生成并保存了 ${result} 张复习卡片！` });
+            frontendEventBus.publish("message_show", { type: 'success', content: `成功生成并保存了 ${result} 张复习卡片！` });
           }
         }
       }
@@ -229,7 +228,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleStartLevelTest = () => {
     if (!selectedNode) {
-      addMessage({ type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
       return;
     }
     
@@ -239,7 +238,7 @@ export function useCombinedGraphAIOperations(props: UseCombinedGraphAIOperations
   
   const handleStartLearningMode = () => {
     if (!selectedNode) {
-      addMessage({ type: 'error', content: '请先选择一个节点' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '请先选择一个节点' });
       return;
     }
     

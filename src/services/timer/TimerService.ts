@@ -1,17 +1,7 @@
 import { frontendEventBus } from "./FrontendEventBus";
 import { useFocusStore, type TimerMode } from "../../store/useFocusStore";
 import { api } from "../api";
-import type {
-  TimerStartedPayload,
-  TimerTickPayload,
-  TimerPausedPayload,
-  TimerResumedPayload,
-  TimerCompletedPayload,
-  TimerModeChangedPayload,
-  TimerSkipToBreakPayload,
-  TimerResetPayload,
-  TaskStartedPayload,
-} from "../../../shared/types/events";
+import type { TaskStartedPayload } from "../../../shared/types/events";
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -166,7 +156,7 @@ class TimerService {
       isActive: this._isActive,
       isPaused: this._isPaused,
       completedSessions: this._completedSessions,
-    } satisfies TimerTickPayload);
+    });
   }
 
   private async onTimerEnd(): Promise<void> {
@@ -194,7 +184,7 @@ class TimerService {
       mode: completedMode,
       duration: elapsedDuration,
       completedSessions: this._completedSessions,
-    } satisfies TimerCompletedPayload);
+    });
   }
 
   start(taskId: string, duration: number, queueLevel?: number): void {
@@ -217,7 +207,7 @@ class TimerService {
       queueLevel: this._queueLevel,
       mode: this._mode,
       duration: this._totalTime,
-    } satisfies TimerStartedPayload);
+    });
   }
 
   pause(): void {
@@ -231,7 +221,7 @@ class TimerService {
       taskId: this._taskId,
       timeLeft: this._timeLeft,
       mode: this._mode,
-    } satisfies TimerPausedPayload);
+    });
   }
 
   resume(): void {
@@ -245,7 +235,7 @@ class TimerService {
       taskId: this._taskId,
       timeLeft: this._timeLeft,
       mode: this._mode,
-    } satisfies TimerResumedPayload);
+    });
   }
 
   async complete(): Promise<void> {
@@ -269,7 +259,7 @@ class TimerService {
       mode: this._mode,
       duration: elapsedDuration,
       completedSessions: this._completedSessions,
-    } satisfies TimerCompletedPayload);
+    });
   }
 
   skipToBreak(): void {
@@ -298,7 +288,7 @@ class TimerService {
       fromMode: previousMode,
       toMode: nextMode,
       breakDuration: breakDuration * 60,
-    } satisfies TimerSkipToBreakPayload);
+    });
   }
 
   switchTask(newTaskId: string, duration: number, queueLevel?: number): void {
@@ -321,7 +311,7 @@ class TimerService {
       queueLevel: this._queueLevel,
       mode: this._mode,
       duration: this._totalTime,
-    } satisfies TimerStartedPayload);
+    });
   }
 
   setMode(newMode: TimerMode): void {
@@ -347,7 +337,7 @@ class TimerService {
       newMode,
       timeLeft: this._timeLeft,
       totalTime: this._totalTime,
-    } satisfies TimerModeChangedPayload);
+    });
   }
 
   reset(): void {
@@ -370,7 +360,7 @@ class TimerService {
       mode: this._mode,
       timeLeft: this._timeLeft,
       totalTime: this._totalTime,
-    } satisfies TimerResetPayload);
+    });
   }
 
   private getTimeSliceForQueueLevel(queueLevel: number): number {
@@ -380,10 +370,9 @@ class TimerService {
   }
 
   initSchedulerIntegration(): void {
-    const handler = (payload: unknown) => {
-      const data = payload as TaskStartedPayload;
-      const timeSliceMinutes = this.getTimeSliceForQueueLevel(data.queueLevel);
-      this.start(data.taskId, timeSliceMinutes, data.queueLevel);
+    const handler = (payload: TaskStartedPayload) => {
+      const timeSliceMinutes = this.getTimeSliceForQueueLevel(payload.queueLevel);
+      this.start(payload.taskId, timeSliceMinutes, payload.queueLevel);
     };
 
     this._schedulerUnsubscribe = frontendEventBus.subscribe("task_started", handler);

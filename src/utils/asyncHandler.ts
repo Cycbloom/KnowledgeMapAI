@@ -1,21 +1,19 @@
-import { useMessageStore } from '../store/useMessageStore';
+import { frontendEventBus } from '../services/timer/FrontendEventBus';
 import { isNetworkError } from './errors';
 
-export interface AsyncOperationOptions {
+export interface AsyncOperationOptions<T = unknown> {
   loadingSetter?: (loading: boolean) => void;
   successMessage?: string;
   errorMessage?: string;
-  onSuccess?: (result: any) => void;
+  onSuccess?: (result: T) => void;
   onError?: (error: Error) => void;
   onFinally?: () => void;
 }
 
-type AddMessageFunction = (message: { type: 'success' | 'error' | 'info' | 'warning'; content: string }) => string;
-
-export function createAsyncHandler(addMessage: AddMessageFunction) {
+export function createAsyncHandler() {
   return async <T>(
     operation: () => Promise<T>,
-    options: AsyncOperationOptions = {}
+    options: AsyncOperationOptions<T> = {}
   ): Promise<T | null> => {
     const { loadingSetter, successMessage, errorMessage, onSuccess, onError, onFinally } = options;
     
@@ -23,7 +21,7 @@ export function createAsyncHandler(addMessage: AddMessageFunction) {
       if (loadingSetter) loadingSetter(true);
       const result = await operation();
       if (successMessage) {
-        addMessage({ type: 'success', content: successMessage });
+        frontendEventBus.publish("message_show", { type: 'success', content: successMessage });
       }
       if (onSuccess) onSuccess(result);
       return result;
@@ -32,7 +30,7 @@ export function createAsyncHandler(addMessage: AddMessageFunction) {
       const msg = isNetworkError(error) 
         ? '网络连接失败，请检查网络' 
         : (errorMessage || error.message || '操作失败');
-      addMessage({ type: 'error', content: msg });
+      frontendEventBus.publish("message_show", { type: 'error', content: msg });
       console.error(err);
       if (onError) onError(error);
       return null;
@@ -44,7 +42,6 @@ export function createAsyncHandler(addMessage: AddMessageFunction) {
 }
 
 export function useAsyncOperation() {
-  const { addMessage } = useMessageStore();
-  const handler = createAsyncHandler(addMessage);
+  const handler = createAsyncHandler();
   return { execute: handler };
 }

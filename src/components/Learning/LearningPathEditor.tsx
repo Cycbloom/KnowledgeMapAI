@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from "../../hooks";
 import { api } from '../../services/api';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 interface LearningPathNode {
   id: string;
@@ -201,7 +201,6 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
   onClose
 }) => {
   const { isDark } = useTheme();
-  const { addMessage } = useMessageStore();
   
   const [pathNodes, setPathNodes] = useState<LearningPathNode[]>(learningPath?.nodes || []);
   const [isAddingNode, setIsAddingNode] = useState(false);
@@ -247,11 +246,11 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       setPathNodes(prev => prev.map(pn => 
         pn.id === nodeRefId ? { ...pn, status } : pn
       ));
-      addMessage({ type: 'success', content: '状态已更新' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '状态已更新' });
     } catch (_error) {
-      addMessage({ type: 'error', content: '更新状态失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '更新状态失败' });
     }
-  }, [learningPath, addMessage]);
+  }, [learningPath]);
 
   const handleRemoveNode = useCallback(async (nodeRefId: string) => {
     if (!learningPath) return;
@@ -259,12 +258,12 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
     try {
       await api.learningPaths.removeNode(learningPath.id, nodeRefId);
       setPathNodes(prev => prev.filter(pn => pn.id !== nodeRefId));
-      addMessage({ type: 'success', content: '节点已从路径中移除' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '节点已从路径中移除' });
       onRefresh();
     } catch (_error) {
-      addMessage({ type: 'error', content: '移除节点失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '移除节点失败' });
     }
-  }, [learningPath, addMessage, onRefresh]);
+  }, [learningPath, onRefresh]);
 
   const handleAddNode = useCallback(async () => {
     if (!learningPath || !selectedNewNode) return;
@@ -278,14 +277,14 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
       });
       setSelectedNewNode('');
       setIsAddingNode(false);
-      addMessage({ type: 'success', content: '节点已添加到路径' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '节点已添加到路径' });
       onRefresh();
     } catch (_error) {
-      addMessage({ type: 'error', content: '添加节点失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '添加节点失败' });
     } finally {
       setIsSaving(false);
     }
-  }, [learningPath, selectedNewNode, addMessage, onRefresh]);
+  }, [learningPath, selectedNewNode, onRefresh]);
 
   const handleSaveOrder = useCallback(async () => {
     if (!learningPath) return;
@@ -293,14 +292,14 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
     setIsSaving(true);
     try {
       await api.learningPaths.reorderNodes(learningPath.id, pathNodes.map(pn => pn.id));
-      addMessage({ type: 'success', content: '顺序已保存' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '顺序已保存' });
       onRefresh();
     } catch (_error) {
-      addMessage({ type: 'error', content: '保存顺序失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '保存顺序失败' });
     } finally {
       setIsSaving(false);
     }
-  }, [learningPath, pathNodes, addMessage, onRefresh]);
+  }, [learningPath, pathNodes, onRefresh]);
 
   const handleGeneratePath = useCallback(async () => {
     setIsGenerating(true);
@@ -338,18 +337,18 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
           nodes,
         });
         
-        addMessage({ type: 'success', content: 'AI 学习路径已生成！' });
+        frontendEventBus.publish("message_show", { type: 'success', content: 'AI 学习路径已生成！' });
         onRefresh();
       } else {
-        addMessage({ type: 'warning', content: '无法生成学习路径，请检查图谱是否有节点' });
+        frontendEventBus.publish("message_show", { type: 'warning', content: '无法生成学习路径，请检查图谱是否有节点' });
       }
     } catch (error) {
       console.error('Generate path error:', error);
-      addMessage({ type: 'error', content: '生成学习路径失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '生成学习路径失败' });
     } finally {
       setIsGenerating(false);
     }
-  }, [graphId, learningPath, addMessage, onRefresh]);
+  }, [graphId, learningPath, onRefresh]);
 
   if (!isOpen) return null;
 

@@ -1,4 +1,6 @@
 import type { ScheduledTask } from '@shared/types';
+import type { SSETaskUpdatePayload, SchedulerTaskChangedPayload } from '../services/FrontendEventTypes';
+import { frontendEventBus } from '../services/timer/FrontendEventBus';
 
 class SchedulerNotificationService {
   private permissionGranted: boolean = false;
@@ -188,45 +190,76 @@ class SchedulerSoundService {
 }
 
 class DeadlineChecker {
-  private checkInterval: NodeJS.Timeout | null = null;
   private notifiedTasks: Set<string> = new Set();
+  private tasks: ScheduledTask[] = [];
+  private unsubscribers: (() => void)[] = [];
 
-  startCheck(tasks: ScheduledTask[], onDeadline: (task: ScheduledTask) => void): void {
+  startCheck(tasks: ScheduledTask[]): void {
     this.stopCheck();
+    this.tasks = tasks;
+    this.checkExistingTasks();
 
-    const check = () => {
-      const now = new Date();
+    const unsub1 = frontendEventBus.subscribe('sse_task_update', (payload: SSETaskUpdatePayload) => {
+      this.handleTaskUpdate(payload);
+    });
 
-      tasks.forEach((task) => {
-        if (task.deadline && task.status !== 'completed' && task.status !== 'cancelled') {
-          const deadlineDate = new Date(task.deadline);
-          const timeDiff = deadlineDate.getTime() - now.getTime();
-          const minutesUntilDeadline = timeDiff / (1000 * 60);
+    const unsub2 = frontendEventBus.subscribe('scheduler_task_changed', (payload: SchedulerTaskChangedPayload) => {
+      const task = this.tasks.find(t => t.id === payload.taskId);
+      if (task) {
+        this.checkTaskDeadline(task);
+      }
+    });
 
-          if (minutesUntilDeadline <= 30 && minutesUntilDeadline > 0) {
-            if (!this.notifiedTasks.has(task.id)) {
-              this.notifiedTasks.add(task.id);
-              onDeadline(task);
-            }
-          }
-
-          if (minutesUntilDeadline <= 0) {
-            this.notifiedTasks.delete(task.id);
-          }
-        }
-      });
-    };
-
-    check();
-    this.checkInterval = setInterval(check, 60000);
+    this.unsubscribers = [unsub1, unsub2];
   }
 
   stopCheck(): void {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
-    }
+    this.unsubscribers.forEach(unsub => unsub());
+    this.unsubscribers = [];
+    this.tasks = [];
     this.notifiedTasks.clear();
+  }
+
+  private handleTaskUpdate(payload: SSETaskUpdatePayload): void {
+    const task = this.tasks.find(t => t.id === payload.taskId);
+    if (!task) return;
+    this.checkTaskDeadline(task);
+  }
+
+  private checkExistingTasks(): void {
+    this.tasks.forEach(task => {
+      this.checkTaskDeadline(task);
+    });
+  }
+
+  private checkTaskDeadline(task: ScheduledTask): void {
+    if (!task.deadline || task.status === 'completed' || task.status === 'cancelled') return;
+
+    const deadlineDate = new Date(task.deadline);
+    const now = new Date();
+    const timeDiff = deadlineDate.getTime() - now.getTime();
+    const minutesUntilDeadline = timeDiff / (1000 * 60);
+
+    if (minutesUntilDeadline <= 30 && minutesUntilDeadline > 0) {
+      if (!this.notifiedTasks.has(task.id)) {
+        this.notifiedTasks.add(task.id);
+        this.playDeadlineNotification(task);
+        frontendEventBus.publish('scheduler_deadline_approaching', {
+          taskId: task.id,
+          taskTitle: task.title,
+          minutesLeft: Math.round(minutesUntilDeadline),
+        });
+      }
+    }
+
+    if (minutesUntilDeadline <= 0) {
+      this.notifiedTasks.delete(task.id);
+    }
+  }
+
+  private playDeadlineNotification(task: ScheduledTask): void {
+    schedulerNotificationService.notifyDeadline(task);
+    schedulerSoundService.playAlert();
   }
 }
 

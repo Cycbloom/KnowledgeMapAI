@@ -30,7 +30,7 @@ import {
   type PromptScenario,
 } from "../PromptConfig/promptScenarios";
 import { useStore } from "../../store/useStore";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from "../../services/api";
 import { useIsMobile } from "../../hooks";
 
@@ -78,7 +78,6 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
   const [activeTab, setActiveTab] = useState<ActiveTab>("reading");
 
   const { token } = useStore();
-  const { addMessage } = useMessageStore();
 
   const [selectedScenario, setSelectedScenario] =
     useState<PromptScenario | null>(null);
@@ -167,7 +166,7 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 
     try {
       if (editingScope === "system") {
-        addMessage({ type: "error", content: "系统级模板不可修改" });
+        frontendEventBus.publish("message_show", { type: "error", content: "系统级模板不可修改" });
         return;
       }
 
@@ -178,12 +177,12 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
         graph_id: editingScope === "graph" ? graphId : undefined,
       });
 
-      addMessage({ type: "success", content: "Prompt配置已保存" });
+      frontendEventBus.publish("message_show", { type: "success", content: "Prompt配置已保存" });
       setEditingScope(null);
       await loadTemplates();
     } catch (error) {
       console.error("Failed to save prompt config:", error);
-      addMessage({ type: "error", content: "保存失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "保存失败" });
     }
   };
 
@@ -206,11 +205,11 @@ export const LearningSettingsPanel: React.FC<LearningSettingsPanelProps> = ({
 
     try {
       await api.prompts.reset(template.id);
-      addMessage({ type: "success", content: "已重置为默认模板" });
+      frontendEventBus.publish("message_show", { type: "success", content: "已重置为默认模板" });
       await loadTemplates();
     } catch (error) {
       console.error("Failed to reset template:", error);
-      addMessage({ type: "error", content: "重置失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "重置失败" });
     }
   };
 

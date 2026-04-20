@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import type {
   ScheduledTask,
   CreateScheduledTaskData,
@@ -103,114 +104,85 @@ export function useHeatmap(year?: number, month?: number) {
 }
 
 export function useCreateScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateScheduledTaskData) =>
       api.scheduler.createTask(data) as Promise<ScheduledTask>,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+    onSuccess: (data) => {
+      frontendEventBus.publish("scheduler_task_changed", { taskId: data.id, action: "created" });
     },
   });
 }
 
 export function useUpdateScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateScheduledTaskData }) =>
       api.scheduler.updateTask(id, data) as Promise<ScheduledTask>,
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({
-        queryKey: schedulerKeys.task(variables.id),
-      });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+      frontendEventBus.publish("scheduler_task_changed", { taskId: variables.id, action: "updated" });
     },
   });
 }
 
 export function useDeleteScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.scheduler.deleteTask(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+    onSuccess: (_data, id) => {
+      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "deleted" });
     },
   });
 }
 
 export function useStartScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
       api.scheduler.startTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "updated" });
     },
   });
 }
 
 export function usePauseScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
       api.scheduler.pauseTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "updated" });
     },
   });
 }
 
 export function useCompleteScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
       api.scheduler.completeTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "stats"] });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "heatmap"] });
+      frontendEventBus.publish("scheduler_task_completed", { taskId: id });
     },
   });
 }
 
 export function useDemoteScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
       api.scheduler.demoteTask(id) as Promise<ScheduledTask>,
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({ queryKey: schedulerKeys.task(id) });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+      frontendEventBus.publish("scheduler_task_changed", { taskId: id, action: "updated" });
     },
   });
 }
 
 export function useMoveScheduledTaskMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, targetQueue }: { id: string; targetQueue: number }) =>
       api.scheduler.moveTask(id, targetQueue) as Promise<ScheduledTask>,
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({
-        queryKey: schedulerKeys.task(variables.id),
-      });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+      frontendEventBus.publish("scheduler_task_changed", { taskId: variables.id, action: "updated" });
     },
   });
 }
 
 export function useReorderScheduledTasksMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       queueLevel,
@@ -220,8 +192,7 @@ export function useReorderScheduledTasksMutation() {
       taskIds: string[];
     }) => api.scheduler.reorderTasks(queueLevel, taskIds),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["scheduler", "queues"] });
+      frontendEventBus.publish("scheduler_task_changed", { taskId: "", action: "updated" });
     },
   });
 }

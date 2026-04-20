@@ -17,7 +17,7 @@ import {
   Square,
   X,
 } from "lucide-react";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ConfirmationModal } from "../components/common";
 import { useTheme } from "../hooks";
 import { useNavigate } from "react-router-dom";
@@ -31,7 +31,6 @@ export const RecycleBin = () => {
   const permanentDeleteGraphMutation = usePermanentDeleteGraphMutation();
   const batchRestoreMutation = useBatchRestoreGraphsMutation();
   const batchPermanentDeleteMutation = useBatchPermanentDeleteGraphsMutation();
-  const { addMessage } = useMessageStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -96,10 +95,10 @@ export const RecycleBin = () => {
   const handleRestore = async (id: string) => {
     try {
       await restoreGraphMutation.mutateAsync(id);
-      addMessage({ type: "success", content: t("recycleBin.messages.restoreSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("recycleBin.messages.restoreSuccess") });
     } catch (err: any) {
       console.error(err);
-      addMessage({ type: "error", content: err.message || t("recycleBin.messages.restoreFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("recycleBin.messages.restoreFailed") });
     }
   };
 
@@ -109,11 +108,11 @@ export const RecycleBin = () => {
     try {
       const ids = Array.from(selectedIds);
       await batchRestoreMutation.mutateAsync(ids);
-      addMessage({ type: "success", content: t("recycleBin.messages.batchRestoreSuccess", { count: ids.length }) });
+      frontendEventBus.publish("message_show", { type: "success", content: t("recycleBin.messages.batchRestoreSuccess", { count: ids.length }) });
       setSelectedIds(new Set());
     } catch (err: any) {
       console.error(err);
-      addMessage({ type: "error", content: err.message || t("recycleBin.messages.batchRestoreFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: err.message || t("recycleBin.messages.batchRestoreFailed") });
     }
   };
 
@@ -136,7 +135,7 @@ export const RecycleBin = () => {
       const ids = Array.from(selectedIds);
       batchPermanentDeleteMutation.mutate(ids, {
         onSuccess: () => {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "success",
             content: t("recycleBin.messages.batchDeleteSuccess", { count: ids.length }),
           });
@@ -145,7 +144,7 @@ export const RecycleBin = () => {
         },
         onError: (err: any) => {
           console.error(err);
-          addMessage({ type: "error", content: err.message || t("recycleBin.messages.batchDeleteFailed") });
+          frontendEventBus.publish("message_show", { type: "error", content: err.message || t("recycleBin.messages.batchDeleteFailed") });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });
@@ -154,12 +153,12 @@ export const RecycleBin = () => {
 
       permanentDeleteGraphMutation.mutate(deleteConfirm.id, {
         onSuccess: () => {
-          addMessage({ type: "success", content: t("recycleBin.messages.deleteSuccess") });
+          frontendEventBus.publish("message_show", { type: "success", content: t("recycleBin.messages.deleteSuccess") });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: any) => {
           console.error(err);
-          addMessage({ type: "error", content: err.message || t("recycleBin.messages.deleteFailed") });
+          frontendEventBus.publish("message_show", { type: "error", content: err.message || t("recycleBin.messages.deleteFailed") });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });

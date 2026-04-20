@@ -6,9 +6,9 @@ import { useTheme } from '../../hooks';
 import {
   getSyncStatus,
   syncOfflineQueue,
-  onSyncEvent,
 } from '../../utils/backgroundSync';
 import { getOfflineQueueCount } from '../../utils/offlineStorage';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 
 type SyncState = 'idle' | 'syncing' | 'success' | 'error';
 
@@ -33,7 +33,7 @@ export const OfflineStatusBar: React.FC = () => {
   useEffect(() => {
     updatePendingCount();
 
-    const unsubscribeQueue = onSyncEvent('queueUpdated', (data) => {
+    const unsubscribeQueue = frontendEventBus.subscribe('sync_queue_updated', (data) => {
       const queueData = data as { pendingCount?: number };
       if (typeof queueData.pendingCount === 'number') {
         setPendingCount(queueData.pendingCount);
@@ -42,11 +42,11 @@ export const OfflineStatusBar: React.FC = () => {
       }
     });
 
-    const unsubscribeSyncStart = onSyncEvent('syncStart', () => {
+    const unsubscribeSyncStart = frontendEventBus.subscribe('sync_started', () => {
       setSyncState('syncing');
     });
 
-    const unsubscribeSyncComplete = onSyncEvent('syncComplete', (data) => {
+    const unsubscribeSyncComplete = frontendEventBus.subscribe('sync_completed', (data) => {
       const result = data as { success: number; failed: number };
       if (result.failed > 0) {
         setSyncState('error');

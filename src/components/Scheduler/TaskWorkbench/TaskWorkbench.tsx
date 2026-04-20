@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskDetail } from "../../../types";
-import { useMessageStore } from "../../../store/useMessageStore";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { SubtaskList } from "./SubtaskList";
 import { TaskLinks } from "./TaskLinks";
@@ -39,7 +39,6 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
   onBack,
   onEdit,
 }) => {
-  const { addMessage } = useMessageStore();
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<WorkTab>("notes");
@@ -58,7 +57,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
       }
     } catch (error) {
       console.error("Failed to load task detail:", error);
-      addMessage({ type: "error", content: "加载任务详情失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "加载任务详情失败" });
     } finally {
       setLoading(false);
     }
@@ -68,10 +67,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.startTask(task.id);
-      addMessage({ type: "success", content: "任务已开始" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已开始" });
       loadTaskDetail();
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "开始任务失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "开始任务失败" });
     }
   };
 
@@ -79,10 +78,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.pauseTask(task.id);
-      addMessage({ type: "success", content: "任务已暂停" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已暂停" });
       loadTaskDetail();
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "暂停任务失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "暂停任务失败" });
     }
   };
 
@@ -90,10 +89,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!task) return;
     try {
       await api.scheduler.completeTask(task.id);
-      addMessage({ type: "success", content: "任务已完成" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已完成" });
       loadTaskDetail();
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "完成任务失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "完成任务失败" });
     }
   };
 
@@ -102,10 +101,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
     if (!window.confirm("确定要删除这个任务吗？此操作不可撤销。")) return;
     try {
       await api.scheduler.deleteTask(task.id);
-      addMessage({ type: "success", content: "任务已删除" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已删除" });
       onBack();
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "删除任务失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "删除任务失败" });
     }
   };
 
@@ -116,10 +115,10 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
         await api.scheduler.updateNotes(task.id, notes);
         setTask({ ...task, notes });
       } catch (error: any) {
-        addMessage({ type: "error", content: error.message || "保存笔记失败" });
+        frontendEventBus.publish("message_show", { type: "error", content: error.message || "保存笔记失败" });
       }
     },
-    [task, addMessage],
+    [task],
   );
 
   const getStatusColor = (status: string) => {
@@ -545,7 +544,7 @@ export const TaskWorkbench: React.FC<TaskWorkbenchProps> = ({
           }}
           onClose={() => setShowSaveAsTemplate(false)}
           onSuccess={() => {
-            addMessage({ type: "success", content: "模板保存成功!" });
+            frontendEventBus.publish("message_show", { type: "success", content: "模板保存成功!" });
           }}
         />
       )}

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { Node, Edge, NodeLevel } from '../../types';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from './index';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { levelLabels } from '../../config/graphConfig';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 
@@ -20,7 +20,6 @@ interface UseGraphNodeOperationsProps {
     batchDeleteNodesMutation: any;
   };
   record: (action: HistoryAction) => void;
-  addMessage: any;
 }
 
 export const useGraphNodeOperations = ({
@@ -31,8 +30,7 @@ export const useGraphNodeOperations = ({
   mutations,
   record
 }: UseGraphNodeOperationsProps) => {
-  const { addMessage } = useMessageStore();
-  const asyncHandler = createAsyncHandler(addMessage);
+  const asyncHandler = createAsyncHandler();
   const { 
     nodeForm, setNodeForm, 
     sidebarMode, setSidebarMode, 
@@ -216,18 +214,18 @@ export const useGraphNodeOperations = ({
               handleCloseSidebar();
             }
             if (hardDelete && data?.affected_graphs?.length) {
-              addMessage({ 
+              frontendEventBus.publish("message_show", { 
                 type: 'success', 
                 content: `知识点已从 ${data.affected_graphs.length} 个图谱中彻底删除` 
               });
             } else {
-              addMessage({ type: 'success', content: '节点已删除' });
+              frontendEventBus.publish("message_show", { type: 'success', content: '节点已删除' });
             }
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           },
           onError: (err: any) => {
             console.error(err);
-            addMessage({ type: 'error', content: '删除失败' });
+            frontendEventBus.publish("message_show", { type: 'error', content: '删除失败' });
             setConfirmModal(prev => ({ ...prev, isOpen: false }));
           }
         });

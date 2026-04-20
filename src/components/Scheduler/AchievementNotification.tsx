@@ -1,44 +1,19 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { Achievement } from "@shared/types";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import type { AchievementUnlockedPayload } from "../../services/FrontendEventTypes";
 
-interface AchievementNotification {
+interface NotificationItem {
   id: string;
-  achievement: Achievement;
+  title: string;
+  description: string;
+  icon?: string;
   timestamp: Date;
 }
 
-interface AchievementNotificationContextType {
-  showNotification: (achievement: Achievement) => void;
-  showMultipleNotifications: (achievements: Achievement[]) => void;
-  clearNotifications: () => void;
-}
-
-const AchievementNotificationContext =
-  createContext<AchievementNotificationContextType | null>(null);
-
-export const useAchievementNotification = () => {
-  const context = useContext(AchievementNotificationContext);
-  if (!context) {
-    throw new Error(
-      "useAchievementNotification must be used within AchievementNotificationProvider",
-    );
-  }
-  return context;
-};
-
-interface AchievementNotificationProviderProps {
-  children: React.ReactNode;
-  maxVisible?: number;
-  autoDismissMs?: number;
-}
+const DEFAULT_GRADIENT = "from-amber-500 to-orange-500";
 
 const CATEGORY_COLORS = {
   focus: "from-cyan-500 to-blue-500",
@@ -50,11 +25,9 @@ const CATEGORY_COLORS = {
 };
 
 const SingleNotification: React.FC<{
-  notification: AchievementNotification;
+  notification: NotificationItem;
   onDismiss: (id: string) => void;
 }> = ({ notification, onDismiss }) => {
-  const gradient = CATEGORY_COLORS[notification.achievement.category];
-
   return (
     <motion.div
       layout
@@ -65,7 +38,7 @@ const SingleNotification: React.FC<{
       className="relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-sm"
     >
       <div
-        className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-5`}
+        className={`absolute inset-0 bg-gradient-to-r ${DEFAULT_GRADIENT} opacity-5`}
       />
 
       <div className="relative p-4">
@@ -101,24 +74,23 @@ const SingleNotification: React.FC<{
                 成就解锁!
               </p>
               <p className="text-base font-bold text-slate-900 dark:text-white truncate">
-                {notification.achievement.name}
+                {notification.title}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                {notification.achievement.description}
+                {notification.description}
               </p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="flex items-center gap-2 mt-2"
-            >
-              <span className="text-lg">{notification.achievement.icon}</span>
-              <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
-                +{notification.achievement.xp_reward} XP
-              </span>
-            </motion.div>
+            {notification.icon && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center gap-2 mt-2"
+              >
+                <span className="text-lg">{notification.icon}</span>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
@@ -127,24 +99,25 @@ const SingleNotification: React.FC<{
         initial={{ scaleX: 1 }}
         animate={{ scaleX: 0 }}
         transition={{ duration: 5, ease: "linear" }}
-        className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${gradient} origin-left`}
+        className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${DEFAULT_GRADIENT} origin-left`}
       />
     </motion.div>
   );
 };
 
-export const AchievementNotificationProvider: React.FC<
-  AchievementNotificationProviderProps
-> = ({ children, maxVisible = 3, autoDismissMs = 5000 }) => {
-  const [notifications, setNotifications] = useState<AchievementNotification[]>(
-    [],
-  );
+export const AchievementNotification: React.FC<{
+  maxVisible?: number;
+  autoDismissMs?: number;
+}> = ({ maxVisible = 3, autoDismissMs = 5000 }) => {
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const showNotification = useCallback(
-    (achievement: Achievement) => {
-      const notification: AchievementNotification = {
-        id: `${achievement.id}-${Date.now()}`,
-        achievement,
+  useEffect(() => {
+    const handler = (payload: AchievementUnlockedPayload) => {
+      const notification: NotificationItem = {
+        id: `${payload.id}-${Date.now()}`,
+        title: payload.title,
+        description: payload.description,
+        icon: payload.icon,
         timestamp: new Date(),
       };
 
@@ -152,24 +125,14 @@ export const AchievementNotificationProvider: React.FC<
         const newNotifications = [...prev, notification];
         return newNotifications.slice(-maxVisible);
       });
-    },
-    [maxVisible],
-  );
+    };
 
-  const showMultipleNotifications = useCallback(
-    (achievements: Achievement[]) => {
-      achievements.forEach((achievement, index) => {
-        setTimeout(() => {
-          showNotification(achievement);
-        }, index * 500);
-      });
-    },
-    [showNotification],
-  );
-
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-  }, []);
+    const unsubscribe = frontendEventBus.subscribe(
+      "achievement_unlocked",
+      handler,
+    );
+    return unsubscribe;
+  }, [maxVisible]);
 
   const dismissNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -186,28 +149,18 @@ export const AchievementNotificationProvider: React.FC<
   }, [notifications, autoDismissMs]);
 
   return (
-    <AchievementNotificationContext.Provider
-      value={{
-        showNotification,
-        showMultipleNotifications,
-        clearNotifications,
-      }}
-    >
-      {children}
-
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-        <AnimatePresence mode="popLayout">
-          {notifications.map((notification) => (
-            <div key={notification.id} className="pointer-events-auto">
-              <SingleNotification
-                notification={notification}
-                onDismiss={dismissNotification}
-              />
-            </div>
-          ))}
-        </AnimatePresence>
-      </div>
-    </AchievementNotificationContext.Provider>
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      <AnimatePresence mode="popLayout">
+        {notifications.map((notification) => (
+          <div key={notification.id} className="pointer-events-auto">
+            <SingleNotification
+              notification={notification}
+              onDismiss={dismissNotification}
+            />
+          </div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 };
 

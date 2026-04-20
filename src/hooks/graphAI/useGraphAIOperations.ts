@@ -2,7 +2,7 @@ import { Node, Edge, BranchSuggestion } from '../../types';
 import { getLevel, getNextLevel, getLevelColorHex } from '../../lib/graphUtils';
 import { HistoryAction } from '../common/useHistory';
 import { GraphEditorState } from '../graphEditor';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { api } from '../../services/api';
 import { useStore } from '../../store/useStore';
 import { queryKeys } from '../queries/config';
@@ -44,9 +44,8 @@ export const useGraphAIOperations = ({
   record,
   navigate
 }: UseGraphAIOperationsProps) => {
-  const { addMessage } = useMessageStore();
   const queryClient = useQueryClient();
-  const asyncHandler = createAsyncHandler(addMessage);
+  const asyncHandler = createAsyncHandler();
   const { 
     nodeForm, 
     selectedNode, 
@@ -129,7 +128,7 @@ export const useGraphAIOperations = ({
     if (!selectedNode || !id) return;
     
     if (!selectedNode.title) {
-      addMessage({ type: 'error', content: '节点标题不能为空' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '节点标题不能为空' });
       return;
     }
     
@@ -175,9 +174,9 @@ export const useGraphAIOperations = ({
         loadingSetter: setLoading,
         onSuccess: (result) => {
           if (result && (result.newNodesCount > 0 || result.newEdgesCount > 0)) {
-            addMessage({ type: 'success', content: `拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线` });
+            frontendEventBus.publish("message_show", { type: 'success', content: `拓展完成：新增 ${result.newNodesCount} 个节点，${result.newEdgesCount} 条连线` });
           } else {
-            addMessage({ type: 'info', content: '未发现新的关联' });
+            frontendEventBus.publish("message_show", { type: 'info', content: '未发现新的关联' });
           }
         },
         errorMessage: '拓展失败'
@@ -204,7 +203,7 @@ export const useGraphAIOperations = ({
         }));
 
         if (cards.length === 0) {
-          addMessage({ type: 'error', content: 'AI 未能生成有效的卡片' });
+          frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未能生成有效的卡片' });
           return null;
         }
 
@@ -218,7 +217,7 @@ export const useGraphAIOperations = ({
         errorMessage: '生成卡片失败',
         onSuccess: (result) => {
           if (result && typeof result === 'number') {
-            addMessage({ type: 'success', content: `成功生成并保存了 ${result} 张复习卡片！` });
+            frontendEventBus.publish("message_show", { type: 'success', content: `成功生成并保存了 ${result} 张复习卡片！` });
           }
         }
       }
@@ -243,7 +242,7 @@ export const useGraphAIOperations = ({
         const model = aiConfig?.model;
 
         if (type === 'batch_generate_questions') {
-          addMessage({
+          frontendEventBus.publish("message_show", {
               type: 'info',
               content: `正在提交 ${nodesToProcess.length} 个节点的题目生成任务...`,
               duration: 2000
@@ -257,7 +256,7 @@ export const useGraphAIOperations = ({
             model
           });
 
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: 'success',
             content: `成功提交 ${nodesToProcess.length} 个生成任务，请在任务列表中查看进度`,
             duration: 3000,
@@ -305,7 +304,7 @@ export const useGraphAIOperations = ({
         successMessage: '任务提交成功',
         errorMessage: '任务提交失败',
         onSuccess: () => {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: 'success',
             content: '任务提交成功',
             duration: 3000,
@@ -512,7 +511,7 @@ export const useGraphAIOperations = ({
         errorMessage: '切换分支失败',
         onSuccess: (result) => {
           if (result) {
-            addMessage({ type: 'success', content: `已切换分支：${suggestion.title}` });
+            frontendEventBus.publish("message_show", { type: 'success', content: `已切换分支：${suggestion.title}` });
           }
         }
       }
@@ -522,7 +521,9 @@ export const useGraphAIOperations = ({
   const handleGenerateNodeContent = async () => {
     if (!selectedNode || !id) return;
     
-    const loadingMsgId = addMessage({ 
+    const loadingId = `loading-${Date.now()}`;
+    frontendEventBus.publish("message_show", { 
+      id: loadingId,
       content: 'AI 内容生成任务已开始...', 
       type: 'loading',
       duration: 0
@@ -562,7 +563,7 @@ export const useGraphAIOperations = ({
         successMessage: 'AI 内容生成完成',
         errorMessage: 'AI 生成失败',
         onFinally: () => {
-          useMessageStore.getState().removeMessage(loadingMsgId);
+          frontendEventBus.publish("message_hide", { id: loadingId });
         }
       }
     );

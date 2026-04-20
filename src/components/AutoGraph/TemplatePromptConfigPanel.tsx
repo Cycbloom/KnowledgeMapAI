@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { PromptEditor } from "../GraphEditor/panels/PromptEditor";
 import { useStore } from "../../store/useStore";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from "../../services/api";
 import { getScenarioById } from "../PromptConfig/promptScenarios";
 import type { TemplateType, TemplateCategory } from "@shared/types/graph";
@@ -87,7 +87,6 @@ export const TemplatePromptConfigPanel: React.FC<
 > = ({ isOpen, onClose, graphId, initialSelectedType }) => {
   const { t } = useTranslation();
   const { token } = useStore();
-  const { addMessage } = useMessageStore();
 
   const [selectedType, setSelectedType] = useState<TemplateType | null>(
     initialSelectedType ?? null,
@@ -182,11 +181,11 @@ export const TemplatePromptConfigPanel: React.FC<
         template_content: content,
         graph_id: graphId,
       });
-      addMessage({ type: "success", content: t("autoGraph.promptSaved") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("autoGraph.promptSaved") });
       await loadTemplates();
     } catch (error) {
       console.error("Failed to save prompt:", error);
-      addMessage({ type: "error", content: t("autoGraph.promptSaveFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("autoGraph.promptSaveFailed") });
     }
   };
 

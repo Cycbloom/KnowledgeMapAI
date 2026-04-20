@@ -36,7 +36,7 @@ import {
 } from "../hooks";
 import { useScrollDirection } from "../hooks/useScrollDirection";
 import { useLearningPaths } from "../hooks/queries/useLearningPathQueries";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import {
   ScheduledTask,
   CreateScheduledTaskData,
@@ -110,7 +110,6 @@ const QueueDataDefault: QueueData = { q0: [], q1: [], q2: [] };
 export const Scheduler: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { addMessage } = useMessageStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
@@ -245,10 +244,10 @@ export const Scheduler: React.FC = () => {
   const handleCreateTask = async (data: CreateScheduledTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      addMessage({ type: "success", content: t("scheduler.taskCreated") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskCreated") });
       setShowTaskForm(false);
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.createTaskFailed"),
       });
@@ -259,11 +258,11 @@ export const Scheduler: React.FC = () => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      addMessage({ type: "success", content: t("scheduler.taskUpdated") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskUpdated") });
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.updateTaskFailed"),
       });
@@ -273,9 +272,9 @@ export const Scheduler: React.FC = () => {
   const handleDeleteTask = async (task: ScheduledTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: t("scheduler.taskDeleted") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskDeleted") });
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.deleteTaskFailed"),
       });
@@ -285,12 +284,12 @@ export const Scheduler: React.FC = () => {
   const handleMoveTask = async (taskId: string, targetQueue: number) => {
     try {
       await moveTaskMutation.mutateAsync({ id: taskId, targetQueue });
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("scheduler.taskMoved", { queue: targetQueue }),
       });
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.moveTaskFailed"),
       });
@@ -301,7 +300,7 @@ export const Scheduler: React.FC = () => {
     try {
       await reorderMutation.mutateAsync({ queueLevel, taskIds });
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.reorderFailed"),
       });
@@ -311,9 +310,9 @@ export const Scheduler: React.FC = () => {
   const handleStartTask = async (task: ScheduledTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: t("scheduler.taskStarted") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskStarted") });
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.startTaskFailed"),
       });
@@ -323,9 +322,9 @@ export const Scheduler: React.FC = () => {
   const handlePauseTask = async (task: ScheduledTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: t("scheduler.taskPaused") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskPaused") });
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.pauseTaskFailed"),
       });
@@ -335,9 +334,9 @@ export const Scheduler: React.FC = () => {
   const handleCompleteTask = async (task: ScheduledTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: t("scheduler.taskCompleted") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("scheduler.taskCompleted") });
     } catch (err: any) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: err.message || t("scheduler.completeTaskFailed"),
       });

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { api } from '../../services/api';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { createAsyncHandler } from '../../utils/asyncHandler';
 import type { 
   SimilarKnowledgePoint, 
@@ -18,8 +18,7 @@ export const useKnowledgePointOperations = ({
   onNodeCreated,
   onNodeDeleted
 }: UseKnowledgePointOperationsProps) => {
-  const { addMessage } = useMessageStore();
-  const asyncHandler = createAsyncHandler(addMessage);
+  const asyncHandler = createAsyncHandler();
   const [similarPoints, setSimilarPoints] = useState<SimilarKnowledgePoint[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showReuseDialog, setShowReuseDialog] = useState(false);
@@ -150,7 +149,7 @@ export const useKnowledgePointOperations = ({
           const result = await api.nodes.delete(nodeId, true);
           
           if (result.affected_graphs && result.affected_graphs.length > 1) {
-            addMessage({ 
+            frontendEventBus.publish("message_show", { 
               type: 'warning', 
               content: `此知识点已在 ${result.affected_graphs.length} 个图谱中删除` 
             });
@@ -169,7 +168,7 @@ export const useKnowledgePointOperations = ({
     );
     
     return result || { success: false };
-  }, [onNodeDeleted, addMessage, asyncHandler]);
+  }, [onNodeDeleted, asyncHandler]);
 
   const getKnowledgePointGraphs = useCallback(async (nodeId: string) => {
     const result = await asyncHandler(

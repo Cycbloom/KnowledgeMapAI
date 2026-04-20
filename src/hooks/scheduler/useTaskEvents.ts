@@ -8,6 +8,7 @@ import {
   getElectronApiUrl,
 } from "../../config/electronConfig";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 
 const SSE_HEARTBEAT_TIMEOUT = 300000;
 const SSE_RECONNECT_DELAY_BASE = 1000;
@@ -16,7 +17,6 @@ const SSE_RECONNECT_MAX_ATTEMPTS = 10;
 export const useTaskEvents = () => {
   const queryClient = useQueryClient();
   const token = useStore((state) => state.token);
-  const setSSEStatus = useStore((state) => state.setSSEStatus);
   const [apiUrl, setApiUrl] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSourcePolyfill | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -68,7 +68,7 @@ export const useTaskEvents = () => {
       }
 
       cleanup();
-      setSSEStatus("connecting");
+      frontendEventBus.publish("sse_status_changed", { status: "connecting" });
 
       if (!isReconnect) {
         reconnectAttemptsRef.current = 0;
@@ -89,7 +89,7 @@ export const useTaskEvents = () => {
         eventSourceRef.current = es;
 
         es.onopen = () => {
-          setSSEStatus("connected");
+          frontendEventBus.publish("sse_status_changed", { status: "connected" });
           reconnectAttemptsRef.current = 0;
           lastActivityRef.current = Date.now();
         };
@@ -104,6 +104,24 @@ export const useTaskEvents = () => {
               return;
             }
 
+            frontendEventBus.publish("sse_message", data);
+
+            if (data.type === "task_update") {
+              frontendEventBus.publish("sse_task_update", { taskId: data.taskId, status: data.status, ...data });
+            }
+            if (data.type === "task_completed") {
+              frontendEventBus.publish("sse_task_completed", data);
+            }
+            if (data.type === "focus_session_ended") {
+              frontendEventBus.publish("sse_focus_session_ended", data);
+            }
+            if (data.type === "review_completed") {
+              frontendEventBus.publish("sse_review_completed", data);
+            }
+            if (data.type === "notification_needed") {
+              frontendEventBus.publish("sse_notification_needed", data);
+            }
+
             if (data.cacheKeys && Array.isArray(data.cacheKeys)) {
               for (const key of data.cacheKeys) {
                 if (Array.isArray(key)) {
@@ -114,6 +132,19 @@ export const useTaskEvents = () => {
 
             if (data.type === "task_update") {
               const { taskId, status } = data;
+
+              const cachedTasks = queryClient.getQueryData<Task[]>(["tasks"]);
+              const existingTask = cachedTasks?.find((t) => t.id === taskId);
+              const oldStatus = existingTask?.status;
+
+              if (oldStatus && oldStatus !== status) {
+                frontendEventBus.publish("scheduler_task_status_changed", {
+                  taskId,
+                  oldStatus,
+                  newStatus: status,
+                  taskType: existingTask?.task_type,
+                });
+              }
 
               queryClient.setQueryData(
                 ["tasks"],
@@ -141,10 +172,6 @@ export const useTaskEvents = () => {
 
               queryClient.invalidateQueries({ queryKey: ["task", taskId] });
             }
-
-            if (data.type === "task_completed" || data.type === "focus_session_ended" || data.type === "review_completed") {
-              queryClient.invalidateQueries({ queryKey: ["scheduler"] });
-            }
           } catch (err) {
             console.error("[SSE] Error parsing message:", err);
           }
@@ -159,7 +186,7 @@ export const useTaskEvents = () => {
 
           if (errorStatus === 401 || errorType === "authorization") {
             console.error("[SSE] Authentication failed, closing connection");
-            setSSEStatus("error", "Authentication failed. Please login again.");
+            frontendEventBus.publish("sse_status_changed", { status: "error", error: "Authentication failed. Please login again." });
             cleanup();
             return;
           }
@@ -170,10 +197,7 @@ export const useTaskEvents = () => {
               SSE_RECONNECT_DELAY_BASE *
               Math.pow(2, Math.min(reconnectAttemptsRef.current - 1, 5));
 
-            setSSEStatus(
-              "connecting",
-              `Reconnecting... (${reconnectAttemptsRef.current}/${SSE_RECONNECT_MAX_ATTEMPTS})`,
-            );
+            frontendEventBus.publish("sse_status_changed", { status: "connecting", error: `Reconnecting... (${reconnectAttemptsRef.current}/${SSE_RECONNECT_MAX_ATTEMPTS})` });
 
             reconnectTimeoutRef.current = setTimeout(() => {
               if (connectRef.current) {
@@ -182,20 +206,17 @@ export const useTaskEvents = () => {
             }, delay);
           } else {
             console.error("[SSE] Max reconnection attempts reached");
-            setSSEStatus(
-              "error",
-              "Connection failed. Please refresh the page.",
-            );
+            frontendEventBus.publish("sse_status_changed", { status: "error", error: "Connection failed. Please refresh the page." });
             cleanup();
           }
         };
       } catch (error) {
         console.error("[SSE] Failed to create EventSource:", error);
-        setSSEStatus("error", "Failed to establish connection");
+        frontendEventBus.publish("sse_status_changed", { status: "error", error: "Failed to establish connection" });
         cleanup();
       }
     },
-    [token, apiUrl, queryClient, setSSEStatus, cleanup],
+    [token, apiUrl, queryClient, cleanup],
   );
 
   useEffect(() => {
@@ -236,7 +257,7 @@ export const useTaskEvents = () => {
 
     if (!token) {
       cleanup();
-      setSSEStatus("disconnected");
+      frontendEventBus.publish("sse_status_changed", { status: "disconnected" });
       return;
     }
     if (!apiUrl) {
@@ -247,7 +268,7 @@ export const useTaskEvents = () => {
 
     return () => {
       cleanup();
-      setSSEStatus("disconnected");
+      frontendEventBus.publish("sse_status_changed", { status: "disconnected" });
     };
-  }, [token, apiUrl, connect, cleanup, setSSEStatus]);
+  }, [token, apiUrl, connect, cleanup]);
 };

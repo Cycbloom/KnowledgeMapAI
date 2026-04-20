@@ -12,7 +12,7 @@ import {
 import { api } from '../../services/api';
 import { useTheme } from "../../hooks";
 import { useTextToSpeech } from "../../hooks";
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { ExtractedConcept, TutorMode, TTSEngine } from '../../types';
 import { useChatState, Message, Source } from './hooks/useChatState';
 import { ChatMessage, LoadingMessage } from './ChatMessage';
@@ -77,7 +77,6 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
   onLearningPathNodeClick
 }) => {
   const { isDark } = useTheme();
-  const { addMessage } = useMessageStore();
   const chatState = useChatState();
   const [ttsEngine, _setTTSEngine] = useState<TTSEngine>('browser');
   const { 
@@ -249,7 +248,7 @@ export const RAGChatPanel: React.FC<RAGChatPanelProps> = ({
 
     } catch (error: any) {
       console.error('RAG Chat Error:', error);
-      addMessage({ type: 'error', content: '发送失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '发送失败，请重试' });
       chatState.updateMessage(assistantMessageId, { 
         content: '抱歉，发生了错误，请稍后再试。', 
         isStreaming: false 

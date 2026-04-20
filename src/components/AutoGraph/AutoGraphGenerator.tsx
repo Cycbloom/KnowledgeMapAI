@@ -20,7 +20,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { api } from "../../services/api";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useErrorHandler, useIsMobile } from "../../hooks";
 import { useTopicCheck } from "../../hooks";
 import type { TemplateType, TemplateCategory } from "@shared/types/graph";
@@ -296,7 +296,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
   const [rootNode, setRootNode] = useState<TreeNode | null>(null);
   const [createdGraphId, setCreatedGraphId] = useState<string | null>(null);
 
-  const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
   const {
@@ -331,17 +330,17 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
   const handleInitialize = useCallback(async () => {
     if (!topic.trim()) {
-      addMessage({ type: "warning", content: t("autoGraph.topicRequired") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("autoGraph.topicRequired") });
       return;
     }
 
     if (!graphId && isDuplicate) {
-      addMessage({ type: "warning", content: t("autoGraph.topicDuplicate") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("autoGraph.topicDuplicate") });
       return;
     }
 
     if (style === "custom" && !customPrompt.trim()) {
-      addMessage({ type: "warning", content: t("autoGraph.enterCustomRules") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("autoGraph.enterCustomRules") });
       return;
     }
 
@@ -376,7 +375,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
 
       setRootNode(root);
       setIsInputCollapsed(true);
-      addMessage({ type: "success", content: t("autoGraph.initSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("autoGraph.initSuccess") });
     } catch (error) {
       handleError(error, {
         context: "AutoGraphInit",
@@ -385,7 +384,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     } finally {
       setIsInitializing(false);
     }
-  }, [topic, style, sources, graphId, addMessage, handleError, isDuplicate, t]);
+  }, [topic, style, sources, graphId, handleError, isDuplicate, t]);
 
   const handleExpandNode = useCallback(
     async (nodeId: string, node: TreeNode): Promise<TreeNode[] | null> => {
@@ -534,7 +533,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
         nodes: allNodes,
       });
 
-      addMessage({ type: "success", content: t("autoGraph.graphSaved") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("autoGraph.graphSaved") });
       onGraphGenerated?.(allNodes, []);
       onClose?.();
     } catch (error) {
@@ -552,7 +551,6 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
     collectAllNodes,
     onGraphGenerated,
     onClose,
-    addMessage,
     handleError,
     t,
   ]);
@@ -882,7 +880,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                 <button
                   onClick={async () => {
                     if (!topic.trim()) {
-                      addMessage({
+                      frontendEventBus.publish("message_show", {
                         type: "warning",
                         content: t("autoGraph.topicRequired"),
                       });
@@ -894,7 +892,7 @@ export const AutoGraphGenerator: React.FC<AutoGraphGeneratorProps> = ({
                         currentPrompt: customPrompt,
                       });
                       setCustomPrompt(result.optimizedPrompt);
-                      addMessage({
+                      frontendEventBus.publish("message_show", {
                         type: "success",
                         content: t("autoGraph.rulesOptimized"),
                       });

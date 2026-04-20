@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { ArrowLeft, Loader2, Lock, LogIn } from "lucide-react";
 
 import { GraphToolbar } from "../components/GraphEditor/toolbar/GraphToolbar";
@@ -107,7 +107,6 @@ export const GraphEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { token, user } = useStore();
-  const { addMessage } = useMessageStore();
   const { isDark, toggleTheme } = useTheme();
   const { isMobile } = useIsMobile();
   const queryClient = useQueryClient();
@@ -203,10 +202,10 @@ export const GraphEditor = () => {
         }
       } catch (error) {
         console.error("Failed to fetch learning path:", error);
-        addMessage({ type: "error", content: "获取学习路径失败" });
+        frontendEventBus.publish("message_show", { type: "error", content: "获取学习路径失败" });
       }
     },
-    [addMessage],
+    [],
   );
 
   // Command Palette Logic
@@ -418,7 +417,6 @@ export const GraphEditor = () => {
     state,
     mutations,
     record,
-    addMessage,
   });
 
   const aiOps = useGraphAIOperations({
@@ -467,7 +465,6 @@ export const GraphEditor = () => {
     canUndo,
     canRedo,
     aiEnabled,
-    addMessage,
   });
 
   // Auto-show timeline when entering exploration mode
@@ -617,13 +614,13 @@ export const GraphEditor = () => {
           graphId: id || "",
           relationship_type: "related",
         });
-        addMessage({ content: "连接已创建", type: "success" });
+        frontendEventBus.publish("message_show", { content: "连接已创建", type: "success" });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "未知错误";
-        addMessage({ content: `创建连接失败: ${message}`, type: "error" });
+        frontendEventBus.publish("message_show", { content: `创建连接失败: ${message}`, type: "error" });
       }
     },
-    [mutations.createEdgeMutation, id, addMessage],
+    [mutations.createEdgeMutation, id],
   );
 
   const handleNodeClick = useCallback(
@@ -703,7 +700,7 @@ export const GraphEditor = () => {
 
   const handleExecuteAction = async (action: AIAction, nodeId: string) => {
     try {
-      addMessage({ type: "info", content: `正在执行动作: ${action.name}...` });
+      frontendEventBus.publish("message_show", { type: "info", content: `正在执行动作: ${action.name}...` });
       const res = await api.aiActions.execute({
         action_id: action.id,
         node_id: nodeId,
@@ -722,7 +719,7 @@ export const GraphEditor = () => {
               ? res.data
               : JSON.stringify(res.data, null, 2),
         });
-        addMessage({ type: "success", content: `动作执行成功` });
+        frontendEventBus.publish("message_show", { type: "success", content: `动作执行成功` });
       } else {
         // Invalidate graphData to trigger refetch of nodes/edges
         await queryClient.invalidateQueries({ queryKey: ["graphData", id] });
@@ -743,11 +740,11 @@ export const GraphEditor = () => {
           feedback += `。已生成 ${res.data.createdCount} 个子节点`;
         }
 
-        addMessage({ type: "success", content: feedback });
+        frontendEventBus.publish("message_show", { type: "success", content: feedback });
       }
     } catch (err: any) {
       console.error(err);
-      addMessage({ type: "error", content: `执行失败: ${err.message}` });
+      frontendEventBus.publish("message_show", { type: "error", content: `执行失败: ${err.message}` });
     }
   };
 
@@ -761,7 +758,9 @@ export const GraphEditor = () => {
     setViewMode,
     setIsFocusMode,
     handleDeleteNode: nodeOps.handleDeleteNode,
-    addMessage,
+    addMessage: (msg: { type: "success" | "error" | "warning" | "info" | "loading"; content: string }) => {
+      frontendEventBus.publish("message_show", msg);
+    },
   });
 
   return (
@@ -916,7 +915,7 @@ export const GraphEditor = () => {
                   await queryClient.invalidateQueries({
                     queryKey: ["graphNodeStatus", id],
                   });
-                  addMessage({ type: "success", content: "节点状态已更新" });
+                  frontendEventBus.publish("message_show", { type: "success", content: "节点状态已更新" });
                 } catch (err) {
                   console.error("Failed to update node status:", err);
                 }
@@ -1449,10 +1448,10 @@ export const GraphEditor = () => {
                 graphId: id || "",
                 relationship_type: "related",
               });
-              addMessage({ content: "连接已创建", type: "success" });
+              frontendEventBus.publish("message_show", { content: "连接已创建", type: "success" });
             } catch (error: unknown) {
               const message = error instanceof Error ? error.message : "未知错误";
-              addMessage({ content: `创建连接失败: ${message}`, type: "error" });
+              frontendEventBus.publish("message_show", { content: `创建连接失败: ${message}`, type: "error" });
             }
           }}
         />

@@ -1,3 +1,5 @@
+import type { FrontendEventMap } from "../FrontendEventTypes";
+
 type Handler<T> = (payload: T) => void;
 
 class FrontendEventBus<
@@ -74,5 +76,5 @@ class FrontendEventBus<
   }
 }
 
-export const frontendEventBus = new FrontendEventBus();
+export const frontendEventBus = new FrontendEventBus<FrontendEventMap>();
 export { FrontendEventBus };

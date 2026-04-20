@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Node, Edge } from '../../types';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { api } from '../../services/api';
 import { isNetworkError, wrapUnknownError } from '../../utils/errors';
 import { queryKeys } from '../queries/config';
@@ -25,7 +25,6 @@ interface UseContentGenerationOptions {
 
 export const useContentGeneration = (options: UseContentGenerationOptions) => {
   const { id, nodes, edges, selectedNode, state, mutations } = options;
-  const { addMessage } = useMessageStore();
   const queryClient = useQueryClient();
 
   const handleAIGenerate = useCallback(async () => {
@@ -79,21 +78,21 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
         }
       );
       state.setAiPrompt('');
-      addMessage({ content: 'AI 内容生成完成', type: 'success' });
+      frontendEventBus.publish("message_show", { content: 'AI 内容生成完成', type: 'success' });
     } catch (err) {
       const appError = wrapUnknownError(err);
       console.error('[handleAIGenerate]', appError);
       const errorMsg = isNetworkError(err) ? '网络连接失败，请检查网络' : 'AI 生成失败';
-      addMessage({ content: errorMsg, type: 'error' });
+      frontendEventBus.publish("message_show", { content: errorMsg, type: 'error' });
     } finally {
       state.setLoading(false);
     }
-  }, [state, selectedNode, nodes, edges, addMessage]);
+  }, [state, selectedNode, nodes, edges]);
 
   const handleGenerateNodeContent = useCallback(async () => {
     if (!selectedNode || !id) return;
     state.setLoading(true);
-    addMessage({ content: 'AI 内容生成任务已开始...', type: 'info' });
+    frontendEventBus.publish("message_show", { content: 'AI 内容生成任务已开始...', type: 'info' });
     
     try {
       const prompt = `请详细解释 ${selectedNode.title} 的核心概念、特点和应用。\n\n请直接输出 Markdown 格式的正文内容，严禁包含任何开场白（如"好的"、"作为..."）、结束语或无关的对话内容。`;
@@ -118,16 +117,16 @@ export const useContentGeneration = (options: UseContentGenerationOptions) => {
           data: { content: generatedContent }
         });
         
-        addMessage({ content: 'AI 内容生成完成', type: 'success' });
+        frontendEventBus.publish("message_show", { content: 'AI 内容生成完成', type: 'success' });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphData(id) });
       }
     } catch (err) {
       console.error(err);
-      addMessage({ content: 'AI 生成失败', type: 'error' });
+      frontendEventBus.publish("message_show", { content: 'AI 生成失败', type: 'error' });
     } finally {
       state.setLoading(false);
     }
-  }, [selectedNode, id, state, mutations, addMessage, queryClient]);
+  }, [selectedNode, id, state, mutations, queryClient]);
 
   return {
     handleAIGenerate,

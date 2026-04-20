@@ -31,7 +31,7 @@ import {
   useCompleteScheduledTaskMutation,
   useSchedulerSettings,
 } from "../hooks";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { TaskForm } from "../components/Scheduler/TaskForm";
 import { api } from "../services/api";
 import type {
@@ -139,7 +139,6 @@ const URGENCY_CONFIG = {
 
 export const UnifiedWorkbench: React.FC = () => {
   const navigate = useNavigate();
-  const { addMessage } = useMessageStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
   const [defaultQueueLevel, setDefaultQueueLevel] = useState<number>(2);
@@ -282,11 +281,11 @@ export const UnifiedWorkbench: React.FC = () => {
   const handleCreateTask = async (data: CreateScheduledTaskData) => {
     try {
       await createTaskMutation.mutateAsync(data);
-      addMessage({ type: "success", content: "任务创建成功" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务创建成功" });
       setShowTaskForm(false);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "创建任务失败";
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -294,52 +293,52 @@ export const UnifiedWorkbench: React.FC = () => {
     if (!editingTask) return;
     try {
       await updateTaskMutation.mutateAsync({ id: editingTask.id, data });
-      addMessage({ type: "success", content: "任务更新成功" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务更新成功" });
       setEditingTask(null);
       setShowTaskForm(false);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "更新任务失败";
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handleDeleteTask = async (task: ScheduledTask) => {
     try {
       await deleteTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已删除" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已删除" });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "删除任务失败";
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handleStartTask = async (task: ScheduledTask) => {
     try {
       await startTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已开始" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已开始" });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "开始任务失败";
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handlePauseTask = async (task: ScheduledTask) => {
     try {
       await pauseTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已暂停" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已暂停" });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "暂停任务失败";
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handleCompleteTask = async (task: ScheduledTask) => {
     try {
       await completeTaskMutation.mutateAsync(task.id);
-      addMessage({ type: "success", content: "任务已完成" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已完成" });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "完成任务失败";
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -359,14 +358,14 @@ export const UnifiedWorkbench: React.FC = () => {
       await api.scheduler.addTaskKnowledgePoint(taskId, {
         knowledge_point_id: knowledgePointId,
       });
-      addMessage({ type: "success", content: "知识点关联成功" });
+      frontendEventBus.publish("message_show", { type: "success", content: "知识点关联成功" });
       setLinkingTaskId(null);
       setKnowledgePointSearch("");
       setSearchResults([]);
       refetchQueues();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "关联知识点失败";
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 

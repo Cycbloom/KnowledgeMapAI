@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskSubtask } from "../../../types";
-import { useMessageStore } from "../../../store/useMessageStore";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 
 interface SubtaskListProps {
   taskId: string;
@@ -21,7 +21,6 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
   taskId,
   className = "",
 }) => {
-  const { addMessage } = useMessageStore();
   const [subtasks, setSubtasks] = useState<TaskSubtask[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -51,7 +50,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
 
   const handleAddSubtask = async () => {
     if (!newSubtask.title.trim()) {
-      addMessage({ type: "error", content: "请输入子任务标题" });
+      frontendEventBus.publish("message_show", { type: "error", content: "请输入子任务标题" });
       return;
     }
 
@@ -69,10 +68,10 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
           estimated_duration: undefined,
         });
         setIsAdding(false);
-        addMessage({ type: "success", content: "子任务已添加" });
+        frontendEventBus.publish("message_show", { type: "success", content: "子任务已添加" });
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "添加子任务失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "添加子任务失败" });
     }
   };
 
@@ -88,7 +87,7 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
         );
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "更新状态失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "更新状态失败" });
     }
   };
 
@@ -97,10 +96,10 @@ export const SubtaskList: React.FC<SubtaskListProps> = ({
       const response = await api.scheduler.deleteSubtask(taskId, subtaskId);
       if (response.success) {
         setSubtasks(subtasks.filter((st) => st.id !== subtaskId));
-        addMessage({ type: "success", content: "子任务已删除" });
+        frontendEventBus.publish("message_show", { type: "success", content: "子任务已删除" });
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "删除子任务失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "删除子任务失败" });
     }
   };
 

@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useMessageStore } from '@/store/useMessageStore';
 import { Node, GraphViewMode } from '../../types';
 
 interface UseKeyboardShortcutsProps {
@@ -39,8 +38,6 @@ export const useKeyboardShortcuts = ({
   viewMode,
   setViewMode
 }: UseKeyboardShortcutsProps) => {
-  const { addMessage: _addMessage } = useMessageStore();
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;

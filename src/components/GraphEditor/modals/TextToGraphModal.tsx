@@ -3,7 +3,7 @@ import { X, Wand2, Loader2, Check, ArrowLeft, Network, FileText, Upload, Globe, 
 import { parseMarkdownToGraph } from '../../../utils/markdownParser';
 import { parseOpmlToGraph } from '../../../utils/opmlParser';
 import { useTextToGraphMutation, useDocumentToGraphMutation, useImageToGraphMutation } from '../../../hooks/mutations';
-import { useMessageStore } from '../../../store/useMessageStore';
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { api } from '../../../services/api';
 import { useNetworkStatus } from "../../../hooks";
 
@@ -29,7 +29,6 @@ type PreviewEdge = {
 };
 
 export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onClose, graphId, initialData, aiEnabled }) => {
-  const { addMessage } = useMessageStore();
   const [step, setStep] = useState<'input' | 'preview'>(initialData ? 'preview' : 'input');
   const [activeTab, setActiveTab] = useState<'text' | 'file' | 'url' | 'image'>('text');
   const [text, setText] = useState('');
@@ -78,11 +77,11 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
     if (activeTab === 'url') {
       if (!isOnline) {
-        addMessage({ type: 'error', content: '离线模式下无法解析 URL' });
+        frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法解析 URL' });
         return;
       }
       if (!url.trim()) {
-        addMessage({ type: 'error', content: '请输入有效的 URL' });
+        frontendEventBus.publish("message_show", { type: 'error', content: '请输入有效的 URL' });
         return;
       }
       try {
@@ -94,30 +93,30 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         if (!contentToAnalyze) throw new Error('无法从该 URL 提取内容');
       } catch (err: any) {
         console.error(err);
-        addMessage({ type: 'error', content: err.message || 'URL 解析失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: err.message || 'URL 解析失败' });
         setIsUrlLoading(false);
         return;
       } finally {
         setIsUrlLoading(false);
       }
     } else if (!contentToAnalyze.trim()) {
-      addMessage({ type: 'error', content: '请输入文本内容' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '请输入文本内容' });
       return;
     }
     
     if (contentToAnalyze.length < 10) {
-      addMessage({ type: 'error', content: '内容太短，至少需要10个字符' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '内容太短，至少需要10个字符' });
       return;
     }
 
     if (!isOnline) {
-      addMessage({ type: 'error', content: '离线模式下无法使用 AI 分析' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法使用 AI 分析' });
       return;
     }
 
     try {
       if (aiEnabled === false) {
-        addMessage({ type: 'warning', content: 'AI 未配置：本次将生成模拟预览' });
+        frontendEventBus.publish("message_show", { type: 'warning', content: 'AI 未配置：本次将生成模拟预览' });
       }
       const result = await textToGraphMutation.mutateAsync({ 
         text: contentToAnalyze, 
@@ -131,25 +130,25 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
       }
       setStep('preview');
-      addMessage({ type: 'success', content: 'AI 分析完成，请确认生成内容' });
+      frontendEventBus.publish("message_show", { type: 'success', content: 'AI 分析完成，请确认生成内容' });
     } catch (error: any) {
       console.error(error);
-      addMessage({ type: 'error', content: error.message || '分析失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '分析失败，请重试' });
     }
   };
 
   const processImage = async (file: File) => {
     if (!isOnline) {
-      addMessage({ type: 'error', content: '离线模式下无法使用图片识别' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法使用图片识别' });
       return;
     }
 
     if (aiEnabled === false) {
-      addMessage({ type: 'error', content: 'AI 未配置：图片识别需要配置 AI Key (推荐使用 Aliyun/Volcengine)' });
+      frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未配置：图片识别需要配置 AI Key (推荐使用 Aliyun/Volcengine)' });
       return;
     }
 
-    addMessage({ type: 'info', content: '正在分析图片内容...' });
+    frontendEventBus.publish("message_show", { type: 'info', content: '正在分析图片内容...' });
 
     try {
       const formData = new FormData();
@@ -165,10 +164,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       setPreviewData(result);
       setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
       setStep('preview');
-      addMessage({ type: 'success', content: '图片分析成功' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '图片分析成功' });
     } catch (err: any) {
       console.error(err);
-      addMessage({ type: 'error', content: err.message || '分析失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: err.message || '分析失败' });
     }
   };
 
@@ -180,16 +179,16 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
 
     if (file.name.endsWith('.pdf')) {
         if (!isOnline) {
-          addMessage({ type: 'error', content: '离线模式下无法解析 PDF' });
+          frontendEventBus.publish("message_show", { type: 'error', content: '离线模式下无法解析 PDF' });
           return;
         }
 
         if (aiEnabled === false) {
-          addMessage({ type: 'error', content: 'AI 未配置：PDF 解析不可用，请先配置 AI Key' });
+          frontendEventBus.publish("message_show", { type: 'error', content: 'AI 未配置：PDF 解析不可用，请先配置 AI Key' });
           return;
         }
 
-        addMessage({ type: 'info', content: '正在解析 PDF 文档...' });
+        frontendEventBus.publish("message_show", { type: 'info', content: '正在解析 PDF 文档...' });
 
         try {
           const result = await documentToGraphMutation.mutateAsync({
@@ -204,10 +203,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
           setPreviewData(result);
           setSelectedNodeIds(new Set(result.nodes.map((n: any) => n.id)));
           setStep('preview');
-          addMessage({ type: 'success', content: '文档解析成功' });
+          frontendEventBus.publish("message_show", { type: 'success', content: '文档解析成功' });
         } catch (err: any) {
           console.error(err);
-          addMessage({ type: 'error', content: err.message || '解析失败' });
+          frontendEventBus.publish("message_show", { type: 'error', content: err.message || '解析失败' });
         }
     } else {
        // Local parsing for MD/OPML/TXT
@@ -225,7 +224,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
              // TXT: Switch to text tab and fill content
              setText(content);
              setActiveTab('text');
-             addMessage({ type: 'success', content: '文本已导入编辑器' });
+             frontendEventBus.publish("message_show", { type: 'success', content: '文本已导入编辑器' });
              return;
            }
 
@@ -246,10 +245,10 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
            setPreviewData({ nodes: previewNodes, edges: previewEdges });
            setSelectedNodeIds(new Set(previewNodes.map(n => n.id)));
            setStep('preview');
-           addMessage({ type: 'success', content: '文件解析成功' });
+           frontendEventBus.publish("message_show", { type: 'success', content: '文件解析成功' });
          } catch (err: any) {
            console.error(err);
-           addMessage({ type: 'error', content: `解析失败: ${  err.message}` });
+           frontendEventBus.publish("message_show", { type: 'error', content: `解析失败: ${  err.message}` });
          }
        };
        reader.readAsText(file);
@@ -305,7 +304,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       const validExtensions = ['.pdf', '.txt', '.md', '.opml', '.png', '.jpg', '.jpeg', '.webp'];
       const isValid = validExtensions.some(type => file.name.toLowerCase().endsWith(type));
       if (!isValid) {
-        addMessage({ type: 'error', content: '不支持的文件格式。请上传 PDF, Markdown, OPML, TXT 或 图片文件。' });
+        frontendEventBus.publish("message_show", { type: 'error', content: '不支持的文件格式。请上传 PDF, Markdown, OPML, TXT 或 图片文件。' });
         return;
       }
       await processFile(file);
@@ -325,7 +324,7 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
       );
 
       if (nodesToSave.length === 0) {
-        addMessage({ type: 'error', content: '请至少选择一个节点' });
+        frontendEventBus.publish("message_show", { type: 'error', content: '请至少选择一个节点' });
         return;
       }
 
@@ -336,11 +335,11 @@ export const TextToGraphModal: React.FC<TextToGraphModalProps> = ({ isOpen, onCl
         edges: edgesToSave
       });
 
-      addMessage({ type: 'success', content: `成功生成 ${nodesToSave.length} 个节点和 ${edgesToSave.length} 条关系！` });
+      frontendEventBus.publish("message_show", { type: 'success', content: `成功生成 ${nodesToSave.length} 个节点和 ${edgesToSave.length} 条关系！` });
       handleClose();
     } catch (error: any) {
       console.error(error);
-      addMessage({ type: 'error', content: error.message || '保存失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: error.message || '保存失败，请重试' });
     }
   };
 

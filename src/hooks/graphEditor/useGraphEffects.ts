@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
 import { GraphEditorState } from './index';
 
 interface UseGraphEffectsProps {
@@ -9,7 +10,6 @@ interface UseGraphEffectsProps {
   canUndo: boolean;
   canRedo: boolean;
   aiEnabled: boolean;
-  addMessage: (msg: any) => void;
 }
 
 export const useGraphEffects = ({
@@ -19,7 +19,6 @@ export const useGraphEffects = ({
   canUndo,
   canRedo,
   aiEnabled,
-  addMessage,
 }: UseGraphEffectsProps) => {
   const navigate = useNavigate();
   const {
@@ -47,13 +46,13 @@ export const useGraphEffects = ({
     if (aiEnabled) return;
     if (hasShownAIWarningRef.current) return;
     hasShownAIWarningRef.current = true;
-    addMessage({
+    frontendEventBus.publish("message_show", {
       type: 'warning',
       content: 'AI 未配置：文本分析/对话将使用模拟结果，文档解析与智能推荐不可用',
       duration: 12000,
       action: { label: '配置说明', onClick: () => navigate('/profile') }
     });
-  }, [aiEnabled, addMessage, navigate]);
+  }, [aiEnabled, navigate]);
 
   const clearSelection = useCallback(() => {
     setSelectedNode(null);

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../services/api";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useErrorHandler } from "../../hooks";
 import { LearningPathWizard } from "./LearningPathWizard";
 import { useLearningPaths, useLearningPath } from "../../hooks/queries/useLearningPathQueries";
@@ -109,7 +109,6 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
   const { data: savedPaths = [], isLoading: isLoadingPaths } =
@@ -166,7 +165,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
   }) => {
     setIsGenerating(true);
     setGenerationStep(t("learning.learningPath.analyzingGraph"));
-    addMessage({ type: "info", content: t("learning.learningPath.aiAnalyzing") });
+    frontendEventBus.publish("message_show", { type: "info", content: t("learning.learningPath.aiAnalyzing") });
 
     try {
       const knowledgeStr = Object.entries(data.currentKnowledge)
@@ -185,7 +184,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
       setGenerationStep(t("learning.learningPath.optimizingOrder"));
       setTempPath(result);
       setViewMode("create");
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("learning.learningPath.pathGenerated"),
       });
@@ -230,7 +229,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
       setTempPath(null);
       setViewMode("list");
-      addMessage({ type: "success", content: t("learning.learningPath.pathSaved") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learning.learningPath.pathSaved") });
     } catch (error) {
       handleError(error, {
         context: "SavePath",
@@ -246,7 +245,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
 
     try {
       await deleteMutation.mutateAsync(pathId);
-      addMessage({ type: "success", content: t("learning.learningPath.pathDeleted") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("learning.learningPath.pathDeleted") });
       if (selectedPath?.id === pathId) {
         setSelectedPath(null);
       }
@@ -265,7 +264,7 @@ export const LearningPathPanel: React.FC<LearningPathPanelProps> = ({
         id: path.id,
         data: { status: newStatus },
       });
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: newStatus === "active" ? t("learning.learningPath.pathResumed") : t("learning.learningPath.pathPaused"),
       });

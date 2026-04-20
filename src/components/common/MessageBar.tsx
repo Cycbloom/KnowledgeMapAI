@@ -1,5 +1,6 @@
-import React from "react";
-import { useMessageStore } from "../../store/useMessageStore";
+import React, { useState, useEffect, useCallback } from "react";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
+import type { MessageShowPayload } from "../../services/FrontendEventTypes";
 import { useTheme } from "../../hooks";
 import {
   CheckCircle,
@@ -10,16 +11,53 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
+interface CurrentMessage {
+  id: string;
+  type: MessageShowPayload["type"];
+  content: string;
+  action?: MessageShowPayload["action"];
+}
+
 interface MessageBarProps {
   bottomOffset?: number;
 }
 
 export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
-  const { messages } = useMessageStore();
+  const [currentMessage, setCurrentMessage] = useState<CurrentMessage | null>(null);
   const { isDark } = useTheme();
-  // Get the most recent message
-  const currentMessage =
-    messages.length > 0 ? messages[messages.length - 1] : null;
+
+  const handleMessageShow = useCallback((payload: MessageShowPayload) => {
+    const id = payload.id ?? Math.random().toString(36).substring(7);
+    setCurrentMessage({
+      id,
+      type: payload.type,
+      content: payload.content,
+      action: payload.action,
+    });
+
+    if (payload.duration !== 0) {
+      setTimeout(() => {
+        setCurrentMessage((prev) => (prev?.id === id ? null : prev));
+      }, payload.duration ?? 3000);
+    }
+  }, []);
+
+  const handleMessageHide = useCallback((payload: { id?: string }) => {
+    if (payload.id) {
+      setCurrentMessage((prev) => (prev?.id === payload.id ? null : prev));
+    } else {
+      setCurrentMessage(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const unsubShow = frontendEventBus.subscribe("message_show", handleMessageShow);
+    const unsubHide = frontendEventBus.subscribe("message_hide", handleMessageHide);
+    return () => {
+      unsubShow();
+      unsubHide();
+    };
+  }, [handleMessageShow, handleMessageHide]);
 
   const getBackgroundColor = (
     type?: "info" | "success" | "warning" | "error" | "loading",
@@ -34,7 +72,7 @@ export const MessageBar: React.FC<MessageBarProps> = ({ bottomOffset = 0 }) => {
       case "loading":
         return "bg-blue-600";
       default:
-        return isDark ? "bg-slate-900" : "bg-blue-600"; // Match theme: Slate-900 for Dark, Blue-600 for Light
+        return isDark ? "bg-slate-900" : "bg-blue-600";
     }
   };
 

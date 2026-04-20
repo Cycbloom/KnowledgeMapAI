@@ -34,7 +34,7 @@ import {
   Clock,
   Calendar,
 } from "lucide-react";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { parseMarkdownToGraph } from "../utils/markdownParser";
 import { parseOpmlToGraph } from "../utils/opmlParser";
 import { ConfirmationModal, SearchResults } from "../components/common";
@@ -56,7 +56,6 @@ export const Dashboard = () => {
   const batchDeleteGraphsMutation = useBatchDeleteGraphsMutation();
   const prefetchGraph = usePrefetchGraph();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const { addMessage } = useMessageStore();
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
@@ -203,7 +202,7 @@ export const Dashboard = () => {
     const ids = Array.from(selectedIds);
     batchDeleteGraphsMutation.mutate(ids, {
       onSuccess: () => {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: `已将 ${ids.length} 个图谱移至回收站`,
         });
@@ -214,7 +213,7 @@ export const Dashboard = () => {
       onError: (err: unknown) => {
         console.error(err);
         const message = err instanceof Error ? err.message : "批量删除失败";
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
       },
     });
@@ -228,13 +227,13 @@ export const Dashboard = () => {
     if (deleteConfirm.id) {
       deleteGraphMutation.mutate(deleteConfirm.id, {
         onSuccess: () => {
-          addMessage({ type: "success", content: "图谱删除成功" });
+          frontendEventBus.publish("message_show", { type: "success", content: "图谱删除成功" });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
         onError: (err: unknown) => {
           console.error(err);
           const message = err instanceof Error ? err.message : "删除失败";
-          addMessage({ type: "error", content: message });
+          frontendEventBus.publish("message_show", { type: "error", content: message });
           setDeleteConfirm((prev) => ({ ...prev, isOpen: false }));
         },
       });
@@ -248,7 +247,7 @@ export const Dashboard = () => {
       { id, is_favorite: !currentFavorite },
       {
         onSuccess: () => {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "success",
             content: currentFavorite ? "已取消收藏" : "收藏成功",
           });
@@ -256,7 +255,7 @@ export const Dashboard = () => {
         onError: (err: unknown) => {
           console.error(err);
           const message = err instanceof Error ? err.message : "操作失败";
-          addMessage({ type: "error", content: message });
+          frontendEventBus.publish("message_show", { type: "error", content: message });
         },
       },
     );
@@ -305,11 +304,11 @@ export const Dashboard = () => {
         }
 
         await importGraphMutation.mutateAsync(importData);
-        addMessage({ content: "导入成功!", type: "success" });
+        frontendEventBus.publish("message_show", { content: "导入成功!", type: "success" });
       } catch (err: unknown) {
         console.error(err);
         const message = err instanceof Error ? err.message : "格式错误";
-        addMessage({ content: `导入失败: ${message}`, type: "error" });
+        frontendEventBus.publish("message_show", { content: `导入失败: ${message}`, type: "error" });
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
@@ -760,7 +759,7 @@ export const Dashboard = () => {
                   queryClient.invalidateQueries({
                     queryKey: ["dashboardStats"],
                   });
-                  addMessage({
+                  frontendEventBus.publish("message_show", {
                     type: "success",
                     content: `成功生成 ${nodes.length} 个节点！`,
                   });

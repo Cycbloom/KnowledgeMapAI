@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, Image, List, Check, Download, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useMessageStore } from '../../../store/useMessageStore';
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -13,7 +13,6 @@ interface ExportDialogProps {
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, graphId, graphTitle, getScreenshot }) => {
   const { t } = useTranslation();
-  const { addMessage } = useMessageStore();
   const [loading, setLoading] = useState(false);
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
   const [includeStats, _setIncludeStats] = useState(true);
@@ -80,11 +79,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, gra
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      addMessage({ type: 'success', content: t('graphEditor.export.success') });
+      frontendEventBus.publish("message_show", { type: 'success', content: t('graphEditor.export.success') });
       onClose();
     } catch (error) {
       console.error('Export error:', error);
-      addMessage({ type: 'error', content: t('graphEditor.export.failed') });
+      frontendEventBus.publish("message_show", { type: 'error', content: t('graphEditor.export.failed') });
     } finally {
       setLoading(false);
     }

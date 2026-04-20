@@ -39,7 +39,7 @@ import { LearningSettingsPanel } from "../components/Learning/LearningSettingsPa
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme, useSpeechRecognition, useNetworkStatus } from "../hooks";
 import { useGraph, useGraphData, useGraphNodeStatus } from "../hooks/queries";
 import { useUnifiedTimer } from "../hooks/scheduler";
@@ -76,7 +76,6 @@ type OutlineMode = "graph" | "learning-path";
 export const LearningMode = () => {
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
-  const { addMessage } = useMessageStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nodeId = searchParams.get("node_id");
@@ -189,7 +188,7 @@ export const LearningMode = () => {
       const isNetworkError = speechError.includes(
         t("learning.speech.networkError"),
       );
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: speechError,
         duration: isNetworkError ? 8000 : 5000,
@@ -203,7 +202,7 @@ export const LearningMode = () => {
           : undefined,
       });
     }
-  }, [speechError, addMessage, t]);
+  }, [speechError, t]);
 
   useEffect(() => {
     if (isListening) {
@@ -224,7 +223,7 @@ export const LearningMode = () => {
   const toggleListening = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!hasRecognitionSupport) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "warning",
         content: t("learning.speech.notSupported"),
       });
@@ -254,7 +253,7 @@ export const LearningMode = () => {
       });
 
       if (result.success) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: t("learning.cards.taskSubmitted"),
           duration: 5000,
@@ -266,7 +265,7 @@ export const LearningMode = () => {
       }
     } catch (cardError) {
       console.error("Failed to generate cards:", cardError);
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: t("learning.cards.generateFailed"),
       });
@@ -290,7 +289,7 @@ export const LearningMode = () => {
         const node = await api.nodes.get(nodeId);
 
         if (!node) {
-          addMessage({ type: "error", content: t("learning.node.loadFailed") });
+          frontendEventBus.publish("message_show", { type: "error", content: t("learning.node.loadFailed") });
           return;
         }
 
@@ -333,7 +332,7 @@ export const LearningMode = () => {
               keywords: responseKeywords,
             });
 
-            addMessage({
+            frontendEventBus.publish("message_show", {
               type: "success",
               content: t("learning.material.generated"),
               duration: 8000,
@@ -344,7 +343,7 @@ export const LearningMode = () => {
             });
           } catch (saveError) {
             console.error("Failed to save learning material:", saveError);
-            addMessage({
+            frontendEventBus.publish("message_show", {
               type: "error",
               content: t("learning.material.saveFailed"),
             });
@@ -359,14 +358,14 @@ export const LearningMode = () => {
             },
           ]);
         } else {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "error",
             content: t("learning.material.aiFailed"),
           });
         }
       } catch (error) {
         console.error("Failed to load learning material:", error);
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "error",
           content: t("learning.material.generateFailed"),
         });
@@ -392,7 +391,7 @@ export const LearningMode = () => {
     if (!input.trim() || isChatLoading) return;
 
     if (!isOnline) {
-      addMessage({ type: "error", content: t("learning.chat.offline") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("learning.chat.offline") });
       return;
     }
 
@@ -467,7 +466,7 @@ export const LearningMode = () => {
 
   const handleCreateNode = async () => {
     if (!graphId || !newNodeTitle.trim()) {
-      addMessage({ type: "warning", content: t("learning.node.enterTitle") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("learning.node.enterTitle") });
       return;
     }
 
@@ -491,7 +490,7 @@ export const LearningMode = () => {
         });
       }
 
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("learning.node.createSuccess"),
       });
@@ -512,13 +511,13 @@ export const LearningMode = () => {
       }
     } catch (error) {
       console.error("Failed to create node:", error);
-      addMessage({ type: "error", content: t("learning.node.createFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("learning.node.createFailed") });
     }
   };
 
   const handleStartChallenge = async () => {
     if (!nodeId || !graphId) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "warning",
         content: t("learning.challenge.missingParams"),
       });
@@ -550,7 +549,7 @@ export const LearningMode = () => {
         task_id: taskId,
       });
 
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "success",
         content: t("learning.challenge.completed"),
       });
@@ -565,7 +564,7 @@ export const LearningMode = () => {
 
   const handleRegenerateMaterial = async () => {
     if (!nodeId || !graphId) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "warning",
         content: t("learning.challenge.missingParams"),
       });
@@ -573,7 +572,7 @@ export const LearningMode = () => {
     }
 
     if (!isOnline) {
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: t("learning.material.regenerateOffline"),
       });
@@ -604,7 +603,7 @@ export const LearningMode = () => {
 
         queryClient.invalidateQueries({ queryKey: ["graphData", graphId] });
 
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: t("learning.material.regenerated"),
         });
@@ -620,7 +619,7 @@ export const LearningMode = () => {
       }
     } catch (error) {
       console.error("Failed to regenerate learning material:", error);
-      addMessage({
+      frontendEventBus.publish("message_show", {
         type: "error",
         content: t("learning.material.regenerateFailed"),
       });
@@ -634,12 +633,12 @@ export const LearningMode = () => {
     types: string[];
   }) => {
     if (!nodeId) {
-      addMessage({ type: "warning", content: t("learning.cards.selectNode") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("learning.cards.selectNode") });
       return;
     }
 
     if (!isOnline) {
-      addMessage({ type: "error", content: t("learning.cards.offline") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("learning.cards.offline") });
       return;
     }
 
@@ -647,7 +646,7 @@ export const LearningMode = () => {
 
     if (isMobile) {
       if (!mobileAIService.isConfigured()) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "error",
           content: t("learning.cards.configureApiKey"),
           action: {
@@ -686,7 +685,7 @@ export const LearningMode = () => {
 
         if (gnError) {
           console.error("查询 graph_nodes 失败:", gnError);
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "error",
             content: t("learning.cards.queryFailed"),
           });
@@ -694,7 +693,7 @@ export const LearningMode = () => {
         }
 
         if (!graphNodes || graphNodes.length === 0) {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "error",
             content: t("learning.cards.nodeNotFound"),
           });
@@ -732,7 +731,7 @@ export const LearningMode = () => {
 
         for (let i = 0; i < batches; i++) {
           if (signal.aborted) {
-            addMessage({
+            frontendEventBus.publish("message_show", {
               type: "info",
               content: t("learning.cards.cancelled", { count: savedCount }),
             });
@@ -748,7 +747,7 @@ export const LearningMode = () => {
             isGenerating: true,
           });
 
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "info",
             content: t("learning.cards.generating", {
               start: generatedCount + 1,
@@ -781,7 +780,7 @@ export const LearningMode = () => {
             }
           } catch (batchError) {
             console.error(`Batch ${i + 1} failed:`, batchError);
-            addMessage({
+            frontendEventBus.publish("message_show", {
               type: "warning",
               content: t("learning.cards.batchFailed", { batch: i + 1 }),
               duration: 3000,
@@ -790,7 +789,7 @@ export const LearningMode = () => {
         }
 
         if (!signal.aborted && savedCount > 0) {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "success",
             content: t("learning.cards.generateSuccess", { count: savedCount }),
             duration: 5000,
@@ -816,7 +815,7 @@ export const LearningMode = () => {
           switch (error.type) {
             case "api_key_missing":
             case "api_key_invalid":
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "error",
                 content: error.message,
                 duration: 8000,
@@ -828,12 +827,12 @@ export const LearningMode = () => {
               break;
 
             case "quota_exceeded":
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "error",
                 content: error.message,
                 duration: 8000,
               });
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "info",
                 content: error.suggestion,
                 duration: 8000,
@@ -841,7 +840,7 @@ export const LearningMode = () => {
               break;
 
             case "rate_limited":
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "warning",
                 content: error.message,
                 duration: 5000,
@@ -854,7 +853,7 @@ export const LearningMode = () => {
 
             case "network_error":
             case "timeout":
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "error",
                 content: error.message,
                 duration: 5000,
@@ -866,12 +865,12 @@ export const LearningMode = () => {
               break;
 
             case "database_error":
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "error",
                 content: error.message,
                 duration: 8000,
               });
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "info",
                 content: error.suggestion,
                 duration: 8000,
@@ -885,7 +884,7 @@ export const LearningMode = () => {
               break;
 
             case "invalid_response":
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "warning",
                 content: error.message,
                 duration: 5000,
@@ -897,7 +896,7 @@ export const LearningMode = () => {
               break;
 
             default:
-              addMessage({
+              frontendEventBus.publish("message_show", {
                 type: "error",
                 content: error.message,
                 duration: 5000,
@@ -908,7 +907,7 @@ export const LearningMode = () => {
           if (error instanceof Error) {
             errorMessage = error.message;
           }
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "error",
             content: errorMessage,
             duration: 5000,
@@ -934,7 +933,7 @@ export const LearningMode = () => {
       });
 
       if (result.success) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: t("learning.cards.taskSubmitted"),
           duration: 5000,
@@ -947,7 +946,7 @@ export const LearningMode = () => {
         const errorMsg =
           result.message || result.error || t("learning.cards.unknownError");
         console.error("[LearningMode] 任务提交失败:", errorMsg);
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "error",
           content: t("learning.cards.submitFailed", { error: errorMsg }),
         });
@@ -977,7 +976,7 @@ export const LearningMode = () => {
         });
       }
 
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     } finally {
       setIsGeneratingCards(false);
     }
@@ -986,7 +985,7 @@ export const LearningMode = () => {
   const handleCancelGenerate = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      addMessage({ type: "info", content: t("learning.cards.cancelling") });
+      frontendEventBus.publish("message_show", { type: "info", content: t("learning.cards.cancelling") });
     }
   };
 
@@ -996,14 +995,14 @@ export const LearningMode = () => {
   ) => {
     const nodeIds = Array.from(selectedNodeIds);
     if (nodeIds.length === 0) {
-      addMessage({ type: "warning", content: t("learning.batch.selectNodes") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("learning.batch.selectNodes") });
       return;
     }
 
     if (action === "delete") {
       try {
         await api.nodes.batchDelete(nodeIds);
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "success",
           content: t("learning.batch.deleteSuccess", { count: nodeIds.length }),
         });
@@ -1014,14 +1013,14 @@ export const LearningMode = () => {
         });
       } catch (error) {
         console.error("Batch delete failed:", error);
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "error",
           content: t("learning.batch.deleteFailed"),
         });
       }
     } else if (action === "expand_graph") {
       if (!isOnline) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "error",
           content: t("learning.batch.expandOffline"),
         });
@@ -1030,7 +1029,7 @@ export const LearningMode = () => {
       try {
         const result = await api.ai.batchExpandGraph(nodeIds);
         if (result.success) {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "success",
             content: t("learning.batch.expandSuccess", {
               count: nodeIds.length,
@@ -1043,18 +1042,18 @@ export const LearningMode = () => {
           });
           setSelectedNodeIds(new Set());
         } else {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "error",
             content: t("learning.batch.submitFailed"),
           });
         }
       } catch (error) {
         console.error("Batch expand failed:", error);
-        addMessage({ type: "error", content: t("learning.batch.expandError") });
+        frontendEventBus.publish("message_show", { type: "error", content: t("learning.batch.expandError") });
       }
     } else if (action === "batch_generate_questions" && data) {
       if (!isOnline) {
-        addMessage({ type: "error", content: t("learning.cards.offline") });
+        frontendEventBus.publish("message_show", { type: "error", content: t("learning.cards.offline") });
         return;
       }
 
@@ -1063,7 +1062,7 @@ export const LearningMode = () => {
         const result = await api.ai.batchGenerateCards(nodeIds, data);
 
         if (result.success) {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "success",
             content: t("learning.batch.generateSuccess", {
               count: nodeIds.length,
@@ -1079,7 +1078,7 @@ export const LearningMode = () => {
           const errorMsg =
             result.message || result.error || t("learning.cards.unknownError");
           console.error("[LearningMode] 批量生成失败:", errorMsg);
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "error",
             content: t("learning.cards.submitFailed", { error: errorMsg }),
           });
@@ -1105,7 +1104,7 @@ export const LearningMode = () => {
           errorMessage = error.message;
         }
 
-        addMessage({ type: "error", content: errorMessage });
+        frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
       } finally {
         setIsGeneratingCards(false);
       }
@@ -1268,6 +1267,7 @@ export const LearningMode = () => {
                 onClick={() => {
                   if (nodeId && articleContent) {
                     enterFocusMode(nodeId);
+                    frontendEventBus.publish("focus_enter", { nodeId, taskId: focusTaskId ?? undefined });
                     setIsFocusModeOpen(true);
                   }
                 }}
@@ -2096,6 +2096,7 @@ export const LearningMode = () => {
         onClose={() => {
           setIsFocusModeOpen(false);
           exitFocusMode();
+          frontendEventBus.publish("focus_exit", { nodeId: nodeId ?? undefined });
         }}
         articleContent={articleContent}
         nodeTitle={nodeTitle}

@@ -27,7 +27,7 @@ import {
   useDemoteScheduledTaskMutation,
   useStartScheduledTaskMutation,
 } from "../hooks";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useUnifiedTimer } from "../hooks/scheduler";
 import type { ScheduledTask, TaskSettings } from "@shared/types";
 
@@ -103,7 +103,6 @@ export const CurrentTask: React.FC = () => {
   const completeMutation = useCompleteScheduledTaskMutation();
   const demoteMutation = useDemoteScheduledTaskMutation();
   const startMutation = useStartScheduledTaskMutation();
-  const { addMessage } = useMessageStore();
 
   const currentTask = useMemo(() => {
     const tasks = tasksData as ScheduledTask[] | undefined;
@@ -190,9 +189,9 @@ export const CurrentTask: React.FC = () => {
     try {
       await pauseMutation.mutateAsync(currentTask.id);
       pauseTimer();
-      addMessage({ type: "info", content: "任务已暂停" });
+      frontendEventBus.publish("message_show", { type: "info", content: "任务已暂停" });
     } catch (error) {
-      addMessage({ type: "error", content: "暂停失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "暂停失败" });
     }
   };
 
@@ -201,9 +200,9 @@ export const CurrentTask: React.FC = () => {
     try {
       await startMutation.mutateAsync(currentTask.id);
       resumeTimer();
-      addMessage({ type: "success", content: "任务已继续" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已继续" });
     } catch (error) {
-      addMessage({ type: "error", content: "继续失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "继续失败" });
     }
   };
 
@@ -212,10 +211,10 @@ export const CurrentTask: React.FC = () => {
     try {
       await completeMutation.mutateAsync(currentTask.id);
       await completeTimer();
-      addMessage({ type: "success", content: "任务已完成！" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务已完成！" });
       refetch();
     } catch (error) {
-      addMessage({ type: "error", content: "完成失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "完成失败" });
     }
   };
 
@@ -224,10 +223,10 @@ export const CurrentTask: React.FC = () => {
     try {
       await demoteMutation.mutateAsync(currentTask.id);
       await completeTimer();
-      addMessage({ type: "info", content: "任务已降级" });
+      frontendEventBus.publish("message_show", { type: "info", content: "任务已降级" });
       refetch();
     } catch (error) {
-      addMessage({ type: "error", content: "降级失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "降级失败" });
     }
   };
 

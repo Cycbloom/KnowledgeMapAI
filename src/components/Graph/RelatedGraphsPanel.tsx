@@ -9,7 +9,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useErrorHandler } from "../../hooks";
 
 interface GraphRelation {
@@ -45,7 +45,6 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [_showAddModal, _setShowAddModal] = useState(false);
   
-  const { addMessage } = useMessageStore();
   const { handleError } = useErrorHandler();
 
   const fetchRelations = async () => {
@@ -70,7 +69,7 @@ export const RelatedGraphsPanel: React.FC<RelatedGraphsPanelProps> = ({
   const handleDeleteRelation = async (relationId: string) => {
     try {
       await api.graphs.deleteRelation(graphId, relationId);
-      addMessage({ type: 'success', content: '已删除关联' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '已删除关联' });
       fetchRelations();
     } catch (error) {
       handleError(error, { context: 'DeleteRelation', fallbackMessage: '删除关联失败' });

@@ -1,11 +1,10 @@
 import { useCallback } from 'react';
-import { useMessageStore } from '../../store/useMessageStore';
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { AppError, wrapUnknownError, getUserFriendlyMessage, isAuthError } from '../../utils/errors';
 
 export const useError = () => {
-  const { addMessage } = useMessageStore();
   const navigate = useNavigate();
   const { setUser } = useStore();
 
@@ -15,7 +14,7 @@ export const useError = () => {
     console.error(`[${context || 'App'}]`, appError);
     
     const userMessage = getUserFriendlyMessage(appError);
-    addMessage({
+    frontendEventBus.publish("message_show", {
       type: 'error',
       content: userMessage,
     });
@@ -26,7 +25,7 @@ export const useError = () => {
     }
     
     return appError;
-  }, [addMessage, navigate, setUser]);
+  }, [navigate, setUser]);
 
   const handleSilent = useCallback((error: unknown, context?: string): AppError => {
     const appError = wrapUnknownError(error);

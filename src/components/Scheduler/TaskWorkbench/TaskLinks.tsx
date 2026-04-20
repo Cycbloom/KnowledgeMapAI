@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskLink } from "../../../types";
-import { useMessageStore } from "../../../store/useMessageStore";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 
 interface TaskLinksProps {
   taskId: string;
@@ -48,7 +48,6 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
   taskId,
   className = "",
 }) => {
-  const { addMessage } = useMessageStore();
   const [links, setLinks] = useState<TaskLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -79,7 +78,7 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
 
   const handleAddLink = async () => {
     if (!newLink.url.trim()) {
-      addMessage({ type: "error", content: "请输入链接地址" });
+      frontendEventBus.publish("message_show", { type: "error", content: "请输入链接地址" });
       return;
     }
 
@@ -94,10 +93,10 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
         setLinks([...links, response.data]);
         setNewLink({ link_type: "web", title: "", url: "", description: "" });
         setIsAdding(false);
-        addMessage({ type: "success", content: "链接已添加" });
+        frontendEventBus.publish("message_show", { type: "success", content: "链接已添加" });
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "添加链接失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "添加链接失败" });
     }
   };
 
@@ -106,10 +105,10 @@ export const TaskLinks: React.FC<TaskLinksProps> = ({
       const response = await api.scheduler.deleteLink(taskId, linkId);
       if (response.success) {
         setLinks(links.filter((l) => l.id !== linkId));
-        addMessage({ type: "success", content: "链接已删除" });
+        frontendEventBus.publish("message_show", { type: "success", content: "链接已删除" });
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "删除链接失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "删除链接失败" });
     }
   };
 

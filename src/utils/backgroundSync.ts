@@ -13,6 +13,7 @@ import {
 import { createLogger } from './logger';
 import { request } from '../services/api';
 import { useStore } from '../store/useStore';
+import { frontendEventBus } from '../services/timer/FrontendEventBus';
 
 const logger = createLogger('BackgroundSync');
 
@@ -38,15 +39,10 @@ export interface ConflictResolution {
   mergedData?: Record<string, unknown>;
 }
 
-type SyncEventType = 'syncStart' | 'syncComplete' | 'syncError' | 'conflictDetected' | 'queueUpdated';
-
-type SyncEventCallback = (data: unknown) => void;
-
 const MAX_RETRY_COUNT = 3;
 
 class BackgroundSyncManager {
   private isSyncing = false;
-  private eventListeners = new Map<SyncEventType, Set<SyncEventCallback>>();
 
   constructor() {
     this.initialize();
@@ -64,20 +60,23 @@ class BackgroundSyncManager {
 
   private async setupNetworkListeners(): Promise<void> {
     if (Capacitor.isNativePlatform()) {
-      await Network.addListener('networkStatusChange', (status) => {
-        this.notifyListeners('queueUpdated', { isOnline: status.connected });
+      await Network.addListener('networkStatusChange', async (status) => {
+        const pendingCount = await getOfflineQueueCount();
+        frontendEventBus.publish('sync_queue_updated', { pendingCount, isOnline: status.connected });
         if (status.connected) {
           this.checkAndSync();
         }
       });
     } else {
-      window.addEventListener('online', () => {
-        this.notifyListeners('queueUpdated', { isOnline: true });
+      window.addEventListener('online', async () => {
+        const pendingCount = await getOfflineQueueCount();
+        frontendEventBus.publish('sync_queue_updated', { pendingCount, isOnline: true });
         this.checkAndSync();
       });
 
-      window.addEventListener('offline', () => {
-        this.notifyListeners('queueUpdated', { isOnline: false });
+      window.addEventListener('offline', async () => {
+        const pendingCount = await getOfflineQueueCount();
+        frontendEventBus.publish('sync_queue_updated', { pendingCount, isOnline: false });
       });
     }
   }
@@ -101,17 +100,10 @@ class BackgroundSyncManager {
     return navigator.onLine;
   }
 
-  private notifyListeners(event: SyncEventType, data: unknown): void {
-    const listeners = this.eventListeners.get(event);
-    if (listeners) {
-      listeners.forEach(callback => callback(data));
-    }
-  }
-
   async addToQueue(item: Omit<OfflineOperation, 'id' | 'timestamp' | 'retryCount'>): Promise<string> {
     const id = await addToOfflineQueue(item);
     const count = await getOfflineQueueCount();
-    this.notifyListeners('queueUpdated', { pendingCount: count });
+    frontendEventBus.publish('sync_queue_updated', { pendingCount: count });
     const isOnline = await this.getIsOnline();
     if (isOnline) {
       this.checkAndSync();
@@ -122,7 +114,7 @@ class BackgroundSyncManager {
   async removeFromQueue(operationId: string): Promise<void> {
     await removeFromOfflineQueue(operationId);
     const count = await getOfflineQueueCount();
-    this.notifyListeners('queueUpdated', { pendingCount: count });
+    frontendEventBus.publish('sync_queue_updated', { pendingCount: count });
   }
 
   async syncOfflineQueue(): Promise<{ success: number; failed: number; conflicts: SyncConflict[] }> {
@@ -132,7 +124,7 @@ class BackgroundSyncManager {
     }
 
     this.isSyncing = true;
-    this.notifyListeners('syncStart', { timestamp: Date.now() });
+    frontendEventBus.publish('sync_started', { timestamp: Date.now() });
 
     const queue = await getOfflineQueue();
     const results = { success: 0, failed: 0, conflicts: [] as SyncConflict[] };
@@ -146,7 +138,7 @@ class BackgroundSyncManager {
           await removeFromOfflineQueue(item.id);
         } else if (result.conflict) {
           results.conflicts.push(result.conflict);
-          this.notifyListeners('conflictDetected', result.conflict);
+          frontendEventBus.publish('sync_conflict_detected', result.conflict);
         } else {
           throw new Error(result.error || 'Sync failed');
         }
@@ -169,8 +161,8 @@ class BackgroundSyncManager {
     this.isSyncing = false;
 
     const count = await getOfflineQueueCount();
-    this.notifyListeners('queueUpdated', { pendingCount: count });
-    this.notifyListeners('syncComplete', results);
+    frontendEventBus.publish('sync_queue_updated', { pendingCount: count });
+    frontendEventBus.publish('sync_completed', results);
 
     return results;
   }
@@ -302,21 +294,10 @@ class BackgroundSyncManager {
     return defaults;
   }
 
-  on(event: SyncEventType, callback: SyncEventCallback): () => void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, new Set());
-    }
-    this.eventListeners.get(event)!.add(callback);
-
-    return () => {
-      this.eventListeners.get(event)?.delete(callback);
-    };
-  }
-
   async clearQueue(): Promise<void> {
     await clearOfflineQueue();
     const count = await getOfflineQueueCount();
-    this.notifyListeners('queueUpdated', { pendingCount: count });
+    frontendEventBus.publish('sync_queue_updated', { pendingCount: count });
   }
 
   async getPendingItems(): Promise<OfflineOperation[]> {
@@ -354,10 +335,6 @@ export const addToSyncQueue = (item: Omit<OfflineOperation, 'id' | 'timestamp' |
 
 export const removeFromSyncQueue = (operationId: string): Promise<void> => {
   return syncManager.removeFromQueue(operationId);
-};
-
-export const onSyncEvent = (event: SyncEventType, callback: SyncEventCallback): (() => void) => {
-  return syncManager.on(event, callback);
 };
 
 export const clearSyncQueue = (): Promise<void> => {

@@ -1,13 +1,26 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useStore } from '../../store/useStore';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
+import type { SSEStatusChangedPayload } from '../../services/FrontendEventTypes';
 import { Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
+
+type SSEConnectionStatus = SSEStatusChangedPayload['status'];
 
 export const SSEStatusIndicator = () => {
   const { t } = useTranslation();
-  const { sseStatus, sseError } = useStore();
+  const [status, setStatus] = useState<SSEConnectionStatus>('disconnected');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = frontendEventBus.subscribe('sse_status_changed', (payload: SSEStatusChangedPayload) => {
+      setStatus(payload.status);
+      setError(payload.error ?? null);
+    });
+    return unsubscribe;
+  }, []);
 
   const getStatusInfo = () => {
-    switch (sseStatus) {
+    switch (status) {
       case 'connected':
         return {
           icon: Wifi,
@@ -22,7 +35,7 @@ export const SSEStatusIndicator = () => {
           color: 'text-blue-500',
           bgColor: 'bg-blue-100 dark:bg-blue-900/30',
           label: t('layout.sse.connecting'),
-          tooltip: sseError || t('layout.sse.connectingTooltip')
+          tooltip: error || t('layout.sse.connectingTooltip')
         };
       case 'error':
         return {
@@ -30,7 +43,7 @@ export const SSEStatusIndicator = () => {
           color: 'text-red-500',
           bgColor: 'bg-red-100 dark:bg-red-900/30',
           label: t('layout.sse.error'),
-          tooltip: sseError || t('layout.sse.errorTooltip')
+          tooltip: error || t('layout.sse.errorTooltip')
         };
       default:
         return {
@@ -46,7 +59,7 @@ export const SSEStatusIndicator = () => {
   const statusInfo = getStatusInfo();
   const StatusIcon = statusInfo.icon;
 
-  if (sseStatus === 'disconnected') {
+  if (status === 'disconnected') {
     return null;
   }
 
@@ -55,7 +68,7 @@ export const SSEStatusIndicator = () => {
       className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}
       title={statusInfo.tooltip}
     >
-      <StatusIcon size={14} className={sseStatus === 'connecting' ? 'animate-spin' : ''} />
+      <StatusIcon size={14} className={status === 'connecting' ? 'animate-spin' : ''} />
       <span className="hidden sm:inline">{statusInfo.label}</span>
     </div>
   );

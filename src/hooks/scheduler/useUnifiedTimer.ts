@@ -59,57 +59,52 @@ export function useUnifiedTimer(): UseUnifiedTimerReturn {
   }, []);
 
   useEffect(() => {
-    const onTick = (payload: unknown) => {
-      const p = payload as TimerTickPayload;
-      setTaskId(p.taskId);
-      setTimeLeft(p.timeLeft);
-      setTotalTime(p.totalTime);
-      setProgress(p.progress);
-      setModeState(p.mode as TimerMode);
-      setIsActive(p.isActive);
-      setIsPaused(p.isPaused);
-      setCompletedSessions(p.completedSessions);
+    const onTick = (payload: TimerTickPayload) => {
+      setTaskId(payload.taskId);
+      setTimeLeft(payload.timeLeft);
+      setTotalTime(payload.totalTime);
+      setProgress(payload.progress);
+      setModeState(payload.mode as TimerMode);
+      setIsActive(payload.isActive);
+      setIsPaused(payload.isPaused);
+      setCompletedSessions(payload.completedSessions);
     };
 
-    const onStarted = (_payload: unknown) => {
+    const onStarted = () => {
       syncAllState();
     };
 
-    const onPaused = (payload: unknown) => {
-      const p = payload as TimerPausedPayload;
+    const onPaused = (payload: TimerPausedPayload) => {
       setIsPaused(true);
-      setTimeLeft(p.timeLeft);
+      setTimeLeft(payload.timeLeft);
     };
 
-    const onResumed = (_payload: unknown) => {
+    const onResumed = () => {
       setIsPaused(false);
     };
 
-    const onCompleted = (payload: unknown) => {
-      const p = payload as TimerCompletedPayload;
+    const onCompleted = (payload: TimerCompletedPayload) => {
       setIsActive(false);
       setIsPaused(false);
-      setCompletedSessions(p.completedSessions);
+      setCompletedSessions(payload.completedSessions);
       setTimeLeft(timerService.getState().timeLeft);
     };
 
-    const onModeChanged = (payload: unknown) => {
-      const p = payload as TimerModeChangedPayload;
-      setModeState(p.newMode as TimerMode);
-      setTimeLeft(p.timeLeft);
-      setTotalTime(p.totalTime);
+    const onModeChanged = (payload: TimerModeChangedPayload) => {
+      setModeState(payload.newMode as TimerMode);
+      setTimeLeft(payload.timeLeft);
+      setTotalTime(payload.totalTime);
     };
 
-    const onSkipToBreak = (payload: unknown) => {
-      const p = payload as TimerSkipToBreakPayload;
-      setModeState(p.toMode as TimerMode);
-      setTimeLeft(p.breakDuration);
-      setTotalTime(p.breakDuration);
+    const onSkipToBreak = (payload: TimerSkipToBreakPayload) => {
+      setModeState(payload.toMode as TimerMode);
+      setTimeLeft(payload.breakDuration);
+      setTotalTime(payload.breakDuration);
       setIsActive(true);
       setIsPaused(false);
     };
 
-    const onReset = (_payload: unknown) => {
+    const onReset = () => {
       syncAllState();
     };
 

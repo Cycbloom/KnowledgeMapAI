@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Globe, Lock, Copy, Check, ExternalLink, Users, UserPlus, Link as LinkIcon } from 'lucide-react';
 import { api } from '../../../services/api';
-import { useMessageStore } from '../../../store/useMessageStore';
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import type { CollaboratorRole, CollaboratorWithUser } from '@shared/types';
 
 interface ShareModalProps {
@@ -19,7 +19,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   isPublic: initialIsPublic,
   onPublicChange 
 }) => {
-  const { addMessage } = useMessageStore();
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -63,13 +62,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       await api.graphs.togglePublic(graphId, newStatus);
       setIsPublic(newStatus);
       onPublicChange(newStatus);
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'success', 
         content: newStatus ? '图谱已公开，任何人均可访问' : '图谱已设为私有' 
       });
     } catch (error: any) {
       console.error(error);
-      addMessage({ type: 'error', content: '设置失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '设置失败，请重试' });
     } finally {
       setLoading(false);
     }
@@ -80,7 +79,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    addMessage({ type: 'success', content: '链接已复制到剪贴板' });
+    frontendEventBus.publish("message_show", { type: 'success', content: '链接已复制到剪贴板' });
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -97,16 +96,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       });
       
       if (response.ok) {
-        addMessage({ type: 'success', content: '邀请已发送' });
+        frontendEventBus.publish("message_show", { type: 'success', content: '邀请已发送' });
         setInviteEmail('');
         fetchCollaborators();
       } else {
         const data = await response.json();
-        addMessage({ type: 'error', content: data.error || '邀请失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: data.error || '邀请失败' });
       }
     } catch (error) {
       console.error('邀请失败:', error);
-      addMessage({ type: 'error', content: '邀请失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '邀请失败，请重试' });
     } finally {
       setInviteLoading(false);
     }
@@ -122,15 +121,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       });
       
       if (response.ok) {
-        addMessage({ type: 'success', content: '已移除协作者' });
+        frontendEventBus.publish("message_show", { type: 'success', content: '已移除协作者' });
         fetchCollaborators();
       } else {
         const data = await response.json();
-        addMessage({ type: 'error', content: data.error || '移除失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: data.error || '移除失败' });
       }
     } catch (error) {
       console.error('移除失败:', error);
-      addMessage({ type: 'error', content: '移除失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '移除失败，请重试' });
     }
   };
 
@@ -146,14 +145,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       if (response.ok) {
         const data = await response.json();
         setShareToken(data.invitationToken);
-        addMessage({ type: 'success', content: '分享链接已生成' });
+        frontendEventBus.publish("message_show", { type: 'success', content: '分享链接已生成' });
       } else {
         const data = await response.json();
-        addMessage({ type: 'error', content: data.error || '生成链接失败' });
+        frontendEventBus.publish("message_show", { type: 'error', content: data.error || '生成链接失败' });
       }
     } catch (error) {
       console.error('生成链接失败:', error);
-      addMessage({ type: 'error', content: '生成链接失败，请重试' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '生成链接失败，请重试' });
     }
   };
 
@@ -305,7 +304,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(`${window.location.origin}/collaboration/${shareToken}`);
-                            addMessage({ type: 'success', content: '链接已复制' });
+                            frontendEventBus.publish("message_show", { type: 'success', content: '链接已复制' });
                           }}
                           className="px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
                         >

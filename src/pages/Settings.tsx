@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAIStatus, useUser } from "../hooks/queries";
 import { useUpdateProfileMutation } from "../hooks/mutations";
 import { useStore } from "../store/useStore";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useTheme } from "../hooks";
 import {
   Cpu,
@@ -34,7 +34,6 @@ export const Settings = () => {
   const { t, i18n } = useTranslation();
   const { token } = useStore();
   const { themeMode, setTheme } = useTheme();
-  const { addMessage } = useMessageStore();
 
   const { data: userData } = useUser(!!token);
   const { data: aiStatus } = useAIStatus(!!token);
@@ -128,10 +127,10 @@ export const Settings = () => {
           available_models: availableModels,
         },
       });
-      addMessage({ type: "success", content: t("settings.saveSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("settings.saveSuccess") });
     } catch (e) {
       console.error(e);
-      addMessage({ type: "error", content: t("settings.saveFailed") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("settings.saveFailed") });
     }
   };
 
@@ -141,7 +140,7 @@ export const Settings = () => {
     const currentModels = availableModels[provider] || [];
 
     if (currentModels.includes(newModelName.trim())) {
-      addMessage({ type: "warning", content: t("settings.modelExists") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("settings.modelExists") });
       return;
     }
 
@@ -150,7 +149,7 @@ export const Settings = () => {
       [provider]: [...(prev[provider] || []), newModelName.trim()],
     }));
     setNewModelName("");
-    addMessage({
+    frontendEventBus.publish("message_show", {
       type: "success",
       content: `${t("settings.modelAdded")}: ${newModelName}`,
     });
@@ -165,7 +164,7 @@ export const Settings = () => {
 
   const handleSaveMobileAIConfig = () => {
     if (!mobileApiKey.trim()) {
-      addMessage({ type: "warning", content: t("settings.enterApiKey") });
+      frontendEventBus.publish("message_show", { type: "warning", content: t("settings.enterApiKey") });
       return;
     }
 
@@ -177,14 +176,14 @@ export const Settings = () => {
 
     mobileAIService.setConfig(config);
     setMobileAIConfig(config);
-    addMessage({ type: "success", content: t("settings.mobileConfigSaved") });
+    frontendEventBus.publish("message_show", { type: "success", content: t("settings.mobileConfigSaved") });
   };
 
   const handleClearMobileAIConfig = () => {
     mobileAIService.clearConfig();
     setMobileAIConfig(null);
     setMobileApiKey("");
-    addMessage({ type: "success", content: t("settings.mobileConfigCleared") });
+    frontendEventBus.publish("message_show", { type: "success", content: t("settings.mobileConfigCleared") });
   };
 
   return (

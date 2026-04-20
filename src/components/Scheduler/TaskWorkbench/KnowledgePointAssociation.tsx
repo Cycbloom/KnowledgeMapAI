@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../services/api";
 import { TaskKnowledgePoint } from "../../../types";
-import { useMessageStore } from "../../../store/useMessageStore";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 
 interface KnowledgePointAssociationProps {
   taskId: string;
@@ -23,7 +23,6 @@ export const KnowledgePointAssociation: React.FC<
   KnowledgePointAssociationProps
 > = ({ taskId, className = "" }) => {
   const navigate = useNavigate();
-  const { addMessage } = useMessageStore();
   const [associations, setAssociations] = useState<TaskKnowledgePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -91,10 +90,10 @@ export const KnowledgePointAssociation: React.FC<
         setIsAdding(false);
         setSearchQuery("");
         setSearchResults([]);
-        addMessage({ type: "success", content: "知识点已关联" });
+        frontendEventBus.publish("message_show", { type: "success", content: "知识点已关联" });
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "关联知识点失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "关联知识点失败" });
     }
   };
 
@@ -106,10 +105,10 @@ export const KnowledgePointAssociation: React.FC<
       );
       if (response.success) {
         setAssociations(associations.filter((a) => a.id !== kpId));
-        addMessage({ type: "success", content: "已取消关联" });
+        frontendEventBus.publish("message_show", { type: "success", content: "已取消关联" });
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "取消关联失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "取消关联失败" });
     }
   };
 
@@ -127,10 +126,10 @@ export const KnowledgePointAssociation: React.FC<
             is_primary: a.id === kpId,
           })),
         );
-        addMessage({ type: "success", content: "已设为主要知识点" });
+        frontendEventBus.publish("message_show", { type: "success", content: "已设为主要知识点" });
       }
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "设置失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "设置失败" });
     }
   };
 

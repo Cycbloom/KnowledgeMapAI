@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, AlertTriangle, CheckCircle2, Network, Layers, Link2, TrendingUp, Activity, X } from 'lucide-react';
 import { api } from '../../../services/api';
-import { useMessageStore } from '../../../store/useMessageStore';
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Node } from '../../../types';
 
@@ -48,7 +48,6 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
   onNodeClick,
   onCreateConnection
 }) => {
-  const { addMessage } = useMessageStore();
   const [analysis, setAnalysis] = useState<GraphAnalysis | null>(null);
   const [missingConnections, setMissingConnections] = useState<MissingConnection[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +69,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
       setAnalysis(analysisData);
       setMissingConnections(connectionsData?.suggestions || []);
     } catch (error: any) {
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'error',
         content: `加载分析数据失败: ${  error.message || '未知错误'}`
       });
@@ -82,7 +81,7 @@ export const GraphAnalysisPanel: React.FC<GraphAnalysisPanelProps> = ({
   const handleCreateConnection = (sourceId: string, targetId: string) => {
     if (onCreateConnection) {
       onCreateConnection(sourceId, targetId);
-      addMessage({ 
+      frontendEventBus.publish("message_show", { 
         type: 'success',
         content: '连接已创建'
       });

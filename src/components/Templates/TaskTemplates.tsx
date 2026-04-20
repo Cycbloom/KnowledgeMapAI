@@ -23,7 +23,7 @@ import {
   applyTemplatePlaceholders,
   extractPlaceholders,
 } from "../../services/api/template";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useTheme } from "../../hooks";
 import { useTemplateForm } from "../../hooks/templates/useTemplateForm";
 import { useTemplateList } from "../../hooks/templates/useTemplateList";
@@ -46,7 +46,6 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { addMessage } = useMessageStore();
 
   const {
     loading,
@@ -84,7 +83,7 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
   const handleCreateTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.title_template) {
-      addMessage({ type: "error", content: t("templates.message.nameAndTitleRequired") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("templates.message.nameAndTitleRequired") });
       return;
     }
 
@@ -99,13 +98,13 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         tags: formData.tags,
         priority: formData.priority,
       });
-      addMessage({ type: "success", content: t("templates.message.createSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("templates.message.createSuccess") });
       closeAllModals();
       resetForm();
       loadTemplates();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("templates.message.createFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -124,19 +123,19 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         tags: formData.tags,
         priority: formData.priority,
       });
-      addMessage({ type: "success", content: t("templates.message.updateSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("templates.message.updateSuccess") });
       closeAllModals();
       resetForm();
       loadTemplates();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("templates.message.updateFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handleDeleteTemplate = async (template: TaskTemplate) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotDelete") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("templates.message.systemTemplateCannotDelete") });
       return;
     }
 
@@ -144,11 +143,11 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
 
     try {
       await templateApi.deleteTemplate(template.id);
-      addMessage({ type: "success", content: t("templates.message.deleteSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("templates.message.deleteSuccess") });
       loadTemplates();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("templates.message.deleteFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -158,11 +157,11 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
         template.id,
         `${template.name} (${t("templates.button.duplicate")})`,
       );
-      addMessage({ type: "success", content: t("templates.message.duplicateSuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("templates.message.duplicateSuccess") });
       loadTemplates();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("templates.message.duplicateFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
@@ -173,20 +172,20 @@ export const TaskTemplates: React.FC<TaskTemplatesProps> = ({
       await templateApi.applyTemplate(applyingTemplate.id, {
         placeholders: placeholderValues,
       });
-      addMessage({ type: "success", content: t("templates.message.applySuccess") });
+      frontendEventBus.publish("message_show", { type: "success", content: t("templates.message.applySuccess") });
       closeAllModals();
       if (onSelectTemplate) {
         onSelectTemplate(applyingTemplate);
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("templates.message.applyFailed");
-      addMessage({ type: "error", content: errorMessage });
+      frontendEventBus.publish("message_show", { type: "error", content: errorMessage });
     }
   };
 
   const handleOpenEditModal = (template: TaskTemplate) => {
     if (template.is_system) {
-      addMessage({ type: "error", content: t("templates.message.systemTemplateCannotEdit") });
+      frontendEventBus.publish("message_show", { type: "error", content: t("templates.message.systemTemplateCannotEdit") });
       return;
     }
     setFormDataForEdit({

@@ -12,7 +12,7 @@ import {
   Tag,
 } from "lucide-react";
 import { templateApi } from "../../services/api/template";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { useTheme } from "../../hooks";
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -50,7 +50,6 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   onSuccess,
 }) => {
   const { isDark } = useTheme();
-  const { addMessage } = useMessageStore();
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState(task.title);
@@ -89,7 +88,7 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !titleTemplate) {
-      addMessage({ type: "error", content: "请填写模板名称和标题模板" });
+      frontendEventBus.publish("message_show", { type: "error", content: "请填写模板名称和标题模板" });
       return;
     }
 
@@ -105,11 +104,11 @@ export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
         tags,
         priority,
       });
-      addMessage({ type: "success", content: "模板保存成功!" });
+      frontendEventBus.publish("message_show", { type: "success", content: "模板保存成功!" });
       onSuccess?.();
       onClose();
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "保存模板失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "保存模板失败" });
     } finally {
       setLoading(false);
     }

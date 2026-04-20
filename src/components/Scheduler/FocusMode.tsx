@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWhiteNoise } from "../../hooks/useWhiteNoise";
 import { useUnifiedTimer } from "../../hooks/scheduler";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import { AudioVisualizer } from "../common/AudioVisualizer";
 import {
   NOISE_OPTIONS,
@@ -115,8 +116,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       if (taskId && !isActive) {
         start(taskId, 25);
       }
+      frontendEventBus.publish("focus_enter", { taskId });
     } else {
       stopMixer();
+      frontendEventBus.publish("focus_exit", {});
     }
   }, [isOpen, startMixer, stopMixer, taskId, isActive, start]);
 

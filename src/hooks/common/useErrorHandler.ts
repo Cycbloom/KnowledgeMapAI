@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../../store/useStore';
-import { useMessageStore, MessageType } from '../../store/useMessageStore';
+import { frontendEventBus } from '../../services/timer/FrontendEventBus';
+import type { MessageShowPayload } from '../../services/FrontendEventTypes';
 import { useNavigate } from 'react-router-dom';
 import {
   isAuthError,
@@ -9,6 +10,8 @@ import {
   wrapUnknownError,
   ValidationError,
 } from '../../utils/errors';
+
+type MessageType = MessageShowPayload["type"];
 
 interface ErrorHandlerOptions {
   silent?: boolean;
@@ -41,7 +44,6 @@ const parseError = (error: unknown): ErrorInfo => {
 
 export const useErrorHandler = () => {
   const navigate = useNavigate();
-  const { addMessage } = useMessageStore();
   const { setUser } = useStore();
 
   const handleError = useCallback((error: unknown, options: ErrorHandlerOptions = {}) => {
@@ -59,7 +61,7 @@ export const useErrorHandler = () => {
     if (errorInfo.isAuthError) {
       setUser(null, null);
       if (!silent) {
-        addMessage({ type: 'error', content: errorInfo.message, duration: 5000 });
+        frontendEventBus.publish("message_show", { type: 'error', content: errorInfo.message, duration: 5000 });
       }
       navigate('/login');
       return errorInfo;
@@ -70,7 +72,7 @@ export const useErrorHandler = () => {
       : errorInfo.message;
 
     if (!silent) {
-      addMessage({ type: 'error', content: displayMessage, duration: 5000 });
+      frontendEventBus.publish("message_show", { type: 'error', content: displayMessage, duration: 5000 });
     }
 
     if (redirect) {
@@ -78,7 +80,7 @@ export const useErrorHandler = () => {
     }
 
     return errorInfo;
-  }, [navigate, addMessage, setUser]);
+  }, [navigate, setUser]);
 
   const withErrorHandling = useCallback(async <T,>(
     fn: () => Promise<T>,
@@ -96,17 +98,17 @@ export const useErrorHandler = () => {
 };
 
 export class ErrorHandlerService {
-  private addMessage: (msg: { type: MessageType; content: string; duration?: number }) => void;
+  private publishMessage: (msg: { type: MessageType; content: string; duration?: number }) => void;
 
-  constructor(addMessage: (msg: { type: MessageType; content: string; duration?: number }) => void) {
-    this.addMessage = addMessage;
+  constructor(publishMessage: (msg: { type: MessageType; content: string; duration?: number }) => void) {
+    this.publishMessage = publishMessage;
   }
 
   handle(error: unknown, context?: string): ErrorInfo {
     const errorInfo = parseError(error);
     const prefix = context ? `[${context}] ` : '';
     console.error(`${prefix}${errorInfo.message}`, error);
-    this.addMessage({ type: 'error', content: errorInfo.message, duration: 5000 });
+    this.publishMessage({ type: 'error', content: errorInfo.message, duration: 5000 });
     return errorInfo;
   }
 
@@ -116,7 +118,9 @@ export class ErrorHandlerService {
 }
 
 export const useErrorHandlerService = () => {
-  const { addMessage } = useMessageStore();
-  const handler = useMemo(() => new ErrorHandlerService(addMessage), [addMessage]);
+  const publishMessage = useCallback((msg: { type: MessageType; content: string; duration?: number }) => {
+    frontendEventBus.publish("message_show", msg);
+  }, []);
+  const handler = useMemo(() => new ErrorHandlerService(publishMessage), [publishMessage]);
   return handler;
 };

@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore } from "../../store/useStore";
-import { useUser, useTasks } from "../../hooks/queries";
+import { useUser } from "../../hooks/queries";
 import { useLogoutMutation } from "../../hooks/mutations";
 import { useTaskEvents, useConsole } from "../../hooks";
-import { useMessageStore } from "../../store/useMessageStore";
+import { frontendEventBus } from "../../services/timer/FrontendEventBus";
 import {
   LogOut,
   BookOpen,
@@ -79,7 +79,6 @@ export const Layout = () => {
   const { isMobile } = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const { addMessage } = useMessageStore();
 
   const isFullScreenPage =
     location.pathname.startsWith("/graph/") ||
@@ -114,10 +113,7 @@ export const Layout = () => {
     !!token && !user,
   );
   const logoutMutation = useLogoutMutation();
-  const { data: tasksData } = useTasks(!!token);
   useTaskEvents();
-  const lastTaskStatusRef = useRef<Map<string, string>>(new Map());
-  const hasInitializedTasksRef = useRef(false);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -157,49 +153,34 @@ export const Layout = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!Array.isArray(tasksData)) return;
-
-    if (!hasInitializedTasksRef.current) {
-      hasInitializedTasksRef.current = true;
-      lastTaskStatusRef.current = new Map(
-        tasksData.map((t: any) => [t.id, t.status]),
-      );
-      return;
-    }
-
     const typeLabel = (type: string) => {
       if (type === "generate_questions") return t('layout.autoGenerateQuestions');
       if (type === "expand_graph") return t('layout.autoExpandGraph');
       return type;
     };
 
-    const updated = new Map(lastTaskStatusRef.current);
-
-    for (const t of tasksData as any[]) {
-      const prev = lastTaskStatusRef.current.get(t.id);
-      if (prev && prev !== t.status) {
-        if (t.status === "completed") {
-          addMessage({
-            type: "success",
-            content: `${t('layout.taskCompleted')}：${typeLabel(t.type)}`,
-            duration: 8000,
-            action: { label: t('common.view'), onClick: () => navigate("/tasks") },
-          });
-        }
-        if (t.status === "failed") {
-          addMessage({
-            type: "error",
-            content: `${t('layout.taskFailed')}：${typeLabel(t.type)}${t.error ? `（${t.error}）` : ""}`,
-            duration: 10000,
-            action: { label: t('common.view'), onClick: () => navigate("/tasks") },
-          });
-        }
+    const handler = (payload: { taskId: string; oldStatus: string; newStatus: string; taskType?: string }) => {
+      if (payload.newStatus === "completed") {
+        frontendEventBus.publish("message_show", {
+          type: "success",
+          content: `${t('layout.taskCompleted')}：${typeLabel(payload.taskType ?? "")}`,
+          duration: 8000,
+          action: { label: t('common.view'), onClick: () => navigate("/tasks") },
+        });
       }
-      updated.set(t.id, t.status);
-    }
+      if (payload.newStatus === "failed") {
+        frontendEventBus.publish("message_show", {
+          type: "error",
+          content: `${t('layout.taskFailed')}：${typeLabel(payload.taskType ?? "")}`,
+          duration: 10000,
+          action: { label: t('common.view'), onClick: () => navigate("/tasks") },
+        });
+      }
+    };
 
-    lastTaskStatusRef.current = updated;
-  }, [tasksData, addMessage, navigate, t]);
+    const unsubscribe = frontendEventBus.subscribe("scheduler_task_status_changed", handler);
+    return unsubscribe;
+  }, [navigate, t]);
 
   if (!!token && !user && isUserLoading) {
     return (

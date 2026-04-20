@@ -8,7 +8,7 @@ import { PodcastModal } from "./PodcastModal";
 import { ConfirmationModal } from "../../common";
 import { queryKeys } from "../../../hooks/queries/config";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMessageStore } from "../../../store/useMessageStore";
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 
 interface GraphModalManagerProps {
   id: string;
@@ -26,7 +26,6 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
   nodes,
 }) => {
   const queryClient = useQueryClient();
-  const { addMessage } = useMessageStore();
   const {
     isSettingsOpen,
     setIsSettingsOpen,
@@ -57,10 +56,10 @@ export const GraphModalManager: React.FC<GraphModalManagerProps> = ({
         link.href = dataUrl;
         link.click();
         setIsExportImageModalOpen(false);
-        addMessage({ content: "图片导出成功", type: "success" });
+        frontendEventBus.publish("message_show", { content: "图片导出成功", type: "success" });
       } catch (error) {
         console.error("Export image failed:", error);
-        addMessage({ content: "图片导出失败", type: "error" });
+        frontendEventBus.publish("message_show", { content: "图片导出失败", type: "error" });
       }
     },
   };

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Sparkles, BookOpen, X, ChevronUp, ChevronDown, Layers, Loader2, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api } from "../services/api";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { useStore } from "../store/useStore";
 import { queryKeys } from "../hooks/queries/queryConfig";
 import { useIsMobile } from "../hooks/common/useIsMobile";
@@ -228,7 +228,6 @@ export const GraphMap = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const { addMessage } = useMessageStore();
   const { user } = useStore();
   const { isMobile } = useIsMobile();
 
@@ -488,15 +487,15 @@ export const GraphMap = () => {
       for (const id of ids) {
         await api.graphs.delete(id);
       }
-      addMessage({ type: "success", content: t('graphMap.batch.deleteSuccess', { count: ids.length }) });
+      frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.batch.deleteSuccess', { count: ids.length }) });
       setMultiSelectedGraphIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t('graphMap.batch.deleteFailed');
-      addMessage({ type: "error", content: message });
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     }
-  }, [multiSelectedGraphIds, addMessage, queryClient, t]);
+  }, [multiSelectedGraphIds, queryClient, t]);
 
   const handleBatchSetDomain = useCallback(async (domainId: string) => {
     const ids = Array.from(multiSelectedGraphIds);
@@ -517,14 +516,14 @@ export const GraphMap = () => {
       }
 
       if (failCount === 0) {
-        addMessage({ type: "success", content: t('graphMap.batch.setDomainSuccess', { count: successCount }) });
+        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.batch.setDomainSuccess', { count: successCount }) });
       } else if (successCount > 0) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "warning",
           content: t('graphMap.batch.setDomainPartial', { success: successCount, fail: failCount }),
         });
       } else {
-        addMessage({ type: "error", content: t('graphMap.batch.setDomainFailed') });
+        frontendEventBus.publish("message_show", { type: "error", content: t('graphMap.batch.setDomainFailed') });
       }
 
       setMultiSelectedGraphIds(new Set());
@@ -533,11 +532,11 @@ export const GraphMap = () => {
       setIsBatchDomainPickerOpen(false);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t('graphMap.batch.setDomainFailed');
-      addMessage({ type: "error", content: message });
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     } finally {
       setIsBatchSettingDomain(false);
     }
-  }, [multiSelectedGraphIds, addMessage, queryClient, t]);
+  }, [multiSelectedGraphIds, queryClient, t]);
 
   const handleSetSingleGraphDomains = useCallback(async (domainIds: string[]) => {
     const graphId = singleGraphDomainPicker.graphId;
@@ -549,17 +548,17 @@ export const GraphMap = () => {
         graphId,
         domainIds.map((id) => ({ domain_id: id })),
       );
-      addMessage({ type: "success", content: t('graphMap.domainPicker.setSuccess') });
+      frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.domainPicker.setSuccess') });
       queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       setSingleGraphDomainPicker({ graphId: '', open: false });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t('graphMap.domainPicker.setFailed');
-      addMessage({ type: "error", content: message });
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     } finally {
       setIsSettingSingleGraphDomain(false);
     }
-  }, [singleGraphDomainPicker.graphId, addMessage, queryClient, t]);
+  }, [singleGraphDomainPicker.graphId, queryClient, t]);
 
   const handleCombinedOpen = useCallback(() => {
     const ids = Array.from(multiSelectedGraphIds);
@@ -577,29 +576,29 @@ export const GraphMap = () => {
     }) => {
       try {
         await api.graphs.createRelation(data);
-        addMessage({ type: "success", content: t('graphMap.relation.createSuccess') });
+        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.createSuccess') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         throw error;
       }
     },
-    [addMessage, queryClient, t],
+    [queryClient, t],
   );
 
   const handleDeleteRelation = useCallback(
     async (relationId: string) => {
       try {
         await api.graphs.deleteRelationById(relationId);
-        addMessage({ type: "success", content: t('graphMap.relation.deleteSuccess') });
+        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.deleteSuccess') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.relation.deleteFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
       }
     },
-    [addMessage, queryClient, t],
+    [queryClient, t],
   );
 
   const handleQuickCreateGraph = useCallback(
@@ -627,20 +626,20 @@ export const GraphMap = () => {
           });
         }
 
-        addMessage({ type: "success", content: t('graphMap.graphCreation.success') });
+        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.graphCreation.success') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
 
         if (data.auto_generate_content) {
-          addMessage({ type: "info", content: t('graphMap.graphCreation.generatingContent') });
+          frontendEventBus.publish("message_show", { type: "info", content: t('graphMap.graphCreation.generatingContent') });
         }
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.graphCreation.failed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         throw error;
       }
     },
-    [addMessage, queryClient, t],
+    [queryClient, t],
   );
 
   const handleCreateRelatedGraph = useCallback(
@@ -663,7 +662,7 @@ export const GraphMap = () => {
 
       try {
         await api.graphs.infiniteExpand(selectedGraphId, config);
-        addMessage({ type: "success", content: t('graphMap.expansion.started') });
+        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.expansion.started') });
         setIsExpansionRunning(true);
         setExpansionProgress({
           status: "running",
@@ -678,11 +677,11 @@ export const GraphMap = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.expansion.startFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         throw error;
       }
     },
-    [selectedGraphId, addMessage, queryClient, t],
+    [selectedGraphId, queryClient, t],
   );
 
   const handleDepthExpand = useCallback(
@@ -746,11 +745,11 @@ export const GraphMap = () => {
         return null;
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.expansion.depthFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         throw error;
       }
     },
-    [selectedGraphId, graphs, addMessage, queryClient, t],
+    [selectedGraphId, graphs, queryClient, t],
   );
 
   const handleDepthExpandNode = useCallback(
@@ -797,11 +796,11 @@ export const GraphMap = () => {
         return null;
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.expansion.nodeExpandFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         throw error;
       }
     },
-    [selectedGraphId, addMessage, queryClient, t],
+    [selectedGraphId, queryClient, t],
   );
 
   const handleOpenPromptEditor = useCallback(
@@ -837,10 +836,10 @@ export const GraphMap = () => {
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.message : t('graphMap.prompt.fetchFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
       }
     },
-    [addMessage, t],
+    [t],
   );
 
   const handleSwitchDepthPrompt = useCallback(
@@ -861,10 +860,10 @@ export const GraphMap = () => {
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.message : t('graphMap.prompt.fetchFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
       }
     },
-    [addMessage, t],
+    [t],
   );
 
   const handleSavePrompt = useCallback(
@@ -884,15 +883,15 @@ export const GraphMap = () => {
           scope: "user",
           template_content: content,
         });
-        addMessage({ type: "success", content: t('graphMap.prompt.saveSuccess') });
+        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.prompt.saveSuccess') });
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.message : t('graphMap.prompt.saveFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         throw error;
       }
     },
-    [promptEditMode, depthPromptType, addMessage, t],
+    [promptEditMode, depthPromptType, t],
   );
 
   const handleNodeSelectorConfirm = useCallback((nodeIds: string[]) => {
@@ -923,12 +922,12 @@ export const GraphMap = () => {
         setIntelligentSuggestions(suggestions);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.relation.discoveryFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
       } finally {
         setIsDiscovering(false);
       }
     },
-    [addMessage, t],
+    [t],
   );
 
   const handleCrossDomainAnalysis = useCallback(async () => {
@@ -939,15 +938,15 @@ export const GraphMap = () => {
       });
       setCrossDomainResult(result as unknown as CrossDomainAnalysisResult);
       setShowCrossDomainInsights(true);
-      addMessage({ type: "success", content: t('graphMap.crossDomain.analyzeComplete') });
+      frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.crossDomain.analyzeComplete') });
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : t('graphMap.crossDomain.analyzeFailed');
-      addMessage({ type: "error", content: message });
+      frontendEventBus.publish("message_show", { type: "error", content: message });
     } finally {
       setIsAnalyzingCrossDomain(false);
     }
-  }, [addMessage, t]);
+  }, [t]);
 
   const handleCreateDiscoveredRelation = useCallback(
     async (relation: DiscoveredRelation) => {
@@ -962,15 +961,15 @@ export const GraphMap = () => {
         });
         const key = `${relation.source_graph_id}-${relation.target_graph_id}-${relation.relation_type}`;
         setCreatedRelationIds((prev) => new Set(prev).add(key));
-        addMessage({ type: "success", content: t('graphMap.relation.createSuccess') });
+        frontendEventBus.publish("message_show", { type: "success", content: t('graphMap.relation.createSuccess') });
         queryClient.invalidateQueries({ queryKey: ["graphMap"] });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.relation.createFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
         throw error;
       }
     },
-    [addMessage, queryClient, t],
+    [queryClient, t],
   );
 
   const handleGenerateCards = useCallback(
@@ -984,7 +983,7 @@ export const GraphMap = () => {
         });
 
         if (result.success) {
-          addMessage({
+          frontendEventBus.publish("message_show", {
             type: "success",
             content: t('graphMap.cards.taskSubmitted'),
             duration: 5000,
@@ -996,10 +995,10 @@ export const GraphMap = () => {
         }
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : t('graphMap.cards.generateFailed');
-        addMessage({ type: "error", content: message });
+        frontendEventBus.publish("message_show", { type: "error", content: message });
       }
     },
-    [selectedNodeIds, addMessage, navigate, t],
+    [selectedNodeIds, navigate, t],
   );
 
   useEffect(() => {
@@ -1792,7 +1791,7 @@ export const GraphMap = () => {
             });
             queryClient.invalidateQueries({ queryKey: ["graphMap"] });
             queryClient.invalidateQueries({ queryKey: queryKeys.graphs });
-            addMessage({
+            frontendEventBus.publish("message_show", {
               type: "success",
               content: t('graphMap.graphCreation.batchCreateSuccess', { count: result.created.length, failed: result.failed?.length || 0 }),
             });
@@ -1803,7 +1802,7 @@ export const GraphMap = () => {
               graph_ids: graphIds,
               style: "academic",
             });
-            addMessage({
+            frontendEventBus.publish("message_show", {
               type: "success",
               content: t('graphMap.graphCreation.initTaskSubmitted', { count: result.summary.pending }),
             });

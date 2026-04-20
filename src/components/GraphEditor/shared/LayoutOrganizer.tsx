@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from "../../../hooks";
-import { useMessageStore } from '../../../store/useMessageStore';
+import { frontendEventBus } from "../../../services/timer/FrontendEventBus";
 import { api } from '../../../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Node, Edge } from '../../../types';
@@ -21,14 +21,13 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
   onLayoutUpdate
 }) => {
   const { isDark: _isDark } = useTheme();
-  const { addMessage } = useMessageStore();
   const queryClient = useQueryClient();
   
   const [isApplying, setIsApplying] = useState(false);
 
   const organizeLayout = async () => {
     if (!nodes || nodes.length === 0) {
-      addMessage({ type: 'warning', content: '没有节点可以调整' });
+      frontendEventBus.publish("message_show", { type: 'warning', content: '没有节点可以调整' });
       return;
     }
 
@@ -49,10 +48,10 @@ export const LayoutOrganizer: React.FC<LayoutOrganizerProps> = ({
       
       queryClient.invalidateQueries({ queryKey: ['graphData', graphId] });
       
-      addMessage({ type: 'success', content: '节点位置已整理' });
+      frontendEventBus.publish("message_show", { type: 'success', content: '节点位置已整理' });
     } catch (error) {
       console.error('Layout organize error:', error);
-      addMessage({ type: 'error', content: '整理节点位置失败' });
+      frontendEventBus.publish("message_show", { type: 'error', content: '整理节点位置失败' });
     } finally {
       setIsApplying(false);
     }

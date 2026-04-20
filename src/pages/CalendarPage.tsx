@@ -12,7 +12,7 @@ import {
   Tag,
 } from "lucide-react";
 import { useTheme } from "../hooks";
-import { useMessageStore } from "../store/useMessageStore";
+import { frontendEventBus } from "../services/timer/FrontendEventBus";
 import { api } from "../services/api";
 import {
   isElectronProduction,
@@ -48,7 +48,6 @@ interface QuickTaskFormData {
 
 export const CalendarPage: React.FC = () => {
   const { isDark } = useTheme();
-  const { addMessage } = useMessageStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<ViewType>("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -156,7 +155,7 @@ export const CalendarPage: React.FC = () => {
 
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) {
-      addMessage({ type: "error", content: "请输入任务标题" });
+      frontendEventBus.publish("message_show", { type: "error", content: "请输入任务标题" });
       return;
     }
 
@@ -173,11 +172,11 @@ export const CalendarPage: React.FC = () => {
           taskForm.priority >= 3 ? 0 : taskForm.priority >= 2 ? 1 : 2,
       });
 
-      addMessage({ type: "success", content: "任务创建成功!" });
+      frontendEventBus.publish("message_show", { type: "success", content: "任务创建成功!" });
       setShowTaskModal(false);
       loadData();
     } catch (error: any) {
-      addMessage({ type: "error", content: error.message || "创建任务失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: error.message || "创建任务失败" });
     } finally {
       setSaving(false);
     }
@@ -206,16 +205,16 @@ export const CalendarPage: React.FC = () => {
         }
 
         await api.scheduler.updateTask(dropInfo.eventId, updateData);
-        addMessage({ type: "success", content: "任务时间已更新!" });
+        frontendEventBus.publish("message_show", { type: "success", content: "任务时间已更新!" });
         loadData();
       } catch (error: any) {
-        addMessage({
+        frontendEventBus.publish("message_show", {
           type: "error",
           content: error.message || "更新任务时间失败",
         });
       }
     },
-    [addMessage],
+    [],
   );
 
   const navigateMonth = (direction: number) => {
@@ -288,16 +287,16 @@ export const CalendarPage: React.FC = () => {
       a.download = `calendar-${new Date().toISOString().split("T")[0]}.ics`;
       a.click();
       window.URL.revokeObjectURL(url);
-      addMessage({ type: "success", content: "日历已导出!" });
+      frontendEventBus.publish("message_show", { type: "success", content: "日历已导出!" });
     } catch (error) {
-      addMessage({ type: "error", content: "导出失败" });
+      frontendEventBus.publish("message_show", { type: "error", content: "导出失败" });
     }
   };
 
   const handleCopyWebCalLink = () => {
     const webcalUrl = `webcal://${window.location.host}/api/calendar/subscribe/${localStorage.getItem("userId")}`;
     navigator.clipboard.writeText(webcalUrl);
-    addMessage({ type: "success", content: "WebCal 链接已复制!" });
+    frontendEventBus.publish("message_show", { type: "success", content: "WebCal 链接已复制!" });
   };
 
   const priorityLabels = ["低", "中", "高", "紧急"];

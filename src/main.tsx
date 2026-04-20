@@ -8,6 +8,7 @@ import { registerServiceWorker } from './utils/serviceWorker'
 import { initPerformanceMonitoring } from './utils/performance'
 import { initErrorReporter } from './utils/errorReporter'
 import { initCsrf } from './services/api'
+import { initializeEventSubscribers } from './services/FrontendEventSubscribers'
 import './index.css'
 import 'katex/dist/katex.min.css'
 
@@ -22,6 +23,7 @@ export const queryClient = new QueryClient({
 })
 
 initCsrf()
+initializeEventSubscribers(queryClient)
 
 const isElectron = navigator.userAgent.toLowerCase().includes('electron')
 

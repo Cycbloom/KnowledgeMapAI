@@ -1859,7 +1859,13 @@ export const LearningMode = () => {
                                   ></div>
                                 </div>
                               ) : (
-                                <div className="prose prose-sm dark:prose-invert prose-indigo max-w-none">
+                                <div
+                                  className={
+                                    msg.role === "user"
+                                      ? "text-white"
+                                      : "prose prose-sm dark:prose-invert prose-indigo max-w-none"
+                                  }
+                                >
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm, remarkMath]}
                                     rehypePlugins={[
@@ -1895,7 +1901,14 @@ export const LearningMode = () => {
                                             />
                                           );
                                         }
-                                        return (
+                                        return msg.role === "user" ? (
+                                          <a
+                                            {...props}
+                                            className="text-white/80 hover:text-white hover:underline"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                          />
+                                        ) : (
                                           <a
                                             {...props}
                                             className="text-primary-600 hover:underline"

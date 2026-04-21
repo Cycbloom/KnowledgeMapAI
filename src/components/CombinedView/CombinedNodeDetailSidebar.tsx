@@ -24,6 +24,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useTheme } from "../../hooks";
+import { useTranslation } from "react-i18next";
 
 interface CombinedNodeDetailSidebarProps {
   node: Node;
@@ -65,6 +66,7 @@ export const CombinedNodeDetailSidebar: React.FC<
   aiOps,
   onNodeClick,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const tags: string[] = node.tags || node.properties?.tags || [];
 
@@ -94,7 +96,7 @@ export const CombinedNodeDetailSidebar: React.FC<
             <button
               onClick={onBack}
               className="mr-1 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-              title="返回大纲"
+              title={t("nodeDetail.backToOutline")}
             >
               <ArrowLeft size={18} />
             </button>
@@ -104,7 +106,7 @@ export const CombinedNodeDetailSidebar: React.FC<
             style={{ backgroundColor: graphColor }}
           ></div>
           <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-            节点详情
+            {t("nodeDetail.title")}
           </h3>
         </div>
         <button
@@ -133,7 +135,7 @@ export const CombinedNodeDetailSidebar: React.FC<
           <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
               <Activity size={14} className="mr-1.5 text-blue-500" />
-              <span>{levelLabels[getLevel(node, edges)] || "普通节点"}</span>
+              <span>{levelLabels[getLevel(node, edges)] || t("nodeDetail.normalNode")}</span>
             </div>
 
             <div className="flex items-center bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
@@ -141,7 +143,7 @@ export const CombinedNodeDetailSidebar: React.FC<
               <span>
                 {node.created_at
                   ? new Date(node.created_at).toLocaleDateString()
-                  : "未知日期"}
+                  : t("nodeDetail.unknownDate")}
               </span>
             </div>
           </div>
@@ -240,7 +242,7 @@ export const CombinedNodeDetailSidebar: React.FC<
               },
             }}
           >
-            {preprocessMarkdown(node.content || "*暂无内容*")}
+            {preprocessMarkdown(node.content || `*${t("nodeDetail.noContent")}*`)}
           </ReactMarkdown>
         </section>
 
@@ -251,7 +253,7 @@ export const CombinedNodeDetailSidebar: React.FC<
               className="w-full flex items-center justify-center p-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-sm font-bold"
             >
               <Wand2 size={16} className="mr-2" />
-              生成/补充节点内容
+              {t("nodeDetail.generateContent")}
             </button>
 
             <section className="grid grid-cols-2 gap-3">
@@ -260,7 +262,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                 className="col-span-2 flex items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
               >
                 <Navigation size={18} className="mr-2" />
-                <span className="font-bold">开启沉浸学习</span>
+                <span className="font-bold">{t("nodeDetail.startImmersiveLearning")}</span>
               </button>
 
               <button
@@ -268,7 +270,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                 className="flex items-center justify-center p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <GraduationCap size={18} className="mr-2 text-indigo-500" />
-                <span className="font-medium">关卡测试</span>
+                <span className="font-medium">{t("nodeDetail.levelTest")}</span>
               </button>
 
               <button
@@ -276,7 +278,7 @@ export const CombinedNodeDetailSidebar: React.FC<
                 className="flex items-center justify-center p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Sparkles size={18} className="mr-2 text-amber-500" />
-                <span className="font-medium">生成卡片</span>
+                <span className="font-medium">{t("nodeDetail.generateCards")}</span>
               </button>
             </section>
           </>
@@ -286,7 +288,7 @@ export const CombinedNodeDetailSidebar: React.FC<
           {parentNode && (
             <div>
               <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
-                <LinkIcon size={10} className="mr-1" /> 上一级 (Parent)
+                <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.parent")} (Parent)
               </div>
               <button
                 onClick={() => onNodeClick(parentNode)}
@@ -301,7 +303,7 @@ export const CombinedNodeDetailSidebar: React.FC<
           {childNodes.length > 0 && (
             <div>
               <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
-                <LinkIcon size={10} className="mr-1" /> 下一级 (Children)
+                <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.children")} (Children)
               </div>
               <div className="flex flex-col gap-1.5">
                 {childNodes.map((child) => (
@@ -333,12 +335,12 @@ export const CombinedNodeDetailSidebar: React.FC<
           className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 dark:shadow-blue-900/30 transition-all active:scale-95"
         >
           <Edit3 size={18} className="mr-2" />
-          编辑节点
+          {t("nodeDetail.editNode")}
         </button>
         <button
           onClick={onDelete}
           className="w-12 bg-white dark:bg-gray-800 text-red-500 border border-red-100 dark:border-red-900 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-all"
-          title="删除节点"
+          title={t("nodeDetail.deleteNode")}
         >
           <Trash2 size={18} />
         </button>

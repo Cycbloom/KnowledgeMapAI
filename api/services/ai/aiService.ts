@@ -26,6 +26,11 @@ import {
 import { AppError } from "../../middleware/errorHandler";
 import { ErrorCodes } from "../../../shared/types/errorCodes";
 
+function isEnglishLanguage(language?: string): boolean {
+  if (!language) return false;
+  return language === "en-US" || language === "en" || language.startsWith("en");
+}
+
 interface PerformanceTrackingOptions {
   operation: string;
   provider: AIProviderType;
@@ -1143,8 +1148,10 @@ Your task:
           {
             term: topic,
             importance: 5,
-            category: "概念",
-            explanation: `关于${topic}的核心概念`,
+            category: isEnglishLanguage(options.language) ? "Concept" : "概念",
+            explanation: isEnglishLanguage(options.language)
+              ? `Core concept of ${topic}`
+              : `关于${topic}的核心概念`,
           },
         ],
       };
@@ -1226,7 +1233,11 @@ Your task:
                   ? parsed.keywords.map((k) => ({
                       term: k.term || "",
                       importance: Math.min(5, Math.max(1, k.importance || 3)),
-                      category: k.category || "概念",
+                      category:
+                        k.category ||
+                        (isEnglishLanguage(options.language)
+                          ? "Concept"
+                          : "概念"),
                       explanation: k.explanation || "",
                     }))
                   : [],

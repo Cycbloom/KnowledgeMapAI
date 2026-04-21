@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../../hooks";
 import { useIsMobile } from "../../../hooks";
+import { useTranslation } from "react-i18next";
 
 interface NodeDetailSidebarProps {
   node: Node;
@@ -94,6 +95,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
   onShowVersionHistory,
   isGeneratingContent = false,
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const { isMobile } = useIsMobile();
   const isMastered = nodeStatus && nodeStatus[node.id]?.mastered;
@@ -132,7 +134,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             <button
               onClick={onBack}
               className={`text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all ${isMobile ? "mr-2 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center" : "mr-1 p-1.5"}`}
-              title="返回大纲"
+              title={t("nodeDetail.backToOutline")}
             >
               <ArrowLeft size={isMobile ? 20 : 18} />
             </button>
@@ -144,7 +146,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           <h3
             className={`font-bold text-gray-800 dark:text-gray-100 ${isMobile ? "text-xl" : "text-lg"}`}
           >
-            节点详情
+            {t("nodeDetail.title")}
           </h3>
         </div>
         <button
@@ -158,7 +160,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
       {isReadOnly && (
         <div className="mb-4 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
           <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-            🔒 只读模式 - 您正在查看其他用户的知识图谱，无法进行编辑操作
+            🔒 {t("nodeDetail.readOnlyMode")} - {t("nodeDetail.readOnlyHint")}
           </p>
         </div>
       )}
@@ -181,7 +183,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               className={`flex items-center bg-gray-50 dark:bg-gray-800 rounded ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
             >
               <Activity size={14} className="mr-1.5 text-blue-500" />
-              <span>{levelLabels[getLevel(node, edges)] || "普通节点"}</span>
+              <span>{levelLabels[getLevel(node, edges)] || t("nodeDetail.normalNode")}</span>
             </div>
 
             <div
@@ -191,7 +193,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               <span>
                 {node.created_at
                   ? new Date(node.created_at).toLocaleDateString()
-                  : "未知日期"}
+                  : t("nodeDetail.unknownDate")}
               </span>
             </div>
 
@@ -201,7 +203,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 className={`flex items-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors cursor-pointer ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
               >
                 <History size={14} className="mr-1.5" />
-                <span>版本历史</span>
+                <span>{t("nodeDetail.versionHistory")}</span>
               </button>
             )}
 
@@ -209,7 +211,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               <div
                 className={`flex items-center bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded border border-green-100 dark:border-green-800 ${isMobile ? "px-2.5 py-1.5" : "px-2 py-1"}`}
               >
-                <Check size={14} className="mr-1" /> 已掌握
+                <Check size={14} className="mr-1" /> {t("nodeDetail.mastered")}
               </div>
             ) : (
               <div
@@ -219,7 +221,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                   className={`rounded-full mr-1.5 ${isMobile ? "w-2.5 h-2.5" : "w-2 h-2"}`}
                   style={{ backgroundColor: colors.primary }}
                 />
-                {status === "new" ? "未开始" : "学习中"}
+                {status === "new" ? t("nodeDetail.notStarted") : t("nodeDetail.learning")}
               </div>
             )}
           </div>
@@ -318,7 +320,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
               },
             }}
           >
-            {preprocessMarkdown(node.content || "*暂无内容*")}
+            {preprocessMarkdown(node.content || `*${t("nodeDetail.noContent")}*`)}
           </ReactMarkdown>
         </section>
 
@@ -336,12 +338,12 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             {isGeneratingContent ? (
               <>
                 <Loader2 size={isMobile ? 18 : 16} className="mr-2 animate-spin" />
-                生成中...
+                {t("nodeDetail.generating")}
               </>
             ) : (
               <>
                 <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
-                生成/补充节点内容
+                {t("nodeDetail.generateContent")}
               </>
             )}
           </button>
@@ -358,7 +360,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             >
               <Navigation size={isMobile ? 20 : 18} className="mr-2" />
               <span className={`font-bold ${isMobile ? "text-base" : ""}`}>
-                开启沉浸学习
+                {t("nodeDetail.startImmersiveLearning")}
               </span>
             </button>
 
@@ -370,7 +372,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 size={isMobile ? 20 : 18}
                 className="mr-2 text-indigo-500"
               />
-              <span className="font-medium">关卡测试</span>
+              <span className="font-medium">{t("nodeDetail.levelTest")}</span>
             </button>
 
             <button
@@ -381,7 +383,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 size={isMobile ? 20 : 18}
                 className="mr-2 text-amber-500"
               />
-              <span className="font-medium">生成卡片</span>
+              <span className="font-medium">{t("nodeDetail.generateCards")}</span>
             </button>
           </section>
         )}
@@ -394,14 +396,14 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 className={`font-bold text-purple-900 dark:text-purple-300 flex items-center ${isMobile ? "text-base" : ""}`}
               >
                 <Wand2 size={isMobile ? 18 : 16} className="mr-2" />
-                AI 深度探索
+                {t("nodeDetail.aiDeepExplore")}
               </h3>
               <span className="text-[10px] bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full">
                 Beta
               </span>
             </div>
             <p className="text-xs text-purple-700 dark:text-purple-400 mb-4 leading-relaxed">
-              使用 AI 分析当前节点，发现潜在的关联知识点或生成深度思考问题。
+              {t("nodeDetail.aiDeepExploreDesc")}
             </p>
             <div
               className={`grid gap-2 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}
@@ -410,19 +412,19 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 onClick={onDeepAnalysis}
                 className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
               >
-                深度解析
+                {t("nodeDetail.deepAnalysis")}
               </button>
               <button
                 onClick={onGenerateQuiz}
                 className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
               >
-                生成测验
+                {t("nodeDetail.generateQuiz")}
               </button>
               <button
                 onClick={onBackgroundGenerate}
                 className={`bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg border border-purple-200 dark:border-purple-700 shadow-sm hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? "py-3 min-h-[44px]" : "py-2"}`}
               >
-                后台生成
+                {t("nodeDetail.backgroundGenerate")}
               </button>
             </div>
           </div>
@@ -434,7 +436,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           {parentNode && (
             <div>
               <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
-                <LinkIcon size={10} className="mr-1" /> 上一级 (Parent)
+                <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.parent")} (Parent)
               </div>
               <button
                 onClick={() => onRelatedNodeClick(parentNode)}
@@ -450,7 +452,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
           {childNodes.length > 0 && (
             <div>
               <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 flex items-center">
-                <LinkIcon size={10} className="mr-1" /> 下一级 (Children)
+                <LinkIcon size={10} className="mr-1" /> {t("nodeDetail.children")} (Children)
               </div>
               <div className="flex flex-col gap-1.5">
                 {childNodes.map((child) => (
@@ -476,14 +478,14 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
         <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
           <div className="flex justify-between items-center mb-2">
             <h5 className="text-xs font-bold text-purple-700 dark:text-purple-400">
-              🔗 语义相关节点
+              🔗 {t("nodeDetail.semanticRelatedNodes")}
             </h5>
             {!showRelatedSection && (
               <button
                 onClick={onFetchRelatedNodes}
                 className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
               >
-                加载相关
+                {t("nodeDetail.loadRelated")}
               </button>
             )}
           </div>
@@ -508,7 +510,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                 </div>
               ) : (
                 <p className="text-xs text-gray-400 text-center py-2">
-                  暂无相关节点
+                  {t("nodeDetail.noRelatedNodes")}
                 </p>
               )}
             </div>
@@ -521,19 +523,19 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             <div className="flex justify-between items-center mb-2">
               <h5 className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center">
                 <GitBranch size={14} className="mr-1" />
-                分支状态
+                {t("nodeDetail.branchStatus")}
               </h5>
             </div>
             <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1">
                   <div className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    {isAccepted ? "已选择" : "未选择"}
+                    {isAccepted ? t("nodeDetail.selected") : t("nodeDetail.notSelected")}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {isAccepted
-                      ? "此分支已被选中，显示为圆形+实线"
-                      : "此分支未被选中，显示为方形+虚线"}
+                      ? t("nodeDetail.branchSelectedDesc")
+                      : t("nodeDetail.branchNotSelectedDesc")}
                   </div>
                 </div>
                 {onUpdateNode && (
@@ -547,7 +549,7 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
                         : "bg-blue-500 text-white hover:bg-blue-600"
                     }`}
                   >
-                    {isAccepted ? "取消选择" : "选择此分支"}
+                    {isAccepted ? t("nodeDetail.cancelSelection") : t("nodeDetail.selectBranch")}
                   </button>
                 )}
               </div>
@@ -574,12 +576,12 @@ export const NodeDetailSidebar: React.FC<NodeDetailSidebarProps> = ({
             className={`flex-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center justify-center font-bold shadow-lg shadow-blue-100 dark:shadow-blue-900/30 transition-all active:scale-95 ${isMobile ? "py-3.5 min-h-[52px]" : "py-2.5"}`}
           >
             <Edit3 size={isMobile ? 20 : 18} className="mr-2" />
-            编辑节点
+            {t("nodeDetail.editNode")}
           </button>
           <button
             onClick={onDelete}
             className={`bg-white dark:bg-gray-800 text-red-500 border border-red-100 dark:border-red-900 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-all ${isMobile ? "w-14 h-[52px] min-h-[52px]" : "w-12"}`}
-            title="删除节点"
+            title={t("nodeDetail.deleteNode")}
           >
             <Trash2 size={isMobile ? 20 : 18} />
           </button>

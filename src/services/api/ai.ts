@@ -7,7 +7,10 @@ import { useLearningSettingsStore } from '../../store/useLearningSettingsStore';
 const getCurrentLanguage = (): string => {
   const aiLanguage = useLearningSettingsStore.getState().aiLanguage;
   if (aiLanguage === 'auto') {
-    return i18n.language || 'zh-CN';
+    const lang = i18n.language || 'zh-CN';
+    if (lang.startsWith('en')) return 'en-US';
+    if (lang.startsWith('zh')) return 'zh-CN';
+    return 'zh-CN';
   }
   return aiLanguage;
 };

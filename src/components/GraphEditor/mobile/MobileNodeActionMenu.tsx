@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit3, Sparkles, Wand2, Layers, GraduationCap, Trash2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface MobileNodeActionMenuProps {
   isOpen: boolean;
@@ -15,14 +16,6 @@ interface MobileNodeActionMenuProps {
   onGenerateContent?: () => void;
 }
 
-const menuItems = [
-  { key: 'edit', icon: Edit3, label: '编辑节点', color: 'text-blue-500' },
-  { key: 'aiExpand', icon: Sparkles, label: 'AI 拓展', color: 'text-purple-500' },
-  { key: 'generateContent', icon: Wand2, label: '生成内容', color: 'text-amber-500' },
-  { key: 'generateCards', icon: Layers, label: '生成卡片', color: 'text-emerald-500' },
-  { key: 'startLearning', icon: GraduationCap, label: '开始学习', color: 'text-cyan-500' },
-] as const;
-
 export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
   isOpen,
   onClose,
@@ -35,6 +28,16 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
   onStartLearning,
   onGenerateContent,
 }) => {
+  const { t } = useTranslation();
+
+  const menuItems = [
+    { key: 'edit', icon: Edit3, labelKey: 'nodeDetail.editNode', color: 'text-blue-500' },
+    { key: 'aiExpand', icon: Sparkles, labelKey: 'nodeDetail.aiExpand', color: 'text-purple-500' },
+    { key: 'generateContent', icon: Wand2, labelKey: 'nodeDetail.generateContent', color: 'text-amber-500' },
+    { key: 'generateCards', icon: Layers, labelKey: 'nodeDetail.generateCards', color: 'text-emerald-500' },
+    { key: 'startLearning', icon: GraduationCap, labelKey: 'nodeDetail.startLearning', color: 'text-cyan-500' },
+  ] as const;
+
   const handleAction = (action: () => void) => {
     action();
     onClose();
@@ -90,7 +93,7 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
                   <button
                     onClick={onClose}
                     className="p-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    aria-label="关闭菜单"
+                    aria-label={t("nodeDetail.closeMenu")}
                   >
                     <X size={22} />
                   </button>
@@ -108,11 +111,11 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
                     key={item.key}
                     onClick={() => handleAction(action)}
                     className="w-full flex items-center gap-4 px-5 py-4 min-h-[52px] text-left rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 active:bg-gray-100 dark:active:bg-slate-700 transition-colors"
-                    aria-label={item.label}
+                    aria-label={t(item.labelKey)}
                   >
                     <item.icon size={22} className={item.color} />
                     <span className="text-base text-gray-700 dark:text-gray-200 font-medium">
-                      {item.label}
+                      {t(item.labelKey)}
                     </span>
                   </button>
                 );
@@ -123,11 +126,11 @@ export const MobileNodeActionMenu: React.FC<MobileNodeActionMenuProps> = ({
               <button
                 onClick={() => handleAction(onDelete)}
                 className="w-full flex items-center gap-4 px-5 py-4 min-h-[52px] text-left rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30 transition-colors"
-                aria-label="删除节点"
+                aria-label={t("nodeDetail.deleteNode")}
               >
                 <Trash2 size={22} className="text-red-500" />
                 <span className="text-base text-red-600 dark:text-red-400 font-medium">
-                  删除节点
+                  {t("nodeDetail.deleteNode")}
                 </span>
               </button>
             </div>

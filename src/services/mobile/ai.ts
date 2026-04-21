@@ -5,6 +5,8 @@ import { getAIConfig, injectAIConfig } from "../api/client";
 import type { AIAction } from "@shared/types";
 import { mobileAIService } from "./aiService";
 import { isCapacitorMobile } from "../../config/mobileApiConfig";
+import i18n from "../../i18n";
+import { useLearningSettingsStore } from "../../store/useLearningSettingsStore";
 import { getMobileSupabaseClient } from "./client";
 
 const getCloudApiBaseUrl = (): string => {
@@ -49,6 +51,17 @@ const createMobileAiApiClient = (): AxiosInstance => {
 };
 
 const mobileAiClient = createMobileAiApiClient();
+
+const getCurrentLanguage = (): string => {
+  const aiLanguage = useLearningSettingsStore.getState().aiLanguage;
+  if (aiLanguage === "auto") {
+    const lang = i18n.language || "zh-CN";
+    if (lang.startsWith("en")) return "en-US";
+    if (lang.startsWith("zh")) return "zh-CN";
+    return "zh-CN";
+  }
+  return aiLanguage;
+};
 
 const createStreamHandler = async (
   url: string,
@@ -151,16 +164,18 @@ export const mobileAiApi = {
     graph_id?: string;
     provider?: string;
     model?: string;
+    language?: string;
   }) => {
     const isMobile = isCapacitorMobile();
     const isConfigured = mobileAIService.isConfigured();
+    const language = data.language || getCurrentLanguage();
 
     if (isMobile && isConfigured) {
       try {
         const result = await mobileAIService.generateLearningMaterial(
           data.topic,
           data.context || "",
-          { level: data.level },
+          { level: data.level, language },
         );
         return result;
       } catch (error) {
@@ -172,7 +187,7 @@ export const mobileAiApi = {
       }
     }
 
-    const payload = injectAIConfig(data, "text");
+    const payload = injectAIConfig({ ...data, language }, "text");
     return mobileAiClient.post("/ai/learning-material", payload);
   },
 
@@ -265,7 +280,8 @@ export const mobileAiApi = {
 
       const { data: graphNodes } = await client
         .from("graph_nodes")
-        .select(`
+        .select(
+          `
           knowledge_point_id,
           graph_id,
           knowledge_points (
@@ -273,7 +289,8 @@ export const mobileAiApi = {
             title,
             content
           )
-        `)
+        `,
+        )
         .in("knowledge_point_id", node_ids)
         .is("deleted_at", null);
 

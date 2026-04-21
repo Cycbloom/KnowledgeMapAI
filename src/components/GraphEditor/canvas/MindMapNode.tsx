@@ -370,6 +370,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
   const baseFontSize = level === "root" ? 18 : level === "core" ? 16 : 14;
   const scaledFontSize = useMemo(() => {
     const calculatedSize = baseFontSize / zoomLevel;
+    const englishScale = titleInfo.isEnglish ? 0.85 : 1;
+    const adjustedSize = calculatedSize * englishScale;
     // 根据缩放级别调整文字大小范围
     let minSize, maxSize;
     if (zoomLevel < 0.5) {
@@ -385,8 +387,8 @@ const MindMapNodeComponent: React.FC<MindMapNodeProps> = ({
       minSize = 12;
       maxSize = 28;
     }
-    return Math.max(minSize, Math.min(maxSize, calculatedSize));
-  }, [baseFontSize, zoomLevel]);
+    return Math.max(minSize, Math.min(maxSize, adjustedSize));
+  }, [baseFontSize, zoomLevel, titleInfo.isEnglish]);
   const tagOffset = useMemo(
     () => textOffset + scaledFontSize * 1.4,
     [textOffset, scaledFontSize],

@@ -1,0 +1,13 @@
+- [x] 服务端 aiService 关键词 category 回退值根据语言参数动态选择（英文 "Concept" / 中文 "概念"）
+- [x] 服务端 aiService Mock 响应根据语言参数动态生成
+- [x] 移动端 LEARNING_MATERIAL_SYSTEM_PROMPT 根据语言参数动态生成（英文/中文模板 + 对应 category 选项 + 语言指令）
+- [x] 移动端 generateLearningMaterial 方法接受 language 参数
+- [x] 移动端用户 prompt 根据语言参数切换中英文
+- [x] 移动端关键词归一化 category 回退值根据语言参数动态选择
+- [x] 移动端 API 层 generateLearningMaterial data 类型包含 language 字段
+- [x] 移动端 API 层调用本地服务时传递 language 参数
+- [x] 移动端 API 层调用 API 时注入 language 参数
+- [x] 英文模式下生成的关键词 term、category、explanation 全部为英文
+- [x] 中文模式下生成的关键词 term、category、explanation 全部为中文
+- [x] 前端 getCurrentLanguage() 将任何以 'en' 开头的语言代码标准化为 'en-US'
+- [x] 后端 isEnglishLanguage() 函数支持检测任何以 'en' 开头的语言代码

@@ -12,9 +12,15 @@ const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
   en: "Please respond in English.",
 };
 
+function isEnglishLanguage(language?: string): boolean {
+  if (!language) return false;
+  return language === "en-US" || language === "en" || language.startsWith("en");
+}
+
 export function getLanguageInstruction(language?: string): string {
   if (!language) return LANGUAGE_INSTRUCTIONS["zh-CN"];
-  return LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS["zh-CN"];
+  if (isEnglishLanguage(language)) return LANGUAGE_INSTRUCTIONS["en-US"];
+  return LANGUAGE_INSTRUCTIONS["zh-CN"];
 }
 
 export interface PromptTemplate {
@@ -132,8 +138,10 @@ You must respond with a JSON object containing:
 Each keyword object must have:
 - 'term': The keyword text (string)
 - 'importance': Importance level 1-5 (number, where 5 is most important)
-- 'category': Category type - one of: '定义', '概念', '方法', '结论', '原理', '应用', '术语' (string)
-- 'explanation': Brief explanation of the keyword (string, max 50 chars)`,
+- 'category': Category type - one of: {{categoryOptions}} (string)
+- 'explanation': Brief explanation of the keyword (string, max 50 chars)
+
+IMPORTANT: All keyword fields (term, category, explanation) must be in {{outputLanguage}}.`,
 
   expand_knowledge: `
 Return a JSON object with a 'suggestions' array. Each object in the array must have 'title' and 'content' fields.
@@ -766,6 +774,16 @@ export class PromptService {
     if (OUTPUT_SCHEMAS[code]) {
       content += `\n\n${OUTPUT_SCHEMAS[code]}`;
     }
+
+    // Replace output language placeholder in schemas
+    const outputLanguage = isEnglishLanguage(language) ? "English" : "Chinese";
+    content = content.replace(/\{\{outputLanguage\}\}/g, outputLanguage);
+
+    // Replace category options based on language
+    const categoryOptions = isEnglishLanguage(language)
+      ? "'Definition', 'Concept', 'Method', 'Conclusion', 'Principle', 'Application', 'Terminology'"
+      : "'定义', '概念', '方法', '结论', '原理', '应用', '术语'";
+    content = content.replace(/\{\{categoryOptions\}\}/g, categoryOptions);
 
     // Append language instruction based on the language parameter
     const languageInstruction = getLanguageInstruction(language);

@@ -304,7 +304,44 @@ const DIFFICULTY_PROMPTS: Record<string, string> = {
 - Include complex scenarios, edge cases, or require multi-step reasoning`,
 };
 
-const LEARNING_MATERIAL_SYSTEM_PROMPT = `你是一位杰出的教材作者和教育家。请为给定的主题编写一个全面、结构化的学习模块。
+const getLearningMaterialSystemPrompt = (language?: string): string => {
+  const isEnglish = language === "en-US" || language === "en";
+
+  if (isEnglish) {
+    return `You are a distinguished textbook author and educator. Write a comprehensive, structured learning module for the given topic.
+
+Target Audience: University students or professionals learning this concept.
+
+Structure:
+1. **Introduction (Hook)**: Briefly explain what this is and why it matters.
+2. **Core Concepts (Deep Dive)**: Explain the theoretical foundations. Use analogies.
+3. **Key Mechanisms/Details**: Technical details, 'how it works', or step-by-step logic.
+4. **Real-world Examples**: Concrete use cases or historical context.
+5. **Summary**: Key takeaways.
+
+Formatting:
+- Use Markdown headers (##, ###).
+- Use bolding for key terms.
+- **IMPORTANT**: Wrap ALL mathematical formulas in LaTeX: $inline$ or $$block$$.
+- Use lists and bullet points for readability.
+- Length: Comprehensive (approx 800-1500 words).
+
+You must respond with a JSON object containing:
+1. 'content': The learning material in Markdown format (as a string)
+2. 'keywords': An array of 5-15 keywords extracted from the content
+
+Each keyword object must have:
+- 'term': The keyword text (string)
+- 'importance': Importance level 1-5 (number, where 5 is most important)
+- 'category': Category type - one of: 'Definition', 'Concept', 'Method', 'Conclusion', 'Principle', 'Application', 'Terminology' (string)
+- 'explanation': Brief explanation of the keyword (string, max 50 chars)
+
+IMPORTANT: All keyword fields (term, category, explanation) must be in English.
+
+Please respond in English.`;
+  }
+
+  return `你是一位杰出的教材作者和教育家。请为给定的主题编写一个全面、结构化的学习模块。
 
 目标受众：大学生或正在学习这一概念的专业人士。
 
@@ -332,7 +369,10 @@ const LEARNING_MATERIAL_SYSTEM_PROMPT = `你是一位杰出的教材作者和教
 - 'category'：类别类型 - 以下之一：'定义', '概念', '方法', '结论', '原理', '应用', '术语'（字符串）
 - 'explanation'：关键词的简要解释（字符串，最多 50 字符）
 
+IMPORTANT: All keyword fields (term, category, explanation) must be in Chinese.
+
 请用中文回答。`;
+};
 
 export const mobileAIService = {
   isConfigured: (): boolean => {
@@ -642,6 +682,7 @@ Important:
     context: string,
     options: {
       level?: string;
+      language?: string;
     } = {},
   ): Promise<GenerateLearningMaterialResult> => {
     const client = createAIClient();
@@ -650,14 +691,21 @@ Important:
       throw new Error("AI 服务未配置，请先在设置中配置 API Key");
     }
 
-    const userPrompt = `主题：${topic}
+    const isEnglish = options.language === "en-US" || options.language === "en";
+    const userPrompt = isEnglish
+      ? `Topic: ${topic}
+Context/Background: ${context || "General knowledge"}
+${options.level ? `Knowledge Level: ${options.level}` : ""}
+
+Please generate the learning material based on the instructions above.`
+      : `主题：${topic}
 背景/上下文：${context || "通用知识"}
 ${options.level ? `知识水平：${options.level}` : ""}
 
 请根据上述要求生成学习资料。`;
 
     const messages = [
-      { role: "system" as const, content: LEARNING_MATERIAL_SYSTEM_PROMPT },
+      { role: "system" as const, content: getLearningMaterialSystemPrompt(options.language) },
       { role: "user" as const, content: userPrompt },
     ];
 
@@ -669,7 +717,7 @@ ${options.level ? `知识水平：${options.level}` : ""}
         ? result.keywords.map((k) => ({
             term: k.term || "",
             importance: Math.min(5, Math.max(1, k.importance || 3)),
-            category: k.category || "概念",
+            category: k.category || (isEnglish ? "Concept" : "概念"),
             explanation: k.explanation || "",
           }))
         : [];

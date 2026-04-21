@@ -3,6 +3,7 @@ import type { Node, Edge } from '../../../types';
 import { getLearningStatus, getStatusColors } from '../../../config/learningStatusColors';
 import { getLevel, getLevelLabel } from '../../../lib/graphUtils';
 import { useTheme } from "../../../hooks";
+import { useTranslation } from 'react-i18next';
 import { 
   Check, 
   Lock, 
@@ -35,6 +36,7 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
   onOpenDetail,
   onClose
 }) => {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   
   const status = getLearningStatus(nodeStatus?.[node.id]);
@@ -106,12 +108,12 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
               </span>
               {isMastered && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium flex items-center gap-1">
-                  <Check size={10} /> 已掌握
+                  <Check size={10} /> {t("nodeDetail.mastered")}
                 </span>
               )}
               {isLocked && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium flex items-center gap-1">
-                  <Lock size={10} /> 锁定
+                  <Lock size={10} /> {t("nodeDetail.locked")}
                 </span>
               )}
             </div>
@@ -123,8 +125,8 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
                 className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors ${
                   isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
                 }`}
-                title="查看详情"
-                aria-label="查看详情"
+                title={t("nodeDetail.viewDetails")}
+                aria-label={t("nodeDetail.viewDetails")}
               >
                 <Maximize2 size={22} />
               </button>
@@ -135,8 +137,8 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
                 className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors ${
                   isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'
                 }`}
-                title="关闭"
-                aria-label="关闭"
+                title={t("nodeDetail.close")}
+                aria-label={t("nodeDetail.close")}
               >
                 <X size={22} />
               </button>
@@ -176,7 +178,7 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
         <div className={`grid grid-cols-2 gap-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
           <div className="flex items-center gap-1.5">
             <BookOpen size={12} />
-            <span>复习 {reviewCount} 次</span>
+            <span>{t("nodeDetail.reviewCount", { count: reviewCount })}</span>
           </div>
         </div>
         
@@ -192,7 +194,7 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
                     ? 'hover:bg-slate-700 active:bg-slate-600 text-slate-300' 
                     : 'hover:bg-gray-50 active:bg-gray-100 text-gray-600'}
                 `}
-                aria-label={`查看父节点：${parentNode.title}`}
+                aria-label={t("nodeDetail.viewParentNode", { title: parentNode.title })}
               >
                 <ChevronLeft size={16} className="shrink-0" />
                 <span className="truncate font-medium">{parentNode.title}</span>
@@ -211,7 +213,7 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
                         ? 'hover:bg-slate-700 active:bg-slate-600 text-slate-300' 
                         : 'hover:bg-gray-50 active:bg-gray-100 text-gray-600'}
                     `}
-                    aria-label={`查看子节点：${child.title}`}
+                    aria-label={t("nodeDetail.viewChildNode", { title: child.title })}
                   >
                     <span className="truncate font-medium">{child.title}</span>
                     <ChevronRight size={16} className="shrink-0" />
@@ -219,7 +221,7 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
                 ))}
                 {childNodes.length > 3 && (
                   <div className={`text-xs text-center py-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    还有 {childNodes.length - 3} 个子节点
+                    {t("nodeDetail.moreChildren", { count: childNodes.length - 3 })}
                   </div>
                 )}
               </div>
@@ -242,9 +244,9 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
               onMarkMastered(node.id);
             }}
             className="flex-1 text-sm px-4 py-3 min-h-[44px] rounded-xl bg-green-500 text-white hover:bg-green-600 active:bg-green-700 transition-colors font-medium"
-            aria-label="标记已掌握"
+            aria-label={t("nodeDetail.markMastered")}
           >
-            标记已掌握
+            {t("nodeDetail.markMastered")}
           </button>
         )}
         {onOpenDetail && (
@@ -255,9 +257,9 @@ export const MobileNodePreviewCard: React.FC<MobileNodePreviewCardProps> = ({
                 ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800' 
                 : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
             }`}
-            aria-label="查看详情"
+            aria-label={t("nodeDetail.viewDetails")}
           >
-            查看详情
+            {t("nodeDetail.viewDetails")}
           </button>
         )}
       </div>
